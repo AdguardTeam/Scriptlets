@@ -1,0 +1,8 @@
+{
+  "name": "scriptlets",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://bit.adguard.com/scm/adguard-filters/scriptlets.git",
+  "author": "Tim Shenin <t.shenin@adguard.com>",
+  "license": "MIT"
+}
