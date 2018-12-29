@@ -1,7 +1,20 @@
-import test from './scriptlets/test';
+import { resolveDependencies } from './injector';
 
-scriptlets = (() => {
-    return {
-        test
+import * as scriptlets from './scriptlets';
+
+scriptlet = (() => {
+
+    const invoke = (data) => {
+        if (!data.name) {
+            return;
+        }
+        if (!scriptlets[data.name]) {
+            return;
+        }
+
+        const result = resolveDependencies(scriptlets[data.name]);
+        return result(data.args);
     }
+
+    return { invoke };
 })();
