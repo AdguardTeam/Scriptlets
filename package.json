@@ -1,8 +1,18 @@
 {
-  "name": "scriptlets",
-  "version": "1.0.0",
-  "main": "index.js",
-  "repository": "https://bit.adguard.com/scm/adguard-filters/scriptlets.git",
-  "author": "Tim Shenin <t.shenin@adguard.com>",
-  "license": "MIT"
+    "name": "scriptlets",
+    "version": "1.0.0",
+    "scripts": {
+        "build": "rollup -c",
+        "watch": "rollup -c -w"
+    },
+    "repository": "https://bit.adguard.com/scm/adguard-filters/scriptlets.git",
+    "author": "adguard@adguard.com",
+    "license": "LGPL-3.0",
+    "devDependencies": {
+        "@babel/core": "^7.2.2",
+        "@babel/preset-env": "^7.2.3",
+        "rollup": "^0.68.2",
+        "rollup-plugin-babel": "^4.1.0",
+        "rollup-plugin-node-resolve": "^4.0.0"
+    }
 }
