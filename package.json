@@ -5,8 +5,7 @@
         "build": "rollup -c",
         "watch": "rollup -c -w"
     },
-    "repository": "https://bit.adguard.com/scm/adguard-filters/scriptlets.git",
-    "author": "adguard@adguard.com",
+    "author": "devteam@adguard.com",
     "license": "LGPL-3.0",
     "devDependencies": {
         "@babel/core": "^7.2.2",
