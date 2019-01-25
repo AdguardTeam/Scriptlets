@@ -24,7 +24,7 @@ module.exports = {
     input: 'src/index.js',
     output: {
         dir: 'dist',
-        file: 'bundle.js',
+        file: 'scriptlets.js',
         format: 'iife',
         strict: false,
         banner,

@@ -1,10 +1,10 @@
 import { resolveDependencies } from './injector';
-import * as scriptlets from './scriptlets';
+import * as scriptletList from './scriptlets';
 
 /**
  * Global scriptlet variable
  */
-scriptlet = (() => {
+scriptlets = (() => {
 
     /**
      * Public method to run scriptlet execution
@@ -20,11 +20,11 @@ scriptlet = (() => {
         if (!data.name) {
             return;
         }
-        if (!scriptlets[data.name]) {
+        if (!scriptletList[data.name]) {
             return;
         }
 
-        const result = resolveDependencies(scriptlets[data.name]);
+        const result = resolveDependencies(scriptletList[data.name]);
         return result(data.args);
     }
 

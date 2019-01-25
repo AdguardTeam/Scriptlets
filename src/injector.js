@@ -1,4 +1,4 @@
-import * as dependencies from './snippets';
+import * as dependencies from './helpers';
 
 /**
  * Concat dependencies to scriptlet code
@@ -14,7 +14,7 @@ function attachdependencies(scriptlet, scriptletDeps = []) {
  * @param {Function} func injectable function
  * @param  {...any} args arguments for function
  */
-function wrapInIIFE(func, ...args) {
+function wrapInIIFE(func, args) {
     return '"use strict";(' + func + ')(' + args.map(JSON.stringify).join(',') + ');';
 }
 
