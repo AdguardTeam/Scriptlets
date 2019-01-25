@@ -20,11 +20,16 @@ scriptlets = (() => {
         if (!data.name) {
             return;
         }
-        if (!scriptletList[data.name]) {
+
+        const scriptlet = Object
+            .values(scriptletList)
+            .find(s => s.sName === data.name);
+
+        if (!scriptlet) {
             return;
         }
 
-        const result = resolveDependencies(scriptletList[data.name]);
+        const result = resolveDependencies(scriptlet);
         return result(data.args);
     }
 
