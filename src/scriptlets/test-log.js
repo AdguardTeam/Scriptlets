@@ -5,10 +5,10 @@ import log from '../helpers/log';
  * Log an array of passed arguments
  * @param {string} args test arguments
  */
-function test(...args) {
+function testLog(...args) {
     log(args);
 }
-test.sName = 'test';
-test.injections = [log];
+testLog.sName = 'test';
+testLog.injections = [log];
 
-export default test;
+export default testLog;

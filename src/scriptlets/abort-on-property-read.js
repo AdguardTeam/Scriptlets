@@ -7,7 +7,7 @@ import wrapPropertyAccess from '../helpers/wrap-property-access';
  */
 function abortOnPropertyRead(property) {
     const rid = randomId();
-
+    
     if (!property) {
         return;
     }

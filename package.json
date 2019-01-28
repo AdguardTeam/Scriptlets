@@ -4,12 +4,14 @@
     "scripts": {
         "build": "rollup -c",
         "watch": "rollup -c -w",
-        "test": "jest"
+        "test": "yarn build && jest"
     },
     "author": "devteam@adguard.com",
     "license": "LGPL-3.0",
     "devDependencies": {
         "@babel/core": "^7.2.2",
+        "@babel/plugin-transform-regenerator": "^7.0.0",
+        "@babel/plugin-transform-runtime": "^7.2.0",
         "@babel/preset-env": "^7.2.3",
         "babel-jest": "^24.0.0",
         "jest": "^24.0.0",
@@ -18,5 +20,8 @@
         "rollup": "^0.68.2",
         "rollup-plugin-babel": "^4.1.0",
         "rollup-plugin-node-resolve": "^4.0.0"
+    },
+    "dependencies": {
+        "@babel/runtime": "^7.3.1"
     }
 }

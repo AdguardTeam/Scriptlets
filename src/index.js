@@ -1,4 +1,4 @@
-import { resolveDependencies } from './injector';
+import { getResolvedScriptletString } from './injector';
 import * as scriptletList from './scriptlets';
 
 /**
@@ -29,8 +29,7 @@ scriptlets = (() => {
             return;
         }
 
-        const result = resolveDependencies(scriptlet);
-        return result(data.args);
+        return getResolvedScriptletString(scriptlet, data.args);
     }
 
     return { invoke };

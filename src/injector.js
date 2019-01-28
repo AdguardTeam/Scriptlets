@@ -4,7 +4,7 @@ import * as dependencies from './helpers';
  * Concat dependencies to scriptlet code
  * @param {string} scriptlet string view of scriptlet
  */
-function attachdependencies(scriptlet, scriptletDeps = []) {
+export function attachdependencies(scriptlet, scriptletDeps = []) {
     return scriptletDeps
         .reduce((accum, dep) => accum += dependencies[dep.name], scriptlet);
 }
@@ -14,7 +14,7 @@ function attachdependencies(scriptlet, scriptletDeps = []) {
  * @param {Function} func injectable function
  * @param  {...any} args arguments for function
  */
-function wrapInIIFE(func, args) {
+export function wrapInIIFE(func, args) {
     return '"use strict";(' + func + ')(' + args.map(JSON.stringify).join(',') + ');';
 }
 
@@ -28,3 +28,13 @@ export function resolveDependencies(scriptlet) {
         scriptlet.injections
     );
 };
+
+/**
+ * Returns string of result scriptlet which must be evaluated
+ * @param {Function} scriptlet
+ * @param {Array<string>} args 
+ */
+export function getResolvedScriptletString(scriptlet, args) {
+    const result = resolveDependencies(scriptlet);
+    return result(args);
+}
