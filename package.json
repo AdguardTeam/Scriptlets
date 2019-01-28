@@ -4,7 +4,7 @@
     "scripts": {
         "build": "rollup -c",
         "watch": "rollup -c -w",
-        "test": "yarn build && jest",
+        "test": "jest",
         "ui-test": "yarn rollup -c --environment UI_TEST && open tests/ui/tests.html"
     },
     "author": "devteam@adguard.com",
@@ -16,8 +16,6 @@
         "@babel/preset-env": "^7.2.3",
         "babel-jest": "^24.0.0",
         "jest": "^24.0.0",
-        "jest-puppeteer": "^3.9.0",
-        "puppeteer": "^1.11.0",
         "qunit": "^2.9.1",
         "rollup": "^0.68.2",
         "rollup-plugin-babel": "^4.1.0",

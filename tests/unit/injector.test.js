@@ -1,6 +1,6 @@
-import { attachdependencies, wrapInIIFE } from '../src/injector';
-import log from '../src/helpers/log';
-import testLog from '../src/helpers/log';
+import { attachdependencies, wrapInIIFE } from '../../src/injector';
+import log from '../../src/helpers/log';
+import testLog from '../../src/helpers/log';
 
 describe('injector', () => {
 
