@@ -20,13 +20,14 @@ const footer = `
  */
 `
 
-module.exports = {
+const bundleBuild = {
     input: 'src/index.js',
     output: {
         dir: 'dist',
         file: 'scriptlets.js',
         format: 'iife',
         strict: false,
+        sourcemap: true,
         banner,
         footer
     },
@@ -38,3 +39,28 @@ module.exports = {
         })
     ]
 };
+
+const testBuild = {
+    input: 'tests/ui/index.test.js',
+    output: {
+        dir: 'tests/ui/dist',
+        file: 'tests.js',
+        format: 'iife',
+        strict: false,
+        sourcemap: true,
+    },
+    plugins: [
+        resolve(),
+        babel({
+            exclude: 'node_modules/**',
+            runtimeHelpers: true,
+        })
+    ]
+}
+
+const isTest = process.env.UI_TEST === 'true';
+const resultBuilds = isTest
+    ? [bundleBuild, testBuild]
+    : bundleBuild;
+
+module.exports = resultBuilds;
