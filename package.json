@@ -4,8 +4,7 @@
     "scripts": {
         "build": "rollup -c",
         "watch": "rollup -c -w",
-        "test": "jest",
-        "ui-test": "yarn rollup -c --environment UI_TEST && open tests/ui/tests.html"
+        "test": "yarn rollup -c --environment UI_TEST && open tests/tests.html"
     },
     "author": "devteam@adguard.com",
     "license": "LGPL-3.0",
@@ -14,8 +13,6 @@
         "@babel/plugin-transform-regenerator": "^7.0.0",
         "@babel/plugin-transform-runtime": "^7.2.0",
         "@babel/preset-env": "^7.2.3",
-        "babel-jest": "^24.0.0",
-        "jest": "^24.0.0",
         "qunit": "^2.9.1",
         "rollup": "^0.68.2",
         "rollup-plugin-babel": "^4.1.0",

@@ -17,11 +17,6 @@ yarn watch
 
 Run UI Unit testing
 ```
-yarn ui-test
-```
-
-Run node unit testing
-```
 yarn test
 ```
 

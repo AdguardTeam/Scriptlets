@@ -41,9 +41,9 @@ const bundleBuild = {
 };
 
 const testBuild = {
-    input: 'tests/ui/index.test.js',
+    input: 'tests/index.test.js',
     output: {
-        dir: 'tests/ui/dist',
+        dir: 'tests/dist',
         file: 'tests.js',
         format: 'iife',
         strict: false,
