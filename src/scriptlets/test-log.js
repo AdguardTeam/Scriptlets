@@ -8,7 +8,7 @@ import log from '../helpers/log';
 function testLog(...args) {
     log(args);
 }
-testLog.sName = 'test';
+testLog.sName = 'test-log';
 testLog.injections = [log];
 
 export default testLog;
