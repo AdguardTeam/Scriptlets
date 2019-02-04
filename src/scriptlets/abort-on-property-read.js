@@ -1,5 +1,5 @@
 import randomId from '../helpers/random-id';
-import wrapPropertyAccess from '../helpers/wrap-property-access';
+import setPropertyAccess from '../helpers/set-property-access';
 import getChainProperty from '../helpers/getChainProperty';
 
 /**
@@ -22,10 +22,10 @@ function abortOnPropertyRead(property) {
     if (!chain) {
         return;
     }
-    wrapPropertyAccess(chain.base, chain.property, descriptor);
+    setPropertyAccess(chain.base, chain.property, descriptor);
 }
 
 abortOnPropertyRead.sName = 'abort-on-property-read';
-abortOnPropertyRead.injections = [randomId, wrapPropertyAccess, getChainProperty];
+abortOnPropertyRead.injections = [randomId, setPropertyAccess, getChainProperty];
 
 export default abortOnPropertyRead;
