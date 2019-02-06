@@ -1,14 +1,8 @@
-module.exports = api => {
-    const isTest = api.env('test');
-
+module.exports = (api) => {
+    api.cache(false);
     const config = {
         presets: [
-            [
-                '@babel/env',
-                {
-                    'modules': isTest ? 'auto' : false
-                }
-            ]
+            ['@babel/env']
         ],
         plugins: [
             '@babel/plugin-transform-regenerator',

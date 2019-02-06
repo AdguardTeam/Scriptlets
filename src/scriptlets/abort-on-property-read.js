@@ -6,15 +6,17 @@ import getChainProperty from '../helpers/getChainProperty';
  * Abort access to property if exists
  * @param {string} property propery name
  */
-function abortOnPropertyRead(property) {
+function abortOnPropertyRead(source, property) {
     const rid = randomId();
 
     if (!property) {
         return;
     }
-
     const descriptor = {
-        get() { throw new ReferenceError(rid); },
+        get() { 
+            source.hit && source.hit();
+            throw new ReferenceError(rid);
+        },
         set() { },
     };
 
