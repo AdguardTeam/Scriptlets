@@ -18,18 +18,7 @@ function getChainProperty(base, property) {
     };
 
     const getPathArray = property => {
-        const props = [];
-        let currentProp = '';
-        property.split('').forEach(s => {
-            if (s === '[' || s === ']' || s === '.') {
-                currentProp && props.push(currentProp);
-                currentProp = '';
-            } else {
-                currentProp += s;
-            }
-        });
-        currentProp && props.push(currentProp);
-        return props;
+        return property.split('.');
     };
 
     let currentBase = base;
