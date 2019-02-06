@@ -32,6 +32,41 @@ export function wrapInIIFE(source, code) {
 }
 
 /**
+ * Wrap code in no name function
+ * @param {string} code which must be wrapped
+ */
+export function wrapInNonameFunc(code) {
+    return `function(source, args){
+        ${code}
+    }`;
+}
+
+
+/**
+ * Check is scriptlet params valid
+ * @param {Object} source 
+ */
+export function isValidScriptletSource(source) {
+    if (!source.name) {
+        return false;
+    }
+    const scriptlet = getScriptletByName(source.name);
+    if (!scriptlet) {
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Find scriptlet by it's name
+ * @param {string} name 
+ */
+export function getScriptletByName(name) {
+    return Object
+        .values(scriptletList)
+        .find(s => s.sName === name);
+}
+/**
 * Returns scriptlet code by params
 * 
 * @param {Object} source params object
@@ -42,21 +77,16 @@ export function wrapInIIFE(source, code) {
 * @property {Array<string>}  source.args Arguments which need to pass in scriptlet
 */
 export function getScriptletCode(source) {
-    if (!source.name) {
+    if (!isValidScriptletSource(source)) {
         return;
     }
 
-    const scriptlet = Object
-        .values(scriptletList)
-        .find(s => s.sName === source.name);
-
-    if (!scriptlet) {
-        return;
-    }
-
+    const scriptlet = getScriptletByName(source.name);
     let result = attachdependencies(scriptlet);
     result = addScriptletCall(scriptlet, result);
-    result = wrapInIIFE(source, result);
+    result = source.engine === 'corelibs'
+        ? wrapInNonameFunc(result)
+        : wrapInIIFE(source, result);
 
     return result;
 }

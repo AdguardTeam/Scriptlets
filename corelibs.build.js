@@ -1,13 +1,33 @@
-import * as scriptletsSrc from './src/scriptlets';
+import * as scriptletList from './src/scriptlets';
 import { getScriptletCode } from './src/injector';
+import fs from 'fs';
+import path from 'path';
 
-const ARGUMENT_PLACEHOLDER = '${args}';
-const sNames = Object.values(scriptletsSrc).map(s => s.sName);
+const FILE_NAME = 'scriptlets.corelibs.json';
+const PATH_TO_DIST = './dist';
+const RESULT_PATH = path.resolve(PATH_TO_DIST, FILE_NAME);
 
-const res = getScriptletCode({
-    name: 'abort-on-property-read',
-    args: ARGUMENT_PLACEHOLDER
-})
+if (!fs.existsSync(PATH_TO_DIST)) {
+    fs.mkdirSync(PATH_TO_DIST);
+}
 
-console.log(res);
+let json = Object
+    .values(scriptletList)
+    .map(s => s.sName)
+    .reduce((acc, name) => {
+        const source = { name, engine: 'corelibs', args: [] };
+        acc[name] = getScriptletCode(source);
+        return acc;
+    }, {});
+json = JSON.stringify(json, null, 4);
+
+const writeCallback = err => {
+    if (err) {
+        console.error(err);
+        return;
+    }
+    console.log('corelibs built');
+};
+
+fs.writeFile(RESULT_PATH, json, 'utf8', writeCallback);
 
