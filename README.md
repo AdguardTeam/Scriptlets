@@ -5,9 +5,14 @@ Install dependencies
 yarn install
 ```
 
-Build
+Build for Extension
 ```
 yarn build
+```
+
+Build for Corelibs
+```
+yarn corelibs
 ```
 
 Build dev (rebuild js files on every change)
