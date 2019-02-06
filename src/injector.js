@@ -26,9 +26,7 @@ export function addScriptletCall(scriptlet, code) {
 export function wrapInIIFE(source, code) {
     const sourcString = JSON.stringify(source);
     const argsString = `[${source.args.map(JSON.stringify)}]`;
-    return `(function(source, args){
-        ${code}
-    })(${sourcString}, ${argsString})`;
+    return `(function(source, args){\n${code}\n})(${sourcString}, ${argsString})`;
 }
 
 /**
@@ -36,9 +34,7 @@ export function wrapInIIFE(source, code) {
  * @param {string} code which must be wrapped
  */
 export function wrapInNonameFunc(code) {
-    return `function(source, args){
-        ${code}
-    }`;
+    return `function(source, args){\n${code}\n}`;
 }
 
 
