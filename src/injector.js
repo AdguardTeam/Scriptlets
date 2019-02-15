@@ -6,7 +6,8 @@ import * as scriptletList from './scriptlets';
  * @param {string} scriptlet string view of scriptlet
  */
 export function attachdependencies(scriptlet) {
-    return scriptlet.injections.reduce((accum, dep) =>
+    const { injections = [] } = scriptlet;
+    return injections.reduce((accum, dep) =>
         accum += ('\n' + dependencies[dep.name]), scriptlet.toString());
 }
 
