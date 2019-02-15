@@ -67,11 +67,11 @@ export function getScriptletByName(name) {
 * Returns scriptlet code by params
 * 
 * @param {Object} source params object
-* @property {string}  source.name Scriptlets name
-* @property {'extension'|'corelibs'}  source.engine Platform where scriptlet will be executed
-* @property {string}  source.version Engine version
-* @property {Function}  source.hit This function needs to be called when scriptlet was executed and done its work
-* @property {Array<string>}  source.args Arguments which need to pass in scriptlet
+* @property {string} source.name Scriptlets name
+* @property {Array<string>} source.args Arguments which need to pass in scriptlet
+* @property {'extension'|'corelibs'} source.engine Platform where scriptlet will be executed
+* @property {string} [source.version] Engine version
+* @property {Function} [source.hit] This function needs to be called when scriptlet was executed and done its work
 */
 export function getScriptletCode(source) {
     if (!isValidScriptletSource(source)) {
