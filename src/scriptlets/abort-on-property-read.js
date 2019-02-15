@@ -7,7 +7,6 @@ import getPropertyInChain from '../helpers/get-property-in-chain';
  * @param {string} property propery name
  */
 function abortOnPropertyRead(source, property) {
-    debugger
     if (!property) {
         return;
     }
