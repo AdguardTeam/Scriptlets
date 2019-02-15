@@ -1,33 +1,47 @@
 import randomId from '../helpers/random-id';
 import setPropertyAccess from '../helpers/set-property-access';
-import getChainProperty from '../helpers/getChainProperty';
+import getPropertyInChain from '../helpers/get-property-in-chain';
 
 /**
  * Abort access to property if exists
  * @param {string} property propery name
  */
 function abortOnPropertyRead(source, property) {
-    const rid = randomId();
-
+    debugger
     if (!property) {
         return;
     }
-    const descriptor = {
-        get() { 
-            source.hit && source.hit();
-            throw new ReferenceError(rid);
-        },
-        set() { },
+    const rid = randomId();
+    const abort = () => {
+        source.hit && source.hit();
+        throw new ReferenceError(rid);
+    };
+    const setChainPropAccess = (owner, property) => {
+        let { base, prop, chain } = getPropertyInChain(owner, property);
+        if (chain) {
+            const setter = a => {
+                base = a;
+                if (a instanceof Object) {
+                    setChainPropAccess(a, chain);
+                }
+            };
+            Object.defineProperty(owner, prop, {
+                get: () => base,
+                set: setter,
+            });
+            return;
+        }
+
+        setPropertyAccess(base, prop, {
+            get: abort,
+            set: () => { },
+        });
     };
 
-    const chain = getChainProperty(window, property);
-    if (!chain) {
-        return;
-    }
-    setPropertyAccess(chain.base, chain.property, descriptor);
+    setChainPropAccess(window, property);
 }
 
 abortOnPropertyRead.sName = 'abort-on-property-read';
-abortOnPropertyRead.injections = [randomId, setPropertyAccess, getChainProperty];
+abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain];
 
 export default abortOnPropertyRead;

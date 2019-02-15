@@ -32,3 +32,17 @@ test('abort-on-property-read dot notation', (assert) => {
         `should throw Reference error when try to access property ${property}`
     );
 });
+
+test('abort-on-property-read dot notation deferred defenition', (assert) => {
+    const property = '___ddd.___eee';
+    const params = { name, args: [property] };
+    const resString = window.scriptlets.invoke(params);
+    eval(resString);
+    window.___ddd = {};
+    window.___ddd.___eee = 'value';
+    assert.throws(
+        () => window.___ddd.___eee,
+        /ReferenceError/,
+        `should throw Reference error when try to access property ${property}`
+    );
+});
