@@ -6,6 +6,6 @@
 function testLog(...args) {
     console.log(args);
 }
-testLog.sName = 'test-log';
+testLog.names = ['test-log'];
 
 export default testLog;
