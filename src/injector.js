@@ -61,7 +61,7 @@ export function isValidScriptletSource(source) {
 export function getScriptletByName(name) {
     return Object
         .values(scriptletList)
-        .find(s => s.sName === name);
+        .find(s => s.names && s.names.includes(name));
 }
 /**
 * Returns scriptlet code by params

@@ -42,7 +42,11 @@ function abortOnPropertyRead(source, property) {
     setChainPropAccess(window, property);
 }
 
-abortOnPropertyRead.sName = 'abort-on-property-read';
+abortOnPropertyRead.names = [
+    'abort-on-property-read',
+    'ubo-abort-on-property-read.js',
+    'abp-abort-on-property-read',
+];
 abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain];
 
 export default abortOnPropertyRead;
