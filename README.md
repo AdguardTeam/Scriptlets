@@ -7,19 +7,19 @@ Scriptlet is a JavaScript function which provide extended capabilities for filtr
 ### Syntax
 
 ```
-domains#%#//sciptlet(name[, arg1[, arg2[, ...]]])
+domains#%#//scriptlet(name[, arg1[, arg2[, ...]]])
 ```
 **Example**
 ```
-example.org#%#//sciptlet("abort-on-property-read", "alert")
+example.org#%#//scriptlet("abort-on-property-read", "alert")
 ```
 
 **Valid rules**
 - scriptlet `name` provided
 - single and double qoutes are supported
-    - `abc.org#%#//sciptlet('prop')` - valid
-    - `abc.org#%#//sciptlet("prop")` - valid
-    - `abc.org#%#//sciptlet("prop')` - not valid
+    - `abc.org#%#//scriptlet('prop')` - valid
+    - `abc.org#%#//scriptlet("prop")` - valid
+    - `abc.org#%#//scriptlet("prop')` - not valid
 - symbols inside parameters escaped properly
     - `"prop[\"nested\"]"` - valid
     - `"prop['nested']"` - also valid
@@ -35,7 +35,7 @@ Throws a ReferenceError when trying to read
 
 **Syntax**
 ```
-example.org#%#//sciptlet("abort-on-property-read", <arg>)
+example.org#%#//scriptlet("abort-on-property-read", <arg>)
 ```
 
 **Parameters**
@@ -45,7 +45,7 @@ Required. Name of property which should be abort on reading. Allowed chain of pr
 
 **Example**
 ```
-example.org#%#//sciptlet("abort-on-property-read", "alert")
+example.org#%#//scriptlet("abort-on-property-read", "alert")
 ```
 
 [scriptlet source](./src/scriptlets/abort-on-property-read.js)

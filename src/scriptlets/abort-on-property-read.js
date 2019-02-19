@@ -5,8 +5,7 @@ import getPropertyInChain from '../helpers/get-property-in-chain';
 /**
  * Abort property reading even if it doesn't exist in execution moment
  * 
- * @param {Object} source params object
- * @property {Function} [source.hit] This function needs to be called when scriptlet was executed and done its work
+ * @param {Source} source
  * @param {string} property propery name
  */
 function abortOnPropertyRead(source, property) {
