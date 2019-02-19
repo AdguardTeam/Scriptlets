@@ -13,7 +13,7 @@ if (!fs.existsSync(PATH_TO_DIST)) {
 
 let json = Object
     .values(scriptletList)
-    .map(s => s.names[0])
+    .reduce((acc, item) => [...acc, ...item.names], [])
     .reduce((acc, name) => {
         const source = { name, engine: 'corelibs', args: [] };
         acc[name] = getScriptletCode(source);
