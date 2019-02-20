@@ -31,7 +31,8 @@ example.org#%#//scriptlet("abort-on-property-read", "alert")
 ### Available scriptlets
 
 **[abort-on-property-read](#abortOnPropertyRead)**
-Throws a ReferenceError when trying to read 
+<br>
+Throws a ReferenceError when trying to read property
 
 **Syntax**
 ```
@@ -77,4 +78,66 @@ yarn watch
 Run UI Unit testing
 ```
 yarn test
+```
+
+### Output
+
+**Extension**
+
+After build will be generated `dist/scriptlets.js` file.
+<br>
+This file adds global variable `scriptlets`.
+
+API
+```
+/**
+* Returns scriptlet code
+* 
+* @param {Source} source
+* @returns {string}
+*/
+scriptlets.invoke(source)
+```
+
+**Corelibs**
+
+After build will be generated `dist/scriptlets.corelibs.json`.
+
+File structure
+```
+{
+    "scriptlets": [
+        {
+            "names": [ <NAME 1>[, <NAME 2>[, <NAME N>]]  ],
+            "scriptlet": <SCRIPTLET CODE 1>
+        },
+
+        ...
+
+        {
+            "names": [ <NAME 1>[, <NAME 2>[, <NAME N>]]  ],
+            "scriptlet": <SCRIPTLET CODE N>
+        },
+    ]
+}
+```
+
+`<NAME>` - `{string}` Scriptlet name, also may has aliases.
+<br>
+`<SCRIPTLET CODE>` - `{string}` Scriptlet code.
+
+**Example**
+```
+{
+    "scriptlets": [
+        {
+            "names": [
+                "abort-on-property-read",
+                "ubo-abort-on-property-read.js",
+                "abp-abort-on-property-read"
+            ],
+            "scriptlet": "function() { ...code... }"
+        },
+    ]
+}
 ```
