@@ -103,30 +103,7 @@ scriptlets.invoke(source)
 
 After build will be generated `dist/scriptlets.corelibs.json`.
 
-File structure
-```
-{
-    "scriptlets": [
-        {
-            "names": [ <NAME 1>[, <NAME 2>[, <NAME N>]]  ],
-            "scriptlet": <SCRIPTLET CODE 1>
-        },
-
-        ...
-
-        {
-            "names": [ <NAME 1>[, <NAME 2>[, <NAME N>]]  ],
-            "scriptlet": <SCRIPTLET CODE N>
-        },
-    ]
-}
-```
-
-`<NAME>` - `{string}` Scriptlet name, also may has aliases.
-<br>
-`<SCRIPTLET CODE>` - `{string}` Scriptlet code.
-
-**Example**
+File example
 ```
 {
     "scriptlets": [
@@ -139,5 +116,31 @@ File structure
             "scriptlet": "function() { ...code... }"
         },
     ]
+}
+```
+
+Schema
+```
+{
+    "type": "object",
+    "properties": {
+        "scriptlets": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "names": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "scriptlet": {
+                        "type": "string"
+                    }
+                },
+            }
+        }
+    }
 }
 ```
