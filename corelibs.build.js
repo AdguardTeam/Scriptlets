@@ -2,6 +2,7 @@ import * as scriptletList from './src/scriptlets';
 import { getScriptletCode } from './src/injector';
 import fs from 'fs';
 import path from 'path';
+import { version } from './package.json';
 
 const FILE_NAME = 'scriptlets.corelibs.json';
 const PATH_TO_DIST = './dist';
@@ -19,7 +20,8 @@ const scriptlets = Object
         const scriptlet = getScriptletCode(source);
         return { names, scriptlet };
     })
-const json = JSON.stringify({ scriptlets }, null, 4);
+let json = { version, scriptlets };
+json = JSON.stringify(json, null, 4);
 const writeCallback = err => {
     if (err) {
         console.error(err);
