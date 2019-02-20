@@ -11,16 +11,15 @@ if (!fs.existsSync(PATH_TO_DIST)) {
     fs.mkdirSync(PATH_TO_DIST);
 }
 
-let json = Object
+const scriptlets = Object
     .values(scriptletList)
-    .reduce((acc, item) => [...acc, ...item.names], [])
-    .reduce((acc, name) => {
-        const source = { name, engine: 'corelibs', args: [] };
-        acc[name] = getScriptletCode(source);
-        return acc;
-    }, {});
-json = JSON.stringify(json, null, 4);
-
+    .map(s => {
+        const source = { name: s.names[0], engine: 'corelibs', args: [] };
+        const names = [...s.names];
+        const scriptlet = getScriptletCode(source);
+        return { names, scriptlet };
+    })
+const json = JSON.stringify({ scriptlets }, null, 4);
 const writeCallback = err => {
     if (err) {
         console.error(err);
