@@ -106,6 +106,7 @@ After build will be generated `dist/scriptlets.corelibs.json`.
 File example
 ```
 {
+    "version": "1.0.0",
     "scriptlets": [
         {
             "names": [
@@ -124,6 +125,9 @@ Schema
 {
     "type": "object",
     "properties": {
+        "version": {
+            "type": "string"
+        },
         "scriptlets": {
             "type": "array",
             "items": {
