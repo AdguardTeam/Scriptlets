@@ -5,7 +5,7 @@ import * as scriptletList from './scriptlets';
  * Concat dependencies to scriptlet code
  * @param {string} scriptlet string view of scriptlet
  */
-export function attachdependencies(scriptlet) {
+export function attachDependencies(scriptlet) {
     const { injections = [] } = scriptlet;
     return injections.reduce((accum, dep) =>
         accum += ('\n' + dependencies[dep.name]), scriptlet.toString());
@@ -13,7 +13,8 @@ export function attachdependencies(scriptlet) {
 
 /**
  * Add scriptlet call to existing code
- * @param {Add } scriptlet 
+ * @param {Function} scriptlet
+ * @param {string} code
  */
 export function addScriptletCall(scriptlet, code) {
     return `${code}\n${scriptlet.name}(source, args.join(','))`;
@@ -21,8 +22,8 @@ export function addScriptletCall(scriptlet, code) {
 
 /**
  * Wrap function into IIFE
- * @param {Function} func injectable function
- * @param  {...any} args arguments for function
+ * @param {Source} source 
+ * @param {string} code
  */
 export function wrapInIIFE(source, code) {
     const sourcString = JSON.stringify(source);
@@ -64,8 +65,7 @@ export function getScriptletByName(name) {
         .find(s => s.names && s.names.includes(name));
 }
 /**
-* Returns scriptlet code by params
-* 
+* Returns scriptlet code by param
 * @param {Source} source
 */
 export function getScriptletCode(source) {
@@ -74,7 +74,7 @@ export function getScriptletCode(source) {
     }
 
     const scriptlet = getScriptletByName(source.name);
-    let result = attachdependencies(scriptlet);
+    let result = attachDependencies(scriptlet);
     result = addScriptletCall(scriptlet, result);
     result = source.engine === 'corelibs'
         ? wrapInNonameFunc(result)

@@ -1,8 +1,19 @@
 /**
- * Check is passed property available in base object
+ * @typedef Chain
+ * @property {Object} base 
+ * @property {string} prop
+ * @property {string} [chain]
+ */
+
+/**
+ * Check is property exist in base object recursively
+ * 
+ * If property doesn't exist in base object
+ * defines this property and returns base, property name and remaining part of property chain
+ * 
  * @param {Object} base
  * @param {string} property
- * @returns {{base: Object, property: string}|boolean}
+ * @returns {Chain}
  */
 function getPropertyInChain(base, chain) {
     let pos = chain.indexOf('.');
