@@ -1,3 +1,5 @@
+/* global QUnit */
+/* eslint-disable no-eval, no-underscore-dangle */
 const { test, module } = QUnit;
 const name = 'abort-on-property-read';
 
@@ -6,7 +8,7 @@ test('abort-on-property-read simple check ubo alias', (assert) => {
     const property = '___aaa';
     const params = {
         name: `ubo-${name}.js`,
-        args: [property]
+        args: [property],
     };
     window[property] = 'value';
     const resString = window.scriptlets.invoke(params);
@@ -14,7 +16,7 @@ test('abort-on-property-read simple check ubo alias', (assert) => {
     assert.throws(
         () => window[property],
         /ReferenceError/,
-        `should throw Reference error when try to access property ${property}`
+        `should throw Reference error when try to access property ${property}`,
     );
 });
 
@@ -22,7 +24,7 @@ test('abort-on-property-read simple check abp alias', (assert) => {
     const property = '___aaa';
     const params = {
         name: `abp-${name}`,
-        args: [property]
+        args: [property],
     };
     window[property] = 'value';
     const resString = window.scriptlets.invoke(params);
@@ -30,7 +32,7 @@ test('abort-on-property-read simple check abp alias', (assert) => {
     assert.throws(
         () => window[property],
         /ReferenceError/,
-        `should throw Reference error when try to access property ${property}`
+        `should throw Reference error when try to access property ${property}`,
     );
 });
 
@@ -38,7 +40,7 @@ test('abort-on-property-read simple', (assert) => {
     const property = '___aaa';
     const params = {
         name,
-        args: [property]
+        args: [property],
     };
     window[property] = 'value';
     const resString = window.scriptlets.invoke(params);
@@ -46,7 +48,7 @@ test('abort-on-property-read simple', (assert) => {
     assert.throws(
         () => window[property],
         /ReferenceError/,
-        `should throw Reference error when try to access property ${property}`
+        `should throw Reference error when try to access property ${property}`,
     );
 });
 
@@ -61,7 +63,7 @@ test('abort-on-property-read dot notation', (assert) => {
     assert.throws(
         () => window.___bbb.___ccc,
         /ReferenceError/,
-        `should throw Reference error when try to access property ${property}`
+        `should throw Reference error when try to access property ${property}`,
     );
 });
 
@@ -75,6 +77,6 @@ test('abort-on-property-read dot notation deferred defenition', (assert) => {
     assert.throws(
         () => window.___ddd.___eee,
         /ReferenceError/,
-        `should throw Reference error when try to access property ${property}`
+        `should throw Reference error when try to access property ${property}`,
     );
 });

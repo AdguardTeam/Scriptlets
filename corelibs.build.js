@@ -1,7 +1,7 @@
-import * as scriptletList from './src/scriptlets';
-import { getScriptletCode } from './src/injector';
 import fs from 'fs';
 import path from 'path';
+import * as scriptletList from './src/scriptlets';
+import { getScriptletCode } from './src/injector';
 import { version } from './package.json';
 
 const FILE_NAME = 'scriptlets.corelibs.json';
@@ -14,21 +14,20 @@ if (!fs.existsSync(PATH_TO_DIST)) {
 
 const scriptlets = Object
     .values(scriptletList)
-    .map(s => {
+    .map((s) => {
         const source = { name: s.names[0], engine: 'corelibs', args: [] };
         const names = [...s.names];
         const scriptlet = getScriptletCode(source);
         return { names, scriptlet };
-    })
+    });
 let json = { version, scriptlets };
 json = JSON.stringify(json, null, 4);
-const writeCallback = err => {
+const writeCallback = (err) => {
     if (err) {
-        console.error(err);
+        console.error(err); // eslint-disable-line no-console
         return;
     }
-    console.log('corelibs built');
+    console.log('corelibs built'); // eslint-disable-line no-console
 };
 
 fs.writeFile(RESULT_PATH, json, 'utf8', writeCallback);
-

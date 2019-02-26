@@ -7,7 +7,7 @@ const banner = `
  * AdGuard Scriptlets
  * Version ${project.version}
  */
-`
+`;
 
 const footer = `
 /**
@@ -18,7 +18,7 @@ const footer = `
  * |                                         |
  * -------------------------------------------
  */
-`
+`;
 
 const bundleBuild = {
     input: 'src/index.js',
@@ -29,15 +29,15 @@ const bundleBuild = {
         strict: false,
         sourcemap: true,
         banner,
-        footer
+        footer,
     },
     plugins: [
         resolve(),
         babel({
             exclude: 'node_modules/**',
             runtimeHelpers: true,
-        })
-    ]
+        }),
+    ],
 };
 
 const testBuild = {
@@ -54,9 +54,9 @@ const testBuild = {
         babel({
             exclude: 'node_modules/**',
             runtimeHelpers: true,
-        })
-    ]
-}
+        }),
+    ],
+};
 
 const isTest = process.env.UI_TEST === 'true';
 const resultBuilds = isTest
