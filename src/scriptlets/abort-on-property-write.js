@@ -3,7 +3,7 @@ import setPropertyAccess from '../helpers/set-property-access';
 import getPropertyInChain from '../helpers/get-property-in-chain';
 
 /**
- * Abort property reading even if it doesn't exist in execution moment
+ * Abort property writing
  * 
  * @param {Source} source
  * @param {string} property propery name
