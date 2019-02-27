@@ -8,6 +8,9 @@ const {
 } = QUnit;
 const name = 'setTimeout-defuser';
 
+// copy eval to prevent rollup warnings
+const evalWrap = eval;
+
 let nativeSetTimeout;
 moduleStart(() => {
     nativeSetTimeout = window.setTimeout;
@@ -30,7 +33,7 @@ test('setTimeout-defuser: adg no args', (assert) => {
         done();
     }, 20);
     // run scriptlet code
-    eval(scriptlet);
+    evalWrap(scriptlet);
     // check is scriptlet works
     setTimeout(() => { window.aaa = 'new value'; });
 });
@@ -47,7 +50,7 @@ test('setTimeout-defuser: ubo alias no args', (assert) => {
         done();
     }, 20);
     // run scriptlet code
-    eval(scriptlet);
+    evalWrap(scriptlet);
     // check is scriptlet works
     setTimeout(() => { window.aaa = 'new value'; });
 });
@@ -67,7 +70,7 @@ test('setTimeout-defuser: adg by timeout name', (assert) => {
     }, 20);
 
     // run scriptlet code
-    eval(scriptlet);
+    evalWrap(scriptlet);
     // check is scriptlet works
     const test = () => { window.bbb = 'new value'; };
     setTimeout(test);

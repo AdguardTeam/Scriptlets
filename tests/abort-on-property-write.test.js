@@ -5,6 +5,9 @@ const name = 'abort-on-property-write';
 const PROPERTY = 'aaa';
 const CHAIN_PROPERTY = 'aaa.bbb';
 
+// copy eval to prevent rollup warnings
+const evalWrap = eval;
+
 testDone(() => {
     delete window[PROPERTY];
 });
@@ -17,7 +20,7 @@ test('abort-on-property-write: ubo alias, set prop for existed prop', (assert) =
     };
     window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
-    eval(resString);
+    evalWrap(resString);
     assert.throws(
         () => {
             window[PROPERTY] = 'new value';
@@ -34,7 +37,7 @@ test('abort-on-property-write: abp alias, set prop for existed prop', (assert) =
     };
     window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
-    eval(resString);
+    evalWrap(resString);
     assert.throws(
         () => {
             window[PROPERTY] = 'new value';
@@ -51,7 +54,7 @@ test('abort-on-property-write: adg alias, set prop for existed prop', (assert) =
     };
     window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
-    eval(resString);
+    evalWrap(resString);
     assert.throws(
         () => {
             window[PROPERTY] = 'new value';
@@ -67,7 +70,7 @@ test('abort-on-property-write dot notation', (assert) => {
         bbb: 'value',
     };
     const resString = window.scriptlets.invoke(params);
-    eval(resString);
+    evalWrap(resString);
     assert.throws(
         () => {
             window.aaa.bbb = 'new value';
@@ -80,7 +83,7 @@ test('abort-on-property-write dot notation', (assert) => {
 test('abort-on-property-write dot notation deferred defenition', (assert) => {
     const params = { name, args: [CHAIN_PROPERTY] };
     const resString = window.scriptlets.invoke(params);
-    eval(resString);
+    evalWrap(resString);
     window.aaa = {};
     assert.throws(
         () => {

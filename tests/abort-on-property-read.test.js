@@ -5,6 +5,9 @@ const name = 'abort-on-property-read';
 const PROPERTY = 'aaa';
 const CHAIN_PROPERTY = 'aaa.bbb';
 
+// copy eval to prevent rollup warnings
+const evalWrap = eval;
+
 testDone(() => {
     delete window[PROPERTY];
 });
@@ -17,7 +20,7 @@ test('abort-on-property-read simple check ubo alias', (assert) => {
     };
     window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
-    eval(resString);
+    evalWrap(resString);
     assert.throws(
         () => window[PROPERTY],
         /ReferenceError/,
@@ -32,7 +35,7 @@ test('abort-on-property-read simple check abp alias', (assert) => {
     };
     window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
-    eval(resString);
+    evalWrap(resString);
     assert.throws(
         () => window[PROPERTY],
         /ReferenceError/,
@@ -47,7 +50,7 @@ test('abort-on-property-read simple', (assert) => {
     };
     window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
-    eval(resString);
+    evalWrap(resString);
     assert.throws(
         () => window[PROPERTY],
         /ReferenceError/,
@@ -61,7 +64,7 @@ test('abort-on-property-read dot notation', (assert) => {
         bbb: 'value',
     };
     const resString = window.scriptlets.invoke(params);
-    eval(resString);
+    evalWrap(resString);
     assert.throws(
         () => window.aaa.bbb,
         /ReferenceError/,
@@ -72,7 +75,7 @@ test('abort-on-property-read dot notation', (assert) => {
 test('abort-on-property-read dot notation deferred defenition', (assert) => {
     const params = { name, args: [CHAIN_PROPERTY] };
     const resString = window.scriptlets.invoke(params);
-    eval(resString);
+    evalWrap(resString);
     window.aaa = {};
     window.aaa.bbb = 'value';
     assert.throws(
