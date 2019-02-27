@@ -20,11 +20,14 @@ function setTimeoutDefuser(source, match, delay) {
     match = new RegExp(match);
 
     const timeoutWrapper = function (cb, d) {
-        return (isNaN(delay) || d === delay) && match.test(cb.toString())
-            ? nativeTimeout(() => { }, d)
-            : nativeTimeout.apply(window, arguments)
+        if ((isNaN(delay) || d === delay) && match.test(cb.toString())) {
+            if (source.hit) {
+                source.hit();
+            }
+            return nativeTimeout(() => { }, d);
+        }
+        return nativeTimeout.apply(window, arguments);
     };
-
     window.setTimeout = timeoutWrapper;
 }
 
