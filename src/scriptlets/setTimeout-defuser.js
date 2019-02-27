@@ -1,28 +1,31 @@
 /**
  * 
- * 
  * @param {Source} source
  * @param {string} match
  * @param {string} match
  */
 function setTimeoutDefuser(source, match, delay) {
-    let nativeTimeout = window.setTimeout;
+    const nativeTimeout = window.setTimeout;
     delay = parseInt(delay, 10);
+    const isStringRegexp = s => s[0] === '/' && s[s.length - 1] === '/';
+    const escapeChars = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    if (match === '') {
+    if (!match) {
         match = '.?';
-    } else if (match[0] === '/' && match[match.length - 1] === '/') {
+    } else if (isStringRegexp(match)) {
         match = match.slice(1, -1);
     } else {
-        match = match.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        match = escapeChars(match);
     }
     match = new RegExp(match);
-    window.setTimeout = function (a, b) {
-        if ((isNaN(delay) || b == delay) && match.test(a.toString())) {
-            return nativeTimeout(function () { }, b);
-        }
-        return nativeTimeout.apply(this, arguments);
-    }.bind(window);
+
+    const timeoutWrapper = function (cb, d) {
+        return (isNaN(delay) || d === delay) && match.test(cb.toString())
+            ? nativeTimeout(() => { }, d)
+            : nativeTimeout.apply(window, arguments)
+    };
+
+    window.setTimeout = timeoutWrapper;
 }
 
 setTimeoutDefuser.names = [
