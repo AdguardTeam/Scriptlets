@@ -4,7 +4,7 @@ import getPropertyInChain from '../helpers/get-property-in-chain';
 
 /**
  * Abort property reading even if it doesn't exist in execution moment
- * 
+ *
  * @param {Source} source
  * @param {string} property propery name
  */
@@ -14,13 +14,16 @@ function abortOnPropertyRead(source, property) {
     }
     const rid = randomId();
     const abort = () => {
-        source.hit && source.hit();
+        if (source.hit) {
+            source.hit();
+        }
         throw new ReferenceError(rid);
     };
     const setChainPropAccess = (owner, property) => {
+        // eslint-disable-next-line prefer-const
         let { base, prop, chain } = getPropertyInChain(owner, property);
         if (chain) {
-            const setter = a => {
+            const setter = (a) => {
                 base = a;
                 if (a instanceof Object) {
                     setChainPropAccess(a, chain);

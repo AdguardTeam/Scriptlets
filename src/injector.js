@@ -7,8 +7,7 @@ import * as scriptletList from './scriptlets';
  */
 export function attachDependencies(scriptlet) {
     const { injections = [] } = scriptlet;
-    return injections.reduce((accum, dep) =>
-        accum += ('\n' + dependencies[dep.name]), scriptlet.toString());
+    return injections.reduce((accum, dep) => `${accum}\n${dependencies[dep.name]}`, scriptlet.toString());
 }
 
 /**
@@ -22,7 +21,7 @@ export function addScriptletCall(scriptlet, code) {
 
 /**
  * Wrap function into IIFE
- * @param {Source} source 
+ * @param {Source} source
  * @param {string} code
  */
 export function wrapInIIFE(source, code) {
@@ -39,10 +38,19 @@ export function wrapInNonameFunc(code) {
     return `function(source, args){\n${code}\n}`;
 }
 
+/**
+ * Find scriptlet by it's name
+ * @param {string} name
+ */
+export function getScriptletByName(name) {
+    return Object
+        .values(scriptletList)
+        .find(s => s.names && s.names.includes(name));
+}
 
 /**
  * Check is scriptlet params valid
- * @param {Object} source 
+ * @param {Object} source
  */
 export function isValidScriptletSource(source) {
     if (!source.name) {
@@ -56,21 +64,12 @@ export function isValidScriptletSource(source) {
 }
 
 /**
- * Find scriptlet by it's name
- * @param {string} name 
- */
-export function getScriptletByName(name) {
-    return Object
-        .values(scriptletList)
-        .find(s => s.names && s.names.includes(name));
-}
-/**
 * Returns scriptlet code by param
 * @param {Source} source
 */
 export function getScriptletCode(source) {
     if (!isValidScriptletSource(source)) {
-        return;
+        return null;
     }
 
     const scriptlet = getScriptletByName(source.name);
