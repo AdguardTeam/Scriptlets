@@ -4,6 +4,7 @@ const { test, module, testDone } = QUnit;
 const name = 'abort-on-property-write';
 const PROPERTY = 'aaa';
 const CHAIN_PROPERTY = 'aaa.bbb';
+
 testDone(() => {
     delete window[PROPERTY];
 });
