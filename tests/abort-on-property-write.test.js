@@ -1,3 +1,5 @@
+/* global QUnit */
+/* eslint-disable no-eval */
 const { test, module } = QUnit;
 const name = 'abort-on-property-write';
 
@@ -6,15 +8,17 @@ test('abort-on-property-write: ubo alias, set prop for existed prop', (assert) =
     const property = 'aaa';
     const params = {
         name: `ubo-${name}.js`,
-        args: [property]
+        args: [property],
     };
     window[property] = 'value';
     const resString = window.scriptlets.invoke(params);
     eval(resString);
     assert.throws(
-        () => window[property] = 'new value',
+        () => {
+            window[property] = 'new value';
+        },
         /ReferenceError/,
-        `should throw Reference error when try to write property ${property}`
+        `should throw Reference error when try to write property ${property}`,
     );
 });
 
@@ -22,15 +26,17 @@ test('abort-on-property-write: abp alias, set prop for existed prop', (assert) =
     const property = 'bbb';
     const params = {
         name: `abp-${name}`,
-        args: [property]
+        args: [property],
     };
     window[property] = 'value';
     const resString = window.scriptlets.invoke(params);
     eval(resString);
     assert.throws(
-        () => window[property] = 'new value',
+        () => {
+            window[property] = 'new value';
+        },
         /ReferenceError/,
-        `should throw Reference error when try to write property ${property}`
+        `should throw Reference error when try to write property ${property}`,
     );
 });
 
@@ -38,15 +44,17 @@ test('abort-on-property-write: adg alias, set prop for existed prop', (assert) =
     const property = 'ccc';
     const params = {
         name,
-        args: [property]
+        args: [property],
     };
     window[property] = 'value';
     const resString = window.scriptlets.invoke(params);
     eval(resString);
     assert.throws(
-        () => window[property] = 'new value',
+        () => {
+            window[property] = 'new value';
+        },
         /ReferenceError/,
-        `should throw Reference error when try to access property ${property}`
+        `should throw Reference error when try to access property ${property}`,
     );
 });
 
@@ -59,9 +67,11 @@ test('abort-on-property-write dot notation', (assert) => {
     const resString = window.scriptlets.invoke(params);
     eval(resString);
     assert.throws(
-        () => window.ddd.eee = 'new value',
+        () => {
+            window.ddd.eee = 'new value';
+        },
         /ReferenceError/,
-        `should throw Reference error when try to access property ${property}`
+        `should throw Reference error when try to access property ${property}`,
     );
 });
 
@@ -72,8 +82,10 @@ test('abort-on-property-write dot notation deferred defenition', (assert) => {
     eval(resString);
     window.fff = {};
     assert.throws(
-        () => window.fff.ggg = 'new value',
+        () => {
+            window.fff.ggg = 'new value';
+        },
         /ReferenceError/,
-        `should throw Reference error when try to access property ${property}`
+        `should throw Reference error when try to access property ${property}`,
     );
 });
