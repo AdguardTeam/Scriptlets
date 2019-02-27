@@ -11,10 +11,8 @@ import { getScriptletCode } from './injector';
 
 /**
  * Global scriptlet variable
- * 
+ *
  * @returns {Object} object with method `invoke`
  * `invoke` method recieves one argument with `Source` type
  */
-scriptlets = (() => {
-    return { invoke: getScriptletCode }
-})();
+scriptlets = (() => ({ invoke: getScriptletCode }))(); // eslint-disable-line no-undef

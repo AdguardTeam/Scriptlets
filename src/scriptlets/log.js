@@ -3,7 +3,7 @@
  * @param {string} args test arguments
  */
 function log(...args) {
-    console.log(args);
+    console.log(args); // eslint-disable-line no-console
 }
 log.names = ['log'];
 
