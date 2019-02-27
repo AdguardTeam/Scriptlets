@@ -3,12 +3,12 @@ import setPropertyAccess from '../helpers/set-property-access';
 import getPropertyInChain from '../helpers/get-property-in-chain';
 
 /**
- * Abort property reading even if it doesn't exist in execution moment
+ * Abort property writing
  *
  * @param {Source} source
  * @param {string} property propery name
  */
-function abortOnPropertyRead(source, property) {
+function abortOnPropertyWrite(source, property) {
     if (!property) {
         return;
     }
@@ -20,8 +20,9 @@ function abortOnPropertyRead(source, property) {
         throw new ReferenceError(rid);
     };
     const setChainPropAccess = (owner, property) => {
-        // eslint-disable-next-line prefer-const
-        let { base, prop, chain } = getPropertyInChain(owner, property);
+        const chainInfo = getPropertyInChain(owner, property);
+        let { base } = chainInfo;
+        const { prop, chain } = chainInfo;
         if (chain) {
             const setter = (a) => {
                 base = a;
@@ -36,20 +37,17 @@ function abortOnPropertyRead(source, property) {
             return;
         }
 
-        setPropertyAccess(base, prop, {
-            get: abort,
-            set: () => { },
-        });
+        setPropertyAccess(base, prop, { set: abort });
     };
 
     setChainPropAccess(window, property);
 }
 
-abortOnPropertyRead.names = [
-    'abort-on-property-read',
-    'ubo-abort-on-property-read.js',
-    'abp-abort-on-property-read',
+abortOnPropertyWrite.names = [
+    'abort-on-property-write',
+    'ubo-abort-on-property-write.js',
+    'abp-abort-on-property-write',
 ];
-abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain];
+abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain];
 
-export default abortOnPropertyRead;
+export default abortOnPropertyWrite;

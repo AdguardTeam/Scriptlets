@@ -1,4 +1,11 @@
-const { test, module, moduleStart, testDone } = QUnit;
+/* global QUnit */
+/* eslint-disable no-eval */
+const {
+    test,
+    module,
+    moduleStart,
+    testDone,
+} = QUnit;
 const name = 'setTimeout-defuser';
 
 let nativeSetTimeout;
@@ -25,7 +32,7 @@ test('setTimeout-defuser: adg no args', (assert) => {
     // run scriptlet code
     eval(scriptlet);
     // check is scriptlet works
-    setTimeout(() => { window.aaa === 'new value'; });
+    setTimeout(() => { window.aaa = 'new value'; });
 });
 
 test('setTimeout-defuser: ubo alias no args', (assert) => {
@@ -42,7 +49,7 @@ test('setTimeout-defuser: ubo alias no args', (assert) => {
     // run scriptlet code
     eval(scriptlet);
     // check is scriptlet works
-    setTimeout(() => { window.aaa === 'new value'; });
+    setTimeout(() => { window.aaa = 'new value'; });
 });
 
 test('setTimeout-defuser: adg by timeout name', (assert) => {

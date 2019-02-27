@@ -1,12 +1,13 @@
 /**
- * 
+ * Replace setTimeout with empty function execution
  * @param {Source} source
- * @param {string} match
- * @param {string} match
+ * @param {string} match can be regexp string
+ * @param {string|number} delay
  */
 function setTimeoutDefuser(source, match, delay) {
     const nativeTimeout = window.setTimeout;
     delay = parseInt(delay, 10);
+    delay = Number.isNaN(delay) ? null : delay;
     const isStringRegexp = s => s[0] === '/' && s[s.length - 1] === '/';
     const escapeChars = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -19,14 +20,14 @@ function setTimeoutDefuser(source, match, delay) {
     }
     match = new RegExp(match);
 
-    const timeoutWrapper = function (cb, d) {
-        if ((isNaN(delay) || d === delay) && match.test(cb.toString())) {
+    const timeoutWrapper = (cb, d, ...args) => {
+        if ((!delay || d === delay) && match.test(cb.toString())) {
             if (source.hit) {
                 source.hit();
             }
             return nativeTimeout(() => { }, d);
         }
-        return nativeTimeout.apply(window, arguments);
+        return nativeTimeout.apply(window, [cb, d, ...args]);
     };
     window.setTimeout = timeoutWrapper;
 }
