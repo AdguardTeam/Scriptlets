@@ -6,7 +6,7 @@ const {
     moduleStart,
     testDone,
 } = QUnit;
-const name = 'setTimeout-defuser';
+const name = 'prevent-setTimeout';
 
 // copy eval to prevent rollup warnings
 const evalWrap = eval;
@@ -21,7 +21,7 @@ testDone(() => {
 });
 
 module(name);
-test('setTimeout-defuser: adg no args', (assert) => {
+test('prevent-setTimeout: adg no args', (assert) => {
     const params = { name, args: [] };
     const scriptlet = window.scriptlets.invoke(params);
     const done = assert.async();
@@ -38,8 +38,8 @@ test('setTimeout-defuser: adg no args', (assert) => {
     setTimeout(() => { window.aaa = 'new value'; });
 });
 
-test('setTimeout-defuser: ubo alias no args', (assert) => {
-    const params = { name: `ubo-${name}.js`, args: [] };
+test('prevent-setTimeout: ubo alias no args', (assert) => {
+    const params = { name: 'ubo-setTimeout-defuser.js', args: [] };
     const scriptlet = window.scriptlets.invoke(params);
     const done = assert.async();
 
@@ -55,7 +55,7 @@ test('setTimeout-defuser: ubo alias no args', (assert) => {
     setTimeout(() => { window.aaa = 'new value'; });
 });
 
-test('setTimeout-defuser: adg by timeout name', (assert) => {
+test('prevent-setTimeout: adg by timeout name', (assert) => {
     const params = { name, args: ['test'] };
     const scriptlet = window.scriptlets.invoke(params);
     const done = assert.async();

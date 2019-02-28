@@ -1,30 +1,26 @@
+/* eslint-disable no-new-func */
+import { toRegExp } from '../helpers/string-utils';
+
 /**
- * Replace setTimeout with empty function execution
+ * Prevent calls to setTimeout for specified matching in passed callback and delay
+ * by setting callback to empty function
+ *
  * @param {Source} source
- * @param {string} match can be regexp string
- * @param {string|number} delay
+ * @param {string|RegExp} match mathicng in string of callback function
+ * @param {string|number} delay matching delay
  */
 export function setTimeoutDefuser(source, match, delay) {
+    const hit = source.hit
+        ? new Function(source.hit)
+        : () => {};
     const nativeTimeout = window.setTimeout;
     delay = parseInt(delay, 10);
     delay = Number.isNaN(delay) ? null : delay;
-    const isStringRegexp = s => s[0] === '/' && s[s.length - 1] === '/';
-    const escapeChars = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    if (!match) {
-        match = '.?';
-    } else if (isStringRegexp(match)) {
-        match = match.slice(1, -1);
-    } else {
-        match = escapeChars(match);
-    }
-    match = new RegExp(match);
-
+    match = match ? toRegExp(match) : toRegExp('/.?/');
     const timeoutWrapper = (cb, d, ...args) => {
         if ((!delay || d === delay) && match.test(cb.toString())) {
-            if (source.hit) {
-                source.hit();
-            }
+            hit();
             return nativeTimeout(() => { }, d);
         }
         return nativeTimeout.apply(window, [cb, d, ...args]);
@@ -33,8 +29,10 @@ export function setTimeoutDefuser(source, match, delay) {
 }
 
 setTimeoutDefuser.names = [
-    'setTimeout-defuser',
+    'prevent-setTimeout',
     'ubo-setTimeout-defuser.js',
 ];
+
+setTimeoutDefuser.injections = [toRegExp];
 
 export default setTimeoutDefuser;
