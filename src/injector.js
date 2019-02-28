@@ -25,9 +25,12 @@ export function addScriptletCall(scriptlet, code) {
  * @param {string} code
  */
 export function wrapInIIFE(source, code) {
-    const sourcString = JSON.stringify(source);
+    if (source.hit) {
+        source.hit = source.hit.toString();
+    }
+    const sourceString = JSON.stringify(source);
     const argsString = `[${source.args.map(JSON.stringify)}]`;
-    return `(function(source, args){\n${code}\n})(${sourcString}, ${argsString})`;
+    return `(function(source, args){\n${code}\n})(${sourceString}, ${argsString})`;
 }
 
 /**
@@ -78,6 +81,5 @@ export function getScriptletCode(source) {
     result = source.engine === 'corelibs'
         ? wrapInNonameFunc(result)
         : wrapInIIFE(source, result);
-
     return result;
 }
