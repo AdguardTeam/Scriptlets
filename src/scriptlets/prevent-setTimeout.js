@@ -6,7 +6,7 @@ import { toRegExp } from '../helpers/string-utils';
  * by setting callback to empty function
  *
  * @param {Source} source
- * @param {string|RegExp} match mathicng in string of callback function
+ * @param {string|RegExp} match matching in string of callback function
  * @param {string|number} delay matching delay
  */
 export function setTimeoutDefuser(source, match, delay) {
