@@ -2,27 +2,26 @@ import randomId from '../helpers/random-id';
 import setPropertyAccess from '../helpers/set-property-access';
 import getPropertyInChain from '../helpers/get-property-in-chain';
 
-// TODO move to the helpers
-/**
- * Escapes string
- * @param {string} str
- * @returns {*|void|string|never}
- */
-const escapeRegExp = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-// TODO move to the helpers
-/**
- * Converts search string to the regexp
- * @param {string} str search string
- */
-const toRegExp = (str) => {
-    if (str[0] === '/' && str[str.length - 1] === '/') {
-        return new RegExp(str.slice(1, -1));
-    }
-    return new RegExp(escapeRegExp(str));
-};
-
 const abortCurrentInlineScript = (source, property, search = null) => {
+    // TODO remove later
+    /**
+     * Escapes string
+     * @param {string} str
+     * @returns {*|void|string|never}
+     */
+    const escapeRegExp = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // TODO remove
+    /**
+     * Converts search string to the regexp
+     * @param {string} str search string
+     */
+    const toRegExp = (str) => {
+        if (str[0] === '/' && str[str.length - 1] === '/') {
+            return new RegExp(str.slice(1, -1));
+        }
+        return new RegExp(escapeRegExp(str));
+    };
+
     const regex = search ? toRegExp(search) : null;
     const rid = randomId();
 
