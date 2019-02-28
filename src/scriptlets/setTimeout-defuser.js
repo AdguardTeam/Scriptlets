@@ -4,7 +4,7 @@
  * @param {string} match can be regexp string
  * @param {string|number} delay
  */
-function setTimeoutDefuser(source, match, delay) {
+export function setTimeoutDefuser(source, match, delay) {
     const nativeTimeout = window.setTimeout;
     delay = parseInt(delay, 10);
     delay = Number.isNaN(delay) ? null : delay;

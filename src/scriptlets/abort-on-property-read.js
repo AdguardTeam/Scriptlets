@@ -1,6 +1,6 @@
-import randomId from '../helpers/random-id';
-import setPropertyAccess from '../helpers/set-property-access';
-import getPropertyInChain from '../helpers/get-property-in-chain';
+import { randomId } from '../helpers/random-id';
+import { setPropertyAccess } from '../helpers/set-property-access';
+import { getPropertyInChain } from '../helpers/get-property-in-chain';
 
 /**
  * Abort property reading even if it doesn't exist in execution moment
@@ -8,7 +8,7 @@ import getPropertyInChain from '../helpers/get-property-in-chain';
  * @param {Source} source
  * @param {string} property propery name
  */
-function abortOnPropertyRead(source, property) {
+export function abortOnPropertyRead(source, property) {
     if (!property) {
         return;
     }
@@ -52,5 +52,3 @@ abortOnPropertyRead.names = [
     'abp-abort-on-property-read',
 ];
 abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain];
-
-export default abortOnPropertyRead;
