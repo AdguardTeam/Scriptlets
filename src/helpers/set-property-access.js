@@ -5,7 +5,7 @@
  * @param {Object} descriptor contains getter and setter functions
  * @returns {boolean} is operation successfull
  */
-function setPropertyAccess(object, property, descriptor) {
+export function setPropertyAccess(object, property, descriptor) {
     const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
     if (currentDescriptor && !currentDescriptor.configurable) {
         return false;
@@ -13,5 +13,3 @@ function setPropertyAccess(object, property, descriptor) {
     Object.defineProperty(object, property, descriptor);
     return true;
 }
-
-export default setPropertyAccess;
