@@ -3,7 +3,8 @@
   "rules": {
     "indent": ["error", 4],
     "no-param-reassign": "off",
-    "no-shadow": "off"
+    "no-shadow": "off",
+    "import/prefer-default-export": "off"
   },
   "env": {
     "browser": true

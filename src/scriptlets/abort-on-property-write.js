@@ -1,6 +1,6 @@
-import randomId from '../helpers/random-id';
-import setPropertyAccess from '../helpers/set-property-access';
-import getPropertyInChain from '../helpers/get-property-in-chain';
+import { randomId } from '../helpers/random-id';
+import { setPropertyAccess } from '../helpers/set-property-access';
+import { getPropertyInChain } from '../helpers/get-property-in-chain';
 
 /**
  * Abort property writing
@@ -8,7 +8,7 @@ import getPropertyInChain from '../helpers/get-property-in-chain';
  * @param {Source} source
  * @param {string} property propery name
  */
-function abortOnPropertyWrite(source, property) {
+export function abortOnPropertyWrite(source, property) {
     if (!property) {
         return;
     }
@@ -49,5 +49,3 @@ abortOnPropertyWrite.names = [
     'abp-abort-on-property-write',
 ];
 abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain];
-
-export default abortOnPropertyWrite;

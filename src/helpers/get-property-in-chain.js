@@ -15,7 +15,7 @@
  * @param {string} chain
  * @returns {Chain}
  */
-function getPropertyInChain(base, chain) {
+export function getPropertyInChain(base, chain) {
     const pos = chain.indexOf('.');
     if (pos === -1) {
         return { base, prop: chain };
@@ -30,5 +30,3 @@ function getPropertyInChain(base, chain) {
     Object.defineProperty(base, prop, { configurable: true });
     return { base: own, prop, chain };
 }
-
-export default getPropertyInChain;
