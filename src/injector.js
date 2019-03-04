@@ -26,7 +26,7 @@ export function addScriptletCall(scriptlet, code) {
  */
 export function wrapInIIFE(source, code) {
     if (source.hit) {
-        source.hit = source.hit.toString();
+        source.hit = `(${source.hit.toString()})()`;
     }
     const sourceString = JSON.stringify(source);
     const argsString = `[${source.args.map(JSON.stringify)}]`;
