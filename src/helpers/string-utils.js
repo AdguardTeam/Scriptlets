@@ -7,7 +7,7 @@ export const escapeRegExp = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
  * Converts search string to the regexp
- * TODO think about nested dependecies, but be carefull with cicle deps
+ * TODO think about nested dependecies, but be carefull with dependency loops
  * @param {string} str search string
  * @returns {RegExp}
  */

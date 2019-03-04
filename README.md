@@ -65,7 +65,7 @@ example.org#%#//scriptlet("prevent-setTimeout"[, arg1[, arg2]])
 **Parameters**
 - `arg1`
 
-Optional. String to be matched for callback function
+Optional. String for matching in stringified callback function
 
 - `arg2`
 
@@ -73,7 +73,14 @@ Optional. Number to be matched for delay
 
 **Example**
 ```
-example.org#%#//scriptlet("prevent-setTimeout", "showAd()", 300)
+example.org#%#//scriptlet("prevent-setTimeout", "value", 300)
+
+// the following setTimeout will be prevented
+
+setTimout(function () {
+    window.test = "value";
+}, 300);
+
 ```
 
 [scriptlet source](./src/scriptlets/prevent-setTimeout.js)
