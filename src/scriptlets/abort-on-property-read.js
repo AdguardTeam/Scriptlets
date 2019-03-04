@@ -22,8 +22,9 @@ export function abortOnPropertyRead(source, property) {
         throw new ReferenceError(rid);
     };
     const setChainPropAccess = (owner, property) => {
-        // eslint-disable-next-line prefer-const
-        let { base, prop, chain } = getPropertyInChain(owner, property);
+        const chainInfo = getPropertyInChain(owner, property);
+        let { base } = chainInfo;
+        const { prop, chain } = chainInfo;
         if (chain) {
             const setter = (a) => {
                 base = a;
