@@ -51,6 +51,49 @@ example.org#%#//scriptlet("abort-on-property-read", "alert")
 
 [scriptlet source](./src/scriptlets/abort-on-property-read.js)
 
+<br>
+
+**[prevent-setTimeout](#preventSetTimeout)**
+<br>
+Prevent calls to setTimeout for specified matching in passed callback and delay by setting callback to empty function
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-setTimeout"[, arg1[, arg2]])
+```
+
+**Parameters**
+- `arg1`
+
+Optional. String or RegExp for matching in stringified callback function.
+RegExp must start and end with `/` symbol, flags are not supported.
+
+- `arg2`
+
+Optional. Number to be matched for delay
+
+**Example**
+```
+example.org#%#//scriptlet("prevent-setTimeout", "value", 300)
+
+// the following setTimeout will be prevented
+setTimout(function () {
+    window.test = "value";
+}, 300);
+
+
+// RegExp example
+example.org#%#//scriptlet("prevent-setTimeout", "/\.test/", 100)
+
+// the following setTimeout will be prevented
+setTimout(function () {
+    window.test = "value";
+}, 100);
+
+```
+
+[scriptlet source](./src/scriptlets/prevent-setTimeout.js)
+
 ---
 
 ### Source build

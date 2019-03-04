@@ -1,6 +1,6 @@
-import randomId from '../helpers/random-id';
-import setPropertyAccess from '../helpers/set-property-access';
-import getPropertyInChain from '../helpers/get-property-in-chain';
+import { randomId } from '../helpers/random-id';
+import { setPropertyAccess } from '../helpers/set-property-access';
+import { getPropertyInChain } from '../helpers/get-property-in-chain';
 
 /**
  * Abort property reading even if it doesn't exist in execution moment
@@ -8,7 +8,7 @@ import getPropertyInChain from '../helpers/get-property-in-chain';
  * @param {Source} source
  * @param {string} property propery name
  */
-function abortOnPropertyRead(source, property) {
+export function abortOnPropertyRead(source, property) {
     if (!property) {
         return;
     }
@@ -20,8 +20,9 @@ function abortOnPropertyRead(source, property) {
         throw new ReferenceError(rid);
     };
     const setChainPropAccess = (owner, property) => {
-        // eslint-disable-next-line prefer-const
-        let { base, prop, chain } = getPropertyInChain(owner, property);
+        const chainInfo = getPropertyInChain(owner, property);
+        let { base } = chainInfo;
+        const { prop, chain } = chainInfo;
         if (chain) {
             const setter = (a) => {
                 base = a;
@@ -51,5 +52,3 @@ abortOnPropertyRead.names = [
     'abp-abort-on-property-read',
 ];
 abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain];
-
-export default abortOnPropertyRead;

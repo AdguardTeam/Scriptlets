@@ -1,8 +1,8 @@
-import randomId from '../helpers/random-id';
-import setPropertyAccess from '../helpers/set-property-access';
-import getPropertyInChain from '../helpers/get-property-in-chain';
+import { randomId } from '../helpers/random-id';
+import { setPropertyAccess } from '../helpers/set-property-access';
+import { getPropertyInChain } from '../helpers/get-property-in-chain';
 
-const abortCurrentInlineScript = (source, property, search = null) => {
+export function abortCurrentInlineScript(source, property, search = null) {
     // TODO remove later
     /**
      * Escapes string
@@ -71,7 +71,7 @@ const abortCurrentInlineScript = (source, property, search = null) => {
     };
 
     setChainPropAccess(window, property);
-};
+}
 
 abortCurrentInlineScript.names = [
     'abort-current-inline-script',
@@ -80,5 +80,3 @@ abortCurrentInlineScript.names = [
 ];
 
 abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain];
-
-export default abortCurrentInlineScript;
