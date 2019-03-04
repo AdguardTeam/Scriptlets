@@ -65,7 +65,8 @@ example.org#%#//scriptlet("prevent-setTimeout"[, arg1[, arg2]])
 **Parameters**
 - `arg1`
 
-Optional. String for matching in stringified callback function
+Optional. String or RegExp for matching in stringified callback function.
+RegExp must start and end with `/` symbol, flags are not supported.
 
 - `arg2`
 
@@ -76,10 +77,18 @@ Optional. Number to be matched for delay
 example.org#%#//scriptlet("prevent-setTimeout", "value", 300)
 
 // the following setTimeout will be prevented
-
 setTimout(function () {
     window.test = "value";
 }, 300);
+
+
+// RegExp example
+example.org#%#//scriptlet("prevent-setTimeout", "/\.test/", 100)
+
+// the following setTimeout will be prevented
+setTimout(function () {
+    window.test = "value";
+}, 100);
 
 ```
 
