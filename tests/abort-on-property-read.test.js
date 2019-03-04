@@ -1,82 +1,86 @@
 /* global QUnit */
 /* eslint-disable no-eval, no-underscore-dangle */
-const { test, module } = QUnit;
+const { test, module, testDone } = QUnit;
 const name = 'abort-on-property-read';
+const PROPERTY = 'aaa';
+const CHAIN_PROPERTY = 'aaa.bbb';
+
+// copy eval to prevent rollup warnings
+const evalWrap = eval;
+
+testDone(() => {
+    delete window[PROPERTY];
+});
 
 module(name);
 test('abort-on-property-read simple check ubo alias', (assert) => {
-    const property = '___aaa';
     const params = {
         name: `ubo-${name}.js`,
-        args: [property],
+        args: [PROPERTY],
     };
-    window[property] = 'value';
+    window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
-    eval(resString);
+    evalWrap(resString);
     assert.throws(
-        () => window[property],
+        () => window[PROPERTY],
         /ReferenceError/,
-        `should throw Reference error when try to access property ${property}`,
+        `should throw Reference error when try to access property ${PROPERTY}`,
     );
 });
 
 test('abort-on-property-read simple check abp alias', (assert) => {
-    const property = '___aaa';
     const params = {
         name: `abp-${name}`,
-        args: [property],
+        args: [PROPERTY],
     };
-    window[property] = 'value';
+    window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
-    eval(resString);
+    evalWrap(resString);
     assert.throws(
-        () => window[property],
+        () => window[PROPERTY],
         /ReferenceError/,
-        `should throw Reference error when try to access property ${property}`,
+        `should throw Reference error when try to access property ${PROPERTY}`,
     );
 });
 
 test('abort-on-property-read simple', (assert) => {
-    const property = '___aaa';
     const params = {
         name,
-        args: [property],
+        args: [PROPERTY],
     };
-    window[property] = 'value';
+    window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
-    eval(resString);
+    evalWrap(resString);
     assert.throws(
-        () => window[property],
+        () => window[PROPERTY],
         /ReferenceError/,
-        `should throw Reference error when try to access property ${property}`,
+        `should throw Reference error when try to access property ${PROPERTY}`,
     );
 });
 
 test('abort-on-property-read dot notation', (assert) => {
-    const property = '___bbb.___ccc';
-    const params = { name, args: [property] };
-    window.___bbb = {
-        ___ccc: 'value',
+    const params = { name, args: [CHAIN_PROPERTY] };
+    window.aaa = {
+        bbb: 'value',
     };
     const resString = window.scriptlets.invoke(params);
-    eval(resString);
+    evalWrap(resString);
     assert.throws(
-        () => window.___bbb.___ccc,
+        () => window.aaa.bbb,
         /ReferenceError/,
-        `should throw Reference error when try to access property ${property}`,
+        `should throw Reference error when try to access property ${CHAIN_PROPERTY}`,
     );
 });
 
 test('abort-on-property-read dot notation deferred defenition', (assert) => {
-    const property = '___ddd.___eee';
-    const params = { name, args: [property] };
+    const params = { name, args: [CHAIN_PROPERTY] };
     const resString = window.scriptlets.invoke(params);
-    eval(resString);
-    window.___ddd = {};
-    window.___ddd.___eee = 'value';
+    evalWrap(resString);
+    window.aaa = {};
+    window.aaa.bbb = 'value';
     assert.throws(
-        () => window.___ddd.___eee,
+        () => window.aaa.bbb,
         /ReferenceError/,
-        `should throw Reference error when try to access property ${property}`,
+        `should throw Reference error when try to access property ${CHAIN_PROPERTY}`,
     );
 });
