@@ -18,6 +18,8 @@ moduleStart(() => {
 
 testDone(() => {
     window.setTimeout = nativeSetTimeout;
+    delete window.hit;
+    delete window.aaa;
 });
 
 module(name);
@@ -56,7 +58,13 @@ test('prevent-setTimeout: ubo alias no args', (assert) => {
 });
 
 test('prevent-setTimeout: adg by timeout name', (assert) => {
-    const params = { name, args: ['test'] };
+    const params = {
+        name,
+        args: ['test', '500'],
+        hit: () => {
+            window.hit = 'value';
+        },
+    };
     const scriptlet = window.scriptlets.invoke(params);
     const done = assert.async();
 
@@ -73,7 +81,7 @@ test('prevent-setTimeout: adg by timeout name', (assert) => {
     evalWrap(scriptlet);
     // check is scriptlet works
     const test = () => { window.bbb = 'new value'; };
-    setTimeout(test);
+    setTimeout(test, 500);
 
     // check is scriptlet doesn't affect on others timeouts
     const anotherTimeout = () => { window.ddd = 'new value'; };
