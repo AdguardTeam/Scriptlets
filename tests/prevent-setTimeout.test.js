@@ -24,7 +24,13 @@ testDone(() => {
 
 module(name);
 test('prevent-setTimeout: adg no args', (assert) => {
-    const params = { name, args: [] };
+    const params = {
+        name,
+        args: [],
+        hit: () => {
+            window.hit = 'value';
+        },
+    };
     const scriptlet = window.scriptlets.invoke(params);
     const done = assert.async();
 
@@ -32,6 +38,7 @@ test('prevent-setTimeout: adg no args', (assert) => {
     // We need to run our assertation after all timeouts
     setTimeout(() => {
         assert.equal(window.aaa, 'value', 'Target property not changed');
+        assert.equal(window.hit, 'value', 'Hit function was executed');
         done();
     }, 20);
     // run scriptlet code
@@ -41,7 +48,13 @@ test('prevent-setTimeout: adg no args', (assert) => {
 });
 
 test('prevent-setTimeout: ubo alias no args', (assert) => {
-    const params = { name: 'ubo-setTimeout-defuser.js', args: [] };
+    const params = {
+        name: 'ubo-setTimeout-defuser.js',
+        args: [],
+        hit: () => {
+            window.hit = 'value';
+        },
+    };
     const scriptlet = window.scriptlets.invoke(params);
     const done = assert.async();
 
@@ -49,6 +62,7 @@ test('prevent-setTimeout: ubo alias no args', (assert) => {
     // We need to run our assertation after all timeouts
     setTimeout(() => {
         assert.equal(window.aaa, 'value', 'Target property not changed');
+        assert.equal(window.hit, 'value', 'Hit function was executed');
         done();
     }, 20);
     // run scriptlet code
@@ -74,6 +88,7 @@ test('prevent-setTimeout: adg by timeout name', (assert) => {
     setTimeout(() => {
         assert.equal(window.bbb, 'value', 'Target Target property not changed');
         assert.equal(window.ddd, 'new value', 'Another property should successfully changed by another timeout');
+        assert.equal(window.hit, 'value', 'Hit function was executed');
         done();
     }, 20);
 
