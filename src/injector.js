@@ -16,7 +16,10 @@ export function attachDependencies(scriptlet) {
  * @param {string} code
  */
 export function addScriptletCall(scriptlet, code) {
-    return `${code}\n${scriptlet.name}(source, args.join(','))`;
+    return `${code};
+        args.unshift(source);
+        ${scriptlet.name}.apply(this, args);
+    `;
 }
 
 /**
