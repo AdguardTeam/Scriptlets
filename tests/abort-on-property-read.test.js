@@ -10,6 +10,7 @@ const evalWrap = eval;
 
 testDone(() => {
     delete window[PROPERTY];
+    delete window.hit;
 });
 
 module(name);
@@ -17,6 +18,9 @@ test('abort-on-property-read simple check ubo alias', (assert) => {
     const params = {
         name: `ubo-${name}.js`,
         args: [PROPERTY],
+        hit: () => {
+            window.hit = 'value';
+        },
     };
     window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
@@ -26,12 +30,16 @@ test('abort-on-property-read simple check ubo alias', (assert) => {
         /ReferenceError/,
         `should throw Reference error when try to access property ${PROPERTY}`,
     );
+    assert.equal(window.hit, 'value', 'Hit function was executed');
 });
 
 test('abort-on-property-read simple check abp alias', (assert) => {
     const params = {
         name: `abp-${name}`,
         args: [PROPERTY],
+        hit: () => {
+            window.hit = 'value';
+        },
     };
     window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
@@ -41,12 +49,16 @@ test('abort-on-property-read simple check abp alias', (assert) => {
         /ReferenceError/,
         `should throw Reference error when try to access property ${PROPERTY}`,
     );
+    assert.equal(window.hit, 'value', 'Hit function was executed');
 });
 
 test('abort-on-property-read simple', (assert) => {
     const params = {
         name,
         args: [PROPERTY],
+        hit: () => {
+            window.hit = 'value';
+        },
     };
     window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
@@ -56,10 +68,17 @@ test('abort-on-property-read simple', (assert) => {
         /ReferenceError/,
         `should throw Reference error when try to access property ${PROPERTY}`,
     );
+    assert.equal(window.hit, 'value', 'Hit function was executed');
 });
 
 test('abort-on-property-read dot notation', (assert) => {
-    const params = { name, args: [CHAIN_PROPERTY] };
+    const params = {
+        name,
+        args: [CHAIN_PROPERTY],
+        hit: () => {
+            window.hit = 'value';
+        },
+    };
     window.aaa = {
         bbb: 'value',
     };
@@ -70,10 +89,17 @@ test('abort-on-property-read dot notation', (assert) => {
         /ReferenceError/,
         `should throw Reference error when try to access property ${CHAIN_PROPERTY}`,
     );
+    assert.equal(window.hit, 'value', 'Hit function was executed');
 });
 
 test('abort-on-property-read dot notation deferred defenition', (assert) => {
-    const params = { name, args: [CHAIN_PROPERTY] };
+    const params = {
+        name,
+        args: [CHAIN_PROPERTY],
+        hit: () => {
+            window.hit = 'value';
+        },
+    };
     const resString = window.scriptlets.invoke(params);
     evalWrap(resString);
     window.aaa = {};
@@ -83,4 +109,5 @@ test('abort-on-property-read dot notation deferred defenition', (assert) => {
         /ReferenceError/,
         `should throw Reference error when try to access property ${CHAIN_PROPERTY}`,
     );
+    assert.equal(window.hit, 'value', 'Hit function was executed');
 });
