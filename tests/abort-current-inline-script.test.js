@@ -9,38 +9,61 @@ testDone(() => {
     delete window.hit;
 });
 
-// test('abort-on-property-read simple check ubo alias', (assert) => {
-//     const property = '___aaa';
-//     const params = {
-//         name: `ubo-${name}.js`,
-//         args: [property],
-//     };
-//     window[property] = 'value';
-//     const resString = window.scriptlets.invoke(params);
-//     eval(resString);
-//     assert.throws(
-//         () => window[property],
-//         /ReferenceError/,
-//         `should throw Reference error when try to access property ${property}`,
-//     );
-// });
+const onError = assert => (message) => {
+    const browserErrorMessage = 'Script error.';
+    const nodePuppeteerErrorMessageRgx = /Reference error/g;
+    const checkResult = message === browserErrorMessage
+        || message.test(nodePuppeteerErrorMessageRgx);
+    assert.ok(checkResult);
+};
 
-// test('abort-on-property-read simple check abp alias', (assert) => {
-//     const property = '___aaa';
-//     const params = {
-//         name: `abp-${name}`,
-//         args: [property],
-//     };
-//     window[property] = 'value';
-//     const resString = window.scriptlets.invoke(params);
-//     eval(resString);
-//     assert.throws(
-//         () => window[property],
-//         /ReferenceError/,
-//         `should throw Reference error when try to access property ${property}`,
-//     );
-// });
-//
+const addAndRemoveInlineScript = (scriptText) => {
+    const scriptElement = document.createElement('script');
+    scriptElement.type = 'text/javascript';
+    scriptElement.innerText = scriptText;
+    document.body.appendChild(scriptElement);
+    scriptElement.parentNode.removeChild(scriptElement);
+};
+
+test('abort-current-inline-script ubo alias works', (assert) => {
+    const property = '___aaa';
+    const params = {
+        name: 'ubo-abort-current-inline-script.js',
+        args: [property],
+        hit: () => {
+            window.hit = 'FIRED';
+        },
+    };
+    window[property] = 'value';
+    const resString = window.scriptlets.invoke(params);
+
+    window.onerror = onError(assert);
+
+    eval(resString);
+    addAndRemoveInlineScript('window.___aaa;');
+
+    assert.strictEqual(window.hit, 'FIRED');
+});
+
+test('abort-current-inline-script abp alias works', (assert) => {
+    const property = '___aaa';
+    const params = {
+        name: 'abp-abort-current-inline-script',
+        args: [property],
+        hit: () => {
+            window.hit = 'FIRED';
+        },
+    };
+    window[property] = 'value';
+    const resString = window.scriptlets.invoke(params);
+
+    window.onerror = onError(assert);
+
+    eval(resString);
+    addAndRemoveInlineScript('window.___aaa;');
+
+    assert.strictEqual(window.hit, 'FIRED');
+});
 
 test('abort-current-inline-script works', (assert) => {
     const property = '___aaa';
@@ -54,29 +77,20 @@ test('abort-current-inline-script works', (assert) => {
     window[property] = 'value';
     const resString = window.scriptlets.invoke(params);
 
-    window.onerror = (message) => {
-        const browserErrorMessage = 'Script error.';
-        const nodePuppeteerErrorMessageRgx = /Reference error/g;
-        const checkResult = message === browserErrorMessage
-            || message.test(nodePuppeteerErrorMessageRgx);
-        assert.ok(checkResult);
-    };
+    window.onerror = onError(assert);
 
     eval(resString);
-    const scriptElement = document.createElement('script');
-    scriptElement.type = 'text/javascript';
-    scriptElement.innerText = 'const test = window.___aaa;';
-    document.body.appendChild(scriptElement);
+    addAndRemoveInlineScript('window.___aaa;');
 
     assert.strictEqual(window.hit, 'FIRED');
 });
 
 test('abort-current-inline-script works, and aborts script by search', (assert) => {
     const property = '___aaa';
-    const search = 'const search';
+    const search = 'const someVar';
     const params = {
         name,
-        args: ['___aaa', 'const search'],
+        args: ['___aaa', 'const someVar'],
         hit: () => {
             window.hit = 'FIRED';
         },
@@ -84,48 +98,51 @@ test('abort-current-inline-script works, and aborts script by search', (assert) 
     window[property] = 'value';
     const resString = window.scriptlets.invoke(params);
 
-    window.onerror = (message) => {
-        const browserErrorMessage = 'Script error.';
-        const nodePuppeteerErrorMessageRgx = /Reference error/g;
-        const checkResult = message === browserErrorMessage
-            || message.test(nodePuppeteerErrorMessageRgx);
-        assert.ok(checkResult);
-    };
+    window.onerror = onError(assert);
 
     eval(resString);
-    const scriptElement = document.createElement('script');
-    scriptElement.type = 'text/javascript';
-    scriptElement.innerText = `${search} = window.___aaa;`;
-    document.body.appendChild(scriptElement);
+    addAndRemoveInlineScript(`${search} = window.___aaa;`);
 
     assert.strictEqual(window.hit, 'FIRED');
 });
 
-// test('abort-on-property-read dot notation', (assert) => {
-//     const property = '___bbb.___ccc';
-//     const params = { name, args: [property] };
-//     window.___bbb = {
-//         ___ccc: 'value',
-//     };
-//     const resString = window.scriptlets.invoke(params);
-//     eval(resString);
-//     assert.throws(
-//         () => window.___bbb.___ccc,
-//         /ReferenceError/,
-//         `should throw Reference error when try to access property ${property}`,
-//     );
-// });
-//
-// test('abort-on-property-read dot notation deferred defenition', (assert) => {
-//     const property = '___ddd.___eee';
-//     const params = { name, args: [property] };
-//     const resString = window.scriptlets.invoke(params);
-//     eval(resString);
-//     window.___ddd = {};
-//     window.___ddd.___eee = 'value';
-//     assert.throws(
-//         () => window.___ddd.___eee,
-//         /ReferenceError/,
-//         `should throw Reference error when try to access property ${property}`,
-//     );
-// });
+
+test('abort-current-inline-script doesnt aborts function which is not specified by search', (assert) => {
+    const property = '___aaa';
+    const search = 'blabla';
+    const params = {
+        name,
+        args: [property, search],
+        hit: () => {
+            window.hit = 'FIRED';
+        },
+    };
+    window[property] = 'value';
+    const resString = window.scriptlets.invoke(params);
+
+    eval(resString);
+    addAndRemoveInlineScript('window.___aaa;');
+
+    assert.strictEqual(window.hit, undefined);
+});
+
+test('abort-current-inline-script searches function by regexp', (assert) => {
+    const property = '___aaa';
+    const search = '/a{3}/';
+    const params = {
+        name,
+        args: [property, search],
+        hit: () => {
+            window.hit = 'FIRED';
+        },
+    };
+    window[property] = 'value';
+    const resString = window.scriptlets.invoke(params);
+
+    window.onerror = onError(assert);
+
+    eval(resString);
+    addAndRemoveInlineScript('window.___aaa;');
+
+    assert.strictEqual(window.hit, 'FIRED');
+});

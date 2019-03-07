@@ -64,4 +64,4 @@ abortCurrentInlineScript.names = [
     'abp-abort-current-inline-script',
 ];
 
-abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain];
+abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp];
