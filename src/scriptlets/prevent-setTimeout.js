@@ -9,7 +9,7 @@ import { toRegExp } from '../helpers/string-utils';
  * @param {string|RegExp} match matching in string of callback function
  * @param {string|number} delay matching delay
  */
-export function setTimeoutDefuser(source, match, delay) {
+export function preventSetTimeout(source, match, delay) {
     const hit = source.hit
         ? new Function(source.hit)
         : () => {};
@@ -28,11 +28,11 @@ export function setTimeoutDefuser(source, match, delay) {
     window.setTimeout = timeoutWrapper;
 }
 
-setTimeoutDefuser.names = [
+preventSetTimeout.names = [
     'prevent-setTimeout',
     'ubo-setTimeout-defuser.js',
 ];
 
-setTimeoutDefuser.injections = [toRegExp];
+preventSetTimeout.injections = [toRegExp];
 
-export default setTimeoutDefuser;
+export default preventSetTimeout;
