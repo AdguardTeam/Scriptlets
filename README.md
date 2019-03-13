@@ -108,7 +108,7 @@ example.org#%#//scriptlet("prevent-setInterval"[, arg1[, arg2]])
 **Parameters**
 - `arg1`
 
-Optional. String or RegExp for matching in stringified callback function.
+Optional. String or RegExp for matching in stringified callback function.<br>
 RegExp must start and end with `/` symbol, flags are not supported.
 
 - `arg2`
@@ -136,6 +136,61 @@ setInterval(function () {
 ```
 
 [scriptlet source](./src/scriptlets/prevent-setInterval.js)
+
+<br>
+
+**[prevent-window-open](#preventWindowOpen)**
+<br>
+Prevent calls `window.open` when URL match or not match with passed to scriptlets param.
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-window-open"[, arg1[, arg2]])
+```
+
+**Parameters**
+- `arg1`
+
+Optional. Set to `Match` or `Not Match` with passed string or RegExp in `arg2`.<br>
+Any positive number set it to `Match`, 0 or any string value set it to `Not Match`.<br>
+Default: `Match`.
+
+- `arg2`
+
+Optional. String or RegExp for matching with URL.<br>
+RegExp must start and end with `/` symbol, flags are not supported.
+
+**Example**
+
+In this case all `window.open` calls will be prevented
+```
+example.org#%#//scriptlet("prevent-window-open")
+```
+
+Simple example
+```
+example.org#%#//scriptlet("prevent-window-open", , 'example')
+
+window.open('http://example.org'); // prevented
+```
+
+RegExp and `Match` flag example
+```
+example.org#%#//scriptlet("prevent-window-open", 1, "/example\./")
+
+window.open('http://example.org'); // prevented
+```
+
+String and `Not Match` flag example
+```
+example.org#%#//scriptlet("prevent-window-open", 0, "example")
+
+window.open('http://test.org'); // prevented
+
+window.open('http://example.org'); // executed
+```
+
+[scriptlet source](./src/scriptlets/prevent-window-open.js)
 
 ---
 

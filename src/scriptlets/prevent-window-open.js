@@ -1,6 +1,12 @@
 /* eslint-disable no-new-func */
 import { toRegExp } from '../helpers/string-utils';
 
+/**
+ * Prevent calls `window.open` when URL match or not match with passed params
+ * @param {Source} source
+ * @param {number|string} [inverse] inverse matching
+ * @param {string} [match] matching with URL
+ */
 export function preventWindowOpen(source, inverse = false, match) {
     const nativeOpen = window.open;
     const hit = source.hit
