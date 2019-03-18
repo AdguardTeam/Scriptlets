@@ -5,6 +5,8 @@ const name = 'abort-current-inline-script';
 
 module(name);
 
+const evalWrapper = eval;
+
 testDone(() => {
     delete window.hit;
 });
@@ -25,7 +27,7 @@ const addAndRemoveInlineScript = (scriptText) => {
     scriptElement.parentNode.removeChild(scriptElement);
 };
 
-test('abort-current-inline-script ubo alias works', (assert) => {
+test('ubo alias', (assert) => {
     const property = '___aaa';
     const params = {
         name: 'ubo-abort-current-inline-script.js',
@@ -34,18 +36,17 @@ test('abort-current-inline-script ubo alias works', (assert) => {
             window.hit = 'FIRED';
         },
     };
-    window[property] = 'value';
     const resString = window.scriptlets.invoke(params);
 
     window.onerror = onError(assert);
 
-    eval(resString);
+    evalWrapper(resString);
     addAndRemoveInlineScript('window.___aaa;');
 
     assert.strictEqual(window.hit, 'FIRED');
 });
 
-test('abort-current-inline-script abp alias works', (assert) => {
+test('abp alias', (assert) => {
     const property = '___aaa';
     const params = {
         name: 'abp-abort-current-inline-script',
@@ -54,18 +55,17 @@ test('abort-current-inline-script abp alias works', (assert) => {
             window.hit = 'FIRED';
         },
     };
-    window[property] = 'value';
     const resString = window.scriptlets.invoke(params);
 
     window.onerror = onError(assert);
 
-    eval(resString);
+    evalWrapper(resString);
     addAndRemoveInlineScript('window.___aaa;');
 
     assert.strictEqual(window.hit, 'FIRED');
 });
 
-test('abort-current-inline-script works', (assert) => {
+test('works', (assert) => {
     const property = '___aaa';
     const params = {
         name,
@@ -74,42 +74,63 @@ test('abort-current-inline-script works', (assert) => {
             window.hit = 'FIRED';
         },
     };
-    window[property] = 'value';
     const resString = window.scriptlets.invoke(params);
 
     window.onerror = onError(assert);
 
-    eval(resString);
+    evalWrapper(resString);
     addAndRemoveInlineScript('window.___aaa;');
 
     assert.strictEqual(window.hit, 'FIRED');
 });
 
-test('abort-current-inline-script works, and aborts script by search', (assert) => {
-    const property = '___aaa';
-    const search = 'const someVar';
+test('works with chained properties', (assert) => {
+    const chainProperty = 'aaa.bbb.ccc';
     const params = {
         name,
-        args: ['___aaa', 'const someVar'],
+        args: [chainProperty],
         hit: () => {
             window.hit = 'FIRED';
         },
     };
-    window[property] = 'value';
     const resString = window.scriptlets.invoke(params);
 
     window.onerror = onError(assert);
 
-    eval(resString);
-    addAndRemoveInlineScript(`${search} = window.___aaa;`);
+    evalWrapper(resString);
+    addAndRemoveInlineScript(`
+        var aaa = {};
+        aaa.bbb = {};
+        aaa.bbb.ccc = 'test';
+    `);
+
+    assert.strictEqual(window.hit, 'FIRED');
+});
+
+test('aborts script by search', (assert) => {
+    const property = '___aaa';
+    const search = 'const someVar';
+    const params = {
+        name,
+        args: [property, 'const someVar'],
+        hit: () => {
+            window.hit = 'FIRED';
+        },
+    };
+    const resString = window.scriptlets.invoke(params);
+
+    window.onerror = onError(assert);
+
+    evalWrapper(resString);
+    addAndRemoveInlineScript(`${search} = window.${property};`);
 
     assert.strictEqual(window.hit, 'FIRED');
 });
 
 
-test('abort-current-inline-script doesnt aborts function which is not specified by search', (assert) => {
+test('doesnt aborts script which is not specified by search', (assert) => {
     const property = '___aaa';
-    const search = 'blabla';
+    const search = 'some search';
     const params = {
         name,
         args: [property, search],
@@ -117,16 +138,15 @@ test('abort-current-inline-script doesnt aborts function which is not specified 
             window.hit = 'FIRED';
         },
     };
-    window[property] = 'value';
     const resString = window.scriptlets.invoke(params);
 
-    eval(resString);
-    addAndRemoveInlineScript('window.___aaa;');
+    evalWrapper(resString);
+    addAndRemoveInlineScript(`window.${property};`);
 
-    assert.strictEqual(window.hit, undefined);
+    assert.notStrictEqual(window.hit, undefined);
 });
 
-test('abort-current-inline-script searches function by regexp', (assert) => {
+test('searches script by regexp', (assert) => {
     const property = '___aaa';
     const search = '/a{3}/';
     const params = {
@@ -136,13 +156,12 @@ test('abort-current-inline-script searches function by regexp', (assert) => {
             window.hit = 'FIRED';
         },
     };
-    window[property] = 'value';
     const resString = window.scriptlets.invoke(params);
 
     window.onerror = onError(assert);
 
-    eval(resString);
-    addAndRemoveInlineScript('window.___aaa;');
+    evalWrapper(resString);
+    addAndRemoveInlineScript(`window.${property};`);
 
     assert.strictEqual(window.hit, 'FIRED');
 });

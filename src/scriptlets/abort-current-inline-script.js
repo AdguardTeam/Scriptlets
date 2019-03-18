@@ -17,7 +17,7 @@ export function abortCurrentInlineScript(source, property, search = null) {
     const abort = () => {
         const scriptEl = document.currentScript;
         if (scriptEl instanceof HTMLScriptElement
-            && scriptEl.src === ''
+            && scriptEl.textContent.length > 0
             && scriptEl !== ourScript
             && (!regex || regex.test(scriptEl.textContent))) {
             hit();
@@ -56,6 +56,17 @@ export function abortCurrentInlineScript(source, property, search = null) {
     };
 
     setChainPropAccess(window, property);
+
+    const onerrorOriginal = window.onerror;
+    // eslint-disable-next-line consistent-return
+    window.onerror = (error, ...args) => {
+        if (typeof error === 'string' && error.indexOf(rid) !== -1) {
+            return true;
+        }
+        if (onerrorOriginal instanceof Function) {
+            return onerrorOriginal.apply(this, [error, ...args]);
+        }
+    };
 }
 
 abortCurrentInlineScript.names = [

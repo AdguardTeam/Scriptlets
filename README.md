@@ -53,6 +53,49 @@ example.org#%#//scriptlet("abort-on-property-read", "alert")
 
 <br>
 
+**[abort-current-inline-script](#abortCurrentInlineScript)**
+<br>
+Throws a ReferenceError when trying to access property of inline script
+
+**Syntax**
+```
+example.org#%#//scriptlet("abort-current-inline-script", <arg1>[, arg2])
+```
+
+**Parameters**
+- `arg1`
+Required. Name of property access to which will abort inline script. Allowed chain of properties defined via dot notation e.g. `navigator.language`
+
+- `arg2`
+Optional. String or RegExp for matching in inline script text.
+
+**Example**
+```
+// Simple example
+example.org#%#//scriptlet("abort-current-inline-script", "alert")
+
+// all scripts accessing alert property in global scope will be aborted
+
+// Example with search
+example.org#%#//scriptlet("abort-current-inline-script", "alert", "Hello, world")
+
+// the following script will be aborted
+alert("Hello, world");
+
+// Example with regexp search
+example.org#%#//scriptlet("abort-current-inline-script", "alert", "/Hello.+world/")
+
+// Following scripts will be aborted
+"alert("Hello, big world");"
+"alert("Hello, little world");"
+// This one won't
+"alert("Hi, little world");"
+```
+
+[scriptlet source](./src/scriptlets/abort-on-property-read.js)
+
+<br>
+
 **[prevent-setTimeout](#preventSetTimeout)**
 <br>
 Prevent calls to setTimeout for specified matching in passed callback and delay by setting callback to empty function
