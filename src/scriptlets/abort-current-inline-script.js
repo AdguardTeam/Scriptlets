@@ -12,10 +12,19 @@ export function abortCurrentInlineScript(source, property, search = null) {
         ? new Function(source.hit)
         : () => {};
 
-    const ourScript = document.currentScript;
+
+    const getCurrentScript = () => {
+        if (!document.currentScript) {
+            const scripts = document.getElementsByTagName('script');
+            return scripts[scripts.length - 1];
+        }
+        return document.currentScript;
+    };
+
+    const ourScript = getCurrentScript();
 
     const abort = () => {
-        const scriptEl = document.currentScript;
+        const scriptEl = getCurrentScript();
         if (scriptEl instanceof HTMLScriptElement
             && scriptEl.textContent.length > 0
             && scriptEl !== ourScript
