@@ -6,7 +6,9 @@ module.exports = (api) => {
         ],
         plugins: [
             '@babel/plugin-transform-regenerator',
-            '@babel/plugin-transform-runtime',
+            ['@babel/plugin-transform-runtime', {
+                useESModules: true,
+            }],
         ],
     };
 
