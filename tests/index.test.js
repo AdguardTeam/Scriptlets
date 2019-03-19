@@ -4,3 +4,4 @@ import * as abortOnPropertyWrite from './abort-on-property-write.test';
 import * as preventSetTimeout from './prevent-setTimeout.test';
 import * as preventSetInterval from './prevent-setInterval.test';
 import * as preventWindowOpen from './prevent-window-open.test';
+import * as abortCurrentInlineScript from './abort-current-inline-script.test';
