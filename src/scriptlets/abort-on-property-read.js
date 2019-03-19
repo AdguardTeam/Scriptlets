@@ -1,3 +1,4 @@
+/* eslint-disable no-new-func */
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
@@ -12,16 +13,18 @@ export function abortOnPropertyRead(source, property) {
     if (!property) {
         return;
     }
+    const hit = source.hit
+        ? new Function(source.hit)
+        : () => {};
     const rid = randomId();
     const abort = () => {
-        if (source.hit) {
-            source.hit();
-        }
+        hit();
         throw new ReferenceError(rid);
     };
     const setChainPropAccess = (owner, property) => {
-        // eslint-disable-next-line prefer-const
-        let { base, prop, chain } = getPropertyInChain(owner, property);
+        const chainInfo = getPropertyInChain(owner, property);
+        let { base } = chainInfo;
+        const { prop, chain } = chainInfo;
         if (chain) {
             const setter = (a) => {
                 base = a;

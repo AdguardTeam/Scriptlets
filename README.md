@@ -51,6 +51,190 @@ example.org#%#//scriptlet("abort-on-property-read", "alert")
 
 [scriptlet source](./src/scriptlets/abort-on-property-read.js)
 
+<br>
+
+**[abort-current-inline-script](#abortCurrentInlineScript)**
+<br>
+Throws a ReferenceError when trying to access property of inline script
+
+**Syntax**
+```
+example.org#%#//scriptlet("abort-current-inline-script", <arg1>[, arg2])
+```
+
+**Parameters**
+- `arg1`
+Required. Name of property access to which will abort inline script. Allowed chain of properties defined via dot notation e.g. `navigator.language`
+
+- `arg2`
+Optional. String or RegExp for matching in inline script text.
+
+**Example**
+```
+// Simple example
+example.org#%#//scriptlet("abort-current-inline-script", "alert")
+
+// all scripts accessing alert property in global scope will be aborted
+
+// Example with search
+example.org#%#//scriptlet("abort-current-inline-script", "alert", "Hello, world")
+
+// the following script will be aborted
+alert("Hello, world");
+
+// Example with regexp search
+example.org#%#//scriptlet("abort-current-inline-script", "alert", "/Hello.+world/")
+
+// Following scripts will be aborted
+"alert("Hello, big world");"
+"alert("Hello, little world");"
+// This one won't
+"alert("Hi, little world");"
+```
+
+[scriptlet source](./src/scriptlets/abort-on-property-read.js)
+
+<br>
+
+**[prevent-setTimeout](#preventSetTimeout)**
+<br>
+Prevent calls to setTimeout for specified matching in passed callback and delay by setting callback to empty function
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-setTimeout"[, arg1[, arg2]])
+```
+
+**Parameters**
+- `arg1`
+
+Optional. String or RegExp for matching in stringified callback function.
+RegExp must start and end with `/` symbol, flags are not supported.
+
+- `arg2`
+
+Optional. Number to be matched for delay.
+
+**Example**
+```
+example.org#%#//scriptlet("prevent-setTimeout", "value", 300)
+
+// the following setTimeout will be prevented
+setTimeout(function () {
+    window.test = "value";
+}, 300);
+
+
+// RegExp example
+example.org#%#//scriptlet("prevent-setTimeout", "/\.test/", 100)
+
+// the following setTimeout will be prevented
+setTimeout(function () {
+    window.test = "value";
+}, 100);
+
+```
+
+[scriptlet source](./src/scriptlets/prevent-setTimeout.js)
+
+<br>
+
+**[prevent-setInterval](#preventSetInterval)**
+<br>
+Prevent calls to setInterval for specified matching in passed callback and delay by setting callback to empty function
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-setInterval"[, arg1[, arg2]])
+```
+
+**Parameters**
+- `arg1`
+
+Optional. String or RegExp for matching in stringified callback function.<br>
+RegExp must start and end with `/` symbol, flags are not supported.
+
+- `arg2`
+
+Optional. Number to be matched for interval.
+
+**Example**
+```
+example.org#%#//scriptlet("prevent-setInterval", "value", 300)
+
+// the following setInterval will be prevented
+setInterval(function () {
+    window.test = "value";
+}, 300);
+
+
+// RegExp example
+example.org#%#//scriptlet("prevent-setInterval", "/\.test/", 100)
+
+// the following setInterval will be prevented
+setInterval(function () {
+    window.test = "value";
+}, 100);
+
+```
+
+[scriptlet source](./src/scriptlets/prevent-setInterval.js)
+
+<br>
+
+**[prevent-window-open](#preventWindowOpen)**
+<br>
+Prevent calls `window.open` when URL match or not match with passed to scriptlets param.
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-window-open"[, arg1[, arg2]])
+```
+
+**Parameters**
+- `arg1`
+
+Optional. Set to `Match` or `Not Match` with passed string or RegExp in `arg2`.<br>
+Any positive number set it to `Match`, 0 or any string value set it to `Not Match`.<br>
+Default: `Match`.
+
+- `arg2`
+
+Optional. String or RegExp for matching with URL.<br>
+RegExp must start and end with `/` symbol, flags are not supported.
+
+**Example**
+
+In this case all `window.open` calls will be prevented
+```
+example.org#%#//scriptlet("prevent-window-open")
+```
+
+Simple example
+```
+example.org#%#//scriptlet("prevent-window-open", , 'example')
+
+window.open('http://example.org'); // prevented
+```
+
+RegExp and `Match` flag example
+```
+example.org#%#//scriptlet("prevent-window-open", 1, "/example\./")
+
+window.open('http://example.org'); // prevented
+```
+
+String and `Not Match` flag example
+```
+example.org#%#//scriptlet("prevent-window-open", 0, "example")
+
+window.open('http://test.org'); // prevented
+
+window.open('http://example.org'); // executed
+```
+
+[scriptlet source](./src/scriptlets/prevent-window-open.js)
+
 ---
 
 ### Source build
