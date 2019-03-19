@@ -1,9 +1,9 @@
 /**
- * Set getter and setter to propety if it's configurable
- * @param {Object} object target object with proprty
+ * Set getter and setter to property if it's configurable
+ * @param {Object} object target object with property
  * @param {string} property property name
  * @param {Object} descriptor contains getter and setter functions
- * @returns {boolean} is operation successfull
+ * @returns {boolean} is operation successful
  */
 export function setPropertyAccess(object, property, descriptor) {
     const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
