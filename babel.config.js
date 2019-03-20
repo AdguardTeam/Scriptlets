@@ -2,13 +2,16 @@ module.exports = (api) => {
     api.cache(false);
     const config = {
         presets: [
-            ['@babel/env'],
+            [
+                '@babel/env',
+                {
+                    exclude: ['transform-typeof-symbol'],
+                },
+            ],
         ],
         plugins: [
             '@babel/plugin-transform-regenerator',
-            ['@babel/plugin-transform-runtime', {
-                useESModules: true,
-            }],
+            '@babel/plugin-transform-runtime',
         ],
     };
 
