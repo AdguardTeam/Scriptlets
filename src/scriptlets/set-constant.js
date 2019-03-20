@@ -14,6 +14,8 @@ export function setConstant(source, property, value) {
         constantValue = false;
     } else if (value === 'true') {
         constantValue = true;
+    } else if (value === 'null') {
+        constantValue = null;
     } else if (value === 'noopFunc') {
         constantValue = () => {};
     } else if (value === 'trueFunc') {
@@ -28,6 +30,8 @@ export function setConstant(source, property, value) {
         if (Math.abs(constantValue) > 0x7FFF) {
             return;
         }
+    } else if (value === '') {
+        constantValue = '';
     } else {
         return;
     }
@@ -38,13 +42,13 @@ export function setConstant(source, property, value) {
         : () => {};
 
     let canceled = false;
-    const mustCancel = (target) => {
+    const mustCancel = (value) => {
         if (canceled) {
             return canceled;
         }
-        canceled = target !== undefined
+        canceled = value !== undefined
             && constantValue !== undefined
-            && typeof target !== typeof constantValue;
+            && typeof value !== typeof constantValue;
         return canceled;
     };
 
