@@ -92,7 +92,7 @@ example.org#%#//scriptlet("abort-current-inline-script", "alert", "/Hello.+world
 "alert("Hi, little world");"
 ```
 
-[scriptlet source](./src/scriptlets/abort-on-property-read.js)
+[scriptlet source](./src/scriptlets/abort-current-inline-script.js)
 
 <br>
 
@@ -136,6 +136,48 @@ setTimeout(function () {
 ```
 
 [scriptlet source](./src/scriptlets/prevent-setTimeout.js)
+
+<br>
+
+## set-constant
+
+Creates `"constant"` property and assigns it a one of the values from the predefined list. Actually property is not `"constant"`. In current implementation it could be rewritten by the value with another type.
+
+**Syntax**
+```
+example.org#%#//scriptlet("set-constant", <arg1>, <arg2>)
+```
+
+**Parameters**
+- `arg1`
+
+Required. Name of the property to which will be saved provided value. You can use chain of properties defined via dot notation e.g. `chained.property`
+
+- `arg2`
+
+Required. Possible values:
+- positive decimal integer `<= 32767`
+- one value from the set of predefined constants:
+    - `undefined`
+    - `false`
+    - `true`
+    - `null`
+    - `noopFunc` - function with empty body
+    - `trueFunc` - function returning true
+    - `falseFunc` - function returning false
+    - `''` - empty string
+
+**Example**
+```
+example.org#%#//scriptlet("set-constant", "firstConst", "false")
+window.firstConst === false // this comparision will return true
+
+example.org#%#//scriptlet("set-constant", "secondConst", "trueFunc")
+window.secondConst() === true // call to the secondConst will return true
+
+```
+
+[scriptlet source](./src/scriptlets/set-constant.js)
 
 <br>
 
