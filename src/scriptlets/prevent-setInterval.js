@@ -31,5 +31,3 @@ preventSetInterval.names = [
 ];
 
 preventSetInterval.injections = [toRegExp, stringToFunc];
-
-export default preventSetInterval;

@@ -33,5 +33,3 @@ preventWindowOpen.names = [
 ];
 
 preventWindowOpen.injections = [toRegExp, stringToFunc];
-
-export default preventWindowOpen;

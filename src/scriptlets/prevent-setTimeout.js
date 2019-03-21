@@ -31,5 +31,3 @@ preventSetTimeout.names = [
 ];
 
 preventSetTimeout.injections = [toRegExp, stringToFunc];
-
-export default preventSetTimeout;
