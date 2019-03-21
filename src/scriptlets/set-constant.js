@@ -1,6 +1,6 @@
-/* eslint-disable no-new-func */
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { setPropertyAccess } from '../helpers/set-property-access';
+import { stringToFunc } from '../helpers/string-utils';
 
 export function setConstant(source, property, value) {
     if (!property) {
@@ -37,9 +37,7 @@ export function setConstant(source, property, value) {
     }
 
 
-    const hit = source.hit
-        ? new Function(source.hit)
-        : () => {};
+    const hit = stringToFunc(source.hit);
 
     let canceled = false;
     const mustCancel = (value) => {
@@ -90,4 +88,4 @@ setConstant.names = [
     'set-constant',
     'ubo-set-constant.js',
 ];
-setConstant.injections = [getPropertyInChain, setPropertyAccess];
+setConstant.injections = [getPropertyInChain, setPropertyAccess, stringToFunc];

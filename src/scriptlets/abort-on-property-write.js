@@ -1,7 +1,7 @@
-/* eslint-disable no-new-func */
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
+import { stringToFunc } from '../helpers/string-utils';
 
 /**
  * Abort property writing
@@ -13,9 +13,7 @@ export function abortOnPropertyWrite(source, property) {
     if (!property) {
         return;
     }
-    const hit = source.hit
-        ? new Function(source.hit)
-        : () => {};
+    const hit = stringToFunc(source.hit);
     const rid = randomId();
     const abort = () => {
         hit();
@@ -50,4 +48,9 @@ abortOnPropertyWrite.names = [
     'ubo-abort-on-property-write.js',
     'abp-abort-on-property-write',
 ];
-abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain];
+abortOnPropertyWrite.injections = [
+    randomId,
+    setPropertyAccess,
+    getPropertyInChain,
+    stringToFunc,
+];
