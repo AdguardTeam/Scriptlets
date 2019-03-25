@@ -251,6 +251,26 @@ example.org#%#//scriptlet("prevent-bab")
 
 <br>
 
+## nowebrtc
+
+Disables WebRTC, overwriting RTCPeerConnection function. Overwritten function will log attempts to create new connections.
+
+**Syntax**
+```
+example.org#%#//scriptlet("nowebrtc")
+```
+
+**Example**
+```
+example.org#%#//scriptlet("prevent-bab")
+const localConnection = new RTCPeerConnection(); // will log to the console that was attempt to create RTCPerrConnection
+
+```
+
+[scriptlet source](./src/scriptlets/nowebrtc.js)
+
+<br>
+
 **[prevent-setInterval](#preventSetInterval)**
 <br>
 Prevent calls to setInterval for specified matching in passed callback and delay by setting callback to empty function
