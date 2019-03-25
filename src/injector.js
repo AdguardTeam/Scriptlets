@@ -34,7 +34,7 @@ export function wrapInIIFE(source, code) {
     const sourceString = JSON.stringify(source);
     const argsString = source.args ? `[${source.args.map(JSON.stringify)}]` : undefined;
     const params = argsString ? `${sourceString}, ${argsString}` : sourceString;
-    return `(function(source, args){\n${code}\n})(${params})`;
+    return `(function(source, args){\n${code}\n})(${params});`;
 }
 
 /**
