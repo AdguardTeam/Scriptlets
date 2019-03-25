@@ -9,3 +9,4 @@ export * from './prevent-setInterval';
 export * from './prevent-window-open';
 export * from './abort-current-inline-script';
 export * from './set-constant';
+export * from './prevent-addEventListener';

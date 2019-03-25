@@ -6,3 +6,4 @@ import * as preventSetInterval from './prevent-setInterval.test';
 import * as preventWindowOpen from './prevent-window-open.test';
 import * as abortCurrentInlineScript from './abort-current-inline-script.test';
 import * as setConstant from './set-constant.test';
+import * as preventAddEventListener from './prevent-addEventListener.test';
