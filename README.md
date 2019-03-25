@@ -181,6 +181,76 @@ window.secondConst() === true // call to the secondConst will return true
 
 <br>
 
+## prevent-addEventListener
+
+Prevents adding event listeners
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-addEventListener"[, arg1[, arg2]])
+```
+
+**Parameters**
+- `arg1`
+
+Optional. String or regex string matching event name.
+
+- `arg2`
+
+Optional. String or regex string matching stringified event handler
+
+**Examples**
+```
+// Example 1
+
+example.org#%#//scriptlet("prevent-addEventListener", "click")
+const el = document.createElement('div');
+el.addEventListener('click', () => {
+    window.test = 'test';
+});
+el.click();
+window.test === undefined; // 'test' wasn't assigned to the window.test property
+
+// Example 2
+
+example.org#%#//scriptlet("prevent-addEventListener", "click", "searchString")
+el.addEventListener('click', () => {
+    window.test = 'searchString';
+});
+el.click();
+window.test === undefined; // 'searchString' wasn't assigned to the window.test property
+
+el.addEventListener('focus', () => {
+    window.test = 'test';
+});
+el.dispatchEvent(new Event('focus'));
+window.test === 'test' // 'test' string was assigned to the window.test property, because this event and function didn't match with searched values
+
+```
+
+[scriptlet source](./src/scriptlets/prevent-addEventListener.js)
+
+<br>
+
+## prevent-bab
+
+Prevents BlockAdblock scripts execution on the set of predefined tokens.
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-bab")
+```
+
+**Example**
+```
+example.org#%#//scriptlet("prevent-bab")
+
+```
+
+[scriptlet source](./src/scriptlets/prevent-bab.js)
+
+<br>
+
 **[prevent-setInterval](#preventSetInterval)**
 <br>
 Prevent calls to setInterval for specified matching in passed callback and delay by setting callback to empty function
