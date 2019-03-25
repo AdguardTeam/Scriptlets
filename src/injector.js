@@ -17,8 +17,8 @@ export function attachDependencies(scriptlet) {
  */
 export function addScriptletCall(scriptlet, code) {
     return `${code};
-        args.unshift(source);
-        ${scriptlet.name}.apply(this, args);
+        const updatedArgs = args ? [].concat(source).concat(args) : [source];
+        ${scriptlet.name}.apply(this, updatedArgs);
     `;
 }
 
@@ -32,8 +32,9 @@ export function wrapInIIFE(source, code) {
         source.hit = `(${source.hit.toString()})()`;
     }
     const sourceString = JSON.stringify(source);
-    const argsString = `[${source.args.map(JSON.stringify)}]`;
-    return `(function(source, args){\n${code}\n})(${sourceString}, ${argsString})`;
+    const argsString = source.args ? `[${source.args.map(JSON.stringify)}]` : undefined;
+    const params = argsString ? `${sourceString}, ${argsString}` : sourceString;
+    return `(function(source, args){\n${code}\n})(${params})`;
 }
 
 /**

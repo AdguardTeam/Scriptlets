@@ -232,6 +232,25 @@ window.test === 'test' // 'test' string was assigned to the window.test property
 
 <br>
 
+## prevent-bab
+
+Prevents BlockAdblock scripts execution on the set of predefined tokens.
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-bab")
+```
+
+**Example**
+```
+example.org#%#//scriptlet("prevent-bab")
+
+```
+
+[scriptlet source](./src/scriptlets/prevent-bab.js)
+
+<br>
+
 **[prevent-setInterval](#preventSetInterval)**
 <br>
 Prevent calls to setInterval for specified matching in passed callback and delay by setting callback to empty function
