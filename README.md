@@ -375,6 +375,7 @@ window.open('http://example.org'); // executed
 | nano-setTimeout-booster.js        |                       |
 | sharedWorker-defuser.js           |                       |
 | window.open-defuser.js            | :white_check_mark:    |
+| bab-defuser.js                    | :white_check_mark:    |
 
 ---
 <br>
