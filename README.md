@@ -4,7 +4,7 @@ Scriptlet is a JavaScript function which provide extended capabilities for filtr
 
 ---
 
-### Syntax
+## Syntax
 
 ```
 domains#%#//scriptlet(name[, arg1[, arg2[, ...]]])
@@ -28,9 +28,10 @@ example.org#%#//scriptlet("abort-on-property-read", "alert")
 
 ---
 
-### Available scriptlets
+## Available scriptlets
 
-**[abort-on-property-read](#abortOnPropertyRead)**
+<a id="abort-on-property-read"></a>
+### abort-on-property-read
 <br>
 Throws a ReferenceError when trying to read property
 
@@ -96,7 +97,8 @@ example.org#%#//scriptlet("abort-current-inline-script", "alert", "/Hello.+world
 
 <br>
 
-**[prevent-setTimeout](#preventSetTimeout)**
+<a id="prevent-setTimeout"></a>
+### prevent-setTimeout
 <br>
 Prevent calls to setTimeout for specified matching in passed callback and delay by setting callback to empty function
 
@@ -139,7 +141,8 @@ setTimeout(function () {
 
 <br>
 
-## set-constant
+<a id="set-constant"></a>
+### set-constant
 
 Creates `"constant"` property and assigns it a one of the values from the predefined list. Actually property is not `"constant"`. In current implementation it could be rewritten by the value with another type.
 
@@ -181,7 +184,8 @@ window.secondConst() === true // call to the secondConst will return true
 
 <br>
 
-## prevent-addEventListener
+<a id="prevent-addEventListener"></a>
+### prevent-addEventListener
 
 Prevents adding event listeners
 
@@ -232,7 +236,8 @@ window.test === 'test' // 'test' string was assigned to the window.test property
 
 <br>
 
-## prevent-bab
+<a id="prevent-bab"></a>
+### prevent-bab
 
 Prevents BlockAdblock scripts execution on the set of predefined tokens.
 
@@ -251,7 +256,29 @@ example.org#%#//scriptlet("prevent-bab")
 
 <br>
 
-**[prevent-setInterval](#preventSetInterval)**
+<a id="nowebrtc"></a>
+### nowebrtc
+
+Disables WebRTC, overwriting RTCPeerConnection function. Overwritten function will log attempts to create new connections.
+
+**Syntax**
+```
+example.org#%#//scriptlet("nowebrtc")
+```
+
+**Example**
+```
+example.org#%#//scriptlet("prevent-bab")
+const localConnection = new RTCPeerConnection(); // will log to the console that was attempt to create RTCPerrConnection
+
+```
+
+[scriptlet source](./src/scriptlets/nowebrtc.js)
+
+<br>
+
+<a id="prevent-setInterval"></a>
+### prevent-setInterval
 <br>
 Prevent calls to setInterval for specified matching in passed callback and delay by setting callback to empty function
 
@@ -294,7 +321,8 @@ setInterval(function () {
 
 <br>
 
-**[prevent-window-open](#preventWindowOpen)**
+<a id="prevent-window-open"></a>
+### prevent-window-open
 <br>
 Prevent calls `window.open` when URL match or not match with passed to scriptlets param.
 
@@ -349,7 +377,7 @@ window.open('http://example.org'); // executed
 
 ---
 
-### Source build
+## Source build
 
 Install dependencies
 ```

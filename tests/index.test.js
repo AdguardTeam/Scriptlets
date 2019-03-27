@@ -8,3 +8,4 @@ import * as abortCurrentInlineScript from './abort-current-inline-script.test';
 import * as setConstant from './set-constant.test';
 import * as preventAddEventListener from './prevent-addEventListener.test';
 import * as preventBab from './prevent-bab.test';
+import * as nowebrtc from './nowebrtc.test';
