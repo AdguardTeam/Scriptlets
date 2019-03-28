@@ -352,30 +352,30 @@ window.open('http://example.org'); // executed
 
 ### UBO Sriptlets compatibility table
 
-| UBO scriplet                      | Supporting            |
-|---                                |---                    |
-| abort-current-inline-script.js    | :white_check_mark:    |
-| abort-on-property-read.js         | :white_check_mark:    |
-| abort-on-property-write.js        | :white_check_mark:    |
-| addEventListener-defuser.js       | :white_check_mark:    |
-| addEventListener-logger.js        |                       |
-| cookie-remover.js                 |                       |
-| csp.js                            |                       |
-| disable-newtab-links.js           |                       |
-| noeval.js                         |                       |
-| silent-noeval.js                  |                       |
-| nowebrtc.js                       |                       |
-| remove-attr.js                    |                       |
-| set-constant.js                   | :white_check_mark:    |
-| setInterval-defuser.js            | :white_check_mark:    |
-| setInterval-logger.js             |                       |
-| setTimeout-defuser.js             | :white_check_mark:    |
-| setTimeout-logger.js              |                       |
-| nano-setInterval-booster.js       |                       |
-| nano-setTimeout-booster.js        |                       |
-| sharedWorker-defuser.js           |                       |
-| window.open-defuser.js            | :white_check_mark:    |
-| bab-defuser.js                    | :white_check_mark:    |
+| UBO                               | AdGuard                       |
+|---                                |---                            |
+| abort-current-inline-script.js    | abort-current-inline-script   |
+| abort-on-property-read.js         | abort-on-property-read        |
+| abort-on-property-write.js        | abort-on-property-write       |
+| addEventListener-defuser.js       | prevent-addEventListener      |
+| addEventListener-logger.js        |                               |
+| cookie-remover.js                 |                               |
+| csp.js                            |                               |
+| disable-newtab-links.js           |                               |
+| noeval.js                         |                               |
+| silent-noeval.js                  |                               |
+| nowebrtc.js                       |                               |
+| remove-attr.js                    |                               |
+| set-constant.js                   | set-constant                  |
+| setInterval-defuser.js            | prevent-setInterval           |
+| setInterval-logger.js             |                               |
+| setTimeout-defuser.js             | prevent-setTimeout            |
+| setTimeout-logger.js              |                               |
+| nano-setInterval-booster.js       |                               |
+| nano-setTimeout-booster.js        |                               |
+| sharedWorker-defuser.js           |                               |
+| window.open-defuser.js            | prevent-window-open           |
+| bab-defuser.js                    | prevent-bab                   |
 
 ---
 <br>
