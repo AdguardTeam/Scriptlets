@@ -376,6 +376,37 @@ window.open('http://example.org'); // executed
 [scriptlet source](./src/scriptlets/prevent-window-open.js)
 
 ---
+<br>
+
+### UBO Sriptlets compatibility table
+
+| UBO                               | AdGuard                       |
+|---                                |---                            |
+| abort-current-inline-script.js    | abort-current-inline-script   |
+| abort-on-property-read.js         | abort-on-property-read        |
+| abort-on-property-write.js        | abort-on-property-write       |
+| addEventListener-defuser.js       | prevent-addEventListener      |
+| addEventListener-logger.js        |                               |
+| cookie-remover.js                 |                               |
+| csp.js                            |                               |
+| disable-newtab-links.js           |                               |
+| noeval.js                         |                               |
+| silent-noeval.js                  |                               |
+| nowebrtc.js                       |                               |
+| remove-attr.js                    |                               |
+| set-constant.js                   | set-constant                  |
+| setInterval-defuser.js            | prevent-setInterval           |
+| setInterval-logger.js             |                               |
+| setTimeout-defuser.js             | prevent-setTimeout            |
+| setTimeout-logger.js              |                               |
+| nano-setInterval-booster.js       |                               |
+| nano-setTimeout-booster.js        |                               |
+| sharedWorker-defuser.js           |                               |
+| window.open-defuser.js            | prevent-window-open           |
+| bab-defuser.js                    | prevent-bab                   |
+
+---
+<br>
 
 ## Source build
 
