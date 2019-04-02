@@ -362,6 +362,7 @@ example.org#%#//scriptlet("prevent-bab")
 |  | disable-newtab-links.js |  |
 |  | noeval.js |  |
 |  | silent-noeval.js |  |
+|  | noeval-if.js |  |
 | [nowebrtc](#nowebrtc) | nowebrtc.js |  |
 |  | remove-attr.js |  |
 | [set-constant](#set-constant) | set-constant.js |  |
@@ -378,7 +379,6 @@ example.org#%#//scriptlet("prevent-bab")
 |  | popads-dummy.js |  |
 |  | popads.net.js |  |
 |  | adfly-defuser.js |  |
-|  | popads-dummy.js |  |
 |  |  | hide-if-contains-image |
 |  |  | hide-if-has-and-matches-style |
 |  |  | dir-string |
