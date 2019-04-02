@@ -1,6 +1,6 @@
 # AdGuard Scriptlets
 
-Scriptlet is a JavaScript function that provide extended capabilities for filtration. These functions can be used in a declarative manner in AdGuard filtering rules.
+Scriptlet is a JavaScript function that provides extended capabilities for content blocking. These functions can be used in a declarative manner in AdGuard filtering rules.
 
 * [Syntax](#syntax)
 * [Available scriptlets](#scriptlets)
