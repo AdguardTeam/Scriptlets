@@ -1,414 +1,394 @@
 # AdGuard Scriptlets
 
-Scriptlet is a JavaScript function which provide extended capabilities for filtration.
+Scriptlet is a JavaScript function that provide extended capabilities for filtration. These functions can be used in a declarative manner in AdGuard filtering rules.
 
----
+* [Syntax](#syntax)
+* [Available scriptlets](#scriptlets)
+    * [set-constant](#set-constant)
+    * [abort-on-property-read](#abort-on-property-read)
+    * [abort-on-property-write](#abort-on-property-write)
+    * [abort-current-inline-script](#abort-current-inline-script)
+    * [prevent-setTimeout](#prevent-setTimeout)
+    * [prevent-setInterval](#prevent-setInterval)
+    * [prevent-addEventListener](#prevent-addEventListener)
+    * [prevent-window-open](#prevent-window-open)
+    * [nowebrtc](#nowebrtc)
+    * [prevent-bab](#prevent-bab)
+* [Scriptlets compatibility table](#compatibility)
+* [How to build](#how-to-build)
 
-## Syntax
+## <a id="syntax"></a> Syntax
 
 ```
-domains#%#//scriptlet(name[, arg1[, arg2[, ...]]])
-```
-**Example**
-```
-example.org#%#//scriptlet("abort-on-property-read", "alert")
+rule = [domains]  "#%#//scriptlet(" scriptletName arguments ")"
 ```
 
-**Valid rules**
-- scriptlet `name` provided
-- single and double qoutes are supported
-    - `abc.org#%#//scriptlet('prop')` - valid
-    - `abc.org#%#//scriptlet("prop")` - valid
-    - `abc.org#%#//scriptlet("prop')` - not valid
-- symbols inside parameters escaped properly
-    - `"prop[\"nested\"]"` - valid
-    - `"prop['nested']"` - also valid
-    - `"prop["nested"]"` - not valid
-- no characters after closing brace `)`
+* `scriptletName` (mandatory) is a name of the scriptlet from AdGuard's scriptlets library
+* `arguments` (optional) a list of `String` arguments (no other types of arguments are supported)
 
----
+> **Remarks**
+> * The meanining of the arguments depends on the scriptlet.
+> * You can use either single or double quotes for the scriptlet name and arguments.
+> * Special characters must be escaped properly:
+>     * `"prop[\"nested\"]"` - valid
+>     * `"prop['nested']"` - also valid
+>     * `"prop["nested"]"` - not valid
 
-## Available scriptlets
+#### Example
 
-<a id="abort-on-property-read"></a>
-### abort-on-property-read
-<br>
-Throws a ReferenceError when trying to read property
-
-**Syntax**
-```
-example.org#%#//scriptlet("abort-on-property-read", <arg>)
-```
-
-**Parameters**
-- `arg`
-
-Required. Name of property which should be abort on reading. Allowed chain of property defined via dot notation e.g. `navigator.language`
-
-**Example**
 ```
 example.org#%#//scriptlet("abort-on-property-read", "alert")
 ```
 
-[scriptlet source](./src/scriptlets/abort-on-property-read.js)
+This rule applies the `abort-on-property-read` scriptlet on all pages of `example.org` and its subdomains, and passes one orgument to it (`alert`).
 
-<br>
+## <a id="scriptlets"></a> Available scriptlets
 
-**[abort-current-inline-script](#abortCurrentInlineScript)**
-<br>
-Throws a ReferenceError when trying to access property of inline script
+This is a list of scriptlets supported by AdGuard. Please note, that in order to achieve cross-blocker compatibility, we also support syntax of uBO and ABP. You can check out the [compatibility table](#compatibility).
 
-**Syntax**
-```
-example.org#%#//scriptlet("abort-current-inline-script", <arg1>[, arg2])
-```
+### <a id="set-constant"></a> set-constant
 
-**Parameters**
-- `arg1`
-Required. Name of property access to which will abort inline script. Allowed chain of properties defined via dot notation e.g. `navigator.language`
+Creates a constant property and assigns it one of the values from the predefined list.
 
-- `arg2`
-Optional. String or RegExp for matching in inline script text.
-
-**Example**
-```
-// Simple example
-example.org#%#//scriptlet("abort-current-inline-script", "alert")
-
-// all scripts accessing alert property in global scope will be aborted
-
-// Example with search
-example.org#%#//scriptlet("abort-current-inline-script", "alert", "Hello, world")
-
-// the following script will be aborted
-alert("Hello, world");
-
-// Example with regexp search
-example.org#%#//scriptlet("abort-current-inline-script", "alert", "/Hello.+world/")
-
-// Following scripts will be aborted
-"alert("Hello, big world");"
-"alert("Hello, little world");"
-// This one won't
-"alert("Hi, little world");"
-```
-
-[scriptlet source](./src/scriptlets/abort-current-inline-script.js)
-
-<br>
-
-<a id="prevent-setTimeout"></a>
-### prevent-setTimeout
-<br>
-Prevent calls to setTimeout for specified matching in passed callback and delay by setting callback to empty function
+> Actually, it's not a constant. Please note, that it can be rewritten with a value of a different type.
 
 **Syntax**
 ```
-example.org#%#//scriptlet("prevent-setTimeout"[, arg1[, arg2]])
+example.org#%#//scriptlet("set-constant", <property>, <value>)
 ```
 
 **Parameters**
-- `arg1`
+- `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
+- `value` (required). Possible values:
+    - positive decimal integer `<= 32767`
+    - one of the predefined constants:
+        - `undefined`
+        - `false`
+        - `true`
+        - `null`
+        - `noopFunc` - function with empty body
+        - `trueFunc` - function returning true
+        - `falseFunc` - function returning false
+        - `''` - empty string
 
-Optional. String or RegExp for matching in stringified callback function.
-RegExp must start and end with `/` symbol, flags are not supported.
-
-- `arg2`
-
-Optional. Number to be matched for delay.
-
-**Example**
-```
-example.org#%#//scriptlet("prevent-setTimeout", "value", 300)
-
-// the following setTimeout will be prevented
-setTimeout(function () {
-    window.test = "value";
-}, 300);
-
-
-// RegExp example
-example.org#%#//scriptlet("prevent-setTimeout", "/\.test/", 100)
-
-// the following setTimeout will be prevented
-setTimeout(function () {
-    window.test = "value";
-}, 100);
-
-```
-
-[scriptlet source](./src/scriptlets/prevent-setTimeout.js)
-
-<br>
-
-<a id="set-constant"></a>
-### set-constant
-
-Creates `"constant"` property and assigns it a one of the values from the predefined list. Actually property is not `"constant"`. In current implementation it could be rewritten by the value with another type.
-
-**Syntax**
-```
-example.org#%#//scriptlet("set-constant", <arg1>, <arg2>)
-```
-
-**Parameters**
-- `arg1`
-
-Required. Name of the property to which will be saved provided value. You can use chain of properties defined via dot notation e.g. `chained.property`
-
-- `arg2`
-
-Required. Possible values:
-- positive decimal integer `<= 32767`
-- one value from the set of predefined constants:
-    - `undefined`
-    - `false`
-    - `true`
-    - `null`
-    - `noopFunc` - function with empty body
-    - `trueFunc` - function returning true
-    - `falseFunc` - function returning false
-    - `''` - empty string
-
-**Example**
+**Examples**
 ```
 example.org#%#//scriptlet("set-constant", "firstConst", "false")
-window.firstConst === false // this comparision will return true
+! window.firstConst === false // this comparision will return true
 
 example.org#%#//scriptlet("set-constant", "secondConst", "trueFunc")
-window.secondConst() === true // call to the secondConst will return true
-
+! window.secondConst() === true // call to the secondConst will return true
 ```
 
 [scriptlet source](./src/scriptlets/set-constant.js)
 
-<br>
+### <a id="abort-on-property-read"></a> abort-on-property-read
 
-<a id="prevent-addEventListener"></a>
-### prevent-addEventListener
-
-Prevents adding event listeners
+Aborts a script when it attempts to **read** the specified property.
 
 **Syntax**
 ```
-example.org#%#//scriptlet("prevent-addEventListener"[, arg1[, arg2]])
+example.org#%#//scriptlet("abort-on-property-read", <property>)
 ```
 
 **Parameters**
-- `arg1`
-
-Optional. String or regex string matching event name.
-
-- `arg2`
-
-Optional. String or regex string matching stringified event handler
+- `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
 
 **Examples**
 ```
-// Example 1
+! Aborts script when it tries to access `window.alert`
+example.org#%#//scriptlet("abort-on-property-read", "alert")
 
-example.org#%#//scriptlet("prevent-addEventListener", "click")
-const el = document.createElement('div');
-el.addEventListener('click', () => {
-    window.test = 'test';
-});
-el.click();
-window.test === undefined; // 'test' wasn't assigned to the window.test property
-
-// Example 2
-
-example.org#%#//scriptlet("prevent-addEventListener", "click", "searchString")
-el.addEventListener('click', () => {
-    window.test = 'searchString';
-});
-el.click();
-window.test === undefined; // 'searchString' wasn't assigned to the window.test property
-
-el.addEventListener('focus', () => {
-    window.test = 'test';
-});
-el.dispatchEvent(new Event('focus'));
-window.test === 'test' // 'test' string was assigned to the window.test property, because this event and function didn't match with searched values
-
+! Aborts script when it tries to access `navigator.language`
+example.org#%#//scriptlet("abort-on-property-read", "navigator.language")
 ```
 
-[scriptlet source](./src/scriptlets/prevent-addEventListener.js)
+[Scriptlet source](./src/scriptlets/abort-on-property-read.js)
 
-<br>
+### <a id="abort-on-property-write"></a> abort-on-property-write
 
-<a id="prevent-bab"></a>
-### prevent-bab
-
-Prevents BlockAdblock scripts execution on the set of predefined tokens.
+Aborts a script when it attempts to **write** the specified property.
 
 **Syntax**
 ```
-example.org#%#//scriptlet("prevent-bab")
+example.org#%#//scriptlet("abort-on-property-write", <property>)
 ```
+
+**Parameters**
+- `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
+
+**Examples**
+```
+! Aborts script when it tries to set `window.adblock` value
+example.org#%#//scriptlet("abort-on-property-read", "adblock")
+```
+
+[Scriptlet source](./src/scriptlets/abort-on-property-write.js)
+
+### <a id="abort-current-inline-script"></a> abort-current-inline-script
+
+Aborts an inline script when it attempts to **read** the specified property AND when the contents of the `<script>` element contains the specified text or matches the regular expression.
+
+**Syntax**
+```
+example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>])
+```
+
+**Parameters**
+- `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
+- `search` (optional) string or regular expression that must match the inline script contents. If not set, abort all inline scripts which are trying to access the specified property.
+
+**Examples**
+1. Aborts all inline scripts trying to access `window.alert`
+    ```
+    example.org#%#//scriptlet("abort-current-inline-script", "alert")
+    ```
+
+2. Aborts inline scripts which are trying to access `window.alert` and contain `Hello, world`.
+    ```
+    example.org#%#//scriptlet("abort-current-inline-script", "alert", "Hello, world")
+    ```
+
+    For instance, the following script will be aborted
+    ```html
+    <script>alert("Hello, world");</script>
+    ```
+
+3. Aborts inline scripts which are trying to access `window.alert` and match this regexp: `/Hello.+world/`.
+    ```
+    example.org#%#//scriptlet("abort-current-inline-script", "alert", "/Hello.+world/")
+    ```
+
+    For instance, the following scripts will be aborted:
+    ```html
+    <script>alert("Hello, big world");</script>
+    ```
+    ```html
+    <script>alert("Hello, little world");</script>
+    ```
+
+    This script will not be aborted:
+    ```html
+    <script>alert("Hi, little world");</script>
+    ```
+
+[scriptlet source](./src/scriptlets/abort-current-inline-script.js)
+
+### <a id="prevent-setTimeout"></a> prevent-setTimeout
+
+Prevents a `setTimeout` call if the text of the callback is matching the specified search string/regexp and (optionally) have the specified delay.
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-setTimeout"[, <search>[, <delay>]])
+```
+
+**Parameters**
+- `search` (optional) string or regular expression that must match the stringified callback . If not set, prevents all `setTimeout` calls.
+- `delay` (optional) must be an integer. If set, it matches the delay passed to the `setTimeout` call.
+
+**Examples**
+
+1. Prevents `setTimeout` calls if the callback contains `value` and the delay is set to `300`.
+    ```
+    example.org#%#//scriptlet("prevent-setTimeout", "value", "300")
+    ```
+
+    For instance, the followiing call will be prevented:
+    ```javascript
+    setTimeout(function () {
+        window.test = "value";
+    }, 300);
+    ```
+
+2. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.
+    ```
+    example.org#%#//scriptlet("prevent-setTimeout", "/\.test/")
+    ```
+
+    For instance, the followiing call will be prevented:
+    ```javascript
+    setTimeout(function () {
+        window.test = "value";
+    }, 100);
+    ```
+
+[scriptlet source](./src/scriptlets/prevent-setTimeout.js)
+
+### <a id="prevent-setInterval"></a> prevent-setInterval
+
+Prevents a `setInterval` call if the text of the callback is matching the specified search string/regexp and (optionally) have the specified interval.
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-setInterval"[, <search>[, <interval>]])
+```
+
+**Parameters**
+- `search` (optional) string or regular expression that must match the stringified callback . If not set, prevents all `setInterval` calls.
+- `interval` (optional) must be an integer. If set, it matches the interval passed to the `setInterval` call.
 
 **Example**
+
+1. Prevents `setInterval` calls if the callback contains `value` and the interval is set to `300`.
+    ```
+    example.org#%#//scriptlet("prevent-setInterval", "value", "300")
+    ```
+
+    For instance, the followiing call will be prevented:
+    ```javascript
+    setInterval(function () {
+        window.test = "value";
+    }, 300);
+    ```
+
+2. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the interval.
+    ```
+    example.org#%#//scriptlet("prevent-setInterval", "/\.test/")
+    ```
+
+    For instance, the followiing call will be prevented:
+    ```javascript
+    setInterval(function () {
+        window.test = "value";
+    }, 100);
+    ```
+
+[scriptlet source](./src/scriptlets/prevent-setInterval.js)
+
+### <a id="prevent-addEventListener"></a> prevent-addEventListener
+
+Prevents adding event listeners for the specified events and callbacks.
+
+**Syntax**
 ```
-example.org#%#//scriptlet("prevent-bab")
-
+example.org#%#//scriptlet("prevent-addEventListener"[, eventSearch[, functionSearch]])
 ```
 
-[scriptlet source](./src/scriptlets/prevent-bab.js)
+**Parameters**
+- `eventSearch` (optional) String or regex matching the event name. If not specified, the scriptlets prevents all event listeners.
+- `functionSearch` (optional) String or regex matching the event listener function body. If not set, the scriptlet prevents all event listeners with event name matching `eventSearch`.
 
-<br>
+**Examples**
+1. Prevent all `click` listeners:
+    ```
+    example.org#%#//scriptlet("prevent-addEventListener", "click")
+    ```
 
-<a id="nowebrtc"></a>
-### nowebrtc
+2. Prevent 'click' listeners with the callback body containing `searchString`.
+    ```
+    example.org#%#//scriptlet("prevent-addEventListener", "click", "searchString")
+    ```
 
-Disables WebRTC, overwriting RTCPeerConnection function. Overwritten function will log attempts to create new connections.
+    For instance, this listener will not be called:
+    ```javascript
+    el.addEventListener('click', () => {
+        window.test = 'searchString';
+    });
+    ```
+
+[scriptlet source](./src/scriptlets/prevent-addEventListener.js)
+
+### <a id="prevent-window-open"></a> prevent-window-open
+
+Prevents `window.open` calls when URL either matches or not matches the specified string/regexp. Using it without parameters prevents all `window.open` calls.
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
+```
+
+**Parameters**
+- `match` (optional) set to `Match` or `Not Match`.
+- `search` (optional) string or regexp for matching the URL passed to `window.open` call.
+
+**Example**
+
+1. Prevent all `window.open` calls:
+    ```
+    example.org#%#//scriptlet("prevent-window-open")
+    ```
+
+2. Prevent `window.open` for all URLs containing `example` string:
+    ```
+    example.org#%#//scriptlet("prevent-window-open", 'Match', 'example')
+    ```
+
+3. Prevent `window.open` for all URLs matching `/example\./`:
+    ```
+    example.org#%#//scriptlet("prevent-window-open", 1, "/example\./")
+    ```
+
+4. Prevent `window.open` for all URLs **NOT** containing `example`:
+    ```
+    example.org#%#//scriptlet("prevent-window-open", 0, "example")
+    ```
+
+[scriptlet source](./src/scriptlets/prevent-window-open.js)
+
+### <a id="nowebrtc"></a> nowebrtc
+
+Disables WebRTC by overriding `RTCPeerConnection`. The overriden function will log every attempt to create a new connection.
 
 **Syntax**
 ```
 example.org#%#//scriptlet("nowebrtc")
 ```
 
-**Example**
-```
-example.org#%#//scriptlet("prevent-bab")
-const localConnection = new RTCPeerConnection(); // will log to the console that was attempt to create RTCPerrConnection
-
-```
-
 [scriptlet source](./src/scriptlets/nowebrtc.js)
 
-<br>
+### <a id="prevent-bab"></a> prevent-bab
 
-<a id="prevent-setInterval"></a>
-### prevent-setInterval
-<br>
-Prevent calls to setInterval for specified matching in passed callback and delay by setting callback to empty function
+Prevents BlockAdblock script from detecting an ad bloccker.
 
 **Syntax**
 ```
-example.org#%#//scriptlet("prevent-setInterval"[, arg1[, arg2]])
+example.org#%#//scriptlet("prevent-bab")
 ```
 
-**Parameters**
-- `arg1`
+[scriptlet source](./src/scriptlets/prevent-bab.js)
 
-Optional. String or RegExp for matching in stringified callback function.<br>
-RegExp must start and end with `/` symbol, flags are not supported.
+## <a id="compatibility"></a> Sriptlets compatibility table
 
-- `arg2`
+|AdGuard | uBO | Adblock Plus |
+|--|--|--|
+| [abort-current-inline-script](#abort-current-inline-script) | abort-current-inline-script.js | abort-current-inline-script |
+| [abort-on-property-read](#abort-on-property-read) | abort-on-property-read.js | abort-on-property-read |
+| [abort-on-property-write](#abort-on-property-write) | abort-on-property-write.js | abort-on-property-write |
+| [prevent-addEventListener](#prevent-addEventListener) | addEventListener-defuser.js |  |
+|  | addEventListener-logger.js |  |
+|  | cookie-remover.js |  |
+|  | csp.js (deprecated) |  |
+|  | disable-newtab-links.js |  |
+|  | noeval.js |  |
+|  | silent-noeval.js |  |
+| [nowebrtc](#nowebrtc) | nowebrtc.js |  |
+|  | remove-attr.js |  |
+| [set-constant](#set-constant) | set-constant.js |  |
+| [prevent-setInterval](#prevent-setInterval) | setInterval-defuser.js |  |
+|  | setInterval-logger.js |  |
+| [prevent-setTimeout](#prevent-setTimeout) | setTimeout-defuser.js |  |
+|  | setTimeout-logger.js |  |
+|  | nano-setInterval-booster.js |  |
+|  | nano-setTimeout-booster.js |  |
+|  | sharedWorker-defuser.js (deprecated) |  |
+| [prevent-window-open](#prevent-window-open) | window.open-defuser.js |  |
+| [prevent-bab](#prevent-bab) | bab-defuser.js |  |
+|  | fuckadblock.js-3.2.0 |  |
+|  | popads-dummy.js |  |
+|  | popads.net.js |  |
+|  | adfly-defuser.js |  |
+|  | popads-dummy.js |  |
+|  |  | hide-if-contains-image |
+|  |  | hide-if-has-and-matches-style |
+|  |  | dir-string |
+|  |  | hide-if-contains-and-matches-style |
+|  |  | hide-if-contains |
+|  |  | hide-if-shadow-contains |
 
-Optional. Number to be matched for interval.
-
-**Example**
-```
-example.org#%#//scriptlet("prevent-setInterval", "value", 300)
-
-// the following setInterval will be prevented
-setInterval(function () {
-    window.test = "value";
-}, 300);
 
 
-// RegExp example
-example.org#%#//scriptlet("prevent-setInterval", "/\.test/", 100)
-
-// the following setInterval will be prevented
-setInterval(function () {
-    window.test = "value";
-}, 100);
-
-```
-
-[scriptlet source](./src/scriptlets/prevent-setInterval.js)
-
-<br>
-
-<a id="prevent-window-open"></a>
-### prevent-window-open
-<br>
-Prevent calls `window.open` when URL match or not match with passed to scriptlets param.
-
-**Syntax**
-```
-example.org#%#//scriptlet("prevent-window-open"[, arg1[, arg2]])
-```
-
-**Parameters**
-- `arg1`
-
-Optional. Set to `Match` or `Not Match` with passed string or RegExp in `arg2`.<br>
-Any positive number set it to `Match`, 0 or any string value set it to `Not Match`.<br>
-Default: `Match`.
-
-- `arg2`
-
-Optional. String or RegExp for matching with URL.<br>
-RegExp must start and end with `/` symbol, flags are not supported.
-
-**Example**
-
-In this case all `window.open` calls will be prevented
-```
-example.org#%#//scriptlet("prevent-window-open")
-```
-
-Simple example
-```
-example.org#%#//scriptlet("prevent-window-open", , 'example')
-
-window.open('http://example.org'); // prevented
-```
-
-RegExp and `Match` flag example
-```
-example.org#%#//scriptlet("prevent-window-open", 1, "/example\./")
-
-window.open('http://example.org'); // prevented
-```
-
-String and `Not Match` flag example
-```
-example.org#%#//scriptlet("prevent-window-open", 0, "example")
-
-window.open('http://test.org'); // prevented
-
-window.open('http://example.org'); // executed
-```
-
-[scriptlet source](./src/scriptlets/prevent-window-open.js)
-
----
-<br>
-
-### UBO Sriptlets compatibility table
-
-| UBO                               | AdGuard                       |
-|---                                |---                            |
-| abort-current-inline-script.js    | abort-current-inline-script   |
-| abort-on-property-read.js         | abort-on-property-read        |
-| abort-on-property-write.js        | abort-on-property-write       |
-| addEventListener-defuser.js       | prevent-addEventListener      |
-| addEventListener-logger.js        |                               |
-| cookie-remover.js                 |                               |
-| csp.js                            |                               |
-| disable-newtab-links.js           |                               |
-| noeval.js                         |                               |
-| silent-noeval.js                  |                               |
-| nowebrtc.js                       |                               |
-| remove-attr.js                    |                               |
-| set-constant.js                   | set-constant                  |
-| setInterval-defuser.js            | prevent-setInterval           |
-| setInterval-logger.js             |                               |
-| setTimeout-defuser.js             | prevent-setTimeout            |
-| setTimeout-logger.js              |                               |
-| nano-setInterval-booster.js       |                               |
-| nano-setTimeout-booster.js        |                               |
-| sharedWorker-defuser.js           |                               |
-| window.open-defuser.js            | prevent-window-open           |
-| bab-defuser.js                    | prevent-bab                   |
-
----
-<br>
-
-## Source build
+## <a id="how-to-build"></a> How to build
 
 Install dependencies
 ```
@@ -435,16 +415,15 @@ Run UI Unit testing
 yarn test
 ```
 
-### Output
+### Build output
 
-**Extension**
+#### Scriplets library
 
-After build will be generated `dist/scriptlets.js` file.
-<br>
-This file adds global variable `scriptlets`.
+`dist/scriptlets.js`
 
-API
-```
+Creates a global variable `scriptlets`.
+
+```javascript
 /**
 * Returns scriptlet code
 * 
@@ -454,9 +433,9 @@ API
 scriptlets.invoke(source)
 ```
 
-**Corelibs**
+#### Corelibs library
 
-After build will be generated `dist/scriptlets.corelibs.json`.
+`dist/scriptlets.corelibs.json`
 
 File example
 ```
