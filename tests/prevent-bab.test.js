@@ -37,7 +37,7 @@ test('ubo alias works', (assert) => {
 
     const evalWrap = eval;
 
-    evalWrap(`function test() { const temp = 'blockadblock'; window.${evalProp} = 'test';}`);
+    evalWrap(`(function test() { const temp = 'blockadblock'; window.${evalProp} = 'test';})()`);
 
     assert.strictEqual(window[evalProp], undefined);
     assert.strictEqual(window.hit, 'FIRED');
@@ -51,7 +51,7 @@ test('works eval with AdblockBlock', (assert) => {
 
     const evalWrap = eval;
 
-    evalWrap(`function test() { const temp = 'babasbm'; window.${evalProp} = 'test';}`);
+    evalWrap(`(function test() { const temp = 'babasbm'; window.${evalProp} = 'test';})()`);
 
     assert.strictEqual(window[evalProp], undefined);
     assert.strictEqual(window.hit, 'FIRED');
