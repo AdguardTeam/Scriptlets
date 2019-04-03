@@ -1,0 +1,34 @@
+{
+    "version": "1.0.0",
+    "scriptlets": [
+        {
+            "names": [
+                "log"
+            ],
+            "scriptlet": "function(source, args){\nfunction log() {\n  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {\n    args[_key] = arguments[_key];\n  }\n\n  console.log(args); // eslint-disable-line no-console\n}\nlog(source, args.join(','))\n}"
+        },
+        {
+            "names": [
+                "abort-on-property-read",
+                "ubo-abort-on-property-read.js",
+                "abp-abort-on-property-read"
+            ],
+            "scriptlet": "function(source, args){\nfunction abortOnPropertyRead(source, property) {\n  if (!property) {\n    return;\n  }\n\n  var rid = (0, _randomId.randomId)();\n\n  var abort = function abort() {\n    if (source.hit) {\n      source.hit();\n    }\n\n    throw new ReferenceError(rid);\n  };\n\n  var setChainPropAccess = function setChainPropAccess(owner, property) {\n    var chainInfo = (0, _getPropertyInChain.getPropertyInChain)(owner, property);\n    var base = chainInfo.base;\n    var prop = chainInfo.prop,\n        chain = chainInfo.chain;\n\n    if (chain) {\n      var setter = function setter(a) {\n        base = a;\n\n        if (a instanceof Object) {\n          setChainPropAccess(a, chain);\n        }\n      };\n\n      Object.defineProperty(owner, prop, {\n        get: function get() {\n          return base;\n        },\n        set: setter\n      });\n      return;\n    }\n\n    (0, _setPropertyAccess.setPropertyAccess)(base, prop, {\n      get: abort,\n      set: function set() {}\n    });\n  };\n\n  setChainPropAccess(window, property);\n}\nfunction randomId() {\n  return Math.random().toString(36).substr(2, 9);\n}\nfunction setPropertyAccess(object, property, descriptor) {\n  var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);\n\n  if (currentDescriptor && !currentDescriptor.configurable) {\n    return false;\n  }\n\n  Object.defineProperty(object, property, descriptor);\n  return true;\n}\nfunction getPropertyInChain(base, chain) {\n  var pos = chain.indexOf('.');\n\n  if (pos === -1) {\n    return {\n      base: base,\n      prop: chain\n    };\n  }\n\n  var prop = chain.slice(0, pos);\n  var own = base[prop];\n  chain = chain.slice(pos + 1);\n\n  if (own !== undefined) {\n    return getPropertyInChain(own, chain);\n  }\n\n  Object.defineProperty(base, prop, {\n    configurable: true\n  });\n  return {\n    base: own,\n    prop: prop,\n    chain: chain\n  };\n}\nabortOnPropertyRead(source, args.join(','))\n}"
+        },
+        {
+            "names": [
+                "abort-on-property-write",
+                "ubo-abort-on-property-write.js",
+                "abp-abort-on-property-write"
+            ],
+            "scriptlet": "function(source, args){\nfunction abortOnPropertyWrite(source, property) {\n  if (!property) {\n    return;\n  }\n\n  var rid = (0, _randomId.randomId)();\n\n  var abort = function abort() {\n    if (source.hit) {\n      source.hit();\n    }\n\n    throw new ReferenceError(rid);\n  };\n\n  var setChainPropAccess = function setChainPropAccess(owner, property) {\n    var chainInfo = (0, _getPropertyInChain.getPropertyInChain)(owner, property);\n    var base = chainInfo.base;\n    var prop = chainInfo.prop,\n        chain = chainInfo.chain;\n\n    if (chain) {\n      var setter = function setter(a) {\n        base = a;\n\n        if (a instanceof Object) {\n          setChainPropAccess(a, chain);\n        }\n      };\n\n      Object.defineProperty(owner, prop, {\n        get: function get() {\n          return base;\n        },\n        set: setter\n      });\n      return;\n    }\n\n    (0, _setPropertyAccess.setPropertyAccess)(base, prop, {\n      set: abort\n    });\n  };\n\n  setChainPropAccess(window, property);\n}\nfunction randomId() {\n  return Math.random().toString(36).substr(2, 9);\n}\nfunction setPropertyAccess(object, property, descriptor) {\n  var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);\n\n  if (currentDescriptor && !currentDescriptor.configurable) {\n    return false;\n  }\n\n  Object.defineProperty(object, property, descriptor);\n  return true;\n}\nfunction getPropertyInChain(base, chain) {\n  var pos = chain.indexOf('.');\n\n  if (pos === -1) {\n    return {\n      base: base,\n      prop: chain\n    };\n  }\n\n  var prop = chain.slice(0, pos);\n  var own = base[prop];\n  chain = chain.slice(pos + 1);\n\n  if (own !== undefined) {\n    return getPropertyInChain(own, chain);\n  }\n\n  Object.defineProperty(base, prop, {\n    configurable: true\n  });\n  return {\n    base: own,\n    prop: prop,\n    chain: chain\n  };\n}\nabortOnPropertyWrite(source, args.join(','))\n}"
+        },
+        {
+            "names": [
+                "prevent-setTimeout",
+                "ubo-setTimeout-defuser.js"
+            ],
+            "scriptlet": "function(source, args){\nfunction setTimeoutDefuser(source, match, delay) {\n  var hit = source.hit ? new Function(source.hit) : function () {};\n  var nativeTimeout = window.setTimeout;\n  delay = parseInt(delay, 10);\n  delay = Number.isNaN(delay) ? null : delay;\n  match = match ? (0, _stringUtils.toRegExp)(match) : (0, _stringUtils.toRegExp)('/.?/');\n\n  var timeoutWrapper = function timeoutWrapper(cb, d) {\n    if ((!delay || d === delay) && match.test(cb.toString())) {\n      hit();\n      return nativeTimeout(function () {}, d);\n    }\n\n    for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {\n      args[_key - 2] = arguments[_key];\n    }\n\n    return nativeTimeout.apply(window, [cb, d].concat(args));\n  };\n\n  window.setTimeout = timeoutWrapper;\n}\nfunction toRegExp(str) {\n  if (str[0] === '/' && str[str.length - 1] === '/') {\n    return new RegExp(str.slice(1, -1));\n  }\n\n  var escaped = str.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\n  return new RegExp(escaped);\n}\nsetTimeoutDefuser(source, args.join(','))\n}"
+        }
+    ]
+}
