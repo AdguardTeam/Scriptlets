@@ -52,14 +52,15 @@ export function abortCurrentInlineScript(source, property, search = null) {
             return;
         }
 
+        let currentValue = base[prop];
         setPropertyAccess(base, prop, {
             set: (value) => {
                 abort();
-                base = value;
+                currentValue = value;
             },
             get: () => {
                 abort();
-                return base;
+                return currentValue;
             },
         });
     };
