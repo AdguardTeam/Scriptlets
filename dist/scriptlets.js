@@ -680,15 +680,20 @@
     }
     nowebrtc.names = ['nowebrtc', 'ubo-nowebrtc.js'];
 
-    /* eslint-disable no-new-func */
+    /* eslint-disable no-new-func, no-console */
+
+    /**
+     * Logs add event listener calls
+     *
+     * @param {Source} source
+     */
     function logAddEventListener(source) {
       var hit = source.hit ? new Function(source.hit) : function () {};
-      var nativeConsole = console;
-      var nativeLog = nativeConsole.log;
+      var log = console.log.bind(console);
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
       function addEventListenerWrapper(eventName, callback) {
-        nativeLog.call(nativeConsole, "addEventListener(\"".concat(eventName, "\", ").concat(callback.toString(), ")"));
+        log("addEventListener(\"".concat(eventName, "\", ").concat(callback.toString(), ")"));
         hit();
 
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
@@ -701,6 +706,33 @@
       window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
     }
     logAddEventListener.names = ['log-addEventListener', 'addEventListener-logger.js'];
+
+    /* eslint-disable no-new-func, no-console */
+
+    /**
+     * Logs setInterval calls
+     *
+     * @param {Source} source
+     */
+    function logSetInterval(source) {
+      var hit = source.hit ? new Function(source.hit) : function () {};
+      var nativeSetInterval = window.setInterval;
+      var log = console.log.bind(console);
+
+      function setIntervalWrapper(callback, timeout) {
+        hit();
+        log("setInterval(\"".concat(callback.toString(), "\", ").concat(timeout, ")"));
+
+        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+          args[_key - 2] = arguments[_key];
+        }
+
+        return nativeSetInterval.apply(window, [callback, timeout].concat(args));
+      }
+
+      window.setInterval = setIntervalWrapper;
+    }
+    logSetInterval.names = ['log-setInterval', 'setInterval-logger.js'];
 
     /**
      * This file must export all scriptlets which should be accessible
@@ -718,7 +750,8 @@
         preventAddEventListener: preventAddEventListener,
         preventBab: preventBab,
         nowebrtc: nowebrtc,
-        logAddEventListener: logAddEventListener
+        logAddEventListener: logAddEventListener,
+        logSetInterval: logSetInterval
     });
 
     /**
