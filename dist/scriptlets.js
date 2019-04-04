@@ -734,6 +734,33 @@
     }
     logSetInterval.names = ['log-setInterval', 'setInterval-logger.js'];
 
+    /* eslint-disable no-new-func, no-console */
+
+    /**
+     * Logs setTimeout calls
+     *
+     * @param {Source} source
+     */
+    function logSetTimeout(source) {
+      var hit = source.hit ? new Function(source.hit) : function () {};
+      var nativeSetTimeout = window.setTimeout;
+      var log = console.log.bind(console);
+
+      function setTimeoutWrapper(callback, timeout) {
+        hit();
+        log("setTimeout(\"".concat(callback.toString(), "\", ").concat(timeout, ")"));
+
+        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+          args[_key - 2] = arguments[_key];
+        }
+
+        return nativeSetTimeout.apply(window, [callback, timeout].concat(args));
+      }
+
+      window.setTimeout = setTimeoutWrapper;
+    }
+    logSetTimeout.names = ['log-setTimeout', 'setTimeout-logger.js'];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -751,7 +778,8 @@
         preventBab: preventBab,
         nowebrtc: nowebrtc,
         logAddEventListener: logAddEventListener,
-        logSetInterval: logSetInterval
+        logSetInterval: logSetInterval,
+        logSetTimeout: logSetTimeout
     });
 
     /**
