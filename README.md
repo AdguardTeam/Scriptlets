@@ -14,6 +14,7 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [prevent-window-open](#prevent-window-open)
     * [nowebrtc](#nowebrtc)
     * [prevent-bab](#prevent-bab)
+    * [log-addEventListener](#log-addEventListener)
 * [Scriptlets compatibility table](#compatibility)
 * [How to build](#how-to-build)
 
@@ -339,7 +340,7 @@ example.org#%#//scriptlet("nowebrtc")
 
 ### <a id="prevent-bab"></a> prevent-bab
 
-Prevents BlockAdblock script from detecting an ad bloccker.
+Prevents BlockAdblock script from detecting an ad blocker.
 
 **Syntax**
 ```
@@ -347,6 +348,17 @@ example.org#%#//scriptlet("prevent-bab")
 ```
 
 [scriptlet source](./src/scriptlets/prevent-bab.js)
+
+### <a id="log-addEventListener"></a> log-addEventListener
+
+Logs calls to the addEventListener function
+
+**Syntax**
+```
+example.org#%#//scriptlet("log-addEventListener")
+```
+
+[scriptlet source](./src/scriptlets/log-addEventListener.js)
 
 ## <a id="compatibility"></a> Sriptlets compatibility table
 
@@ -356,7 +368,7 @@ example.org#%#//scriptlet("prevent-bab")
 | [abort-on-property-read](#abort-on-property-read) | abort-on-property-read.js | abort-on-property-read |
 | [abort-on-property-write](#abort-on-property-write) | abort-on-property-write.js | abort-on-property-write |
 | [prevent-addEventListener](#prevent-addEventListener) | addEventListener-defuser.js |  |
-|  | addEventListener-logger.js |  |
+| [log-addEventListener](#log-addEventListener) | addEventListener-logger.js |  |
 |  | cookie-remover.js |  |
 |  | csp.js (deprecated) |  |
 |  | disable-newtab-links.js |  |

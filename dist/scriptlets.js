@@ -680,6 +680,28 @@
     }
     nowebrtc.names = ['nowebrtc', 'ubo-nowebrtc.js'];
 
+    /* eslint-disable no-new-func */
+    function logAddEventListener(source) {
+      var hit = source.hit ? new Function(source.hit) : function () {};
+      var nativeConsole = console;
+      var nativeLog = nativeConsole.log;
+      var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+
+      function addEventListenerWrapper(eventName, callback) {
+        nativeLog.call(nativeConsole, "addEventListener(\"".concat(eventName, "\", ").concat(callback.toString(), ")"));
+        hit();
+
+        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+          args[_key - 2] = arguments[_key];
+        }
+
+        return nativeAddEventListener.apply(this, [eventName, callback].concat(args));
+      }
+
+      window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
+    }
+    logAddEventListener.names = ['log-addEventListener', 'addEventListener-logger.js'];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -695,7 +717,8 @@
         setConstant: setConstant,
         preventAddEventListener: preventAddEventListener,
         preventBab: preventBab,
-        nowebrtc: nowebrtc
+        nowebrtc: nowebrtc,
+        logAddEventListener: logAddEventListener
     });
 
     /**

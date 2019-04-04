@@ -12,3 +12,4 @@ export * from './set-constant';
 export * from './prevent-addEventListener';
 export * from './prevent-bab';
 export * from './nowebrtc';
+export * from './log-addEventListener';
