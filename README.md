@@ -15,6 +15,8 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [nowebrtc](#nowebrtc)
     * [prevent-bab](#prevent-bab)
     * [log-addEventListener](#log-addEventListener)
+    * [log-setInterval](#log-setInterval)
+    * [log-setTimeout](#log-setTimeout)
 * [Scriptlets compatibility table](#compatibility)
 * [How to build](#how-to-build)
 
@@ -351,7 +353,7 @@ example.org#%#//scriptlet("prevent-bab")
 
 ### <a id="log-addEventListener"></a> log-addEventListener
 
-Logs calls to the addEventListener function
+Logs in console calls to the addEventListener
 
 **Syntax**
 ```
@@ -359,6 +361,28 @@ example.org#%#//scriptlet("log-addEventListener")
 ```
 
 [scriptlet source](./src/scriptlets/log-addEventListener.js)
+
+### <a id="log-setInterval"></a> log-setInterval
+
+Logs in console calls to setInterval
+
+**Syntax**
+```
+example.org#%#//scriptlet("log-setInterval")
+```
+
+[scriptlet source](./src/scriptlets/log-setInterval.js)
+
+### <a id="log-setTimeout"></a> log-setTimeout
+
+Logs in console calls to setTimeout
+
+**Syntax**
+```
+example.org#%#//scriptlet("log-setTimeout")
+```
+
+[scriptlet source](./src/scriptlets/log-setTimeout.js)
 
 ## <a id="compatibility"></a> Sriptlets compatibility table
 
@@ -379,9 +403,9 @@ example.org#%#//scriptlet("log-addEventListener")
 |  | remove-attr.js |  |
 | [set-constant](#set-constant) | set-constant.js |  |
 | [prevent-setInterval](#prevent-setInterval) | setInterval-defuser.js |  |
-|  | setInterval-logger.js |  |
+| [log-setInterval](#log-setInterval) | setInterval-logger.js |  |
 | [prevent-setTimeout](#prevent-setTimeout) | setTimeout-defuser.js |  |
-|  | setTimeout-logger.js |  |
+| [log-setTimeout](#log-setInterval) | setTimeout-logger.js |  |
 |  | nano-setInterval-booster.js |  |
 |  | nano-setTimeout-booster.js |  |
 |  | sharedWorker-defuser.js (deprecated) |  |
