@@ -761,6 +761,46 @@
     }
     logSetTimeout.names = ['log-setTimeout', 'setTimeout-logger.js'];
 
+    /* eslint-disable no-new-func, no-console, no-eval */
+
+    /**
+     * Logs all eval() and Function() calls
+     *
+     * @param {Source} source
+     */
+    function logEval(source) {
+      var hit = source.hit ? new Function(source.hit) : function () {};
+      var log = console.log.bind(console); // wrap eval function
+
+      var nativeEval = window.eval;
+
+      function evalWrapper(str) {
+        hit();
+        log("eval(\"".concat(str, "\")"));
+        return nativeEval(str);
+      }
+
+      window.eval = evalWrapper; // wrap new Function
+
+      var nativeFunction = window.Function;
+
+      function FunctionWrapper() {
+        hit();
+
+        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        log("new Function(".concat(args.join(', '), ")"));
+        return nativeFunction.apply(this, [].concat(args));
+      }
+
+      FunctionWrapper.prototype = Object.create(nativeFunction.prototype);
+      FunctionWrapper.prototype.constructor = FunctionWrapper;
+      window.Function = FunctionWrapper;
+    }
+    logEval.names = ['log-eval'];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -779,7 +819,8 @@
         nowebrtc: nowebrtc,
         logAddEventListener: logAddEventListener,
         logSetInterval: logSetInterval,
-        logSetTimeout: logSetTimeout
+        logSetTimeout: logSetTimeout,
+        logEval: logEval
     });
 
     /**

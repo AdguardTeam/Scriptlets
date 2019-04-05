@@ -17,6 +17,7 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [log-addEventListener](#log-addEventListener)
     * [log-setInterval](#log-setInterval)
     * [log-setTimeout](#log-setTimeout)
+    * [log-eval](#log-eval)
 * [Scriptlets compatibility table](#compatibility)
 * [How to build](#how-to-build)
 
@@ -384,6 +385,17 @@ example.org#%#//scriptlet("log-setTimeout")
 
 [scriptlet source](./src/scriptlets/log-setTimeout.js)
 
+### <a id="log-eval"></a> log-eval
+
+Logs in console calls to `eval()` or `new Function()`
+
+**Syntax**
+```
+example.org#%#//scriptlet("log-eval")
+```
+
+[scriptlet source](./src/scriptlets/log-eval.js)
+
 ## <a id="compatibility"></a> Sriptlets compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -421,6 +433,7 @@ example.org#%#//scriptlet("log-setTimeout")
 |  |  | hide-if-contains-and-matches-style |
 |  |  | hide-if-contains |
 |  |  | hide-if-shadow-contains |
+| [log-eval](#log-eval) |  | |
 
 
 

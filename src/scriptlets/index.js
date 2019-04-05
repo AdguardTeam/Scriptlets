@@ -15,3 +15,4 @@ export * from './nowebrtc';
 export * from './log-addEventListener';
 export * from './log-setInterval';
 export * from './log-setTimeout';
+export * from './log-eval';
