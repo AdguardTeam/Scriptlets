@@ -1,4 +1,5 @@
-/* eslint-disable no-new-func, no-console */
+/* eslint-disable no-console */
+import { stringToFunc } from '../helpers';
 
 /**
  * Logs setInterval calls
@@ -6,9 +7,7 @@
  * @param {Source} source
  */
 export function logSetInterval(source) {
-    const hit = source.hit
-        ? new Function(source.hit)
-        : () => {};
+    const hit = stringToFunc(source.hit);
     const nativeSetInterval = window.setInterval;
     const log = console.log.bind(console);
     function setIntervalWrapper(callback, timeout, ...args) {
@@ -23,3 +22,5 @@ logSetInterval.names = [
     'log-setInterval',
     'setInterval-logger.js',
 ];
+
+logSetInterval.injections = [stringToFunc];

@@ -1,4 +1,5 @@
-/* eslint-disable no-new-func, no-console, no-eval */
+/* eslint-disable no-console, no-eval */
+import { stringToFunc } from '../helpers';
 
 /**
  * Logs all eval() and Function() calls
@@ -6,9 +7,7 @@
  * @param {Source} source
  */
 export function logEval(source) {
-    const hit = source.hit
-        ? new Function(source.hit)
-        : () => {};
+    const hit = stringToFunc(source.hit);
 
     const log = console.log.bind(console);
 
@@ -39,3 +38,5 @@ export function logEval(source) {
 logEval.names = [
     'log-eval',
 ];
+
+logEval.injections = [stringToFunc];

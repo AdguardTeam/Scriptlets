@@ -98,6 +98,16 @@
       var escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       return new RegExp(escaped);
     };
+    /**
+     * Converts string to function
+     * @param {string} str string should be turned into function
+     */
+    // eslint-disable-next-line arrow-body-style
+
+    var stringToFunc = function stringToFunc(str) {
+      return str // eslint-disable-next-line no-new-func
+      ? new Function(str) : function () {};
+    };
 
     /**
      * This file must export all used dependencies
@@ -108,7 +118,8 @@
         setPropertyAccess: setPropertyAccess,
         getPropertyInChain: getPropertyInChain,
         escapeRegExp: escapeRegExp,
-        toRegExp: toRegExp
+        toRegExp: toRegExp,
+        stringToFunc: stringToFunc
     });
 
     /**
@@ -680,15 +691,15 @@
     }
     nowebrtc.names = ['nowebrtc', 'ubo-nowebrtc.js'];
 
-    /* eslint-disable no-new-func, no-console */
-
+    /* eslint-disable no-console */
     /**
      * Logs add event listener calls
      *
      * @param {Source} source
      */
+
     function logAddEventListener(source) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var log = console.log.bind(console);
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
@@ -706,16 +717,17 @@
       window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
     }
     logAddEventListener.names = ['log-addEventListener', 'addEventListener-logger.js'];
+    logAddEventListener.injections = [stringToFunc];
 
-    /* eslint-disable no-new-func, no-console */
-
+    /* eslint-disable no-console */
     /**
      * Logs setInterval calls
      *
      * @param {Source} source
      */
+
     function logSetInterval(source) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var nativeSetInterval = window.setInterval;
       var log = console.log.bind(console);
 
@@ -733,16 +745,17 @@
       window.setInterval = setIntervalWrapper;
     }
     logSetInterval.names = ['log-setInterval', 'setInterval-logger.js'];
+    logSetInterval.injections = [stringToFunc];
 
-    /* eslint-disable no-new-func, no-console */
-
+    /* eslint-disable no-console */
     /**
      * Logs setTimeout calls
      *
      * @param {Source} source
      */
+
     function logSetTimeout(source) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var nativeSetTimeout = window.setTimeout;
       var log = console.log.bind(console);
 
@@ -760,16 +773,17 @@
       window.setTimeout = setTimeoutWrapper;
     }
     logSetTimeout.names = ['log-setTimeout', 'setTimeout-logger.js'];
+    logSetTimeout.injections = [stringToFunc];
 
-    /* eslint-disable no-new-func, no-console, no-eval */
-
+    /* eslint-disable no-console, no-eval */
     /**
      * Logs all eval() and Function() calls
      *
      * @param {Source} source
      */
+
     function logEval(source) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var log = console.log.bind(console); // wrap eval function
 
       var nativeEval = window.eval;
@@ -800,6 +814,7 @@
       window.Function = FunctionWrapper;
     }
     logEval.names = ['log-eval'];
+    logEval.injections = [stringToFunc];
 
     /**
      * This file must export all scriptlets which should be accessible
