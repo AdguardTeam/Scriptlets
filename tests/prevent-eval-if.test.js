@@ -6,7 +6,6 @@ const name = 'prevent-eval-if';
 module(name);
 
 const nativeEval = window.eval;
-const nativeConsole = console.log;
 
 const hit = () => {
     window.hit = 'FIRED';
@@ -31,7 +30,6 @@ const clearProperties = (...props) => {
 testDone(() => {
     clearProperties('hit');
     window.eval = nativeEval;
-    console.log = nativeConsole;
 });
 
 test('ubo noeval-if.js alias', (assert) => {
