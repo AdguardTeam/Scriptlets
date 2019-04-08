@@ -14,6 +14,7 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [prevent-window-open](#prevent-window-open)
     * [nowebrtc](#nowebrtc)
     * [prevent-bab](#prevent-bab)
+    * [noeval](#noeval)
 * [Scriptlets compatibility table](#compatibility)
 * [How to build](#how-to-build)
 
@@ -348,6 +349,17 @@ example.org#%#//scriptlet("prevent-bab")
 
 [scriptlet source](./src/scriptlets/prevent-bab.js)
 
+### <a id="noeval"></a> noeval
+
+Prevents executing eval on the page.
+
+**Syntax**
+```
+example.org#%#//scriptlet("noeval")
+```
+
+[scriptlet source](./src/scriptlets/noeval.js)
+
 ## <a id="compatibility"></a> Sriptlets compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -360,8 +372,8 @@ example.org#%#//scriptlet("prevent-bab")
 |  | cookie-remover.js |  |
 |  | csp.js (deprecated) |  |
 |  | disable-newtab-links.js |  |
-|  | noeval.js |  |
-|  | silent-noeval.js |  |
+| [noeval](#noeval) | noeval.js |  |
+| [noeval](#noeval) | silent-noeval.js |  |
 |  | noeval-if.js |  |
 | [nowebrtc](#nowebrtc) | nowebrtc.js |  |
 |  | remove-attr.js |  |

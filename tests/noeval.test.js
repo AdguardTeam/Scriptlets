@@ -1,5 +1,5 @@
 /* global QUnit */
-/* eslint-disable no-eval */
+/* eslint-disable no-eval, no-console */
 const { test, module, testDone } = QUnit;
 const name = 'noeval';
 
