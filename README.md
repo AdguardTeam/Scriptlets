@@ -360,6 +360,32 @@ example.org#%#//scriptlet("noeval")
 
 [scriptlet source](./src/scriptlets/noeval.js)
 
+### <a id="prevent-eval-if"></a> prevent-eval-if
+
+Prevents page to use eval matching payload
+
+**Syntax**
+```
+example.org#%#//scriptlet('prevent-eval-if'[, <search>])
+```
+
+**Parameters**
+- `search` (optional) string or regexp for matching the payload
+
+**Examples**
+
+1. Prevent all eval calls
+    ```
+    example.org#%#//scriptlet('prevent-eval-if')
+    ```
+
+2. Prevent eval call with payload containing 'test'
+    ```
+    example.org#%#//scriptlet('prevent-eval-if', 'test')
+    ```
+
+[scriptlet source](./src/scriptlets/prevent-eval-if.js)
+
 ## <a id="compatibility"></a> Sriptlets compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -374,7 +400,7 @@ example.org#%#//scriptlet("noeval")
 |  | disable-newtab-links.js |  |
 | [noeval](#noeval) | noeval.js |  |
 | [noeval](#noeval) | silent-noeval.js |  |
-|  | noeval-if.js |  |
+| [prevent-eval-if](#prevent-eval-if) | noeval-if.js |  |
 | [nowebrtc](#nowebrtc) | nowebrtc.js |  |
 |  | remove-attr.js |  |
 | [set-constant](#set-constant) | set-constant.js |  |

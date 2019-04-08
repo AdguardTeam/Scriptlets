@@ -697,6 +697,30 @@
     }
     noeval.names = ['noeval.js', 'silent-noeval.js', 'noeval'];
 
+    /* eslint-disable no-new-func, no-eval, no-extra-bind, func-names */
+    /**
+     * Prevents page to use eval matching payload
+     * @param {Source} source
+     * @param {string|RegExp} [search] string or regexp matching stringified eval payload
+     */
+
+    function preventEvalIf(source, search) {
+      var hit = source.hit ? new Function(source.hit) : function () {};
+      search = search ? toRegExp(search) : toRegExp('/.?/');
+      var nativeEval = window.eval;
+
+      window.eval = function (payload) {
+        if (!search.test(payload.toString())) {
+          return nativeEval.call(window, payload);
+        }
+
+        hit();
+        return undefined;
+      }.bind(window);
+    }
+    preventEvalIf.names = ['noeval-if.js', 'prevent-eval-if'];
+    preventEvalIf.injections = [toRegExp];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -713,7 +737,8 @@
         preventAddEventListener: preventAddEventListener,
         preventBab: preventBab,
         nowebrtc: nowebrtc,
-        noeval: noeval
+        noeval: noeval,
+        preventEvalIf: preventEvalIf
     });
 
     /**

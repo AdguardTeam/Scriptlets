@@ -10,3 +10,4 @@ import * as preventAddEventListener from './prevent-addEventListener.test';
 import * as preventBab from './prevent-bab.test';
 import * as nowebrtc from './nowebrtc.test';
 import * as noeval from './noeval.test';
+import * as preventEvalIf from './prevent-eval-if.test';
