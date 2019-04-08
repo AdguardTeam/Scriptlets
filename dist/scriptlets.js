@@ -680,6 +680,23 @@
     }
     nowebrtc.names = ['nowebrtc', 'ubo-nowebrtc.js'];
 
+    /* eslint-disable no-new-func, no-eval, no-extra-bind, no-console, func-names */
+
+    /**
+     * Prevents page to use eval.
+     * Notifies about attempts in the console
+     * @param {Source} source
+     */
+    function noeval(source) {
+      var hit = source.hit ? new Function(source.hit) : function () {};
+
+      window.eval = function (s) {
+        hit();
+        console.log("AG: Document tried to eval... \n".concat(s));
+      }.bind(window);
+    }
+    noeval.names = ['noeval.js', 'silent-noeval.js', 'noeval'];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -695,7 +712,8 @@
         setConstant: setConstant,
         preventAddEventListener: preventAddEventListener,
         preventBab: preventBab,
-        nowebrtc: nowebrtc
+        nowebrtc: nowebrtc,
+        noeval: noeval
     });
 
     /**
