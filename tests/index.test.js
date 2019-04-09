@@ -9,3 +9,7 @@ import * as setConstant from './set-constant.test';
 import * as preventAddEventListener from './prevent-addEventListener.test';
 import * as preventBab from './prevent-bab.test';
 import * as nowebrtc from './nowebrtc.test';
+import * as logAddEventListener from './log-addEventListener.test';
+import * as logSetInterval from './log-setInterval.test';
+import * as logSetTimeout from './log-setTimeout.test';
+import * as logEval from './log-eval.test';

@@ -14,6 +14,10 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [prevent-window-open](#prevent-window-open)
     * [nowebrtc](#nowebrtc)
     * [prevent-bab](#prevent-bab)
+    * [log-addEventListener](#log-addEventListener)
+    * [log-setInterval](#log-setInterval)
+    * [log-setTimeout](#log-setTimeout)
+    * [log-eval](#log-eval)
 * [Scriptlets compatibility table](#compatibility)
 * [How to build](#how-to-build)
 
@@ -339,7 +343,7 @@ example.org#%#//scriptlet("nowebrtc")
 
 ### <a id="prevent-bab"></a> prevent-bab
 
-Prevents BlockAdblock script from detecting an ad bloccker.
+Prevents BlockAdblock script from detecting an ad blocker.
 
 **Syntax**
 ```
@@ -347,6 +351,50 @@ example.org#%#//scriptlet("prevent-bab")
 ```
 
 [scriptlet source](./src/scriptlets/prevent-bab.js)
+
+### <a id="log-addEventListener"></a> log-addEventListener
+
+Logs all addEventListener calls to the console
+
+**Syntax**
+```
+example.org#%#//scriptlet("log-addEventListener")
+```
+
+[scriptlet source](./src/scriptlets/log-addEventListener.js)
+
+### <a id="log-setInterval"></a> log-setInterval
+
+Logs all setInterval calls to the console
+
+**Syntax**
+```
+example.org#%#//scriptlet("log-setInterval")
+```
+
+[scriptlet source](./src/scriptlets/log-setInterval.js)
+
+### <a id="log-setTimeout"></a> log-setTimeout
+
+Logs all setTimeout call to the console
+
+**Syntax**
+```
+example.org#%#//scriptlet("log-setTimeout")
+```
+
+[scriptlet source](./src/scriptlets/log-setTimeout.js)
+
+### <a id="log-eval"></a> log-eval
+
+Logs all `eval()` or `new Function()` calls to the console
+
+**Syntax**
+```
+example.org#%#//scriptlet("log-eval")
+```
+
+[scriptlet source](./src/scriptlets/log-eval.js)
 
 ## <a id="compatibility"></a> Sriptlets compatibility table
 
@@ -356,7 +404,7 @@ example.org#%#//scriptlet("prevent-bab")
 | [abort-on-property-read](#abort-on-property-read) | abort-on-property-read.js | abort-on-property-read |
 | [abort-on-property-write](#abort-on-property-write) | abort-on-property-write.js | abort-on-property-write |
 | [prevent-addEventListener](#prevent-addEventListener) | addEventListener-defuser.js |  |
-|  | addEventListener-logger.js |  |
+| [log-addEventListener](#log-addEventListener) | addEventListener-logger.js |  |
 |  | cookie-remover.js |  |
 |  | csp.js (deprecated) |  |
 |  | disable-newtab-links.js |  |
@@ -367,9 +415,9 @@ example.org#%#//scriptlet("prevent-bab")
 |  | remove-attr.js |  |
 | [set-constant](#set-constant) | set-constant.js |  |
 | [prevent-setInterval](#prevent-setInterval) | setInterval-defuser.js |  |
-|  | setInterval-logger.js |  |
+| [log-setInterval](#log-setInterval) | setInterval-logger.js |  |
 | [prevent-setTimeout](#prevent-setTimeout) | setTimeout-defuser.js |  |
-|  | setTimeout-logger.js |  |
+| [log-setTimeout](#log-setInterval) | setTimeout-logger.js |  |
 |  | nano-setInterval-booster.js |  |
 |  | nano-setTimeout-booster.js |  |
 |  | sharedWorker-defuser.js (deprecated) |  |
@@ -385,6 +433,7 @@ example.org#%#//scriptlet("prevent-bab")
 |  |  | hide-if-contains-and-matches-style |
 |  |  | hide-if-contains |
 |  |  | hide-if-shadow-contains |
+| [log-eval](#log-eval) |  | |
 
 
 
