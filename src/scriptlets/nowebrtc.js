@@ -1,4 +1,5 @@
-/* eslint-disable no-new-func, no-unused-vars, no-extra-bind, no-console, func-names */
+/* eslint-disable no-unused-vars, no-extra-bind, no-console, func-names */
+import { stringToFunc } from '../helpers';
 
 /**
  * Disables WebRTC via blocking calls to the RTCPeerConnection()
@@ -6,9 +7,7 @@
  * @param {Source} source
  */
 export function nowebrtc(source) {
-    const hit = source.hit
-        ? new Function(source.hit)
-        : () => {};
+    const hit = stringToFunc(source.hit);
 
     let propertyName = '';
     if (window.RTCPeerConnection) {
@@ -49,3 +48,5 @@ nowebrtc.names = [
     'nowebrtc',
     'ubo-nowebrtc.js',
 ];
+
+nowebrtc.injections = [stringToFunc];

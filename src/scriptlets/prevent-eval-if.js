@@ -1,6 +1,6 @@
-/* eslint-disable no-new-func, no-eval, no-extra-bind, func-names */
+/* eslint-disable no-eval, no-extra-bind, func-names */
 
-import { toRegExp } from '../helpers';
+import { toRegExp, stringToFunc } from '../helpers';
 
 /**
  * Prevents page to use eval matching payload
@@ -8,9 +8,7 @@ import { toRegExp } from '../helpers';
  * @param {string|RegExp} [search] string or regexp matching stringified eval payload
  */
 export function preventEvalIf(source, search) {
-    const hit = source.hit
-        ? new Function(source.hit)
-        : () => {};
+    const hit = stringToFunc(source.hit);
 
     search = search ? toRegExp(search) : toRegExp('/.?/');
 
@@ -29,4 +27,4 @@ preventEvalIf.names = [
     'prevent-eval-if',
 ];
 
-preventEvalIf.injections = [toRegExp];
+preventEvalIf.injections = [toRegExp, stringToFunc];

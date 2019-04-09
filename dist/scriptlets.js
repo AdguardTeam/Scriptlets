@@ -135,7 +135,6 @@
     }
     log.names = ['log'];
 
-    /* eslint-disable no-new-func */
     /**
      * Abort property reading even if it doesn't exist in execution moment
      *
@@ -148,7 +147,7 @@
         return;
       }
 
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var rid = randomId();
 
       var abort = function abort() {
@@ -189,9 +188,8 @@
       setChainPropAccess(window, property);
     }
     abortOnPropertyRead.names = ['abort-on-property-read', 'ubo-abort-on-property-read.js', 'abp-abort-on-property-read'];
-    abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain];
+    abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, stringToFunc];
 
-    /* eslint-disable no-new-func */
     /**
      * Abort property writing
      *
@@ -204,7 +202,7 @@
         return;
       }
 
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var rid = randomId();
 
       var abort = function abort() {
@@ -244,7 +242,7 @@
       setChainPropAccess(window, property);
     }
     abortOnPropertyWrite.names = ['abort-on-property-write', 'ubo-abort-on-property-write.js', 'abp-abort-on-property-write'];
-    abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain];
+    abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, stringToFunc];
 
     /* eslint-disable no-new-func */
     /**
@@ -257,7 +255,7 @@
      */
 
     function preventSetTimeout(source, match, delay) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var nativeTimeout = window.setTimeout;
       delay = parseInt(delay, 10);
       delay = Number.isNaN(delay) ? null : delay;
@@ -279,7 +277,7 @@
       window.setTimeout = timeoutWrapper;
     }
     preventSetTimeout.names = ['prevent-setTimeout', 'ubo-setTimeout-defuser.js'];
-    preventSetTimeout.injections = [toRegExp];
+    preventSetTimeout.injections = [toRegExp, stringToFunc];
 
     /* eslint-disable no-new-func */
     /**
@@ -292,7 +290,7 @@
      */
 
     function preventSetInterval(source, match, interval) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var nativeInterval = window.setInterval;
       interval = parseInt(interval, 10);
       interval = Number.isNaN(interval) ? null : interval;
@@ -314,7 +312,7 @@
       window.setInterval = intervalWrapper;
     }
     preventSetInterval.names = ['prevent-setInterval', 'ubo-setInterval-defuser.js'];
-    preventSetInterval.injections = [toRegExp];
+    preventSetInterval.injections = [toRegExp, stringToFunc];
 
     /* eslint-disable no-new-func */
     /**
@@ -328,7 +326,7 @@
       var inverse = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
       var match = arguments.length > 2 ? arguments[2] : undefined;
       var nativeOpen = window.open;
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       inverse = inverse ? !+inverse : inverse;
       match = match ? toRegExp(match) : toRegExp('/.?/'); // eslint-disable-next-line consistent-return
 
@@ -347,16 +345,15 @@
       window.open = openWrapper;
     }
     preventWindowOpen.names = ['prevent-window-open', 'ubo-window.open-defuser.js'];
-    preventWindowOpen.injections = [toRegExp];
+    preventWindowOpen.injections = [toRegExp, stringToFunc];
 
-    /* eslint-disable no-new-func */
     function abortCurrentInlineScript(source, property) {
       var _this = this;
 
       var search = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
       var regex = search ? toRegExp(search) : null;
       var rid = randomId();
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
 
       var getCurrentScript = function getCurrentScript() {
         if (!document.currentScript) {
@@ -433,7 +430,7 @@
       };
     }
     abortCurrentInlineScript.names = ['abort-current-inline-script', 'ubo-abort-current-inline-script.js', 'abp-abort-current-inline-script'];
-    abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp];
+    abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, stringToFunc];
 
     /* eslint-disable no-new-func */
     function setConstant(source, property, value) {
@@ -477,7 +474,7 @@
         return;
       }
 
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var canceled = false;
 
       var mustCancel = function mustCancel(value) {
@@ -533,9 +530,8 @@
       setChainPropAccess(window, property);
     }
     setConstant.names = ['set-constant', 'ubo-set-constant.js'];
-    setConstant.injections = [getPropertyInChain, setPropertyAccess];
+    setConstant.injections = [getPropertyInChain, setPropertyAccess, stringToFunc];
 
-    /* eslint-disable no-new-func */
     /**
      * Prevents adding event listeners
      *
@@ -545,7 +541,7 @@
      */
 
     function preventAddEventListener(source, event, funcStr) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       event = event ? toRegExp(event) : toRegExp('/.?/');
       funcStr = funcStr ? toRegExp(funcStr) : toRegExp('/.?/');
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
@@ -566,19 +562,19 @@
       window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
     }
     preventAddEventListener.names = ['prevent-addEventListener', 'ubo-addEventListener-defuser.js'];
-    preventAddEventListener.injections = [toRegExp];
+    preventAddEventListener.injections = [toRegExp, stringToFunc];
 
-    /* eslint-disable no-new-func, consistent-return, no-eval */
-
+    /* eslint-disable consistent-return, no-eval */
     /**
      * Prevents BlockAdblock
      *
      * @param {Source} source
      */
+
     function preventBab(source) {
       var _this = this;
 
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var nativeSetTimeout = window.setTimeout;
       var babRegex = /\.bab_elementid.$/;
 
@@ -640,16 +636,17 @@
       };
     }
     preventBab.names = ['prevent-bab', 'ubo-bab-defuser.js'];
+    preventBab.injections = [stringToFunc];
 
-    /* eslint-disable no-new-func, no-unused-vars, no-extra-bind, no-console, func-names */
-
+    /* eslint-disable no-unused-vars, no-extra-bind, no-console, func-names */
     /**
      * Disables WebRTC via blocking calls to the RTCPeerConnection()
      *
      * @param {Source} source
      */
+
     function nowebrtc(source) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var propertyName = '';
 
       if (window.RTCPeerConnection) {
@@ -690,6 +687,7 @@
       }
     }
     nowebrtc.names = ['nowebrtc', 'ubo-nowebrtc.js'];
+    nowebrtc.injections = [stringToFunc];
 
     /* eslint-disable no-console */
     /**
@@ -816,15 +814,15 @@
     logEval.names = ['log-eval'];
     logEval.injections = [stringToFunc];
 
-    /* eslint-disable no-new-func, no-eval, no-extra-bind, no-console, func-names */
-
+    /* eslint-disable no-eval, no-extra-bind, no-console, func-names */
     /**
      * Prevents page to use eval.
      * Notifies about attempts in the console
      * @param {Source} source
      */
+
     function noeval(source) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
 
       window.eval = function (s) {
         hit();
@@ -832,8 +830,9 @@
       }.bind(window);
     }
     noeval.names = ['noeval.js', 'silent-noeval.js', 'noeval'];
+    noeval.injections = [stringToFunc];
 
-    /* eslint-disable no-new-func, no-eval, no-extra-bind, func-names */
+    /* eslint-disable no-eval, no-extra-bind, func-names */
     /**
      * Prevents page to use eval matching payload
      * @param {Source} source
@@ -841,7 +840,7 @@
      */
 
     function preventEvalIf(source, search) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       search = search ? toRegExp(search) : toRegExp('/.?/');
       var nativeEval = window.eval;
 
@@ -855,7 +854,7 @@
       }.bind(window);
     }
     preventEvalIf.names = ['noeval-if.js', 'prevent-eval-if'];
-    preventEvalIf.injections = [toRegExp];
+    preventEvalIf.injections = [toRegExp, stringToFunc];
 
     /**
      * This file must export all scriptlets which should be accessible

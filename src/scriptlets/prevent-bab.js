@@ -1,4 +1,6 @@
-/* eslint-disable no-new-func, consistent-return, no-eval */
+/* eslint-disable consistent-return, no-eval */
+
+import { stringToFunc } from '../helpers';
 
 /**
  * Prevents BlockAdblock
@@ -6,9 +8,7 @@
  * @param {Source} source
  */
 export function preventBab(source) {
-    const hit = source.hit
-        ? new Function(source.hit)
-        : () => {};
+    const hit = stringToFunc(source.hit);
 
     const nativeSetTimeout = window.setTimeout;
     const babRegex = /\.bab_elementid.$/;
@@ -65,3 +65,5 @@ preventBab.names = [
     'prevent-bab',
     'ubo-bab-defuser.js',
 ];
+
+preventBab.injections = [stringToFunc];

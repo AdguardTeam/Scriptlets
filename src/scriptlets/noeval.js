@@ -1,4 +1,5 @@
-/* eslint-disable no-new-func, no-eval, no-extra-bind, no-console, func-names */
+/* eslint-disable no-eval, no-extra-bind, no-console, func-names */
+import { stringToFunc } from '../helpers';
 
 /**
  * Prevents page to use eval.
@@ -6,9 +7,7 @@
  * @param {Source} source
  */
 export function noeval(source) {
-    const hit = source.hit
-        ? new Function(source.hit)
-        : () => {};
+    const hit = stringToFunc(source.hit);
 
     window.eval = function (s) {
         hit();
@@ -21,3 +20,5 @@ noeval.names = [
     'silent-noeval.js',
     'noeval',
 ];
+
+noeval.injections = [stringToFunc];
