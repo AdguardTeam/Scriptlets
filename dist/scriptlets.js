@@ -112,8 +112,14 @@
     /**
      * This file must export all used dependencies
      */
+    /**
+     * Noop function
+     */
+
+    var noop = function noop() {};
 
     var dependencies = /*#__PURE__*/Object.freeze({
+        noop: noop,
         randomId: randomId,
         setPropertyAccess: setPropertyAccess,
         getPropertyInChain: getPropertyInChain,
@@ -816,6 +822,48 @@
     logEval.names = ['log-eval'];
     logEval.injections = [stringToFunc];
 
+    /* eslint-disable no-console, func-names, no-multi-assign */
+    /**
+     * Fuckadblock 3.2.0 defuser
+     *
+     * @param {Source} source
+     */
+
+    function preventFab(source) {
+      var hit = stringToFunc(source.hit);
+      hit();
+
+      var Fab = function Fab() {};
+
+      Fab.prototype.check = noop;
+      Fab.prototype.clearEvent = noop;
+      Fab.prototype.emitEvent = noop;
+
+      Fab.prototype.on = function (a, b) {
+        if (!a) {
+          b();
+        }
+
+        return this;
+      };
+
+      Fab.prototype.onDetected = function () {
+        return this;
+      };
+
+      Fab.prototype.onNotDetected = function (a) {
+        a();
+        return this;
+      };
+
+      Fab.prototype.setOption = noop;
+      window.FuckAdBlock = window.BlockAdBlock = Fab; //
+
+      window.fuckAdBlock = window.blockAdBlock = new Fab();
+    }
+    preventFab.names = ['prevent-fab-3.2.0', 'fuckadblock.js-3.2.0'];
+    preventFab.injections = [stringToFunc, noop];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -835,7 +883,8 @@
         logAddEventListener: logAddEventListener,
         logSetInterval: logSetInterval,
         logSetTimeout: logSetTimeout,
-        logEval: logEval
+        logEval: logEval,
+        preventFab: preventFab
     });
 
     /**

@@ -13,3 +13,4 @@ import * as logAddEventListener from './log-addEventListener.test';
 import * as logSetInterval from './log-setInterval.test';
 import * as logSetTimeout from './log-setTimeout.test';
 import * as logEval from './log-eval.test';
+import * as preventFab from './prevent-fab-3.2.0.test';

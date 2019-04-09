@@ -396,6 +396,17 @@ example.org#%#//scriptlet("log-eval")
 
 [scriptlet source](./src/scriptlets/log-eval.js)
 
+### <a id="prevent-fab-3.2.0"></a> prevent-fab-3.2.0
+
+Prevents execution of FuckAdBlock script v3.2.0
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-fab-3.2.0")
+```
+
+[scriptlet source](./src/scriptlets/prevent-fab-3.2.0.js)
+
 ## <a id="compatibility"></a> Sriptlets compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -423,7 +434,7 @@ example.org#%#//scriptlet("log-eval")
 |  | sharedWorker-defuser.js (deprecated) |  |
 | [prevent-window-open](#prevent-window-open) | window.open-defuser.js |  |
 | [prevent-bab](#prevent-bab) | bab-defuser.js |  |
-|  | fuckadblock.js-3.2.0 |  |
+| [prevent-fab-3.2.0](#prevent-fab-3.2.0) | fuckadblock.js-3.2.0 |  |
 |  | popads-dummy.js |  |
 |  | popads.net.js |  |
 |  | adfly-defuser.js |  |
