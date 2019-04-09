@@ -2,6 +2,7 @@
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
+import { onErrorHandler } from '../helpers';
 
 /**
  * Abort property reading even if it doesn't exist in execution moment
@@ -46,6 +47,9 @@ export function abortOnPropertyRead(source, property) {
     };
 
     setChainPropAccess(window, property);
+
+    const nativeOnError = window.onerror;
+    window.onerror = onErrorHandler(nativeOnError, rid).bind();
 }
 
 abortOnPropertyRead.names = [
@@ -53,4 +57,4 @@ abortOnPropertyRead.names = [
     'ubo-abort-on-property-read.js',
     'abp-abort-on-property-read',
 ];
-abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain];
+abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, onErrorHandler];
