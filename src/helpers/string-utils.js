@@ -18,3 +18,15 @@ export const toRegExp = (str) => {
     const escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     return new RegExp(escaped);
 };
+
+/**
+ * Converts string to function
+ * @param {string} str string should be turned into function
+ */
+// eslint-disable-next-line arrow-body-style
+export const stringToFunc = (str) => {
+    return str
+        // eslint-disable-next-line no-new-func
+        ? new Function(str)
+        : () => { };
+};
