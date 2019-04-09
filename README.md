@@ -354,7 +354,7 @@ example.org#%#//scriptlet("prevent-bab")
 
 ### <a id="log-addEventListener"></a> log-addEventListener
 
-Logs in console calls to the addEventListener
+Logs all addEventListener calls to the console
 
 **Syntax**
 ```
@@ -365,7 +365,7 @@ example.org#%#//scriptlet("log-addEventListener")
 
 ### <a id="log-setInterval"></a> log-setInterval
 
-Logs in console calls to setInterval
+Logs all setInterval calls to the console
 
 **Syntax**
 ```
@@ -376,7 +376,7 @@ example.org#%#//scriptlet("log-setInterval")
 
 ### <a id="log-setTimeout"></a> log-setTimeout
 
-Logs in console calls to setTimeout
+Logs all setTimeout call to the console
 
 **Syntax**
 ```
@@ -387,7 +387,7 @@ example.org#%#//scriptlet("log-setTimeout")
 
 ### <a id="log-eval"></a> log-eval
 
-Logs in console calls to `eval()` or `new Function()`
+Logs all `eval()` or `new Function()` calls to the console
 
 **Syntax**
 ```
