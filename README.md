@@ -459,10 +459,17 @@ Build dev (rebuild js files on every change)
 yarn watch
 ```
 
-Run UI Unit testing
+Run node testing
 ```
 yarn test
 ```
+
+Run ui testing
+Add `127.0.0.1 scriptlets.adguard.com` to `/etc/hosts`
+```
+yarn gui-test
+```
+
 
 ### Build output
 

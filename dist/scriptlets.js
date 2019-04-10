@@ -135,7 +135,6 @@
     }
     log.names = ['log'];
 
-    /* eslint-disable no-new-func */
     /**
      * Abort property reading even if it doesn't exist in execution moment
      *
@@ -148,7 +147,7 @@
         return;
       }
 
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var rid = randomId();
 
       var abort = function abort() {
@@ -189,9 +188,8 @@
       setChainPropAccess(window, property);
     }
     abortOnPropertyRead.names = ['abort-on-property-read', 'ubo-abort-on-property-read.js', 'abp-abort-on-property-read'];
-    abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain];
+    abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, stringToFunc];
 
-    /* eslint-disable no-new-func */
     /**
      * Abort property writing
      *
@@ -204,7 +202,7 @@
         return;
       }
 
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var rid = randomId();
 
       var abort = function abort() {
@@ -244,9 +242,8 @@
       setChainPropAccess(window, property);
     }
     abortOnPropertyWrite.names = ['abort-on-property-write', 'ubo-abort-on-property-write.js', 'abp-abort-on-property-write'];
-    abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain];
+    abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, stringToFunc];
 
-    /* eslint-disable no-new-func */
     /**
      * Prevent calls to setTimeout for specified matching in passed callback and delay
      * by setting callback to empty function
@@ -257,7 +254,7 @@
      */
 
     function preventSetTimeout(source, match, delay) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var nativeTimeout = window.setTimeout;
       delay = parseInt(delay, 10);
       delay = Number.isNaN(delay) ? null : delay;
@@ -279,9 +276,8 @@
       window.setTimeout = timeoutWrapper;
     }
     preventSetTimeout.names = ['prevent-setTimeout', 'ubo-setTimeout-defuser.js'];
-    preventSetTimeout.injections = [toRegExp];
+    preventSetTimeout.injections = [toRegExp, stringToFunc];
 
-    /* eslint-disable no-new-func */
     /**
      * Prevent calls to setInterval for specified matching in passed callback and delay
      * by setting callback to empty function
@@ -292,7 +288,7 @@
      */
 
     function preventSetInterval(source, match, interval) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var nativeInterval = window.setInterval;
       interval = parseInt(interval, 10);
       interval = Number.isNaN(interval) ? null : interval;
@@ -314,9 +310,8 @@
       window.setInterval = intervalWrapper;
     }
     preventSetInterval.names = ['prevent-setInterval', 'ubo-setInterval-defuser.js'];
-    preventSetInterval.injections = [toRegExp];
+    preventSetInterval.injections = [toRegExp, stringToFunc];
 
-    /* eslint-disable no-new-func */
     /**
      * Prevent calls `window.open` when URL match or not match with passed params
      * @param {Source} source
@@ -328,7 +323,7 @@
       var inverse = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
       var match = arguments.length > 2 ? arguments[2] : undefined;
       var nativeOpen = window.open;
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       inverse = inverse ? !+inverse : inverse;
       match = match ? toRegExp(match) : toRegExp('/.?/'); // eslint-disable-next-line consistent-return
 
@@ -347,16 +342,15 @@
       window.open = openWrapper;
     }
     preventWindowOpen.names = ['prevent-window-open', 'ubo-window.open-defuser.js'];
-    preventWindowOpen.injections = [toRegExp];
+    preventWindowOpen.injections = [toRegExp, stringToFunc];
 
-    /* eslint-disable no-new-func */
     function abortCurrentInlineScript(source, property) {
       var _this = this;
 
       var search = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
       var regex = search ? toRegExp(search) : null;
       var rid = randomId();
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
 
       var getCurrentScript = function getCurrentScript() {
         if (!document.currentScript) {
@@ -433,9 +427,8 @@
       };
     }
     abortCurrentInlineScript.names = ['abort-current-inline-script', 'ubo-abort-current-inline-script.js', 'abp-abort-current-inline-script'];
-    abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp];
+    abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, stringToFunc];
 
-    /* eslint-disable no-new-func */
     function setConstant(source, property, value) {
       if (!property) {
         return;
@@ -477,7 +470,7 @@
         return;
       }
 
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var canceled = false;
 
       var mustCancel = function mustCancel(value) {
@@ -533,7 +526,63 @@
       setChainPropAccess(window, property);
     }
     setConstant.names = ['set-constant', 'ubo-set-constant.js'];
-    setConstant.injections = [getPropertyInChain, setPropertyAccess];
+    setConstant.injections = [getPropertyInChain, setPropertyAccess, stringToFunc];
+
+    /**
+     *
+     * @param {Source} source
+     */
+
+    function cookieRemover(source, match) {
+      var hit = stringToFunc(source.hit);
+      var regex = match ? toRegExp(match) : toRegExp('/.?/');
+
+      var removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
+        var cookieSpec = "".concat(cookieName, "=");
+        var domain1 = "; domain=".concat(hostName);
+        var domain2 = "; domain=.".concat(hostName);
+        var path = '; path=/';
+        var expiration = '; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        document.cookie = cookieSpec + expiration;
+        document.cookie = cookieSpec + domain1 + expiration;
+        document.cookie = cookieSpec + domain2 + expiration;
+        document.cookie = cookieSpec + path + expiration;
+        document.cookie = cookieSpec + domain1 + path + expiration;
+        document.cookie = cookieSpec + domain2 + path + expiration;
+        hit();
+      };
+
+      var removeCookie = function removeCookie() {
+        document.cookie.split(';').forEach(function (cookieStr) {
+          var pos = cookieStr.indexOf('=');
+
+          if (pos === -1) {
+            return;
+          }
+
+          var cookieName = cookieStr.slice(0, pos).trim();
+
+          if (!regex.test(cookieName)) {
+            return;
+          }
+
+          var hostParts = document.location.hostname.split('.');
+
+          for (var i = 0; i < hostParts.length - 1; i += 1) {
+            var hostName = hostParts.slice(i).join('.');
+
+            if (hostName) {
+              removeCookieFromHost(cookieName, hostName);
+            }
+          }
+        });
+      };
+
+      removeCookie();
+      window.addEventListener('beforeunload', removeCookie);
+    }
+    cookieRemover.names = ['cookie-remover', 'ubo-cookie-remover.js'];
+    cookieRemover.injections = [stringToFunc, toRegExp];
 
     /* eslint-disable no-new-func */
     /**
@@ -829,6 +878,7 @@
         preventWindowOpen: preventWindowOpen,
         abortCurrentInlineScript: abortCurrentInlineScript,
         setConstant: setConstant,
+        cookieRemover: cookieRemover,
         preventAddEventListener: preventAddEventListener,
         preventBab: preventBab,
         nowebrtc: nowebrtc,
