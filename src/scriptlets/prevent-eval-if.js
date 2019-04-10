@@ -17,7 +17,7 @@ export function preventEvalIf(source, search) {
         if (!search.test(payload.toString())) {
             return nativeEval.call(window, payload);
         }
-        hit();
+        hit(payload);
         return undefined;
     }.bind(window);
 }

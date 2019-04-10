@@ -10,8 +10,7 @@ export function noeval(source) {
     const hit = stringToFunc(source.hit);
 
     window.eval = function (s) {
-        hit();
-        console.log(`AG: Document tried to eval... \n${s}`);
+        hit(`AdGuard has prevented eval:\n${s}`);
     }.bind(window);
 }
 

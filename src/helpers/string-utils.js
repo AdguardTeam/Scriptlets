@@ -25,8 +25,6 @@ export const toRegExp = (str) => {
  */
 // eslint-disable-next-line arrow-body-style
 export const stringToFunc = (str) => {
-    return str
-        // eslint-disable-next-line no-new-func
-        ? new Function(str)
-        : () => { };
+    // eslint-disable-next-line no-new-func
+    return str ? new Function(str) : () => {};
 };
