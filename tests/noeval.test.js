@@ -8,7 +8,8 @@ module(name);
 const nativeEval = window.eval;
 const nativeConsole = console.log;
 
-const hit = () => {
+const hit = (payload) => {
+    console.log(payload);
     window.hit = 'FIRED';
 };
 
@@ -38,8 +39,11 @@ test('ubo noeval alias', (assert) => {
 
     const evalStr = '2';
 
+    // set assertions amount
+    assert.expect(3);
+
     console.log = function log(input) {
-        assert.ok(input.includes('AG: Document tried to eval'), 'console.log should print info');
+        assert.ok(input.includes('AdGuard has prevented eval:'), 'console.log should print info');
     };
 
     const evalWrapper = eval;
@@ -54,8 +58,11 @@ test('ubo silent-noeval alias', (assert) => {
 
     const evalStr = '2';
 
+    // set assertions amount
+    assert.expect(3);
+
     console.log = function log(input) {
-        assert.ok(input.includes('AG: Document tried to eval'), 'console.log should print info');
+        assert.ok(input.includes('AdGuard has prevented eval:'), 'console.log should print info');
     };
 
     const evalWrapper = eval;
@@ -71,8 +78,11 @@ test('AG noeval alias', (assert) => {
 
     const evalStr = '2';
 
+    // set assertions amount
+    assert.expect(3);
+
     console.log = function log(input) {
-        assert.ok(input.includes('AG: Document tried to eval'), 'console.log should print info');
+        assert.ok(input.includes('AdGuard has prevented eval:'), 'console.log should print info');
     };
 
     const evalWrapper = eval;

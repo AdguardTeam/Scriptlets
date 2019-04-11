@@ -75,6 +75,8 @@
       };
     }
 
+    /* eslint-disable no-new-func, prefer-spread */
+
     /**
      * Escapes special chars in string
      * @param {string} str
@@ -85,7 +87,7 @@
     };
     /**
      * Converts search string to the regexp
-     * TODO think about nested dependecies, but be carefull with dependency loops
+     * TODO think about nested dependencies, but be careful with dependency loops
      * @param {string} str search string
      * @returns {RegExp}
      */
@@ -101,12 +103,18 @@
     /**
      * Converts string to function
      * @param {string} str string should be turned into function
+     * @param {string[]} [args] array of parameters;
+     * @param {string} [body] function body stringified
+     * @return {function} return function build from arguments or noop function
      */
     // eslint-disable-next-line arrow-body-style
 
-    var stringToFunc = function stringToFunc(str) {
-      return str // eslint-disable-next-line no-new-func
-      ? new Function(str) : function () {};
+    var stringToFunc = function stringToFunc(str, args, body) {
+      if (args && body) {
+        return Function.apply(null, args.concat(body));
+      }
+
+      return str ? new Function(str) : function () {};
     };
 
     /**
@@ -814,7 +822,7 @@
     logEval.names = ['log-eval'];
     logEval.injections = [stringToFunc];
 
-    /* eslint-disable no-eval, no-extra-bind, no-console, func-names */
+    /* eslint-disable no-eval, no-extra-bind */
     /**
      * Prevents page to use eval.
      * Notifies about attempts in the console
@@ -822,12 +830,11 @@
      */
 
     function noeval(source) {
-      var hit = stringToFunc(source.hit);
+      var hit = stringToFunc(source.hit, source.hitArgs, source.hitBody);
 
-      window.eval = function (s) {
-        hit();
-        console.log("AG: Document tried to eval... \n".concat(s));
-      }.bind(window);
+      window.eval = function evalWrapper(s) {
+        hit("AdGuard has prevented eval:\n".concat(s));
+      }.bind();
     }
     noeval.names = ['noeval.js', 'silent-noeval.js', 'noeval'];
     noeval.injections = [stringToFunc];
@@ -840,7 +847,7 @@
      */
 
     function preventEvalIf(source, search) {
-      var hit = stringToFunc(source.hit);
+      var hit = stringToFunc(source.hit, source.hitArgs, source.hitBody);
       search = search ? toRegExp(search) : toRegExp('/.?/');
       var nativeEval = window.eval;
 
@@ -849,7 +856,7 @@
           return nativeEval.call(window, payload);
         }
 
-        hit();
+        hit(payload);
         return undefined;
       }.bind(window);
     }
@@ -902,14 +909,53 @@
       return "".concat(code, ";\n        const updatedArgs = args ? [].concat(source).concat(args) : [source];\n        ").concat(scriptlet.name, ".apply(this, updatedArgs);\n    ");
     }
     /**
+     * Returns arguments of the function
+     * @source https://github.com/sindresorhus/fn-args
+     * @param {function|string} [func] function or string
+     * @returns {string[]}
+     */
+
+    var getFuncArgs = function getFuncArgs(func) {
+      return func.toString().match(/(?:\((.*)\))|(?:([^ ]*) *=>)/).slice(1, 3).find(function (capture) {
+        return typeof capture === 'string';
+      }).split(/, */).filter(function (arg) {
+        return arg !== '';
+      }).map(function (arg) {
+        return arg.replace(/\/\*.*\*\//, '');
+      });
+    };
+    /**
+     * Returns body of the function
+     * @param {function|string} [func] function or string
+     * @returns {string}
+     */
+
+
+    var getFuncBody = function getFuncBody(func) {
+      var regexp = /(?:(?:\((?:.*)\))|(?:(?:[^ ]*) *=>))\s?({?[\s\S]*}?)/;
+      var funcString = func.toString();
+      return funcString.match(regexp)[1];
+    };
+    /**
      * Wrap function into IIFE
      * @param {Source} source
      * @param {string} code
      */
 
+
     function wrapInIIFE(source, code) {
       if (source.hit) {
-        source.hit = "(".concat(source.hit.toString(), ")()");
+        // hit function can be either arrow like "(arg) => [{] body [}];" or usual
+        // function like "function (arg) { body }"
+        var stringifiedHit = source.hit.toString();
+        var hitArgs = getFuncArgs(stringifiedHit);
+
+        if (hitArgs.length > 0) {
+          source.hitBody = getFuncBody(stringifiedHit);
+          source.hitArgs = hitArgs;
+        }
+
+        source.hit = "(".concat(stringifiedHit, ")()");
       }
 
       var sourceString = JSON.stringify(source);

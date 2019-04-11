@@ -23,13 +23,46 @@ export function addScriptletCall(scriptlet, code) {
 }
 
 /**
+ * Returns arguments of the function
+ * @source https://github.com/sindresorhus/fn-args
+ * @param {function|string} [func] function or string
+ * @returns {string[]}
+ */
+const getFuncArgs = func => func.toString()
+    .match(/(?:\((.*)\))|(?:([^ ]*) *=>)/)
+    .slice(1, 3)
+    .find(capture => typeof capture === 'string')
+    .split(/, */)
+    .filter(arg => arg !== '')
+    .map(arg => arg.replace(/\/\*.*\*\//, ''));
+
+/**
+ * Returns body of the function
+ * @param {function|string} [func] function or string
+ * @returns {string}
+ */
+const getFuncBody = (func) => {
+    const regexp = /(?:(?:\((?:.*)\))|(?:(?:[^ ]*) *=>))\s?({?[\s\S]*}?)/;
+    const funcString = func.toString();
+    return funcString.match(regexp)[1];
+};
+
+/**
  * Wrap function into IIFE
  * @param {Source} source
  * @param {string} code
  */
 export function wrapInIIFE(source, code) {
     if (source.hit) {
-        source.hit = `(${source.hit.toString()})()`;
+        // hit function can be either arrow like "(arg) => [{] body [}];" or usual
+        // function like "function (arg) { body }"
+        const stringifiedHit = source.hit.toString();
+        const hitArgs = getFuncArgs(stringifiedHit);
+        if (hitArgs.length > 0) {
+            source.hitBody = getFuncBody(stringifiedHit);
+            source.hitArgs = hitArgs;
+        }
+        source.hit = `(${stringifiedHit})()`;
     }
     const sourceString = JSON.stringify(source);
     const argsString = source.args ? `[${source.args.map(JSON.stringify)}]` : undefined;

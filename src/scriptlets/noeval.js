@@ -1,4 +1,4 @@
-/* eslint-disable no-eval, no-extra-bind, no-console, func-names */
+/* eslint-disable no-eval, no-extra-bind */
 import { stringToFunc } from '../helpers';
 
 /**
@@ -7,11 +7,10 @@ import { stringToFunc } from '../helpers';
  * @param {Source} source
  */
 export function noeval(source) {
-    const hit = stringToFunc(source.hit);
-
-    window.eval = function (s) {
+    const hit = stringToFunc(source.hit, source.hitArgs, source.hitBody);
+    window.eval = function evalWrapper(s) {
         hit(`AdGuard has prevented eval:\n${s}`);
-    }.bind(window);
+    }.bind();
 }
 
 noeval.names = [
