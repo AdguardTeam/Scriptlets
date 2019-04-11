@@ -26,18 +26,29 @@ const hit = () => {
 };
 
 
-test('Cookie works ', (assert) => {
-    const cName = '__test-cookie-name__1';
+test('Cookie works fine', (assert) => {
+    const cName = '__test-cookie-name__';
     document.cookie = `${cName}=cookie`;
-    const res = document.cookie.includes(cName);
-    assert.strictEqual(res, true);
+    assert.strictEqual(document.cookie.includes(cName), true, 'cookie was set');
 });
 
-test('Remove cookie by match ', (assert) => {
-    document.cookie = '__test-cookie-name__=cookie';
-    runScriptlet('__test-cookie-name__', hit);
+test('Remove cookie by match', (assert) => {
+    const cName = '__test-cookie-name__1';
+    const cName1 = '__test-cookie-name__3';
+    document.cookie = `${cName}=cookie`;
+    document.cookie = `${cName1}=cookie`;
+    runScriptlet(cName, hit);
+
+    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+    assert.strictEqual(document.cookie.includes(cName), false, 'Cookie by match was removed');
+    assert.strictEqual(document.cookie.includes(cName1), true, 'Another cookies works');
+});
+
+test('Remove all cookies', (assert) => {
+    const cName = '__test-cookie-name__2';
+    document.cookie = `${cName}=cookie`;
+    runScriptlet(null, hit);
 
     assert.strictEqual(window.hit, 'FIRED');
-    const res = document.cookie.includes('__test-cookie-name__');
-    assert.strictEqual(res, false);
+    assert.strictEqual(document.cookie.includes(cName), false, 'If no match delete all cookies for domain');
 });

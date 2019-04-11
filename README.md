@@ -469,7 +469,6 @@ Add `127.0.0.1 scriptlets.adguard.com` to `/etc/hosts`
 ```
 yarn gui-test
 ```
-Open http://scriptlets.adguard.com:8081
 
 
 ### Build output
