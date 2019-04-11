@@ -1,13 +1,13 @@
 /* global QUnit */
 /* eslint-disable no-eval */
 const { test, module, testDone } = QUnit;
-const name = 'cookie-remover';
+const name = 'remove-cookie';
 
 module(name);
 
 const evalWrapper = eval;
 
-const runScriptlet = (match, hit) => {
+const runScriptlet = (name, match, hit) => {
     const params = {
         name,
         args: [match],
@@ -37,17 +37,27 @@ test('Remove cookie by match', (assert) => {
     const cName1 = '__test-cookie-name__3';
     document.cookie = `${cName}=cookie`;
     document.cookie = `${cName1}=cookie`;
-    runScriptlet(cName, hit);
+    runScriptlet(name, cName, hit);
 
     assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
     assert.strictEqual(document.cookie.includes(cName), false, 'Cookie by match was removed');
     assert.strictEqual(document.cookie.includes(cName1), true, 'Another cookies works');
 });
 
+test('Remove cookie by match ubo syntax', (assert) => {
+    const name = 'ubo-cookie-remover.js';
+    const cName = '__test-cookie-name__14';
+    document.cookie = `${cName}=cookie`;
+    runScriptlet(name, cName, hit);
+
+    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+    assert.strictEqual(document.cookie.includes(cName), false, 'Cookie by match was removed');
+});
+
 test('Remove all cookies', (assert) => {
     const cName = '__test-cookie-name__2';
     document.cookie = `${cName}=cookie`;
-    runScriptlet(null, hit);
+    runScriptlet(name, null, hit);
 
     assert.strictEqual(window.hit, 'FIRED');
     assert.strictEqual(document.cookie.includes(cName), false, 'If no match delete all cookies for domain');

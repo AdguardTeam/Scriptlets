@@ -533,7 +533,7 @@
      * @param {Source} source
      */
 
-    function cookieRemover(source, match) {
+    function removeCookie(source, match) {
       var hit = stringToFunc(source.hit);
       var regex = match ? toRegExp(match) : toRegExp('/.?/');
 
@@ -552,7 +552,7 @@
         hit();
       };
 
-      var removeCookie = function removeCookie() {
+      var rmCookie = function rmCookie() {
         document.cookie.split(';').forEach(function (cookieStr) {
           var pos = cookieStr.indexOf('=');
 
@@ -578,11 +578,11 @@
         });
       };
 
-      removeCookie();
-      window.addEventListener('beforeunload', removeCookie);
+      rmCookie();
+      window.addEventListener('beforeunload', rmCookie);
     }
-    cookieRemover.names = ['cookie-remover', 'ubo-cookie-remover.js'];
-    cookieRemover.injections = [stringToFunc, toRegExp];
+    removeCookie.names = ['remove-cookie', 'ubo-cookie-remover.js'];
+    removeCookie.injections = [stringToFunc, toRegExp];
 
     /* eslint-disable no-new-func */
     /**
@@ -878,7 +878,7 @@
         preventWindowOpen: preventWindowOpen,
         abortCurrentInlineScript: abortCurrentInlineScript,
         setConstant: setConstant,
-        cookieRemover: cookieRemover,
+        removeCookie: removeCookie,
         preventAddEventListener: preventAddEventListener,
         preventBab: preventBab,
         nowebrtc: nowebrtc,

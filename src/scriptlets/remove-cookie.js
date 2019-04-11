@@ -4,7 +4,7 @@ import { stringToFunc, toRegExp } from '../helpers/string-utils';
  *
  * @param {Source} source
  */
-export function cookieRemover(source, match) {
+export function removeCookie(source, match) {
     const hit = stringToFunc(source.hit);
     const regex = match ? toRegExp(match) : toRegExp('/.?/');
 
@@ -23,7 +23,7 @@ export function cookieRemover(source, match) {
         hit();
     };
 
-    const removeCookie = () => {
+    const rmCookie = () => {
         document.cookie.split(';').forEach((cookieStr) => {
             const pos = cookieStr.indexOf('=');
             if (pos === -1) {
@@ -44,13 +44,13 @@ export function cookieRemover(source, match) {
             }
         });
     };
-    removeCookie();
-    window.addEventListener('beforeunload', removeCookie);
+    rmCookie();
+    window.addEventListener('beforeunload', rmCookie);
 }
 
-cookieRemover.names = [
-    'cookie-remover',
+removeCookie.names = [
+    'remove-cookie',
     'ubo-cookie-remover.js',
 ];
 
-cookieRemover.injections = [stringToFunc, toRegExp];
+removeCookie.injections = [stringToFunc, toRegExp];

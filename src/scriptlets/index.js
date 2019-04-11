@@ -9,7 +9,7 @@ export * from './prevent-setInterval';
 export * from './prevent-window-open';
 export * from './abort-current-inline-script';
 export * from './set-constant';
-export * from './cookie-remover';
+export * from './remove-cookie';
 export * from './prevent-addEventListener';
 export * from './prevent-bab';
 export * from './nowebrtc';
