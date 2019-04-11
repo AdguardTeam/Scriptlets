@@ -1,11 +1,9 @@
 /* eslint-disable no-console */
 const { runQunitPuppeteer, printFailedTests, printResultSummary } = require('node-qunit-puppeteer');
-const server = require('./server');
+const { server, port } = require('./server');
 
-const PORT = 8081;
-const HOSTNAME = 'scriptlets.adguard.com';
 const qunitArgs = {
-    targetUrl: `http://${HOSTNAME}:${PORT}/`,
+    targetUrl: `http://127.0.0.1:${port}/`,
     timeout: 10000,
 };
 

@@ -464,8 +464,7 @@ Run node testing
 yarn test
 ```
 
-Run ui testing
-Add `127.0.0.1 scriptlets.adguard.com` to `/etc/hosts`
+Run tests gui
 ```
 yarn gui-test
 ```

@@ -21,9 +21,12 @@ const requestHandler = (request, response) => {
     response.write(file);
     response.end();
 };
-const PORT = 8081;
+const PORT = 8585;
 const server = http.createServer(requestHandler);
 
 server.listen(PORT, () => console.log(`server is listening on ${PORT}`));
 
-module.exports = server;
+module.exports = {
+    server,
+    port: PORT,
+};
