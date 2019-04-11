@@ -48,9 +48,9 @@ const getFuncBody = (func) => {
 };
 
 /**
- * Wrap function into IIFE
- * @param {Source} source
- * @param {string} code
+ * Wrap function into IIFE (Immediately invoked function expression)
+ * @param {Source} source - object with scriptlet properties
+ * @param {string} code - scriptlet source code with dependencies
  */
 export function wrapInIIFE(source, code) {
     if (source.hit) {

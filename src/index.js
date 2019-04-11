@@ -1,7 +1,7 @@
 import { getScriptletCode } from './injector';
 
 /**
- * @typedef {Object} Source
+ * @typedef {Object} Source - scriptlet properties
  * @property {string} name Scriptlet name
  * @property {Array<string>} args Arguments for scriptlet function
  * @property {'extension'|'corelibs'} engine Defines the final form of scriptlet string presentation

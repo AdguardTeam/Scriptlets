@@ -934,9 +934,9 @@
       return funcString.match(regexp)[1];
     };
     /**
-     * Wrap function into IIFE
-     * @param {Source} source
-     * @param {string} code
+     * Wrap function into IIFE (Immediately invoked function expression)
+     * @param {Source} source - object with scriptlet properties
+     * @param {string} code - scriptlet source code with dependencies
      */
 
 
@@ -1015,7 +1015,7 @@
     }
 
     /**
-     * @typedef {Object} Source
+     * @typedef {Object} Source - scriptlet properties
      * @property {string} name Scriptlet name
      * @property {Array<string>} args Arguments for scriptlet function
      * @property {'extension'|'corelibs'} engine Defines the final form of scriptlet string presentation
