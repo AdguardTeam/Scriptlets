@@ -7,7 +7,7 @@
         "corelibs": "babel-node corelibs.build.js",
         "test": "rollup -c --environment UI_TEST && node tests/index.js",
         "test-watch": "rollup -c -w --environment UI_TEST",
-        "gui-test": "rollup -c --environment UI_TEST",
+        "gui-test": "rollup -c --environment UI_TEST && node ./tests/server.js",
         "lint": "eslint ."
     },
     "husky": {
