@@ -7,6 +7,8 @@ import { getScriptletCode } from './injector';
  * @property {'extension'|'corelibs'} engine Defines the final form of scriptlet string presentation
  * @property {string} [version]
  * @property {Function} [hit] Will be executed when target action is triggered
+ * @property {string[]} [hitArgs] Arguments of hit function
+ * @property {string} [hitBody] Body of hit function
  */
 
 /**

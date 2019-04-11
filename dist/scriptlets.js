@@ -646,7 +646,7 @@
     preventBab.names = ['prevent-bab', 'ubo-bab-defuser.js'];
     preventBab.injections = [stringToFunc];
 
-    /* eslint-disable no-unused-vars, no-extra-bind, no-console, func-names */
+    /* eslint-disable no-unused-vars, no-extra-bind, func-names */
     /**
      * Disables WebRTC via blocking calls to the RTCPeerConnection()
      *
@@ -654,7 +654,7 @@
      */
 
     function nowebrtc(source) {
-      var hit = stringToFunc(source.hit);
+      var hit = stringToFunc(source.hit, source.hitArgs, source.hitBody);
       var propertyName = '';
 
       if (window.RTCPeerConnection) {
@@ -667,11 +667,8 @@
         return;
       }
 
-      var log = console.log.bind(console);
-
       var rtcReplacement = function rtcReplacement(config) {
-        hit();
-        log('Document tried to create an RTCPeerConnection: %o', config);
+        hit("Document tried to create an RTCPeerConnection: ".concat(config));
       };
 
       var noop = function noop() {};
@@ -1023,6 +1020,8 @@
      * @property {'extension'|'corelibs'} engine Defines the final form of scriptlet string presentation
      * @property {string} [version]
      * @property {Function} [hit] Will be executed when target action is triggered
+     * @property {string[]} [hitArgs] Arguments of hit function
+     * @property {string} [hitBody] Body of hit function
      */
 
     /**
