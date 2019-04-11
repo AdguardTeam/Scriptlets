@@ -942,17 +942,18 @@
 
     function wrapInIIFE(source, code) {
       if (source.hit) {
-        // hit function can be either arrow like "(arg) => [{] body [}];" or usual
-        // function like "function (arg) { body }"
+        // if hit function has arguments, we get them in order to be able to build function after
+        // e.g. function (a) { console.log(a) } ==> hitArgs: ["a"], hitBody: "console.log(a)";
+        // hit function without arguments simply is called inside anonymous function
         var stringifiedHit = source.hit.toString();
         var hitArgs = getFuncArgs(stringifiedHit);
 
         if (hitArgs.length > 0) {
           source.hitBody = getFuncBody(stringifiedHit);
           source.hitArgs = hitArgs;
+        } else {
+          source.hit = "(".concat(stringifiedHit, ")()");
         }
-
-        source.hit = "(".concat(stringifiedHit, ")()");
       }
 
       var sourceString = JSON.stringify(source);

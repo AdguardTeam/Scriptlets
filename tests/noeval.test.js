@@ -9,6 +9,11 @@ const nativeEval = window.eval;
 const nativeConsole = console.log;
 
 const hit = (payload) => {
+    // calling console.log we test that our hit function was build correctly
+    // example of use in the test
+    // console.log = function log(input) {
+    //     assert.ok(input.includes('test text'));
+    // };
     console.log(payload);
     window.hit = 'FIRED';
 };
