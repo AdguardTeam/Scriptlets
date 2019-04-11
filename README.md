@@ -396,6 +396,36 @@ example.org#%#//scriptlet("log-eval")
 
 [scriptlet source](./src/scriptlets/log-eval.js)
 
+### <a id="remove-cookie"></a> remove cookie
+
+Removes current page cookies by passed string matching with name. For current domain and subdomains. Runs on load and before unload.
+
+**Syntax**
+```
+example.org#%#//scriptlet("cookie-remove"[, match])
+```
+
+**Parameters**
+- `match` (optional) String or regex matching the cookie name. If not specified all accessible cookies will be removed.
+
+**Examples**
+1. Removes all cookies:
+    ```
+    example.org#%#//scriptlet("remove-cookie")
+    ```
+
+2. Removes cookies which name contains `example` string.
+    ```
+    example.org#%#//scriptlet("remove-cookie", "example")
+    ```
+
+    For instance this cookie will be removed
+    ```javascript
+    document.cookie = '__example=randomValue';
+    ```
+
+[scriptlet source](./src/scriptlets/cookie-remover.js)
+
 ## <a id="compatibility"></a> Sriptlets compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -405,7 +435,7 @@ example.org#%#//scriptlet("log-eval")
 | [abort-on-property-write](#abort-on-property-write) | abort-on-property-write.js | abort-on-property-write |
 | [prevent-addEventListener](#prevent-addEventListener) | addEventListener-defuser.js |  |
 | [log-addEventListener](#log-addEventListener) | addEventListener-logger.js |  |
-|  | cookie-remover.js |  |
+| [remove-cookie](#remove-cookie) | cookie-remover.js |  |
 |  | csp.js (deprecated) |  |
 |  | disable-newtab-links.js |  |
 |  | noeval.js |  |

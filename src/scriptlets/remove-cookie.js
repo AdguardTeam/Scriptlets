@@ -1,8 +1,10 @@
 import { stringToFunc, toRegExp } from '../helpers/string-utils';
 
 /**
- *
+ * Removes current page cookies specified by name.
+ * For current domain, subdomains on load and before unload.
  * @param {Source} source
+ * @param {string} match string for matching with cookie name
  */
 export function removeCookie(source, match) {
     const hit = stringToFunc(source.hit);
