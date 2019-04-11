@@ -48,9 +48,36 @@ const getFuncBody = (func) => {
 };
 
 /**
+ Example of how works wrapInIIFE
+
+ const source = {
+        args: ["aaa", "bbb"],
+        name: "noeval",
+    };
+
+ const code = "function noeval(source, args) {
+                    alert(source);
+                  }
+ noeval.apply(this, args);"
+
+ const result = wrapInIIFE(source, code);
+
+ result becomes a string
+
+ "(function(source, args){
+        function noeval(source) {
+            alert(source);
+        }
+        noeval.apply(this, args);
+    )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])
+
+ */
+
+/**
  * Wrap function into IIFE (Immediately invoked function expression)
  * @param {Source} source - object with scriptlet properties
  * @param {string} code - scriptlet source code with dependencies
+ * @return {string} full scriptlet code
  */
 export function wrapInIIFE(source, code) {
     if (source.hit) {
