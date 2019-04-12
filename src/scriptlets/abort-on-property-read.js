@@ -1,8 +1,7 @@
-/* eslint-disable no-new-func */
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
-import { onErrorHandler } from '../helpers';
+import { stringToFunc, onErrorHandler } from '../helpers';
 
 /**
  * Abort property reading even if it doesn't exist in execution moment
@@ -14,9 +13,7 @@ export function abortOnPropertyRead(source, property) {
     if (!property) {
         return;
     }
-    const hit = source.hit
-        ? new Function(source.hit)
-        : () => {};
+    const hit = stringToFunc(source.hit);
     const rid = randomId();
     const abort = () => {
         hit();
@@ -56,4 +53,10 @@ abortOnPropertyRead.names = [
     'ubo-abort-on-property-read.js',
     'abp-abort-on-property-read',
 ];
-abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, onErrorHandler];
+abortOnPropertyRead.injections = [
+    randomId,
+    setPropertyAccess,
+    getPropertyInChain,
+    stringToFunc,
+    onErrorHandler,
+];
