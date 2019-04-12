@@ -970,6 +970,8 @@
         // if hit function has arguments, we get them in order to be able to build function after
         // e.g. function (a) { console.log(a) } ==> hitArgs: ["a"], hitBody: "console.log(a)";
         // hit function without arguments simply is called inside anonymous function
+        // Check `stringToFunc` implementation to learn how this `hit` function is executed
+        // by scriptlets.
         var stringifiedHit = source.hit.toString();
         var hitArgs = getFuncArgs(stringifiedHit);
 
