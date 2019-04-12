@@ -13,4 +13,6 @@ import * as logAddEventListener from './log-addEventListener.test';
 import * as logSetInterval from './log-setInterval.test';
 import * as logSetTimeout from './log-setTimeout.test';
 import * as logEval from './log-eval.test';
+import * as noeval from './noeval.test';
+import * as preventEvalIf from './prevent-eval-if.test';
 import * as cookieRemover from './remove-cookie.test';

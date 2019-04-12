@@ -18,6 +18,8 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [log-setInterval](#log-setInterval)
     * [log-setTimeout](#log-setTimeout)
     * [log-eval](#log-eval)
+    * [noeval](#noeval)
+    * [prevent-eval-if](#prevent-eval-if)
 * [Scriptlets compatibility table](#compatibility)
 * [How to build](#how-to-build)
 
@@ -438,9 +440,9 @@ example.org#%#//scriptlet("cookie-remove"[, match])
 | [remove-cookie](#remove-cookie) | cookie-remover.js |  |
 |  | csp.js (deprecated) |  |
 |  | disable-newtab-links.js |  |
-|  | noeval.js |  |
-|  | silent-noeval.js |  |
-|  | noeval-if.js |  |
+| [noeval](#noeval) | noeval.js |  |
+| [noeval](#noeval) | silent-noeval.js |  |
+| [prevent-eval-if](#prevent-eval-if) | noeval-if.js |  |
 | [nowebrtc](#nowebrtc) | nowebrtc.js |  |
 |  | remove-attr.js |  |
 | [set-constant](#set-constant) | set-constant.js |  |

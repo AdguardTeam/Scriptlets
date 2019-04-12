@@ -75,6 +75,8 @@
       };
     }
 
+    /* eslint-disable no-new-func, prefer-spread */
+
     /**
      * Escapes special chars in string
      * @param {string} str
@@ -85,7 +87,7 @@
     };
     /**
      * Converts search string to the regexp
-     * TODO think about nested dependecies, but be carefull with dependency loops
+     * TODO think about nested dependencies, but be careful with dependency loops
      * @param {string} str search string
      * @returns {RegExp}
      */
@@ -101,12 +103,18 @@
     /**
      * Converts string to function
      * @param {string} str string should be turned into function
+     * @param {string[]} [args] array of parameters;
+     * @param {string} [body] function body stringified
+     * @return {function} return function build from arguments or noop function
      */
     // eslint-disable-next-line arrow-body-style
 
-    var stringToFunc = function stringToFunc(str) {
-      return str // eslint-disable-next-line no-new-func
-      ? new Function(str) : function () {};
+    var stringToFunc = function stringToFunc(str, args, body) {
+      if (args && body) {
+        return Function.apply(null, args.concat(body));
+      }
+
+      return str ? new Function(str) : function () {};
     };
 
     /**
@@ -594,7 +602,7 @@
      */
 
     function preventAddEventListener(source, event, funcStr) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       event = event ? toRegExp(event) : toRegExp('/.?/');
       funcStr = funcStr ? toRegExp(funcStr) : toRegExp('/.?/');
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
@@ -615,19 +623,19 @@
       window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
     }
     preventAddEventListener.names = ['prevent-addEventListener', 'ubo-addEventListener-defuser.js'];
-    preventAddEventListener.injections = [toRegExp];
+    preventAddEventListener.injections = [toRegExp, stringToFunc];
 
-    /* eslint-disable no-new-func, consistent-return, no-eval */
-
+    /* eslint-disable consistent-return, no-eval */
     /**
      * Prevents BlockAdblock
      *
      * @param {Source} source
      */
+
     function preventBab(source) {
       var _this = this;
 
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var nativeSetTimeout = window.setTimeout;
       var babRegex = /\.bab_elementid.$/;
 
@@ -689,16 +697,17 @@
       };
     }
     preventBab.names = ['prevent-bab', 'ubo-bab-defuser.js'];
+    preventBab.injections = [stringToFunc];
 
-    /* eslint-disable no-new-func, no-unused-vars, no-extra-bind, no-console, func-names */
-
+    /* eslint-disable no-unused-vars, no-extra-bind, func-names */
     /**
      * Disables WebRTC via blocking calls to the RTCPeerConnection()
      *
      * @param {Source} source
      */
+
     function nowebrtc(source) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit, source.hitArgs, source.hitBody);
       var propertyName = '';
 
       if (window.RTCPeerConnection) {
@@ -711,11 +720,8 @@
         return;
       }
 
-      var log = console.log.bind(console);
-
       var rtcReplacement = function rtcReplacement(config) {
-        hit();
-        log('Document tried to create an RTCPeerConnection: %o', config);
+        hit("Document tried to create an RTCPeerConnection: ".concat(config));
       };
 
       var noop = function noop() {};
@@ -739,6 +745,7 @@
       }
     }
     nowebrtc.names = ['nowebrtc', 'ubo-nowebrtc.js'];
+    nowebrtc.injections = [stringToFunc];
 
     /* eslint-disable no-console */
     /**
@@ -865,6 +872,47 @@
     logEval.names = ['log-eval'];
     logEval.injections = [stringToFunc];
 
+    /* eslint-disable no-eval, no-extra-bind */
+    /**
+     * Prevents page to use eval.
+     * Notifies about attempts in the console
+     * @param {Source} source
+     */
+
+    function noeval(source) {
+      var hit = stringToFunc(source.hit, source.hitArgs, source.hitBody);
+
+      window.eval = function evalWrapper(s) {
+        hit("AdGuard has prevented eval:\n".concat(s));
+      }.bind();
+    }
+    noeval.names = ['noeval.js', 'silent-noeval.js', 'noeval'];
+    noeval.injections = [stringToFunc];
+
+    /* eslint-disable no-eval, no-extra-bind, func-names */
+    /**
+     * Prevents page to use eval matching payload
+     * @param {Source} source
+     * @param {string|RegExp} [search] string or regexp matching stringified eval payload
+     */
+
+    function preventEvalIf(source, search) {
+      var hit = stringToFunc(source.hit, source.hitArgs, source.hitBody);
+      search = search ? toRegExp(search) : toRegExp('/.?/');
+      var nativeEval = window.eval;
+
+      window.eval = function (payload) {
+        if (!search.test(payload.toString())) {
+          return nativeEval.call(window, payload);
+        }
+
+        hit(payload);
+        return undefined;
+      }.bind(window);
+    }
+    preventEvalIf.names = ['noeval-if.js', 'prevent-eval-if'];
+    preventEvalIf.injections = [toRegExp, stringToFunc];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -885,7 +933,9 @@
         logAddEventListener: logAddEventListener,
         logSetInterval: logSetInterval,
         logSetTimeout: logSetTimeout,
-        logEval: logEval
+        logEval: logEval,
+        noeval: noeval,
+        preventEvalIf: preventEvalIf
     });
 
     /**
@@ -910,14 +960,81 @@
       return "".concat(code, ";\n        const updatedArgs = args ? [].concat(source).concat(args) : [source];\n        ").concat(scriptlet.name, ".apply(this, updatedArgs);\n    ");
     }
     /**
-     * Wrap function into IIFE
-     * @param {Source} source
-     * @param {string} code
+     * Returns arguments of the function
+     * @source https://github.com/sindresorhus/fn-args
+     * @param {function|string} [func] function or string
+     * @returns {string[]}
      */
+
+    var getFuncArgs = function getFuncArgs(func) {
+      return func.toString().match(/(?:\((.*)\))|(?:([^ ]*) *=>)/).slice(1, 3).find(function (capture) {
+        return typeof capture === 'string';
+      }).split(/, */).filter(function (arg) {
+        return arg !== '';
+      }).map(function (arg) {
+        return arg.replace(/\/\*.*\*\//, '');
+      });
+    };
+    /**
+     * Returns body of the function
+     * @param {function|string} [func] function or string
+     * @returns {string}
+     */
+
+
+    var getFuncBody = function getFuncBody(func) {
+      var regexp = /(?:(?:\((?:.*)\))|(?:(?:[^ ]*) *=>))\s?({?[\s\S]*}?)/;
+      var funcString = func.toString();
+      return funcString.match(regexp)[1];
+    };
+    /**
+     * Wrap function into IIFE (Immediately invoked function expression)
+     *
+     * <code>
+     *       const source = {
+     *           args: ["aaa", "bbb"],
+     *           name: "noeval",
+     *       };
+     *
+     *      const code = "function noeval(source, args) {
+     *                            alert(source);
+     *                          }
+     *      noeval.apply(this, args);"
+     *
+     *      const result = wrapInIIFE(source, code);
+     *
+     *      // result becomes a string
+     *
+     *      "(function(source, args){
+     *                function noeval(source) {
+     *                    alert(source);
+     *                }
+     *                noeval.apply(this, args);
+     *        )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])"
+     * </code>
+     *
+     * @param {Source} source - object with scriptlet properties
+     * @param {string} code - scriptlet source code with dependencies
+     * @return {string} full scriptlet code
+     */
+
 
     function wrapInIIFE(source, code) {
       if (source.hit) {
-        source.hit = "(".concat(source.hit.toString(), ")()");
+        // if hit function has arguments, we get them in order to be able to build function after
+        // e.g. function (a) { console.log(a) } ==> hitArgs: ["a"], hitBody: "console.log(a)";
+        // hit function without arguments simply is called inside anonymous function
+        // Check `stringToFunc` implementation to learn how this `hit` function is executed
+        // by scriptlets.
+        var stringifiedHit = source.hit.toString();
+        var hitArgs = getFuncArgs(stringifiedHit);
+
+        if (hitArgs.length > 0) {
+          source.hitBody = getFuncBody(stringifiedHit);
+          source.hitArgs = hitArgs;
+        } else {
+          source.hit = "(".concat(stringifiedHit, ")()");
+        }
       }
 
       var sourceString = JSON.stringify(source);
@@ -979,12 +1096,14 @@
     }
 
     /**
-     * @typedef {Object} Source
+     * @typedef {Object} Source - scriptlet properties
      * @property {string} name Scriptlet name
      * @property {Array<string>} args Arguments for scriptlet function
      * @property {'extension'|'corelibs'} engine Defines the final form of scriptlet string presentation
      * @property {string} [version]
      * @property {Function} [hit] Will be executed when target action is triggered
+     * @property {string[]} [hitArgs] Arguments of hit function
+     * @property {string} [hitBody] Body of hit function
      */
 
     /**
