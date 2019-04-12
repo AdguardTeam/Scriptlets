@@ -98,6 +98,16 @@
       var escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       return new RegExp(escaped);
     };
+    /**
+     * Converts string to function
+     * @param {string} str string should be turned into function
+     */
+    // eslint-disable-next-line arrow-body-style
+
+    var stringToFunc = function stringToFunc(str) {
+      return str // eslint-disable-next-line no-new-func
+      ? new Function(str) : function () {};
+    };
 
     function onErrorHandler(nativeOnError, rid) {
       // eslint-disable-next-line consistent-return
@@ -126,6 +136,7 @@
         getPropertyInChain: getPropertyInChain,
         escapeRegExp: escapeRegExp,
         toRegExp: toRegExp,
+        stringToFunc: stringToFunc,
         onErrorHandler: onErrorHandler
     });
 
@@ -687,6 +698,131 @@
     }
     nowebrtc.names = ['nowebrtc', 'ubo-nowebrtc.js'];
 
+    /* eslint-disable no-console */
+    /**
+     * Logs add event listener calls
+     *
+     * @param {Source} source
+     */
+
+    function logAddEventListener(source) {
+      var hit = stringToFunc(source.hit);
+      var log = console.log.bind(console);
+      var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+
+      function addEventListenerWrapper(eventName, callback) {
+        log("addEventListener(\"".concat(eventName, "\", ").concat(callback.toString(), ")"));
+        hit();
+
+        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+          args[_key - 2] = arguments[_key];
+        }
+
+        return nativeAddEventListener.apply(this, [eventName, callback].concat(args));
+      }
+
+      window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
+    }
+    logAddEventListener.names = ['log-addEventListener', 'addEventListener-logger.js'];
+    logAddEventListener.injections = [stringToFunc];
+
+    /* eslint-disable no-console */
+    /**
+     * Logs setInterval calls
+     *
+     * @param {Source} source
+     */
+
+    function logSetInterval(source) {
+      var hit = stringToFunc(source.hit);
+      var nativeSetInterval = window.setInterval;
+      var log = console.log.bind(console);
+
+      function setIntervalWrapper(callback, timeout) {
+        hit();
+        log("setInterval(\"".concat(callback.toString(), "\", ").concat(timeout, ")"));
+
+        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+          args[_key - 2] = arguments[_key];
+        }
+
+        return nativeSetInterval.apply(window, [callback, timeout].concat(args));
+      }
+
+      window.setInterval = setIntervalWrapper;
+    }
+    logSetInterval.names = ['log-setInterval', 'setInterval-logger.js'];
+    logSetInterval.injections = [stringToFunc];
+
+    /* eslint-disable no-console */
+    /**
+     * Logs setTimeout calls
+     *
+     * @param {Source} source
+     */
+
+    function logSetTimeout(source) {
+      var hit = stringToFunc(source.hit);
+      var nativeSetTimeout = window.setTimeout;
+      var log = console.log.bind(console);
+
+      function setTimeoutWrapper(callback, timeout) {
+        hit();
+        log("setTimeout(\"".concat(callback.toString(), "\", ").concat(timeout, ")"));
+
+        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+          args[_key - 2] = arguments[_key];
+        }
+
+        return nativeSetTimeout.apply(window, [callback, timeout].concat(args));
+      }
+
+      window.setTimeout = setTimeoutWrapper;
+    }
+    logSetTimeout.names = ['log-setTimeout', 'setTimeout-logger.js'];
+    logSetTimeout.injections = [stringToFunc];
+
+    /* eslint-disable no-console, no-eval */
+    /**
+     * Logs all eval() and Function() calls
+     *
+     * @param {Source} source
+     */
+
+    function logEval(source) {
+      var hit = stringToFunc(source.hit);
+      var log = console.log.bind(console); // wrap eval function
+
+      var nativeEval = window.eval;
+
+      function evalWrapper(str) {
+        hit();
+        log("eval(\"".concat(str, "\")"));
+        return nativeEval(str);
+      }
+
+      window.eval = evalWrapper; // wrap new Function
+
+      var nativeFunction = window.Function;
+
+      function FunctionWrapper() {
+        hit();
+
+        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        log("new Function(".concat(args.join(', '), ")"));
+        return nativeFunction.apply(this, [].concat(args));
+      }
+
+      FunctionWrapper.prototype = Object.create(nativeFunction.prototype);
+      FunctionWrapper.prototype.constructor = FunctionWrapper;
+      window.Function = FunctionWrapper;
+    }
+    logEval.names = ['log-eval'];
+    logEval.injections = [stringToFunc];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -702,7 +838,11 @@
         setConstant: setConstant,
         preventAddEventListener: preventAddEventListener,
         preventBab: preventBab,
-        nowebrtc: nowebrtc
+        nowebrtc: nowebrtc,
+        logAddEventListener: logAddEventListener,
+        logSetInterval: logSetInterval,
+        logSetTimeout: logSetTimeout,
+        logEval: logEval
     });
 
     /**
