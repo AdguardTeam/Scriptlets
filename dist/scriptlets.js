@@ -537,8 +537,10 @@
     setConstant.injections = [getPropertyInChain, setPropertyAccess, stringToFunc];
 
     /**
-     *
+     * Removes current page cookies specified by name.
+     * For current domain, subdomains on load and before unload.
      * @param {Source} source
+     * @param {string} match string for matching with cookie name
      */
 
     function removeCookie(source, match) {
@@ -592,7 +594,6 @@
     removeCookie.names = ['remove-cookie', 'ubo-cookie-remover.js'];
     removeCookie.injections = [stringToFunc, toRegExp];
 
-    /* eslint-disable no-new-func */
     /**
      * Prevents adding event listeners
      *
