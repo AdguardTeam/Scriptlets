@@ -3,7 +3,7 @@ import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { stringToFunc, toRegExp } from '../helpers/string-utils';
-import { onErrorHandler } from '../helpers';
+import { createOnErrorHandler } from '../helpers';
 
 export function abortCurrentInlineScript(source, property, search = null) {
     const regex = search ? toRegExp(search) : null;
@@ -65,7 +65,7 @@ export function abortCurrentInlineScript(source, property, search = null) {
 
     setChainPropAccess(window, property);
 
-    window.onerror = onErrorHandler(rid).bind();
+    window.onerror = createOnErrorHandler(rid).bind();
 }
 
 abortCurrentInlineScript.names = [
@@ -80,5 +80,5 @@ abortCurrentInlineScript.injections = [
     getPropertyInChain,
     toRegExp,
     stringToFunc,
-    onErrorHandler,
+    createOnErrorHandler,
 ];
