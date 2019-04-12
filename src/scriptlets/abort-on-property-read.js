@@ -48,8 +48,7 @@ export function abortOnPropertyRead(source, property) {
 
     setChainPropAccess(window, property);
 
-    const nativeOnError = window.onerror;
-    window.onerror = onErrorHandler(nativeOnError, rid).bind();
+    window.onerror = onErrorHandler(rid).bind();
 }
 
 abortOnPropertyRead.names = [

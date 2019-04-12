@@ -109,8 +109,9 @@
       ? new Function(str) : function () {};
     };
 
-    function onErrorHandler(nativeOnError, rid) {
+    function onErrorHandler(rid) {
       // eslint-disable-next-line consistent-return
+      var nativeOnError = window.onerror;
       return function onError(error) {
         if (typeof error === 'string' && error.indexOf(rid) !== -1) {
           return true;
@@ -123,6 +124,8 @@
 
           return nativeOnError.apply(this, [error].concat(args));
         }
+
+        return false;
       };
     }
 
@@ -205,8 +208,7 @@
       };
 
       setChainPropAccess(window, property);
-      var nativeOnError = window.onerror;
-      window.onerror = onErrorHandler(nativeOnError, rid).bind();
+      window.onerror = onErrorHandler(rid).bind();
     }
     abortOnPropertyRead.names = ['abort-on-property-read', 'ubo-abort-on-property-read.js', 'abp-abort-on-property-read'];
     abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, onErrorHandler];
@@ -262,8 +264,7 @@
       };
 
       setChainPropAccess(window, property);
-      var nativeOnError = window.onerror;
-      window.onerror = onErrorHandler(nativeOnError, rid).bind();
+      window.onerror = onErrorHandler(rid).bind();
     }
     abortOnPropertyWrite.names = ['abort-on-property-write', 'ubo-abort-on-property-write.js', 'abp-abort-on-property-write'];
     abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, onErrorHandler];
@@ -436,8 +437,7 @@
       };
 
       setChainPropAccess(window, property);
-      var nativeOnError = window.onerror;
-      window.onerror = onErrorHandler(nativeOnError, rid).bind();
+      window.onerror = onErrorHandler(rid).bind();
     }
     abortCurrentInlineScript.names = ['abort-current-inline-script', 'ubo-abort-current-inline-script.js', 'abp-abort-current-inline-script'];
     abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, onErrorHandler];

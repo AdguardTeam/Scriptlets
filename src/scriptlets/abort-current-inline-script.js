@@ -67,8 +67,7 @@ export function abortCurrentInlineScript(source, property, search = null) {
 
     setChainPropAccess(window, property);
 
-    const nativeOnError = window.onerror;
-    window.onerror = onErrorHandler(nativeOnError, rid).bind();
+    window.onerror = onErrorHandler(rid).bind();
 }
 
 abortCurrentInlineScript.names = [
