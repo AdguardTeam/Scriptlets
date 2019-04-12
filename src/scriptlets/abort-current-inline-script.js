@@ -1,17 +1,13 @@
-/* eslint-disable no-new-func */
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
-import { toRegExp } from '../helpers/string-utils';
+import { stringToFunc, toRegExp } from '../helpers/string-utils';
 
 export function abortCurrentInlineScript(source, property, search = null) {
     const regex = search ? toRegExp(search) : null;
     const rid = randomId();
 
-    const hit = source.hit
-        ? new Function(source.hit)
-        : () => {};
-
+    const hit = stringToFunc(source.hit);
 
     const getCurrentScript = () => {
         if (!document.currentScript) {
@@ -85,4 +81,10 @@ abortCurrentInlineScript.names = [
     'abp-abort-current-inline-script',
 ];
 
-abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp];
+abortCurrentInlineScript.injections = [
+    randomId,
+    setPropertyAccess,
+    getPropertyInChain,
+    toRegExp,
+    stringToFunc,
+];

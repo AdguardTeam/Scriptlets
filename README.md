@@ -18,6 +18,8 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [log-setInterval](#log-setInterval)
     * [log-setTimeout](#log-setTimeout)
     * [log-eval](#log-eval)
+    * [noeval](#noeval)
+    * [prevent-eval-if](#prevent-eval-if)
 * [Scriptlets compatibility table](#compatibility)
 * [How to build](#how-to-build)
 
@@ -396,6 +398,43 @@ example.org#%#//scriptlet("log-eval")
 
 [scriptlet source](./src/scriptlets/log-eval.js)
 
+### <a id="noeval"></a> noeval
+
+Prevents executing eval on the page.
+
+**Syntax**
+```
+example.org#%#//scriptlet("noeval")
+```
+
+[scriptlet source](./src/scriptlets/noeval.js)
+
+### <a id="prevent-eval-if"></a> prevent-eval-if
+
+Prevents page to use eval matching payload
+
+**Syntax**
+```
+example.org#%#//scriptlet('prevent-eval-if'[, <search>])
+```
+
+**Parameters**
+- `search` (optional) string or regexp for matching the payload
+
+**Examples**
+
+1. Prevent all eval calls
+    ```
+    example.org#%#//scriptlet('prevent-eval-if')
+    ```
+
+2. Prevent eval call with payload containing 'test'
+    ```
+    example.org#%#//scriptlet('prevent-eval-if', 'test')
+    ```
+
+[scriptlet source](./src/scriptlets/prevent-eval-if.js)
+
 ## <a id="compatibility"></a> Sriptlets compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -408,9 +447,9 @@ example.org#%#//scriptlet("log-eval")
 |  | cookie-remover.js |  |
 |  | csp.js (deprecated) |  |
 |  | disable-newtab-links.js |  |
-|  | noeval.js |  |
-|  | silent-noeval.js |  |
-|  | noeval-if.js |  |
+| [noeval](#noeval) | noeval.js |  |
+| [noeval](#noeval) | silent-noeval.js |  |
+| [prevent-eval-if](#prevent-eval-if) | noeval-if.js |  |
 | [nowebrtc](#nowebrtc) | nowebrtc.js |  |
 |  | remove-attr.js |  |
 | [set-constant](#set-constant) | set-constant.js |  |
