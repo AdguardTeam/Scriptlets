@@ -1,7 +1,6 @@
-/* eslint-disable no-new-func */
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { setPropertyAccess } from '../helpers/set-property-access';
-import { stringToFunc } from '../helpers';
+import { stringToFunc } from '../helpers/string-utils';
 
 export function setConstant(source, property, value) {
     if (!property) {

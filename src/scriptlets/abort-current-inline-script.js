@@ -8,7 +8,6 @@ import { createOnErrorHandler } from '../helpers';
 export function abortCurrentInlineScript(source, property, search = null) {
     const regex = search ? toRegExp(search) : null;
     const rid = randomId();
-
     const hit = stringToFunc(source.hit);
 
     const getCurrentScript = () => {

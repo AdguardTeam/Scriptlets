@@ -1,5 +1,4 @@
-/* eslint-disable no-new-func */
-import { stringToFunc, toRegExp } from '../helpers/string-utils';
+import { toRegExp, stringToFunc } from '../helpers/string-utils';
 
 /**
  * Prevent calls to setInterval for specified matching in passed callback and delay

@@ -398,42 +398,35 @@ example.org#%#//scriptlet("log-eval")
 
 [scriptlet source](./src/scriptlets/log-eval.js)
 
-### <a id="noeval"></a> noeval
+### <a id="remove-cookie"></a> remove cookie
 
-Prevents executing eval on the page.
-
-**Syntax**
-```
-example.org#%#//scriptlet("noeval")
-```
-
-[scriptlet source](./src/scriptlets/noeval.js)
-
-### <a id="prevent-eval-if"></a> prevent-eval-if
-
-Prevents page to use eval matching payload
+Removes current page cookies by passed string matching with name. For current domain and subdomains. Runs on load and before unload.
 
 **Syntax**
 ```
-example.org#%#//scriptlet('prevent-eval-if'[, <search>])
+example.org#%#//scriptlet("cookie-remove"[, match])
 ```
 
 **Parameters**
-- `search` (optional) string or regexp for matching the payload
+- `match` (optional) String or regex matching the cookie name. If not specified all accessible cookies will be removed.
 
 **Examples**
-
-1. Prevent all eval calls
+1. Removes all cookies:
     ```
-    example.org#%#//scriptlet('prevent-eval-if')
-    ```
-
-2. Prevent eval call with payload containing 'test'
-    ```
-    example.org#%#//scriptlet('prevent-eval-if', 'test')
+    example.org#%#//scriptlet("remove-cookie")
     ```
 
-[scriptlet source](./src/scriptlets/prevent-eval-if.js)
+2. Removes cookies which name contains `example` string.
+    ```
+    example.org#%#//scriptlet("remove-cookie", "example")
+    ```
+
+    For instance this cookie will be removed
+    ```javascript
+    document.cookie = '__example=randomValue';
+    ```
+
+[scriptlet source](./src/scriptlets/cookie-remover.js)
 
 ## <a id="compatibility"></a> Sriptlets compatibility table
 
@@ -444,7 +437,7 @@ example.org#%#//scriptlet('prevent-eval-if'[, <search>])
 | [abort-on-property-write](#abort-on-property-write) | abort-on-property-write.js | abort-on-property-write |
 | [prevent-addEventListener](#prevent-addEventListener) | addEventListener-defuser.js |  |
 | [log-addEventListener](#log-addEventListener) | addEventListener-logger.js |  |
-|  | cookie-remover.js |  |
+| [remove-cookie](#remove-cookie) | cookie-remover.js |  |
 |  | csp.js (deprecated) |  |
 |  | disable-newtab-links.js |  |
 | [noeval](#noeval) | noeval.js |  |
@@ -498,10 +491,16 @@ Build dev (rebuild js files on every change)
 yarn watch
 ```
 
-Run UI Unit testing
+Run node testing
 ```
 yarn test
 ```
+
+Run tests gui
+```
+yarn gui-test
+```
+
 
 ### Build output
 

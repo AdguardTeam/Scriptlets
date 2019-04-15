@@ -281,7 +281,6 @@
     abortOnPropertyWrite.names = ['abort-on-property-write', 'ubo-abort-on-property-write.js', 'abp-abort-on-property-write'];
     abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, stringToFunc, createOnErrorHandler];
 
-    /* eslint-disable no-new-func */
     /**
      * Prevent calls to setTimeout for specified matching in passed callback and delay
      * by setting callback to empty function
@@ -316,7 +315,6 @@
     preventSetTimeout.names = ['prevent-setTimeout', 'ubo-setTimeout-defuser.js'];
     preventSetTimeout.injections = [toRegExp, stringToFunc];
 
-    /* eslint-disable no-new-func */
     /**
      * Prevent calls to setInterval for specified matching in passed callback and delay
      * by setting callback to empty function
@@ -351,7 +349,6 @@
     preventSetInterval.names = ['prevent-setInterval', 'ubo-setInterval-defuser.js'];
     preventSetInterval.injections = [toRegExp, stringToFunc];
 
-    /* eslint-disable no-new-func */
     /**
      * Prevent calls `window.open` when URL match or not match with passed params
      * @param {Source} source
@@ -454,7 +451,6 @@
     abortCurrentInlineScript.names = ['abort-current-inline-script', 'ubo-abort-current-inline-script.js', 'abp-abort-current-inline-script'];
     abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, stringToFunc, createOnErrorHandler];
 
-    /* eslint-disable no-new-func */
     function setConstant(source, property, value) {
       if (!property) {
         return;
@@ -553,6 +549,64 @@
     }
     setConstant.names = ['set-constant', 'ubo-set-constant.js'];
     setConstant.injections = [getPropertyInChain, setPropertyAccess, stringToFunc];
+
+    /**
+     * Removes current page cookies specified by name.
+     * For current domain, subdomains on load and before unload.
+     * @param {Source} source
+     * @param {string} match string for matching with cookie name
+     */
+
+    function removeCookie(source, match) {
+      var hit = stringToFunc(source.hit);
+      var regex = match ? toRegExp(match) : toRegExp('/.?/');
+
+      var removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
+        var cookieSpec = "".concat(cookieName, "=");
+        var domain1 = "; domain=".concat(hostName);
+        var domain2 = "; domain=.".concat(hostName);
+        var path = '; path=/';
+        var expiration = '; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        document.cookie = cookieSpec + expiration;
+        document.cookie = cookieSpec + domain1 + expiration;
+        document.cookie = cookieSpec + domain2 + expiration;
+        document.cookie = cookieSpec + path + expiration;
+        document.cookie = cookieSpec + domain1 + path + expiration;
+        document.cookie = cookieSpec + domain2 + path + expiration;
+        hit();
+      };
+
+      var rmCookie = function rmCookie() {
+        document.cookie.split(';').forEach(function (cookieStr) {
+          var pos = cookieStr.indexOf('=');
+
+          if (pos === -1) {
+            return;
+          }
+
+          var cookieName = cookieStr.slice(0, pos).trim();
+
+          if (!regex.test(cookieName)) {
+            return;
+          }
+
+          var hostParts = document.location.hostname.split('.');
+
+          for (var i = 0; i < hostParts.length - 1; i += 1) {
+            var hostName = hostParts.slice(i).join('.');
+
+            if (hostName) {
+              removeCookieFromHost(cookieName, hostName);
+            }
+          }
+        });
+      };
+
+      rmCookie();
+      window.addEventListener('beforeunload', rmCookie);
+    }
+    removeCookie.names = ['remove-cookie', 'ubo-cookie-remover.js'];
+    removeCookie.injections = [stringToFunc, toRegExp];
 
     /**
      * Prevents adding event listeners
@@ -887,6 +941,7 @@
         preventWindowOpen: preventWindowOpen,
         abortCurrentInlineScript: abortCurrentInlineScript,
         setConstant: setConstant,
+        removeCookie: removeCookie,
         preventAddEventListener: preventAddEventListener,
         preventBab: preventBab,
         nowebrtc: nowebrtc,
