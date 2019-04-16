@@ -17,3 +17,4 @@ export * from './log-setInterval';
 export * from './log-setTimeout';
 export * from './log-eval';
 export * from './prevent-fab-3.2.0';
+export * from './set-popads-dummy';

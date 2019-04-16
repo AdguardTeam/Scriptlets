@@ -864,6 +864,30 @@
     preventFab.names = ['prevent-fab-3.2.0', 'fuckadblock.js-3.2.0'];
     preventFab.injections = [stringToFunc, noop];
 
+    /* eslint-disable no-console, func-names, no-multi-assign */
+    /**
+     * Set static properties to PopAds and popns
+     *
+     * @param {Source} source
+     */
+
+    function setPopadsDummy(source) {
+      var hit = stringToFunc(source.hit);
+      delete window.PopAds;
+      delete window.popns;
+      Object.defineProperties(window, {
+        PopAds: {
+          value: {}
+        },
+        popns: {
+          value: {}
+        }
+      });
+      hit();
+    }
+    setPopadsDummy.names = ['set-popads-dummy', 'popads-dummy.js'];
+    setPopadsDummy.injections = [stringToFunc];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -884,7 +908,8 @@
         logSetInterval: logSetInterval,
         logSetTimeout: logSetTimeout,
         logEval: logEval,
-        preventFab: preventFab
+        preventFab: preventFab,
+        setPopadsDummy: setPopadsDummy
     });
 
     /**

@@ -407,6 +407,17 @@ example.org#%#//scriptlet("prevent-fab-3.2.0")
 
 [scriptlet source](./src/scriptlets/prevent-fab-3.2.0.js)
 
+### <a id="set-popads-dummy"></a> set-popads-dummy
+
+Prevents execution of FuckAdBlock script v3.2.0
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-fab-3.2.0")
+```
+
+[scriptlet source](./src/scriptlets/prevent-fab-3.2.0.js)
+
 ## <a id="compatibility"></a> Sriptlets compatibility table
 
 |AdGuard | uBO | Adblock Plus |
