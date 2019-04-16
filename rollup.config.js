@@ -34,6 +34,9 @@ const bundleBuild = {
     },
     plugins: [
         resolve(),
+        commonjs({
+            include: 'node_modules/**',
+        }),
         babel({
             exclude: 'node_modules/**',
             runtimeHelpers: true,

@@ -18,6 +18,8 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [log-setInterval](#log-setInterval)
     * [log-setTimeout](#log-setTimeout)
     * [log-eval](#log-eval)
+    * [noeval](#noeval)
+    * [prevent-eval-if](#prevent-eval-if)
 * [Scriptlets compatibility table](#compatibility)
 * [How to build](#how-to-build)
 
@@ -396,6 +398,36 @@ example.org#%#//scriptlet("log-eval")
 
 [scriptlet source](./src/scriptlets/log-eval.js)
 
+### <a id="remove-cookie"></a> remove cookie
+
+Removes current page cookies by passed string matching with name. For current domain and subdomains. Runs on load and before unload.
+
+**Syntax**
+```
+example.org#%#//scriptlet("cookie-remove"[, match])
+```
+
+**Parameters**
+- `match` (optional) String or regex matching the cookie name. If not specified all accessible cookies will be removed.
+
+**Examples**
+1. Removes all cookies:
+    ```
+    example.org#%#//scriptlet("remove-cookie")
+    ```
+
+2. Removes cookies which name contains `example` string.
+    ```
+    example.org#%#//scriptlet("remove-cookie", "example")
+    ```
+
+    For instance this cookie will be removed
+    ```javascript
+    document.cookie = '__example=randomValue';
+    ```
+
+[scriptlet source](./src/scriptlets/cookie-remover.js)
+
 ### <a id="prevent-fab-3.2.0"></a> prevent-fab-3.2.0
 
 Prevents execution of FuckAdBlock script v3.2.0
@@ -427,12 +459,12 @@ example.org#%#//scriptlet("prevent-fab-3.2.0")
 | [abort-on-property-write](#abort-on-property-write) | abort-on-property-write.js | abort-on-property-write |
 | [prevent-addEventListener](#prevent-addEventListener) | addEventListener-defuser.js |  |
 | [log-addEventListener](#log-addEventListener) | addEventListener-logger.js |  |
-|  | cookie-remover.js |  |
+| [remove-cookie](#remove-cookie) | cookie-remover.js |  |
 |  | csp.js (deprecated) |  |
 |  | disable-newtab-links.js |  |
-|  | noeval.js |  |
-|  | silent-noeval.js |  |
-|  | noeval-if.js |  |
+| [noeval](#noeval) | noeval.js |  |
+| [noeval](#noeval) | silent-noeval.js |  |
+| [prevent-eval-if](#prevent-eval-if) | noeval-if.js |  |
 | [nowebrtc](#nowebrtc) | nowebrtc.js |  |
 |  | remove-attr.js |  |
 | [set-constant](#set-constant) | set-constant.js |  |
@@ -481,10 +513,16 @@ Build dev (rebuild js files on every change)
 yarn watch
 ```
 
-Run UI Unit testing
+Run node testing
 ```
 yarn test
 ```
+
+Run tests gui
+```
+yarn gui-test
+```
+
 
 ### Build output
 

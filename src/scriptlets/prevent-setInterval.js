@@ -1,5 +1,4 @@
-/* eslint-disable no-new-func */
-import { toRegExp } from '../helpers/string-utils';
+import { toRegExp, stringToFunc } from '../helpers/string-utils';
 
 /**
  * Prevent calls to setInterval for specified matching in passed callback and delay
@@ -10,9 +9,7 @@ import { toRegExp } from '../helpers/string-utils';
  * @param {string|number} interval matching interval
  */
 export function preventSetInterval(source, match, interval) {
-    const hit = source.hit
-        ? new Function(source.hit)
-        : () => {};
+    const hit = stringToFunc(source.hit);
     const nativeInterval = window.setInterval;
     interval = parseInt(interval, 10);
     interval = Number.isNaN(interval) ? null : interval;
@@ -33,6 +30,4 @@ preventSetInterval.names = [
     'ubo-setInterval-defuser.js',
 ];
 
-preventSetInterval.injections = [toRegExp];
-
-export default preventSetInterval;
+preventSetInterval.injections = [toRegExp, stringToFunc];

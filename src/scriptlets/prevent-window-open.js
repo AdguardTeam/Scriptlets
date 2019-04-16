@@ -1,5 +1,4 @@
-/* eslint-disable no-new-func */
-import { toRegExp } from '../helpers/string-utils';
+import { toRegExp, stringToFunc } from '../helpers/string-utils';
 
 /**
  * Prevent calls `window.open` when URL match or not match with passed params
@@ -9,9 +8,7 @@ import { toRegExp } from '../helpers/string-utils';
  */
 export function preventWindowOpen(source, inverse = false, match) {
     const nativeOpen = window.open;
-    const hit = source.hit
-        ? new Function(source.hit)
-        : () => { };
+    const hit = stringToFunc(source.hit);
 
     inverse = inverse
         ? !(+inverse)
@@ -35,6 +32,4 @@ preventWindowOpen.names = [
     'ubo-window.open-defuser.js',
 ];
 
-preventWindowOpen.injections = [toRegExp];
-
-export default preventWindowOpen;
+preventWindowOpen.injections = [toRegExp, stringToFunc];

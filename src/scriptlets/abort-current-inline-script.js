@@ -2,16 +2,13 @@
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
-import { toRegExp } from '../helpers/string-utils';
+import { stringToFunc, toRegExp } from '../helpers/string-utils';
+import { createOnErrorHandler } from '../helpers';
 
 export function abortCurrentInlineScript(source, property, search = null) {
     const regex = search ? toRegExp(search) : null;
     const rid = randomId();
-
-    const hit = source.hit
-        ? new Function(source.hit)
-        : () => {};
-
+    const hit = stringToFunc(source.hit);
 
     const getCurrentScript = () => {
         if (!document.currentScript) {
@@ -67,16 +64,7 @@ export function abortCurrentInlineScript(source, property, search = null) {
 
     setChainPropAccess(window, property);
 
-    const onerrorOriginal = window.onerror;
-    // eslint-disable-next-line consistent-return
-    window.onerror = (error, ...args) => {
-        if (typeof error === 'string' && error.indexOf(rid) !== -1) {
-            return true;
-        }
-        if (onerrorOriginal instanceof Function) {
-            return onerrorOriginal.apply(this, [error, ...args]);
-        }
-    };
+    window.onerror = createOnErrorHandler(rid).bind();
 }
 
 abortCurrentInlineScript.names = [
@@ -85,4 +73,11 @@ abortCurrentInlineScript.names = [
     'abp-abort-current-inline-script',
 ];
 
-abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp];
+abortCurrentInlineScript.injections = [
+    randomId,
+    setPropertyAccess,
+    getPropertyInChain,
+    toRegExp,
+    stringToFunc,
+    createOnErrorHandler,
+];

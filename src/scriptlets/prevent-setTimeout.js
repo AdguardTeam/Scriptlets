@@ -1,5 +1,4 @@
-/* eslint-disable no-new-func */
-import { toRegExp } from '../helpers/string-utils';
+import { toRegExp, stringToFunc } from '../helpers/string-utils';
 
 /**
  * Prevent calls to setTimeout for specified matching in passed callback and delay
@@ -10,9 +9,7 @@ import { toRegExp } from '../helpers/string-utils';
  * @param {string|number} delay matching delay
  */
 export function preventSetTimeout(source, match, delay) {
-    const hit = source.hit
-        ? new Function(source.hit)
-        : () => {};
+    const hit = stringToFunc(source.hit);
     const nativeTimeout = window.setTimeout;
     delay = parseInt(delay, 10);
     delay = Number.isNaN(delay) ? null : delay;
@@ -33,6 +30,4 @@ preventSetTimeout.names = [
     'ubo-setTimeout-defuser.js',
 ];
 
-preventSetTimeout.injections = [toRegExp];
-
-export default preventSetTimeout;
+preventSetTimeout.injections = [toRegExp, stringToFunc];

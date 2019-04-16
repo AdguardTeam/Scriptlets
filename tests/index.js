@@ -1,9 +1,9 @@
 /* eslint-disable no-console */
-const path = require('path');
 const { runQunitPuppeteer, printFailedTests, printResultSummary } = require('node-qunit-puppeteer');
+const { server, port } = require('./server');
 
 const qunitArgs = {
-    targetUrl: `file://${path.join(__dirname, 'tests.html')}`,
+    targetUrl: `http://127.0.0.1:${port}/`,
     timeout: 10000,
 };
 
@@ -14,6 +14,9 @@ runQunitPuppeteer(qunitArgs)
         if (result.stats.failed > 0) {
             printFailedTests(result, console);
         }
+    })
+    .then(() => {
+        server.close();
     })
     .catch((ex) => {
         console.error(ex);
