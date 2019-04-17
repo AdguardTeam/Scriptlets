@@ -23,6 +23,7 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [prevent-fab-3.2.0](#prevent-fab-3.2.0)
     * [set-popads-dummy](#set-popads-dummy)
     * [prevent-popads-net](#prevent-popads-net)
+    * [prevent-adfly](#prevent-adfly)
 * [Scriptlets compatibility table](#compatibility)
 * [How to build](#how-to-build)
 
