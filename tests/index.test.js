@@ -19,3 +19,4 @@ import * as cookieRemover from './remove-cookie.test';
 import * as preventFab from './prevent-fab-3.2.0.test';
 import * as setPopadsDummy from './set-popads-dummy.test';
 import * as preventPopadsNet from './prevent-popads-net.test';
+import * as preventAdfly from './prevent-adfly.test';

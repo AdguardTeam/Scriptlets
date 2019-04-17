@@ -17,8 +17,20 @@ const map = {
     '/dist/scriptlets.js': '../dist/scriptlets.js',
     '/dist/tests.js': 'dist/tests.js',
 };
+
+const prepareUrl = (requestUrl) => {
+    let url;
+    if (requestUrl.match(/testId/)) {
+        url = '/';
+    } else {
+        url = requestUrl;
+    }
+    return url;
+};
+
 const requestHandler = (request, response) => {
-    const file = getFile(map[request.url]);
+    const url = prepareUrl(request.url);
+    const file = getFile(map[url]);
     response.write(file);
     response.end();
 };

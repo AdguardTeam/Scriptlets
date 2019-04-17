@@ -464,6 +464,17 @@ example.org#%#//scriptlet("prevent-popads-net")
 
 [scriptlet source](./src/scriptlets/prevent-popads-net.js)
 
+### <a id="prevent-adfly"></a> prevent-adfly
+
+Prevents anti adblock based on adfly shortened links
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-adfly")
+```
+
+[scriptlet source](./src/scriptlets/prevent-adfly.js)
+
 ## <a id="compatibility"></a> Sriptlets compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -494,7 +505,7 @@ example.org#%#//scriptlet("prevent-popads-net")
 | [prevent-fab-3.2.0](#prevent-fab-3.2.0) | fuckadblock.js-3.2.0 |  |
 | [set-popads-dummy](#set-popads-dummy) | popads-dummy.js |  |
 | [prevent-popads-net](#prevent-popads-net) | popads.net.js |  |
-|  | adfly-defuser.js |  |
+| [prevent-adfly](#prevent-adfly) | adfly-defuser.js |  |
 |  |  | hide-if-contains-image |
 |  |  | hide-if-has-and-matches-style |
 |  |  | dir-string |

@@ -1030,6 +1030,87 @@
     preventPopadsNet.names = ['prevent-popads-net', 'popads.net.js'];
     preventPopadsNet.injections = [stringToFunc, createOnErrorHandler, randomId];
 
+    /* eslint-disable func-names */
+    /**
+     * Prevents anti adblock based on adfly shortened links
+     * @param {Source} source
+     */
+
+    function preventAdfly(source) {
+      var hit = stringToFunc(source.hit);
+      var isDigit = /^\d$/;
+
+      var handler = function handler(encodedURL) {
+        var var1 = '';
+        var var2 = '';
+
+        for (var i = 0; i < encodedURL.length; i += 1) {
+          if (i % 2 === 0) {
+            var1 += encodedURL.charAt(i);
+          } else {
+            var2 = encodedURL.charAt(i) + var2;
+          }
+        }
+
+        var data = (var1 + var2).split('');
+
+        for (var _i = 0; _i < data.length; _i += 1) {
+          if (isDigit.test(data[_i])) {
+            for (var ii = _i + 1; ii < data.length; ii += 1) {
+              if (isDigit.test(data[ii])) {
+                // eslint-disable-next-line no-bitwise
+                var temp = parseInt(data[_i], 10) ^ parseInt(data[ii], 10);
+
+                if (temp < 10) {
+                  data[_i] = temp.toString();
+                }
+
+                _i = ii;
+                break;
+              }
+            }
+          }
+        }
+
+        data = data.join('');
+        var decodedURL = window.atob(data).slice(16, -16);
+        window.stop();
+        window.onbeforeunload = null;
+        window.location.href = decodedURL;
+      };
+
+      var val;
+      var flag = true;
+      var result = setPropertyAccess(window, 'ysmm', {
+        configurable: false,
+        set: function set(value) {
+          if (flag) {
+            flag = false;
+
+            try {
+              if (typeof value === 'string') {
+                handler(value);
+              }
+            } catch (err) {} // eslint-disable-line no-empty
+
+          }
+
+          val = value;
+        },
+        get: function get() {
+          return val;
+        }
+      });
+
+      if (result) {
+        hit();
+      } else {
+        window.console.error('Failed to set up prevent-adfly scriptlet');
+      }
+    }
+    preventAdfly.names = ['prevent-adfly', 'adfly-defuser.js'];
+    preventAdfly.injections = [stringToFunc, setPropertyAccess];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -1055,7 +1136,8 @@
         preventEvalIf: preventEvalIf,
         preventFab: preventFab,
         setPopadsDummy: setPopadsDummy,
-        preventPopadsNet: preventPopadsNet
+        preventPopadsNet: preventPopadsNet,
+        preventAdfly: preventAdfly
     });
 
     /**
