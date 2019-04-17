@@ -13,6 +13,7 @@ const map = {
     '/': 'tests.html',
     '/styles.css': 'styles.css',
     '/node_modules/qunit/qunit/qunit.js': '../node_modules/qunit/qunit/qunit.js',
+    '/node_modules/sinon/pkg/sinon.js': '../node_modules/sinon/pkg/sinon.js',
     '/dist/scriptlets.js': '../dist/scriptlets.js',
     '/dist/tests.js': 'dist/tests.js',
 };

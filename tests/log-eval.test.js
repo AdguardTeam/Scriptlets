@@ -1,5 +1,7 @@
 /* global QUnit */
 /* eslint-disable no-eval, no-console, no-new-func */
+import { clearProperties } from './helpers';
+
 const { test, module, testDone } = QUnit;
 const name = 'log-eval';
 
@@ -14,12 +16,6 @@ const runScriptlet = (hit) => {
     };
     const resultString = window.scriptlets.invoke(params);
     evalWrapper(resultString);
-};
-
-const clearProperties = (...props) => {
-    props.forEach((prop) => {
-        delete window[prop];
-    });
 };
 
 const nativeEval = window.eval;

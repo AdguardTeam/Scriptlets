@@ -1,5 +1,7 @@
 /* global QUnit */
 /* eslint-disable no-eval */
+import { clearProperties } from './helpers';
+
 const { test, module, testDone } = QUnit;
 const name = 'prevent-addEventListener';
 
@@ -15,12 +17,6 @@ const runScriptlet = (event, func, hit) => {
     };
     const resultString = window.scriptlets.invoke(params);
     evalWrapper(resultString);
-};
-
-const clearProperties = (...props) => {
-    props.forEach((prop) => {
-        delete window[prop];
-    });
 };
 
 const originalEventLister = window.EventTarget.prototype.addEventListener;

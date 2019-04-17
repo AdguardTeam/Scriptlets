@@ -17,4 +17,5 @@ import * as noeval from './noeval.test';
 import * as preventEvalIf from './prevent-eval-if.test';
 import * as cookieRemover from './remove-cookie.test';
 import * as preventFab from './prevent-fab-3.2.0.test';
-import * as setPopAdsDummy from './set-popads-dummy.test';
+import * as setPopadsDummy from './set-popads-dummy.test';
+import * as preventPopadsNet from './prevent-popads-net.test';

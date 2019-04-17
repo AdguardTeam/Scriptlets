@@ -20,6 +20,9 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [log-eval](#log-eval)
     * [noeval](#noeval)
     * [prevent-eval-if](#prevent-eval-if)
+    * [prevent-fab-3.2.0](#prevent-fab-3.2.0)
+    * [set-popads-dummy](#set-popads-dummy)
+    * [prevent-popads-net](#prevent-popads-net)
 * [Scriptlets compatibility table](#compatibility)
 * [How to build](#how-to-build)
 
@@ -441,14 +444,25 @@ example.org#%#//scriptlet("prevent-fab-3.2.0")
 
 ### <a id="set-popads-dummy"></a> set-popads-dummy
 
-Prevents execution of FuckAdBlock script v3.2.0
+Set static properties to PopAds and popns
 
 **Syntax**
 ```
-example.org#%#//scriptlet("prevent-fab-3.2.0")
+example.org#%#//scriptlet("set-popads-dummy")
 ```
 
-[scriptlet source](./src/scriptlets/prevent-fab-3.2.0.js)
+[scriptlet source](./src/scriptlets/set-popads-dummy.js)
+
+### <a id="prevent-popads-net"></a> prevent-popads-net
+
+Aborts on property write (PopAds, popns), throws reference error with random id
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-popads-net")
+```
+
+[scriptlet source](./src/scriptlets/prevent-popads-net.js)
 
 ## <a id="compatibility"></a> Sriptlets compatibility table
 
@@ -478,8 +492,8 @@ example.org#%#//scriptlet("prevent-fab-3.2.0")
 | [prevent-window-open](#prevent-window-open) | window.open-defuser.js |  |
 | [prevent-bab](#prevent-bab) | bab-defuser.js |  |
 | [prevent-fab-3.2.0](#prevent-fab-3.2.0) | fuckadblock.js-3.2.0 |  |
-|  | popads-dummy.js |  |
-|  | popads.net.js |  |
+| [set-popads-dummy](#set-popads-dummy) | popads-dummy.js |  |
+| [prevent-popads-net](#prevent-popads-net) | popads.net.js |  |
 |  | adfly-defuser.js |  |
 |  |  | hide-if-contains-image |
 |  |  | hide-if-has-and-matches-style |
@@ -526,7 +540,7 @@ yarn gui-test
 
 ### Build output
 
-#### Scriplets library
+#### Scriptlets library
 
 `dist/scriptlets.js`
 

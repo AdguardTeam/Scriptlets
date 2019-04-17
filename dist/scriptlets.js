@@ -282,11 +282,11 @@
       };
 
       setChainPropAccess(window, property);
+      window.onerror = createOnErrorHandler(rid).bind();
     }
     abortOnPropertyWrite.names = ['abort-on-property-write', 'ubo-abort-on-property-write.js', 'abp-abort-on-property-write'];
-    abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain];
+    abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, stringToFunc, createOnErrorHandler];
 
-    /* eslint-disable no-new-func */
     /**
      * Prevent calls to setTimeout for specified matching in passed callback and delay
      * by setting callback to empty function
@@ -297,7 +297,7 @@
      */
 
     function preventSetTimeout(source, match, delay) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var nativeTimeout = window.setTimeout;
       delay = parseInt(delay, 10);
       delay = Number.isNaN(delay) ? null : delay;
@@ -319,9 +319,8 @@
       window.setTimeout = timeoutWrapper;
     }
     preventSetTimeout.names = ['prevent-setTimeout', 'ubo-setTimeout-defuser.js'];
-    preventSetTimeout.injections = [toRegExp];
+    preventSetTimeout.injections = [toRegExp, stringToFunc];
 
-    /* eslint-disable no-new-func */
     /**
      * Prevent calls to setInterval for specified matching in passed callback and delay
      * by setting callback to empty function
@@ -332,7 +331,7 @@
      */
 
     function preventSetInterval(source, match, interval) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var nativeInterval = window.setInterval;
       interval = parseInt(interval, 10);
       interval = Number.isNaN(interval) ? null : interval;
@@ -354,9 +353,8 @@
       window.setInterval = intervalWrapper;
     }
     preventSetInterval.names = ['prevent-setInterval', 'ubo-setInterval-defuser.js'];
-    preventSetInterval.injections = [toRegExp];
+    preventSetInterval.injections = [toRegExp, stringToFunc];
 
-    /* eslint-disable no-new-func */
     /**
      * Prevent calls `window.open` when URL match or not match with passed params
      * @param {Source} source
@@ -368,7 +366,7 @@
       var inverse = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
       var match = arguments.length > 2 ? arguments[2] : undefined;
       var nativeOpen = window.open;
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       inverse = inverse ? !+inverse : inverse;
       match = match ? toRegExp(match) : toRegExp('/.?/'); // eslint-disable-next-line consistent-return
 
@@ -387,16 +385,14 @@
       window.open = openWrapper;
     }
     preventWindowOpen.names = ['prevent-window-open', 'ubo-window.open-defuser.js'];
-    preventWindowOpen.injections = [toRegExp];
+    preventWindowOpen.injections = [toRegExp, stringToFunc];
 
     /* eslint-disable no-new-func */
     function abortCurrentInlineScript(source, property) {
-      var _this = this;
-
       var search = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
       var regex = search ? toRegExp(search) : null;
       var rid = randomId();
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
 
       var getCurrentScript = function getCurrentScript() {
         if (!document.currentScript) {
@@ -456,26 +452,11 @@
       };
 
       setChainPropAccess(window, property);
-      var onerrorOriginal = window.onerror; // eslint-disable-next-line consistent-return
-
-      window.onerror = function (error) {
-        if (typeof error === 'string' && error.indexOf(rid) !== -1) {
-          return true;
-        }
-
-        if (onerrorOriginal instanceof Function) {
-          for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-            args[_key - 1] = arguments[_key];
-          }
-
-          return onerrorOriginal.apply(_this, [error].concat(args));
-        }
-      };
+      window.onerror = createOnErrorHandler(rid).bind();
     }
     abortCurrentInlineScript.names = ['abort-current-inline-script', 'ubo-abort-current-inline-script.js', 'abp-abort-current-inline-script'];
-    abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp];
+    abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, stringToFunc, createOnErrorHandler];
 
-    /* eslint-disable no-new-func */
     function setConstant(source, property, value) {
       if (!property) {
         return;
@@ -517,7 +498,7 @@
         return;
       }
 
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var canceled = false;
 
       var mustCancel = function mustCancel(value) {
@@ -573,9 +554,66 @@
       setChainPropAccess(window, property);
     }
     setConstant.names = ['set-constant', 'ubo-set-constant.js'];
-    setConstant.injections = [getPropertyInChain, setPropertyAccess];
+    setConstant.injections = [getPropertyInChain, setPropertyAccess, stringToFunc];
 
-    /* eslint-disable no-new-func */
+    /**
+     * Removes current page cookies specified by name.
+     * For current domain, subdomains on load and before unload.
+     * @param {Source} source
+     * @param {string} match string for matching with cookie name
+     */
+
+    function removeCookie(source, match) {
+      var hit = stringToFunc(source.hit);
+      var regex = match ? toRegExp(match) : toRegExp('/.?/');
+
+      var removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
+        var cookieSpec = "".concat(cookieName, "=");
+        var domain1 = "; domain=".concat(hostName);
+        var domain2 = "; domain=.".concat(hostName);
+        var path = '; path=/';
+        var expiration = '; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        document.cookie = cookieSpec + expiration;
+        document.cookie = cookieSpec + domain1 + expiration;
+        document.cookie = cookieSpec + domain2 + expiration;
+        document.cookie = cookieSpec + path + expiration;
+        document.cookie = cookieSpec + domain1 + path + expiration;
+        document.cookie = cookieSpec + domain2 + path + expiration;
+        hit();
+      };
+
+      var rmCookie = function rmCookie() {
+        document.cookie.split(';').forEach(function (cookieStr) {
+          var pos = cookieStr.indexOf('=');
+
+          if (pos === -1) {
+            return;
+          }
+
+          var cookieName = cookieStr.slice(0, pos).trim();
+
+          if (!regex.test(cookieName)) {
+            return;
+          }
+
+          var hostParts = document.location.hostname.split('.');
+
+          for (var i = 0; i < hostParts.length - 1; i += 1) {
+            var hostName = hostParts.slice(i).join('.');
+
+            if (hostName) {
+              removeCookieFromHost(cookieName, hostName);
+            }
+          }
+        });
+      };
+
+      rmCookie();
+      window.addEventListener('beforeunload', rmCookie);
+    }
+    removeCookie.names = ['remove-cookie', 'ubo-cookie-remover.js'];
+    removeCookie.injections = [stringToFunc, toRegExp];
+
     /**
      * Prevents adding event listeners
      *
@@ -585,7 +623,7 @@
      */
 
     function preventAddEventListener(source, event, funcStr) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       event = event ? toRegExp(event) : toRegExp('/.?/');
       funcStr = funcStr ? toRegExp(funcStr) : toRegExp('/.?/');
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
@@ -606,19 +644,19 @@
       window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
     }
     preventAddEventListener.names = ['prevent-addEventListener', 'ubo-addEventListener-defuser.js'];
-    preventAddEventListener.injections = [toRegExp];
+    preventAddEventListener.injections = [toRegExp, stringToFunc];
 
-    /* eslint-disable no-new-func, consistent-return, no-eval */
-
+    /* eslint-disable consistent-return, no-eval */
     /**
      * Prevents BlockAdblock
      *
      * @param {Source} source
      */
+
     function preventBab(source) {
       var _this = this;
 
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit);
       var nativeSetTimeout = window.setTimeout;
       var babRegex = /\.bab_elementid.$/;
 
@@ -680,16 +718,17 @@
       };
     }
     preventBab.names = ['prevent-bab', 'ubo-bab-defuser.js'];
+    preventBab.injections = [stringToFunc];
 
-    /* eslint-disable no-new-func, no-unused-vars, no-extra-bind, no-console, func-names */
-
+    /* eslint-disable no-unused-vars, no-extra-bind, func-names */
     /**
      * Disables WebRTC via blocking calls to the RTCPeerConnection()
      *
      * @param {Source} source
      */
+
     function nowebrtc(source) {
-      var hit = source.hit ? new Function(source.hit) : function () {};
+      var hit = stringToFunc(source.hit, source.hitArgs, source.hitBody);
       var propertyName = '';
 
       if (window.RTCPeerConnection) {
@@ -702,20 +741,17 @@
         return;
       }
 
-      var log = console.log.bind(console);
-
       var rtcReplacement = function rtcReplacement(config) {
-        hit();
-        log('Document tried to create an RTCPeerConnection: %o', config);
+        hit("Document tried to create an RTCPeerConnection: ".concat(config));
       };
 
-      var noop = function noop() {};
+      var noop$$1 = function noop$$1() {};
 
       rtcReplacement.prototype = {
-        close: noop,
-        createDataChannel: noop,
-        createOffer: noop,
-        setRemoteDescription: noop
+        close: noop$$1,
+        createDataChannel: noop$$1,
+        createOffer: noop$$1,
+        setRemoteDescription: noop$$1
       };
       var rtc = window[propertyName];
       window[propertyName] = rtcReplacement;
@@ -723,13 +759,14 @@
       if (rtc.prototype) {
         rtc.prototype.createDataChannel = function (a, b) {
           return {
-            close: noop,
-            send: noop
+            close: noop$$1,
+            send: noop$$1
           };
         }.bind(null);
       }
     }
     nowebrtc.names = ['nowebrtc', 'ubo-nowebrtc.js'];
+    nowebrtc.injections = [stringToFunc];
 
     /* eslint-disable no-console */
     /**
@@ -856,6 +893,143 @@
     logEval.names = ['log-eval'];
     logEval.injections = [stringToFunc];
 
+    /* eslint-disable no-eval, no-extra-bind */
+    /**
+     * Prevents page to use eval.
+     * Notifies about attempts in the console
+     * @param {Source} source
+     */
+
+    function noeval(source) {
+      var hit = stringToFunc(source.hit, source.hitArgs, source.hitBody);
+
+      window.eval = function evalWrapper(s) {
+        hit("AdGuard has prevented eval:\n".concat(s));
+      }.bind();
+    }
+    noeval.names = ['noeval.js', 'silent-noeval.js', 'noeval'];
+    noeval.injections = [stringToFunc];
+
+    /* eslint-disable no-eval, no-extra-bind, func-names */
+    /**
+     * Prevents page to use eval matching payload
+     * @param {Source} source
+     * @param {string|RegExp} [search] string or regexp matching stringified eval payload
+     */
+
+    function preventEvalIf(source, search) {
+      var hit = stringToFunc(source.hit, source.hitArgs, source.hitBody);
+      search = search ? toRegExp(search) : toRegExp('/.?/');
+      var nativeEval = window.eval;
+
+      window.eval = function (payload) {
+        if (!search.test(payload.toString())) {
+          return nativeEval.call(window, payload);
+        }
+
+        hit(payload);
+        return undefined;
+      }.bind(window);
+    }
+    preventEvalIf.names = ['noeval-if.js', 'prevent-eval-if'];
+    preventEvalIf.injections = [toRegExp, stringToFunc];
+
+    /* eslint-disable no-console, func-names, no-multi-assign */
+    /**
+     * Fuckadblock 3.2.0 defuser
+     *
+     * @param {Source} source
+     */
+
+    function preventFab(source) {
+      var hit = stringToFunc(source.hit);
+      hit();
+
+      var Fab = function Fab() {};
+
+      Fab.prototype.check = noop;
+      Fab.prototype.clearEvent = noop;
+      Fab.prototype.emitEvent = noop;
+
+      Fab.prototype.on = function (a, b) {
+        if (!a) {
+          b();
+        }
+
+        return this;
+      };
+
+      Fab.prototype.onDetected = function () {
+        return this;
+      };
+
+      Fab.prototype.onNotDetected = function (a) {
+        a();
+        return this;
+      };
+
+      Fab.prototype.setOption = noop;
+      window.FuckAdBlock = window.BlockAdBlock = Fab; //
+
+      window.fuckAdBlock = window.blockAdBlock = new Fab();
+    }
+    preventFab.names = ['prevent-fab-3.2.0', 'fuckadblock.js-3.2.0'];
+    preventFab.injections = [stringToFunc, noop];
+
+    /* eslint-disable no-console, func-names, no-multi-assign */
+    /**
+     * Set static properties to PopAds and popns
+     *
+     * @param {Source} source
+     */
+
+    function setPopadsDummy(source) {
+      var hit = stringToFunc(source.hit);
+      delete window.PopAds;
+      delete window.popns;
+      Object.defineProperties(window, {
+        PopAds: {
+          value: {}
+        },
+        popns: {
+          value: {}
+        }
+      });
+      hit();
+    }
+    setPopadsDummy.names = ['set-popads-dummy', 'popads-dummy.js'];
+    setPopadsDummy.injections = [stringToFunc];
+
+    /**
+     * Aborts on property write (PopAds, popns), throws reference error with random id
+     *
+     * @param {Source} source
+     */
+
+    function preventPopadsNet(source) {
+      var hit = stringToFunc(source.hit);
+      var rid = randomId();
+
+      var throwError = function throwError() {
+        throw new ReferenceError(rid);
+      };
+
+      delete window.PopAds;
+      delete window.popns;
+      Object.defineProperties(window, {
+        PopAds: {
+          set: throwError
+        },
+        popns: {
+          set: throwError
+        }
+      });
+      window.onerror = createOnErrorHandler(rid).bind();
+      hit();
+    }
+    preventPopadsNet.names = ['prevent-popads-net', 'popads.net.js'];
+    preventPopadsNet.injections = [stringToFunc, createOnErrorHandler, randomId];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -869,13 +1043,19 @@
         preventWindowOpen: preventWindowOpen,
         abortCurrentInlineScript: abortCurrentInlineScript,
         setConstant: setConstant,
+        removeCookie: removeCookie,
         preventAddEventListener: preventAddEventListener,
         preventBab: preventBab,
         nowebrtc: nowebrtc,
         logAddEventListener: logAddEventListener,
         logSetInterval: logSetInterval,
         logSetTimeout: logSetTimeout,
-        logEval: logEval
+        logEval: logEval,
+        noeval: noeval,
+        preventEvalIf: preventEvalIf,
+        preventFab: preventFab,
+        setPopadsDummy: setPopadsDummy,
+        preventPopadsNet: preventPopadsNet
     });
 
     /**
@@ -900,14 +1080,81 @@
       return "".concat(code, ";\n        const updatedArgs = args ? [].concat(source).concat(args) : [source];\n        ").concat(scriptlet.name, ".apply(this, updatedArgs);\n    ");
     }
     /**
-     * Wrap function into IIFE
-     * @param {Source} source
-     * @param {string} code
+     * Returns arguments of the function
+     * @source https://github.com/sindresorhus/fn-args
+     * @param {function|string} [func] function or string
+     * @returns {string[]}
      */
+
+    var getFuncArgs = function getFuncArgs(func) {
+      return func.toString().match(/(?:\((.*)\))|(?:([^ ]*) *=>)/).slice(1, 3).find(function (capture) {
+        return typeof capture === 'string';
+      }).split(/, */).filter(function (arg) {
+        return arg !== '';
+      }).map(function (arg) {
+        return arg.replace(/\/\*.*\*\//, '');
+      });
+    };
+    /**
+     * Returns body of the function
+     * @param {function|string} [func] function or string
+     * @returns {string}
+     */
+
+
+    var getFuncBody = function getFuncBody(func) {
+      var regexp = /(?:(?:\((?:.*)\))|(?:(?:[^ ]*) *=>))\s?({?[\s\S]*}?)/;
+      var funcString = func.toString();
+      return funcString.match(regexp)[1];
+    };
+    /**
+     * Wrap function into IIFE (Immediately invoked function expression)
+     *
+     * <code>
+     *       const source = {
+     *           args: ["aaa", "bbb"],
+     *           name: "noeval",
+     *       };
+     *
+     *      const code = "function noeval(source, args) {
+     *                            alert(source);
+     *                          }
+     *      noeval.apply(this, args);"
+     *
+     *      const result = wrapInIIFE(source, code);
+     *
+     *      // result becomes a string
+     *
+     *      "(function(source, args){
+     *                function noeval(source) {
+     *                    alert(source);
+     *                }
+     *                noeval.apply(this, args);
+     *        )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])"
+     * </code>
+     *
+     * @param {Source} source - object with scriptlet properties
+     * @param {string} code - scriptlet source code with dependencies
+     * @return {string} full scriptlet code
+     */
+
 
     function wrapInIIFE(source, code) {
       if (source.hit) {
-        source.hit = "(".concat(source.hit.toString(), ")()");
+        // if hit function has arguments, we get them in order to be able to build function after
+        // e.g. function (a) { console.log(a) } ==> hitArgs: ["a"], hitBody: "console.log(a)";
+        // hit function without arguments simply is called inside anonymous function
+        // Check `stringToFunc` implementation to learn how this `hit` function is executed
+        // by scriptlets.
+        var stringifiedHit = source.hit.toString();
+        var hitArgs = getFuncArgs(stringifiedHit);
+
+        if (hitArgs.length > 0) {
+          source.hitBody = getFuncBody(stringifiedHit);
+          source.hitArgs = hitArgs;
+        } else {
+          source.hit = "(".concat(stringifiedHit, ")()");
+        }
       }
 
       var sourceString = JSON.stringify(source);
@@ -969,12 +1216,14 @@
     }
 
     /**
-     * @typedef {Object} Source
+     * @typedef {Object} Source - scriptlet properties
      * @property {string} name Scriptlet name
      * @property {Array<string>} args Arguments for scriptlet function
      * @property {'extension'|'corelibs'} engine Defines the final form of scriptlet string presentation
      * @property {string} [version]
      * @property {Function} [hit] Will be executed when target action is triggered
+     * @property {string[]} [hitArgs] Arguments of hit function
+     * @property {string} [hitBody] Body of hit function
      */
 
     /**

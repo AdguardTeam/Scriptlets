@@ -1,5 +1,7 @@
 /* global QUnit */
 /* eslint-disable no-eval, no-console */
+import { clearProperties } from './helpers';
+
 const { test, module, testDone } = QUnit;
 const name = 'noeval';
 
@@ -25,12 +27,6 @@ const runScriptlet = (name) => {
     };
     const resultString = window.scriptlets.invoke(params);
     nativeEval(resultString);
-};
-
-const clearProperties = (...props) => {
-    props.forEach((prop) => {
-        delete window[prop];
-    });
 };
 
 testDone(() => {
