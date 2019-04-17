@@ -2,7 +2,7 @@
 import { stringToFunc } from '../helpers';
 
 /**
- * Set static properties to PopAds and popns
+ * Sets static properties PopAds and popns.
  *
  * @param {Source} source
  */
@@ -11,10 +11,19 @@ export function setPopadsDummy(source) {
     delete window.PopAds;
     delete window.popns;
     Object.defineProperties(window, {
-        PopAds: { value: {} },
-        popns: { value: {} },
+        PopAds: {
+            get: () => {
+                hit();
+                return {};
+            },
+        },
+        popns: {
+            get: () => {
+                hit();
+                return {};
+            },
+        },
     });
-    hit();
 }
 
 setPopadsDummy.names = [

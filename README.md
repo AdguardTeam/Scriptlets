@@ -434,7 +434,7 @@ example.org#%#//scriptlet("cookie-remove"[, match])
 
 ### <a id="prevent-fab-3.2.0"></a> prevent-fab-3.2.0
 
-Prevents execution of FuckAdBlock script v3.2.0
+Prevents execution of the FAB script v3.2.0
 
 **Syntax**
 ```
@@ -445,7 +445,7 @@ example.org#%#//scriptlet("prevent-fab-3.2.0")
 
 ### <a id="set-popads-dummy"></a> set-popads-dummy
 
-Set static properties to PopAds and popns
+Sets static properties PopAds and popns.
 
 **Syntax**
 ```
@@ -467,7 +467,7 @@ example.org#%#//scriptlet("prevent-popads-net")
 
 ### <a id="prevent-adfly"></a> prevent-adfly
 
-Prevents anti adblock based on adfly shortened links
+Prevents anti-adblock scripts on adfly short links.
 
 **Syntax**
 ```

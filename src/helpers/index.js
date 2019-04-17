@@ -6,8 +6,4 @@ export * from './set-property-access';
 export * from './get-property-in-chain';
 export * from './string-utils';
 export * from './create-on-error-handler';
-
-/**
- * Noop function
- */
-export const noop = () => {};
+export * from './plugs';

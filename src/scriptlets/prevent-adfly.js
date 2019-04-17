@@ -2,29 +2,29 @@
 import { setPropertyAccess, stringToFunc } from '../helpers';
 
 /**
- * Prevents anti adblock based on adfly shortened links
+ * Prevents anti-adblock scripts on adfly short links.
  * @param {Source} source
  */
 export function preventAdfly(source) {
     const hit = stringToFunc(source.hit);
-    const isDigit = /^\d$/;
+    const isDigit = data => /^\d$/.test(data);
     const handler = function (encodedURL) {
-        let var1 = '';
-        let var2 = '';
+        let evenChars = '';
+        let oddChars = '';
         for (let i = 0; i < encodedURL.length; i += 1) {
             if (i % 2 === 0) {
-                var1 += encodedURL.charAt(i);
+                evenChars += encodedURL.charAt(i);
             } else {
-                var2 = encodedURL.charAt(i) + var2;
+                oddChars = encodedURL.charAt(i) + oddChars;
             }
         }
 
-        let data = (var1 + var2).split('');
+        let data = (evenChars + oddChars).split('');
 
         for (let i = 0; i < data.length; i += 1) {
-            if (isDigit.test(data[i])) {
+            if (isDigit(data[i])) {
                 for (let ii = i + 1; ii < data.length; ii += 1) {
-                    if (isDigit.test(data[ii])) {
+                    if (isDigit(data[ii])) {
                         // eslint-disable-next-line no-bitwise
                         const temp = parseInt(data[i], 10) ^ parseInt(data[ii], 10);
                         if (temp < 10) {
@@ -44,13 +44,14 @@ export function preventAdfly(source) {
     };
 
     let val;
-    let flag = true;
+    // Do not apply handler more than one time
+    let applyHandler = true;
 
     const result = setPropertyAccess(window, 'ysmm', {
         configurable: false,
         set: (value) => {
-            if (flag) {
-                flag = false;
+            if (applyHandler) {
+                applyHandler = false;
                 try {
                     if (typeof value === 'string') {
                         handler(value);

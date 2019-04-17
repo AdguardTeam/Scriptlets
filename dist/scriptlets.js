@@ -144,23 +144,23 @@
     }
 
     /**
-     * This file must export all used dependencies
-     */
-    /**
      * Noop function
      */
-
     var noop = function noop() {};
 
+    /**
+     * This file must export all used dependencies
+     */
+
     var dependencies = /*#__PURE__*/Object.freeze({
-        noop: noop,
         randomId: randomId,
         setPropertyAccess: setPropertyAccess,
         getPropertyInChain: getPropertyInChain,
         escapeRegExp: escapeRegExp,
         toRegExp: toRegExp,
         stringToFunc: stringToFunc,
-        createOnErrorHandler: createOnErrorHandler
+        createOnErrorHandler: createOnErrorHandler,
+        noop: noop
     });
 
     /**
@@ -978,7 +978,7 @@
 
     /* eslint-disable no-console, func-names, no-multi-assign */
     /**
-     * Set static properties to PopAds and popns
+     * Sets static properties PopAds and popns.
      *
      * @param {Source} source
      */
@@ -989,13 +989,18 @@
       delete window.popns;
       Object.defineProperties(window, {
         PopAds: {
-          value: {}
+          get: function get() {
+            hit();
+            return {};
+          }
         },
         popns: {
-          value: {}
+          get: function get() {
+            hit();
+            return {};
+          }
         }
       });
-      hit();
     }
     setPopadsDummy.names = ['set-popads-dummy', 'popads-dummy.js'];
     setPopadsDummy.injections = [stringToFunc];
@@ -1032,32 +1037,35 @@
 
     /* eslint-disable func-names */
     /**
-     * Prevents anti adblock based on adfly shortened links
+     * Prevents anti-adblock scripts on adfly short links.
      * @param {Source} source
      */
 
     function preventAdfly(source) {
       var hit = stringToFunc(source.hit);
-      var isDigit = /^\d$/;
+
+      var isDigit = function isDigit(data) {
+        return /^\d$/.test(data);
+      };
 
       var handler = function handler(encodedURL) {
-        var var1 = '';
-        var var2 = '';
+        var evenChars = '';
+        var oddChars = '';
 
         for (var i = 0; i < encodedURL.length; i += 1) {
           if (i % 2 === 0) {
-            var1 += encodedURL.charAt(i);
+            evenChars += encodedURL.charAt(i);
           } else {
-            var2 = encodedURL.charAt(i) + var2;
+            oddChars = encodedURL.charAt(i) + oddChars;
           }
         }
 
-        var data = (var1 + var2).split('');
+        var data = (evenChars + oddChars).split('');
 
         for (var _i = 0; _i < data.length; _i += 1) {
-          if (isDigit.test(data[_i])) {
+          if (isDigit(data[_i])) {
             for (var ii = _i + 1; ii < data.length; ii += 1) {
-              if (isDigit.test(data[ii])) {
+              if (isDigit(data[ii])) {
                 // eslint-disable-next-line no-bitwise
                 var temp = parseInt(data[_i], 10) ^ parseInt(data[ii], 10);
 
@@ -1079,13 +1087,14 @@
         window.location.href = decodedURL;
       };
 
-      var val;
-      var flag = true;
+      var val; // Do not apply handler more than one time
+
+      var applyHandler = true;
       var result = setPropertyAccess(window, 'ysmm', {
         configurable: false,
         set: function set(value) {
-          if (flag) {
-            flag = false;
+          if (applyHandler) {
+            applyHandler = false;
 
             try {
               if (typeof value === 'string') {
