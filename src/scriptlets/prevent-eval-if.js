@@ -8,7 +8,7 @@ import { toRegExp, stringToFunc } from '../helpers';
  * @param {string|RegExp} [search] string or regexp matching stringified eval payload
  */
 export function preventEvalIf(source, search) {
-    const hit = stringToFunc(source.hit, source.hitArgs, source.hitBody);
+    const hit = stringToFunc(source.hit);
 
     search = search ? toRegExp(search) : toRegExp('/.?/');
 

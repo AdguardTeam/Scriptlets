@@ -109,12 +109,49 @@
      */
     // eslint-disable-next-line arrow-body-style
 
-    var stringToFunc = function stringToFunc(str, args, body) {
+    var stringToFunc = function stringToFunc(str) {
+      /**
+       * Returns arguments of the function
+       * @source https://github.com/sindresorhus/fn-args
+       * @param {function|string} [func] function or string
+       * @returns {string[]}
+       */
+      var getFuncArgs = function getFuncArgs(func) {
+        return func.toString().match(/(?:\((.*)\))|(?:([^ ]*) *=>)/).slice(1, 3).find(function (capture) {
+          return typeof capture === 'string';
+        }).split(/, */).filter(function (arg) {
+          return arg !== '';
+        }).map(function (arg) {
+          return arg.replace(/\/\*.*\*\//, '');
+        });
+      };
+      /**
+      * Returns body of the function
+      * @param {function|string} [func] function or string
+      * @returns {string}
+      */
+
+
+      var getFuncBody = function getFuncBody(func) {
+        var regexp = /(?:(?:\((?:.*)\))|(?:(?:[^ ]*) *=>))\s?({?[\s\S]*}?)/;
+        var funcString = func.toString();
+        return funcString.match(regexp)[1];
+      };
+
+      var body = '';
+      var args = '';
+      var hitArgs = getFuncArgs(str);
+
+      if (hitArgs.length > 0) {
+        body = getFuncBody(str);
+        args = hitArgs;
+      }
+
       if (args && body) {
         return Function.apply(null, args.concat(body));
       }
 
-      return str ? new Function(str) : function () {};
+      return str ? new Function("(".concat(str, ")()")) : function () {};
     };
 
     /**
@@ -728,7 +765,7 @@
      */
 
     function nowebrtc(source) {
-      var hit = stringToFunc(source.hit, source.hitArgs, source.hitBody);
+      var hit = stringToFunc(source.hit);
       var propertyName = '';
 
       if (window.RTCPeerConnection) {
@@ -901,7 +938,7 @@
      */
 
     function noeval(source) {
-      var hit = stringToFunc(source.hit, source.hitArgs, source.hitBody);
+      var hit = stringToFunc(source.hit);
 
       window.eval = function evalWrapper(s) {
         hit("AdGuard has prevented eval:\n".concat(s));
@@ -918,7 +955,7 @@
      */
 
     function preventEvalIf(source, search) {
-      var hit = stringToFunc(source.hit, source.hitArgs, source.hitBody);
+      var hit = stringToFunc(source.hit);
       search = search ? toRegExp(search) : toRegExp('/.?/');
       var nativeEval = window.eval;
 
@@ -1171,34 +1208,6 @@
       return "".concat(code, ";\n        const updatedArgs = args ? [].concat(source).concat(args) : [source];\n        ").concat(scriptlet.name, ".apply(this, updatedArgs);\n    ");
     }
     /**
-     * Returns arguments of the function
-     * @source https://github.com/sindresorhus/fn-args
-     * @param {function|string} [func] function or string
-     * @returns {string[]}
-     */
-
-    var getFuncArgs = function getFuncArgs(func) {
-      return func.toString().match(/(?:\((.*)\))|(?:([^ ]*) *=>)/).slice(1, 3).find(function (capture) {
-        return typeof capture === 'string';
-      }).split(/, */).filter(function (arg) {
-        return arg !== '';
-      }).map(function (arg) {
-        return arg.replace(/\/\*.*\*\//, '');
-      });
-    };
-    /**
-     * Returns body of the function
-     * @param {function|string} [func] function or string
-     * @returns {string}
-     */
-
-
-    var getFuncBody = function getFuncBody(func) {
-      var regexp = /(?:(?:\((?:.*)\))|(?:(?:[^ ]*) *=>))\s?({?[\s\S]*}?)/;
-      var funcString = func.toString();
-      return funcString.match(regexp)[1];
-    };
-    /**
      * Wrap function into IIFE (Immediately invoked function expression)
      *
      * <code>
@@ -1229,23 +1238,9 @@
      * @return {string} full scriptlet code
      */
 
-
     function wrapInIIFE(source, code) {
       if (source.hit) {
-        // if hit function has arguments, we get them in order to be able to build function after
-        // e.g. function (a) { console.log(a) } ==> hitArgs: ["a"], hitBody: "console.log(a)";
-        // hit function without arguments simply is called inside anonymous function
-        // Check `stringToFunc` implementation to learn how this `hit` function is executed
-        // by scriptlets.
-        var stringifiedHit = source.hit.toString();
-        var hitArgs = getFuncArgs(stringifiedHit);
-
-        if (hitArgs.length > 0) {
-          source.hitBody = getFuncBody(stringifiedHit);
-          source.hitArgs = hitArgs;
-        } else {
-          source.hit = "(".concat(stringifiedHit, ")()");
-        }
+        source.hit = source.hit.toString();
       }
 
       var sourceString = JSON.stringify(source);
@@ -1313,8 +1308,6 @@
      * @property {'extension'|'corelibs'} engine Defines the final form of scriptlet string presentation
      * @property {string} [version]
      * @property {Function} [hit] Will be executed when target action is triggered
-     * @property {string[]} [hitArgs] Arguments of hit function
-     * @property {string} [hitBody] Body of hit function
      */
 
     /**

@@ -7,7 +7,7 @@ import { stringToFunc } from '../helpers';
  * @param {Source} source
  */
 export function nowebrtc(source) {
-    const hit = stringToFunc(source.hit, source.hitArgs, source.hitBody);
+    const hit = stringToFunc(source.hit);
 
     let propertyName = '';
     if (window.RTCPeerConnection) {
