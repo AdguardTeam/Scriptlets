@@ -144,6 +144,11 @@
     }
 
     /**
+     * Noop function
+     */
+    var noop = function noop() {};
+
+    /**
      * This file must export all used dependencies
      */
 
@@ -154,7 +159,8 @@
         escapeRegExp: escapeRegExp,
         toRegExp: toRegExp,
         stringToFunc: stringToFunc,
-        createOnErrorHandler: createOnErrorHandler
+        createOnErrorHandler: createOnErrorHandler,
+        noop: noop
     });
 
     /**
@@ -739,13 +745,13 @@
         hit("Document tried to create an RTCPeerConnection: ".concat(config));
       };
 
-      var noop = function noop() {};
+      var noop$$1 = function noop$$1() {};
 
       rtcReplacement.prototype = {
-        close: noop,
-        createDataChannel: noop,
-        createOffer: noop,
-        setRemoteDescription: noop
+        close: noop$$1,
+        createDataChannel: noop$$1,
+        createOffer: noop$$1,
+        setRemoteDescription: noop$$1
       };
       var rtc = window[propertyName];
       window[propertyName] = rtcReplacement;
@@ -753,8 +759,8 @@
       if (rtc.prototype) {
         rtc.prototype.createDataChannel = function (a, b) {
           return {
-            close: noop,
-            send: noop
+            close: noop$$1,
+            send: noop$$1
           };
         }.bind(null);
       }
@@ -928,6 +934,192 @@
     preventEvalIf.names = ['noeval-if.js', 'prevent-eval-if'];
     preventEvalIf.injections = [toRegExp, stringToFunc];
 
+    /* eslint-disable no-console, func-names, no-multi-assign */
+    /**
+     * Fuckadblock 3.2.0 defuser
+     *
+     * @param {Source} source
+     */
+
+    function preventFab(source) {
+      var hit = stringToFunc(source.hit);
+      hit();
+
+      var Fab = function Fab() {};
+
+      Fab.prototype.check = noop;
+      Fab.prototype.clearEvent = noop;
+      Fab.prototype.emitEvent = noop;
+
+      Fab.prototype.on = function (a, b) {
+        if (!a) {
+          b();
+        }
+
+        return this;
+      };
+
+      Fab.prototype.onDetected = function () {
+        return this;
+      };
+
+      Fab.prototype.onNotDetected = function (a) {
+        a();
+        return this;
+      };
+
+      Fab.prototype.setOption = noop;
+      window.FuckAdBlock = window.BlockAdBlock = Fab; //
+
+      window.fuckAdBlock = window.blockAdBlock = new Fab();
+    }
+    preventFab.names = ['prevent-fab-3.2.0', 'fuckadblock.js-3.2.0'];
+    preventFab.injections = [stringToFunc, noop];
+
+    /* eslint-disable no-console, func-names, no-multi-assign */
+    /**
+     * Sets static properties PopAds and popns.
+     *
+     * @param {Source} source
+     */
+
+    function setPopadsDummy(source) {
+      var hit = stringToFunc(source.hit);
+      delete window.PopAds;
+      delete window.popns;
+      Object.defineProperties(window, {
+        PopAds: {
+          get: function get() {
+            hit();
+            return {};
+          }
+        },
+        popns: {
+          get: function get() {
+            hit();
+            return {};
+          }
+        }
+      });
+    }
+    setPopadsDummy.names = ['set-popads-dummy', 'popads-dummy.js'];
+    setPopadsDummy.injections = [stringToFunc];
+
+    /**
+     * Aborts on property write (PopAds, popns), throws reference error with random id
+     *
+     * @param {Source} source
+     */
+
+    function preventPopadsNet(source) {
+      var hit = stringToFunc(source.hit);
+      var rid = randomId();
+
+      var throwError = function throwError() {
+        throw new ReferenceError(rid);
+      };
+
+      delete window.PopAds;
+      delete window.popns;
+      Object.defineProperties(window, {
+        PopAds: {
+          set: throwError
+        },
+        popns: {
+          set: throwError
+        }
+      });
+      window.onerror = createOnErrorHandler(rid).bind();
+      hit();
+    }
+    preventPopadsNet.names = ['prevent-popads-net', 'popads.net.js'];
+    preventPopadsNet.injections = [stringToFunc, createOnErrorHandler, randomId];
+
+    /* eslint-disable func-names */
+    /**
+     * Prevents anti-adblock scripts on adfly short links.
+     * @param {Source} source
+     */
+
+    function preventAdfly(source) {
+      var hit = stringToFunc(source.hit);
+
+      var isDigit = function isDigit(data) {
+        return /^\d$/.test(data);
+      };
+
+      var handler = function handler(encodedURL) {
+        var evenChars = '';
+        var oddChars = '';
+
+        for (var i = 0; i < encodedURL.length; i += 1) {
+          if (i % 2 === 0) {
+            evenChars += encodedURL.charAt(i);
+          } else {
+            oddChars = encodedURL.charAt(i) + oddChars;
+          }
+        }
+
+        var data = (evenChars + oddChars).split('');
+
+        for (var _i = 0; _i < data.length; _i += 1) {
+          if (isDigit(data[_i])) {
+            for (var ii = _i + 1; ii < data.length; ii += 1) {
+              if (isDigit(data[ii])) {
+                // eslint-disable-next-line no-bitwise
+                var temp = parseInt(data[_i], 10) ^ parseInt(data[ii], 10);
+
+                if (temp < 10) {
+                  data[_i] = temp.toString();
+                }
+
+                _i = ii;
+                break;
+              }
+            }
+          }
+        }
+
+        data = data.join('');
+        var decodedURL = window.atob(data).slice(16, -16);
+        window.stop();
+        window.onbeforeunload = null;
+        window.location.href = decodedURL;
+      };
+
+      var val; // Do not apply handler more than one time
+
+      var applyHandler = true;
+      var result = setPropertyAccess(window, 'ysmm', {
+        configurable: false,
+        set: function set(value) {
+          if (applyHandler) {
+            applyHandler = false;
+
+            try {
+              if (typeof value === 'string') {
+                handler(value);
+              }
+            } catch (err) {} // eslint-disable-line no-empty
+
+          }
+
+          val = value;
+        },
+        get: function get() {
+          return val;
+        }
+      });
+
+      if (result) {
+        hit();
+      } else {
+        window.console.error('Failed to set up prevent-adfly scriptlet');
+      }
+    }
+    preventAdfly.names = ['prevent-adfly', 'adfly-defuser.js'];
+    preventAdfly.injections = [stringToFunc, setPropertyAccess];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -950,7 +1142,11 @@
         logSetTimeout: logSetTimeout,
         logEval: logEval,
         noeval: noeval,
-        preventEvalIf: preventEvalIf
+        preventEvalIf: preventEvalIf,
+        preventFab: preventFab,
+        setPopadsDummy: setPopadsDummy,
+        preventPopadsNet: preventPopadsNet,
+        preventAdfly: preventAdfly
     });
 
     /**

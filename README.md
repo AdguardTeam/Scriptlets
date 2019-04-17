@@ -20,6 +20,10 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [log-eval](#log-eval)
     * [noeval](#noeval)
     * [prevent-eval-if](#prevent-eval-if)
+    * [prevent-fab-3.2.0](#prevent-fab-3.2.0)
+    * [set-popads-dummy](#set-popads-dummy)
+    * [prevent-popads-net](#prevent-popads-net)
+    * [prevent-adfly](#prevent-adfly)
 * [Scriptlets compatibility table](#compatibility)
 * [How to build](#how-to-build)
 
@@ -428,6 +432,50 @@ example.org#%#//scriptlet("cookie-remove"[, match])
 
 [scriptlet source](./src/scriptlets/cookie-remover.js)
 
+### <a id="prevent-fab-3.2.0"></a> prevent-fab-3.2.0
+
+Prevents execution of the FAB script v3.2.0
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-fab-3.2.0")
+```
+
+[scriptlet source](./src/scriptlets/prevent-fab-3.2.0.js)
+
+### <a id="set-popads-dummy"></a> set-popads-dummy
+
+Sets static properties PopAds and popns.
+
+**Syntax**
+```
+example.org#%#//scriptlet("set-popads-dummy")
+```
+
+[scriptlet source](./src/scriptlets/set-popads-dummy.js)
+
+### <a id="prevent-popads-net"></a> prevent-popads-net
+
+Aborts on property write (PopAds, popns), throws reference error with random id
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-popads-net")
+```
+
+[scriptlet source](./src/scriptlets/prevent-popads-net.js)
+
+### <a id="prevent-adfly"></a> prevent-adfly
+
+Prevents anti-adblock scripts on adfly short links.
+
+**Syntax**
+```
+example.org#%#//scriptlet("prevent-adfly")
+```
+
+[scriptlet source](./src/scriptlets/prevent-adfly.js)
+
 ## <a id="compatibility"></a> Sriptlets compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -455,10 +503,10 @@ example.org#%#//scriptlet("cookie-remove"[, match])
 |  | sharedWorker-defuser.js (deprecated) |  |
 | [prevent-window-open](#prevent-window-open) | window.open-defuser.js |  |
 | [prevent-bab](#prevent-bab) | bab-defuser.js |  |
-|  | fuckadblock.js-3.2.0 |  |
-|  | popads-dummy.js |  |
-|  | popads.net.js |  |
-|  | adfly-defuser.js |  |
+| [prevent-fab-3.2.0](#prevent-fab-3.2.0) | fuckadblock.js-3.2.0 |  |
+| [set-popads-dummy](#set-popads-dummy) | popads-dummy.js |  |
+| [prevent-popads-net](#prevent-popads-net) | popads.net.js |  |
+| [prevent-adfly](#prevent-adfly) | adfly-defuser.js |  |
 |  |  | hide-if-contains-image |
 |  |  | hide-if-has-and-matches-style |
 |  |  | dir-string |
@@ -504,7 +552,7 @@ yarn gui-test
 
 ### Build output
 
-#### Scriplets library
+#### Scriptlets library
 
 `dist/scriptlets.js`
 

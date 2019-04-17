@@ -1,5 +1,7 @@
 /* global QUnit */
 /* eslint-disable no-eval, no-console */
+import { clearProperties } from './helpers';
+
 const { test, module } = QUnit;
 const name = 'log-setTimeout';
 
@@ -14,12 +16,6 @@ const runScriptlet = (hit) => {
     };
     const resultString = window.scriptlets.invoke(params);
     evalWrapper(resultString);
-};
-
-const clearProperties = (...props) => {
-    props.forEach((prop) => {
-        delete window[prop];
-    });
 };
 
 const nativeSetTimeout = window.setTimeout;
