@@ -1238,7 +1238,7 @@
      * @return {string} full scriptlet code
      */
 
-    function wrapInIIFE(source, code) {
+    function passSourceAndPropsToScriptlet(source, code) {
       if (source.hit) {
         source.hit = source.hit.toString();
       }
@@ -1297,7 +1297,7 @@
       var scriptlet = getScriptletByName(source.name);
       var result = attachDependencies(scriptlet);
       result = addScriptletCall(scriptlet, result);
-      result = source.engine === 'corelibs' ? wrapInNonameFunc(result) : wrapInIIFE(source, result);
+      result = source.engine === 'corelibs' ? wrapInNonameFunc(result) : passSourceAndPropsToScriptlet(source, result);
       return result;
     }
 
