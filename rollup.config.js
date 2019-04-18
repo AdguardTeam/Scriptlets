@@ -1,6 +1,8 @@
 import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
 import babel from 'rollup-plugin-babel';
+import cleanup from 'rollup-plugin-cleanup';
+
 import project from './package.json';
 
 const banner = `
@@ -64,6 +66,11 @@ const testBuild = {
         }),
     ],
 };
+
+const isCleanBuild = process.env.CLEAN === 'true'; // strip comments
+if (isCleanBuild) {
+    bundleBuild.plugins.push(cleanup());
+}
 
 const isTest = process.env.UI_TEST === 'true';
 const resultBuilds = isTest
