@@ -476,7 +476,7 @@ example.org#%#//scriptlet("prevent-adfly")
 
 [scriptlet source](./src/scriptlets/prevent-adfly.js)
 
-## <a id="compatibility"></a> Sriptlets compatibility table
+## <a id="compatibility"></a> Scriptlets compatibility table
 
 |AdGuard | uBO | Adblock Plus |
 |--|--|--|
