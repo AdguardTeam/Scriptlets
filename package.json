@@ -4,7 +4,7 @@
     "scripts": {
         "build": "rollup -c",
         "watch": "rollup -c -w",
-        "corelibs": "babel-node corelibs.build.js",
+        "corelibs": "rollup -c --environment CLEAN && babel-node corelibs.build.js",
         "test": "rollup -c --environment UI_TEST && node tests/index.js",
         "test-watch": "rollup -c -w --environment UI_TEST",
         "gui-test": "rollup -c --environment UI_TEST && open http://127.0.0.1:8585 && node ./tests/server.js",
@@ -32,6 +32,7 @@
         "qunit": "^2.9.1",
         "rollup": "^0.68.2",
         "rollup-plugin-babel": "^4.1.0",
+        "rollup-plugin-cleanup": "^3.1.1",
         "rollup-plugin-commonjs": "^9.3.4",
         "rollup-plugin-node-resolve": "^4.0.0",
         "sinon": "^7.3.1"
