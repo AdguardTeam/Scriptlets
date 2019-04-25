@@ -20,6 +20,7 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [log-eval](#log-eval)
     * [noeval](#noeval)
     * [prevent-eval-if](#prevent-eval-if)
+    * [remove-cookie](#remove-cookie)
     * [prevent-fab-3.2.0](#prevent-fab-3.2.0)
     * [set-popads-dummy](#set-popads-dummy)
     * [prevent-popads-net](#prevent-popads-net)
@@ -402,13 +403,13 @@ example.org#%#//scriptlet("log-eval")
 
 [scriptlet source](./src/scriptlets/log-eval.js)
 
-### <a id="remove-cookie"></a> remove cookie
+### <a id="remove-cookie"></a> remove-cookie
 
 Removes current page cookies by passed string matching with name. For current domain and subdomains. Runs on load and before unload.
 
 **Syntax**
 ```
-example.org#%#//scriptlet("cookie-remove"[, match])
+example.org#%#//scriptlet("remove-cookie"[, match])
 ```
 
 **Parameters**

@@ -25,32 +25,24 @@ export function addScriptletCall(scriptlet, code) {
 /**
  * Wrap function into IIFE (Immediately invoked function expression)
  *
- * <code>
- *       const source = {
- *           args: ["aaa", "bbb"],
- *           name: "noeval",
- *       };
- *
- *      const code = "function noeval(source, args) {
- *                            alert(source);
- *                          }
- *      noeval.apply(this, args);"
- *
- *      const result = wrapInIIFE(source, code);
- *
- *      // result becomes a string
- *
- *      "(function(source, args){
- *                function noeval(source) {
- *                    alert(source);
- *                }
- *                noeval.apply(this, args);
- *        )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])"
- * </code>
- *
  * @param {Source} source - object with scriptlet properties
  * @param {string} code - scriptlet source code with dependencies
- * @return {string} full scriptlet code
+ *
+ * @returns {string} full scriptlet code
+ *
+ * @example
+ * const source = {
+ *      args: ["aaa", "bbb"],
+ *      name: 'noeval',
+ * };
+ * const code = "function noeval(source, args) { alert(source); } noeval.apply(this, args);"
+ * const result = wrapInIIFE(source, code);
+ *
+ * // result
+ * `(function(source, args) {
+ *      function noeval(source) { alert(source); }
+ *      noeval.apply(this, args);
+ * )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])`
  */
 export function passSourceAndPropsToScriptlet(source, code) {
     if (source.hit) {

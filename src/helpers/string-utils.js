@@ -23,11 +23,14 @@ export const toRegExp = (str) => {
 /**
  * Converts string to function
  * @param {string} str string should be turned into function
- * @param {string[]} [args] array of parameters;
- * @param {string} [body] function body stringified
- * @return {function} return function build from arguments or noop function
+ *
+ * @example
+ * const str = 'function(name) { console.log(name) }';
+ * const newFunc = stringToFunc(str);
+ * newFunc('John Doe'); // console output 'John Doe'
+ *
+ * @returns {Function}
  */
-// eslint-disable-next-line arrow-body-style
 export const stringToFunc = (str) => {
     /**
      * Returns arguments of the function
