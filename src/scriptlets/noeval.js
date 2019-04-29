@@ -7,7 +7,7 @@ import { stringToFunc } from '../helpers';
  * @param {Source} source
  */
 export function noeval(source) {
-    const hit = stringToFunc(source.hit, source.hitArgs, source.hitBody);
+    const hit = stringToFunc(source.hit);
     window.eval = function evalWrapper(s) {
         hit(`AdGuard has prevented eval:\n${s}`);
     }.bind();
