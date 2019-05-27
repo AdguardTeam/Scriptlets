@@ -7,7 +7,7 @@ import { stringToFunc, noop, createHitFunction } from '../helpers';
  * @param {Source} source
  */
 export function preventFab(source) {
-    const hit = createHitFunction(source.hit, source.ruleText);
+    const hit = createHitFunction(source);
     hit();
     const Fab = function () {};
     Fab.prototype.check = noop;

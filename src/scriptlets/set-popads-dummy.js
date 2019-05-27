@@ -7,7 +7,7 @@ import { createHitFunction, stringToFunc } from '../helpers';
  * @param {Source} source
  */
 export function setPopadsDummy(source) {
-    const hit = createHitFunction(source.hit, source.ruleText);
+    const hit = createHitFunction(source);
     delete window.PopAds;
     delete window.popns;
     Object.defineProperties(window, {

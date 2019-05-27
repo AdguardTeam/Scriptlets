@@ -7,7 +7,7 @@ import { createHitFunction, stringToFunc } from '../helpers';
  * @param {Source} source
  */
 export function logEval(source) {
-    const hit = createHitFunction(source.hit, source.ruleText);
+    const hit = createHitFunction(source);
 
     const log = console.log.bind(console);
 

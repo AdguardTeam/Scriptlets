@@ -8,7 +8,7 @@ import { createHitFunction, stringToFunc } from '../helpers';
  * @param {Source} source
  */
 export function preventBab(source) {
-    const hit = createHitFunction(source.hit, source.ruleText);
+    const hit = createHitFunction(source);
 
     const nativeSetTimeout = window.setTimeout;
     const babRegex = /\.bab_elementid.$/;

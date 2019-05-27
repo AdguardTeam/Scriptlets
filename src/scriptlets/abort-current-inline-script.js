@@ -8,7 +8,7 @@ import { createHitFunction, createOnErrorHandler } from '../helpers';
 export function abortCurrentInlineScript(source, property, search = null) {
     const regex = search ? toRegExp(search) : null;
     const rid = randomId();
-    const hit = createHitFunction(source.hit, source.ruleText);
+    const hit = createHitFunction(source);
 
     const getCurrentScript = () => {
         if (!document.currentScript) {

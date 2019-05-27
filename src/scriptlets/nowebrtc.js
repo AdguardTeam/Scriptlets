@@ -7,7 +7,7 @@ import { createHitFunction, stringToFunc } from '../helpers';
  * @param {Source} source
  */
 export function nowebrtc(source) {
-    const hit = createHitFunction(source.hit, source.ruleText);
+    const hit = createHitFunction(source);
 
     let propertyName = '';
     if (window.RTCPeerConnection) {

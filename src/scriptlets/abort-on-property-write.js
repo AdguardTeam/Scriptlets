@@ -13,7 +13,7 @@ export function abortOnPropertyWrite(source, property) {
     if (!property) {
         return;
     }
-    const hit = createHitFunction(source.hit, source.ruleText);
+    const hit = createHitFunction(source);
     const rid = randomId();
     const abort = () => {
         hit();

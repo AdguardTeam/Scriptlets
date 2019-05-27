@@ -8,7 +8,7 @@ import { createHitFunction } from '../helpers';
  * @param {string} match string for matching with cookie name
  */
 export function removeCookie(source, match) {
-    const hit = createHitFunction(source.hit, source.ruleText);
+    const hit = createHitFunction(source);
     const regex = match ? toRegExp(match) : toRegExp('/.?/');
 
     const removeCookieFromHost = (cookieName, hostName) => {

@@ -7,7 +7,7 @@ import { createHitFunction, stringToFunc } from '../helpers';
  * @param {Source} source
  */
 export function noeval(source) {
-    const hit = createHitFunction(source.hit, source.ruleText);
+    const hit = createHitFunction(source);
     window.eval = function evalWrapper(s) {
         hit(`AdGuard has prevented eval:\n${s}`);
     }.bind();

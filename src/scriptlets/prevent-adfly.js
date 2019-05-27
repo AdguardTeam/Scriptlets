@@ -6,7 +6,7 @@ import { createHitFunction, setPropertyAccess, stringToFunc } from '../helpers';
  * @param {Source} source
  */
 export function preventAdfly(source) {
-    const hit = createHitFunction(source.hit, source.ruleText);
+    const hit = createHitFunction(source);
     const isDigit = data => /^\d$/.test(data);
     const handler = function (encodedURL) {
         let evenChars = '';

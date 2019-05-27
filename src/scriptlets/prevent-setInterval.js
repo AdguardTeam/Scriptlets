@@ -10,7 +10,7 @@ import { createHitFunction } from '../helpers';
  * @param {string|number} interval matching interval
  */
 export function preventSetInterval(source, match, interval) {
-    const hit = createHitFunction(source.hit, source.ruleText);
+    const hit = createHitFunction(source);
     const nativeInterval = window.setInterval;
     interval = parseInt(interval, 10);
     interval = Number.isNaN(interval) ? null : interval;

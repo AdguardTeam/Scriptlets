@@ -196,13 +196,14 @@
     /**
      * Takes source and creates hit function from hitStr
      * Then binds to this function ruleText
-     * @param hitStr - function string representation
-     * @param ruleText - ruleText
+     * @param {Source} source
      * @return {Function} returns function
      */
 
-    var createHitFunction = function createHitFunction(hitStr, ruleText) {
-      var func = stringToFunc(hitStr);
+    var createHitFunction = function createHitFunction(source) {
+      var hit = source.hit,
+          ruleText = source.ruleText;
+      var func = stringToFunc(hit);
       return ruleText ? func.bind(null, ruleText) : func;
     };
 
@@ -247,7 +248,7 @@
         return;
       }
 
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       var rid = randomId();
 
       var abort = function abort() {
@@ -303,7 +304,7 @@
         return;
       }
 
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       var rid = randomId();
 
       var abort = function abort() {
@@ -356,7 +357,7 @@
      */
 
     function preventSetTimeout(source, match, delay) {
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       var nativeTimeout = window.setTimeout;
       delay = parseInt(delay, 10);
       delay = Number.isNaN(delay) ? null : delay;
@@ -390,7 +391,7 @@
      */
 
     function preventSetInterval(source, match, interval) {
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       var nativeInterval = window.setInterval;
       interval = parseInt(interval, 10);
       interval = Number.isNaN(interval) ? null : interval;
@@ -425,7 +426,7 @@
       var inverse = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
       var match = arguments.length > 2 ? arguments[2] : undefined;
       var nativeOpen = window.open;
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       inverse = inverse ? !+inverse : inverse;
       match = match ? toRegExp(match) : toRegExp('/.?/'); // eslint-disable-next-line consistent-return
 
@@ -451,7 +452,7 @@
       var search = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
       var regex = search ? toRegExp(search) : null;
       var rid = randomId();
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
 
       var getCurrentScript = function getCurrentScript() {
         if (!document.currentScript) {
@@ -557,7 +558,7 @@
         return;
       }
 
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       var canceled = false;
 
       var mustCancel = function mustCancel(value) {
@@ -623,7 +624,7 @@
      */
 
     function removeCookie(source, match) {
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       var regex = match ? toRegExp(match) : toRegExp('/.?/');
 
       var removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
@@ -682,7 +683,7 @@
      */
 
     function preventAddEventListener(source, event, funcStr) {
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       event = event ? toRegExp(event) : toRegExp('/.?/');
       funcStr = funcStr ? toRegExp(funcStr) : toRegExp('/.?/');
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
@@ -715,7 +716,7 @@
     function preventBab(source) {
       var _this = this;
 
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       var nativeSetTimeout = window.setTimeout;
       var babRegex = /\.bab_elementid.$/;
 
@@ -787,7 +788,7 @@
      */
 
     function nowebrtc(source) {
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       var propertyName = '';
 
       if (window.RTCPeerConnection) {
@@ -835,7 +836,7 @@
      */
 
     function logAddEventListener(source) {
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       var log = console.log.bind(console);
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
@@ -863,7 +864,7 @@
      */
 
     function logSetInterval(source) {
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       var nativeSetInterval = window.setInterval;
       var log = console.log.bind(console);
 
@@ -891,7 +892,7 @@
      */
 
     function logSetTimeout(source) {
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       var nativeSetTimeout = window.setTimeout;
       var log = console.log.bind(console);
 
@@ -919,7 +920,7 @@
      */
 
     function logEval(source) {
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       var log = console.log.bind(console); // wrap eval function
 
       var nativeEval = window.eval;
@@ -960,7 +961,7 @@
      */
 
     function noeval(source) {
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
 
       window.eval = function evalWrapper(s) {
         hit("AdGuard has prevented eval:\n".concat(s));
@@ -977,7 +978,7 @@
      */
 
     function preventEvalIf(source, search) {
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       search = search ? toRegExp(search) : toRegExp('/.?/');
       var nativeEval = window.eval;
 
@@ -1001,7 +1002,7 @@
      */
 
     function preventFab(source) {
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       hit();
 
       var Fab = function Fab() {};
@@ -1043,7 +1044,7 @@
      */
 
     function setPopadsDummy(source) {
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       delete window.PopAds;
       delete window.popns;
       Object.defineProperties(window, {
@@ -1071,7 +1072,7 @@
      */
 
     function preventPopadsNet(source) {
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
       var rid = randomId();
 
       var throwError = function throwError() {
@@ -1101,7 +1102,7 @@
      */
 
     function preventAdfly(source) {
-      var hit = createHitFunction(source.hit, source.ruleText);
+      var hit = createHitFunction(source);
 
       var isDigit = function isDigit(data) {
         return /^\d$/.test(data);
@@ -1321,8 +1322,8 @@
      * @property {Array<string>} args Arguments for scriptlet function
      * @property {'extension'|'corelibs'} engine Defines the final form of scriptlet string presentation
      * @property {string} [version]
-     * @property {Function} [hit] Will be executed when target action is triggered
-     * @property {string} [ruleText] usually is used to provide into hit function
+     * @property {string} [hit] Will be executed when target action is triggered
+     * @property {string} [ruleText] Source rule text is used for debugging purposes
      */
 
     /**

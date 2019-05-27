@@ -7,7 +7,7 @@ import { createHitFunction, stringToFunc } from '../helpers';
  * @param {Source} source
  */
 export function logSetTimeout(source) {
-    const hit = createHitFunction(source.hit, source.ruleText);
+    const hit = createHitFunction(source);
     const nativeSetTimeout = window.setTimeout;
     const log = console.log.bind(console);
     function setTimeoutWrapper(callback, timeout, ...args) {

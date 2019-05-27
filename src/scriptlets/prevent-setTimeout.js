@@ -10,7 +10,7 @@ import { createHitFunction } from '../helpers';
  * @param {string|number} delay matching delay
  */
 export function preventSetTimeout(source, match, delay) {
-    const hit = createHitFunction(source.hit, source.ruleText);
+    const hit = createHitFunction(source);
     const nativeTimeout = window.setTimeout;
     delay = parseInt(delay, 10);
     delay = Number.isNaN(delay) ? null : delay;

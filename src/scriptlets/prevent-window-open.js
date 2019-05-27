@@ -9,7 +9,7 @@ import { createHitFunction } from '../helpers';
  */
 export function preventWindowOpen(source, inverse = false, match) {
     const nativeOpen = window.open;
-    const hit = createHitFunction(source.hit, source.ruleText);
+    const hit = createHitFunction(source);
 
     inverse = inverse
         ? !(+inverse)

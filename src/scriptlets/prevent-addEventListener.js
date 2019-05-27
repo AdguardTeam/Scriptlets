@@ -9,7 +9,7 @@ import { createHitFunction } from '../helpers';
  * @param {string|RegExp} [funcStr] - string or regexp matching stringified handler function
  */
 export function preventAddEventListener(source, event, funcStr) {
-    const hit = createHitFunction(source.hit, source.ruleText);
+    const hit = createHitFunction(source);
 
     event = event ? toRegExp(event) : toRegExp('/.?/');
     funcStr = funcStr ? toRegExp(funcStr) : toRegExp('/.?/');

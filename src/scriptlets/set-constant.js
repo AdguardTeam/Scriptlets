@@ -37,7 +37,7 @@ export function setConstant(source, property, value) {
         return;
     }
 
-    const hit = createHitFunction(source.hit, source.ruleText);
+    const hit = createHitFunction(source);
 
     let canceled = false;
     const mustCancel = (value) => {

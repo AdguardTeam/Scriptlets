@@ -7,7 +7,7 @@ import { createHitFunction, stringToFunc } from '../helpers';
  * @param {Source} source
  */
 export function logSetInterval(source) {
-    const hit = createHitFunction(source.hit, source.ruleText);
+    const hit = createHitFunction(source);
     const nativeSetInterval = window.setInterval;
     const log = console.log.bind(console);
     function setIntervalWrapper(callback, timeout, ...args) {
