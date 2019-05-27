@@ -1,4 +1,5 @@
 import { stringToFunc, toRegExp } from '../helpers/string-utils';
+import { createHitFunction } from '../helpers';
 
 /**
  * Prevents adding event listeners
@@ -8,7 +9,7 @@ import { stringToFunc, toRegExp } from '../helpers/string-utils';
  * @param {string|RegExp} [funcStr] - string or regexp matching stringified handler function
  */
 export function preventAddEventListener(source, event, funcStr) {
-    const hit = stringToFunc(source.hit);
+    const hit = createHitFunction(source.hit, source.ruleText);
 
     event = event ? toRegExp(event) : toRegExp('/.?/');
     funcStr = funcStr ? toRegExp(funcStr) : toRegExp('/.?/');
@@ -30,4 +31,4 @@ preventAddEventListener.names = [
     'ubo-addEventListener-defuser.js',
 ];
 
-preventAddEventListener.injections = [toRegExp, stringToFunc];
+preventAddEventListener.injections = [toRegExp, stringToFunc, createHitFunction];

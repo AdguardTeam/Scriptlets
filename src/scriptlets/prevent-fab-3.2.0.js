@@ -1,5 +1,5 @@
 /* eslint-disable no-console, func-names, no-multi-assign */
-import { stringToFunc, noop } from '../helpers';
+import { stringToFunc, noop, createHitFunction } from '../helpers';
 
 /**
  * Fuckadblock 3.2.0 defuser
@@ -7,7 +7,7 @@ import { stringToFunc, noop } from '../helpers';
  * @param {Source} source
  */
 export function preventFab(source) {
-    const hit = stringToFunc(source.hit);
+    const hit = createHitFunction(source.hit, source.ruleText);
     hit();
     const Fab = function () {};
     Fab.prototype.check = noop;
@@ -37,4 +37,4 @@ preventFab.names = [
     'fuckadblock.js-3.2.0',
 ];
 
-preventFab.injections = [stringToFunc, noop];
+preventFab.injections = [stringToFunc, noop, createHitFunction];

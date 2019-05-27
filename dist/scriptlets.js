@@ -103,19 +103,27 @@
     /**
      * Converts string to function
      * @param {string} str string should be turned into function
-     * @param {string[]} [args] array of parameters;
-     * @param {string} [body] function body stringified
-     * @return {function} return function build from arguments or noop function
+     *
+     * @example
+     * const str = 'function(name) { console.log(name) }';
+     * const newFunc = stringToFunc(str);
+     * newFunc('John Doe'); // console output 'John Doe'
+     *
+     * @returns {Function}
      */
-    // eslint-disable-next-line arrow-body-style
 
     var stringToFunc = function stringToFunc(str) {
+      if (!str) {
+        return function () {};
+      }
       /**
        * Returns arguments of the function
        * @source https://github.com/sindresorhus/fn-args
        * @param {function|string} [func] function or string
        * @returns {string[]}
        */
+
+
       var getFuncArgs = function getFuncArgs(func) {
         return func.toString().match(/(?:\((.*)\))|(?:([^ ]*) *=>)/).slice(1, 3).find(function (capture) {
           return typeof capture === 'string';
@@ -151,7 +159,7 @@
         return Function.apply(null, args.concat(body));
       }
 
-      return str ? new Function("(".concat(str, ")()")) : function () {};
+      return new Function("(".concat(str, ")()"));
     };
 
     /**
@@ -186,6 +194,19 @@
     var noop = function noop() {};
 
     /**
+     * Takes source and creates hit function from hitStr
+     * Then binds to this function ruleText
+     * @param hitStr - function string representation
+     * @param ruleText - ruleText
+     * @return {Function} returns function
+     */
+
+    var createHitFunction = function createHitFunction(hitStr, ruleText) {
+      var func = stringToFunc(hitStr);
+      return ruleText ? func.bind(null, ruleText) : func;
+    };
+
+    /**
      * This file must export all used dependencies
      */
 
@@ -197,7 +218,8 @@
         toRegExp: toRegExp,
         stringToFunc: stringToFunc,
         createOnErrorHandler: createOnErrorHandler,
-        noop: noop
+        noop: noop,
+        createHitFunction: createHitFunction
     });
 
     /**
@@ -217,7 +239,7 @@
      * Abort property reading even if it doesn't exist in execution moment
      *
      * @param {Source} source
-     * @param {string} property propery name
+     * @param {string} property property name
      */
 
     function abortOnPropertyRead(source, property) {
@@ -225,7 +247,7 @@
         return;
       }
 
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       var rid = randomId();
 
       var abort = function abort() {
@@ -267,7 +289,7 @@
       window.onerror = createOnErrorHandler(rid).bind();
     }
     abortOnPropertyRead.names = ['abort-on-property-read', 'ubo-abort-on-property-read.js', 'abp-abort-on-property-read'];
-    abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, stringToFunc, createOnErrorHandler];
+    abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, stringToFunc, createOnErrorHandler, createHitFunction];
 
     /**
      * Abort property writing
@@ -281,7 +303,7 @@
         return;
       }
 
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       var rid = randomId();
 
       var abort = function abort() {
@@ -322,7 +344,7 @@
       window.onerror = createOnErrorHandler(rid).bind();
     }
     abortOnPropertyWrite.names = ['abort-on-property-write', 'ubo-abort-on-property-write.js', 'abp-abort-on-property-write'];
-    abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, stringToFunc, createOnErrorHandler];
+    abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, stringToFunc, createHitFunction];
 
     /**
      * Prevent calls to setTimeout for specified matching in passed callback and delay
@@ -334,7 +356,7 @@
      */
 
     function preventSetTimeout(source, match, delay) {
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       var nativeTimeout = window.setTimeout;
       delay = parseInt(delay, 10);
       delay = Number.isNaN(delay) ? null : delay;
@@ -356,7 +378,7 @@
       window.setTimeout = timeoutWrapper;
     }
     preventSetTimeout.names = ['prevent-setTimeout', 'ubo-setTimeout-defuser.js'];
-    preventSetTimeout.injections = [toRegExp, stringToFunc];
+    preventSetTimeout.injections = [toRegExp, stringToFunc, createHitFunction];
 
     /**
      * Prevent calls to setInterval for specified matching in passed callback and delay
@@ -368,7 +390,7 @@
      */
 
     function preventSetInterval(source, match, interval) {
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       var nativeInterval = window.setInterval;
       interval = parseInt(interval, 10);
       interval = Number.isNaN(interval) ? null : interval;
@@ -390,7 +412,7 @@
       window.setInterval = intervalWrapper;
     }
     preventSetInterval.names = ['prevent-setInterval', 'ubo-setInterval-defuser.js'];
-    preventSetInterval.injections = [toRegExp, stringToFunc];
+    preventSetInterval.injections = [toRegExp, stringToFunc, createHitFunction];
 
     /**
      * Prevent calls `window.open` when URL match or not match with passed params
@@ -403,7 +425,7 @@
       var inverse = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
       var match = arguments.length > 2 ? arguments[2] : undefined;
       var nativeOpen = window.open;
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       inverse = inverse ? !+inverse : inverse;
       match = match ? toRegExp(match) : toRegExp('/.?/'); // eslint-disable-next-line consistent-return
 
@@ -422,14 +444,14 @@
       window.open = openWrapper;
     }
     preventWindowOpen.names = ['prevent-window-open', 'ubo-window.open-defuser.js'];
-    preventWindowOpen.injections = [toRegExp, stringToFunc];
+    preventWindowOpen.injections = [toRegExp, stringToFunc, createHitFunction];
 
     /* eslint-disable no-new-func */
     function abortCurrentInlineScript(source, property) {
       var search = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
       var regex = search ? toRegExp(search) : null;
       var rid = randomId();
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
 
       var getCurrentScript = function getCurrentScript() {
         if (!document.currentScript) {
@@ -492,7 +514,7 @@
       window.onerror = createOnErrorHandler(rid).bind();
     }
     abortCurrentInlineScript.names = ['abort-current-inline-script', 'ubo-abort-current-inline-script.js', 'abp-abort-current-inline-script'];
-    abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, stringToFunc, createOnErrorHandler];
+    abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, stringToFunc, createOnErrorHandler, createHitFunction];
 
     function setConstant(source, property, value) {
       if (!property) {
@@ -535,7 +557,7 @@
         return;
       }
 
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       var canceled = false;
 
       var mustCancel = function mustCancel(value) {
@@ -591,7 +613,7 @@
       setChainPropAccess(window, property);
     }
     setConstant.names = ['set-constant', 'ubo-set-constant.js'];
-    setConstant.injections = [getPropertyInChain, setPropertyAccess, stringToFunc];
+    setConstant.injections = [getPropertyInChain, setPropertyAccess, stringToFunc, createHitFunction];
 
     /**
      * Removes current page cookies specified by name.
@@ -601,7 +623,7 @@
      */
 
     function removeCookie(source, match) {
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       var regex = match ? toRegExp(match) : toRegExp('/.?/');
 
       var removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
@@ -649,7 +671,7 @@
       window.addEventListener('beforeunload', rmCookie);
     }
     removeCookie.names = ['remove-cookie', 'ubo-cookie-remover.js'];
-    removeCookie.injections = [stringToFunc, toRegExp];
+    removeCookie.injections = [stringToFunc, toRegExp, createHitFunction];
 
     /**
      * Prevents adding event listeners
@@ -660,7 +682,7 @@
      */
 
     function preventAddEventListener(source, event, funcStr) {
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       event = event ? toRegExp(event) : toRegExp('/.?/');
       funcStr = funcStr ? toRegExp(funcStr) : toRegExp('/.?/');
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
@@ -681,7 +703,7 @@
       window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
     }
     preventAddEventListener.names = ['prevent-addEventListener', 'ubo-addEventListener-defuser.js'];
-    preventAddEventListener.injections = [toRegExp, stringToFunc];
+    preventAddEventListener.injections = [toRegExp, stringToFunc, createHitFunction];
 
     /* eslint-disable consistent-return, no-eval */
     /**
@@ -693,7 +715,7 @@
     function preventBab(source) {
       var _this = this;
 
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       var nativeSetTimeout = window.setTimeout;
       var babRegex = /\.bab_elementid.$/;
 
@@ -755,7 +777,7 @@
       };
     }
     preventBab.names = ['prevent-bab', 'ubo-bab-defuser.js'];
-    preventBab.injections = [stringToFunc];
+    preventBab.injections = [stringToFunc, createHitFunction];
 
     /* eslint-disable no-unused-vars, no-extra-bind, func-names */
     /**
@@ -765,7 +787,7 @@
      */
 
     function nowebrtc(source) {
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       var propertyName = '';
 
       if (window.RTCPeerConnection) {
@@ -803,7 +825,7 @@
       }
     }
     nowebrtc.names = ['nowebrtc', 'ubo-nowebrtc.js'];
-    nowebrtc.injections = [stringToFunc];
+    nowebrtc.injections = [stringToFunc, createHitFunction];
 
     /* eslint-disable no-console */
     /**
@@ -813,7 +835,7 @@
      */
 
     function logAddEventListener(source) {
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       var log = console.log.bind(console);
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
@@ -831,7 +853,7 @@
       window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
     }
     logAddEventListener.names = ['log-addEventListener', 'addEventListener-logger.js'];
-    logAddEventListener.injections = [stringToFunc];
+    logAddEventListener.injections = [stringToFunc, createHitFunction];
 
     /* eslint-disable no-console */
     /**
@@ -841,7 +863,7 @@
      */
 
     function logSetInterval(source) {
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       var nativeSetInterval = window.setInterval;
       var log = console.log.bind(console);
 
@@ -859,7 +881,7 @@
       window.setInterval = setIntervalWrapper;
     }
     logSetInterval.names = ['log-setInterval', 'setInterval-logger.js'];
-    logSetInterval.injections = [stringToFunc];
+    logSetInterval.injections = [stringToFunc, createHitFunction];
 
     /* eslint-disable no-console */
     /**
@@ -869,7 +891,7 @@
      */
 
     function logSetTimeout(source) {
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       var nativeSetTimeout = window.setTimeout;
       var log = console.log.bind(console);
 
@@ -887,7 +909,7 @@
       window.setTimeout = setTimeoutWrapper;
     }
     logSetTimeout.names = ['log-setTimeout', 'setTimeout-logger.js'];
-    logSetTimeout.injections = [stringToFunc];
+    logSetTimeout.injections = [stringToFunc, createHitFunction];
 
     /* eslint-disable no-console, no-eval */
     /**
@@ -897,7 +919,7 @@
      */
 
     function logEval(source) {
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       var log = console.log.bind(console); // wrap eval function
 
       var nativeEval = window.eval;
@@ -928,7 +950,7 @@
       window.Function = FunctionWrapper;
     }
     logEval.names = ['log-eval'];
-    logEval.injections = [stringToFunc];
+    logEval.injections = [stringToFunc, createHitFunction];
 
     /* eslint-disable no-eval, no-extra-bind */
     /**
@@ -938,14 +960,14 @@
      */
 
     function noeval(source) {
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
 
       window.eval = function evalWrapper(s) {
         hit("AdGuard has prevented eval:\n".concat(s));
       }.bind();
     }
     noeval.names = ['noeval.js', 'silent-noeval.js', 'noeval'];
-    noeval.injections = [stringToFunc];
+    noeval.injections = [stringToFunc, createHitFunction];
 
     /* eslint-disable no-eval, no-extra-bind, func-names */
     /**
@@ -955,7 +977,7 @@
      */
 
     function preventEvalIf(source, search) {
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       search = search ? toRegExp(search) : toRegExp('/.?/');
       var nativeEval = window.eval;
 
@@ -969,7 +991,7 @@
       }.bind(window);
     }
     preventEvalIf.names = ['noeval-if.js', 'prevent-eval-if'];
-    preventEvalIf.injections = [toRegExp, stringToFunc];
+    preventEvalIf.injections = [toRegExp, stringToFunc, createHitFunction];
 
     /* eslint-disable no-console, func-names, no-multi-assign */
     /**
@@ -979,7 +1001,7 @@
      */
 
     function preventFab(source) {
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       hit();
 
       var Fab = function Fab() {};
@@ -1011,7 +1033,7 @@
       window.fuckAdBlock = window.blockAdBlock = new Fab();
     }
     preventFab.names = ['prevent-fab-3.2.0', 'fuckadblock.js-3.2.0'];
-    preventFab.injections = [stringToFunc, noop];
+    preventFab.injections = [stringToFunc, noop, createHitFunction];
 
     /* eslint-disable no-console, func-names, no-multi-assign */
     /**
@@ -1021,7 +1043,7 @@
      */
 
     function setPopadsDummy(source) {
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       delete window.PopAds;
       delete window.popns;
       Object.defineProperties(window, {
@@ -1040,7 +1062,7 @@
       });
     }
     setPopadsDummy.names = ['set-popads-dummy', 'popads-dummy.js'];
-    setPopadsDummy.injections = [stringToFunc];
+    setPopadsDummy.injections = [stringToFunc, createHitFunction];
 
     /**
      * Aborts on property write (PopAds, popns), throws reference error with random id
@@ -1049,7 +1071,7 @@
      */
 
     function preventPopadsNet(source) {
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
       var rid = randomId();
 
       var throwError = function throwError() {
@@ -1070,7 +1092,7 @@
       hit();
     }
     preventPopadsNet.names = ['prevent-popads-net', 'popads.net.js'];
-    preventPopadsNet.injections = [stringToFunc, createOnErrorHandler, randomId];
+    preventPopadsNet.injections = [stringToFunc, createOnErrorHandler, randomId, createHitFunction];
 
     /* eslint-disable func-names */
     /**
@@ -1079,7 +1101,7 @@
      */
 
     function preventAdfly(source) {
-      var hit = stringToFunc(source.hit);
+      var hit = createHitFunction(source.hit, source.ruleText);
 
       var isDigit = function isDigit(data) {
         return /^\d$/.test(data);
@@ -1155,7 +1177,7 @@
       }
     }
     preventAdfly.names = ['prevent-adfly', 'adfly-defuser.js'];
-    preventAdfly.injections = [stringToFunc, setPropertyAccess];
+    preventAdfly.injections = [stringToFunc, setPropertyAccess, createHitFunction];
 
     /**
      * This file must export all scriptlets which should be accessible
@@ -1210,32 +1232,24 @@
     /**
      * Wrap function into IIFE (Immediately invoked function expression)
      *
-     * <code>
-     *       const source = {
-     *           args: ["aaa", "bbb"],
-     *           name: "noeval",
-     *       };
-     *
-     *      const code = "function noeval(source, args) {
-     *                            alert(source);
-     *                          }
-     *      noeval.apply(this, args);"
-     *
-     *      const result = wrapInIIFE(source, code);
-     *
-     *      // result becomes a string
-     *
-     *      "(function(source, args){
-     *                function noeval(source) {
-     *                    alert(source);
-     *                }
-     *                noeval.apply(this, args);
-     *        )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])"
-     * </code>
-     *
      * @param {Source} source - object with scriptlet properties
      * @param {string} code - scriptlet source code with dependencies
-     * @return {string} full scriptlet code
+     *
+     * @returns {string} full scriptlet code
+     *
+     * @example
+     * const source = {
+     *      args: ["aaa", "bbb"],
+     *      name: 'noeval',
+     * };
+     * const code = "function noeval(source, args) { alert(source); } noeval.apply(this, args);"
+     * const result = wrapInIIFE(source, code);
+     *
+     * // result
+     * `(function(source, args) {
+     *      function noeval(source) { alert(source); }
+     *      noeval.apply(this, args);
+     * )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])`
      */
 
     function passSourceAndPropsToScriptlet(source, code) {
@@ -1308,6 +1322,7 @@
      * @property {'extension'|'corelibs'} engine Defines the final form of scriptlet string presentation
      * @property {string} [version]
      * @property {Function} [hit] Will be executed when target action is triggered
+     * @property {string} [ruleText] usually is used to provide into hit function
      */
 
     /**

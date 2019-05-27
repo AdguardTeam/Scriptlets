@@ -1,4 +1,5 @@
 import { toRegExp, stringToFunc } from '../helpers/string-utils';
+import { createHitFunction } from '../helpers';
 
 /**
  * Prevent calls to setInterval for specified matching in passed callback and delay
@@ -9,7 +10,7 @@ import { toRegExp, stringToFunc } from '../helpers/string-utils';
  * @param {string|number} interval matching interval
  */
 export function preventSetInterval(source, match, interval) {
-    const hit = stringToFunc(source.hit);
+    const hit = createHitFunction(source.hit, source.ruleText);
     const nativeInterval = window.setInterval;
     interval = parseInt(interval, 10);
     interval = Number.isNaN(interval) ? null : interval;
@@ -30,4 +31,4 @@ preventSetInterval.names = [
     'ubo-setInterval-defuser.js',
 ];
 
-preventSetInterval.injections = [toRegExp, stringToFunc];
+preventSetInterval.injections = [toRegExp, stringToFunc, createHitFunction];

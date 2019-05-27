@@ -32,6 +32,9 @@ export const toRegExp = (str) => {
  * @returns {Function}
  */
 export const stringToFunc = (str) => {
+    if (!str) {
+        return () => {};
+    }
     /**
      * Returns arguments of the function
      * @source https://github.com/sindresorhus/fn-args
@@ -69,5 +72,5 @@ export const stringToFunc = (str) => {
         return Function.apply(null, args.concat(body));
     }
 
-    return str ? new Function(`(${str})()`) : () => { };
+    return new Function(`(${str})()`);
 };

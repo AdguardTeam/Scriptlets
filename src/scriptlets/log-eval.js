@@ -1,5 +1,5 @@
 /* eslint-disable no-console, no-eval */
-import { stringToFunc } from '../helpers';
+import { createHitFunction, stringToFunc } from '../helpers';
 
 /**
  * Logs all eval() and Function() calls
@@ -7,7 +7,7 @@ import { stringToFunc } from '../helpers';
  * @param {Source} source
  */
 export function logEval(source) {
-    const hit = stringToFunc(source.hit);
+    const hit = createHitFunction(source.hit, source.ruleText);
 
     const log = console.log.bind(console);
 
@@ -39,4 +39,4 @@ logEval.names = [
     'log-eval',
 ];
 
-logEval.injections = [stringToFunc];
+logEval.injections = [stringToFunc, createHitFunction];
