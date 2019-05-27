@@ -194,17 +194,16 @@
     var noop = function noop() {};
 
     /**
-     * Takes source and creates hit function from hitStr
-     * Then binds to this function ruleText
+     * takes source and creates hit function from source.hit
+     * then binds to this function source
      * @param {Source} source
      * @return {Function} returns function
      */
 
     var createHitFunction = function createHitFunction(source) {
-      var hit = source.hit,
-          ruleText = source.ruleText;
+      var hit = source.hit;
       var func = stringToFunc(hit);
-      return ruleText ? func.bind(null, ruleText) : func;
+      return func.bind(null, source);
     };
 
     /**

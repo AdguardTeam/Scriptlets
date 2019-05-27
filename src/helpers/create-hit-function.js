@@ -1,13 +1,13 @@
 import { stringToFunc } from './string-utils';
 
 /**
- * Takes source and creates hit function from hitStr
- * Then binds to this function ruleText
+ * takes source and creates hit function from source.hit
+ * then binds to this function source
  * @param {Source} source
  * @return {Function} returns function
  */
 export const createHitFunction = (source) => {
-    const { hit, ruleText } = source;
+    const { hit } = source;
     const func = stringToFunc(hit);
-    return ruleText ? func.bind(null, ruleText) : func;
+    return func.bind(null, source);
 };
