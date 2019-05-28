@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { stringToFunc } from '../helpers';
+import { createHitFunction } from '../helpers';
 
 /**
  * Logs add event listener calls
@@ -7,7 +7,7 @@ import { stringToFunc } from '../helpers';
  * @param {Source} source
  */
 export function logAddEventListener(source) {
-    const hit = stringToFunc(source.hit);
+    const hit = createHitFunction(source);
     const log = console.log.bind(console);
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
     function addEventListenerWrapper(eventName, callback, ...args) {
@@ -23,4 +23,4 @@ logAddEventListener.names = [
     'addEventListener-logger.js',
 ];
 
-logAddEventListener.injections = [stringToFunc];
+logAddEventListener.injections = [createHitFunction];

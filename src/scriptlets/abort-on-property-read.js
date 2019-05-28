@@ -1,19 +1,19 @@
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
-import { stringToFunc, createOnErrorHandler } from '../helpers';
+import { createOnErrorHandler, createHitFunction } from '../helpers';
 
 /**
  * Abort property reading even if it doesn't exist in execution moment
  *
  * @param {Source} source
- * @param {string} property propery name
+ * @param {string} property property name
  */
 export function abortOnPropertyRead(source, property) {
     if (!property) {
         return;
     }
-    const hit = stringToFunc(source.hit);
+    const hit = createHitFunction(source);
     const rid = randomId();
     const abort = () => {
         hit();
@@ -57,6 +57,6 @@ abortOnPropertyRead.injections = [
     randomId,
     setPropertyAccess,
     getPropertyInChain,
-    stringToFunc,
     createOnErrorHandler,
+    createHitFunction,
 ];

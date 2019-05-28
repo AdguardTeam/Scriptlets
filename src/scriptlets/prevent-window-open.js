@@ -1,4 +1,5 @@
-import { toRegExp, stringToFunc } from '../helpers/string-utils';
+import { toRegExp } from '../helpers/string-utils';
+import { createHitFunction } from '../helpers';
 
 /**
  * Prevent calls `window.open` when URL match or not match with passed params
@@ -8,7 +9,7 @@ import { toRegExp, stringToFunc } from '../helpers/string-utils';
  */
 export function preventWindowOpen(source, inverse = false, match) {
     const nativeOpen = window.open;
-    const hit = stringToFunc(source.hit);
+    const hit = createHitFunction(source);
 
     inverse = inverse
         ? !(+inverse)
@@ -32,4 +33,4 @@ preventWindowOpen.names = [
     'ubo-window.open-defuser.js',
 ];
 
-preventWindowOpen.injections = [toRegExp, stringToFunc];
+preventWindowOpen.injections = [toRegExp, createHitFunction];

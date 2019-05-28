@@ -2,13 +2,13 @@
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
-import { stringToFunc, toRegExp } from '../helpers/string-utils';
-import { createOnErrorHandler } from '../helpers';
+import { toRegExp } from '../helpers/string-utils';
+import { createHitFunction, createOnErrorHandler } from '../helpers';
 
 export function abortCurrentInlineScript(source, property, search = null) {
     const regex = search ? toRegExp(search) : null;
     const rid = randomId();
-    const hit = stringToFunc(source.hit);
+    const hit = createHitFunction(source);
 
     const getCurrentScript = () => {
         if (!document.currentScript) {
@@ -78,6 +78,6 @@ abortCurrentInlineScript.injections = [
     setPropertyAccess,
     getPropertyInChain,
     toRegExp,
-    stringToFunc,
     createOnErrorHandler,
+    createHitFunction,
 ];

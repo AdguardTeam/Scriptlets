@@ -10,7 +10,7 @@ module(name);
 const nativeEval = window.eval;
 const nativeConsole = console.log;
 
-const hit = (payload) => {
+const hit = (source, payload) => {
     // calling console.log we test that our hit function was build correctly
     // example of use in the test
     // console.log = function log(input) {

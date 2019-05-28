@@ -1,4 +1,5 @@
-import { stringToFunc, toRegExp } from '../helpers/string-utils';
+import { toRegExp } from '../helpers/string-utils';
+import { createHitFunction } from '../helpers';
 
 /**
  * Removes current page cookies specified by name.
@@ -7,7 +8,7 @@ import { stringToFunc, toRegExp } from '../helpers/string-utils';
  * @param {string} match string for matching with cookie name
  */
 export function removeCookie(source, match) {
-    const hit = stringToFunc(source.hit);
+    const hit = createHitFunction(source);
     const regex = match ? toRegExp(match) : toRegExp('/.?/');
 
     const removeCookieFromHost = (cookieName, hostName) => {
@@ -55,4 +56,4 @@ removeCookie.names = [
     'ubo-cookie-remover.js',
 ];
 
-removeCookie.injections = [stringToFunc, toRegExp];
+removeCookie.injections = [toRegExp, createHitFunction];

@@ -1,4 +1,6 @@
-import { createOnErrorHandler, randomId, stringToFunc } from '../helpers';
+import {
+    createHitFunction, createOnErrorHandler, randomId,
+} from '../helpers';
 
 /**
  * Aborts on property write (PopAds, popns), throws reference error with random id
@@ -6,7 +8,7 @@ import { createOnErrorHandler, randomId, stringToFunc } from '../helpers';
  * @param {Source} source
  */
 export function preventPopadsNet(source) {
-    const hit = stringToFunc(source.hit);
+    const hit = createHitFunction(source);
     const rid = randomId();
 
     const throwError = () => {
@@ -29,4 +31,4 @@ preventPopadsNet.names = [
     'popads.net.js',
 ];
 
-preventPopadsNet.injections = [stringToFunc, createOnErrorHandler, randomId];
+preventPopadsNet.injections = [createOnErrorHandler, randomId, createHitFunction];

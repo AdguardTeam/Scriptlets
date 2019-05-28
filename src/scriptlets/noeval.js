@@ -1,5 +1,5 @@
 /* eslint-disable no-eval, no-extra-bind */
-import { stringToFunc } from '../helpers';
+import { createHitFunction } from '../helpers';
 
 /**
  * Prevents page to use eval.
@@ -7,7 +7,7 @@ import { stringToFunc } from '../helpers';
  * @param {Source} source
  */
 export function noeval(source) {
-    const hit = stringToFunc(source.hit);
+    const hit = createHitFunction(source);
     window.eval = function evalWrapper(s) {
         hit(`AdGuard has prevented eval:\n${s}`);
     }.bind();
@@ -19,4 +19,4 @@ noeval.names = [
     'noeval',
 ];
 
-noeval.injections = [stringToFunc];
+noeval.injections = [createHitFunction];
