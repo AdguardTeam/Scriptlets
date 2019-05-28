@@ -1,6 +1,6 @@
 /* eslint-disable consistent-return, no-eval */
 
-import { createHitFunction, stringToFunc } from '../helpers';
+import { createHitFunction } from '../helpers';
 
 /**
  * Prevents BlockAdblock
@@ -66,4 +66,4 @@ preventBab.names = [
     'ubo-bab-defuser.js',
 ];
 
-preventBab.injections = [stringToFunc, createHitFunction];
+preventBab.injections = [createHitFunction];

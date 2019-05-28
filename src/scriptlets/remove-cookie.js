@@ -1,4 +1,4 @@
-import { stringToFunc, toRegExp } from '../helpers/string-utils';
+import { toRegExp } from '../helpers/string-utils';
 import { createHitFunction } from '../helpers';
 
 /**
@@ -56,4 +56,4 @@ removeCookie.names = [
     'ubo-cookie-remover.js',
 ];
 
-removeCookie.injections = [stringToFunc, toRegExp, createHitFunction];
+removeCookie.injections = [toRegExp, createHitFunction];

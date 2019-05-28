@@ -1,5 +1,5 @@
 /* eslint-disable no-console, no-eval */
-import { createHitFunction, stringToFunc } from '../helpers';
+import { createHitFunction } from '../helpers';
 
 /**
  * Logs all eval() and Function() calls
@@ -39,4 +39,4 @@ logEval.names = [
     'log-eval',
 ];
 
-logEval.injections = [stringToFunc, createHitFunction];
+logEval.injections = [createHitFunction];

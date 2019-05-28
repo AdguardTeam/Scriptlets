@@ -75,8 +75,6 @@
       };
     }
 
-    /* eslint-disable no-new-func, prefer-spread */
-
     /**
      * Escapes special chars in string
      * @param {string} str
@@ -99,67 +97,6 @@
 
       var escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       return new RegExp(escaped);
-    };
-    /**
-     * Converts string to function
-     * @param {string} str string should be turned into function
-     *
-     * @example
-     * const str = 'function(name) { console.log(name) }';
-     * const newFunc = stringToFunc(str);
-     * newFunc('John Doe'); // console output 'John Doe'
-     *
-     * @returns {Function}
-     */
-
-    var stringToFunc = function stringToFunc(str) {
-      if (!str) {
-        return function () {};
-      }
-      /**
-       * Returns arguments of the function
-       * @source https://github.com/sindresorhus/fn-args
-       * @param {function|string} [func] function or string
-       * @returns {string[]}
-       */
-
-
-      var getFuncArgs = function getFuncArgs(func) {
-        return func.toString().match(/(?:\((.*)\))|(?:([^ ]*) *=>)/).slice(1, 3).find(function (capture) {
-          return typeof capture === 'string';
-        }).split(/, */).filter(function (arg) {
-          return arg !== '';
-        }).map(function (arg) {
-          return arg.replace(/\/\*.*\*\//, '');
-        });
-      };
-      /**
-      * Returns body of the function
-      * @param {function|string} [func] function or string
-      * @returns {string}
-      */
-
-
-      var getFuncBody = function getFuncBody(func) {
-        var regexp = /(?:(?:\((?:.*)\))|(?:(?:[^ ]*) *=>))\s?({?[\s\S]*}?)/;
-        var funcString = func.toString();
-        return funcString.match(regexp)[1];
-      };
-
-      var body = '';
-      var args = '';
-      var hitArgs = getFuncArgs(str);
-
-      if (hitArgs.length > 0) {
-        body = getFuncBody(str);
-        args = hitArgs;
-      }
-
-      if (args && body) {
-        return Function.apply(null, args.concat(body));
-      }
-
-      return new Function("(".concat(str, ")()"));
     };
 
     /**
@@ -193,14 +130,76 @@
      */
     var noop = function noop() {};
 
+    /* eslint-disable no-new-func, prefer-spread */
+
     /**
      * takes source and creates hit function from source.hit
      * then binds to this function source
      * @param {Source} source
      * @return {Function} returns function
      */
-
     var createHitFunction = function createHitFunction(source) {
+      /**
+       * Returns body of the function
+       * @param {function|string} [func] function or string
+       * @returns {string}
+       */
+      var getFuncBody = function getFuncBody(func) {
+        var regexp = /(?:(?:\((?:.*)\))|(?:(?:[^ ]*) *=>))\s?({?[\s\S]*}?)/;
+        var funcString = func.toString();
+        return funcString.match(regexp)[1];
+      };
+      /**
+       * Returns arguments of the function
+       * @source https://github.com/sindresorhus/fn-args
+       * @param {function|string} [func] function or string
+       * @returns {string[]}
+       */
+
+
+      var getFuncArgs = function getFuncArgs(func) {
+        return func.toString().match(/(?:\((.*)\))|(?:([^ ]*) *=>)/).slice(1, 3).find(function (capture) {
+          return typeof capture === 'string';
+        }).split(/, */).filter(function (arg) {
+          return arg !== '';
+        }).map(function (arg) {
+          return arg.replace(/\/\*.*\*\//, '');
+        });
+      };
+      /**
+       * Converts string to function
+       * @param {string} str string should be turned into function
+       *
+       * @example
+       * const str = 'function(name) { console.log(name) }';
+       * const newFunc = stringToFunc(str);
+       * newFunc('John Doe'); // console output 'John Doe'
+       *
+       * @returns {Function}
+       */
+
+
+      var stringToFunc = function stringToFunc(str) {
+        if (!str) {
+          return function () {};
+        }
+
+        var body = '';
+        var args = '';
+        var hitArgs = getFuncArgs(str);
+
+        if (hitArgs.length > 0) {
+          body = getFuncBody(str);
+          args = hitArgs;
+        }
+
+        if (args && body) {
+          return Function.apply(null, args.concat(body));
+        }
+
+        return new Function("(".concat(str, ")()"));
+      };
+
       var hit = source.hit;
       var func = stringToFunc(hit);
       return func.bind(null, source);
@@ -216,7 +215,6 @@
         getPropertyInChain: getPropertyInChain,
         escapeRegExp: escapeRegExp,
         toRegExp: toRegExp,
-        stringToFunc: stringToFunc,
         createOnErrorHandler: createOnErrorHandler,
         noop: noop,
         createHitFunction: createHitFunction
@@ -289,7 +287,7 @@
       window.onerror = createOnErrorHandler(rid).bind();
     }
     abortOnPropertyRead.names = ['abort-on-property-read', 'ubo-abort-on-property-read.js', 'abp-abort-on-property-read'];
-    abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, stringToFunc, createOnErrorHandler, createHitFunction];
+    abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, createHitFunction];
 
     /**
      * Abort property writing
@@ -344,7 +342,7 @@
       window.onerror = createOnErrorHandler(rid).bind();
     }
     abortOnPropertyWrite.names = ['abort-on-property-write', 'ubo-abort-on-property-write.js', 'abp-abort-on-property-write'];
-    abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, stringToFunc, createHitFunction];
+    abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, createHitFunction];
 
     /**
      * Prevent calls to setTimeout for specified matching in passed callback and delay
@@ -378,7 +376,7 @@
       window.setTimeout = timeoutWrapper;
     }
     preventSetTimeout.names = ['prevent-setTimeout', 'ubo-setTimeout-defuser.js'];
-    preventSetTimeout.injections = [toRegExp, stringToFunc, createHitFunction];
+    preventSetTimeout.injections = [toRegExp, createHitFunction];
 
     /**
      * Prevent calls to setInterval for specified matching in passed callback and delay
@@ -412,7 +410,7 @@
       window.setInterval = intervalWrapper;
     }
     preventSetInterval.names = ['prevent-setInterval', 'ubo-setInterval-defuser.js'];
-    preventSetInterval.injections = [toRegExp, stringToFunc, createHitFunction];
+    preventSetInterval.injections = [toRegExp, createHitFunction];
 
     /**
      * Prevent calls `window.open` when URL match or not match with passed params
@@ -444,7 +442,7 @@
       window.open = openWrapper;
     }
     preventWindowOpen.names = ['prevent-window-open', 'ubo-window.open-defuser.js'];
-    preventWindowOpen.injections = [toRegExp, stringToFunc, createHitFunction];
+    preventWindowOpen.injections = [toRegExp, createHitFunction];
 
     /* eslint-disable no-new-func */
     function abortCurrentInlineScript(source, property) {
@@ -514,7 +512,7 @@
       window.onerror = createOnErrorHandler(rid).bind();
     }
     abortCurrentInlineScript.names = ['abort-current-inline-script', 'ubo-abort-current-inline-script.js', 'abp-abort-current-inline-script'];
-    abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, stringToFunc, createOnErrorHandler, createHitFunction];
+    abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, createHitFunction];
 
     function setConstant(source, property, value) {
       if (!property) {
@@ -613,7 +611,7 @@
       setChainPropAccess(window, property);
     }
     setConstant.names = ['set-constant', 'ubo-set-constant.js'];
-    setConstant.injections = [getPropertyInChain, setPropertyAccess, stringToFunc, createHitFunction];
+    setConstant.injections = [getPropertyInChain, setPropertyAccess, createHitFunction];
 
     /**
      * Removes current page cookies specified by name.
@@ -671,7 +669,7 @@
       window.addEventListener('beforeunload', rmCookie);
     }
     removeCookie.names = ['remove-cookie', 'ubo-cookie-remover.js'];
-    removeCookie.injections = [stringToFunc, toRegExp, createHitFunction];
+    removeCookie.injections = [toRegExp, createHitFunction];
 
     /**
      * Prevents adding event listeners
@@ -703,7 +701,7 @@
       window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
     }
     preventAddEventListener.names = ['prevent-addEventListener', 'ubo-addEventListener-defuser.js'];
-    preventAddEventListener.injections = [toRegExp, stringToFunc, createHitFunction];
+    preventAddEventListener.injections = [toRegExp, createHitFunction];
 
     /* eslint-disable consistent-return, no-eval */
     /**
@@ -777,7 +775,7 @@
       };
     }
     preventBab.names = ['prevent-bab', 'ubo-bab-defuser.js'];
-    preventBab.injections = [stringToFunc, createHitFunction];
+    preventBab.injections = [createHitFunction];
 
     /* eslint-disable no-unused-vars, no-extra-bind, func-names */
     /**
@@ -825,7 +823,7 @@
       }
     }
     nowebrtc.names = ['nowebrtc', 'ubo-nowebrtc.js'];
-    nowebrtc.injections = [stringToFunc, createHitFunction];
+    nowebrtc.injections = [createHitFunction];
 
     /* eslint-disable no-console */
     /**
@@ -853,7 +851,7 @@
       window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
     }
     logAddEventListener.names = ['log-addEventListener', 'addEventListener-logger.js'];
-    logAddEventListener.injections = [stringToFunc, createHitFunction];
+    logAddEventListener.injections = [createHitFunction];
 
     /* eslint-disable no-console */
     /**
@@ -881,7 +879,7 @@
       window.setInterval = setIntervalWrapper;
     }
     logSetInterval.names = ['log-setInterval', 'setInterval-logger.js'];
-    logSetInterval.injections = [stringToFunc, createHitFunction];
+    logSetInterval.injections = [createHitFunction];
 
     /* eslint-disable no-console */
     /**
@@ -909,7 +907,7 @@
       window.setTimeout = setTimeoutWrapper;
     }
     logSetTimeout.names = ['log-setTimeout', 'setTimeout-logger.js'];
-    logSetTimeout.injections = [stringToFunc, createHitFunction];
+    logSetTimeout.injections = [createHitFunction];
 
     /* eslint-disable no-console, no-eval */
     /**
@@ -950,7 +948,7 @@
       window.Function = FunctionWrapper;
     }
     logEval.names = ['log-eval'];
-    logEval.injections = [stringToFunc, createHitFunction];
+    logEval.injections = [createHitFunction];
 
     /* eslint-disable no-eval, no-extra-bind */
     /**
@@ -967,7 +965,7 @@
       }.bind();
     }
     noeval.names = ['noeval.js', 'silent-noeval.js', 'noeval'];
-    noeval.injections = [stringToFunc, createHitFunction];
+    noeval.injections = [createHitFunction];
 
     /* eslint-disable no-eval, no-extra-bind, func-names */
     /**
@@ -991,7 +989,7 @@
       }.bind(window);
     }
     preventEvalIf.names = ['noeval-if.js', 'prevent-eval-if'];
-    preventEvalIf.injections = [toRegExp, stringToFunc, createHitFunction];
+    preventEvalIf.injections = [toRegExp, createHitFunction];
 
     /* eslint-disable no-console, func-names, no-multi-assign */
     /**
@@ -1033,7 +1031,7 @@
       window.fuckAdBlock = window.blockAdBlock = new Fab();
     }
     preventFab.names = ['prevent-fab-3.2.0', 'fuckadblock.js-3.2.0'];
-    preventFab.injections = [stringToFunc, noop, createHitFunction];
+    preventFab.injections = [noop, createHitFunction];
 
     /* eslint-disable no-console, func-names, no-multi-assign */
     /**
@@ -1062,7 +1060,7 @@
       });
     }
     setPopadsDummy.names = ['set-popads-dummy', 'popads-dummy.js'];
-    setPopadsDummy.injections = [stringToFunc, createHitFunction];
+    setPopadsDummy.injections = [createHitFunction];
 
     /**
      * Aborts on property write (PopAds, popns), throws reference error with random id
@@ -1092,7 +1090,7 @@
       hit();
     }
     preventPopadsNet.names = ['prevent-popads-net', 'popads.net.js'];
-    preventPopadsNet.injections = [stringToFunc, createOnErrorHandler, randomId, createHitFunction];
+    preventPopadsNet.injections = [createOnErrorHandler, randomId, createHitFunction];
 
     /* eslint-disable func-names */
     /**
@@ -1177,7 +1175,7 @@
       }
     }
     preventAdfly.names = ['prevent-adfly', 'adfly-defuser.js'];
-    preventAdfly.injections = [stringToFunc, setPropertyAccess, createHitFunction];
+    preventAdfly.injections = [setPropertyAccess, createHitFunction];
 
     /**
      * This file must export all scriptlets which should be accessible

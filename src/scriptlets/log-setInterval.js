@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { createHitFunction, stringToFunc } from '../helpers';
+import { createHitFunction } from '../helpers';
 
 /**
  * Logs setInterval calls
@@ -23,4 +23,4 @@ logSetInterval.names = [
     'setInterval-logger.js',
 ];
 
-logSetInterval.injections = [stringToFunc, createHitFunction];
+logSetInterval.injections = [createHitFunction];

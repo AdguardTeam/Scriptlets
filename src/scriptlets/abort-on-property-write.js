@@ -1,7 +1,7 @@
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
-import { stringToFunc, createOnErrorHandler, createHitFunction } from '../helpers';
+import { createOnErrorHandler, createHitFunction } from '../helpers';
 
 /**
  * Abort property writing
@@ -56,6 +56,5 @@ abortOnPropertyWrite.injections = [
     setPropertyAccess,
     getPropertyInChain,
     createOnErrorHandler,
-    stringToFunc,
     createHitFunction,
 ];

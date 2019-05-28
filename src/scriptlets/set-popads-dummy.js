@@ -1,5 +1,5 @@
 /* eslint-disable no-console, func-names, no-multi-assign */
-import { createHitFunction, stringToFunc } from '../helpers';
+import { createHitFunction } from '../helpers';
 
 /**
  * Sets static properties PopAds and popns.
@@ -31,4 +31,4 @@ setPopadsDummy.names = [
     'popads-dummy.js',
 ];
 
-setPopadsDummy.injections = [stringToFunc, createHitFunction];
+setPopadsDummy.injections = [createHitFunction];

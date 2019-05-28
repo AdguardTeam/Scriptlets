@@ -2,7 +2,7 @@
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
-import { stringToFunc, toRegExp } from '../helpers/string-utils';
+import { toRegExp } from '../helpers/string-utils';
 import { createHitFunction, createOnErrorHandler } from '../helpers';
 
 export function abortCurrentInlineScript(source, property, search = null) {
@@ -78,7 +78,6 @@ abortCurrentInlineScript.injections = [
     setPropertyAccess,
     getPropertyInChain,
     toRegExp,
-    stringToFunc,
     createOnErrorHandler,
     createHitFunction,
 ];

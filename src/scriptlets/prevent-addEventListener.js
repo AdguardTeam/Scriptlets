@@ -1,4 +1,4 @@
-import { stringToFunc, toRegExp } from '../helpers/string-utils';
+import { toRegExp } from '../helpers/string-utils';
 import { createHitFunction } from '../helpers';
 
 /**
@@ -31,4 +31,4 @@ preventAddEventListener.names = [
     'ubo-addEventListener-defuser.js',
 ];
 
-preventAddEventListener.injections = [toRegExp, stringToFunc, createHitFunction];
+preventAddEventListener.injections = [toRegExp, createHitFunction];

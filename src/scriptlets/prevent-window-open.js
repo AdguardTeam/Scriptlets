@@ -1,4 +1,4 @@
-import { toRegExp, stringToFunc } from '../helpers/string-utils';
+import { toRegExp } from '../helpers/string-utils';
 import { createHitFunction } from '../helpers';
 
 /**
@@ -33,4 +33,4 @@ preventWindowOpen.names = [
     'ubo-window.open-defuser.js',
 ];
 
-preventWindowOpen.injections = [toRegExp, stringToFunc, createHitFunction];
+preventWindowOpen.injections = [toRegExp, createHitFunction];

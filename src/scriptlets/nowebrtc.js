@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars, no-extra-bind, func-names */
-import { createHitFunction, stringToFunc } from '../helpers';
+import { createHitFunction } from '../helpers';
 
 /**
  * Disables WebRTC via blocking calls to the RTCPeerConnection()
@@ -47,4 +47,4 @@ nowebrtc.names = [
     'ubo-nowebrtc.js',
 ];
 
-nowebrtc.injections = [stringToFunc, createHitFunction];
+nowebrtc.injections = [createHitFunction];

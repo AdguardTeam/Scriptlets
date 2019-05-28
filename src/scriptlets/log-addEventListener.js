@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { createHitFunction, stringToFunc } from '../helpers';
+import { createHitFunction } from '../helpers';
 
 /**
  * Logs add event listener calls
@@ -23,4 +23,4 @@ logAddEventListener.names = [
     'addEventListener-logger.js',
 ];
 
-logAddEventListener.injections = [stringToFunc, createHitFunction];
+logAddEventListener.injections = [createHitFunction];

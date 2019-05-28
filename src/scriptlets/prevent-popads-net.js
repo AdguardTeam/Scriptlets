@@ -1,5 +1,5 @@
 import {
-    createHitFunction, createOnErrorHandler, randomId, stringToFunc,
+    createHitFunction, createOnErrorHandler, randomId,
 } from '../helpers';
 
 /**
@@ -31,4 +31,4 @@ preventPopadsNet.names = [
     'popads.net.js',
 ];
 
-preventPopadsNet.injections = [stringToFunc, createOnErrorHandler, randomId, createHitFunction];
+preventPopadsNet.injections = [createOnErrorHandler, randomId, createHitFunction];

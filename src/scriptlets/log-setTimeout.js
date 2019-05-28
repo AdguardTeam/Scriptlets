@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { createHitFunction, stringToFunc } from '../helpers';
+import { createHitFunction } from '../helpers';
 
 /**
  * Logs setTimeout calls
@@ -23,4 +23,4 @@ logSetTimeout.names = [
     'setTimeout-logger.js',
 ];
 
-logSetTimeout.injections = [stringToFunc, createHitFunction];
+logSetTimeout.injections = [createHitFunction];

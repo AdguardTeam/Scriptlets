@@ -1,5 +1,5 @@
 /* eslint-disable no-eval, no-extra-bind */
-import { createHitFunction, stringToFunc } from '../helpers';
+import { createHitFunction } from '../helpers';
 
 /**
  * Prevents page to use eval.
@@ -19,4 +19,4 @@ noeval.names = [
     'noeval',
 ];
 
-noeval.injections = [stringToFunc, createHitFunction];
+noeval.injections = [createHitFunction];

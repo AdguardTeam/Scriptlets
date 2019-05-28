@@ -1,6 +1,5 @@
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { setPropertyAccess } from '../helpers/set-property-access';
-import { stringToFunc } from '../helpers/string-utils';
 import { createHitFunction } from '../helpers';
 
 export function setConstant(source, property, value) {
@@ -88,4 +87,4 @@ setConstant.names = [
     'set-constant',
     'ubo-set-constant.js',
 ];
-setConstant.injections = [getPropertyInChain, setPropertyAccess, stringToFunc, createHitFunction];
+setConstant.injections = [getPropertyInChain, setPropertyAccess, createHitFunction];

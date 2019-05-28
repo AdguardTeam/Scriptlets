@@ -1,5 +1,5 @@
 /* eslint-disable func-names */
-import { createHitFunction, setPropertyAccess, stringToFunc } from '../helpers';
+import { createHitFunction, setPropertyAccess } from '../helpers';
 
 /**
  * Prevents anti-adblock scripts on adfly short links.
@@ -75,4 +75,4 @@ preventAdfly.names = [
     'adfly-defuser.js',
 ];
 
-preventAdfly.injections = [stringToFunc, setPropertyAccess, createHitFunction];
+preventAdfly.injections = [setPropertyAccess, createHitFunction];

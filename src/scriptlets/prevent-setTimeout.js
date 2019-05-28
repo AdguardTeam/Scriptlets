@@ -1,4 +1,4 @@
-import { toRegExp, stringToFunc } from '../helpers/string-utils';
+import { toRegExp } from '../helpers/string-utils';
 import { createHitFunction } from '../helpers';
 
 /**
@@ -31,4 +31,4 @@ preventSetTimeout.names = [
     'ubo-setTimeout-defuser.js',
 ];
 
-preventSetTimeout.injections = [toRegExp, stringToFunc, createHitFunction];
+preventSetTimeout.injections = [toRegExp, createHitFunction];
