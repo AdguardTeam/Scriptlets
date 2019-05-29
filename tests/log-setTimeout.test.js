@@ -3,7 +3,7 @@
 import { clearGlobalProps } from './helpers';
 
 const { test, module } = QUnit;
-const name = 'log-setTimeout';
+const name = 'hit-setTimeout';
 
 const nativeSetTimeout = window.setTimeout;
 const nativeConsole = console.log;
@@ -44,7 +44,7 @@ test('ubo alias setTimeout-logger.js works', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(input, `setTimeout("${callback.toString()}", ${timeout})`, 'console.log input should be equal');
+        assert.strictEqual(input, `setTimeout("${callback.toString()}", ${timeout})`, 'console.hit input should be equal');
     };
     const params = {
         name: 'setTimeout-logger.js',
@@ -75,7 +75,7 @@ test('logs events to console', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(input, `setTimeout("${callback.toString()}", ${timeout})`, 'console.log input');
+        assert.strictEqual(input, `setTimeout("${callback.toString()}", ${timeout})`, 'console.hit input');
     };
 
     runScriptlet();

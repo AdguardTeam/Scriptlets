@@ -7,4 +7,5 @@ export * from './get-property-in-chain';
 export * from './string-utils';
 export * from './create-on-error-handler';
 export * from './plugs';
+export * from './hit';
 export * from './log';

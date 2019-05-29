@@ -1,12 +1,12 @@
-/* eslint-disable no-console, no-underscore-dangle */
-
+/* eslint-disable no-console */
 /**
- * Takes source and logs scriptlet application
- * @param {Source} source
- * @param {string} [message] will be printed in console
+ * Takes source, message and logs when scriptlet is applied
+ * @param source
+ * @param message
  */
 export const log = (source, message) => {
     const nativeLog = console.log.bind(console);
+
     const nativeTrace = console.trace && console.trace.bind(console);
     if (message) {
         nativeLog(message);
@@ -17,11 +17,5 @@ export const log = (source, message) => {
             nativeTrace();
         }
         nativeLog(`${source.ruleText} trace end`);
-
-        // This is necessary for unit-tests only!
-        if (window.__debugScriptlets instanceof Function
-            || typeof window.__debugScriptlets === 'function') {
-            window.__debugScriptlets(source);
-        }
     }
 };

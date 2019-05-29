@@ -1,5 +1,5 @@
 /* eslint-disable func-names */
-import { log, setPropertyAccess } from '../helpers';
+import { hit, setPropertyAccess, log } from '../helpers';
 
 /**
  * Prevents anti-adblock scripts on adfly short links.
@@ -63,6 +63,7 @@ export function preventAdfly(source) {
     });
 
     if (result) {
+        hit(source);
         log(source);
     } else {
         window.console.error('Failed to set up prevent-adfly scriptlet');
@@ -74,4 +75,4 @@ preventAdfly.names = [
     'adfly-defuser.js',
 ];
 
-preventAdfly.injections = [setPropertyAccess, log];
+preventAdfly.injections = [setPropertyAccess, hit, log];

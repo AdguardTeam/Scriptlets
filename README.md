@@ -14,10 +14,10 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [prevent-window-open](#prevent-window-open)
     * [nowebrtc](#nowebrtc)
     * [prevent-bab](#prevent-bab)
-    * [log-addEventListener](#log-addEventListener)
-    * [log-setInterval](#log-setInterval)
-    * [log-setTimeout](#log-setTimeout)
-    * [log-eval](#log-eval)
+    * [hit-addEventListener](#log-addEventListener)
+    * [hit-setInterval](#log-setInterval)
+    * [hit-setTimeout](#log-setTimeout)
+    * [hit-eval](#log-eval)
     * [noeval](#noeval)
     * [prevent-eval-if](#prevent-eval-if)
     * [remove-cookie](#remove-cookie)
@@ -339,7 +339,7 @@ example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
 
 ### <a id="nowebrtc"></a> nowebrtc
 
-Disables WebRTC by overriding `RTCPeerConnection`. The overriden function will log every attempt to create a new connection.
+Disables WebRTC by overriding `RTCPeerConnection`. The overriden function will hit every attempt to create a new connection.
 
 **Syntax**
 ```
@@ -359,46 +359,46 @@ example.org#%#//scriptlet("prevent-bab")
 
 [scriptlet source](./src/scriptlets/prevent-bab.js)
 
-### <a id="log-addEventListener"></a> log-addEventListener
+### <a id="hit-addEventListener"></a> hit-addEventListener
 
 Logs all addEventListener calls to the console
 
 **Syntax**
 ```
-example.org#%#//scriptlet("log-addEventListener")
+example.org#%#//scriptlet("hit-addEventListener")
 ```
 
 [scriptlet source](./src/scriptlets/log-addEventListener.js)
 
-### <a id="log-setInterval"></a> log-setInterval
+### <a id="hit-setInterval"></a> hit-setInterval
 
 Logs all setInterval calls to the console
 
 **Syntax**
 ```
-example.org#%#//scriptlet("log-setInterval")
+example.org#%#//scriptlet("hit-setInterval")
 ```
 
 [scriptlet source](./src/scriptlets/log-setInterval.js)
 
-### <a id="log-setTimeout"></a> log-setTimeout
+### <a id="hit-setTimeout"></a> hit-setTimeout
 
 Logs all setTimeout call to the console
 
 **Syntax**
 ```
-example.org#%#//scriptlet("log-setTimeout")
+example.org#%#//scriptlet("hit-setTimeout")
 ```
 
 [scriptlet source](./src/scriptlets/log-setTimeout.js)
 
-### <a id="log-eval"></a> log-eval
+### <a id="hit-eval"></a> hit-eval
 
 Logs all `eval()` or `new Function()` calls to the console
 
 **Syntax**
 ```
-example.org#%#//scriptlet("log-eval")
+example.org#%#//scriptlet("hit-eval")
 ```
 
 [scriptlet source](./src/scriptlets/log-eval.js)
@@ -485,7 +485,7 @@ example.org#%#//scriptlet("prevent-adfly")
 | [abort-on-property-read](#abort-on-property-read) | abort-on-property-read.js | abort-on-property-read |
 | [abort-on-property-write](#abort-on-property-write) | abort-on-property-write.js | abort-on-property-write |
 | [prevent-addEventListener](#prevent-addEventListener) | addEventListener-defuser.js |  |
-| [log-addEventListener](#log-addEventListener) | addEventListener-logger.js |  |
+| [hit-addEventListener](#log-addEventListener) | addEventListener-logger.js |  |
 | [remove-cookie](#remove-cookie) | cookie-remover.js |  |
 |  | csp.js (deprecated) |  |
 |  | disable-newtab-links.js |  |
@@ -496,9 +496,9 @@ example.org#%#//scriptlet("prevent-adfly")
 |  | remove-attr.js |  |
 | [set-constant](#set-constant) | set-constant.js |  |
 | [prevent-setInterval](#prevent-setInterval) | setInterval-defuser.js |  |
-| [log-setInterval](#log-setInterval) | setInterval-logger.js |  |
+| [hit-setInterval](#log-setInterval) | setInterval-logger.js |  |
 | [prevent-setTimeout](#prevent-setTimeout) | setTimeout-defuser.js |  |
-| [log-setTimeout](#log-setInterval) | setTimeout-logger.js |  |
+| [hit-setTimeout](#log-setInterval) | setTimeout-logger.js |  |
 |  | nano-setInterval-booster.js |  |
 |  | nano-setTimeout-booster.js |  |
 |  | sharedWorker-defuser.js (deprecated) |  |
@@ -514,7 +514,7 @@ example.org#%#//scriptlet("prevent-adfly")
 |  |  | hide-if-contains-and-matches-style |
 |  |  | hide-if-contains |
 |  |  | hide-if-shadow-contains |
-| [log-eval](#log-eval) |  | |
+| [hit-eval](#log-eval) |  | |
 
 
 

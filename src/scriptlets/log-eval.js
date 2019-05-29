@@ -1,5 +1,5 @@
 /* eslint-disable no-console, no-eval */
-import { log } from '../helpers';
+import { hit, log } from '../helpers';
 
 /**
  * Logs all eval() and Function() calls
@@ -10,6 +10,7 @@ export function logEval(source) {
     // wrap eval function
     const nativeEval = window.eval;
     function evalWrapper(str) {
+        hit(source);
         log(source, `eval("${str}")`);
         return nativeEval(str);
     }
@@ -19,6 +20,7 @@ export function logEval(source) {
     const nativeFunction = window.Function;
 
     function FunctionWrapper(...args) {
+        hit(source);
         log(source, `new Function(${args.join(', ')})`);
         return nativeFunction.apply(this, [...args]);
     }
@@ -30,7 +32,7 @@ export function logEval(source) {
 }
 
 logEval.names = [
-    'log-eval',
+    'hit-eval',
 ];
 
-logEval.injections = [log];
+logEval.injections = [hit, log];

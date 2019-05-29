@@ -1,5 +1,5 @@
 import {
-    log, createOnErrorHandler, randomId,
+    hit, createOnErrorHandler, randomId, log,
 } from '../helpers';
 
 /**
@@ -22,6 +22,7 @@ export function preventPopadsNet(source) {
     });
 
     window.onerror = createOnErrorHandler(rid).bind();
+    hit(source);
     log(source);
 }
 
@@ -30,4 +31,4 @@ preventPopadsNet.names = [
     'popads.net.js',
 ];
 
-preventPopadsNet.injections = [createOnErrorHandler, randomId, log];
+preventPopadsNet.injections = [createOnErrorHandler, randomId, hit, log];

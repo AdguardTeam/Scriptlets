@@ -133,9 +133,22 @@
     /* eslint-disable no-console, no-underscore-dangle */
 
     /**
-     * Takes source and logs scriptlet application
+     * Hit used only for debug purposes now
      * @param {Source} source
-     * @param {string} [message] will be printed in console
+     */
+    var hit = function hit(source) {
+      // This is necessary for unit-tests only!
+      if (typeof window.__debugScriptlets === 'function') {
+        window.__debugScriptlets(source);
+      }
+    };
+
+    /* eslint-disable no-console */
+
+    /**
+     * Takes source, message and logs when scriptlet is applied
+     * @param source
+     * @param message
      */
     var log = function log(source, message) {
       var nativeLog = console.log.bind(console);
@@ -152,11 +165,7 @@
           nativeTrace();
         }
 
-        nativeLog("".concat(source.ruleText, " trace end")); // This is necessary for unit-tests only!
-
-        if (window.__debugScriptlets instanceof Function || typeof window.__debugScriptlets === 'function') {
-          window.__debugScriptlets(source);
-        }
+        nativeLog("".concat(source.ruleText, " trace end"));
       }
     };
 
@@ -172,6 +181,7 @@
         toRegExp: toRegExp,
         createOnErrorHandler: createOnErrorHandler,
         noop: noop,
+        hit: hit,
         log: log
     });
 
@@ -190,6 +200,7 @@
       var rid = randomId();
 
       var abort = function abort() {
+        hit(source);
         log(source);
         throw new ReferenceError(rid);
       };
@@ -228,7 +239,7 @@
       window.onerror = createOnErrorHandler(rid).bind();
     }
     abortOnPropertyRead.names = ['abort-on-property-read', 'ubo-abort-on-property-read.js', 'abp-abort-on-property-read'];
-    abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, log];
+    abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, log];
 
     /**
      * Abort property writing
@@ -245,6 +256,7 @@
       var rid = randomId();
 
       var abort = function abort() {
+        hit(source);
         log(source);
         throw new ReferenceError(rid);
       };
@@ -282,7 +294,7 @@
       window.onerror = createOnErrorHandler(rid).bind();
     }
     abortOnPropertyWrite.names = ['abort-on-property-write', 'ubo-abort-on-property-write.js', 'abp-abort-on-property-write'];
-    abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, log];
+    abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, log];
 
     /**
      * Prevent calls to setTimeout for specified matching in passed callback and delay
@@ -301,6 +313,7 @@
 
       var timeoutWrapper = function timeoutWrapper(cb, d) {
         if ((!delay || d === delay) && match.test(cb.toString())) {
+          hit(source);
           log(source);
           return nativeTimeout(function () {}, d);
         }
@@ -315,7 +328,7 @@
       window.setTimeout = timeoutWrapper;
     }
     preventSetTimeout.names = ['prevent-setTimeout', 'ubo-setTimeout-defuser.js'];
-    preventSetTimeout.injections = [toRegExp, log];
+    preventSetTimeout.injections = [toRegExp, hit, log];
 
     /**
      * Prevent calls to setInterval for specified matching in passed callback and delay
@@ -334,6 +347,7 @@
 
       var intervalWrapper = function intervalWrapper(cb, d) {
         if ((!interval || d === interval) && match.test(cb.toString())) {
+          hit(source);
           log(source);
           return nativeInterval(function () {}, d);
         }
@@ -348,7 +362,7 @@
       window.setInterval = intervalWrapper;
     }
     preventSetInterval.names = ['prevent-setInterval', 'ubo-setInterval-defuser.js'];
-    preventSetInterval.injections = [toRegExp, log];
+    preventSetInterval.injections = [toRegExp, hit, log];
 
     /**
      * Prevent calls `window.open` when URL match or not match with passed params
@@ -373,13 +387,14 @@
           return nativeOpen.apply(window, [str].concat(args));
         }
 
+        hit(source);
         log(source);
       };
 
       window.open = openWrapper;
     }
     preventWindowOpen.names = ['prevent-window-open', 'ubo-window.open-defuser.js'];
-    preventWindowOpen.injections = [toRegExp, log];
+    preventWindowOpen.injections = [toRegExp, hit, log];
 
     /* eslint-disable no-new-func */
     function abortCurrentInlineScript(source, property) {
@@ -402,6 +417,7 @@
         var scriptEl = getCurrentScript();
 
         if (scriptEl instanceof HTMLScriptElement && scriptEl.textContent.length > 0 && scriptEl !== ourScript && (!regex || regex.test(scriptEl.textContent))) {
+          hit(source);
           log(source);
           throw new ReferenceError(rid);
         }
@@ -448,7 +464,7 @@
       window.onerror = createOnErrorHandler(rid).bind();
     }
     abortCurrentInlineScript.names = ['abort-current-inline-script', 'ubo-abort-current-inline-script.js', 'abp-abort-current-inline-script'];
-    abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, log];
+    abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit, log];
 
     function setConstant(source, property, value) {
       if (!property) {
@@ -530,6 +546,7 @@
           return;
         }
 
+        hit(source);
         log(source);
         setPropertyAccess(base, prop, {
           get: function get() {
@@ -546,7 +563,7 @@
       setChainPropAccess(window, property);
     }
     setConstant.names = ['set-constant', 'ubo-set-constant.js'];
-    setConstant.injections = [getPropertyInChain, setPropertyAccess, log];
+    setConstant.injections = [getPropertyInChain, setPropertyAccess, hit, log];
 
     /**
      * Removes current page cookies specified by name.
@@ -570,6 +587,7 @@
         document.cookie = cookieSpec + path + expiration;
         document.cookie = cookieSpec + domain1 + path + expiration;
         document.cookie = cookieSpec + domain2 + path + expiration;
+        hit(source);
         log(source);
       };
 
@@ -603,7 +621,7 @@
       window.addEventListener('beforeunload', rmCookie);
     }
     removeCookie.names = ['remove-cookie', 'ubo-cookie-remover.js'];
-    removeCookie.injections = [toRegExp, log];
+    removeCookie.injections = [toRegExp, hit, log];
 
     /**
      * Prevents adding event listeners
@@ -620,6 +638,7 @@
 
       function addEventListenerWrapper(eventName, callback) {
         if (event.test(eventName.toString()) && funcStr.test(callback.toString())) {
+          hit(source);
           log(source);
           return undefined;
         }
@@ -634,7 +653,7 @@
       window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
     }
     preventAddEventListener.names = ['prevent-addEventListener', 'ubo-addEventListener-defuser.js'];
-    preventAddEventListener.injections = [toRegExp, log];
+    preventAddEventListener.injections = [toRegExp, hit, log];
 
     /* eslint-disable consistent-return, no-eval */
     /**
@@ -658,6 +677,7 @@
           return nativeSetTimeout.call.apply(nativeSetTimeout, [_this, callback].concat(args));
         }
 
+        hit(source);
         log(source);
       };
 
@@ -692,6 +712,7 @@
           return nativeEval(str);
         }
 
+        hit(source);
         log(source);
         var bodyEl = document.body;
 
@@ -707,7 +728,7 @@
       };
     }
     preventBab.names = ['prevent-bab', 'ubo-bab-defuser.js'];
-    preventBab.injections = [log];
+    preventBab.injections = [hit, log];
 
     /* eslint-disable no-unused-vars, no-extra-bind, func-names */
     /**
@@ -730,6 +751,7 @@
       }
 
       var rtcReplacement = function rtcReplacement(config) {
+        hit(source);
         log(source, "Document tried to create an RTCPeerConnection: ".concat(config));
       };
 
@@ -754,7 +776,7 @@
       }
     }
     nowebrtc.names = ['nowebrtc', 'ubo-nowebrtc.js'];
-    nowebrtc.injections = [log];
+    nowebrtc.injections = [hit, log];
 
     /* eslint-disable no-console */
     /**
@@ -767,6 +789,7 @@
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
       function addEventListenerWrapper(eventName, callback) {
+        hit(source);
         log(source, "addEventListener(\"".concat(eventName, "\", ").concat(callback.toString(), ")"));
 
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
@@ -778,8 +801,8 @@
 
       window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
     }
-    logAddEventListener.names = ['log-addEventListener', 'addEventListener-logger.js'];
-    logAddEventListener.injections = [log];
+    logAddEventListener.names = ['hit-addEventListener', 'addEventListener-logger.js'];
+    logAddEventListener.injections = [hit, log];
 
     /* eslint-disable no-console */
     /**
@@ -792,6 +815,7 @@
       var nativeSetInterval = window.setInterval;
 
       function setIntervalWrapper(callback, timeout) {
+        hit(source);
         log(source, "setInterval(\"".concat(callback.toString(), "\", ").concat(timeout, ")"));
 
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
@@ -803,8 +827,8 @@
 
       window.setInterval = setIntervalWrapper;
     }
-    logSetInterval.names = ['log-setInterval', 'setInterval-logger.js'];
-    logSetInterval.injections = [log];
+    logSetInterval.names = ['hit-setInterval', 'setInterval-logger.js'];
+    logSetInterval.injections = [hit, log];
 
     /* eslint-disable no-console */
     /**
@@ -817,6 +841,7 @@
       var nativeSetTimeout = window.setTimeout;
 
       function setTimeoutWrapper(callback, timeout) {
+        hit(source);
         log(source, "setTimeout(\"".concat(callback.toString(), "\", ").concat(timeout, ")"));
 
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
@@ -828,8 +853,8 @@
 
       window.setTimeout = setTimeoutWrapper;
     }
-    logSetTimeout.names = ['log-setTimeout', 'setTimeout-logger.js'];
-    logSetTimeout.injections = [log];
+    logSetTimeout.names = ['hit-setTimeout', 'setTimeout-logger.js'];
+    logSetTimeout.injections = [hit, log];
 
     /* eslint-disable no-console, no-eval */
     /**
@@ -843,6 +868,7 @@
       var nativeEval = window.eval;
 
       function evalWrapper(str) {
+        hit(source);
         log(source, "eval(\"".concat(str, "\")"));
         return nativeEval(str);
       }
@@ -852,6 +878,8 @@
       var nativeFunction = window.Function;
 
       function FunctionWrapper() {
+        hit(source);
+
         for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
           args[_key] = arguments[_key];
         }
@@ -864,8 +892,8 @@
       FunctionWrapper.prototype.constructor = FunctionWrapper;
       window.Function = FunctionWrapper;
     }
-    logEval.names = ['log-eval'];
-    logEval.injections = [log];
+    logEval.names = ['hit-eval'];
+    logEval.injections = [hit, log];
 
     /* eslint-disable no-eval, no-extra-bind */
     /**
@@ -876,11 +904,12 @@
 
     function noeval(source) {
       window.eval = function evalWrapper(s) {
+        hit(source);
         log(source, "AdGuard has prevented eval:\n".concat(s));
       }.bind();
     }
     noeval.names = ['noeval.js', 'silent-noeval.js', 'noeval'];
-    noeval.injections = [log];
+    noeval.injections = [hit, log];
 
     /* eslint-disable no-eval, no-extra-bind, func-names */
     /**
@@ -898,12 +927,13 @@
           return nativeEval.call(window, payload);
         }
 
+        hit(source);
         log(source, payload);
         return undefined;
       }.bind(window);
     }
     preventEvalIf.names = ['noeval-if.js', 'prevent-eval-if'];
-    preventEvalIf.injections = [toRegExp, log];
+    preventEvalIf.injections = [toRegExp, hit, log];
 
     /* eslint-disable no-console, func-names, no-multi-assign */
     /**
@@ -913,6 +943,7 @@
      */
 
     function preventFab(source) {
+      hit(source);
       log(source);
 
       var Fab = function Fab() {};
@@ -944,7 +975,7 @@
       window.fuckAdBlock = window.blockAdBlock = new Fab();
     }
     preventFab.names = ['prevent-fab-3.2.0', 'fuckadblock.js-3.2.0'];
-    preventFab.injections = [noop, log];
+    preventFab.injections = [noop, hit, log];
 
     /* eslint-disable no-console, func-names, no-multi-assign */
     /**
@@ -959,12 +990,14 @@
       Object.defineProperties(window, {
         PopAds: {
           get: function get() {
+            hit(source);
             log(source);
             return {};
           }
         },
         popns: {
           get: function get() {
+            hit(source);
             log(source);
             return {};
           }
@@ -972,7 +1005,7 @@
       });
     }
     setPopadsDummy.names = ['set-popads-dummy', 'popads-dummy.js'];
-    setPopadsDummy.injections = [log];
+    setPopadsDummy.injections = [hit, log];
 
     /**
      * Aborts on property write (PopAds, popns), throws reference error with random id
@@ -998,10 +1031,11 @@
         }
       });
       window.onerror = createOnErrorHandler(rid).bind();
+      hit(source);
       log(source);
     }
     preventPopadsNet.names = ['prevent-popads-net', 'popads.net.js'];
-    preventPopadsNet.injections = [createOnErrorHandler, randomId, log];
+    preventPopadsNet.injections = [createOnErrorHandler, randomId, hit, log];
 
     /* eslint-disable func-names */
     /**
@@ -1078,13 +1112,14 @@
       });
 
       if (result) {
+        hit(source);
         log(source);
       } else {
         window.console.error('Failed to set up prevent-adfly scriptlet');
       }
     }
     preventAdfly.names = ['prevent-adfly', 'adfly-defuser.js'];
-    preventAdfly.injections = [setPropertyAccess, log];
+    preventAdfly.injections = [setPropertyAccess, hit, log];
 
     /**
      * This file must export all scriptlets which should be accessible

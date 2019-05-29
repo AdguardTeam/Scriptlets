@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { log } from '../helpers';
+import { hit, log } from '../helpers';
 
 /**
  * Logs add event listener calls
@@ -9,6 +9,7 @@ import { log } from '../helpers';
 export function logAddEventListener(source) {
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
     function addEventListenerWrapper(eventName, callback, ...args) {
+        hit(source);
         log(source, `addEventListener("${eventName}", ${callback.toString()})`);
         return nativeAddEventListener.apply(this, [eventName, callback, ...args]);
     }
@@ -16,8 +17,8 @@ export function logAddEventListener(source) {
 }
 
 logAddEventListener.names = [
-    'log-addEventListener',
+    'hit-addEventListener',
     'addEventListener-logger.js',
 ];
 
-logAddEventListener.injections = [log];
+logAddEventListener.injections = [hit, log];

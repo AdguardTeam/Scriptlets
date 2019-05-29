@@ -1,7 +1,7 @@
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
-import { createOnErrorHandler, log } from '../helpers';
+import { createOnErrorHandler, hit, log } from '../helpers';
 
 /**
  * Abort property writing
@@ -15,6 +15,7 @@ export function abortOnPropertyWrite(source, property) {
     }
     const rid = randomId();
     const abort = () => {
+        hit(source);
         log(source);
         throw new ReferenceError(rid);
     };
@@ -55,5 +56,6 @@ abortOnPropertyWrite.injections = [
     setPropertyAccess,
     getPropertyInChain,
     createOnErrorHandler,
+    hit,
     log,
 ];

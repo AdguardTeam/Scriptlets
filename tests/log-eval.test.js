@@ -3,7 +3,7 @@
 import { clearGlobalProps } from './helpers';
 
 const { test, module } = QUnit;
-const name = 'log-eval';
+const name = 'hit-eval';
 
 const nativeEval = window.eval;
 const nativeFunction = window.Function;
@@ -44,7 +44,7 @@ test('logs eval calls', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(input, `eval("${evalStr}")`, 'console.log input should be equal');
+        assert.strictEqual(input, `eval("${evalStr}")`, 'console.hit input should be equal');
     };
     runScriptlet();
     const evalWrap = eval;
@@ -64,7 +64,7 @@ test('logs new Function() calls', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(input, `new Function(${args.join(', ')})`, 'console.log input should be equal');
+        assert.strictEqual(input, `new Function(${args.join(', ')})`, 'console.hit input should be equal');
     };
 
     runScriptlet();

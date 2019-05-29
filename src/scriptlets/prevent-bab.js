@@ -1,6 +1,6 @@
 /* eslint-disable consistent-return, no-eval */
 
-import { log } from '../helpers';
+import { hit, log } from '../helpers';
 
 /**
  * Prevents BlockAdblock
@@ -15,6 +15,7 @@ export function preventBab(source) {
         if (typeof callback !== 'string' || !babRegex.test(callback)) {
             return nativeSetTimeout.call(this, callback, ...args);
         }
+        hit(source);
         log(source);
     };
 
@@ -47,6 +48,7 @@ export function preventBab(source) {
         if (!check(str)) {
             return nativeEval(str);
         }
+        hit(source);
         log(source);
         const bodyEl = document.body;
         if (bodyEl) {
@@ -64,4 +66,4 @@ preventBab.names = [
     'ubo-bab-defuser.js',
 ];
 
-preventBab.injections = [log];
+preventBab.injections = [hit, log];

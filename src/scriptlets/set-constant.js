@@ -1,6 +1,6 @@
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { setPropertyAccess } from '../helpers/set-property-access';
-import { log } from '../helpers';
+import { hit, log } from '../helpers';
 
 export function setConstant(source, property, value) {
     if (!property) {
@@ -67,6 +67,7 @@ export function setConstant(source, property, value) {
 
         if (mustCancel(base[prop])) { return; }
 
+        hit(source);
         log(source);
         setPropertyAccess(base, prop, {
             get: () => constantValue,
@@ -85,4 +86,4 @@ setConstant.names = [
     'set-constant',
     'ubo-set-constant.js',
 ];
-setConstant.injections = [getPropertyInChain, setPropertyAccess, log];
+setConstant.injections = [getPropertyInChain, setPropertyAccess, hit, log];

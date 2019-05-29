@@ -1,7 +1,7 @@
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
-import { createOnErrorHandler, log } from '../helpers';
+import { createOnErrorHandler, hit, log } from '../helpers';
 
 /**
  * Abort property reading even if it doesn't exist in execution moment
@@ -15,6 +15,7 @@ export function abortOnPropertyRead(source, property) {
     }
     const rid = randomId();
     const abort = () => {
+        hit(source);
         log(source);
         throw new ReferenceError(rid);
     };
@@ -38,13 +39,15 @@ export function abortOnPropertyRead(source, property) {
 
         setPropertyAccess(base, prop, {
             get: abort,
-            set: () => { },
+            set: () => {
+            },
         });
     };
 
     setChainPropAccess(window, property);
 
-    window.onerror = createOnErrorHandler(rid).bind();
+    window.onerror = createOnErrorHandler(rid)
+        .bind();
 }
 
 abortOnPropertyRead.names = [
@@ -57,5 +60,6 @@ abortOnPropertyRead.injections = [
     setPropertyAccess,
     getPropertyInChain,
     createOnErrorHandler,
+    hit,
     log,
 ];

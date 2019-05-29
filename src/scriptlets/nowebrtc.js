@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars, no-extra-bind, func-names */
-import { log } from '../helpers';
+import { hit, log } from '../helpers';
 
 /**
  * Disables WebRTC via blocking calls to the RTCPeerConnection()
@@ -19,6 +19,7 @@ export function nowebrtc(source) {
     }
 
     const rtcReplacement = (config) => {
+        hit(source);
         log(source, `Document tried to create an RTCPeerConnection: ${config}`);
     };
     const noop = () => {};
@@ -45,4 +46,4 @@ nowebrtc.names = [
     'ubo-nowebrtc.js',
 ];
 
-nowebrtc.injections = [log];
+nowebrtc.injections = [hit, log];

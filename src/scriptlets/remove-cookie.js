@@ -1,5 +1,5 @@
 import { toRegExp } from '../helpers/string-utils';
-import { log } from '../helpers';
+import { hit, log } from '../helpers';
 
 /**
  * Removes current page cookies specified by name.
@@ -22,6 +22,7 @@ export function removeCookie(source, match) {
         document.cookie = cookieSpec + path + expiration;
         document.cookie = cookieSpec + domain1 + path + expiration;
         document.cookie = cookieSpec + domain2 + path + expiration;
+        hit(source);
         log(source);
     };
 
@@ -55,4 +56,4 @@ removeCookie.names = [
     'ubo-cookie-remover.js',
 ];
 
-removeCookie.injections = [toRegExp, log];
+removeCookie.injections = [toRegExp, hit, log];

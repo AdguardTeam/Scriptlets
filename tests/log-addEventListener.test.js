@@ -3,7 +3,7 @@
 import { clearGlobalProps } from './helpers';
 
 const { test, module } = QUnit;
-const name = 'log-addEventListener';
+const name = 'hit-addEventListener';
 
 const hit = () => {
     window.hit = 'FIRED';
@@ -36,7 +36,7 @@ test('ubo alias addEventListener-logger.js works', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(input, `addEventListener("${eventName}", ${callback.toString()})`, 'console.log input should be equal');
+        assert.strictEqual(input, `addEventListener("${eventName}", ${callback.toString()})`, 'console.hit input should be equal');
     };
     const params = {
         name: 'addEventListener-logger.js',
@@ -64,11 +64,11 @@ test('logs events to console', (assert) => {
         window[agLogAddEventListenerProp] = 'clicked';
     };
     console.log = function log(input) {
-        // Ignore log messages with "trace"
+        // Ignore hit messages with "trace"
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(input, `addEventListener("${eventName}", ${callback.toString()})`, 'console.log input should be equal');
+        assert.strictEqual(input, `addEventListener("${eventName}", ${callback.toString()})`, 'console.hit input should be equal');
     };
 
     const params = {

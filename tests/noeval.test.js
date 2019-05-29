@@ -44,7 +44,7 @@ test('ubo noeval alias', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.ok(input.includes('AdGuard has prevented eval:'), 'console.log should print info');
+        assert.ok(input.includes('AdGuard has prevented eval:'), 'console.hit should print info');
     };
 
     const evalWrapper = eval;
@@ -66,7 +66,7 @@ test('ubo silent-noeval alias', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.ok(input.includes('AdGuard has prevented eval:'), 'console.log should print info');
+        assert.ok(input.includes('AdGuard has prevented eval:'), 'console.hit should print info');
     };
 
     const evalWrapper = eval;
@@ -89,7 +89,7 @@ test('AG noeval alias', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.ok(input.includes('AdGuard has prevented eval:'), 'console.log should print info');
+        assert.ok(input.includes('AdGuard has prevented eval:'), 'console.hit should print info');
     };
 
     const evalWrapper = eval;
