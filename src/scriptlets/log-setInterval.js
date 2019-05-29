@@ -18,7 +18,7 @@ export function logSetInterval(source) {
 }
 
 logSetInterval.names = [
-    'hit-setInterval',
+    'log-setInterval',
     'setInterval-logger.js',
 ];
 

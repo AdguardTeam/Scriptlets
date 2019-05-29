@@ -1,5 +1,5 @@
 {
-    "version": "1.0.2",
+    "version": "1.0.3",
     "scriptlets": [
         {
             "names": [
@@ -83,28 +83,28 @@
         },
         {
             "names": [
-                "hit-addEventListener",
+                "log-addEventListener",
                 "addEventListener-logger.js"
             ],
             "scriptlet": "function(source, args){function logAddEventListener(source) {var log = console.log.bind(console);var nativeAddEventListener = window.EventTarget.prototype.addEventListener;function addEventListenerWrapper(eventName, callback) {hit(source);log(\"addEventListener(\\\"\".concat(eventName, \"\\\", \").concat(callback.toString(), \")\"));for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {args[_key - 2] = arguments[_key];}return nativeAddEventListener.apply(this, [eventName, callback].concat(args));}window.EventTarget.prototype.addEventListener = addEventListenerWrapper;}function hit(source, message) {if (source.verbose !== true) {return;}var log = console.log.bind(console);var trace = console.trace.bind(console);if (message) {log(\"\".concat(source.ruleText, \" message:\\n\").concat(message));}log(\"\".concat(source.ruleText, \" trace start\"));if (trace) {trace();}log(\"\".concat(source.ruleText, \" trace end\"));if (typeof window.__debugScriptlets === 'function') {window.__debugScriptlets(source);}};const updatedArgs = args ? [].concat(source).concat(args) : [source];logAddEventListener.apply(this, updatedArgs);}"
         },
         {
             "names": [
-                "hit-setInterval",
+                "log-setInterval",
                 "setInterval-logger.js"
             ],
             "scriptlet": "function(source, args){function logSetInterval(source) {var log = console.log.bind(console);var nativeSetInterval = window.setInterval;function setIntervalWrapper(callback, timeout) {hit(source);log(\"setInterval(\\\"\".concat(callback.toString(), \"\\\", \").concat(timeout, \")\"));for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {args[_key - 2] = arguments[_key];}return nativeSetInterval.apply(window, [callback, timeout].concat(args));}window.setInterval = setIntervalWrapper;}function hit(source, message) {if (source.verbose !== true) {return;}var log = console.log.bind(console);var trace = console.trace.bind(console);if (message) {log(\"\".concat(source.ruleText, \" message:\\n\").concat(message));}log(\"\".concat(source.ruleText, \" trace start\"));if (trace) {trace();}log(\"\".concat(source.ruleText, \" trace end\"));if (typeof window.__debugScriptlets === 'function') {window.__debugScriptlets(source);}};const updatedArgs = args ? [].concat(source).concat(args) : [source];logSetInterval.apply(this, updatedArgs);}"
         },
         {
             "names": [
-                "hit-setTimeout",
+                "log-setTimeout",
                 "setTimeout-logger.js"
             ],
             "scriptlet": "function(source, args){function logSetTimeout(source) {var log = console.log.bind(console);var nativeSetTimeout = window.setTimeout;function setTimeoutWrapper(callback, timeout) {hit(source);log(\"setTimeout(\\\"\".concat(callback.toString(), \"\\\", \").concat(timeout, \")\"));for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {args[_key - 2] = arguments[_key];}return nativeSetTimeout.apply(window, [callback, timeout].concat(args));}window.setTimeout = setTimeoutWrapper;}function hit(source, message) {if (source.verbose !== true) {return;}var log = console.log.bind(console);var trace = console.trace.bind(console);if (message) {log(\"\".concat(source.ruleText, \" message:\\n\").concat(message));}log(\"\".concat(source.ruleText, \" trace start\"));if (trace) {trace();}log(\"\".concat(source.ruleText, \" trace end\"));if (typeof window.__debugScriptlets === 'function') {window.__debugScriptlets(source);}};const updatedArgs = args ? [].concat(source).concat(args) : [source];logSetTimeout.apply(this, updatedArgs);}"
         },
         {
             "names": [
-                "hit-eval"
+                "log-eval"
             ],
             "scriptlet": "function(source, args){function logEval(source) {var log = console.log.bind(console);var nativeEval = window.eval;function evalWrapper(str) {hit(source);log(\"eval(\\\"\".concat(str, \"\\\")\"));return nativeEval(str);}window.eval = evalWrapper;var nativeFunction = window.Function;function FunctionWrapper() {hit(source);for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {args[_key] = arguments[_key];}log(\"new Function(\".concat(args.join(', '), \")\"));return nativeFunction.apply(this, [].concat(args));}FunctionWrapper.prototype = Object.create(nativeFunction.prototype);FunctionWrapper.prototype.constructor = FunctionWrapper;window.Function = FunctionWrapper;}function hit(source, message) {if (source.verbose !== true) {return;}var log = console.log.bind(console);var trace = console.trace.bind(console);if (message) {log(\"\".concat(source.ruleText, \" message:\\n\").concat(message));}log(\"\".concat(source.ruleText, \" trace start\"));if (trace) {trace();}log(\"\".concat(source.ruleText, \" trace end\"));if (typeof window.__debugScriptlets === 'function') {window.__debugScriptlets(source);}};const updatedArgs = args ? [].concat(source).concat(args) : [source];logEval.apply(this, updatedArgs);}"
         },

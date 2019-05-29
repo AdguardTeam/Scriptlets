@@ -33,7 +33,7 @@ export function logEval(source) {
 }
 
 logEval.names = [
-    'hit-eval',
+    'log-eval',
 ];
 
 logEval.injections = [hit];

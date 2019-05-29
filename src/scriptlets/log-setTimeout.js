@@ -18,7 +18,7 @@ export function logSetTimeout(source) {
 }
 
 logSetTimeout.names = [
-    'hit-setTimeout',
+    'log-setTimeout',
     'setTimeout-logger.js',
 ];
 
