@@ -1,30 +1,33 @@
 /* global QUnit */
-/* eslint-disable no-eval */
-const { test, module, testDone } = QUnit;
+/* eslint-disable no-eval, no-underscore-dangle */
+import { clearGlobalProps } from './helpers';
+
+const { test, module } = QUnit;
 const name = 'remove-cookie';
 
-module(name);
+const beforeEach = () => {
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
+};
+
+const afterEach = () => {
+    clearGlobalProps('hit', '__debugScriptlets');
+};
+
+module(name, { beforeEach, afterEach });
 
 const evalWrapper = eval;
 
-const runScriptlet = (name, match, hit) => {
+const runScriptlet = (name, match) => {
     const params = {
         name,
         args: [match],
-        hit,
+        verbose: true,
     };
     const resultString = window.scriptlets.invoke(params);
     evalWrapper(resultString);
 };
-
-testDone(() => {
-    delete window.hit;
-});
-
-const hit = () => {
-    window.hit = 'FIRED';
-};
-
 
 test('Cookie works fine', (assert) => {
     const cName = '__test-cookie-name__';
@@ -37,7 +40,7 @@ test('Remove cookie by match', (assert) => {
     const cName1 = '__test-cookie-name__3';
     document.cookie = `${cName}=cookie`;
     document.cookie = `${cName1}=cookie`;
-    runScriptlet(name, cName, hit);
+    runScriptlet(name, cName);
 
     assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
     assert.strictEqual(document.cookie.includes(cName), false, 'Cookie by match was removed');
@@ -48,7 +51,7 @@ test('Remove cookie by match ubo syntax', (assert) => {
     const name = 'ubo-cookie-remover.js';
     const cName = '__test-cookie-name__14';
     document.cookie = `${cName}=cookie`;
-    runScriptlet(name, cName, hit);
+    runScriptlet(name, cName);
 
     assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
     assert.strictEqual(document.cookie.includes(cName), false, 'Cookie by match was removed');
@@ -57,7 +60,7 @@ test('Remove cookie by match ubo syntax', (assert) => {
 test('Remove all cookies', (assert) => {
     const cName = '__test-cookie-name__2';
     document.cookie = `${cName}=cookie`;
-    runScriptlet(name, null, hit);
+    runScriptlet(name, null);
 
     assert.strictEqual(window.hit, 'FIRED');
     assert.strictEqual(document.cookie.includes(cName), false, 'If no match delete all cookies for domain');

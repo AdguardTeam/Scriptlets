@@ -1,5 +1,5 @@
 /* eslint-disable no-console, func-names, no-multi-assign */
-import { noop, createLogFunction } from '../helpers';
+import { noop, log } from '../helpers';
 
 /**
  * Fuckadblock 3.2.0 defuser
@@ -7,8 +7,7 @@ import { noop, createLogFunction } from '../helpers';
  * @param {Source} source
  */
 export function preventFab(source) {
-    const log = createLogFunction(source);
-    log();
+    log(source);
     const Fab = function () {};
     Fab.prototype.check = noop;
     Fab.prototype.clearEvent = noop;
@@ -37,4 +36,4 @@ preventFab.names = [
     'fuckadblock.js-3.2.0',
 ];
 
-preventFab.injections = [noop, createLogFunction];
+preventFab.injections = [noop, log];

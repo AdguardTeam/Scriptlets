@@ -1,40 +1,42 @@
 /* global QUnit */
-/* eslint-disable no-eval */
-import { clearProperties } from './helpers';
+/* eslint-disable no-eval, no-underscore-dangle */
+import { clearGlobalProps } from './helpers';
 
-const { test, module, testDone } = QUnit;
+const { test, module } = QUnit;
 const name = 'prevent-addEventListener';
-
-module(name);
-
-const evalWrapper = eval;
-
-const runScriptlet = (event, func, hit) => {
-    const params = {
-        name,
-        args: [event, func],
-        hit,
-    };
-    const resultString = window.scriptlets.invoke(params);
-    evalWrapper(resultString);
-};
 
 const originalEventLister = window.EventTarget.prototype.addEventListener;
 
-testDone(() => {
-    clearProperties('hit');
-    window.EventTarget.prototype.addEventListener = originalEventLister;
-});
+const beforeEach = () => {
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
+};
 
-const hit = () => {
-    window.hit = 'FIRED';
+const afterEach = () => {
+    clearGlobalProps('__debugScriptlets', 'hit');
+    window.EventTarget.prototype.addEventListener = originalEventLister;
+};
+
+module(name, { beforeEach, afterEach });
+
+const evalWrapper = eval;
+
+const runScriptlet = (event, func) => {
+    const params = {
+        name,
+        args: [event, func],
+        verbose: true,
+    };
+    const resultString = window.scriptlets.invoke(params);
+    evalWrapper(resultString);
 };
 
 test('ubo alias works', (assert) => {
     const params = {
         name: 'ubo-addEventListener-defuser.js',
         args: ['click', 'clicked'],
-        hit,
+        verbose: true,
     };
     const resString = window.scriptlets.invoke(params);
 
@@ -48,11 +50,11 @@ test('ubo alias works', (assert) => {
     element.click();
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
     assert.strictEqual(window[testProp], undefined, 'property should be undefined');
-    clearProperties(testProp);
+    clearGlobalProps(testProp);
 });
 
 test('does not allow to add event listener', (assert) => {
-    runScriptlet('click', 'clicked', hit);
+    runScriptlet('click', 'clicked');
 
     const testProp = 'testProp';
     const element = document.createElement('div');
@@ -63,11 +65,11 @@ test('does not allow to add event listener', (assert) => {
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
     assert.strictEqual(window[testProp], undefined, 'property should be undefined');
-    clearProperties(testProp);
+    clearGlobalProps(testProp);
 });
 
 test('event listeners not corresponding to scriptlet arguments should be added correctly', (assert) => {
-    runScriptlet('click', undefined, hit);
+    runScriptlet('click', undefined);
 
     const focusProp = 'focusProp';
     const element = document.createElement('div');
@@ -86,11 +88,11 @@ test('event listeners not corresponding to scriptlet arguments should be added c
     element.click();
     assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
     assert.strictEqual(window[clickProp], undefined, 'property should be undefined');
-    clearProperties(clickProp, focusProp);
+    clearGlobalProps(clickProp, focusProp);
 });
 
 test('event listeners with handlers matched with regexp not added', (assert) => {
-    runScriptlet(undefined, '/click/', hit);
+    runScriptlet(undefined, '/click/');
 
     const element = document.createElement('div');
 
@@ -101,7 +103,7 @@ test('event listeners with handlers matched with regexp not added', (assert) => 
     element.click();
     assert.strictEqual(window.hit, 'FIRED', 'hit function should not fire');
     assert.strictEqual(window[clickProp], undefined, 'property should be undefined');
-    clearProperties('hit');
+    clearGlobalProps('hit');
 
     const focusProp = 'focusProp';
     element.addEventListener('focus', () => {
@@ -110,7 +112,7 @@ test('event listeners with handlers matched with regexp not added', (assert) => 
     element.dispatchEvent(new Event('focus'));
     assert.strictEqual(window.hit, 'FIRED', 'hit function not fired');
     assert.strictEqual(window[focusProp], undefined, 'property should be undefined');
-    clearProperties('hit');
+    clearGlobalProps('hit');
 
     // this event listener should work correctly
     element.addEventListener('click', () => {
@@ -120,5 +122,5 @@ test('event listeners with handlers matched with regexp not added', (assert) => 
     assert.strictEqual(window.hit, undefined, 'hit function should not fire');
     assert.strictEqual(window[focusProp], 'focus', 'property should change');
 
-    clearProperties(clickProp, focusProp);
+    clearGlobalProps(clickProp, focusProp);
 });

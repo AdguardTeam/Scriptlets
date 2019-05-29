@@ -1,30 +1,32 @@
 /* global QUnit */
-/* eslint-disable no-eval, no-multi-assign, func-names */
-import { clearProperties } from './helpers';
+/* eslint-disable no-eval, no-multi-assign, func-names, no-underscore-dangle */
+import { clearGlobalProps } from './helpers';
 
-const { test, module, testDone } = QUnit;
+const { test, module } = QUnit;
 const name = 'prevent-fab-3.2.0';
-
-module(name);
 
 const evalWrapper = eval;
 
-const hit = () => {
-    window.hit = 'FIRED';
+const beforeEach = () => {
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
 };
+
+const afterEach = () => {
+    clearGlobalProps('hit', 'FuckAdBlock', 'BlockAdBlock', 'fuckAdBlock', 'blockAdBlock', '__debugScriptlets');
+};
+
+module(name, { beforeEach, afterEach });
 
 const runScriptlet = (name) => {
     const params = {
         name,
-        hit,
+        verbose: true,
     };
     const resultString = window.scriptlets.invoke(params);
     evalWrapper(resultString);
 };
-
-testDone(() => {
-    clearProperties('hit', 'FuckAdBlock', 'BlockAdBlock', 'fuckAdBlock', 'blockAdBlock');
-});
 
 const createFuckAdBlockSample = () => {
     function FuckAdBlock() {}
@@ -49,7 +51,7 @@ test('ubo alias works', (assert) => {
     assert.strictEqual(window[uboFuckAdBlock], uboFuckAdBlock, 'callback should apply');
 
 
-    clearProperties(uboFuckAdBlock);
+    clearGlobalProps(uboFuckAdBlock);
     runScriptlet('fuckadblock.js-3.2.0');
 
     assert.notOk(window.fuckAdBlock.check(), 'should be undefined');
@@ -59,7 +61,7 @@ test('ubo alias works', (assert) => {
     assert.strictEqual(window[uboFuckAdBlock], undefined, 'callback should not be applied');
 
     assert.strictEqual(window.hit, 'FIRED');
-    clearProperties(uboFuckAdBlock);
+    clearGlobalProps(uboFuckAdBlock);
 });
 
 test('ag alias works', (assert) => {
@@ -72,7 +74,7 @@ test('ag alias works', (assert) => {
     assert.strictEqual(window[agFuckAdBlock], agFuckAdBlock, 'callback should apply');
 
 
-    clearProperties(agFuckAdBlock);
+    clearGlobalProps(agFuckAdBlock);
     runScriptlet(name);
 
     assert.notOk(window.fuckAdBlock.check(), 'should be undefined');
@@ -82,5 +84,5 @@ test('ag alias works', (assert) => {
     assert.strictEqual(window[agFuckAdBlock], undefined, 'callback should not be applied');
 
     assert.strictEqual(window.hit, 'FIRED');
-    clearProperties(agFuckAdBlock);
+    clearGlobalProps(agFuckAdBlock);
 });

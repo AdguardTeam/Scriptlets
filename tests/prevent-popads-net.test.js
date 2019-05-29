@@ -1,30 +1,32 @@
 /* global QUnit, sinon */
-/* eslint-disable no-eval */
+/* eslint-disable no-eval, no-underscore-dangle */
 
-import { clearProperties } from './helpers';
+import { clearGlobalProps } from './helpers';
 
-const { test, module, testDone } = QUnit;
+const { test, module } = QUnit;
 const name = 'prevent-popads-net';
 
-module(name);
-
-const hit = () => {
-    window.hit = 'FIRED';
+const beforeEach = () => {
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
 };
+
+const afterEach = () => {
+    clearGlobalProps('hit');
+};
+
+module(name, { beforeEach, afterEach });
 
 const runScriptlet = (name) => {
     const params = {
         name,
-        hit,
+        verbose: true,
     };
     const resultString = window.scriptlets.invoke(params);
     const evalWrapper = eval;
     evalWrapper(resultString);
 };
-
-testDone(() => {
-    clearProperties('hit');
-});
 
 test('ag and ubo aliases work', (assert) => {
     const stub = sinon.stub(Object, 'defineProperties').callsFake((obj, props) => props);

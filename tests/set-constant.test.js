@@ -1,19 +1,23 @@
 /* global QUnit */
 /* eslint-disable no-eval, no-underscore-dangle */
-import { clearProperties } from './helpers';
+import { clearGlobalProps } from './helpers';
 
-const { test, module, testDone } = QUnit;
+const { test, module } = QUnit;
 const name = 'set-constant';
 
-module(name);
+const afterEach = () => {
+    clearGlobalProps('hit', '__debugScriptlets', 'counter');
+};
+
+module(name, { afterEach });
 
 const evalWrapper = eval;
 
-const createScriptletRunner = counter => (property, value, hit) => {
+const createScriptletRunner = counter => (property, value) => {
     const params = {
         name,
         args: [property, value],
-        hit,
+        verbose: true,
     };
     const resultString = window.scriptlets.invoke(params);
     evalWrapper(resultString);
@@ -21,128 +25,131 @@ const createScriptletRunner = counter => (property, value, hit) => {
     return counter;
 };
 
-testDone(() => {
-    delete window.hit;
-    delete window.counter;
-});
-
-const hit = () => {
-    window.counter = window.counter ? window.counter + 1 : 1;
-};
-
 test('ubo alias works', (assert) => {
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
+
     const value = 'false';
-    const property = 'aaa';
+    const property = 'ubo';
     const params = {
         name: 'ubo-set-constant.js',
-        args: ['aaa', value],
-        hit: () => {
-            window.hit = 'FIRED';
-        },
+        args: [property, value],
+        verbose: true,
     };
+
     const resString = window.scriptlets.invoke(params);
 
     evalWrapper(resString);
 
     assert.strictEqual(window[property], false);
     assert.strictEqual(window.hit, 'FIRED');
-    clearProperties(property);
+    clearGlobalProps(property);
 });
 
 test('sets values correctly', (assert) => {
+    window.__debugScriptlets = () => {
+        window.counter = window.counter ? window.counter + 1 : 1;
+    };
     const runSetConstantScriptlet = createScriptletRunner(0);
     let counter;
     // settings constant to true;
     const trueProp = 'trueProp';
-    counter = runSetConstantScriptlet(trueProp, 'true', hit);
+    counter = runSetConstantScriptlet(trueProp, 'true');
     assert.strictEqual(window[trueProp], true);
     assert.strictEqual(window.counter, counter);
-    clearProperties(trueProp);
+    clearGlobalProps(trueProp);
 
     // setting constant to false;
     const falseProp = 'falseProp';
-    counter = runSetConstantScriptlet(falseProp, 'false', hit);
+    counter = runSetConstantScriptlet(falseProp, 'false');
     assert.strictEqual(window[falseProp], false);
     assert.strictEqual(window.counter, counter);
-    clearProperties(falseProp);
+    clearGlobalProps(falseProp);
 
     // setting constant to undefined;
     const undefinedProp = 'undefinedProp';
-    counter = runSetConstantScriptlet(undefinedProp, 'undefined', hit);
+    counter = runSetConstantScriptlet(undefinedProp, 'undefined');
     assert.strictEqual(window[undefinedProp], undefined);
     assert.strictEqual(window.counter, counter);
-    clearProperties(undefinedProp);
+    clearGlobalProps(undefinedProp);
 
     // setting constant to null;
     const nullProp = 'nullProp';
-    counter = runSetConstantScriptlet(nullProp, 'null', hit);
+    counter = runSetConstantScriptlet(nullProp, 'null');
     assert.strictEqual(window[nullProp], null);
     assert.strictEqual(window.counter, counter);
-    clearProperties(nullProp);
+    clearGlobalProps(nullProp);
 
     // setting constant to noopFunc;
     const noopFuncProp = 'noopFuncProp';
-    counter = runSetConstantScriptlet(noopFuncProp, 'noopFunc', hit);
+    counter = runSetConstantScriptlet(noopFuncProp, 'noopFunc');
     assert.strictEqual(window[noopFuncProp](), undefined);
     assert.strictEqual(window.counter, counter);
-    clearProperties(noopFuncProp);
+    clearGlobalProps(noopFuncProp);
 
     // setting constant to trueFunc;
     const trueFuncProp = 'trueFuncProp';
-    counter = runSetConstantScriptlet(trueFuncProp, 'trueFunc', hit);
+    counter = runSetConstantScriptlet(trueFuncProp, 'trueFunc');
     assert.strictEqual(window[trueFuncProp](), true);
     assert.strictEqual(window.counter, counter);
-    clearProperties(trueFuncProp);
+    clearGlobalProps(trueFuncProp);
 
     // setting constant to falseFunc;
     const falseFuncProp = 'falseFuncProp';
-    counter = runSetConstantScriptlet(falseFuncProp, 'falseFunc', hit);
+    counter = runSetConstantScriptlet(falseFuncProp, 'falseFunc');
     assert.strictEqual(window[falseFuncProp](), false);
     assert.strictEqual(window.counter, counter);
-    clearProperties(falseFuncProp);
+    clearGlobalProps(falseFuncProp);
 
     // setting constant to number;
     const numberProp = 'numberProp';
-    counter = runSetConstantScriptlet(numberProp, 111, hit);
+    counter = runSetConstantScriptlet(numberProp, 111);
     assert.strictEqual(window[numberProp], 111);
     assert.strictEqual(window.counter, counter);
-    clearProperties(numberProp);
+    clearGlobalProps(numberProp);
 
     // setting constant to empty string;
     const emptyStringProp = 'emptyStringProp';
-    counter = runSetConstantScriptlet(emptyStringProp, '', hit);
+    counter = runSetConstantScriptlet(emptyStringProp, '');
     assert.strictEqual(window[emptyStringProp], '');
     assert.strictEqual(window.counter, counter);
-    clearProperties(emptyStringProp);
+    clearGlobalProps(emptyStringProp);
 
     // setting constant to illegalNumber doesn't works;
     const illegalNumberProp = 'illegalNumberProp';
-    counter = runSetConstantScriptlet(illegalNumberProp, 32768, hit);
+    counter = runSetConstantScriptlet(illegalNumberProp, 32768);
     assert.strictEqual(window[illegalNumberProp], undefined);
     assert.strictEqual(window.counter, counter - 1);
 });
 
 test('sets values to the chained properties', (assert) => {
+    window.__debugScriptlets = () => {
+        window.counter = window.counter ? window.counter + 1 : 1;
+    };
     const runSetConstantScriptlet = createScriptletRunner(0);
     window.chained = { property: {} };
-    const counter = runSetConstantScriptlet('chained.property.aaa', 'true', hit);
+    const counter = runSetConstantScriptlet('chained.property.aaa', 'true');
     assert.strictEqual(window.chained.property.aaa, true);
     assert.strictEqual(window.counter, counter);
-    clearProperties('chained');
+    clearGlobalProps('chained');
 });
 
 test('values with same types are not overwritten, values with different types are overwritten', (assert) => {
+    window.__debugScriptlets = () => {
+        window.counter = window.counter ? window.counter + 1 : 1;
+    };
     const runSetConstantScriptlet = createScriptletRunner(0);
     const property = 'customProperty';
     const firstValue = 10;
     const anotherValue = 100;
     const anotherTypeValue = true;
-    const counter = runSetConstantScriptlet(property, firstValue, hit);
+    const counter = runSetConstantScriptlet(property, firstValue);
     assert.strictEqual(window[property], firstValue);
     assert.strictEqual(window.counter, counter);
     window[property] = anotherValue;
     assert.strictEqual(window[property], firstValue, 'values with same types are not overwritten');
     window[property] = anotherTypeValue;
     assert.strictEqual(window[property], anotherTypeValue, 'values with different types are overwritten');
-    clearProperties(property);
+    clearGlobalProps(property);
 });

@@ -1,6 +1,8 @@
 /* global QUnit */
 /* eslint-disable no-eval, no-underscore-dangle */
-const { test, module, testDone } = QUnit;
+import { clearGlobalProps } from './helpers';
+
+const { test, module } = QUnit;
 const name = 'abort-on-property-read';
 const PROPERTY = 'aaa';
 const CHAIN_PROPERTY = 'aaa.bbb';
@@ -8,20 +10,27 @@ const CHAIN_PROPERTY = 'aaa.bbb';
 // copy eval to prevent rollup warnings
 const evalWrap = eval;
 
-testDone(() => {
-    delete window[PROPERTY];
-    delete window.hit;
-});
+const changingProps = [PROPERTY, 'hit', '__debugScriptlets'];
 
-module(name);
+const beforeEach = () => {
+    window.__debugScriptlets = () => {
+        window.hit = 'value';
+    };
+};
+
+const afterEach = () => {
+    clearGlobalProps(...changingProps);
+};
+
+module(name, { beforeEach, afterEach });
+
 test('abort-on-property-read simple check ubo alias', (assert) => {
     const params = {
         name: `ubo-${name}.js`,
         args: [PROPERTY],
-        hit: () => {
-            window.hit = 'value';
-        },
+        verbose: true,
     };
+
     window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
     evalWrap(resString);
@@ -37,9 +46,7 @@ test('abort-on-property-read simple check abp alias', (assert) => {
     const params = {
         name: `abp-${name}`,
         args: [PROPERTY],
-        hit: () => {
-            window.hit = 'value';
-        },
+        verbose: true,
     };
     window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
@@ -56,9 +63,7 @@ test('abort-on-property-read simple', (assert) => {
     const params = {
         name,
         args: [PROPERTY],
-        hit: () => {
-            window.hit = 'value';
-        },
+        verbose: true,
     };
     window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
@@ -75,9 +80,7 @@ test('abort-on-property-read dot notation', (assert) => {
     const params = {
         name,
         args: [CHAIN_PROPERTY],
-        hit: () => {
-            window.hit = 'value';
-        },
+        verbose: true,
     };
     window.aaa = {
         bbb: 'value',
@@ -96,9 +99,7 @@ test('abort-on-property-read dot notation deferred defenition', (assert) => {
     const params = {
         name,
         args: [CHAIN_PROPERTY],
-        hit: () => {
-            window.hit = 'value';
-        },
+        verbose: true,
     };
     const resString = window.scriptlets.invoke(params);
     evalWrap(resString);

@@ -3,12 +3,11 @@ import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { toRegExp } from '../helpers/string-utils';
-import { createLogFunction, createOnErrorHandler } from '../helpers';
+import { log, createOnErrorHandler } from '../helpers';
 
 export function abortCurrentInlineScript(source, property, search = null) {
     const regex = search ? toRegExp(search) : null;
     const rid = randomId();
-    const log = createLogFunction(source);
 
     const getCurrentScript = () => {
         if (!document.currentScript) {
@@ -26,7 +25,7 @@ export function abortCurrentInlineScript(source, property, search = null) {
             && scriptEl.textContent.length > 0
             && scriptEl !== ourScript
             && (!regex || regex.test(scriptEl.textContent))) {
-            log();
+            log(source);
             throw new ReferenceError(rid);
         }
     };
@@ -79,5 +78,5 @@ abortCurrentInlineScript.injections = [
     getPropertyInChain,
     toRegExp,
     createOnErrorHandler,
-    createLogFunction,
+    log,
 ];

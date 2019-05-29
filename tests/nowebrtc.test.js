@@ -1,31 +1,33 @@
 /* global QUnit */
-/* eslint-disable no-eval */
+/* eslint-disable no-eval, no-underscore-dangle */
 
-import { clearProperties } from './helpers';
+import { clearGlobalProps } from './helpers';
 
-const { test, module, testDone } = QUnit;
+const { test, module } = QUnit;
 const name = 'nowebrtc';
 
-module(name);
+const beforeEach = () => {
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
+};
+
+const afterEach = () => {
+    clearGlobalProps('hit', '__debugScriptlets');
+};
+
+module(name, { beforeEach, afterEach });
 
 const evalWrapper = eval;
-
-const hit = () => {
-    window.hit = 'FIRED';
-};
 
 const runScriptlet = (name) => {
     const params = {
         name,
-        hit,
+        verbose: true,
     };
     const resultString = window.scriptlets.invoke(params);
     evalWrapper(resultString);
 };
-
-testDone(() => {
-    clearProperties('hit');
-});
 
 test('ubo alias works', (assert) => {
     runScriptlet('ubo-nowebrtc.js');

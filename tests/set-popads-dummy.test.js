@@ -1,34 +1,34 @@
 /* global QUnit, sinon */
-/* eslint-disable no-eval */
+/* eslint-disable no-eval, no-underscore-dangle */
 
-import { clearProperties } from './helpers';
+import { clearGlobalProps } from './helpers';
 
-const { test, module, testDone } = QUnit;
+const { test, module } = QUnit;
 const name = 'set-popads-dummy';
+const popAdsProp = 'PopAds';
+const popnsProp = 'popns';
 
-module(name);
+const beforeEach = () => {
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
+};
+
+const afterEach = () => {
+    clearGlobalProps('hit', popAdsProp, popnsProp);
+};
+module(name, { beforeEach, afterEach });
 
 const evalWrapper = eval;
-
-const hit = () => {
-    window.hit = 'FIRED';
-};
 
 const runScriptlet = (name) => {
     const params = {
         name,
-        hit,
+        verbose: true,
     };
     const resultString = window.scriptlets.invoke(params);
     evalWrapper(resultString);
 };
-
-const popAdsProp = 'PopAds';
-const popnsProp = 'popns';
-
-testDone(() => {
-    clearProperties('hit', popAdsProp, popnsProp);
-});
 
 const fillPopAdsWithValues = () => {
     window[popAdsProp] = popAdsProp;

@@ -1,5 +1,5 @@
 import { toRegExp } from '../helpers/string-utils';
-import { createLogFunction } from '../helpers';
+import { log } from '../helpers';
 
 /**
  * Removes current page cookies specified by name.
@@ -8,7 +8,6 @@ import { createLogFunction } from '../helpers';
  * @param {string} match string for matching with cookie name
  */
 export function removeCookie(source, match) {
-    const log = createLogFunction(source);
     const regex = match ? toRegExp(match) : toRegExp('/.?/');
 
     const removeCookieFromHost = (cookieName, hostName) => {
@@ -23,7 +22,7 @@ export function removeCookie(source, match) {
         document.cookie = cookieSpec + path + expiration;
         document.cookie = cookieSpec + domain1 + path + expiration;
         document.cookie = cookieSpec + domain2 + path + expiration;
-        log();
+        log(source);
     };
 
     const rmCookie = () => {
@@ -56,4 +55,4 @@ removeCookie.names = [
     'ubo-cookie-remover.js',
 ];
 
-removeCookie.injections = [toRegExp, createLogFunction];
+removeCookie.injections = [toRegExp, log];

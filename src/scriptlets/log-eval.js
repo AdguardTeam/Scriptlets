@@ -1,5 +1,5 @@
 /* eslint-disable no-console, no-eval */
-import { createLogFunction } from '../helpers';
+import { log } from '../helpers';
 
 /**
  * Logs all eval() and Function() calls
@@ -7,15 +7,10 @@ import { createLogFunction } from '../helpers';
  * @param {Source} source
  */
 export function logEval(source) {
-    const log = createLogFunction(source);
-
-    const nativeConsole = console.log.bind(console);
-
     // wrap eval function
     const nativeEval = window.eval;
     function evalWrapper(str) {
-        log();
-        nativeConsole(`eval("${str}")`);
+        log(source, `eval("${str}")`);
         return nativeEval(str);
     }
     window.eval = evalWrapper;
@@ -24,8 +19,7 @@ export function logEval(source) {
     const nativeFunction = window.Function;
 
     function FunctionWrapper(...args) {
-        log();
-        nativeConsole(`new Function(${args.join(', ')})`);
+        log(source, `new Function(${args.join(', ')})`);
         return nativeFunction.apply(this, [...args]);
     }
 
@@ -39,4 +33,4 @@ logEval.names = [
     'log-eval',
 ];
 
-logEval.injections = [createLogFunction];
+logEval.injections = [log];

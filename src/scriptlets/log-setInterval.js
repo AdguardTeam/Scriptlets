@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { createLogFunction } from '../helpers';
+import { log } from '../helpers';
 
 /**
  * Logs setInterval calls
@@ -7,12 +7,9 @@ import { createLogFunction } from '../helpers';
  * @param {Source} source
  */
 export function logSetInterval(source) {
-    const log = createLogFunction(source);
     const nativeSetInterval = window.setInterval;
-    const nativeConsole = console.log.bind(console);
     function setIntervalWrapper(callback, timeout, ...args) {
-        log();
-        nativeConsole(`setInterval("${callback.toString()}", ${timeout})`);
+        log(source, `setInterval("${callback.toString()}", ${timeout})`);
         return nativeSetInterval.apply(window, [callback, timeout, ...args]);
     }
     window.setInterval = setIntervalWrapper;
@@ -23,4 +20,4 @@ logSetInterval.names = [
     'setInterval-logger.js',
 ];
 
-logSetInterval.injections = [createLogFunction];
+logSetInterval.injections = [log];

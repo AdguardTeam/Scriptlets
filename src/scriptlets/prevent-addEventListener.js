@@ -1,5 +1,5 @@
 import { toRegExp } from '../helpers/string-utils';
-import { createLogFunction } from '../helpers';
+import { log } from '../helpers';
 
 /**
  * Prevents adding event listeners
@@ -9,15 +9,13 @@ import { createLogFunction } from '../helpers';
  * @param {string|RegExp} [funcStr] - string or regexp matching stringified handler function
  */
 export function preventAddEventListener(source, event, funcStr) {
-    const log = createLogFunction(source);
-
     event = event ? toRegExp(event) : toRegExp('/.?/');
     funcStr = funcStr ? toRegExp(funcStr) : toRegExp('/.?/');
 
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
     function addEventListenerWrapper(eventName, callback, ...args) {
         if (event.test(eventName.toString()) && funcStr.test(callback.toString())) {
-            log();
+            log(source);
             return undefined;
         }
         return nativeAddEventListener.apply(this, [eventName, callback, ...args]);
@@ -31,4 +29,4 @@ preventAddEventListener.names = [
     'ubo-addEventListener-defuser.js',
 ];
 
-preventAddEventListener.injections = [toRegExp, createLogFunction];
+preventAddEventListener.injections = [toRegExp, log];
