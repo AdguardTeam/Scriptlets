@@ -7,7 +7,7 @@ import { hit } from '../helpers';
  * @param {Source} source
  */
 export function logAddEventListener(source) {
-    log = console.log.bind(console);
+    const log = console.log.bind(console);
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
     function addEventListenerWrapper(eventName, callback, ...args) {
         hit(source);

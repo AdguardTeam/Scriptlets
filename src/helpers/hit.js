@@ -9,8 +9,8 @@ export const hit = (source, message) => {
         return;
     }
 
-    log = console.log.bind(console);
-    trace = console.trace.bind(console);
+    const log = console.log.bind(console);
+    const trace = console.trace.bind(console);
 
     if (message) {
         log(`${source.ruleText} message:\n${message}`);

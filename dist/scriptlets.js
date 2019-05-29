@@ -142,8 +142,8 @@
         return;
       }
 
-      log = console.log.bind(console);
-      trace = console.trace.bind(console);
+      var log = console.log.bind(console);
+      var trace = console.trace.bind(console);
 
       if (message) {
         log("".concat(source.ruleText, " message:\n").concat(message));
@@ -766,7 +766,7 @@
      */
 
     function logAddEventListener(source) {
-      log = console.log.bind(console);
+      var log = console.log.bind(console);
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
       function addEventListenerWrapper(eventName, callback) {
@@ -793,7 +793,7 @@
      */
 
     function logSetInterval(source) {
-      log = console.log.bind(console);
+      var log = console.log.bind(console);
       var nativeSetInterval = window.setInterval;
 
       function setIntervalWrapper(callback, timeout) {
@@ -820,7 +820,7 @@
      */
 
     function logSetTimeout(source) {
-      log = console.log.bind(console);
+      var log = console.log.bind(console);
       var nativeSetTimeout = window.setTimeout;
 
       function setTimeoutWrapper(callback, timeout) {
@@ -847,7 +847,7 @@
      */
 
     function logEval(source) {
-      log = console.log.bind(console); // wrap eval function
+      var log = console.log.bind(console); // wrap eval function
 
       var nativeEval = window.eval;
 

@@ -7,7 +7,7 @@ import { hit } from '../helpers';
  * @param {Source} source
  */
 export function logEval(source) {
-    log = console.log.bind(console);
+    const log = console.log.bind(console);
     // wrap eval function
     const nativeEval = window.eval;
     function evalWrapper(str) {

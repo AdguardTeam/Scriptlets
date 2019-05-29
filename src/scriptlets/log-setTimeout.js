@@ -7,7 +7,7 @@ import { hit } from '../helpers';
  * @param {Source} source
  */
 export function logSetTimeout(source) {
-    log = console.log.bind(console);
+    const log = console.log.bind(console);
     const nativeSetTimeout = window.setTimeout;
     function setTimeoutWrapper(callback, timeout, ...args) {
         hit(source);
