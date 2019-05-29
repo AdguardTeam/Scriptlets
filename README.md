@@ -14,10 +14,11 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [prevent-window-open](#prevent-window-open)
     * [nowebrtc](#nowebrtc)
     * [prevent-bab](#prevent-bab)
-    * [hit-addEventListener](#log-addEventListener)
-    * [hit-setInterval](#log-setInterval)
-    * [hit-setTimeout](#log-setTimeout)
-    * [hit-eval](#log-eval)
+    * [log](#log)
+    * [log-addEventListener](#log-addEventListener)
+    * [log-setInterval](#log-setInterval)
+    * [log-setTimeout](#log-setTimeout)
+    * [log-eval](#log-eval)
     * [noeval](#noeval)
     * [prevent-eval-if](#prevent-eval-if)
     * [remove-cookie](#remove-cookie)
@@ -339,7 +340,7 @@ example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
 
 ### <a id="nowebrtc"></a> nowebrtc
 
-Disables WebRTC by overriding `RTCPeerConnection`. The overriden function will hit every attempt to create a new connection.
+Disables WebRTC by overriding `RTCPeerConnection`. The overriden function will log every attempt to create a new connection.
 
 **Syntax**
 ```
@@ -359,46 +360,55 @@ example.org#%#//scriptlet("prevent-bab")
 
 [scriptlet source](./src/scriptlets/prevent-bab.js)
 
-### <a id="hit-addEventListener"></a> hit-addEventListener
+### <a id="log"></a> log
+
+A simple scriptlet which only purpose is to print arguments to console.
+This scriptlet can be helpful for debugging and troubleshooting other scriptlets.
+
+```
+example.org#%#//scriptlet("log", "arg1", "arg2")
+```
+
+### <a id="log-addEventListener"></a> log-addEventListener
 
 Logs all addEventListener calls to the console
 
 **Syntax**
 ```
-example.org#%#//scriptlet("hit-addEventListener")
+example.org#%#//scriptlet("log-addEventListener")
 ```
 
 [scriptlet source](./src/scriptlets/log-addEventListener.js)
 
-### <a id="hit-setInterval"></a> hit-setInterval
+### <a id="log-setInterval"></a> log-setInterval
 
 Logs all setInterval calls to the console
 
 **Syntax**
 ```
-example.org#%#//scriptlet("hit-setInterval")
+example.org#%#//scriptlet("log-setInterval")
 ```
 
 [scriptlet source](./src/scriptlets/log-setInterval.js)
 
-### <a id="hit-setTimeout"></a> hit-setTimeout
+### <a id="log-setTimeout"></a> log-setTimeout
 
 Logs all setTimeout call to the console
 
 **Syntax**
 ```
-example.org#%#//scriptlet("hit-setTimeout")
+example.org#%#//scriptlet("log-setTimeout")
 ```
 
 [scriptlet source](./src/scriptlets/log-setTimeout.js)
 
-### <a id="hit-eval"></a> hit-eval
+### <a id="log-eval"></a> log-eval
 
 Logs all `eval()` or `new Function()` calls to the console
 
 **Syntax**
 ```
-example.org#%#//scriptlet("hit-eval")
+example.org#%#//scriptlet("log-eval")
 ```
 
 [scriptlet source](./src/scriptlets/log-eval.js)
@@ -485,7 +495,7 @@ example.org#%#//scriptlet("prevent-adfly")
 | [abort-on-property-read](#abort-on-property-read) | abort-on-property-read.js | abort-on-property-read |
 | [abort-on-property-write](#abort-on-property-write) | abort-on-property-write.js | abort-on-property-write |
 | [prevent-addEventListener](#prevent-addEventListener) | addEventListener-defuser.js |  |
-| [hit-addEventListener](#log-addEventListener) | addEventListener-logger.js |  |
+| [log-addEventListener](#log-addEventListener) | addEventListener-logger.js |  |
 | [remove-cookie](#remove-cookie) | cookie-remover.js |  |
 |  | csp.js (deprecated) |  |
 |  | disable-newtab-links.js |  |
@@ -496,9 +506,9 @@ example.org#%#//scriptlet("prevent-adfly")
 |  | remove-attr.js |  |
 | [set-constant](#set-constant) | set-constant.js |  |
 | [prevent-setInterval](#prevent-setInterval) | setInterval-defuser.js |  |
-| [hit-setInterval](#log-setInterval) | setInterval-logger.js |  |
+| [log-setInterval](#log-setInterval) | setInterval-logger.js |  |
 | [prevent-setTimeout](#prevent-setTimeout) | setTimeout-defuser.js |  |
-| [hit-setTimeout](#log-setInterval) | setTimeout-logger.js |  |
+| [log-setTimeout](#log-setInterval) | setTimeout-logger.js |  |
 |  | nano-setInterval-booster.js |  |
 |  | nano-setTimeout-booster.js |  |
 |  | sharedWorker-defuser.js (deprecated) |  |
@@ -514,7 +524,7 @@ example.org#%#//scriptlet("prevent-adfly")
 |  |  | hide-if-contains-and-matches-style |
 |  |  | hide-if-contains |
 |  |  | hide-if-shadow-contains |
-| [hit-eval](#log-eval) |  | |
+| [log-eval](#log-eval) |  | |
 
 
 

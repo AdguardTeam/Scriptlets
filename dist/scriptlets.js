@@ -879,6 +879,19 @@
     logEval.names = ['hit-eval'];
     logEval.injections = [hit];
 
+    /**
+     * Log an array of passed arguments
+     * @param {string} args test arguments
+     */
+    function log() {
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      console.log(args); // eslint-disable-line no-console
+    }
+    log.names = ['log'];
+
     /* eslint-disable no-eval, no-extra-bind */
     /**
      * Prevents page to use eval.
@@ -1118,6 +1131,7 @@
         logSetInterval: logSetInterval,
         logSetTimeout: logSetTimeout,
         logEval: logEval,
+        log: log,
         noeval: noeval,
         preventEvalIf: preventEvalIf,
         preventFab: preventFab,
