@@ -1,39 +1,35 @@
 /* global QUnit */
-/* eslint-disable no-eval, no-console */
-import { clearProperties } from './helpers';
+/* eslint-disable no-eval, no-console, no-underscore-dangle */
+import { clearGlobalProps } from './helpers';
 
-const { test, module, testDone } = QUnit;
+const { test, module } = QUnit;
 const name = 'noeval';
-
-module(name);
 
 const nativeEval = window.eval;
 const nativeConsole = console.log;
 
-const hit = (source, payload) => {
-    // calling console.log we test that our hit function was build correctly
-    // example of use in the test
-    // console.log = function log(input) {
-    //     assert.ok(input.includes('test text'));
-    // };
-    console.log(payload);
-    window.hit = 'FIRED';
+const beforeEach = () => {
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
 };
+
+const afterEach = () => {
+    clearGlobalProps('hit', '__debugScriptlets');
+    window.eval = nativeEval;
+    console.log = nativeConsole;
+};
+
+module(name, { beforeEach, afterEach });
 
 const runScriptlet = (name) => {
     const params = {
         name,
-        hit,
+        verbose: true,
     };
     const resultString = window.scriptlets.invoke(params);
     nativeEval(resultString);
 };
-
-testDone(() => {
-    clearProperties('hit');
-    window.eval = nativeEval;
-    console.log = nativeConsole;
-});
 
 test('ubo noeval alias', (assert) => {
     runScriptlet('noeval.js');
@@ -44,7 +40,11 @@ test('ubo noeval alias', (assert) => {
     assert.expect(3);
 
     console.log = function log(input) {
-        assert.ok(input.includes('AdGuard has prevented eval:'), 'console.log should print info');
+        nativeConsole(input);
+        if (input.indexOf('trace') > -1) {
+            return;
+        }
+        assert.ok(input.includes('AdGuard has prevented eval:'), 'console.hit should print info');
     };
 
     const evalWrapper = eval;
@@ -63,7 +63,10 @@ test('ubo silent-noeval alias', (assert) => {
     assert.expect(3);
 
     console.log = function log(input) {
-        assert.ok(input.includes('AdGuard has prevented eval:'), 'console.log should print info');
+        if (input.indexOf('trace') > -1) {
+            return;
+        }
+        assert.ok(input.includes('AdGuard has prevented eval:'), 'console.hit should print info');
     };
 
     const evalWrapper = eval;
@@ -83,7 +86,10 @@ test('AG noeval alias', (assert) => {
     assert.expect(3);
 
     console.log = function log(input) {
-        assert.ok(input.includes('AdGuard has prevented eval:'), 'console.log should print info');
+        if (input.indexOf('trace') > -1) {
+            return;
+        }
+        assert.ok(input.includes('AdGuard has prevented eval:'), 'console.hit should print info');
     };
 
     const evalWrapper = eval;

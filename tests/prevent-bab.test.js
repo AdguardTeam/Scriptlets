@@ -1,30 +1,32 @@
 /* global QUnit */
 /* eslint-disable no-eval, no-underscore-dangle */
-import { clearProperties } from './helpers';
+import { clearGlobalProps } from './helpers';
 
-const { test, module, testDone } = QUnit;
+const { test, module } = QUnit;
 const name = 'prevent-bab';
 
-module(name);
+const beforeEach = () => {
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
+};
+
+const afterEach = () => {
+    clearGlobalProps('hit', '__debugScriptlets');
+};
+
+module(name, { beforeEach, afterEach });
 
 const evalWrapper = eval;
-
-const hit = () => {
-    window.hit = 'FIRED';
-};
 
 const runScriptlet = (name) => {
     const params = {
         name,
-        hit,
+        verbose: true,
     };
     const resultString = window.scriptlets.invoke(params);
     evalWrapper(resultString);
 };
-
-testDone(() => {
-    clearProperties('hit');
-});
 
 test('ubo alias works', (assert) => {
     runScriptlet('ubo-bab-defuser.js');
@@ -37,7 +39,7 @@ test('ubo alias works', (assert) => {
 
     assert.strictEqual(window[evalProp], undefined);
     assert.strictEqual(window.hit, 'FIRED');
-    clearProperties(evalProp);
+    clearGlobalProps(evalProp);
 });
 
 test('works eval with AdblockBlock', (assert) => {
@@ -51,7 +53,7 @@ test('works eval with AdblockBlock', (assert) => {
 
     assert.strictEqual(window[evalProp], undefined);
     assert.strictEqual(window.hit, 'FIRED');
-    clearProperties(evalProp);
+    clearGlobalProps(evalProp);
 });
 
 test('sample eval script works', (assert) => {
@@ -65,7 +67,7 @@ test('sample eval script works', (assert) => {
 
     assert.strictEqual(window[evalProp], 'test');
     assert.strictEqual(window.hit, undefined);
-    clearProperties(evalProp);
+    clearGlobalProps(evalProp);
 });
 
 test('prevents set timeout with AdblockBlock', (assert) => {
@@ -79,7 +81,7 @@ test('prevents set timeout with AdblockBlock', (assert) => {
     setTimeout(() => {
         assert.strictEqual(window.hit, 'FIRED');
         assert.strictEqual(window[timeoutProp], undefined);
-        clearProperties(timeoutProp);
+        clearGlobalProps(timeoutProp);
         done();
     }, 20);
 });

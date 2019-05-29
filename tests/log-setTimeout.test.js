@@ -1,28 +1,36 @@
 /* global QUnit */
-/* eslint-disable no-eval, no-console */
-import { clearProperties } from './helpers';
+/* eslint-disable no-eval, no-console, no-underscore-dangle */
+import { clearGlobalProps } from './helpers';
 
 const { test, module } = QUnit;
-const name = 'log-setTimeout';
-
-module(name);
-
-const evalWrapper = eval;
-
-const runScriptlet = (hit) => {
-    const params = {
-        name,
-        hit,
-    };
-    const resultString = window.scriptlets.invoke(params);
-    evalWrapper(resultString);
-};
+const name = 'hit-setTimeout';
 
 const nativeSetTimeout = window.setTimeout;
 const nativeConsole = console.log;
 
-const hit = () => {
-    window.hit = 'FIRED';
+const beforeEach = () => {
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
+};
+
+const afterEach = () => {
+    clearGlobalProps('hit', '__debugScriptlets');
+    window.setTimeout = nativeSetTimeout;
+    console.log = nativeConsole;
+};
+
+module(name, { beforeEach, afterEach });
+
+const evalWrapper = eval;
+
+const runScriptlet = () => {
+    const params = {
+        name,
+        verbose: true,
+    };
+    const resultString = window.scriptlets.invoke(params);
+    evalWrapper(resultString);
 };
 
 test('ubo alias setTimeout-logger.js works', (assert) => {
@@ -33,11 +41,14 @@ test('ubo alias setTimeout-logger.js works', (assert) => {
     };
     const timeout = 10;
     console.log = function log(input) {
-        assert.strictEqual(input, `setTimeout("${callback.toString()}", ${timeout})`, 'console.log input should be equal');
+        if (input.indexOf('trace') > -1) {
+            return;
+        }
+        assert.strictEqual(input, `setTimeout("${callback.toString()}", ${timeout})`, 'console.hit input should be equal');
     };
     const params = {
         name: 'setTimeout-logger.js',
-        hit,
+        verbose: true,
     };
     const resString = window.scriptlets.invoke(params);
 
@@ -47,10 +58,7 @@ test('ubo alias setTimeout-logger.js works', (assert) => {
     nativeSetTimeout(() => {
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         assert.strictEqual(window[uboSetTimeoutLogger], 'changed', 'property changed');
-        // return native functions
-        window.setTimeout = nativeSetTimeout;
-        console.log = nativeConsole;
-        clearProperties('hit', uboSetTimeoutLogger);
+        clearGlobalProps('hit', uboSetTimeoutLogger);
         clearTimeout(timeoutId);
         done();
     }, 20);
@@ -64,20 +72,20 @@ test('logs events to console', (assert) => {
     };
     const timeout = 10;
     console.log = function log(input) {
-        assert.strictEqual(input, `setTimeout("${callback.toString()}", ${timeout})`, 'console.log input');
+        if (input.indexOf('trace') > -1) {
+            return;
+        }
+        assert.strictEqual(input, `setTimeout("${callback.toString()}", ${timeout})`, 'console.hit input');
     };
 
-    runScriptlet(hit);
+    runScriptlet();
 
     const timeoutId = setTimeout(callback, timeout);
 
     nativeSetTimeout(() => {
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         assert.strictEqual(window[agLogSetTimeout], 'changed', 'property changed');
-        // return native functions
-        console.log = nativeConsole;
-        window.setTimeout = nativeSetTimeout;
-        clearProperties('hit', agLogSetTimeout);
+        clearGlobalProps('hit', agLogSetTimeout);
         clearTimeout(timeoutId);
         done();
     }, 20);

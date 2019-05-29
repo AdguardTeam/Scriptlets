@@ -1,5 +1,5 @@
 /* eslint-disable no-console, func-names, no-multi-assign */
-import { createHitFunction } from '../helpers';
+import { hit } from '../helpers';
 
 /**
  * Sets static properties PopAds and popns.
@@ -7,19 +7,18 @@ import { createHitFunction } from '../helpers';
  * @param {Source} source
  */
 export function setPopadsDummy(source) {
-    const hit = createHitFunction(source);
     delete window.PopAds;
     delete window.popns;
     Object.defineProperties(window, {
         PopAds: {
             get: () => {
-                hit();
+                hit(source);
                 return {};
             },
         },
         popns: {
             get: () => {
-                hit();
+                hit(source);
                 return {};
             },
         },
@@ -31,4 +30,4 @@ setPopadsDummy.names = [
     'popads-dummy.js',
 ];
 
-setPopadsDummy.injections = [createHitFunction];
+setPopadsDummy.injections = [hit];

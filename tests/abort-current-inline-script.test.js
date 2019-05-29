@@ -1,15 +1,15 @@
 /* global QUnit */
 /* eslint-disable no-eval, no-underscore-dangle */
-const { test, module, testDone } = QUnit;
+import { clearGlobalProps } from './helpers';
+
+const { test, module } = QUnit;
 const name = 'abort-current-inline-script';
 
 module(name);
 
 const evalWrapper = eval;
 
-testDone(() => {
-    delete window.hit;
-});
+const changingGlobals = ['hit', '__debugScriptlets'];
 
 const onError = assert => (message) => {
     const browserErrorMessage = 'Script error.';
@@ -32,9 +32,10 @@ test('ubo alias', (assert) => {
     const params = {
         name: 'ubo-abort-current-inline-script.js',
         args: [property],
-        hit: () => {
-            window.hit = 'FIRED';
-        },
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
 
@@ -44,6 +45,8 @@ test('ubo alias', (assert) => {
     addAndRemoveInlineScript('window.___aaa;');
 
     assert.strictEqual(window.hit, 'FIRED');
+
+    clearGlobalProps(...changingGlobals);
 });
 
 test('abp alias', (assert) => {
@@ -51,9 +54,10 @@ test('abp alias', (assert) => {
     const params = {
         name: 'abp-abort-current-inline-script',
         args: [property],
-        hit: () => {
-            window.hit = 'FIRED';
-        },
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
 
@@ -63,6 +67,7 @@ test('abp alias', (assert) => {
     addAndRemoveInlineScript('window.___aaa;');
 
     assert.strictEqual(window.hit, 'FIRED');
+    clearGlobalProps(...changingGlobals);
 });
 
 test('works', (assert) => {
@@ -70,9 +75,10 @@ test('works', (assert) => {
     const params = {
         name,
         args: [property],
-        hit: () => {
-            window.hit = 'FIRED';
-        },
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
 
@@ -82,6 +88,7 @@ test('works', (assert) => {
     addAndRemoveInlineScript('window.___aaa;');
 
     assert.strictEqual(window.hit, 'FIRED');
+    clearGlobalProps(...changingGlobals);
 });
 
 test('works with chained properties', (assert) => {
@@ -89,9 +96,10 @@ test('works with chained properties', (assert) => {
     const params = {
         name,
         args: [chainProperty],
-        hit: () => {
-            window.hit = 'FIRED';
-        },
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
 
@@ -105,6 +113,7 @@ test('works with chained properties', (assert) => {
     `);
 
     assert.strictEqual(window.hit, 'FIRED');
+    clearGlobalProps(...changingGlobals);
 });
 
 test('aborts script by search', (assert) => {
@@ -113,9 +122,10 @@ test('aborts script by search', (assert) => {
     const params = {
         name,
         args: [property, 'const someVar'],
-        hit: () => {
-            window.hit = 'FIRED';
-        },
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
 
@@ -125,6 +135,7 @@ test('aborts script by search', (assert) => {
     addAndRemoveInlineScript(`${search} = window.${property};`);
 
     assert.strictEqual(window.hit, 'FIRED');
+    clearGlobalProps(...changingGlobals);
 });
 
 
@@ -134,9 +145,10 @@ test('doesnt aborts script which is not specified by search', (assert) => {
     const params = {
         name,
         args: [property, search],
-        hit: () => {
-            window.hit = 'FIRED';
-        },
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
 
@@ -144,6 +156,7 @@ test('doesnt aborts script which is not specified by search', (assert) => {
     addAndRemoveInlineScript(`window.${property};`);
 
     assert.notStrictEqual(window.hit, undefined);
+    clearGlobalProps(...changingGlobals);
 });
 
 test('searches script by regexp', (assert) => {
@@ -152,9 +165,10 @@ test('searches script by regexp', (assert) => {
     const params = {
         name,
         args: [property, search],
-        hit: () => {
-            window.hit = 'FIRED';
-        },
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
 
@@ -164,4 +178,5 @@ test('searches script by regexp', (assert) => {
     addAndRemoveInlineScript(`window.${property};`);
 
     assert.strictEqual(window.hit, 'FIRED');
+    clearGlobalProps(...changingGlobals);
 });

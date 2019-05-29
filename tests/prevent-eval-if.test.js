@@ -1,32 +1,34 @@
 /* global QUnit */
-/* eslint-disable no-eval, no-console */
-import { clearProperties } from './helpers';
+/* eslint-disable no-eval, no-console, no-underscore-dangle */
+import { clearGlobalProps } from './helpers';
 
-const { test, module, testDone } = QUnit;
+const { test, module } = QUnit;
 const name = 'prevent-eval-if';
-
-module(name);
 
 const nativeEval = window.eval;
 
-const hit = () => {
-    window.hit = 'FIRED';
+const beforeEach = () => {
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
 };
+
+const afterEach = () => {
+    clearGlobalProps('hit', '__debugScriptlets');
+    window.eval = nativeEval;
+};
+
+module(name, { beforeEach, afterEach });
 
 const runScriptlet = (name, search) => {
     const params = {
         name,
         args: [search],
-        hit,
+        verbose: true,
     };
     const resultString = window.scriptlets.invoke(params);
     nativeEval(resultString);
 };
-
-testDone(() => {
-    clearProperties('hit');
-    window.eval = nativeEval;
-});
 
 test('ubo noeval-if.js alias', (assert) => {
     runScriptlet('noeval-if.js', 'test');

@@ -1,6 +1,8 @@
 /* global QUnit */
-/* eslint-disable no-eval */
-const { test, module, testDone } = QUnit;
+/* eslint-disable no-eval, no-underscore-dangle */
+import { clearGlobalProps } from './helpers';
+
+const { test, module } = QUnit;
 const name = 'abort-on-property-write';
 const PROPERTY = 'aaa';
 const CHAIN_PROPERTY = 'aaa.bbb';
@@ -8,19 +10,17 @@ const CHAIN_PROPERTY = 'aaa.bbb';
 // copy eval to prevent rollup warnings
 const evalWrap = eval;
 
-testDone(() => {
-    delete window[PROPERTY];
-    delete window.hit;
-});
+const changingProps = [PROPERTY, 'hit', '__debugScriptlets'];
 
 module(name);
 test('abort-on-property-write: ubo alias, set prop for existed prop', (assert) => {
     const params = {
         name: `ubo-${name}.js`,
         args: [PROPERTY],
-        hit: () => {
-            window.hit = 'value';
-        },
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'value';
     };
     window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
@@ -33,15 +33,17 @@ test('abort-on-property-write: ubo alias, set prop for existed prop', (assert) =
         `should throw Reference error when try to write property ${PROPERTY}`,
     );
     assert.equal(window.hit, 'value', 'Hit function was executed');
+    clearGlobalProps(...changingProps);
 });
 
 test('abort-on-property-write: abp alias, set prop for existed prop', (assert) => {
     const params = {
         name: `abp-${name}`,
         args: [PROPERTY],
-        hit: () => {
-            window.hit = 'value';
-        },
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'value';
     };
     window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
@@ -54,15 +56,17 @@ test('abort-on-property-write: abp alias, set prop for existed prop', (assert) =
         `should throw Reference error when try to write property ${PROPERTY}`,
     );
     assert.equal(window.hit, 'value', 'Hit function was executed');
+    clearGlobalProps(...changingProps);
 });
 
 test('abort-on-property-write: adg alias, set prop for existed prop', (assert) => {
     const params = {
         name,
         args: [PROPERTY],
-        hit: () => {
-            window.hit = 'value';
-        },
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'value';
     };
     window[PROPERTY] = 'value';
     const resString = window.scriptlets.invoke(params);
@@ -75,15 +79,17 @@ test('abort-on-property-write: adg alias, set prop for existed prop', (assert) =
         `should throw Reference error when try to access property ${PROPERTY}`,
     );
     assert.equal(window.hit, 'value', 'Hit function was executed');
+    clearGlobalProps(...changingProps);
 });
 
 test('abort-on-property-write dot notation', (assert) => {
     const params = {
         name,
         args: [CHAIN_PROPERTY],
-        hit: () => {
-            window.hit = 'value';
-        },
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'value';
     };
     window.aaa = {
         bbb: 'value',
@@ -98,15 +104,17 @@ test('abort-on-property-write dot notation', (assert) => {
         `should throw Reference error when try to access property ${CHAIN_PROPERTY}`,
     );
     assert.equal(window.hit, 'value', 'Hit function was executed');
+    clearGlobalProps(...changingProps);
 });
 
 test('abort-on-property-write dot notation deferred defenition', (assert) => {
     const params = {
         name,
         args: [CHAIN_PROPERTY],
-        hit: () => {
-            window.hit = 'value';
-        },
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'value';
     };
     const resString = window.scriptlets.invoke(params);
     evalWrap(resString);
@@ -119,4 +127,5 @@ test('abort-on-property-write dot notation deferred defenition', (assert) => {
         `should throw Reference error when try to access property ${CHAIN_PROPERTY}`,
     );
     assert.equal(window.hit, 'value', 'Hit function was executed');
+    clearGlobalProps(...changingProps);
 });

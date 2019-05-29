@@ -14,6 +14,7 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [prevent-window-open](#prevent-window-open)
     * [nowebrtc](#nowebrtc)
     * [prevent-bab](#prevent-bab)
+    * [log](#log)
     * [log-addEventListener](#log-addEventListener)
     * [log-setInterval](#log-setInterval)
     * [log-setTimeout](#log-setTimeout)
@@ -358,6 +359,15 @@ example.org#%#//scriptlet("prevent-bab")
 ```
 
 [scriptlet source](./src/scriptlets/prevent-bab.js)
+
+### <a id="log"></a> log
+
+A simple scriptlet which only purpose is to print arguments to console.
+This scriptlet can be helpful for debugging and troubleshooting other scriptlets.
+
+```
+example.org#%#//scriptlet("log", "arg1", "arg2")
+```
 
 ### <a id="log-addEventListener"></a> log-addEventListener
 

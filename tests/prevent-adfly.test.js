@@ -1,29 +1,31 @@
 /* global QUnit */
-/* eslint-disable no-eval */
-import { clearProperties } from './helpers';
+/* eslint-disable no-eval, no-underscore-dangle */
+import { clearGlobalProps } from './helpers';
 
-const { test, module, testDone } = QUnit;
+const { test, module } = QUnit;
 const name = 'prevent-adfly';
 
-module(name);
-
-const hit = () => {
-    window.hit = 'FIRED';
+const beforeEach = () => {
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
 };
+
+const afterEach = () => {
+    clearGlobalProps('__debugScriptlets', 'hit');
+};
+
+module(name, { beforeEach, afterEach });
 
 const runScriptlet = (name) => {
     const params = {
         name,
-        hit,
+        verbose: true,
     };
     const evalWrapper = eval;
     const resultString = window.scriptlets.invoke(params);
     evalWrapper(resultString);
 };
-
-testDone(() => {
-    clearProperties('hit');
-});
 
 test('ag and ubo aliases work', (assert) => {
     assert.expect(4);

@@ -1,7 +1,6 @@
 /**
  * This file must export all scriptlets which should be accessible
  */
-export * from './log';
 export * from './abort-on-property-read';
 export * from './abort-on-property-write';
 export * from './prevent-setTimeout';
@@ -17,6 +16,7 @@ export * from './log-addEventListener';
 export * from './log-setInterval';
 export * from './log-setTimeout';
 export * from './log-eval';
+export * from './log';
 export * from './noeval';
 export * from './prevent-eval-if';
 export * from './prevent-fab-3.2.0';

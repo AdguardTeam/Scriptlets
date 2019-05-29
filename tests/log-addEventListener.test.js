@@ -1,29 +1,30 @@
 /* global QUnit */
-/* eslint-disable no-eval, no-console */
-import { clearProperties } from './helpers';
+/* eslint-disable no-eval, no-console, no-underscore-dangle */
+import { clearGlobalProps } from './helpers';
 
 const { test, module } = QUnit;
-const name = 'log-addEventListener';
-
-module(name);
-
-const evalWrapper = eval;
-
-const runScriptlet = (event, func, hit) => {
-    const params = {
-        name,
-        hit,
-    };
-    const resultString = window.scriptlets.invoke(params);
-    evalWrapper(resultString);
-};
-
-const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
-const nativeConsole = console.log;
+const name = 'hit-addEventListener';
 
 const hit = () => {
     window.hit = 'FIRED';
 };
+
+const changingProps = ['hit', '__debugScriptlets'];
+
+const beforeEach = () => {
+    window.__debugScriptlets = hit;
+};
+
+const afterEach = () => {
+    clearGlobalProps(...changingProps);
+};
+
+module(name, { beforeEach, afterEach });
+
+const evalWrapper = eval;
+
+const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+const nativeConsole = console.log;
 
 test('ubo alias addEventListener-logger.js works', (assert) => {
     const uboAddEventListenerLog = 'uboAddEventListenerLog';
@@ -32,11 +33,14 @@ test('ubo alias addEventListener-logger.js works', (assert) => {
         window[uboAddEventListenerLog] = 'clicked';
     };
     console.log = function log(input) {
-        assert.strictEqual(input, `addEventListener("${eventName}", ${callback.toString()})`, 'console.log input should be equal');
+        if (input.indexOf('trace') > -1) {
+            return;
+        }
+        assert.strictEqual(input, `addEventListener("${eventName}", ${callback.toString()})`, 'console.hit input should be equal');
     };
     const params = {
         name: 'addEventListener-logger.js',
-        hit,
+        verbose: true,
     };
     const resString = window.scriptlets.invoke(params);
 
@@ -47,10 +51,10 @@ test('ubo alias addEventListener-logger.js works', (assert) => {
     element.click();
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
     assert.strictEqual(window[uboAddEventListenerLog], 'clicked', 'property should be applied correctly');
-    // return native functions
+    // revert native functions
     window.EventTarget.prototype.addEventListener = nativeAddEventListener;
     console.log = nativeConsole;
-    clearProperties('hit', uboAddEventListenerLog);
+    clearGlobalProps(uboAddEventListenerLog);
 });
 
 test('logs events to console', (assert) => {
@@ -60,9 +64,19 @@ test('logs events to console', (assert) => {
         window[agLogAddEventListenerProp] = 'clicked';
     };
     console.log = function log(input) {
-        assert.strictEqual(input, `addEventListener("${eventName}", ${callback.toString()})`, 'console.log input should be equal');
+        // Ignore hit messages with "trace"
+        if (input.indexOf('trace') > -1) {
+            return;
+        }
+        assert.strictEqual(input, `addEventListener("${eventName}", ${callback.toString()})`, 'console.hit input should be equal');
     };
-    runScriptlet('click', 'clicked', hit);
+
+    const params = {
+        name,
+        verbose: true,
+    };
+    const resString = window.scriptlets.invoke(params);
+    evalWrapper(resString);
 
     const element = document.createElement('div');
     element.addEventListener(eventName, callback);
@@ -70,8 +84,8 @@ test('logs events to console', (assert) => {
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
     assert.strictEqual(window[agLogAddEventListenerProp], 'clicked', 'property should change');
-    // return native functions
+    // revert native functions
     console.log = nativeConsole;
     window.EventTarget.prototype.addEventListener = nativeAddEventListener;
-    clearProperties('hit', agLogAddEventListenerProp);
+    clearGlobalProps(agLogAddEventListenerProp);
 });
