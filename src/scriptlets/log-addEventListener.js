@@ -18,7 +18,7 @@ export function logAddEventListener(source) {
 }
 
 logAddEventListener.names = [
-    'hit-addEventListener',
+    'log-addEventListener',
     'addEventListener-logger.js',
 ];
 

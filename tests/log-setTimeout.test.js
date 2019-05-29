@@ -3,7 +3,7 @@
 import { clearGlobalProps } from './helpers';
 
 const { test, module } = QUnit;
-const name = 'hit-setTimeout';
+const name = 'log-setTimeout';
 
 const nativeSetTimeout = window.setTimeout;
 const nativeConsole = console.log;

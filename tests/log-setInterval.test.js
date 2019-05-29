@@ -3,7 +3,7 @@
 import { clearGlobalProps } from './helpers';
 
 const { test, module } = QUnit;
-const name = 'hit-setInterval';
+const name = 'log-setInterval';
 
 const nativeSetInterval = window.setInterval;
 const nativeConsole = console.log;

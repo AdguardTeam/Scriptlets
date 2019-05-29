@@ -3,7 +3,7 @@
 import { clearGlobalProps } from './helpers';
 
 const { test, module } = QUnit;
-const name = 'hit-eval';
+const name = 'log-eval';
 
 const nativeEval = window.eval;
 const nativeFunction = window.Function;

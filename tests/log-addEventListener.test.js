@@ -3,7 +3,7 @@
 import { clearGlobalProps } from './helpers';
 
 const { test, module } = QUnit;
-const name = 'hit-addEventListener';
+const name = 'log-addEventListener';
 
 const hit = () => {
     window.hit = 'FIRED';
