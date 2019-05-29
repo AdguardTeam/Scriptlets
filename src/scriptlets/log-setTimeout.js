@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { createHitFunction } from '../helpers';
+import { createLogFunction } from '../helpers';
 
 /**
  * Logs setTimeout calls
@@ -7,12 +7,12 @@ import { createHitFunction } from '../helpers';
  * @param {Source} source
  */
 export function logSetTimeout(source) {
-    const hit = createHitFunction(source);
+    const log = createLogFunction(source);
     const nativeSetTimeout = window.setTimeout;
-    const log = console.log.bind(console);
+    const nativeConsole = console.log.bind(console);
     function setTimeoutWrapper(callback, timeout, ...args) {
-        hit();
-        log(`setTimeout("${callback.toString()}", ${timeout})`);
+        log();
+        nativeConsole(`setTimeout("${callback.toString()}", ${timeout})`);
         return nativeSetTimeout.apply(window, [callback, timeout, ...args]);
     }
     window.setTimeout = setTimeoutWrapper;
@@ -23,4 +23,4 @@ logSetTimeout.names = [
     'setTimeout-logger.js',
 ];
 
-logSetTimeout.injections = [createHitFunction];
+logSetTimeout.injections = [createLogFunction];

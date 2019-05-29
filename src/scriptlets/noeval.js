@@ -1,5 +1,5 @@
 /* eslint-disable no-eval, no-extra-bind */
-import { createHitFunction } from '../helpers';
+import { createLogFunction } from '../helpers';
 
 /**
  * Prevents page to use eval.
@@ -7,9 +7,9 @@ import { createHitFunction } from '../helpers';
  * @param {Source} source
  */
 export function noeval(source) {
-    const hit = createHitFunction(source);
+    const log = createLogFunction(source);
     window.eval = function evalWrapper(s) {
-        hit(`AdGuard has prevented eval:\n${s}`);
+        log(`AdGuard has prevented eval:\n${s}`);
     }.bind();
 }
 
@@ -19,4 +19,4 @@ noeval.names = [
     'noeval',
 ];
 
-noeval.injections = [createHitFunction];
+noeval.injections = [createLogFunction];

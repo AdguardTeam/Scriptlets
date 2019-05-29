@@ -1,5 +1,5 @@
 import { toRegExp } from '../helpers/string-utils';
-import { createHitFunction } from '../helpers';
+import { createLogFunction } from '../helpers';
 
 /**
  * Prevent calls `window.open` when URL match or not match with passed params
@@ -9,7 +9,7 @@ import { createHitFunction } from '../helpers';
  */
 export function preventWindowOpen(source, inverse = false, match) {
     const nativeOpen = window.open;
-    const hit = createHitFunction(source);
+    const log = createLogFunction(source);
 
     inverse = inverse
         ? !(+inverse)
@@ -23,7 +23,7 @@ export function preventWindowOpen(source, inverse = false, match) {
         if (inverse === match.test(str)) {
             return nativeOpen.apply(window, [str, ...args]);
         }
-        hit();
+        log();
     };
     window.open = openWrapper;
 }
@@ -33,4 +33,4 @@ preventWindowOpen.names = [
     'ubo-window.open-defuser.js',
 ];
 
-preventWindowOpen.injections = [toRegExp, createHitFunction];
+preventWindowOpen.injections = [toRegExp, createLogFunction];

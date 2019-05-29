@@ -1,12 +1,37 @@
-/* eslint-disable no-new-func, prefer-spread */
+/* eslint-disable no-new-func, prefer-spread, no-console */
 
 /**
- * takes source and creates hit function from source.hit
- * then binds to this function source
+ * Takes source and returns log function if verbose is true
+ * or returns hit function if verbose if false and hit function is provided
+ * hit function is used only for the test purposes
  * @param {Source} source
- * @return {Function} returns function
+ * @return {Function} returns log or hit function
  */
-export const createHitFunction = (source) => {
+export const createLogFunction = (source) => {
+    if (!source) {
+        return () => {};
+    }
+
+    if (source.verbose === 'true') {
+        return () => {
+            console.log(`${source.ruleText} trace start`);
+            if (console.trace) {
+                console.trace();
+            }
+            console.log(`${source.ruleText} trace end`);
+        };
+    }
+
+    /**
+     * Attention!!!
+     * For now source hit is used only for test purposes it can't be used for debug purposes in the
+     * real products because it can be broken because of csp policy set up by our rules or by
+     * website
+     */
+    if (!source.hit) {
+        return () => {};
+    }
+
     /**
      * Returns body of the function
      * @param {function|string} [func] function or string
@@ -62,7 +87,6 @@ export const createHitFunction = (source) => {
         return new Function(`(${str})()`);
     };
 
-    const { hit } = source;
-    const func = stringToFunc(hit);
+    const func = stringToFunc(source.hit);
     return func.bind(null, source);
 };

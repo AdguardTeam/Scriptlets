@@ -1,12 +1,12 @@
 /* eslint-disable func-names */
-import { createHitFunction, setPropertyAccess } from '../helpers';
+import { createLogFunction, setPropertyAccess } from '../helpers';
 
 /**
  * Prevents anti-adblock scripts on adfly short links.
  * @param {Source} source
  */
 export function preventAdfly(source) {
-    const hit = createHitFunction(source);
+    const log = createLogFunction(source);
     const isDigit = data => /^\d$/.test(data);
     const handler = function (encodedURL) {
         let evenChars = '';
@@ -64,7 +64,7 @@ export function preventAdfly(source) {
     });
 
     if (result) {
-        hit();
+        log();
     } else {
         window.console.error('Failed to set up prevent-adfly scriptlet');
     }
@@ -75,4 +75,4 @@ preventAdfly.names = [
     'adfly-defuser.js',
 ];
 
-preventAdfly.injections = [setPropertyAccess, createHitFunction];
+preventAdfly.injections = [setPropertyAccess, createLogFunction];
