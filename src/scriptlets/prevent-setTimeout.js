@@ -1,5 +1,5 @@
 import { toRegExp } from '../helpers/string-utils';
-import { hit, log } from '../helpers';
+import { hit } from '../helpers';
 
 /**
  * Prevent calls to setTimeout for specified matching in passed callback and delay
@@ -18,7 +18,6 @@ export function preventSetTimeout(source, match, delay) {
     const timeoutWrapper = (cb, d, ...args) => {
         if ((!delay || d === delay) && match.test(cb.toString())) {
             hit(source);
-            log(source);
             return nativeTimeout(() => { }, d);
         }
         return nativeTimeout.apply(window, [cb, d, ...args]);
@@ -31,4 +30,4 @@ preventSetTimeout.names = [
     'ubo-setTimeout-defuser.js',
 ];
 
-preventSetTimeout.injections = [toRegExp, hit, log];
+preventSetTimeout.injections = [toRegExp, hit];

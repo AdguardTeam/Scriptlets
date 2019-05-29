@@ -1,5 +1,5 @@
 /* eslint-disable no-console, func-names, no-multi-assign */
-import { hit, log } from '../helpers';
+import { hit } from '../helpers';
 
 /**
  * Sets static properties PopAds and popns.
@@ -13,14 +13,12 @@ export function setPopadsDummy(source) {
         PopAds: {
             get: () => {
                 hit(source);
-                log(source);
                 return {};
             },
         },
         popns: {
             get: () => {
                 hit(source);
-                log(source);
                 return {};
             },
         },
@@ -32,4 +30,4 @@ setPopadsDummy.names = [
     'popads-dummy.js',
 ];
 
-setPopadsDummy.injections = [hit, log];
+setPopadsDummy.injections = [hit];

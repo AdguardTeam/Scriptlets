@@ -1,5 +1,5 @@
 import { toRegExp } from '../helpers/string-utils';
-import { hit, log } from '../helpers';
+import { hit } from '../helpers';
 
 /**
  * Prevent calls to setInterval for specified matching in passed callback and delay
@@ -18,7 +18,6 @@ export function preventSetInterval(source, match, interval) {
     const intervalWrapper = (cb, d, ...args) => {
         if ((!interval || d === interval) && match.test(cb.toString())) {
             hit(source);
-            log(source);
             return nativeInterval(() => { }, d);
         }
         return nativeInterval.apply(window, [cb, d, ...args]);
@@ -31,4 +30,4 @@ preventSetInterval.names = [
     'ubo-setInterval-defuser.js',
 ];
 
-preventSetInterval.injections = [toRegExp, hit, log];
+preventSetInterval.injections = [toRegExp, hit];

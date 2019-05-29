@@ -1,5 +1,5 @@
 /* eslint-disable no-eval, no-extra-bind */
-import { hit, log } from '../helpers';
+import { hit } from '../helpers';
 
 /**
  * Prevents page to use eval.
@@ -8,8 +8,7 @@ import { hit, log } from '../helpers';
  */
 export function noeval(source) {
     window.eval = function evalWrapper(s) {
-        hit(source);
-        log(source, `AdGuard has prevented eval:\n${s}`);
+        hit(source, `AdGuard has prevented eval:\n${s}`);
     }.bind();
 }
 
@@ -19,4 +18,4 @@ noeval.names = [
     'noeval',
 ];
 
-noeval.injections = [hit, log];
+noeval.injections = [hit];

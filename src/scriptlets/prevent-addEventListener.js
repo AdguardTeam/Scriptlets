@@ -1,5 +1,5 @@
 import { toRegExp } from '../helpers/string-utils';
-import { hit, log } from '../helpers';
+import { hit } from '../helpers';
 
 /**
  * Prevents adding event listeners
@@ -16,7 +16,6 @@ export function preventAddEventListener(source, event, funcStr) {
     function addEventListenerWrapper(eventName, callback, ...args) {
         if (event.test(eventName.toString()) && funcStr.test(callback.toString())) {
             hit(source);
-            log(source);
             return undefined;
         }
         return nativeAddEventListener.apply(this, [eventName, callback, ...args]);
@@ -30,4 +29,4 @@ preventAddEventListener.names = [
     'ubo-addEventListener-defuser.js',
 ];
 
-preventAddEventListener.injections = [toRegExp, hit, log];
+preventAddEventListener.injections = [toRegExp, hit];

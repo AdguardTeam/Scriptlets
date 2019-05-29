@@ -1,6 +1,6 @@
 /* eslint-disable no-eval, no-extra-bind, func-names */
 
-import { toRegExp, hit, log } from '../helpers';
+import { toRegExp, hit } from '../helpers';
 
 /**
  * Prevents page to use eval matching payload
@@ -15,8 +15,7 @@ export function preventEvalIf(source, search) {
         if (!search.test(payload.toString())) {
             return nativeEval.call(window, payload);
         }
-        hit(source);
-        log(source, payload);
+        hit(source, payload);
         return undefined;
     }.bind(window);
 }
@@ -26,4 +25,4 @@ preventEvalIf.names = [
     'prevent-eval-if',
 ];
 
-preventEvalIf.injections = [toRegExp, hit, log];
+preventEvalIf.injections = [toRegExp, hit];

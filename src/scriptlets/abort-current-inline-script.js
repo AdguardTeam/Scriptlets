@@ -3,7 +3,7 @@ import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { toRegExp } from '../helpers/string-utils';
-import { hit, log, createOnErrorHandler } from '../helpers';
+import { hit, createOnErrorHandler } from '../helpers';
 
 export function abortCurrentInlineScript(source, property, search = null) {
     const regex = search ? toRegExp(search) : null;
@@ -26,7 +26,6 @@ export function abortCurrentInlineScript(source, property, search = null) {
             && scriptEl !== ourScript
             && (!regex || regex.test(scriptEl.textContent))) {
             hit(source);
-            log(source);
             throw new ReferenceError(rid);
         }
     };
@@ -81,5 +80,4 @@ abortCurrentInlineScript.injections = [
     toRegExp,
     createOnErrorHandler,
     hit,
-    log,
 ];

@@ -1,5 +1,5 @@
 import { toRegExp } from '../helpers/string-utils';
-import { hit, log } from '../helpers';
+import { hit } from '../helpers';
 
 /**
  * Prevent calls `window.open` when URL match or not match with passed params
@@ -23,7 +23,6 @@ export function preventWindowOpen(source, inverse = false, match) {
             return nativeOpen.apply(window, [str, ...args]);
         }
         hit(source);
-        log(source);
     };
     window.open = openWrapper;
 }
@@ -33,4 +32,4 @@ preventWindowOpen.names = [
     'ubo-window.open-defuser.js',
 ];
 
-preventWindowOpen.injections = [toRegExp, hit, log];
+preventWindowOpen.injections = [toRegExp, hit];
