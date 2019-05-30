@@ -525,6 +525,7 @@ example.org#%#//scriptlet("prevent-adfly")
 |  |  | hide-if-contains |
 |  |  | hide-if-shadow-contains |
 | [log-eval](#log-eval) |  | |
+| [log](#log) |  | |
 
 
 
