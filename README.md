@@ -525,6 +525,7 @@ example.org#%#//scriptlet("prevent-adfly")
 |  |  | hide-if-contains |
 |  |  | hide-if-shadow-contains |
 | [log-eval](#log-eval) |  | |
+| [log](#log) |  | log |
 
 
 
@@ -572,7 +573,7 @@ Creates a global variable `scriptlets`.
 ```javascript
 /**
 * Returns scriptlet code
-* 
+*
 * @param {Source} source
 * @returns {string}
 */
