@@ -67,8 +67,8 @@ export function wrapInNonameFunc(code) {
  * @param {string} name
  */
 export function getScriptletByName(name) {
-    return Object
-        .values(scriptletList)
+    const scriptlets = Object.keys(scriptletList).map(key => scriptletList[key]);
+    return scriptlets
         .find(s => s.names && s.names.includes(name));
 }
 
