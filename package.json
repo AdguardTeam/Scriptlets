@@ -1,6 +1,6 @@
 {
     "name": "scriptlets",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "scripts": {
         "build": "rollup -c",
         "watch": "rollup -c -w",
