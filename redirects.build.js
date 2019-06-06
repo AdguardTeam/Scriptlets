@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import yaml from 'js-yaml';
+import { EOL } from 'os';
 
 import * as scriptletList from './src/scriptlets';
 
@@ -61,7 +62,9 @@ const scriptletRedirects = scriptletsToAdd.map((data) => {
 const mergedRedirects = [...staticRedirects, ...scriptletRedirects];
 
 try {
-    const yamlRedirects = yaml.safeDump(mergedRedirects);
+    let yamlRedirects = yaml.safeDump(mergedRedirects);
+    // add empty line before titles
+    yamlRedirects = yamlRedirects.split('- title:').join(`${EOL}- title:`).trimLeft();
     fs.writeFileSync(RESULT_PATH, yamlRedirects, 'utf8');
 } catch (e) {
     // eslint-disable-next-line no-console
