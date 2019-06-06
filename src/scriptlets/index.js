@@ -23,3 +23,4 @@ export * from './prevent-fab-3.2.0';
 export * from './set-popads-dummy';
 export * from './prevent-popads-net';
 export * from './prevent-adfly';
+export * from './debug-on-property-read';
