@@ -1,6 +1,8 @@
 - title: log-addEventListener
-  comment: used to log addEventListeners
+  comment: Logs add event listener calls
+
 - title: log-setInterval
-  comment: |-
-    used to log setIntervals
-     even multiline comments
+  comment: Logs setInterval calls
+
+- title: prevent-fab-3.2.0
+  comment: Fuckadblock 3.2.0 defuser

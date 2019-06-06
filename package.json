@@ -2,7 +2,7 @@
     "name": "scriptlets",
     "version": "1.0.4",
     "scripts": {
-        "build": "rollup -c",
+        "build": "rollup -c && babel-node redirects.build.js",
         "watch": "rollup -c -w",
         "corelibs": "rollup -c --environment CLEAN && babel-node corelibs.build.js",
         "test": "rollup -c --environment UI_TEST && node tests/index.js",
