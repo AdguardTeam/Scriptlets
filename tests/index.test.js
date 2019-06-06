@@ -22,3 +22,4 @@ import * as setPopadsDummy from './set-popads-dummy.test';
 import * as preventPopadsNet from './prevent-popads-net.test';
 import * as preventAdfly from './prevent-adfly.test';
 import * as debugOnPropertyRead from './debug-on-property-read.test';
+import * as debugOnPropertyWrite from './debug-on-property-write.test';

@@ -1168,6 +1168,61 @@
     debugOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
     /**
+     * Call debugger on property writing
+     *
+     * @param {Source} source
+     * @param {string} property propery name
+     */
+
+    function debugOnPropertyWrite(source, property) {
+      if (!property) {
+        return;
+      }
+
+      var rid = randomId();
+
+      var abort = function abort() {
+        hit(source); // eslint-disable-next-line no-debugger
+
+        debugger;
+      };
+
+      var setChainPropAccess = function setChainPropAccess(owner, property) {
+        var chainInfo = getPropertyInChain(owner, property);
+        var base = chainInfo.base;
+        var prop = chainInfo.prop,
+            chain = chainInfo.chain;
+
+        if (chain) {
+          var setter = function setter(a) {
+            base = a;
+
+            if (a instanceof Object) {
+              setChainPropAccess(a, chain);
+            }
+          };
+
+          Object.defineProperty(owner, prop, {
+            get: function get() {
+              return base;
+            },
+            set: setter
+          });
+          return;
+        }
+
+        setPropertyAccess(base, prop, {
+          set: abort
+        });
+      };
+
+      setChainPropAccess(window, property);
+      window.onerror = createOnErrorHandler(rid).bind();
+    }
+    debugOnPropertyWrite.names = ['debug-on-property-write'];
+    debugOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
+
+    /**
      * This file must export all scriptlets which should be accessible
      */
 
@@ -1194,7 +1249,8 @@
         setPopadsDummy: setPopadsDummy,
         preventPopadsNet: preventPopadsNet,
         preventAdfly: preventAdfly,
-        debugOnPropertyRead: debugOnPropertyRead
+        debugOnPropertyRead: debugOnPropertyRead,
+        debugOnPropertyWrite: debugOnPropertyWrite
     });
 
     /**
