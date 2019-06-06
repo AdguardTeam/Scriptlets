@@ -1,0 +1,12 @@
+- title: 1x1-transparent.gif
+  comment: smallest gif
+  contentType: image/gif;base64
+  content: R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
+- title: noopframe
+  contentType: text/html
+  content: |-
+    <!DOCTYPE html>
+    <html>
+        <head><title></title></head>
+        <body></body>
+    </html>

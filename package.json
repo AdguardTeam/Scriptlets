@@ -35,7 +35,8 @@
         "rollup-plugin-cleanup": "^3.1.1",
         "rollup-plugin-commonjs": "^9.3.4",
         "rollup-plugin-node-resolve": "^4.0.0",
-        "sinon": "^7.3.1"
+        "sinon": "^7.3.1",
+        "js-yaml": "^3.13.1"
     },
     "dependencies": {
         "@babel/runtime": "^7.3.1"
