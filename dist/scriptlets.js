@@ -1222,6 +1222,76 @@
     debugOnPropertyWrite.names = ['debug-on-property-write'];
     debugOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
+    /* eslint-disable no-new-func */
+    function debugCurrentInlineScript(source, property) {
+      var search = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+      var regex = search ? toRegExp(search) : null;
+      var rid = randomId();
+
+      var getCurrentScript = function getCurrentScript() {
+        if (!document.currentScript) {
+          var scripts = document.getElementsByTagName('script');
+          return scripts[scripts.length - 1];
+        }
+
+        return document.currentScript;
+      };
+
+      var ourScript = getCurrentScript();
+
+      var abort = function abort() {
+        var scriptEl = getCurrentScript();
+
+        if (scriptEl instanceof HTMLScriptElement && scriptEl.textContent.length > 0 && scriptEl !== ourScript && (!regex || regex.test(scriptEl.textContent))) {
+          hit(source); // eslint-disable-next-line no-debugger
+
+          debugger;
+        }
+      };
+
+      var setChainPropAccess = function setChainPropAccess(owner, property) {
+        var chainInfo = getPropertyInChain(owner, property);
+        var base = chainInfo.base;
+        var prop = chainInfo.prop,
+            chain = chainInfo.chain;
+
+        if (chain) {
+          var setter = function setter(a) {
+            base = a;
+
+            if (a instanceof Object) {
+              setChainPropAccess(a, chain);
+            }
+          };
+
+          Object.defineProperty(owner, prop, {
+            get: function get() {
+              return base;
+            },
+            set: setter
+          });
+          return;
+        }
+
+        var currentValue = base[prop];
+        setPropertyAccess(base, prop, {
+          set: function set(value) {
+            abort();
+            currentValue = value;
+          },
+          get: function get() {
+            abort();
+            return currentValue;
+          }
+        });
+      };
+
+      setChainPropAccess(window, property);
+      window.onerror = createOnErrorHandler(rid).bind();
+    }
+    debugCurrentInlineScript.names = ['debug-current-inline-script'];
+    debugCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -1250,7 +1320,8 @@
         preventPopadsNet: preventPopadsNet,
         preventAdfly: preventAdfly,
         debugOnPropertyRead: debugOnPropertyRead,
-        debugOnPropertyWrite: debugOnPropertyWrite
+        debugOnPropertyWrite: debugOnPropertyWrite,
+        debugCurrentInlineScript: debugCurrentInlineScript
     });
 
     /**
