@@ -26,6 +26,9 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [set-popads-dummy](#set-popads-dummy)
     * [prevent-popads-net](#prevent-popads-net)
     * [prevent-adfly](#prevent-adfly)
+    * [debug-on-property-read](#debug-on-property-read)
+    * [debug-on-property-write](#debug-on-property-write)
+    * [debug-current-inline-script](#debug-current-inline-script)
 * [Scriptlets compatibility table](#compatibility)
 * [How to build](#how-to-build)
 
@@ -487,6 +490,38 @@ example.org#%#//scriptlet("prevent-adfly")
 
 [scriptlet source](./src/scriptlets/prevent-adfly.js)
 
+### <a id="debug-current-inline-script"></a> debug-current-inline-script
+
+Call debugger when script should be aborted
+
+**Syntax**
+
+See [abort-current-inline-script](#abort-current-inline-script)
+
+[scriptlet source](./src/scriptlets/debug-current-inline-script.js)
+
+
+### <a id="debug-on-property-read"></a> debug-on-property-read
+
+Called debugger when should be thrown an Error during property reading
+
+**Syntax**
+
+See [abort-on-property-read](#abort-on-property-read)
+
+[scriptlet source](./src/scriptlets/debug-on-property-read.js)
+
+
+### <a id="debug-on-property-write"></a> debug-on-property-write
+
+Called debugger when should be thrown an Error during property writing
+
+**Syntax**
+
+See [abort-on-property-write](#abort-on-property-write)
+
+[scriptlet source](./src/scriptlets/debug-on-property-write.js)
+
 ## <a id="compatibility"></a> Scriptlets compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -526,6 +561,9 @@ example.org#%#//scriptlet("prevent-adfly")
 |  |  | hide-if-shadow-contains |
 | [log-eval](#log-eval) |  | |
 | [log](#log) |  | log |
+| [debug-current-inline-script](#debug-current-inline-script) |  |  |
+| [debug-on-property-read](#debug-on-property-read) |  |  |
+| [debug-on-property-write](#debug-on-property-write) |  |  |
 
 
 
