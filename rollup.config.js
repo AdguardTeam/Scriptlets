@@ -24,10 +24,12 @@ const footer = `
 `;
 
 const bundleBuild = {
-    input: 'src/index.js',
+    input: {
+        scriptlets: 'src/index.js',
+    },
     output: {
         dir: 'dist',
-        file: 'scriptlets.js',
+        entryFileNames: '[name].js',
         format: 'iife',
         strict: false,
         sourcemap: true,
@@ -46,11 +48,34 @@ const bundleBuild = {
     ],
 };
 
+const redirectsBuild = {
+    input: 'src/redirects/redirects.js',
+    output: {
+        dir: 'dist',
+        name: 'redirects',
+        format: 'iife',
+        strict: false,
+        sourcemap: true,
+    },
+    plugins: [
+        resolve(),
+        commonjs({
+            include: 'node_modules/**',
+        }),
+        babel({
+            exclude: 'node_modules/**',
+            runtimeHelpers: true,
+        }),
+    ],
+};
+
 const testBuild = {
-    input: 'tests/index.test.js',
+    input: {
+        tests: 'tests/index.test.js',
+    },
     output: {
         dir: 'tests/dist',
-        file: 'tests.js',
+        entryFileNames: '[name].js',
         format: 'iife',
         strict: false,
         sourcemap: true,
@@ -75,6 +100,6 @@ if (isCleanBuild) {
 const isTest = process.env.UI_TEST === 'true';
 const resultBuilds = isTest
     ? [bundleBuild, testBuild]
-    : bundleBuild;
+    : [bundleBuild, redirectsBuild];
 
 module.exports = resultBuilds;
