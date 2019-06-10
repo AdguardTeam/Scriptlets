@@ -52,7 +52,7 @@ const redirectsBuild = {
     input: 'src/redirects/redirects.js',
     output: {
         dir: 'dist',
-        name: 'redirects',
+        name: 'Redirects',
         format: 'iife',
         strict: false,
         sourcemap: true,

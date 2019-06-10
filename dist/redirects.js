@@ -1,4 +1,4 @@
-var redirects = (function () {
+var Redirects = (function () {
   function _defineProperty(obj, key, value) {
     if (key in obj) {
       Object.defineProperty(obj, key, {
@@ -3881,6 +3881,7 @@ var redirects = (function () {
           return objectSpread({}, acc, defineProperty({}, redirect.title, redirect));
         }, {});
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.log("Was unable to load YAML into JS due to: ".concat(e.message));
         throw e;
       }
