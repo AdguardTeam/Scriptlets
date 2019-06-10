@@ -492,33 +492,47 @@ example.org#%#//scriptlet("prevent-adfly")
 
 ### <a id="debug-current-inline-script"></a> debug-current-inline-script
 
-Call debugger when script should be aborted
+This scriptlet is basically the same as [abort-current-inline-script](#abort-current-inline-script), but instead of aborting it starts the debugger.
 
 **Syntax**
 
-See [abort-current-inline-script](#abort-current-inline-script)
+```
+! Aborts script when it tries to access `window.alert`
+example.org#%#//scriptlet("debug-current-inline-script", "alert")
+```
+
+**It is not supposed to be used in production filter lists!**
 
 [scriptlet source](./src/scriptlets/debug-current-inline-script.js)
 
 
 ### <a id="debug-on-property-read"></a> debug-on-property-read
 
-Called debugger when should be thrown an Error during property reading
+This scriptlet is basically the same as [abort-on-property-read](#abort-on-property-read), but instead of aborting it starts the debugger.
 
 **Syntax**
+```
+! Aborts script when it tries to access `window.alert`
+example.org#%#//scriptlet("debug-on-property-read", "alert")
+```
 
-See [abort-on-property-read](#abort-on-property-read)
+**It is not supposed to be used in production filter lists!**
 
 [scriptlet source](./src/scriptlets/debug-on-property-read.js)
 
 
 ### <a id="debug-on-property-write"></a> debug-on-property-write
 
-Called debugger when should be thrown an Error during property writing
+This scriptlet is basically the same as [abort-on-property-write](#abort-on-property-write), but instead of aborting it starts the debugger.
 
 **Syntax**
 
-See [abort-on-property-write](#abort-on-property-write)
+```
+! Aborts script when it tries to write in property `window.test`
+example.org#%#//scriptlet("debug-on-property-write", "test")
+```
+
+**It is not supposed to be used in production filter lists!**
 
 [scriptlet source](./src/scriptlets/debug-on-property-write.js)
 
