@@ -41,7 +41,6 @@ const scriptletsObject = Object
     .map((s) => {
         // const name = s.names[0];
         const [name, ...aliases] = s.names;
-        console.log(name, aliases);
         const source = { name };
         const scriptlet = global.scriptlets.invoke(source);
         return { name, scriptlet, aliases: [...aliases] };
