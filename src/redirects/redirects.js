@@ -1,7 +1,7 @@
 import jsYaml from 'js-yaml';
 
 /**
- * RedirectSource
+ * Redirect - object used to redirect some requests
  * e.g.
  * {
  *      title: 1x1-transparent.gif
@@ -9,19 +9,18 @@ import jsYaml from 'js-yaml';
  *      contentType: image/gif;base64
  *      content: R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
  * }
- * @typedef {Object} RedirectSource
+ * @typedef {Object} Redirect
  * @property {string} title
  * @property {string} comment
  * @property {string} content
  * @property {string} contentType
  */
 
-
 class Redirects {
     /**
      * Converts rawYaml into JS object with sources titles used as keys
      * @param rawYaml
-     * @returns {Object<RedirectSource>} - return object with titles in the keys and RedirectSources
+     * @returns {Object<Redirect>} - return object with titles in the keys and RedirectSources
      * in the values
      */
     constructor(rawYaml) {
@@ -43,37 +42,59 @@ class Redirects {
     /**
      * Returns redirect source object
      * @param {string} title
-     * @return {RedirectSource}
+     * @return {Redirect}
      */
-    getSource(title) {
-        return this.redirects[title];
+    getRedirect(title) {
+        if (Object.prototype.hasOwnProperty.call(this.redirects, title)) {
+            return this.redirects[title];
+        }
+        // look title among aliases
+        return Object.keys(this.redirects).find((redirect) => {
+            const { aliases } = redirect;
+            if (!aliases) {
+                return false;
+            }
+            return aliases.includes(title);
+        });
     }
 
     /**
      * Returns content of source object by title
      * @param {string} title
-     * @returns {string}
+     * @returns {string|null}
      */
     getContent(title) {
-        return this.redirects[title].content;
+        const redirect = this.getRedirect(title);
+        if (redirect) {
+            return redirect.content;
+        }
+        return null;
     }
 
     /**
      * Returns contentType of source object by title
      * @param {string} title
-     * @returns {string}
+     * @returns {string|null}
      */
     getContentType(title) {
-        return this.redirects[title].contentType;
+        const redirect = this.getRedirect(title);
+        if (redirect) {
+            return redirect.contentType;
+        }
+        return null;
     }
 
     /**
      * Returns comment of source object by title
      * @param {string} title
-     * @returns {string}
+     * @returns {string|null}µ
      */
-    getCommentType(title) {
-        return this.redirects[title].comment;
+    getComment(title) {
+        const redirect = this.getRedirect(title);
+        if (redirect) {
+            return redirect.contentType;
+        }
+        return null;
     }
 }
 

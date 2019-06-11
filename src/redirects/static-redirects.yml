@@ -1,5 +1,6 @@
 # use "|-" in order to keep indentation
 # use ">" if property contains long string
+# add ";base64" into contentType if your source already in base64
 
 - title: 1x1-transparent.gif
   comment: http://probablyprogramming.com/2009/03/15/the-tiniest-gif-ever

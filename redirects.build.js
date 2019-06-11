@@ -39,10 +39,12 @@ const scriptletsObject = Object
         return scriptletsToAdd.some(scriptletToAdd => scriptletToAdd.title === name);
     })
     .map((s) => {
-        const name = s.names[0];
+        // const name = s.names[0];
+        const [name, ...aliases] = s.names;
+        console.log(name, aliases);
         const source = { name };
         const scriptlet = global.scriptlets.invoke(source);
-        return { name, scriptlet };
+        return { name, scriptlet, aliases: [...aliases] };
     });
 
 const scriptletRedirects = scriptletsToAdd.map((data) => {
@@ -52,6 +54,7 @@ const scriptletRedirects = scriptletsToAdd.map((data) => {
     if (complement) {
         return {
             ...data,
+            aliases: complement.aliases,
             contentType: 'application/javascript',
             content: complement.scriptlet,
         };
