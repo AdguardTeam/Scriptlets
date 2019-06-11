@@ -3916,7 +3916,7 @@ var Redirects = (function () {
       value: function getRedirect(title) {
         if (Object.prototype.hasOwnProperty.call(this.redirects, title)) {
           return this.redirects[title];
-        } // look title inside aliases
+        } // look title among aliases
 
 
         return Object.keys(this.redirects).find(function (redirect) {
@@ -3970,8 +3970,8 @@ var Redirects = (function () {
        */
 
     }, {
-      key: "getCommentType",
-      value: function getCommentType(title) {
+      key: "getComment",
+      value: function getComment(title) {
         var redirect = this.getRedirect(title);
 
         if (redirect) {
