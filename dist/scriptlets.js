@@ -1112,8 +1112,11 @@
     preventAdfly.injections = [setPropertyAccess, hit];
 
     /**
+     * Removes attributes from DOM nodes. Will run only once after page load.
      *
      * @param {Source} source
+     * @param {string} attrs attributes names separated by `|` which should be removed
+     * @param {string} selector CSS selector specifies nodes from which attributes should be removed
      */
 
     function removeAttr(source, attrs, selector) {
@@ -1151,6 +1154,31 @@
     removeAttr.injections = [hit];
 
     /**
+     * Prevents opening new tabs and windows if there is `target` attribute in element
+     *
+     * @param {Source} source
+     */
+
+    function disableNewtabLinks(source) {
+      document.addEventListener('click', function (ev) {
+        var target = ev.target;
+
+        while (target !== null) {
+          if (target.localName === 'a' && target.hasAttribute('target')) {
+            ev.stopPropagation();
+            ev.preventDefault();
+            hit(source);
+            break;
+          }
+
+          target = target.parentNode;
+        }
+      });
+    }
+    disableNewtabLinks.names = ['disable-newtab-links', 'ubo-disable-newtab-links.js'];
+    disableNewtabLinks.injections = [hit];
+
+    /**
      * This file must export all scriptlets which should be accessible
      */
 
@@ -1177,7 +1205,8 @@
         setPopadsDummy: setPopadsDummy,
         preventPopadsNet: preventPopadsNet,
         preventAdfly: preventAdfly,
-        removeAttr: removeAttr
+        removeAttr: removeAttr,
+        disableNewtabLinks: disableNewtabLinks
     });
 
     /**

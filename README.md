@@ -27,6 +27,7 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [prevent-popads-net](#prevent-popads-net)
     * [prevent-adfly](#prevent-adfly)
     * [remove-attr](#remove-attr)
+    * [disable-newtab-links](#disable-newtab-links)
 * [Scriptlets compatibility table](#compatibility)
 * [How to build](#how-to-build)
 
@@ -532,8 +533,19 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
     </div>
     ```
 
-
 [scriptlet source](./src/scriptlets/remove-attr.js)
+
+### <a id="disable-newtab-links"></a> disable-newtab-links
+
+Prevents opening new tabs and windows if there is `target` attribute in element
+
+**Syntax**
+```
+example.org#%#//scriptlet("disable-newtab-links")
+```
+
+[scriptlet source](./src/scriptlets/disable-newtab-links.js)
+
 
 ## <a id="compatibility"></a> Scriptlets compatibility table
 
@@ -575,6 +587,7 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
 | [log-eval](#log-eval) |  | |
 | [log](#log) |  | log |
 | [remove-attr](#remove-attr) | remove-attr.js | |
+| [disable-newtab-links](#disable-newtab-links) | disable-newtab-links.js | |
 
 
 

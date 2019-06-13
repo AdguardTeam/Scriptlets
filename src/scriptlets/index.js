@@ -24,3 +24,4 @@ export * from './set-popads-dummy';
 export * from './prevent-popads-net';
 export * from './prevent-adfly';
 export * from './remove-attr';
+export * from './disable-newtab-links';

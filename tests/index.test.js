@@ -22,3 +22,4 @@ import * as setPopadsDummy from './set-popads-dummy.test';
 import * as preventPopadsNet from './prevent-popads-net.test';
 import * as preventAdfly from './prevent-adfly.test';
 import * as removeAttr from './remove-attr.test';
+import * as disableNewtabLinks from './disable-newtab-links.test';
