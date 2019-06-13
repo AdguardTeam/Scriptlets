@@ -1291,6 +1291,8 @@
     }
     debugCurrentInlineScript.names = ['debug-current-inline-script'];
     debugCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit];
+
+    /**
      * Removes attributes from DOM nodes. Will run only once after page load.
      *
      * @param {Source} source
@@ -1315,12 +1317,17 @@
         }
 
         var nodes = document.querySelectorAll(selector);
+        var removed = false;
         Array.from(nodes).forEach(function (node) {
           attrs.forEach(function (attr) {
             node.removeAttribute(attr);
+            removed = true;
           });
         });
-        hit(source);
+
+        if (removed) {
+          hit(source);
+        }
       };
 
       if (document.readyState === 'loading') {
@@ -1386,7 +1393,7 @@
         preventAdfly: preventAdfly,
         debugOnPropertyRead: debugOnPropertyRead,
         debugOnPropertyWrite: debugOnPropertyWrite,
-        debugCurrentInlineScript: debugCurrentInlineScript
+        debugCurrentInlineScript: debugCurrentInlineScript,
         removeAttr: removeAttr,
         disableNewtabLinks: disableNewtabLinks
     });

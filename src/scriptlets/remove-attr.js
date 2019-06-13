@@ -20,12 +20,16 @@ export function removeAttr(source, attrs, selector) {
         }
 
         const nodes = document.querySelectorAll(selector);
+        let removed = false;
         Array.from(nodes).forEach((node) => {
             attrs.forEach((attr) => {
                 node.removeAttribute(attr);
+                removed = true;
             });
         });
-        hit(source);
+        if (removed) {
+            hit(source);
+        }
     };
 
     if (document.readyState === 'loading') {
