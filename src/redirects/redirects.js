@@ -49,7 +49,7 @@ class Redirects {
             return this.redirects[title];
         }
         // look title among aliases
-        return Object.keys(this.redirects).find((redirect) => {
+        return Object.values(this.redirects).find((redirect) => {
             const { aliases } = redirect;
             if (!aliases) {
                 return false;
