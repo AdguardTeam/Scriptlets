@@ -26,6 +26,9 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [set-popads-dummy](#set-popads-dummy)
     * [prevent-popads-net](#prevent-popads-net)
     * [prevent-adfly](#prevent-adfly)
+    * [debug-on-property-read](#debug-on-property-read)
+    * [debug-on-property-write](#debug-on-property-write)
+    * [debug-current-inline-script](#debug-current-inline-script)
 * [Scriptlets compatibility table](#compatibility)
 * [How to build](#how-to-build)
 
@@ -487,6 +490,52 @@ example.org#%#//scriptlet("prevent-adfly")
 
 [scriptlet source](./src/scriptlets/prevent-adfly.js)
 
+### <a id="debug-current-inline-script"></a> debug-current-inline-script
+
+This scriptlet is basically the same as [abort-current-inline-script](#abort-current-inline-script), but instead of aborting it starts the debugger.
+
+**Syntax**
+
+```
+! Aborts script when it tries to access `window.alert`
+example.org#%#//scriptlet("debug-current-inline-script", "alert")
+```
+
+**It is not supposed to be used in production filter lists!**
+
+[scriptlet source](./src/scriptlets/debug-current-inline-script.js)
+
+
+### <a id="debug-on-property-read"></a> debug-on-property-read
+
+This scriptlet is basically the same as [abort-on-property-read](#abort-on-property-read), but instead of aborting it starts the debugger.
+
+**Syntax**
+```
+! Aborts script when it tries to access `window.alert`
+example.org#%#//scriptlet("debug-on-property-read", "alert")
+```
+
+**It is not supposed to be used in production filter lists!**
+
+[scriptlet source](./src/scriptlets/debug-on-property-read.js)
+
+
+### <a id="debug-on-property-write"></a> debug-on-property-write
+
+This scriptlet is basically the same as [abort-on-property-write](#abort-on-property-write), but instead of aborting it starts the debugger.
+
+**Syntax**
+
+```
+! Aborts script when it tries to write in property `window.test`
+example.org#%#//scriptlet("debug-on-property-write", "test")
+```
+
+**It is not supposed to be used in production filter lists!**
+
+[scriptlet source](./src/scriptlets/debug-on-property-write.js)
+
 ## <a id="compatibility"></a> Scriptlets compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -526,6 +575,9 @@ example.org#%#//scriptlet("prevent-adfly")
 |  |  | hide-if-shadow-contains |
 | [log-eval](#log-eval) |  | |
 | [log](#log) |  | log |
+| [debug-current-inline-script](#debug-current-inline-script) |  |  |
+| [debug-on-property-read](#debug-on-property-read) |  |  |
+| [debug-on-property-write](#debug-on-property-write) |  |  |
 
 
 
