@@ -3919,7 +3919,7 @@ var Redirects = (function () {
         } // look title among aliases
 
 
-        return Object.keys(this.redirects).find(function (redirect) {
+        return Object.values(this.redirects).find(function (redirect) {
           var aliases = redirect.aliases;
 
           if (!aliases) {
