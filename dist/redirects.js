@@ -3929,57 +3929,6 @@ var Redirects = (function () {
           return aliases.includes(title);
         });
       }
-      /**
-       * Returns content of source object by title
-       * @param {string} title
-       * @returns {string|null}
-       */
-
-    }, {
-      key: "getContent",
-      value: function getContent(title) {
-        var redirect = this.getRedirect(title);
-
-        if (redirect) {
-          return redirect.content;
-        }
-
-        return null;
-      }
-      /**
-       * Returns contentType of source object by title
-       * @param {string} title
-       * @returns {string|null}
-       */
-
-    }, {
-      key: "getContentType",
-      value: function getContentType(title) {
-        var redirect = this.getRedirect(title);
-
-        if (redirect) {
-          return redirect.contentType;
-        }
-
-        return null;
-      }
-      /**
-       * Returns comment of source object by title
-       * @param {string} title
-       * @returns {string|null}µ
-       */
-
-    }, {
-      key: "getComment",
-      value: function getComment(title) {
-        var redirect = this.getRedirect(title);
-
-        if (redirect) {
-          return redirect.contentType;
-        }
-
-        return null;
-      }
     }]);
 
     return Redirects;

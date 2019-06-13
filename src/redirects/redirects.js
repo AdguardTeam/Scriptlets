@@ -57,45 +57,6 @@ class Redirects {
             return aliases.includes(title);
         });
     }
-
-    /**
-     * Returns content of source object by title
-     * @param {string} title
-     * @returns {string|null}
-     */
-    getContent(title) {
-        const redirect = this.getRedirect(title);
-        if (redirect) {
-            return redirect.content;
-        }
-        return null;
-    }
-
-    /**
-     * Returns contentType of source object by title
-     * @param {string} title
-     * @returns {string|null}
-     */
-    getContentType(title) {
-        const redirect = this.getRedirect(title);
-        if (redirect) {
-            return redirect.contentType;
-        }
-        return null;
-    }
-
-    /**
-     * Returns comment of source object by title
-     * @param {string} title
-     * @returns {string|null}µ
-     */
-    getComment(title) {
-        const redirect = this.getRedirect(title);
-        if (redirect) {
-            return redirect.contentType;
-        }
-        return null;
-    }
 }
 
 export default Redirects;
