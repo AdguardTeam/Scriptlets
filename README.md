@@ -26,6 +26,7 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [set-popads-dummy](#set-popads-dummy)
     * [prevent-popads-net](#prevent-popads-net)
     * [prevent-adfly](#prevent-adfly)
+    * [remove-attr](#remove-attr)
 * [Scriptlets compatibility table](#compatibility)
 * [How to build](#how-to-build)
 
@@ -487,6 +488,53 @@ example.org#%#//scriptlet("prevent-adfly")
 
 [scriptlet source](./src/scriptlets/prevent-adfly.js)
 
+
+### <a id="remove-attr"></a> remove-attr
+
+Removes attributes from DOM nodes. Will run only once after page load.
+
+**Syntax**
+```
+example.org#%#//scriptlet("remove-attr", attrs[, selector])
+```
+
+- `attrs` - required, attribute or list of attributes joined by |
+- `selector` - optional, CSS selector, specifies nodes from which attributes will be removed
+
+**Examples**
+1.  Removes by attribute
+    ```
+    example.org#%#//scriptlet("remove-attr", "example|test")
+    ```
+
+    ```html
+    <!-- before  -->
+    <div example="true" test="true">Some text</div>
+
+    <!-- after -->
+    <div>Some text</div>
+    ```
+
+2. Removes with specified selector
+    ```
+    example.org#%#//scriptlet("remove-attr", "example", ".inner")
+    ```
+
+    ```html
+    <!-- before -->
+    <div class="wrapper" example="true">
+        <div class="inner" example="true">Some text</div>
+    </div>
+
+    <!-- after -->
+    <div class="wrapper" example="true">
+        <div class="inner">Some text</div>
+    </div>
+    ```
+
+
+[scriptlet source](./src/scriptlets/remove-attr.js)
+
 ## <a id="compatibility"></a> Scriptlets compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -526,6 +574,7 @@ example.org#%#//scriptlet("prevent-adfly")
 |  |  | hide-if-shadow-contains |
 | [log-eval](#log-eval) |  | |
 | [log](#log) |  | log |
+| [remove-attr](#remove-attr) | remove-attr.js | |
 
 
 

@@ -1112,6 +1112,45 @@
     preventAdfly.injections = [setPropertyAccess, hit];
 
     /**
+     *
+     * @param {Source} source
+     */
+
+    function removeAttr(source, attrs, selector) {
+      if (!attrs) {
+        return;
+      }
+
+      attrs = attrs.split(/\s*\|\s*/);
+
+      if (!selector) {
+        selector = "[".concat(attrs.join('],['), "]");
+      }
+
+      var rmattr = function rmattr(ev) {
+        if (ev) {
+          window.removeEventListener(ev.type, rmattr, true);
+        }
+
+        var nodes = document.querySelectorAll(selector);
+        Array.from(nodes).forEach(function (node) {
+          attrs.forEach(function (attr) {
+            node.removeAttribute(attr);
+          });
+        });
+        hit(source);
+      };
+
+      if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', rmattr, true);
+      } else {
+        rmattr();
+      }
+    }
+    removeAttr.names = ['remove-attr', 'ubo-remove-attr.js'];
+    removeAttr.injections = [hit];
+
+    /**
      * This file must export all scriptlets which should be accessible
      */
 
@@ -1137,7 +1176,8 @@
         preventFab: preventFab,
         setPopadsDummy: setPopadsDummy,
         preventPopadsNet: preventPopadsNet,
-        preventAdfly: preventAdfly
+        preventAdfly: preventAdfly,
+        removeAttr: removeAttr
     });
 
     /**
