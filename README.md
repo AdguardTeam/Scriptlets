@@ -324,19 +324,19 @@ example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
     example.org#%#//scriptlet("prevent-window-open")
     ```
 
-2. Prevent `window.open` for all URLs containing `example` string:
+2. Prevent `window.open` for all URLs containing `example`:
     ```
-    example.org#%#//scriptlet("prevent-window-open", 'Match', 'example')
+    example.org#%#//scriptlet("prevent-window-open", "1", "example")
     ```
 
-3. Prevent `window.open` for all URLs matching `/example\./`:
+3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
     ```
-    example.org#%#//scriptlet("prevent-window-open", 1, "/example\./")
+    example.org#%#//scriptlet("prevent-window-open", "1", "/example\./")
     ```
 
 4. Prevent `window.open` for all URLs **NOT** containing `example`:
     ```
-    example.org#%#//scriptlet("prevent-window-open", 0, "example")
+    example.org#%#//scriptlet("prevent-window-open", "0", "example")
     ```
 
 [scriptlet source](./src/scriptlets/prevent-window-open.js)
