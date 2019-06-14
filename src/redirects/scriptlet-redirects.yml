@@ -1,8 +1,4 @@
-- title: log-addEventListener
-  comment: Logs add event listener calls
-
-- title: log-setInterval
-  comment: Logs setInterval calls
-
 - title: prevent-fab-3.2.0
   comment: Fuckadblock 3.2.0 defuser
+- title: set-popads-dummy
+  comment: Sets static properties PopAds and popns
