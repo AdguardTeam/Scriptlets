@@ -26,6 +26,11 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
     * [set-popads-dummy](#set-popads-dummy)
     * [prevent-popads-net](#prevent-popads-net)
     * [prevent-adfly](#prevent-adfly)
+    * [debug-on-property-read](#debug-on-property-read)
+    * [debug-on-property-write](#debug-on-property-write)
+    * [debug-current-inline-script](#debug-current-inline-script)
+    * [remove-attr](#remove-attr)
+    * [disable-newtab-links](#disable-newtab-links)
 * [Scriptlets compatibility table](#compatibility)
 * [How to build](#how-to-build)
 
@@ -321,19 +326,19 @@ example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
     example.org#%#//scriptlet("prevent-window-open")
     ```
 
-2. Prevent `window.open` for all URLs containing `example` string:
+2. Prevent `window.open` for all URLs containing `example`:
     ```
-    example.org#%#//scriptlet("prevent-window-open", 'Match', 'example')
+    example.org#%#//scriptlet("prevent-window-open", "1", "example")
     ```
 
-3. Prevent `window.open` for all URLs matching `/example\./`:
+3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
     ```
-    example.org#%#//scriptlet("prevent-window-open", 1, "/example\./")
+    example.org#%#//scriptlet("prevent-window-open", "1", "/example\./")
     ```
 
 4. Prevent `window.open` for all URLs **NOT** containing `example`:
     ```
-    example.org#%#//scriptlet("prevent-window-open", 0, "example")
+    example.org#%#//scriptlet("prevent-window-open", "0", "example")
     ```
 
 [scriptlet source](./src/scriptlets/prevent-window-open.js)
@@ -487,6 +492,110 @@ example.org#%#//scriptlet("prevent-adfly")
 
 [scriptlet source](./src/scriptlets/prevent-adfly.js)
 
+### <a id="debug-current-inline-script"></a> debug-current-inline-script
+
+This scriptlet is basically the same as [abort-current-inline-script](#abort-current-inline-script), but instead of aborting it starts the debugger.
+
+**Syntax**
+
+```
+! Aborts script when it tries to access `window.alert`
+example.org#%#//scriptlet("debug-current-inline-script", "alert")
+```
+
+**It is not supposed to be used in production filter lists!**
+
+[scriptlet source](./src/scriptlets/debug-current-inline-script.js)
+
+
+### <a id="debug-on-property-read"></a> debug-on-property-read
+
+This scriptlet is basically the same as [abort-on-property-read](#abort-on-property-read), but instead of aborting it starts the debugger.
+
+**Syntax**
+```
+! Aborts script when it tries to access `window.alert`
+example.org#%#//scriptlet("debug-on-property-read", "alert")
+```
+
+**It is not supposed to be used in production filter lists!**
+
+[scriptlet source](./src/scriptlets/debug-on-property-read.js)
+
+
+### <a id="debug-on-property-write"></a> debug-on-property-write
+
+This scriptlet is basically the same as [abort-on-property-write](#abort-on-property-write), but instead of aborting it starts the debugger.
+
+**Syntax**
+
+```
+! Aborts script when it tries to write in property `window.test`
+example.org#%#//scriptlet("debug-on-property-write", "test")
+```
+
+**It is not supposed to be used in production filter lists!**
+
+[scriptlet source](./src/scriptlets/debug-on-property-write.js)
+
+
+### <a id="remove-attr"></a> remove-attr
+
+Removes attributes from DOM nodes. Will run only once after page load.
+
+**Syntax**
+```
+example.org#%#//scriptlet("remove-attr", attrs[, selector])
+```
+
+- `attrs` - required, attribute or list of attributes joined by |
+- `selector` - optional, CSS selector, specifies nodes from which attributes will be removed
+
+**Examples**
+1.  Removes by attribute
+    ```
+    example.org#%#//scriptlet("remove-attr", "example|test")
+    ```
+
+    ```html
+    <!-- before  -->
+    <div example="true" test="true">Some text</div>
+
+    <!-- after -->
+    <div>Some text</div>
+    ```
+
+2. Removes with specified selector
+    ```
+    example.org#%#//scriptlet("remove-attr", "example", ".inner")
+    ```
+
+    ```html
+    <!-- before -->
+    <div class="wrapper" example="true">
+        <div class="inner" example="true">Some text</div>
+    </div>
+
+    <!-- after -->
+    <div class="wrapper" example="true">
+        <div class="inner">Some text</div>
+    </div>
+    ```
+
+[scriptlet source](./src/scriptlets/remove-attr.js)
+
+### <a id="disable-newtab-links"></a> disable-newtab-links
+
+Prevents opening new tabs and windows if there is `target` attribute in element
+
+**Syntax**
+```
+example.org#%#//scriptlet("disable-newtab-links")
+```
+
+[scriptlet source](./src/scriptlets/disable-newtab-links.js)
+
+
 ## <a id="compatibility"></a> Scriptlets compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -526,6 +635,11 @@ example.org#%#//scriptlet("prevent-adfly")
 |  |  | hide-if-shadow-contains |
 | [log-eval](#log-eval) |  | |
 | [log](#log) |  | log |
+| [debug-current-inline-script](#debug-current-inline-script) |  |  |
+| [debug-on-property-read](#debug-on-property-read) |  |  |
+| [debug-on-property-write](#debug-on-property-write) |  |  |
+| [remove-attr](#remove-attr) | remove-attr.js | |
+| [disable-newtab-links](#disable-newtab-links) | disable-newtab-links.js | |
 
 
 

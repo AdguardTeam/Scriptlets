@@ -56,6 +56,20 @@ test('prevent-window-open: ubo alias: not reverse, string', (assert) => {
 test('prevent-window-open: adg: regexp ', (assert) => {
     const params = {
         name,
+        args: ['1', 'test'],
+        verbose: true,
+    };
+    const scriptlet = window.scriptlets.invoke(params);
+    // run scriptlet code
+    evalWrap(scriptlet);
+    // check if scriptlet works
+    window.open('test url', 'some target');
+    assert.equal(window.hit, 'value', 'Hit function was executed');
+});
+
+test('prevent-window-open: adg: regexp ', (assert) => {
+    const params = {
+        name,
         args: ['', '/test/'],
         verbose: true,
     };
@@ -70,7 +84,7 @@ test('prevent-window-open: adg: regexp ', (assert) => {
 test('prevent-window-open: adg: reverse, regexp ', (assert) => {
     const params = {
         name,
-        args: ['reverse', '/test/'],
+        args: ['0', '/test/'],
         verbose: true,
     };
     const scriptlet = window.scriptlets.invoke(params);
