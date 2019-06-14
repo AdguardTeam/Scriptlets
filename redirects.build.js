@@ -5,6 +5,7 @@ import yaml from 'js-yaml';
 import { EOL } from 'os';
 
 import * as scriptletList from './src/scriptlets';
+import project from './package';
 
 // define global variable scriptlets
 // because require('./dist/scriptlets') trying to put scriptlets code in it
@@ -16,6 +17,11 @@ const PATH_TO_DIST = './dist';
 const RESULT_PATH = path.resolve(PATH_TO_DIST, FILE_NAME);
 const STATIC_REDIRECTS_PATH = './src/redirects/static-redirects.yml';
 const SCRIPTLET_REDIRECTS_PATH = './src/redirects/scriptlet-redirects.yml';
+const banner = `#
+#    AdGuard Scriptlets (Redirects Source)
+#    Version ${project.version}
+#
+`;
 
 let scriptletsToAdd;
 let staticRedirects;
@@ -66,6 +72,10 @@ try {
     let yamlRedirects = yaml.safeDump(mergedRedirects);
     // add empty line before titles
     yamlRedirects = yamlRedirects.split('- title:').join(`${EOL}- title:`).trimLeft();
+
+    // add version and title to the top
+    yamlRedirects = `${banner}${yamlRedirects}`;
+
     fs.writeFileSync(RESULT_PATH, yamlRedirects, 'utf8');
 } catch (e) {
     // eslint-disable-next-line no-console
