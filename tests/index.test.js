@@ -26,3 +26,4 @@ import * as debugOnPropertyWrite from './debug-on-property-write.test';
 import * as debugCurrentInlineScript from './debug-current-inline-script.test';
 import * as removeAttr from './remove-attr.test';
 import * as disableNewtabLinks from './disable-newtab-links.test';
+import * as boostSetInterval from './boost-setInterval.test';
