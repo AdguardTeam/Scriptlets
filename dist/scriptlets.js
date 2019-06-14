@@ -1293,6 +1293,78 @@
     debugCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit];
 
     /**
+     * Removes attributes from DOM nodes. Will run only once after page load.
+     *
+     * @param {Source} source
+     * @param {string} attrs attributes names separated by `|` which should be removed
+     * @param {string} selector CSS selector specifies nodes from which attributes should be removed
+     */
+
+    function removeAttr(source, attrs, selector) {
+      if (!attrs) {
+        return;
+      }
+
+      attrs = attrs.split(/\s*\|\s*/);
+
+      if (!selector) {
+        selector = "[".concat(attrs.join('],['), "]");
+      }
+
+      var rmattr = function rmattr(ev) {
+        if (ev) {
+          window.removeEventListener(ev.type, rmattr, true);
+        }
+
+        var nodes = document.querySelectorAll(selector);
+        var removed = false;
+        Array.from(nodes).forEach(function (node) {
+          attrs.forEach(function (attr) {
+            node.removeAttribute(attr);
+            removed = true;
+          });
+        });
+
+        if (removed) {
+          hit(source);
+        }
+      };
+
+      if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', rmattr, true);
+      } else {
+        rmattr();
+      }
+    }
+    removeAttr.names = ['remove-attr', 'ubo-remove-attr.js'];
+    removeAttr.injections = [hit];
+
+    /**
+     * Prevents opening new tabs and windows if there is `target` attribute in element
+     *
+     * @param {Source} source
+     */
+
+    function disableNewtabLinks(source) {
+      document.addEventListener('click', function (ev) {
+        var target = ev.target;
+
+        while (target !== null) {
+          if (target.localName === 'a' && target.hasAttribute('target')) {
+            ev.stopPropagation();
+            ev.preventDefault();
+            hit(source);
+            break;
+          }
+
+          target = target.parentNode;
+        }
+      });
+    }
+    disableNewtabLinks.names = ['disable-newtab-links', 'ubo-disable-newtab-links.js'];
+    disableNewtabLinks.injections = [hit];
+
+    /**
      * This file must export all scriptlets which should be accessible
      */
 
@@ -1321,7 +1393,9 @@
         preventAdfly: preventAdfly,
         debugOnPropertyRead: debugOnPropertyRead,
         debugOnPropertyWrite: debugOnPropertyWrite,
-        debugCurrentInlineScript: debugCurrentInlineScript
+        debugCurrentInlineScript: debugCurrentInlineScript,
+        removeAttr: removeAttr,
+        disableNewtabLinks: disableNewtabLinks
     });
 
     /**

@@ -26,3 +26,5 @@ export * from './prevent-adfly';
 export * from './debug-on-property-read';
 export * from './debug-on-property-write';
 export * from './debug-current-inline-script';
+export * from './remove-attr';
+export * from './disable-newtab-links';
