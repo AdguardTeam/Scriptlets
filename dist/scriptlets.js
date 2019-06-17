@@ -1365,7 +1365,7 @@
     disableNewtabLinks.injections = [hit];
 
     /**
-     *
+     * Adjusts interval for specified setInterval() callbacks.
      * @param {Source} source
      * @param {string|RegExp} match matching in string of callback function
      * @param {string|number} interval matching interval
@@ -1407,6 +1407,48 @@
     boostSetInterval.injections = [toRegExp, hit];
 
     /**
+     * Adjusts timeout for specified setTimout() callbacks.
+     * @param {Source} source
+     * @param {string|RegExp} match matching in string of callback function
+     * @param {string|number} timeout matching timeout
+     * @param {string|number} boost timeout multiplier
+     */
+
+    function boostSetTimeout(source, match, timeout, boost) {
+      var nativeTimeout = window.setTimeout;
+      timeout = parseInt(timeout, 10);
+      timeout = Number.isNaN(timeout) ? 1000 : timeout;
+      boost = parseInt(boost, 10);
+      boost = Number.isNaN(timeout) || !Number.isFinite(boost) ? 0.05 : boost;
+      match = match ? toRegExp(match) : toRegExp('/.?/');
+
+      if (boost < 0.02) {
+        boost = 0.02;
+      }
+
+      if (boost > 50) {
+        boost = 50;
+      }
+
+      var timeoutWrapper = function timeoutWrapper(cb, d) {
+        if (d === timeout && match.test(cb.toString())) {
+          d *= boost;
+          hit(source);
+        }
+
+        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+          args[_key - 2] = arguments[_key];
+        }
+
+        return nativeTimeout.apply(window, [cb, d].concat(args));
+      };
+
+      window.setTimeout = timeoutWrapper;
+    }
+    boostSetTimeout.names = ['boost-setTimeout', 'ubo-nano-setTimeout-booster.js'];
+    boostSetTimeout.injections = [toRegExp, hit];
+
+    /**
      * This file must export all scriptlets which should be accessible
      */
 
@@ -1438,7 +1480,8 @@
         debugCurrentInlineScript: debugCurrentInlineScript,
         removeAttr: removeAttr,
         disableNewtabLinks: disableNewtabLinks,
-        boostSetInterval: boostSetInterval
+        boostSetInterval: boostSetInterval,
+        boostSetTimeout: boostSetTimeout
     });
 
     /**

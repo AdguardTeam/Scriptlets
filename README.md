@@ -629,8 +629,44 @@ example.org#%#//scriptlet("boost-setInterval"[, match [, interval[, boost]]])
     example.org#%#//scriptlet("boost-setInterval", "example", "400", "2")
     ```
 
+[scriptlet source](./src/scriptlets/boost-setInterval.js)
 
-[scriptlet source](./src/scriptlets/debug-on-property-write.js)
+
+### <a id="boost-setTimeout"></a> boost-setTimeout
+
+Adjusts timeout for specified setTimeout() callbacks
+
+**Syntax**
+```
+example.org#%#//scriptlet("boost-setTimeout"[, match [, timeout[, boost]]])
+```
+
+- `match` - optional, string/regular expression, matching in stringified callback function
+- `timeout` - optional, defaults to 1000, decimal integer, matching interval
+- `boost` - optional, default to 0.05, float, capped at 50 times for up and down, interval multiplier
+
+**Examples**
+1. Boost all setTimeout() x20 times where interval equal 1000ms:
+    ```
+    example.org#%#//scriptlet("boost-setTimeout")
+    ```
+
+2. Boost all setTimeout() x20 times where callback mathed with `example` and interval equal 1000ms
+    ```
+    example.org#%#//scriptlet("boost-setTimeout", "example")
+    ```
+
+3. Boost all setTimeout() x20 times where callback mathed with `example` and interval equal 400ms
+    ```
+    example.org#%#//scriptlet("boost-setTimeout", "example", "400")
+    ```
+
+4. Slow down setTimeout() x2 times where callback matched with `example` and interval equal 400ms
+    ```
+    example.org#%#//scriptlet("boost-setTimeout", "example", "400", "2")
+    ```
+
+[scriptlet source](./src/scriptlets/boost-setTimeout.js)
 
 
 ## <a id="compatibility"></a> Scriptlets compatibility table

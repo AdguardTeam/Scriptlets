@@ -3,11 +3,11 @@
 import { clearGlobalProps } from './helpers';
 
 const { test, module } = QUnit;
-const name = 'boost-setInterval';
-const nativeSetInterval = window.setInterval;
+const name = 'boost-setTimeout';
+const nativeSetTimeout = window.setTimeout;
 
 const afterEach = () => {
-    window.setInterval = nativeSetInterval;
+    window.setTimeout = nativeSetTimeout;
     clearGlobalProps('hit', '__debugScriptlets', 'intervalValue', 'someKey');
 };
 
@@ -24,7 +24,7 @@ const evalWrapper = eval;
 test('ubo alias', (assert) => {
     createHit();
     const params = {
-        name: 'ubo-nano-setInterval-booster.js',
+        name: 'ubo-nano-setTimeout-booster.js',
         args: ['intervalValue', '100', '2'],
         verbose: true,
     };
@@ -35,7 +35,7 @@ test('ubo alias', (assert) => {
     const done1 = assert.async();
     const done2 = assert.async();
 
-    const interval = setInterval(() => {
+    const timeout = setTimeout(() => {
         window.intervalValue = 'value';
     }, 100);
 
@@ -45,9 +45,9 @@ test('ubo alias', (assert) => {
     }, 150);
 
     setTimeout(() => {
-        assert.strictEqual(window.intervalValue, 'value', 'Defined after boosted setInterval');
+        assert.strictEqual(window.intervalValue, 'value', 'Defined after boosted setTimeout');
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-        clearInterval(interval);
+        clearTimeout(timeout);
         done2();
     }, 250);
 });
@@ -65,13 +65,13 @@ test('Adg no args', (assert) => {
 
     const done = assert.async();
 
-    const interval = setInterval(() => {
+    const timeout = setTimeout(() => {
         window.intervalValue = 'value';
     }, 1000);
 
     setTimeout(() => {
         assert.strictEqual(window.intervalValue, 'value', 'Should be defined because default boost value equal 0.05');
-        clearInterval(interval);
+        clearTimeout(timeout);
         done();
     }, 100);
 });
@@ -91,17 +91,17 @@ test('Adg: match param', (assert) => {
     const done2 = assert.async();
     const done3 = assert.async();
 
-    const interval = setInterval(() => {
+    const timeout = setTimeout(() => {
         window.intervalValue = 'value';
     }, 1000);
 
-    const regularInterval = setInterval(() => {
+    const regularTimeout = setTimeout(() => {
         window.someKey = 'value';
     }, 200);
 
     setTimeout(() => {
         assert.strictEqual(window.intervalValue, 'value', 'Should be defined because default boost value equal 0.05');
-        clearInterval(interval);
+        clearTimeout(timeout);
         done1();
     }, 100);
 
@@ -112,12 +112,12 @@ test('Adg: match param', (assert) => {
 
     setTimeout(() => {
         assert.strictEqual(window.someKey, 'value', 'All others timeouts should be okay');
-        clearInterval(regularInterval);
+        clearTimeout(regularTimeout);
         done3();
     }, 250);
 });
 
-test('Adg: match param and interval', (assert) => {
+test('Adg: match param and timeout', (assert) => {
     createHit();
     const params = {
         name,
@@ -130,13 +130,13 @@ test('Adg: match param and interval', (assert) => {
 
     const done = assert.async();
 
-    const interval = setInterval(() => {
+    const timeout = setTimeout(() => {
         window.intervalValue = 'value';
     }, 500);
 
     setTimeout(() => {
         assert.strictEqual(window.intervalValue, 'value', 'Should be defined because default boost value equal 0.05');
-        clearInterval(interval);
+        clearTimeout(timeout);
         done();
     }, 50);
 });
@@ -155,7 +155,7 @@ test('Adg: all params', (assert) => {
     const done1 = assert.async();
     const done2 = assert.async();
 
-    const interval = setInterval(() => {
+    const timeout = setTimeout(() => {
         window.intervalValue = 'value';
     }, 100);
 
@@ -166,7 +166,7 @@ test('Adg: all params', (assert) => {
 
     setTimeout(() => {
         assert.strictEqual(window.intervalValue, 'value', 'Should be defined');
-        clearInterval(interval);
+        clearTimeout(timeout);
         done2();
     }, 250);
 });
