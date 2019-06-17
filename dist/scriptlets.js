@@ -1449,6 +1449,34 @@
     boostSetTimeout.injections = [toRegExp, hit];
 
     /**
+     * Wraps the `console.dir` API to call the `toString`
+     * method of the argument.
+     * @param {Source} source
+     * @param {string|number} times the number of times to call the
+     * `toString` method of the argument to `console.dir`.
+     */
+
+    function dirString(source, times) {
+      var _console = console,
+          dir = _console.dir;
+      times = parseInt(times, 10);
+
+      function dirWrapper(object) {
+
+        if (typeof dir === 'function') {
+          dir.call(this, object);
+        }
+
+        hit(source);
+      } // eslint-disable-next-line no-console
+
+
+      console.dir = dirWrapper;
+    }
+    dirString.names = ['dir-string', 'abp-dir-string'];
+    dirString.injections = [hit];
+
+    /**
      * This file must export all scriptlets which should be accessible
      */
 
@@ -1481,7 +1509,8 @@
         removeAttr: removeAttr,
         disableNewtabLinks: disableNewtabLinks,
         boostSetInterval: boostSetInterval,
-        boostSetTimeout: boostSetTimeout
+        boostSetTimeout: boostSetTimeout,
+        dirString: dirString
     });
 
     /**
