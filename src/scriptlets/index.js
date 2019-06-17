@@ -30,3 +30,4 @@ export * from './remove-attr';
 export * from './disable-newtab-links';
 export * from './boost-setInterval';
 export * from './boost-setTimeout';
+export * from './dir-string';

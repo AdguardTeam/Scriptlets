@@ -631,7 +631,6 @@ example.org#%#//scriptlet("boost-setInterval"[, match [, interval[, boost]]])
 
 [scriptlet source](./src/scriptlets/boost-setInterval.js)
 
-
 ### <a id="boost-setTimeout"></a> boost-setTimeout
 
 Adjusts timeout for specified setTimeout() callbacks
@@ -667,6 +666,25 @@ example.org#%#//scriptlet("boost-setTimeout"[, match [, timeout[, boost]]])
     ```
 
 [scriptlet source](./src/scriptlets/boost-setTimeout.js)
+
+
+### <a id="dir-string"></a> dir-string
+
+Wraps the `console.dir` API to call the `toString` method of the argument.
+
+**Syntax**
+```
+example.org#%#//scriptlet("dir-string"[, times])
+```
+- `times` - optional, the number of times to call the `toString` method of the argument to `console.dir`
+
+**Example**
+1. Run 2 times
+    ```
+    example.org#%#//scriptlet("dir-string", "2")
+    ```
+
+[scriptlet source](./src/scriptlets/dir-string.js)
 
 
 ## <a id="compatibility"></a> Scriptlets compatibility table
@@ -713,6 +731,9 @@ example.org#%#//scriptlet("boost-setTimeout"[, match [, timeout[, boost]]])
 | [debug-on-property-write](#debug-on-property-write) |  |  |
 | [remove-attr](#remove-attr) | remove-attr.js | |
 | [disable-newtab-links](#disable-newtab-links) | disable-newtab-links.js | |
+| [boost-setInterval](#boost-setInterval) | nano-setInterval-booster.js | |
+| [boost-setTimeout](#boost-setTimeout) | nano-setTimeout-booster.js | |
+| [dir-string](#dir-string) | | dir-string |
 
 
 
