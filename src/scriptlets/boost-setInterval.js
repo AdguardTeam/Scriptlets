@@ -2,7 +2,7 @@ import { toRegExp } from '../helpers/string-utils';
 import { hit } from '../helpers';
 
 /**
- *
+ * Adjusts interval for specified setInterval() callbacks.
  * @param {Source} source
  * @param {string|RegExp} match matching in string of callback function
  * @param {string|number} interval matching interval

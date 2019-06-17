@@ -595,6 +595,43 @@ example.org#%#//scriptlet("disable-newtab-links")
 
 [scriptlet source](./src/scriptlets/disable-newtab-links.js)
 
+### <a id="boost-setInterval"></a> boost-setInterval
+
+Adjusts interval for specified setInterval() callbacks
+
+**Syntax**
+```
+example.org#%#//scriptlet("boost-setInterval"[, match [, interval[, boost]]])
+```
+
+- `match` - optional, string/regular expression, matching in stringified callback function
+- `interval` - optional, defaults to 1000, decimal integer, matching interval
+- `boost` - optional, default to 0.05, float, capped at 50 times for up and down, interval multiplier
+
+**Examples**
+1. Boost all setInterval() x20 times where interval equal 1000ms:
+    ```
+    example.org#%#//scriptlet("boost-setInterval")
+    ```
+
+2. Boost all setInterval() x20 times where callback mathed with `example` and interval equal 1000ms
+    ```
+    example.org#%#//scriptlet("boost-setInterval", "example")
+    ```
+
+3. Boost all setInterval() x20 times where callback mathed with `example` and interval equal 400ms
+    ```
+    example.org#%#//scriptlet("boost-setInterval", "example", "400")
+    ```
+
+4. Slow down setInterval() x2 times where callback matched with `example` and interval equal 400ms
+    ```
+    example.org#%#//scriptlet("boost-setInterval", "example", "400", "2")
+    ```
+
+
+[scriptlet source](./src/scriptlets/debug-on-property-write.js)
+
 
 ## <a id="compatibility"></a> Scriptlets compatibility table
 
