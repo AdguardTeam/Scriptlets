@@ -28,6 +28,6 @@ export * from './debug-on-property-write';
 export * from './debug-current-inline-script';
 export * from './remove-attr';
 export * from './disable-newtab-links';
-export * from './boost-setInterval';
-export * from './boost-setTimeout';
+export * from './adjust-setInterval';
+export * from './adjust-setTimeout';
 export * from './dir-string';

@@ -8,7 +8,7 @@ import { hit } from '../helpers';
  * @param {string|number} timeout matching timeout
  * @param {string|number} boost timeout multiplier
  */
-export function boostSetTimeout(source, match, timeout, boost) {
+export function adjustSetTimeout(source, match, timeout, boost) {
     const nativeTimeout = window.setTimeout;
     timeout = parseInt(timeout, 10);
     timeout = Number.isNaN(timeout) ? 1000 : timeout;
@@ -35,9 +35,9 @@ export function boostSetTimeout(source, match, timeout, boost) {
     window.setTimeout = timeoutWrapper;
 }
 
-boostSetTimeout.names = [
-    'boost-setTimeout',
+adjustSetTimeout.names = [
+    'adjust-setTimeout',
     'ubo-nano-setTimeout-booster.js',
 ];
 
-boostSetTimeout.injections = [toRegExp, hit];
+adjustSetTimeout.injections = [toRegExp, hit];

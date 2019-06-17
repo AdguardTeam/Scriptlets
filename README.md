@@ -595,13 +595,13 @@ example.org#%#//scriptlet("disable-newtab-links")
 
 [scriptlet source](./src/scriptlets/disable-newtab-links.js)
 
-### <a id="boost-setInterval"></a> boost-setInterval
+### <a id="adjust-setInterval"></a> adjust-setInterval
 
 Adjusts interval for specified setInterval() callbacks
 
 **Syntax**
 ```
-example.org#%#//scriptlet("boost-setInterval"[, match [, interval[, boost]]])
+example.org#%#//scriptlet("adjust-setInterval"[, match [, interval[, boost]]])
 ```
 
 - `match` - optional, string/regular expression, matching in stringified callback function
@@ -609,35 +609,35 @@ example.org#%#//scriptlet("boost-setInterval"[, match [, interval[, boost]]])
 - `boost` - optional, default to 0.05, float, capped at 50 times for up and down, interval multiplier
 
 **Examples**
-1. Boost all setInterval() x20 times where interval equal 1000ms:
+1. Adjust all setInterval() x20 times where interval equal 1000ms:
     ```
-    example.org#%#//scriptlet("boost-setInterval")
-    ```
-
-2. Boost all setInterval() x20 times where callback mathed with `example` and interval equal 1000ms
-    ```
-    example.org#%#//scriptlet("boost-setInterval", "example")
+    example.org#%#//scriptlet("adjust-setInterval")
     ```
 
-3. Boost all setInterval() x20 times where callback mathed with `example` and interval equal 400ms
+2. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 1000ms
     ```
-    example.org#%#//scriptlet("boost-setInterval", "example", "400")
+    example.org#%#//scriptlet("adjust-setInterval", "example")
+    ```
+
+3. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 400ms
+    ```
+    example.org#%#//scriptlet("adjust-setInterval", "example", "400")
     ```
 
 4. Slow down setInterval() x2 times where callback matched with `example` and interval equal 400ms
     ```
-    example.org#%#//scriptlet("boost-setInterval", "example", "400", "2")
+    example.org#%#//scriptlet("adjust-setInterval", "example", "400", "2")
     ```
 
-[scriptlet source](./src/scriptlets/boost-setInterval.js)
+[scriptlet source](./src/scriptlets/adjust-setInterval.js)
 
-### <a id="boost-setTimeout"></a> boost-setTimeout
+### <a id="adjust-setTimeout"></a> adjust-setTimeout
 
 Adjusts timeout for specified setTimeout() callbacks
 
 **Syntax**
 ```
-example.org#%#//scriptlet("boost-setTimeout"[, match [, timeout[, boost]]])
+example.org#%#//scriptlet("adjust-setTimeout"[, match [, timeout[, boost]]])
 ```
 
 - `match` - optional, string/regular expression, matching in stringified callback function
@@ -645,27 +645,27 @@ example.org#%#//scriptlet("boost-setTimeout"[, match [, timeout[, boost]]])
 - `boost` - optional, default to 0.05, float, capped at 50 times for up and down, interval multiplier
 
 **Examples**
-1. Boost all setTimeout() x20 times where interval equal 1000ms:
+1. Adjust all setTimeout() x20 times where interval equal 1000ms:
     ```
-    example.org#%#//scriptlet("boost-setTimeout")
-    ```
-
-2. Boost all setTimeout() x20 times where callback mathed with `example` and interval equal 1000ms
-    ```
-    example.org#%#//scriptlet("boost-setTimeout", "example")
+    example.org#%#//scriptlet("adjust-setTimeout")
     ```
 
-3. Boost all setTimeout() x20 times where callback mathed with `example` and interval equal 400ms
+2. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 1000ms
     ```
-    example.org#%#//scriptlet("boost-setTimeout", "example", "400")
+    example.org#%#//scriptlet("adjust-setTimeout", "example")
+    ```
+
+3. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 400ms
+    ```
+    example.org#%#//scriptlet("adjust-setTimeout", "example", "400")
     ```
 
 4. Slow down setTimeout() x2 times where callback matched with `example` and interval equal 400ms
     ```
-    example.org#%#//scriptlet("boost-setTimeout", "example", "400", "2")
+    example.org#%#//scriptlet("adjust-setTimeout", "example", "400", "2")
     ```
 
-[scriptlet source](./src/scriptlets/boost-setTimeout.js)
+[scriptlet source](./src/scriptlets/adjust-setTimeout.js)
 
 
 ### <a id="dir-string"></a> dir-string
@@ -709,8 +709,6 @@ example.org#%#//scriptlet("dir-string"[, times])
 | [log-setInterval](#log-setInterval) | setInterval-logger.js |  |
 | [prevent-setTimeout](#prevent-setTimeout) | setTimeout-defuser.js |  |
 | [log-setTimeout](#log-setInterval) | setTimeout-logger.js |  |
-|  | nano-setInterval-booster.js |  |
-|  | nano-setTimeout-booster.js |  |
 |  | sharedWorker-defuser.js (deprecated) |  |
 | [prevent-window-open](#prevent-window-open) | window.open-defuser.js |  |
 | [prevent-bab](#prevent-bab) | bab-defuser.js |  |
@@ -731,8 +729,8 @@ example.org#%#//scriptlet("dir-string"[, times])
 | [debug-on-property-write](#debug-on-property-write) |  |  |
 | [remove-attr](#remove-attr) | remove-attr.js | |
 | [disable-newtab-links](#disable-newtab-links) | disable-newtab-links.js | |
-| [boost-setInterval](#boost-setInterval) | nano-setInterval-booster.js | |
-| [boost-setTimeout](#boost-setTimeout) | nano-setTimeout-booster.js | |
+| [adjust-setInterval](#adjust-setInterval) | nano-setInterval-booster.js | |
+| [adjust-setTimeout](#adjust-setTimeout) | nano-setTimeout-booster.js | |
 | [dir-string](#dir-string) | | dir-string |
 
 

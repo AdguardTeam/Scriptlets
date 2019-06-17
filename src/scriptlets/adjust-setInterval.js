@@ -8,7 +8,7 @@ import { hit } from '../helpers';
  * @param {string|number} interval matching interval
  * @param {string|number} boost interval multiplier
  */
-export function boostSetInterval(source, match, interval, boost) {
+export function adjustSetInterval(source, match, interval, boost) {
     const nativeInterval = window.setInterval;
     interval = parseInt(interval, 10);
     interval = Number.isNaN(interval) ? 1000 : interval;
@@ -35,9 +35,9 @@ export function boostSetInterval(source, match, interval, boost) {
     window.setInterval = intervalWrapper;
 }
 
-boostSetInterval.names = [
-    'boost-setInterval',
+adjustSetInterval.names = [
+    'adjust-setInterval',
     'ubo-nano-setInterval-booster.js',
 ];
 
-boostSetInterval.injections = [toRegExp, hit];
+adjustSetInterval.injections = [toRegExp, hit];

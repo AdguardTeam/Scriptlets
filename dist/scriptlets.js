@@ -1372,7 +1372,7 @@
      * @param {string|number} boost interval multiplier
      */
 
-    function boostSetInterval(source, match, interval, boost) {
+    function adjustSetInterval(source, match, interval, boost) {
       var nativeInterval = window.setInterval;
       interval = parseInt(interval, 10);
       interval = Number.isNaN(interval) ? 1000 : interval;
@@ -1403,8 +1403,8 @@
 
       window.setInterval = intervalWrapper;
     }
-    boostSetInterval.names = ['boost-setInterval', 'ubo-nano-setInterval-booster.js'];
-    boostSetInterval.injections = [toRegExp, hit];
+    adjustSetInterval.names = ['adjust-setInterval', 'ubo-nano-setInterval-booster.js'];
+    adjustSetInterval.injections = [toRegExp, hit];
 
     /**
      * Adjusts timeout for specified setTimout() callbacks.
@@ -1414,7 +1414,7 @@
      * @param {string|number} boost timeout multiplier
      */
 
-    function boostSetTimeout(source, match, timeout, boost) {
+    function adjustSetTimeout(source, match, timeout, boost) {
       var nativeTimeout = window.setTimeout;
       timeout = parseInt(timeout, 10);
       timeout = Number.isNaN(timeout) ? 1000 : timeout;
@@ -1445,8 +1445,8 @@
 
       window.setTimeout = timeoutWrapper;
     }
-    boostSetTimeout.names = ['boost-setTimeout', 'ubo-nano-setTimeout-booster.js'];
-    boostSetTimeout.injections = [toRegExp, hit];
+    adjustSetTimeout.names = ['adjust-setTimeout', 'ubo-nano-setTimeout-booster.js'];
+    adjustSetTimeout.injections = [toRegExp, hit];
 
     /**
      * Wraps the `console.dir` API to call the `toString`
@@ -1508,8 +1508,8 @@
         debugCurrentInlineScript: debugCurrentInlineScript,
         removeAttr: removeAttr,
         disableNewtabLinks: disableNewtabLinks,
-        boostSetInterval: boostSetInterval,
-        boostSetTimeout: boostSetTimeout,
+        adjustSetInterval: adjustSetInterval,
+        adjustSetTimeout: adjustSetTimeout,
         dirString: dirString
     });
 

@@ -26,6 +26,6 @@ import * as debugOnPropertyWrite from './debug-on-property-write.test';
 import * as debugCurrentInlineScript from './debug-current-inline-script.test';
 import * as removeAttr from './remove-attr.test';
 import * as disableNewtabLinks from './disable-newtab-links.test';
-import * as boostSetInterval from './boost-setInterval.test';
-import * as boostSetTimeout from './boost-setTimeout.test';
+import * as boostSetInterval from './adjust-setInterval.test';
+import * as boostSetTimeout from './adjust-setTimeout.test';
 import * as dirString from './dir-string.test';
