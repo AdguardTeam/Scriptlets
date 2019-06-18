@@ -1,5 +1,5 @@
 /* global QUnit */
-/* eslint-disable no-eval, no-underscore-dangle */
+/* eslint-disable no-eval, no-underscore-dangle, no-console */
 import { clearGlobalProps } from './helpers';
 
 const { test, module } = QUnit;

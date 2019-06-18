@@ -1365,6 +1365,118 @@
     disableNewtabLinks.injections = [hit];
 
     /**
+     * Adjusts interval for specified setInterval() callbacks.
+     * @param {Source} source
+     * @param {string|RegExp} match matching in string of callback function
+     * @param {string|number} interval matching interval
+     * @param {string|number} boost interval multiplier
+     */
+
+    function adjustSetInterval(source, match, interval, boost) {
+      var nativeInterval = window.setInterval;
+      interval = parseInt(interval, 10);
+      interval = Number.isNaN(interval) ? 1000 : interval;
+      boost = parseInt(boost, 10);
+      boost = Number.isNaN(interval) || !Number.isFinite(boost) ? 0.05 : boost;
+      match = match ? toRegExp(match) : toRegExp('/.?/');
+
+      if (boost < 0.02) {
+        boost = 0.02;
+      }
+
+      if (boost > 50) {
+        boost = 50;
+      }
+
+      var intervalWrapper = function intervalWrapper(cb, d) {
+        if (d === interval && match.test(cb.toString())) {
+          d *= boost;
+          hit(source);
+        }
+
+        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+          args[_key - 2] = arguments[_key];
+        }
+
+        return nativeInterval.apply(window, [cb, d].concat(args));
+      };
+
+      window.setInterval = intervalWrapper;
+    }
+    adjustSetInterval.names = ['adjust-setInterval', 'ubo-nano-setInterval-booster.js'];
+    adjustSetInterval.injections = [toRegExp, hit];
+
+    /**
+     * Adjusts timeout for specified setTimout() callbacks.
+     * @param {Source} source
+     * @param {string|RegExp} match matching in string of callback function
+     * @param {string|number} timeout matching timeout
+     * @param {string|number} boost timeout multiplier
+     */
+
+    function adjustSetTimeout(source, match, timeout, boost) {
+      var nativeTimeout = window.setTimeout;
+      timeout = parseInt(timeout, 10);
+      timeout = Number.isNaN(timeout) ? 1000 : timeout;
+      boost = parseInt(boost, 10);
+      boost = Number.isNaN(timeout) || !Number.isFinite(boost) ? 0.05 : boost;
+      match = match ? toRegExp(match) : toRegExp('/.?/');
+
+      if (boost < 0.02) {
+        boost = 0.02;
+      }
+
+      if (boost > 50) {
+        boost = 50;
+      }
+
+      var timeoutWrapper = function timeoutWrapper(cb, d) {
+        if (d === timeout && match.test(cb.toString())) {
+          d *= boost;
+          hit(source);
+        }
+
+        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+          args[_key - 2] = arguments[_key];
+        }
+
+        return nativeTimeout.apply(window, [cb, d].concat(args));
+      };
+
+      window.setTimeout = timeoutWrapper;
+    }
+    adjustSetTimeout.names = ['adjust-setTimeout', 'ubo-nano-setTimeout-booster.js'];
+    adjustSetTimeout.injections = [toRegExp, hit];
+
+    /**
+     * Wraps the `console.dir` API to call the `toString`
+     * method of the argument.
+     * @param {Source} source
+     * @param {string|number} times the number of times to call the
+     * `toString` method of the argument to `console.dir`.
+     */
+
+    function dirString(source, times) {
+      var _console = console,
+          dir = _console.dir;
+      times = parseInt(times, 10);
+
+      function dirWrapper(object) {
+
+        if (typeof dir === 'function') {
+          dir.call(this, object);
+        }
+
+        hit(source);
+      } // eslint-disable-next-line no-console
+
+
+      console.dir = dirWrapper;
+    }
+    dirString.names = ['dir-string', 'abp-dir-string'];
+    dirString.injections = [hit];
+
+    /**
      * This file must export all scriptlets which should be accessible
      */
 
@@ -1395,7 +1507,10 @@
         debugOnPropertyWrite: debugOnPropertyWrite,
         debugCurrentInlineScript: debugCurrentInlineScript,
         removeAttr: removeAttr,
-        disableNewtabLinks: disableNewtabLinks
+        disableNewtabLinks: disableNewtabLinks,
+        adjustSetInterval: adjustSetInterval,
+        adjustSetTimeout: adjustSetTimeout,
+        dirString: dirString
     });
 
     /**

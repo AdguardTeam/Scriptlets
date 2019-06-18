@@ -595,6 +595,98 @@ example.org#%#//scriptlet("disable-newtab-links")
 
 [scriptlet source](./src/scriptlets/disable-newtab-links.js)
 
+### <a id="adjust-setInterval"></a> adjust-setInterval
+
+Adjusts interval for specified setInterval() callbacks
+
+**Syntax**
+```
+example.org#%#//scriptlet("adjust-setInterval"[, match [, interval[, boost]]])
+```
+
+- `match` - optional, string/regular expression, matching in stringified callback function
+- `interval` - optional, defaults to 1000, decimal integer, matching interval
+- `boost` - optional, default to 0.05, float, capped at 50 times for up and down, interval multiplier
+
+**Examples**
+1. Adjust all setInterval() x20 times where interval equal 1000ms:
+    ```
+    example.org#%#//scriptlet("adjust-setInterval")
+    ```
+
+2. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 1000ms
+    ```
+    example.org#%#//scriptlet("adjust-setInterval", "example")
+    ```
+
+3. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 400ms
+    ```
+    example.org#%#//scriptlet("adjust-setInterval", "example", "400")
+    ```
+
+4. Slow down setInterval() x2 times where callback matched with `example` and interval equal 400ms
+    ```
+    example.org#%#//scriptlet("adjust-setInterval", "example", "400", "2")
+    ```
+
+[scriptlet source](./src/scriptlets/adjust-setInterval.js)
+
+### <a id="adjust-setTimeout"></a> adjust-setTimeout
+
+Adjusts timeout for specified setTimeout() callbacks
+
+**Syntax**
+```
+example.org#%#//scriptlet("adjust-setTimeout"[, match [, timeout[, boost]]])
+```
+
+- `match` - optional, string/regular expression, matching in stringified callback function
+- `timeout` - optional, defaults to 1000, decimal integer, matching interval
+- `boost` - optional, default to 0.05, float, capped at 50 times for up and down, interval multiplier
+
+**Examples**
+1. Adjust all setTimeout() x20 times where interval equal 1000ms:
+    ```
+    example.org#%#//scriptlet("adjust-setTimeout")
+    ```
+
+2. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 1000ms
+    ```
+    example.org#%#//scriptlet("adjust-setTimeout", "example")
+    ```
+
+3. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 400ms
+    ```
+    example.org#%#//scriptlet("adjust-setTimeout", "example", "400")
+    ```
+
+4. Slow down setTimeout() x2 times where callback matched with `example` and interval equal 400ms
+    ```
+    example.org#%#//scriptlet("adjust-setTimeout", "example", "400", "2")
+    ```
+
+[scriptlet source](./src/scriptlets/adjust-setTimeout.js)
+
+
+### <a id="dir-string"></a> dir-string
+
+Wraps the `console.dir` API to call the `toString` method of the argument.
+There are several adblock circumvention systems that detect browser devtools and hide themselves. Therefore, if we force them to think that devtools are open (using this scrciptlet), it will automatically disable the adblock circumvention script.
+
+**Syntax**
+```
+example.org#%#//scriptlet("dir-string"[, times])
+```
+- `times` - optional, the number of times to call the `toString` method of the argument to `console.dir`
+
+**Example**
+1. Run 2 times
+    ```
+    example.org#%#//scriptlet("dir-string", "2")
+    ```
+
+[scriptlet source](./src/scriptlets/dir-string.js)
+
 
 ## <a id="compatibility"></a> Scriptlets compatibility table
 
@@ -618,8 +710,6 @@ example.org#%#//scriptlet("disable-newtab-links")
 | [log-setInterval](#log-setInterval) | setInterval-logger.js |  |
 | [prevent-setTimeout](#prevent-setTimeout) | setTimeout-defuser.js |  |
 | [log-setTimeout](#log-setInterval) | setTimeout-logger.js |  |
-|  | nano-setInterval-booster.js |  |
-|  | nano-setTimeout-booster.js |  |
 |  | sharedWorker-defuser.js (deprecated) |  |
 | [prevent-window-open](#prevent-window-open) | window.open-defuser.js |  |
 | [prevent-bab](#prevent-bab) | bab-defuser.js |  |
@@ -629,7 +719,6 @@ example.org#%#//scriptlet("disable-newtab-links")
 | [prevent-adfly](#prevent-adfly) | adfly-defuser.js |  |
 |  |  | hide-if-contains-image |
 |  |  | hide-if-has-and-matches-style |
-|  |  | dir-string |
 |  |  | hide-if-contains-and-matches-style |
 |  |  | hide-if-contains |
 |  |  | hide-if-shadow-contains |
@@ -640,6 +729,9 @@ example.org#%#//scriptlet("disable-newtab-links")
 | [debug-on-property-write](#debug-on-property-write) |  |  |
 | [remove-attr](#remove-attr) | remove-attr.js | |
 | [disable-newtab-links](#disable-newtab-links) | disable-newtab-links.js | |
+| [adjust-setInterval](#adjust-setInterval) | nano-setInterval-booster.js | |
+| [adjust-setTimeout](#adjust-setTimeout) | nano-setTimeout-booster.js | |
+| [dir-string](#dir-string) | | dir-string |
 
 
 
