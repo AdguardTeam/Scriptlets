@@ -4,7 +4,8 @@
     "indent": ["error", 4],
     "no-param-reassign": "off",
     "no-shadow": "off",
-    "import/prefer-default-export": "off"
+    "import/prefer-default-export": "off",
+    "arrow-body-style": "off"
   },
   "env": {
     "browser": true

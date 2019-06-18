@@ -1,0 +1,8 @@
+- title: prevent-fab-3.2.0
+  comment: Fuckadblock 3.2.0 defuser
+- title: set-popads-dummy
+  comment: Sets static properties PopAds and popns
+- title: prevent-popads-net
+  comment: Aborts on property write (PopAds, popns), throws reference error with random id
+- title: noeval.js
+  comment: Prevents page to use eval.

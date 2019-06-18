@@ -1,40 +1,223 @@
-# AdGuard Scriptlets
+# AdGuard Scriptlets and Resources
+
+* [Scriptlets](#scriptlets)
+    * [Syntax](#syntax)
+    * [Available scriptlets](#available-scriptlets)
+        * [set-constant](#set-constant)
+        * [abort-on-property-read](#abort-on-property-read)
+        * [abort-on-property-write](#abort-on-property-write)
+        * [abort-current-inline-script](#abort-current-inline-script)
+        * [prevent-setTimeout](#prevent-setTimeout)
+        * [prevent-setInterval](#prevent-setInterval)
+        * [prevent-addEventListener](#prevent-addEventListener)
+        * [prevent-window-open](#prevent-window-open)
+        * [nowebrtc](#nowebrtc)
+        * [prevent-bab](#prevent-bab)
+        * [log](#log)
+        * [log-addEventListener](#log-addEventListener)
+        * [log-setInterval](#log-setInterval)
+        * [log-setTimeout](#log-setTimeout)
+        * [log-eval](#log-eval)
+        * [noeval](#noeval)
+        * [prevent-eval-if](#prevent-eval-if)
+        * [remove-cookie](#remove-cookie)
+        * [prevent-fab-3.2.0](#prevent-fab-3.2.0)
+        * [set-popads-dummy](#set-popads-dummy)
+        * [prevent-popads-net](#prevent-popads-net)
+        * [prevent-adfly](#prevent-adfly)
+        * [debug-on-property-read](#debug-on-property-read)
+        * [debug-on-property-write](#debug-on-property-write)
+        * [debug-current-inline-script](#debug-current-inline-script)
+        * [remove-attr](#remove-attr)
+        * [disable-newtab-links](#disable-newtab-links)
+    * [Scriptlets compatibility table](#compatibility)
+* [Redirect resources](#redirect-resources)
+    * [Syntax](#redirect-syntax)
+    * [Available redirect resources](#available-resources)
+    * [Redirect resources compatibility table](#redirect-compatibility)
+* [How to build](#how-to-build)
+
+## <a id="redirect-resources"></a> Redirect resources
+
+AdGuard is able to redirect web requests to a local "resource".
+
+### <a id="redirect-syntax"></a> Syntax
+
+AdGuard uses the same filtering syntax as [uBlock Origin](https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect). Also, it is compatible with ABP `$rewrite` modifier.
+
+`$redirect` is a modifier for the [basic filtering rules](https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-syntax) so rules with this modifier support all other basic modifiers like `$domain`, `$third-party`, `$script`, etc.
+
+The value of the `$redirect` modifier must be the name of the resource, that will be used for redirection. See the list of resources [below](#available-resources).
+
+**Examples**
+* `||example.org/script.js$script,redirect=noopjs` -- redirects all requests to `script.js` to the resource named `noopjs`.
+* `||example.org/test.mp4$media,redirect=noopmp4-1s` -- redirects all requests to `test.mp4` to the resource named `noopmp4-1s`.
+
+> `$redirect` rules priority is higher than the regular basic blocking rules' priority. This means that if there's a basic blocking rule (even with `$important` modifier), `$redirect` rule will prevail over it. If there's a whitelist (`@@`) rule matching the same URL, it will disable redirecting as well (unless the `$redirect` rule is also marked as `$important`).
+
+> uBlock Origin specifies additional resource name `none` that can disable other redirect rules. AdGuard does not support it, use `$badfilter` to disable specific rules.
+
+### <a id="available-resources"></a> Available redirect resources
+
+
+#### <a id="1x1-transparent"></a> 1x1-transparent.gif
+
+**Example**
+```
+||example.org^$image,redirect=1x1-transparent.gif
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="2x2-transparent"></a> 2x2-transparent.png
+
+**Example**
+```
+||example.org^$image,redirect=2x2-transparent.png
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="3x2-transparent"></a> 3x2-transparent.png
+
+**Example**
+```
+||example.org^$image,redirect=3x2-transparent.png
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="32x32-transparent"></a> 32x32-transparent.png
+
+**Example**
+```
+||example.org^$image,redirect=32x32-transparent.png
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="noopframe"></a> noopframe
+
+**Example**
+```
+||example.com^$subdocument,redirect=noopframe,domain=example.org
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="noopcss"></a> noopcss
+
+**Example**
+```
+||example.org^$stylesheet,redirect=noopcss
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="noopjs"></a> noopjs
+
+**Example**
+```
+||example.org^$script,redirect=noopjs
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="nooptext"></a> nooptext
+
+**Example**
+```
+||example.org^$xmlhttprequest,redirect=nooptext
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="noopmp3-01s"></a> noopmp3-0.1s
+
+**Example**
+```
+||example.org^$media,redirect=noopmp3-0.1s
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="noopmp4-1s"></a> noopmp4-1s
+
+**Example**
+```
+||example.org^$media,redirect=noopmp4-1s
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="prevent-fab-3-2-0"></a> prevent-fab-3.2.0
+
+Redirects fuckadblock script to the source js file
+
+**Example**
+```
+*/fuckadblock-$script,redirect=prevent-fab-3.2.0
+```
+[redirect source](./src/scriptlets/prevent-fab-3.2.0.js)
+
+
+#### <a id="set-popads-dummy"></a> set-popads-dummy
+
+Redirects request to the source which sets static properties to PopAds and popns objectss
+
+**Example**
+```
+||popads.net^$script,redirect=set-popads-dummy,domain=example.org
+```
+[redirect source](./src/scriptlets/set-popads-dummy.js)
+
+
+#### <a id="prevent-popads-net"></a> prevent-popads-net
+
+Redirects request to the source which sets static properties to PopAds and popns objectss
+
+**Example**
+```
+||popads.net/pop.js$script,redirect=prevent-popads-net
+```
+[redirect source](./src/scriptlets/prevent-popads-net.js)
+
+
+#### <a id="noeval-js"></a> noeval.js
+
+Prevents page to use eval
+
+**Example**
+```
+||example.org/index.js$script,redirect=noeval.js
+```
+[redirect source](./src/scriptlets/noeval.js)
+
+### <a id="redirect-compatibility"></a> Redirect resources compatibility table
+
+|AdGuard | uBO | Adblock Plus |
+|--|--|--|
+| [1x1-transparent.gif](#1x1-transparent) | 1x1-transparent.gif | 1x1-transparent-gif |
+| [2x2-transparent.png](#2x2-transparent) | 2x2-transparent.png | 2x2-transparent-png |
+| [3x2-transparent.png](#3x2-transparent) | 3x2-transparent.png | 3x2-transparent-png |
+| [32x32-transparent.png](#32x32-transparent) | 32x32-transparent.png | 32x32-transparent-png |
+| [noopframe](#noopframe) | noopframe | blank-html |
+| [noopcss](#noopcss) | noopcss | blank-css |
+| [noopjs](#noopcss) | noopjs | blank-js |
+| [nooptext](#nooptext) | nooptext | blank-text |
+| [noopmp3-0.1s](#noopmp3-01s) | noopmp3-0.1s | blank-mp3 |
+| [noopmp4-1s](#noopmp4-1s) | noopmp4-1s |  blank-mp4 |
+| [prevent-fab-3.2.0](#prevent-fab-3-2-0) | fuckadblock.js-3.2.0 ||
+| [set-popads-dummy](#set-popads-dummy) | popads-dummy.js ||
+| [prevent-popads-net](#prevent-popads-net) | popads.net.js ||
+| [noeval.js](#noeval-js) | silent-noeval.js | noeval |
+
+
+## <a id="scriptlets"></a> Scriptlets
 
 Scriptlet is a JavaScript function that provides extended capabilities for content blocking. These functions can be used in a declarative manner in AdGuard filtering rules.
 
-* [Syntax](#syntax)
-* [Available scriptlets](#scriptlets)
-    * [set-constant](#set-constant)
-    * [abort-on-property-read](#abort-on-property-read)
-    * [abort-on-property-write](#abort-on-property-write)
-    * [abort-current-inline-script](#abort-current-inline-script)
-    * [prevent-setTimeout](#prevent-setTimeout)
-    * [prevent-setInterval](#prevent-setInterval)
-    * [prevent-addEventListener](#prevent-addEventListener)
-    * [prevent-window-open](#prevent-window-open)
-    * [nowebrtc](#nowebrtc)
-    * [prevent-bab](#prevent-bab)
-    * [log](#log)
-    * [log-addEventListener](#log-addEventListener)
-    * [log-setInterval](#log-setInterval)
-    * [log-setTimeout](#log-setTimeout)
-    * [log-eval](#log-eval)
-    * [noeval](#noeval)
-    * [prevent-eval-if](#prevent-eval-if)
-    * [remove-cookie](#remove-cookie)
-    * [prevent-fab-3.2.0](#prevent-fab-3.2.0)
-    * [set-popads-dummy](#set-popads-dummy)
-    * [prevent-popads-net](#prevent-popads-net)
-    * [prevent-adfly](#prevent-adfly)
-    * [debug-on-property-read](#debug-on-property-read)
-    * [debug-on-property-write](#debug-on-property-write)
-    * [debug-current-inline-script](#debug-current-inline-script)
-    * [remove-attr](#remove-attr)
-    * [disable-newtab-links](#disable-newtab-links)
-* [Scriptlets compatibility table](#compatibility)
-* [How to build](#how-to-build)
-
-## <a id="syntax"></a> Syntax
+### <a id="syntax"></a> Syntax
 
 ```
 rule = [domains]  "#%#//scriptlet(" scriptletName arguments ")"
@@ -59,11 +242,11 @@ example.org#%#//scriptlet("abort-on-property-read", "alert")
 
 This rule applies the `abort-on-property-read` scriptlet on all pages of `example.org` and its subdomains, and passes one orgument to it (`alert`).
 
-## <a id="scriptlets"></a> Available scriptlets
+### <a id="available-scriptlets"></a> Available scriptlets
 
 This is a list of scriptlets supported by AdGuard. Please note, that in order to achieve cross-blocker compatibility, we also support syntax of uBO and ABP. You can check out the [compatibility table](#compatibility).
 
-### <a id="set-constant"></a> set-constant
+#### <a id="set-constant"></a> set-constant
 
 Creates a constant property and assigns it one of the values from the predefined list.
 
@@ -99,7 +282,7 @@ example.org#%#//scriptlet("set-constant", "secondConst", "trueFunc")
 
 [scriptlet source](./src/scriptlets/set-constant.js)
 
-### <a id="abort-on-property-read"></a> abort-on-property-read
+#### <a id="abort-on-property-read"></a> abort-on-property-read
 
 Aborts a script when it attempts to **read** the specified property.
 
@@ -122,7 +305,7 @@ example.org#%#//scriptlet("abort-on-property-read", "navigator.language")
 
 [Scriptlet source](./src/scriptlets/abort-on-property-read.js)
 
-### <a id="abort-on-property-write"></a> abort-on-property-write
+#### <a id="abort-on-property-write"></a> abort-on-property-write
 
 Aborts a script when it attempts to **write** the specified property.
 
@@ -142,7 +325,7 @@ example.org#%#//scriptlet("abort-on-property-read", "adblock")
 
 [Scriptlet source](./src/scriptlets/abort-on-property-write.js)
 
-### <a id="abort-current-inline-script"></a> abort-current-inline-script
+#### <a id="abort-current-inline-script"></a> abort-current-inline-script
 
 Aborts an inline script when it attempts to **read** the specified property AND when the contents of the `<script>` element contains the specified text or matches the regular expression.
 
@@ -191,7 +374,7 @@ example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>]
 
 [scriptlet source](./src/scriptlets/abort-current-inline-script.js)
 
-### <a id="prevent-setTimeout"></a> prevent-setTimeout
+#### <a id="prevent-setTimeout"></a> prevent-setTimeout
 
 Prevents a `setTimeout` call if the text of the callback is matching the specified search string/regexp and (optionally) have the specified delay.
 
@@ -232,7 +415,7 @@ example.org#%#//scriptlet("prevent-setTimeout"[, <search>[, <delay>]])
 
 [scriptlet source](./src/scriptlets/prevent-setTimeout.js)
 
-### <a id="prevent-setInterval"></a> prevent-setInterval
+#### <a id="prevent-setInterval"></a> prevent-setInterval
 
 Prevents a `setInterval` call if the text of the callback is matching the specified search string/regexp and (optionally) have the specified interval.
 
@@ -273,7 +456,7 @@ example.org#%#//scriptlet("prevent-setInterval"[, <search>[, <interval>]])
 
 [scriptlet source](./src/scriptlets/prevent-setInterval.js)
 
-### <a id="prevent-addEventListener"></a> prevent-addEventListener
+#### <a id="prevent-addEventListener"></a> prevent-addEventListener
 
 Prevents adding event listeners for the specified events and callbacks.
 
@@ -306,7 +489,7 @@ example.org#%#//scriptlet("prevent-addEventListener"[, eventSearch[, functionSea
 
 [scriptlet source](./src/scriptlets/prevent-addEventListener.js)
 
-### <a id="prevent-window-open"></a> prevent-window-open
+#### <a id="prevent-window-open"></a> prevent-window-open
 
 Prevents `window.open` calls when URL either matches or not matches the specified string/regexp. Using it without parameters prevents all `window.open` calls.
 
@@ -343,7 +526,7 @@ example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
 
 [scriptlet source](./src/scriptlets/prevent-window-open.js)
 
-### <a id="nowebrtc"></a> nowebrtc
+#### <a id="nowebrtc"></a> nowebrtc
 
 Disables WebRTC by overriding `RTCPeerConnection`. The overriden function will log every attempt to create a new connection.
 
@@ -354,7 +537,7 @@ example.org#%#//scriptlet("nowebrtc")
 
 [scriptlet source](./src/scriptlets/nowebrtc.js)
 
-### <a id="prevent-bab"></a> prevent-bab
+#### <a id="prevent-bab"></a> prevent-bab
 
 Prevents BlockAdblock script from detecting an ad blocker.
 
@@ -365,7 +548,7 @@ example.org#%#//scriptlet("prevent-bab")
 
 [scriptlet source](./src/scriptlets/prevent-bab.js)
 
-### <a id="log"></a> log
+#### <a id="log"></a> log
 
 A simple scriptlet which only purpose is to print arguments to console.
 This scriptlet can be helpful for debugging and troubleshooting other scriptlets.
@@ -374,7 +557,7 @@ This scriptlet can be helpful for debugging and troubleshooting other scriptlets
 example.org#%#//scriptlet("log", "arg1", "arg2")
 ```
 
-### <a id="log-addEventListener"></a> log-addEventListener
+#### <a id="log-addEventListener"></a> log-addEventListener
 
 Logs all addEventListener calls to the console
 
@@ -385,7 +568,7 @@ example.org#%#//scriptlet("log-addEventListener")
 
 [scriptlet source](./src/scriptlets/log-addEventListener.js)
 
-### <a id="log-setInterval"></a> log-setInterval
+#### <a id="log-setInterval"></a> log-setInterval
 
 Logs all setInterval calls to the console
 
@@ -396,7 +579,7 @@ example.org#%#//scriptlet("log-setInterval")
 
 [scriptlet source](./src/scriptlets/log-setInterval.js)
 
-### <a id="log-setTimeout"></a> log-setTimeout
+#### <a id="log-setTimeout"></a> log-setTimeout
 
 Logs all setTimeout call to the console
 
@@ -407,7 +590,7 @@ example.org#%#//scriptlet("log-setTimeout")
 
 [scriptlet source](./src/scriptlets/log-setTimeout.js)
 
-### <a id="log-eval"></a> log-eval
+#### <a id="log-eval"></a> log-eval
 
 Logs all `eval()` or `new Function()` calls to the console
 
@@ -418,7 +601,7 @@ example.org#%#//scriptlet("log-eval")
 
 [scriptlet source](./src/scriptlets/log-eval.js)
 
-### <a id="remove-cookie"></a> remove-cookie
+#### <a id="remove-cookie"></a> remove-cookie
 
 Removes current page cookies by passed string matching with name. For current domain and subdomains. Runs on load and before unload.
 
@@ -448,7 +631,7 @@ example.org#%#//scriptlet("remove-cookie"[, match])
 
 [scriptlet source](./src/scriptlets/cookie-remover.js)
 
-### <a id="prevent-fab-3.2.0"></a> prevent-fab-3.2.0
+#### <a id="prevent-fab-3.2.0"></a> prevent-fab-3.2.0
 
 Prevents execution of the FAB script v3.2.0
 
@@ -459,7 +642,7 @@ example.org#%#//scriptlet("prevent-fab-3.2.0")
 
 [scriptlet source](./src/scriptlets/prevent-fab-3.2.0.js)
 
-### <a id="set-popads-dummy"></a> set-popads-dummy
+#### <a id="set-popads-dummy"></a> set-popads-dummy
 
 Sets static properties PopAds and popns.
 
@@ -470,7 +653,7 @@ example.org#%#//scriptlet("set-popads-dummy")
 
 [scriptlet source](./src/scriptlets/set-popads-dummy.js)
 
-### <a id="prevent-popads-net"></a> prevent-popads-net
+#### <a id="prevent-popads-net"></a> prevent-popads-net
 
 Aborts on property write (PopAds, popns), throws reference error with random id
 
@@ -481,7 +664,7 @@ example.org#%#//scriptlet("prevent-popads-net")
 
 [scriptlet source](./src/scriptlets/prevent-popads-net.js)
 
-### <a id="prevent-adfly"></a> prevent-adfly
+#### <a id="prevent-adfly"></a> prevent-adfly
 
 Prevents anti-adblock scripts on adfly short links.
 
@@ -492,7 +675,7 @@ example.org#%#//scriptlet("prevent-adfly")
 
 [scriptlet source](./src/scriptlets/prevent-adfly.js)
 
-### <a id="debug-current-inline-script"></a> debug-current-inline-script
+#### <a id="debug-current-inline-script"></a> debug-current-inline-script
 
 This scriptlet is basically the same as [abort-current-inline-script](#abort-current-inline-script), but instead of aborting it starts the debugger.
 
@@ -508,7 +691,7 @@ example.org#%#//scriptlet("debug-current-inline-script", "alert")
 [scriptlet source](./src/scriptlets/debug-current-inline-script.js)
 
 
-### <a id="debug-on-property-read"></a> debug-on-property-read
+#### <a id="debug-on-property-read"></a> debug-on-property-read
 
 This scriptlet is basically the same as [abort-on-property-read](#abort-on-property-read), but instead of aborting it starts the debugger.
 
@@ -523,7 +706,7 @@ example.org#%#//scriptlet("debug-on-property-read", "alert")
 [scriptlet source](./src/scriptlets/debug-on-property-read.js)
 
 
-### <a id="debug-on-property-write"></a> debug-on-property-write
+#### <a id="debug-on-property-write"></a> debug-on-property-write
 
 This scriptlet is basically the same as [abort-on-property-write](#abort-on-property-write), but instead of aborting it starts the debugger.
 
@@ -539,7 +722,7 @@ example.org#%#//scriptlet("debug-on-property-write", "test")
 [scriptlet source](./src/scriptlets/debug-on-property-write.js)
 
 
-### <a id="remove-attr"></a> remove-attr
+#### <a id="remove-attr"></a> remove-attr
 
 Removes attributes from DOM nodes. Will run only once after page load.
 
@@ -584,7 +767,7 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
 
 [scriptlet source](./src/scriptlets/remove-attr.js)
 
-### <a id="disable-newtab-links"></a> disable-newtab-links
+#### <a id="disable-newtab-links"></a> disable-newtab-links
 
 Prevents opening new tabs and windows if there is `target` attribute in element
 
@@ -688,7 +871,7 @@ example.org#%#//scriptlet("dir-string"[, times])
 [scriptlet source](./src/scriptlets/dir-string.js)
 
 
-## <a id="compatibility"></a> Scriptlets compatibility table
+### <a id="compatibility"></a> Scriptlets compatibility table
 
 |AdGuard | uBO | Adblock Plus |
 |--|--|--|
@@ -732,8 +915,6 @@ example.org#%#//scriptlet("dir-string"[, times])
 | [adjust-setInterval](#adjust-setInterval) | nano-setInterval-booster.js | |
 | [adjust-setTimeout](#adjust-setTimeout) | nano-setTimeout-booster.js | |
 | [dir-string](#dir-string) | | dir-string |
-
-
 
 ## <a id="how-to-build"></a> How to build
 
@@ -834,4 +1015,38 @@ Schema
         }
     }
 }
+```
+
+#### Redirect resources library
+
+#### Redirects library
+```
+dist/redirects.js
+dist/redirects.yml
+```
+
+Creates a global variable `Redirects`.
+
+```javascript
+// Usage
+
+/**
+ * Converts rawYaml into JS object with sources titles used as keys
+ */
+const redirects = new Redirects(rawYaml)
+
+/**
+ * Returns redirect source object by title
+ */
+const redirect = redirect.getRedirect('noopjs');
+
+/**
+ * Redirect - object with following props
+ * {
+ *      title: 1x1-transparent.gif
+ *      comment: http://probablyprogramming.com/2009/03/15/the-tiniest-gif-ever
+ *      contentType: image/gif;base64
+ *      content: R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
+ * }
+ */
 ```
