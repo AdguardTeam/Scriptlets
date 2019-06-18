@@ -359,11 +359,9 @@
      * @param {string} [match] matching with URL
      */
 
-    function preventWindowOpen(source) {
-      var inverse = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-      var match = arguments.length > 2 ? arguments[2] : undefined;
+    function preventWindowOpen(source, inverse, match) {
       var nativeOpen = window.open;
-      inverse = inverse ? !+inverse : inverse;
+      inverse = inverse ? !+inverse : !!inverse;
       match = match ? toRegExp(match) : toRegExp('/.?/'); // eslint-disable-next-line consistent-return
 
       var openWrapper = function openWrapper(str) {
@@ -1462,12 +1460,19 @@
       times = parseInt(times, 10);
 
       function dirWrapper(object) {
+        // eslint-disable-next-line no-unused-vars
+        var temp;
+
+        for (var i = 0; i < times; i += 1) {
+          // eslint-disable-next-line no-unused-expressions
+          temp = "".concat(object);
+        }
 
         if (typeof dir === 'function') {
           dir.call(this, object);
         }
 
-        hit(source);
+        hit(source, temp);
       } // eslint-disable-next-line no-console
 
 

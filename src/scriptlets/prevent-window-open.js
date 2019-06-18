@@ -7,12 +7,12 @@ import { hit } from '../helpers';
  * @param {number|string} [inverse] inverse matching
  * @param {string} [match] matching with URL
  */
-export function preventWindowOpen(source, inverse = false, match) {
+export function preventWindowOpen(source, inverse, match) {
     const nativeOpen = window.open;
 
     inverse = inverse
         ? !(+inverse)
-        : inverse;
+        : !!inverse;
     match = match
         ? toRegExp(match)
         : toRegExp('/.?/');
