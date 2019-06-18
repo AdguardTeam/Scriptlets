@@ -12,14 +12,16 @@ export function dirString(source, times) {
     times = parseInt(times, 10);
 
     function dirWrapper(object) {
+        // eslint-disable-next-line no-unused-vars
+        let temp;
         for (let i = 0; i < times; i += 1) {
             // eslint-disable-next-line no-unused-expressions
-            `${object}`;
+            temp = `${object}`;
         }
         if (typeof dir === 'function') {
             dir.call(this, object);
         }
-        hit(source);
+        hit(source, temp);
     }
     // eslint-disable-next-line no-console
     console.dir = dirWrapper;
