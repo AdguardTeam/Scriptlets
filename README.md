@@ -59,11 +59,159 @@ The value of the `$redirect` modifier must be the name of the resource, that wil
 
 ### <a id="available-resources"></a> Available redirect resources
 
-TBD
+
+#### <a id="1x1-transparent"></a> 1x1-transparent.gif
+
+**Example**
+```
+||example.org^$image,redirect=1x1-transparent.gif
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="2x2-transparent"></a> 2x2-transparent.png
+
+**Example**
+```
+||example.org^$image,redirect=2x2-transparent.png
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="3x2-transparent"></a> 3x2-transparent.png
+
+**Example**
+```
+||example.org^$image,redirect=3x2-transparent.png
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="32x32-transparent"></a> 32x32-transparent.png
+
+**Example**
+```
+||example.org^$image,redirect=32x32-transparent.png
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="noopframe"></a> noopframe
+
+**Example**
+```
+||example.com^$subdocument,redirect=noopframe,domain=example.org
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="noopcss"></a> noopcss
+
+**Example**
+```
+||example.org^$stylesheet,redirect=noopcss
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="noopjs"></a> noopjs
+
+**Example**
+```
+||example.org^$script,redirect=noopjs
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="nooptext"></a> nooptext
+
+**Example**
+```
+||example.org^$xmlhttprequest,redirect=nooptext
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="noopmp3-01s"></a> noopmp3-0.1s
+
+**Example**
+```
+||example.org^$media,redirect=noopmp3-0.1s
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="noopmp4-1s"></a> noopmp4-1s
+
+**Example**
+```
+||example.org^$media,redirect=noopmp4-1s
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="prevent-fab-3-2-0"></a> prevent-fab-3.2.0
+
+Redirects fuckadblock script to the source js file
+
+**Example**
+```
+*/fuckadblock-$script,redirect=prevent-fab-3.2.0
+```
+[redirect source](./src/scriptlets/prevent-fab-3.2.0.js)
+
+
+#### <a id="set-popads-dummy"></a> set-popads-dummy
+
+Redirects request to the source which sets static properties to PopAds and popns objectss
+
+**Example**
+```
+||popads.net^$script,redirect=set-popads-dummy,domain=example.org
+```
+[redirect source](./src/scriptlets/set-popads-dummy.js)
+
+
+#### <a id="prevent-popads-net"></a> prevent-popads-net
+
+Redirects request to the source which sets static properties to PopAds and popns objectss
+
+**Example**
+```
+||popads.net/pop.js$script,redirect=prevent-popads-net
+```
+[redirect source](./src/scriptlets/prevent-popads-net.js)
+
+
+#### <a id="noeval-js"></a> noeval.js
+
+Prevents page to use eval
+
+**Example**
+```
+||example.org/index.js$script,redirect=noeval.js
+```
+[redirect source](./src/scriptlets/noeval.js)
 
 ### <a id="redirect-compatibility"></a> Redirect resources compatibility table
 
-TBD
+|AdGuard | uBO | Adblock Plus |
+|--|--|--|
+| [1x1-transparent.gif](#1x1-transparent) | 1x1-transparent.gif | 1x1-transparent-gif |
+| [2x2-transparent.png](#2x2-transparent) | 2x2-transparent.png | 2x2-transparent-png |
+| [3x2-transparent.png](#3x2-transparent) | 3x2-transparent.png | 3x2-transparent-png |
+| [32x32-transparent.png](#32x32-transparent) | 32x32-transparent.png | 32x32-transparent-png |
+| [noopframe](#noopframe) | noopframe | blank-html |
+| [noopcss](#noopcss) | noopcss | blank-css |
+| [noopjs](#noopcss) | noopjs | blank-js |
+| [nooptext](#nooptext) | nooptext | blank-text |
+| [noopmp3-0.1s](#noopmp3-01s) | noopmp3-0.1s | blank-mp3 |
+| [noopmp4-1s](#noopmp4-1s) | noopmp4-1s |  blank-mp4 |
+| [prevent-fab-3.2.0](#prevent-fab-3-2-0) | fuckadblock.js-3.2.0 ||
+| [set-popads-dummy](#set-popads-dummy) | popads-dummy.js ||
+| [prevent-popads-net](#prevent-popads-net) | popads.net.js ||
+| [noeval.js](#noeval-js) | silent-noeval.js | noeval |
+
 
 ## <a id="scriptlets"></a> Scriptlets
 
@@ -779,4 +927,34 @@ Schema
 
 #### Redirect resources library
 
-TBD
+#### Redirects library
+```
+dist/redirects.js
+dist/redirects.yml
+```
+
+Creates a global variable `Redirects`.
+
+```javascript
+// Usage
+
+/**
+ * Converts rawYaml into JS object with sources titles used as keys
+ */
+const redirects = new Redirects(rawYaml)
+
+/**
+ * Returns redirect source object by title
+ */
+const redirect = redirect.getRedirect('noopjs');
+
+/**
+ * Redirect - object with following props
+ * {
+ *      title: 1x1-transparent.gif
+ *      comment: http://probablyprogramming.com/2009/03/15/the-tiniest-gif-ever
+ *      contentType: image/gif;base64
+ *      content: R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
+ * }
+ */
+```
