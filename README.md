@@ -499,7 +499,7 @@ example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
 ```
 
 **Parameters**
-- `match` (optional) set to `Match` or `Not Match`.
+- `match` (optional) defaults to "matching", any positive number for "matching", 0 or any string for "not matching",
 - `search` (optional) string or regexp for matching the URL passed to `window.open` call.
 
 **Example**
