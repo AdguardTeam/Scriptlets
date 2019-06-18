@@ -671,6 +671,7 @@ example.org#%#//scriptlet("adjust-setTimeout"[, match [, timeout[, boost]]])
 ### <a id="dir-string"></a> dir-string
 
 Wraps the `console.dir` API to call the `toString` method of the argument.
+There are several adblock circumvention systems that detect browser devtools and hide themselves. Therefore, if we force them to think that devtools are open (using this scrciptlet), it will automatically disable the adblock circumvention script.
 
 **Syntax**
 ```
@@ -718,7 +719,6 @@ example.org#%#//scriptlet("dir-string"[, times])
 | [prevent-adfly](#prevent-adfly) | adfly-defuser.js |  |
 |  |  | hide-if-contains-image |
 |  |  | hide-if-has-and-matches-style |
-|  |  | dir-string |
 |  |  | hide-if-contains-and-matches-style |
 |  |  | hide-if-contains |
 |  |  | hide-if-shadow-contains |
