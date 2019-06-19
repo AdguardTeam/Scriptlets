@@ -297,8 +297,10 @@
 
     function preventSetTimeout(source, match, delay) {
       var nativeTimeout = window.setTimeout;
+      var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
+
       delay = parseInt(delay, 10);
-      delay = Number.isNaN(delay) ? null : delay;
+      delay = nativeIsNaN(delay) ? null : delay;
       match = match ? toRegExp(match) : toRegExp('/.?/');
 
       var timeoutWrapper = function timeoutWrapper(cb, d) {
@@ -330,8 +332,10 @@
 
     function preventSetInterval(source, match, interval) {
       var nativeInterval = window.setInterval;
+      var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
+
       interval = parseInt(interval, 10);
-      interval = Number.isNaN(interval) ? null : interval;
+      interval = nativeIsNaN(interval) ? null : interval;
       match = match ? toRegExp(match) : toRegExp('/.?/');
 
       var intervalWrapper = function intervalWrapper(cb, d) {
@@ -389,11 +393,12 @@
 
       var getCurrentScript = function getCurrentScript() {
         if (!document.currentScript) {
+          // eslint-disable-line compat/compat
           var scripts = document.getElementsByTagName('script');
           return scripts[scripts.length - 1];
         }
 
-        return document.currentScript;
+        return document.currentScript; // eslint-disable-line compat/compat
       };
 
       var ourScript = getCurrentScript();
@@ -455,6 +460,8 @@
         return;
       }
 
+      var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
+
       var constantValue;
 
       if (value === 'undefined') {
@@ -478,7 +485,7 @@
       } else if (/^\d+$/.test(value)) {
         constantValue = parseFloat(value);
 
-        if (Number.isNaN(constantValue)) {
+        if (nativeIsNaN(constantValue)) {
           return;
         }
 
@@ -670,7 +677,7 @@
 
           for (var j = 0; j < tokens.length; j += 1) {
             var token = tokens[j];
-            var found = token instanceof RegExp ? token.test(str) : str.includes(token);
+            var found = token instanceof RegExp ? token.test(str) : str.indexOf(token) > -1;
 
             if (found) {
               match += 1;
@@ -1071,7 +1078,14 @@
 
         data = data.join('');
         var decodedURL = window.atob(data).slice(16, -16);
-        window.stop();
+        /* eslint-disable compat/compat */
+
+        if (window.stop) {
+          window.stop();
+        }
+        /* eslint-enable compat/compat */
+
+
         window.onbeforeunload = null;
         window.location.href = decodedURL;
       };
@@ -1228,11 +1242,12 @@
 
       var getCurrentScript = function getCurrentScript() {
         if (!document.currentScript) {
+          // eslint-disable-line compat/compat
           var scripts = document.getElementsByTagName('script');
           return scripts[scripts.length - 1];
         }
 
-        return document.currentScript;
+        return document.currentScript; // eslint-disable-line compat/compat
       };
 
       var ourScript = getCurrentScript();
@@ -1314,9 +1329,9 @@
           window.removeEventListener(ev.type, rmattr, true);
         }
 
-        var nodes = document.querySelectorAll(selector);
+        var nodes = [].slice.call(document.querySelectorAll(selector));
         var removed = false;
-        Array.from(nodes).forEach(function (node) {
+        nodes.forEach(function (node) {
           attrs.forEach(function (attr) {
             node.removeAttribute(attr);
             removed = true;
@@ -1372,10 +1387,14 @@
 
     function adjustSetInterval(source, match, interval, boost) {
       var nativeInterval = window.setInterval;
+      var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
+
+      var nativeIsFinite = Number.isFinite || window.isFinite; // eslint-disable-line compat/compat
+
       interval = parseInt(interval, 10);
-      interval = Number.isNaN(interval) ? 1000 : interval;
+      interval = nativeIsNaN(interval) ? 1000 : interval;
       boost = parseInt(boost, 10);
-      boost = Number.isNaN(interval) || !Number.isFinite(boost) ? 0.05 : boost;
+      boost = nativeIsNaN(interval) || !nativeIsFinite(boost) ? 0.05 : boost;
       match = match ? toRegExp(match) : toRegExp('/.?/');
 
       if (boost < 0.02) {
@@ -1414,10 +1433,14 @@
 
     function adjustSetTimeout(source, match, timeout, boost) {
       var nativeTimeout = window.setTimeout;
+      var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
+
+      var nativeIsFinite = Number.isFinite || window.isFinite; // eslint-disable-line compat/compat
+
       timeout = parseInt(timeout, 10);
-      timeout = Number.isNaN(timeout) ? 1000 : timeout;
+      timeout = nativeIsNaN(timeout) ? 1000 : timeout;
       boost = parseInt(boost, 10);
-      boost = Number.isNaN(timeout) || !Number.isFinite(boost) ? 0.05 : boost;
+      boost = nativeIsNaN(timeout) || !nativeIsFinite(boost) ? 0.05 : boost;
       match = match ? toRegExp(match) : toRegExp('/.?/');
 
       if (boost < 0.02) {
@@ -1590,7 +1613,7 @@
         return scriptletList[key];
       });
       return scriptlets.find(function (s) {
-        return s.names && s.names.includes(name);
+        return s.names && s.names.indexOf(name) > -1;
       });
     }
     /**

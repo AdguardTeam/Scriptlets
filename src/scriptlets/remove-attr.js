@@ -19,9 +19,9 @@ export function removeAttr(source, attrs, selector) {
             window.removeEventListener(ev.type, rmattr, true);
         }
 
-        const nodes = document.querySelectorAll(selector);
+        const nodes = [].slice.call(document.querySelectorAll(selector));
         let removed = false;
-        Array.from(nodes).forEach((node) => {
+        nodes.forEach((node) => {
             attrs.forEach((attr) => {
                 node.removeAttribute(attr);
                 removed = true;

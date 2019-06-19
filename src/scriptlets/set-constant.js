@@ -7,6 +7,8 @@ export function setConstant(source, property, value) {
         return;
     }
 
+    const nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
+
     let constantValue;
     if (value === 'undefined') {
         constantValue = undefined;
@@ -24,7 +26,7 @@ export function setConstant(source, property, value) {
         constantValue = () => false;
     } else if (/^\d+$/.test(value)) {
         constantValue = parseFloat(value);
-        if (Number.isNaN(constantValue)) {
+        if (nativeIsNaN(constantValue)) {
             return;
         }
         if (Math.abs(constantValue) > 0x7FFF) {

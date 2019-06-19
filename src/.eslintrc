@@ -1,0 +1,20 @@
+// this config is used to check compability with browsers
+{
+  "extends": [
+    "plugin:compat/recommended"
+  ],
+  "rules": {
+    "no-restricted-properties": [
+      2,
+      {
+        "property": "includes"
+      },
+      {
+        "property": "startsWith"
+      },
+      {
+        "property": "endsWith"
+      }
+    ]
+  }
+}

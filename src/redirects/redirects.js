@@ -48,13 +48,16 @@ class Redirects {
         if (Object.prototype.hasOwnProperty.call(this.redirects, title)) {
             return this.redirects[title];
         }
+
         // look title among aliases
-        return Object.values(this.redirects).find((redirect) => {
+        const values = Object.keys(this.redirects)
+            .map(key => this.redirects[key]);
+        return values.find((redirect) => {
             const { aliases } = redirect;
             if (!aliases) {
                 return false;
             }
-            return aliases.includes(title);
+            return aliases.indexOf(title) > -1;
         });
     }
 }

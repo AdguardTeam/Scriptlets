@@ -11,8 +11,9 @@ import { hit } from '../helpers';
  */
 export function preventSetTimeout(source, match, delay) {
     const nativeTimeout = window.setTimeout;
+    const nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
     delay = parseInt(delay, 10);
-    delay = Number.isNaN(delay) ? null : delay;
+    delay = nativeIsNaN(delay) ? null : delay;
 
     match = match ? toRegExp(match) : toRegExp('/.?/');
     const timeoutWrapper = (cb, d, ...args) => {
