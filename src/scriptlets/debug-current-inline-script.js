@@ -10,11 +10,11 @@ export function debugCurrentInlineScript(source, property, search = null) {
     const rid = randomId();
 
     const getCurrentScript = () => {
-        if (!document.currentScript) {
+        if (!document.currentScript) { // eslint-disable-line compat/compat
             const scripts = document.getElementsByTagName('script');
             return scripts[scripts.length - 1];
         }
-        return document.currentScript;
+        return document.currentScript; // eslint-disable-line compat/compat
     };
 
     const ourScript = getCurrentScript();

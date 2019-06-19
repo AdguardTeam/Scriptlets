@@ -10,11 +10,14 @@ import { hit } from '../helpers';
  */
 export function adjustSetTimeout(source, match, timeout, boost) {
     const nativeTimeout = window.setTimeout;
+    const nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
+    const nativeIsFinite = Number.isFinite || window.isFinite; // eslint-disable-line compat/compat
+
     timeout = parseInt(timeout, 10);
-    timeout = Number.isNaN(timeout) ? 1000 : timeout;
+    timeout = nativeIsNaN(timeout) ? 1000 : timeout;
 
     boost = parseInt(boost, 10);
-    boost = Number.isNaN(timeout) || !Number.isFinite(boost) ? 0.05 : boost;
+    boost = nativeIsNaN(timeout) || !nativeIsFinite(boost) ? 0.05 : boost;
 
     match = match ? toRegExp(match) : toRegExp('/.?/');
 

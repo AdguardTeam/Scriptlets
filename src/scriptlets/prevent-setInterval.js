@@ -11,8 +11,9 @@ import { hit } from '../helpers';
  */
 export function preventSetInterval(source, match, interval) {
     const nativeInterval = window.setInterval;
+    const nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
     interval = parseInt(interval, 10);
-    interval = Number.isNaN(interval) ? null : interval;
+    interval = nativeIsNaN(interval) ? null : interval;
 
     match = match ? toRegExp(match) : toRegExp('/.?/');
     const intervalWrapper = (cb, d, ...args) => {

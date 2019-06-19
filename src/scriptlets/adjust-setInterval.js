@@ -10,11 +10,14 @@ import { hit } from '../helpers';
  */
 export function adjustSetInterval(source, match, interval, boost) {
     const nativeInterval = window.setInterval;
+    const nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
+    const nativeIsFinite = Number.isFinite || window.isFinite; // eslint-disable-line compat/compat
+
     interval = parseInt(interval, 10);
-    interval = Number.isNaN(interval) ? 1000 : interval;
+    interval = nativeIsNaN(interval) ? 1000 : interval;
 
     boost = parseInt(boost, 10);
-    boost = Number.isNaN(interval) || !Number.isFinite(boost) ? 0.05 : boost;
+    boost = nativeIsNaN(interval) || !nativeIsFinite(boost) ? 0.05 : boost;
 
     match = match ? toRegExp(match) : toRegExp('/.?/');
 
