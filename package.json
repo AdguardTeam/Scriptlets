@@ -17,9 +17,6 @@
             "pre-commit": "yarn run lint"
         }
     },
-    "browserslist": [
-        "IE 11"
-    ],
     "author": "devteam@adguard.com",
     "license": "LGPL-3.0",
     "devDependencies": {

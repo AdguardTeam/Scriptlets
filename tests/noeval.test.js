@@ -36,9 +36,6 @@ test('ubo noeval alias', (assert) => {
 
     const evalStr = '2';
 
-    // set assertions amount
-    assert.expect(3);
-
     console.log = function log(input) {
         nativeConsole(input);
         if (input.indexOf('trace') > -1) {
