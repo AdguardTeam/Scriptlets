@@ -35,184 +35,22 @@
 * [Redirect resources](#redirect-resources)
     * [Syntax](#redirect-syntax)
     * [Available redirect resources](#available-resources)
+        * [1x1-transparent.gif](#1x1-transparent)
+        * [2x2-transparent.png](#2x2-transparent)
+        * [3x2-transparent.png](#3x2-transparent)
+        * [32x32-transparent.png](#32x32-transparent)
+        * [noopframe](#noopframe)
+        * [noopcss](#noopcss)
+        * [noopjs](#noopcss)
+        * [nooptext](#nooptext)
+        * [noopmp3-0.1s](#noopmp3-01s)
+        * [noopmp4-1s](#noopmp4-1s)
+        * [prevent-fab-3.2.0](#prevent-fab-3-2-0)
+        * [set-popads-dummy](#set-popads-dummy)
+        * [prevent-popads-net](#prevent-popads-net)
+        * [noeval.js](#noeval-js)
     * [Redirect resources compatibility table](#redirect-compatibility)
 * [How to build](#how-to-build)
-
-## <a id="redirect-resources"></a> Redirect resources
-
-AdGuard is able to redirect web requests to a local "resource".
-
-### <a id="redirect-syntax"></a> Syntax
-
-AdGuard uses the same filtering syntax as [uBlock Origin](https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect). Also, it is compatible with ABP `$rewrite` modifier.
-
-`$redirect` is a modifier for the [basic filtering rules](https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-syntax) so rules with this modifier support all other basic modifiers like `$domain`, `$third-party`, `$script`, etc.
-
-The value of the `$redirect` modifier must be the name of the resource, that will be used for redirection. See the list of resources [below](#available-resources).
-
-**Examples**
-* `||example.org/script.js$script,redirect=noopjs` -- redirects all requests to `script.js` to the resource named `noopjs`.
-* `||example.org/test.mp4$media,redirect=noopmp4-1s` -- redirects all requests to `test.mp4` to the resource named `noopmp4-1s`.
-
-> `$redirect` rules priority is higher than the regular basic blocking rules' priority. This means that if there's a basic blocking rule (even with `$important` modifier), `$redirect` rule will prevail over it. If there's a whitelist (`@@`) rule matching the same URL, it will disable redirecting as well (unless the `$redirect` rule is also marked as `$important`).
-
-> uBlock Origin specifies additional resource name `none` that can disable other redirect rules. AdGuard does not support it, use `$badfilter` to disable specific rules.
-
-### <a id="available-resources"></a> Available redirect resources
-
-
-#### <a id="1x1-transparent"></a> 1x1-transparent.gif
-
-**Example**
-```
-||example.org^$image,redirect=1x1-transparent.gif
-```
-[redirect source](./src/redirects/static-redirects.yml)
-
-
-#### <a id="2x2-transparent"></a> 2x2-transparent.png
-
-**Example**
-```
-||example.org^$image,redirect=2x2-transparent.png
-```
-[redirect source](./src/redirects/static-redirects.yml)
-
-
-#### <a id="3x2-transparent"></a> 3x2-transparent.png
-
-**Example**
-```
-||example.org^$image,redirect=3x2-transparent.png
-```
-[redirect source](./src/redirects/static-redirects.yml)
-
-
-#### <a id="32x32-transparent"></a> 32x32-transparent.png
-
-**Example**
-```
-||example.org^$image,redirect=32x32-transparent.png
-```
-[redirect source](./src/redirects/static-redirects.yml)
-
-
-#### <a id="noopframe"></a> noopframe
-
-**Example**
-```
-||example.com^$subdocument,redirect=noopframe,domain=example.org
-```
-[redirect source](./src/redirects/static-redirects.yml)
-
-
-#### <a id="noopcss"></a> noopcss
-
-**Example**
-```
-||example.org^$stylesheet,redirect=noopcss
-```
-[redirect source](./src/redirects/static-redirects.yml)
-
-
-#### <a id="noopjs"></a> noopjs
-
-**Example**
-```
-||example.org^$script,redirect=noopjs
-```
-[redirect source](./src/redirects/static-redirects.yml)
-
-
-#### <a id="nooptext"></a> nooptext
-
-**Example**
-```
-||example.org^$xmlhttprequest,redirect=nooptext
-```
-[redirect source](./src/redirects/static-redirects.yml)
-
-
-#### <a id="noopmp3-01s"></a> noopmp3-0.1s
-
-**Example**
-```
-||example.org^$media,redirect=noopmp3-0.1s
-```
-[redirect source](./src/redirects/static-redirects.yml)
-
-
-#### <a id="noopmp4-1s"></a> noopmp4-1s
-
-**Example**
-```
-||example.org^$media,redirect=noopmp4-1s
-```
-[redirect source](./src/redirects/static-redirects.yml)
-
-
-#### <a id="prevent-fab-3-2-0"></a> prevent-fab-3.2.0
-
-Redirects fuckadblock script to the source js file
-
-**Example**
-```
-*/fuckadblock-$script,redirect=prevent-fab-3.2.0
-```
-[redirect source](./src/scriptlets/prevent-fab-3.2.0.js)
-
-
-#### <a id="set-popads-dummy"></a> set-popads-dummy
-
-Redirects request to the source which sets static properties to PopAds and popns objectss
-
-**Example**
-```
-||popads.net^$script,redirect=set-popads-dummy,domain=example.org
-```
-[redirect source](./src/scriptlets/set-popads-dummy.js)
-
-
-#### <a id="prevent-popads-net"></a> prevent-popads-net
-
-Redirects request to the source which sets static properties to PopAds and popns objectss
-
-**Example**
-```
-||popads.net/pop.js$script,redirect=prevent-popads-net
-```
-[redirect source](./src/scriptlets/prevent-popads-net.js)
-
-
-#### <a id="noeval-js"></a> noeval.js
-
-Prevents page to use eval
-
-**Example**
-```
-||example.org/index.js$script,redirect=noeval.js
-```
-[redirect source](./src/scriptlets/noeval.js)
-
-### <a id="redirect-compatibility"></a> Redirect resources compatibility table
-
-|AdGuard | uBO | Adblock Plus |
-|--|--|--|
-| [1x1-transparent.gif](#1x1-transparent) | 1x1-transparent.gif | 1x1-transparent-gif |
-| [2x2-transparent.png](#2x2-transparent) | 2x2-transparent.png | 2x2-transparent-png |
-| [3x2-transparent.png](#3x2-transparent) | 3x2-transparent.png | 3x2-transparent-png |
-| [32x32-transparent.png](#32x32-transparent) | 32x32-transparent.png | 32x32-transparent-png |
-| [noopframe](#noopframe) | noopframe | blank-html |
-| [noopcss](#noopcss) | noopcss | blank-css |
-| [noopjs](#noopcss) | noopjs | blank-js |
-| [nooptext](#nooptext) | nooptext | blank-text |
-| [noopmp3-0.1s](#noopmp3-01s) | noopmp3-0.1s | blank-mp3 |
-| [noopmp4-1s](#noopmp4-1s) | noopmp4-1s |  blank-mp4 |
-| [prevent-fab-3.2.0](#prevent-fab-3-2-0) | fuckadblock.js-3.2.0 ||
-| [set-popads-dummy](#set-popads-dummy) | popads-dummy.js ||
-| [prevent-popads-net](#prevent-popads-net) | popads.net.js ||
-| [noeval.js](#noeval-js) | silent-noeval.js | noeval |
-
 
 ## <a id="scriptlets"></a> Scriptlets
 
@@ -916,6 +754,190 @@ example.org#%#//scriptlet("dir-string"[, times])
 | [adjust-setInterval](#adjust-setInterval) | nano-setInterval-booster.js | |
 | [adjust-setTimeout](#adjust-setTimeout) | nano-setTimeout-booster.js | |
 | [dir-string](#dir-string) | | dir-string |
+
+## <a id="redirect-resources"></a> Redirect resources
+
+AdGuard is able to redirect web requests to a local "resource".
+
+### <a id="redirect-syntax"></a> Syntax
+
+AdGuard uses the same filtering syntax as [uBlock Origin](https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect). Also, it is compatible with ABP `$rewrite` modifier.
+
+`$redirect` is a modifier for the [basic filtering rules](https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-syntax) so rules with this modifier support all other basic modifiers like `$domain`, `$third-party`, `$script`, etc.
+
+The value of the `$redirect` modifier must be the name of the resource, that will be used for redirection. See the list of resources [below](#available-resources).
+
+**Examples**
+* `||example.org/script.js$script,redirect=noopjs` -- redirects all requests to `script.js` to the resource named `noopjs`.
+* `||example.org/test.mp4$media,redirect=noopmp4-1s` -- redirects all requests to `test.mp4` to the resource named `noopmp4-1s`.
+
+> `$redirect` rules priority is higher than the regular basic blocking rules' priority. This means that if there's a basic blocking rule (even with `$important` modifier), `$redirect` rule will prevail over it. If there's a whitelist (`@@`) rule matching the same URL, it will disable redirecting as well (unless the `$redirect` rule is also marked as `$important`).
+
+> uBlock Origin specifies additional resource name `none` that can disable other redirect rules. AdGuard does not support it, use `$badfilter` to disable specific rules.
+
+### <a id="available-resources"></a> Available redirect resources
+
+
+#### <a id="1x1-transparent"></a> 1x1-transparent.gif
+
+**Example**
+```
+||example.org^$image,redirect=1x1-transparent.gif
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="2x2-transparent"></a> 2x2-transparent.png
+
+**Example**
+```
+||example.org^$image,redirect=2x2-transparent.png
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="3x2-transparent"></a> 3x2-transparent.png
+
+**Example**
+```
+||example.org^$image,redirect=3x2-transparent.png
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="32x32-transparent"></a> 32x32-transparent.png
+
+**Example**
+```
+||example.org^$image,redirect=32x32-transparent.png
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="noopframe"></a> noopframe
+
+**Example**
+```
+||example.com^$subdocument,redirect=noopframe,domain=example.org
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="noopcss"></a> noopcss
+
+**Example**
+```
+||example.org^$stylesheet,redirect=noopcss
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="noopjs"></a> noopjs
+
+**Example**
+```
+||example.org^$script,redirect=noopjs
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="nooptext"></a> nooptext
+
+**Example**
+```
+||example.org^$xmlhttprequest,redirect=nooptext
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="noopmp3-01s"></a> noopmp3-0.1s
+
+**Example**
+```
+||example.org^$media,redirect=noopmp3-0.1s
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="noopmp4-1s"></a> noopmp4-1s
+
+**Example**
+```
+||example.org^$media,redirect=noopmp4-1s
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+
+#### <a id="prevent-fab-3-2-0"></a> prevent-fab-3.2.0
+
+Redirects fuckadblock script to the source js file
+
+**Example**
+```
+*/fuckadblock-$script,redirect=prevent-fab-3.2.0
+```
+[redirect source](./src/scriptlets/prevent-fab-3.2.0.js)
+
+
+#### <a id="set-popads-dummy"></a> set-popads-dummy
+
+Redirects request to the source which sets static properties to PopAds and popns objectss
+
+**Example**
+```
+||popads.net^$script,redirect=set-popads-dummy,domain=example.org
+```
+[redirect source](./src/scriptlets/set-popads-dummy.js)
+
+
+#### <a id="prevent-popads-net"></a> prevent-popads-net
+
+Redirects request to the source which sets static properties to PopAds and popns objectss
+
+**Example**
+```
+||popads.net/pop.js$script,redirect=prevent-popads-net
+```
+[redirect source](./src/scriptlets/prevent-popads-net.js)
+
+
+#### <a id="noeval-js"></a> noeval.js
+
+Prevents page to use eval
+
+**Example**
+```
+||example.org/index.js$script,redirect=noeval.js
+```
+[redirect source](./src/scriptlets/noeval.js)
+
+### <a id="redirect-compatibility"></a> Redirect resources compatibility table
+
+|AdGuard | uBO | Adblock Plus |
+|--|--|--|
+| [1x1-transparent.gif](#1x1-transparent) | 1x1-transparent.gif | 1x1-transparent-gif |
+| [2x2-transparent.png](#2x2-transparent) | 2x2-transparent.png | 2x2-transparent-png |
+| [3x2-transparent.png](#3x2-transparent) | 3x2-transparent.png | 3x2-transparent-png |
+| [32x32-transparent.png](#32x32-transparent) | 32x32-transparent.png | 32x32-transparent-png |
+| [noopframe](#noopframe) | noopframe | blank-html |
+| [noopcss](#noopcss) | noopcss | blank-css |
+| [noopjs](#noopcss) | noopjs | blank-js |
+| [nooptext](#nooptext) | nooptext | blank-text |
+| [noopmp3-0.1s](#noopmp3-01s) | noopmp3-0.1s | blank-mp3 |
+| [noopmp4-1s](#noopmp4-1s) | noopmp4-1s |  blank-mp4 |
+| [prevent-fab-3.2.0](#prevent-fab-3-2-0) | fuckadblock.js-3.2.0 ||
+| [set-popads-dummy](#set-popads-dummy) | popads-dummy.js ||
+| [prevent-popads-net](#prevent-popads-net) | popads.net.js ||
+| [noeval.js](#noeval-js) | silent-noeval.js | noeval |
+| | googlesyndication.com/adsbygoogle.js | |
+| | hd-main.js | |
+| | googletagmanager.com/gtm.js | |
+| | google-analytics.com/analytics.js | |
+| | ligatus.com/*/angular-tag.js | |
+| | scorecardresearch.com/beacon.js | |
+| | google-analytics.com/ga.js | |
+| | googletagservices.com/gpt.js | |
+
 
 ## <a id="how-to-build"></a> How to build
 
