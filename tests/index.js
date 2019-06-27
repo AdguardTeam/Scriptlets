@@ -3,7 +3,7 @@ const { runQunitPuppeteer, printFailedTests, printResultSummary } = require('nod
 const { server, port } = require('./server');
 
 const qunitArgs = {
-    targetUrl: `http://127.0.0.1:${port}/`,
+    targetUrl: `http://localhost:${port}/`,
     timeout: 10000,
 };
 
@@ -20,4 +20,5 @@ runQunitPuppeteer(qunitArgs)
     })
     .catch((ex) => {
         console.error(ex);
+        server.close();
     });
