@@ -9,7 +9,7 @@
         "test": "yarn build-test && node tests/index.js",
         "test-watch": "rollup -c -w --environment UI_TEST",
         "browserstack": "yarn build-test && node browserstack.js",
-        "gui-test": "yarn build-test && open http://127.0.0.1:8585 && node ./tests/server.js",
+        "gui-test": "yarn build-test && open http://localhost:8585 && node ./tests/server.js",
         "lint": "eslint ."
     },
     "husky": {

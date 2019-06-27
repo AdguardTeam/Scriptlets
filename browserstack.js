@@ -12,9 +12,7 @@ config.key = process.env.BROWSERSTACK_KEY;
 
 browserstackRunner.run(config, (error) => {
     if (error) {
-        console.log(`Error: ${error}`);
-        return;
+        throw error;
     }
-
     console.log('Test Finished');
 });
