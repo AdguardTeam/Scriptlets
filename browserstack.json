@@ -3,6 +3,7 @@
     "test_path": [
         "tests/dist/tests.html"
     ],
+    "exit_with_fail": true,
     "browsers": [
         {
             "browser": "Chrome",

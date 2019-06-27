@@ -10,18 +10,10 @@ if (!process.env.TRAVIS) {
 config.username = process.env.BROWSERSTACK_USER;
 config.key = process.env.BROWSERSTACK_KEY;
 
-browserstackRunner.run(config, (error, report) => {
+browserstackRunner.run(config, (error) => {
     if (error) {
         console.log(`Error: ${error}`);
         return;
-    }
-
-    const allTestsPassed = report
-        .map(obj => obj.tests)
-        .every(test => test.status === 'passed');
-
-    if (!allTestsPassed) {
-        throw new Error('Not all tests passed');
     }
 
     console.log('Test Finished');
