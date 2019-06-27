@@ -38,7 +38,7 @@ export function removeCookie(source, match) {
             }
 
             const hostParts = document.location.hostname.split('.');
-            for (let i = 0; i < hostParts.length - 1; i += 1) {
+            for (let i = 0; i <= hostParts.length - 1; i += 1) {
                 const hostName = hostParts.slice(i).join('.');
                 if (hostName) {
                     removeCookieFromHost(cookieName, hostName);
