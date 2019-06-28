@@ -9,18 +9,24 @@ export const hit = (source, message) => {
         return;
     }
 
-    const log = console.log.bind(console);
-    const trace = console.trace.bind(console);
+    try {
+        const log = console.log.bind(console);
+        const trace = console.trace.bind(console);
 
-    if (message) {
-        log(`${source.ruleText} message:\n${message}`);
-    }
+        if (message) {
+            log(`${source.ruleText} message:\n${message}`);
+        }
 
-    log(`${source.ruleText} trace start`);
-    if (trace) {
-        trace();
+        log(`${source.ruleText} trace start`);
+        if (trace) {
+            trace();
+        }
+        log(`${source.ruleText} trace end`);
+    } catch (e) {
+        // try catch for Edge 15
+        // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
+        // console.log throws an error
     }
-    log(`${source.ruleText} trace end`);
 
     // This is necessary for unit-tests only!
     if (typeof window.__debugScriptlets === 'function') {

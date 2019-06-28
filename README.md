@@ -972,6 +972,14 @@ yarn gui-test
 ```
 
 
+To run browserstack tests create `.env` file or rename `.env-example`.
+
+Fill in <username> and <key> with data from your Browserstack profile.
+Run next command
+```
+yarn browserstack
+```
+
 ### Build output
 
 #### Scriptlets library
