@@ -3,6 +3,7 @@
     "test_path": [
         "tests/dist/tests.html"
     ],
+    "test_server_port": "10521",
     "exit_with_fail": true,
     "browsers": [
         {

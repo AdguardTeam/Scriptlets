@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.0.4
+ * Version 1.0.7
  */
 
 (function () {
@@ -142,20 +142,26 @@
         return;
       }
 
-      var log = console.log.bind(console);
-      var trace = console.trace.bind(console);
+      try {
+        var log = console.log.bind(console);
+        var trace = console.trace.bind(console);
 
-      if (message) {
-        log("".concat(source.ruleText, " message:\n").concat(message));
-      }
+        if (message) {
+          log("".concat(source.ruleText, " message:\n").concat(message));
+        }
 
-      log("".concat(source.ruleText, " trace start"));
+        log("".concat(source.ruleText, " trace start"));
 
-      if (trace) {
-        trace();
-      }
+        if (trace) {
+          trace();
+        }
 
-      log("".concat(source.ruleText, " trace end")); // This is necessary for unit-tests only!
+        log("".concat(source.ruleText, " trace end"));
+      } catch (e) {} // try catch for Edge 15
+      // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
+      // console.log throws an error
+      // This is necessary for unit-tests only!
+
 
       if (typeof window.__debugScriptlets === 'function') {
         window.__debugScriptlets(source);
@@ -596,7 +602,7 @@
 
           var hostParts = document.location.hostname.split('.');
 
-          for (var i = 0; i < hostParts.length - 1; i += 1) {
+          for (var i = 0; i <= hostParts.length - 1; i += 1) {
             var hostName = hostParts.slice(i).join('.');
 
             if (hostName) {

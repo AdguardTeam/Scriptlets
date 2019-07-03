@@ -19,6 +19,7 @@ runQunitPuppeteer(qunitArgs)
         server.close();
     })
     .catch((ex) => {
-        console.error(ex);
         server.close();
+        console.error(ex);
+        process.exit(1);
     });

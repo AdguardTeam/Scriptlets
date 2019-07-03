@@ -86,7 +86,7 @@ test('prevent-setTimeout: adg by timeout name', (assert) => {
         assert.equal(window.ddd, 'new value', 'Another property should successfully changed by another timeout');
         assert.equal(window.hit, 'value', 'Hit function was executed');
         done();
-    }, 20);
+    }, 100);
 
     // run scriptlet code
     evalWrap(scriptlet);
