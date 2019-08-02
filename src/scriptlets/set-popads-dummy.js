@@ -27,6 +27,7 @@ export function setPopadsDummy(source) {
 
 setPopadsDummy.names = [
     'set-popads-dummy',
+    'popads-dummy.js',
     'ubo-popads-dummy.js',
 ];
 

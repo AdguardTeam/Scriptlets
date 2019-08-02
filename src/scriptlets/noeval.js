@@ -14,6 +14,7 @@ export function noeval(source) {
 
 noeval.names = [
     'noeval',
+    'noeval.js',
     'ubo-noeval.js',
     'ubo-silent-noeval.js',
 ];
