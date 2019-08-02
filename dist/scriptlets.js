@@ -793,7 +793,7 @@
 
       window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
     }
-    logAddEventListener.names = ['log-addEventListener', 'addEventListener-logger.js'];
+    logAddEventListener.names = ['log-addEventListener', 'ubo-addEventListener-logger.js'];
     logAddEventListener.injections = [hit];
 
     /* eslint-disable no-console */
@@ -820,7 +820,7 @@
 
       window.setInterval = setIntervalWrapper;
     }
-    logSetInterval.names = ['log-setInterval', 'setInterval-logger.js'];
+    logSetInterval.names = ['log-setInterval', 'ubo-setInterval-logger.js'];
     logSetInterval.injections = [hit];
 
     /* eslint-disable no-console */
@@ -847,7 +847,7 @@
 
       window.setTimeout = setTimeoutWrapper;
     }
-    logSetTimeout.names = ['log-setTimeout', 'setTimeout-logger.js'];
+    logSetTimeout.names = ['log-setTimeout', 'ubo-setTimeout-logger.js'];
     logSetTimeout.injections = [hit];
 
     /* eslint-disable no-console, no-eval */
@@ -915,7 +915,7 @@
         hit(source, "AdGuard has prevented eval:\n".concat(s));
       }.bind();
     }
-    noeval.names = ['noeval.js', 'silent-noeval.js', 'noeval'];
+    noeval.names = ['noeval', 'ubo-noeval.js', 'ubo-silent-noeval.js'];
     noeval.injections = [hit];
 
     /* eslint-disable no-eval, no-extra-bind, func-names */
@@ -938,7 +938,7 @@
         return undefined;
       }.bind(window);
     }
-    preventEvalIf.names = ['noeval-if.js', 'prevent-eval-if'];
+    preventEvalIf.names = ['prevent-eval-if', 'ubo-noeval-if.js'];
     preventEvalIf.injections = [toRegExp, hit];
 
     /* eslint-disable no-console, func-names, no-multi-assign */
@@ -979,7 +979,7 @@
 
       window.fuckAdBlock = window.blockAdBlock = new Fab();
     }
-    preventFab.names = ['prevent-fab-3.2.0', 'fuckadblock.js-3.2.0'];
+    preventFab.names = ['prevent-fab-3.2.0', 'ubo-fuckadblock.js-3.2.0'];
     preventFab.injections = [noop, hit];
 
     /* eslint-disable no-console, func-names, no-multi-assign */
@@ -1007,7 +1007,7 @@
         }
       });
     }
-    setPopadsDummy.names = ['set-popads-dummy', 'popads-dummy.js'];
+    setPopadsDummy.names = ['set-popads-dummy', 'ubo-popads-dummy.js'];
     setPopadsDummy.injections = [hit];
 
     /**
@@ -1036,7 +1036,7 @@
       window.onerror = createOnErrorHandler(rid).bind();
       hit(source);
     }
-    preventPopadsNet.names = ['prevent-popads-net', 'popads.net.js'];
+    preventPopadsNet.names = ['prevent-popads-net', 'ubo-popads.net.js'];
     preventPopadsNet.injections = [createOnErrorHandler, randomId, hit];
 
     /* eslint-disable func-names */
@@ -1126,7 +1126,7 @@
         window.console.error('Failed to set up prevent-adfly scriptlet');
       }
     }
-    preventAdfly.names = ['prevent-adfly', 'adfly-defuser.js'];
+    preventAdfly.names = ['prevent-adfly', 'ubo-adfly-defuser.js'];
     preventAdfly.injections = [setPropertyAccess, hit];
 
     /**

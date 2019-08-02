@@ -36,6 +36,6 @@ test('ag and ubo aliases work', (assert) => {
     };
 
     runScriptlet(name);
-    runScriptlet('adfly-defuser.js');
+    runScriptlet('ubo-adfly-defuser.js');
     Object.defineProperty = nativeDefineProperty;
 });

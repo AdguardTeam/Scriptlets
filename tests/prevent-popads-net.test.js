@@ -34,7 +34,7 @@ test('ag and ubo aliases work', (assert) => {
     assert.ok(stub.calledOnce, 'Object.defineProperties called once');
     assert.ok(stub.calledWith(window), 'Object.defineProperties called with window object');
 
-    runScriptlet('popads.net.js');
+    runScriptlet('ubo-popads.net.js');
     assert.ok(stub.calledTwice, 'Object.defineProperties called twice');
     assert.ok(stub.calledWith(window), 'Object.defineProperties called with window object');
 
