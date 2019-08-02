@@ -75,7 +75,7 @@ export function preventAdfly(source) {
 
 preventAdfly.names = [
     'prevent-adfly',
-    'adfly-defuser.js',
+    'ubo-adfly-defuser.js',
 ];
 
 preventAdfly.injections = [setPropertyAccess, hit];

@@ -13,9 +13,9 @@ export function noeval(source) {
 }
 
 noeval.names = [
-    'noeval.js',
-    'silent-noeval.js',
     'noeval',
+    'ubo-noeval.js',
+    'ubo-silent-noeval.js',
 ];
 
 noeval.injections = [hit];

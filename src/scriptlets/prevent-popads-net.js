@@ -27,7 +27,7 @@ export function preventPopadsNet(source) {
 
 preventPopadsNet.names = [
     'prevent-popads-net',
-    'popads.net.js',
+    'ubo-popads.net.js',
 ];
 
 preventPopadsNet.injections = [createOnErrorHandler, randomId, hit];
