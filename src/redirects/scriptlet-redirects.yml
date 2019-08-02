@@ -4,5 +4,5 @@
   comment: Sets static properties PopAds and popns
 - title: prevent-popads-net
   comment: Aborts on property write (PopAds, popns), throws reference error with random id
-- title: noeval.js
+- title: noeval
   comment: Prevents page to use eval.
