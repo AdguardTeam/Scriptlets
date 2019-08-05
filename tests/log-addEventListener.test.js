@@ -39,7 +39,7 @@ test('ubo alias addEventListener-logger.js works', (assert) => {
         assert.strictEqual(input, `addEventListener("${eventName}", ${callback.toString()})`, 'console.hit input should be equal');
     };
     const params = {
-        name: 'addEventListener-logger.js',
+        name: 'ubo-addEventListener-logger.js',
         verbose: true,
     };
     const resString = window.scriptlets.invoke(params);

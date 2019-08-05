@@ -6,6 +6,12 @@ import { createOnErrorHandler, hit } from '../helpers';
 /**
  * Abort property writing
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-property-writejs-
+ *
+ * Related ABP source:
+ * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L896
+ *
  * @param {Source} source
  * @param {string} property propery name
  */
@@ -46,6 +52,7 @@ export function abortOnPropertyWrite(source, property) {
 
 abortOnPropertyWrite.names = [
     'abort-on-property-write',
+    'abort-on-property-write.js',
     'ubo-abort-on-property-write.js',
     'abp-abort-on-property-write',
 ];

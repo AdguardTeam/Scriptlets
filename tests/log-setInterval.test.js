@@ -47,7 +47,7 @@ test('ubo alias setInterval-logger.js works', (assert) => {
         assert.strictEqual(input, `setInterval("${callback.toString()}", ${timeout})`, 'console.hit input should be equal');
     };
     const params = {
-        name: 'setInterval-logger.js',
+        name: 'ubo-setInterval-logger.js',
         verbose: true,
     };
     const resString = window.scriptlets.invoke(params);

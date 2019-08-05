@@ -3,6 +3,9 @@ import { hit } from '../helpers';
 /**
  * Prevents opening new tabs and windows if there is `target` attribute in element
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#disable-newtab-linksjs-
+ *
  * @param {Source} source
  */
 export function disableNewtabLinks(source) {
@@ -22,6 +25,7 @@ export function disableNewtabLinks(source) {
 
 disableNewtabLinks.names = [
     'disable-newtab-links',
+    'disable-newtab-links.js',
     'ubo-disable-newtab-links.js',
 ];
 

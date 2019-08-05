@@ -31,7 +31,7 @@ const runScriptlet = (name, search) => {
 };
 
 test('ubo noeval-if.js alias', (assert) => {
-    runScriptlet('noeval-if.js', 'test');
+    runScriptlet('ubo-noeval-if.js', 'test');
 
     const uboNoEvalIf = 'uboNoEvalIf';
 

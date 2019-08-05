@@ -3,6 +3,10 @@ import { hit } from '../helpers';
 
 /**
  * Adjusts interval for specified setInterval() callbacks.
+ *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-setinterval-boosterjs-
+ *
  * @param {Source} source
  * @param {string|RegExp} match matching in string of callback function
  * @param {string|number} interval matching interval
@@ -40,6 +44,7 @@ export function adjustSetInterval(source, match, interval, boost) {
 
 adjustSetInterval.names = [
     'adjust-setInterval',
+    'nano-setInterval-booster.js',
     'ubo-nano-setInterval-booster.js',
 ];
 

@@ -32,7 +32,7 @@ const runScriptlet = (name) => {
 };
 
 test('ubo noeval alias', (assert) => {
-    runScriptlet('noeval.js');
+    runScriptlet('ubo-noeval.js');
 
     const evalStr = '2';
 
@@ -52,7 +52,7 @@ test('ubo noeval alias', (assert) => {
 });
 
 test('ubo silent-noeval alias', (assert) => {
-    runScriptlet('silent-noeval.js');
+    runScriptlet('ubo-silent-noeval.js');
 
     const evalStr = '2';
 

@@ -186,6 +186,12 @@
     /**
      * Abort property reading even if it doesn't exist in execution moment
      *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-property-readjs-
+     *
+     * Related ABP source:
+     * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L864
+     *
      * @param {Source} source
      * @param {string} property property name
      */
@@ -235,11 +241,17 @@
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
-    abortOnPropertyRead.names = ['abort-on-property-read', 'ubo-abort-on-property-read.js', 'abp-abort-on-property-read'];
+    abortOnPropertyRead.names = ['abort-on-property-read', 'abort-on-property-read.js', 'ubo-abort-on-property-read.js', 'abp-abort-on-property-read'];
     abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
     /**
      * Abort property writing
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-property-writejs-
+     *
+     * Related ABP source:
+     * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L896
      *
      * @param {Source} source
      * @param {string} property propery name
@@ -289,12 +301,15 @@
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
-    abortOnPropertyWrite.names = ['abort-on-property-write', 'ubo-abort-on-property-write.js', 'abp-abort-on-property-write'];
+    abortOnPropertyWrite.names = ['abort-on-property-write', 'abort-on-property-write.js', 'ubo-abort-on-property-write.js', 'abp-abort-on-property-write'];
     abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
     /**
      * Prevent calls to setTimeout for specified matching in passed callback and delay
      * by setting callback to empty function
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#settimeout-defuserjs-
      *
      * @param {Source} source
      * @param {string|RegExp} match matching in string of callback function
@@ -324,12 +339,15 @@
 
       window.setTimeout = timeoutWrapper;
     }
-    preventSetTimeout.names = ['prevent-setTimeout', 'ubo-setTimeout-defuser.js'];
+    preventSetTimeout.names = ['prevent-setTimeout', 'setTimeout-defuser.js', 'ubo-setTimeout-defuser.js'];
     preventSetTimeout.injections = [toRegExp, hit];
 
     /**
      * Prevent calls to setInterval for specified matching in passed callback and delay
      * by setting callback to empty function
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#setinterval-defuserjs-
      *
      * @param {Source} source
      * @param {string|RegExp} match matching in string of callback function
@@ -359,11 +377,15 @@
 
       window.setInterval = intervalWrapper;
     }
-    preventSetInterval.names = ['prevent-setInterval', 'ubo-setInterval-defuser.js'];
+    preventSetInterval.names = ['prevent-setInterval', 'setInterval-defuser.js', 'ubo-setInterval-defuser.js'];
     preventSetInterval.injections = [toRegExp, hit];
 
     /**
      * Prevent calls `window.open` when URL match or not match with passed params
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#windowopen-defuserjs-
+     *
      * @param {Source} source
      * @param {number|string} [inverse] inverse matching
      * @param {string} [match] matching with URL
@@ -388,10 +410,26 @@
 
       window.open = openWrapper;
     }
-    preventWindowOpen.names = ['prevent-window-open', 'ubo-window.open-defuser.js'];
+    preventWindowOpen.names = ['prevent-window-open', 'window.open-defuser.js', 'ubo-window.open-defuser.js'];
     preventWindowOpen.injections = [toRegExp, hit];
 
     /* eslint-disable no-new-func */
+    /**
+     * Aborts an inline script when it attempts to **read** the specified property
+     * AND when the contents of the `<script>` element contains the specified
+     * text or matches the regular expression.
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-current-inline-scriptjs-
+     *
+     * Related ABP source:
+     * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L928
+     *
+     * @param {Source} source
+     * @param {string} property path to a property
+     * @param {string} search must match the inline script contents
+     */
+
     function abortCurrentInlineScript(source, property) {
       var search = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
       var regex = search ? toRegExp(search) : null;
@@ -458,8 +496,19 @@
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
-    abortCurrentInlineScript.names = ['abort-current-inline-script', 'ubo-abort-current-inline-script.js', 'abp-abort-current-inline-script'];
+    abortCurrentInlineScript.names = ['abort-current-inline-script', 'abort-current-inline-script.js', 'ubo-abort-current-inline-script.js', 'abp-abort-current-inline-script'];
     abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit];
+
+    /**
+     * Creates a constant property and assigns it one of the values from the predefined list.
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#set-constantjs-
+     *
+     * @param {Source} source
+     * @param {string} property path to a property
+     * @param {string} value
+     */
 
     function setConstant(source, property, value) {
       if (!property) {
@@ -558,12 +607,16 @@
 
       setChainPropAccess(window, property);
     }
-    setConstant.names = ['set-constant', 'ubo-set-constant.js'];
+    setConstant.names = ['set-constant', 'set-constant.js', 'ubo-set-constant.js'];
     setConstant.injections = [getPropertyInChain, setPropertyAccess, hit];
 
     /**
      * Removes current page cookies specified by name.
      * For current domain, subdomains on load and before unload.
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#cookie-removerjs-
+     *
      * @param {Source} source
      * @param {string} match string for matching with cookie name
      */
@@ -615,11 +668,14 @@
       rmCookie();
       window.addEventListener('beforeunload', rmCookie);
     }
-    removeCookie.names = ['remove-cookie', 'ubo-cookie-remover.js'];
+    removeCookie.names = ['remove-cookie', 'cookie-remover.js', 'ubo-cookie-remover.js'];
     removeCookie.injections = [toRegExp, hit];
 
     /**
      * Prevents adding event listeners
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-defuserjs-
      *
      * @param {Source} source
      * @param {string|RegExp} [event] - event name or regexp matching event name
@@ -646,12 +702,15 @@
 
       window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
     }
-    preventAddEventListener.names = ['prevent-addEventListener', 'ubo-addEventListener-defuser.js'];
+    preventAddEventListener.names = ['prevent-addEventListener', 'addEventListener-defuser.js', 'ubo-addEventListener-defuser.js'];
     preventAddEventListener.injections = [toRegExp, hit];
 
     /* eslint-disable consistent-return, no-eval */
     /**
      * Prevents BlockAdblock
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#bab-defuserjs-
      *
      * @param {Source} source
      */
@@ -719,12 +778,15 @@
         }
       };
     }
-    preventBab.names = ['prevent-bab', 'ubo-bab-defuser.js'];
+    preventBab.names = ['prevent-bab', 'bab-defuser.js', 'ubo-bab-defuser.js'];
     preventBab.injections = [hit];
 
     /* eslint-disable no-unused-vars, no-extra-bind, func-names */
     /**
      * Disables WebRTC via blocking calls to the RTCPeerConnection()
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-
      *
      * @param {Source} source
      */
@@ -766,12 +828,15 @@
         }.bind(null);
       }
     }
-    nowebrtc.names = ['nowebrtc', 'ubo-nowebrtc.js'];
+    nowebrtc.names = ['nowebrtc', 'nowebrtc.js', 'ubo-nowebrtc.js'];
     nowebrtc.injections = [hit];
 
     /* eslint-disable no-console */
     /**
      * Logs add event listener calls
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-loggerjs-
      *
      * @param {Source} source
      */
@@ -793,12 +858,15 @@
 
       window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
     }
-    logAddEventListener.names = ['log-addEventListener', 'addEventListener-logger.js'];
+    logAddEventListener.names = ['log-addEventListener', 'addEventListener-logger.js', 'ubo-addEventListener-logger.js'];
     logAddEventListener.injections = [hit];
 
     /* eslint-disable no-console */
     /**
      * Logs setInterval calls
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#setinterval-loggerjs-
      *
      * @param {Source} source
      */
@@ -820,12 +888,15 @@
 
       window.setInterval = setIntervalWrapper;
     }
-    logSetInterval.names = ['log-setInterval', 'setInterval-logger.js'];
+    logSetInterval.names = ['log-setInterval', 'setInterval-logger.js', 'ubo-setInterval-logger.js'];
     logSetInterval.injections = [hit];
 
     /* eslint-disable no-console */
     /**
      * Logs setTimeout calls
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#settimeout-loggerjs-
      *
      * @param {Source} source
      */
@@ -847,7 +918,7 @@
 
       window.setTimeout = setTimeoutWrapper;
     }
-    logSetTimeout.names = ['log-setTimeout', 'setTimeout-logger.js'];
+    logSetTimeout.names = ['log-setTimeout', 'setTimeout-logger.js', 'ubo-setTimeout-logger.js'];
     logSetTimeout.injections = [hit];
 
     /* eslint-disable no-console, no-eval */
@@ -907,6 +978,11 @@
     /**
      * Prevents page to use eval.
      * Notifies about attempts in the console
+     *
+     * Related UBO scriptlets:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#noevaljs-
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#silent-noevaljs-
+     *
      * @param {Source} source
      */
 
@@ -915,12 +991,16 @@
         hit(source, "AdGuard has prevented eval:\n".concat(s));
       }.bind();
     }
-    noeval.names = ['noeval.js', 'silent-noeval.js', 'noeval'];
+    noeval.names = ['noeval', 'noeval.js', 'silent-noeval.js', 'ubo-noeval.js', 'ubo-silent-noeval.js'];
     noeval.injections = [hit];
 
     /* eslint-disable no-eval, no-extra-bind, func-names */
     /**
      * Prevents page to use eval matching payload
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
+     *
      * @param {Source} source
      * @param {string|RegExp} [search] string or regexp matching stringified eval payload
      */
@@ -938,12 +1018,15 @@
         return undefined;
       }.bind(window);
     }
-    preventEvalIf.names = ['noeval-if.js', 'prevent-eval-if'];
+    preventEvalIf.names = ['prevent-eval-if', 'noeval-if.js', 'ubo-noeval-if.js'];
     preventEvalIf.injections = [toRegExp, hit];
 
     /* eslint-disable no-console, func-names, no-multi-assign */
     /**
      * Fuckadblock 3.2.0 defuser
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#fuckadblockjs-320-
      *
      * @param {Source} source
      */
@@ -979,12 +1062,15 @@
 
       window.fuckAdBlock = window.blockAdBlock = new Fab();
     }
-    preventFab.names = ['prevent-fab-3.2.0', 'fuckadblock.js-3.2.0'];
+    preventFab.names = ['prevent-fab-3.2.0', 'fuckadblock.js-3.2.0', 'ubo-fuckadblock.js-3.2.0'];
     preventFab.injections = [noop, hit];
 
     /* eslint-disable no-console, func-names, no-multi-assign */
     /**
      * Sets static properties PopAds and popns.
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#popads-dummyjs-
      *
      * @param {Source} source
      */
@@ -1007,11 +1093,14 @@
         }
       });
     }
-    setPopadsDummy.names = ['set-popads-dummy', 'popads-dummy.js'];
+    setPopadsDummy.names = ['set-popads-dummy', 'popads-dummy.js', 'ubo-popads-dummy.js'];
     setPopadsDummy.injections = [hit];
 
     /**
      * Aborts on property write (PopAds, popns), throws reference error with random id
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#popadsnetjs-
      *
      * @param {Source} source
      */
@@ -1036,12 +1125,16 @@
       window.onerror = createOnErrorHandler(rid).bind();
       hit(source);
     }
-    preventPopadsNet.names = ['prevent-popads-net', 'popads.net.js'];
+    preventPopadsNet.names = ['prevent-popads-net', 'popads.net.js', 'ubo-popads.net.js'];
     preventPopadsNet.injections = [createOnErrorHandler, randomId, hit];
 
     /* eslint-disable func-names */
     /**
      * Prevents anti-adblock scripts on adfly short links.
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#adfly-defuserjs-
+     *
      * @param {Source} source
      */
 
@@ -1126,7 +1219,7 @@
         window.console.error('Failed to set up prevent-adfly scriptlet');
       }
     }
-    preventAdfly.names = ['prevent-adfly', 'adfly-defuser.js'];
+    preventAdfly.names = ['prevent-adfly', 'adfly-defuser.js', 'ubo-adfly-defuser.js'];
     preventAdfly.injections = [setPropertyAccess, hit];
 
     /**
@@ -1241,6 +1334,14 @@
     debugOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
     /* eslint-disable no-new-func */
+    /**
+     * Call debugger when script should be aborted
+     *
+     * @param {Source} source
+     * @param {string} property path to a property
+     * @param {string} search must match the inline script contents
+     */
+
     function debugCurrentInlineScript(source, property) {
       var search = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
       var regex = search ? toRegExp(search) : null;
@@ -1314,6 +1415,9 @@
     /**
      * Removes attributes from DOM nodes. Will run only once after page load.
      *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
+     *
      * @param {Source} source
      * @param {string} attrs attributes names separated by `|` which should be removed
      * @param {string} selector CSS selector specifies nodes from which attributes should be removed
@@ -1355,11 +1459,14 @@
         rmattr();
       }
     }
-    removeAttr.names = ['remove-attr', 'ubo-remove-attr.js'];
+    removeAttr.names = ['remove-attr', 'remove-attr.js', 'ubo-remove-attr.js'];
     removeAttr.injections = [hit];
 
     /**
      * Prevents opening new tabs and windows if there is `target` attribute in element
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#disable-newtab-linksjs-
      *
      * @param {Source} source
      */
@@ -1380,11 +1487,15 @@
         }
       });
     }
-    disableNewtabLinks.names = ['disable-newtab-links', 'ubo-disable-newtab-links.js'];
+    disableNewtabLinks.names = ['disable-newtab-links', 'disable-newtab-links.js', 'ubo-disable-newtab-links.js'];
     disableNewtabLinks.injections = [hit];
 
     /**
      * Adjusts interval for specified setInterval() callbacks.
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-setinterval-boosterjs-
+     *
      * @param {Source} source
      * @param {string|RegExp} match matching in string of callback function
      * @param {string|number} interval matching interval
@@ -1426,11 +1537,15 @@
 
       window.setInterval = intervalWrapper;
     }
-    adjustSetInterval.names = ['adjust-setInterval', 'ubo-nano-setInterval-booster.js'];
+    adjustSetInterval.names = ['adjust-setInterval', 'nano-setInterval-booster.js', 'ubo-nano-setInterval-booster.js'];
     adjustSetInterval.injections = [toRegExp, hit];
 
     /**
      * Adjusts timeout for specified setTimout() callbacks.
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-settimeout-boosterjs-
+     *
      * @param {Source} source
      * @param {string|RegExp} match matching in string of callback function
      * @param {string|number} timeout matching timeout
@@ -1472,12 +1587,16 @@
 
       window.setTimeout = timeoutWrapper;
     }
-    adjustSetTimeout.names = ['adjust-setTimeout', 'ubo-nano-setTimeout-booster.js'];
+    adjustSetTimeout.names = ['adjust-setTimeout', 'nano-setTimeout-booster.js', 'ubo-nano-setTimeout-booster.js'];
     adjustSetTimeout.injections = [toRegExp, hit];
 
     /**
      * Wraps the `console.dir` API to call the `toString`
      * method of the argument.
+     *
+     * Related ABP source:
+     * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L766
+     *
      * @param {Source} source
      * @param {string|number} times the number of times to call the
      * `toString` method of the argument to `console.dir`.

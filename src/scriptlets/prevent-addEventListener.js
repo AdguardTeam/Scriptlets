@@ -4,6 +4,9 @@ import { hit } from '../helpers';
 /**
  * Prevents adding event listeners
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-defuserjs-
+ *
  * @param {Source} source
  * @param {string|RegExp} [event] - event name or regexp matching event name
  * @param {string|RegExp} [funcStr] - string or regexp matching stringified handler function
@@ -26,6 +29,7 @@ export function preventAddEventListener(source, event, funcStr) {
 
 preventAddEventListener.names = [
     'prevent-addEventListener',
+    'addEventListener-defuser.js',
     'ubo-addEventListener-defuser.js',
 ];
 

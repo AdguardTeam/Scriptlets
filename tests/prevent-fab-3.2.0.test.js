@@ -52,7 +52,7 @@ test('ubo alias works', (assert) => {
 
 
     clearGlobalProps(uboFuckAdBlock);
-    runScriptlet('fuckadblock.js-3.2.0');
+    runScriptlet('ubo-fuckadblock.js-3.2.0');
 
     assert.notOk(window.fuckAdBlock.check(), 'should be undefined');
     window.fuckAdBlock.onDetected(() => {

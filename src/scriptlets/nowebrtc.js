@@ -4,6 +4,9 @@ import { hit } from '../helpers';
 /**
  * Disables WebRTC via blocking calls to the RTCPeerConnection()
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-
+ *
  * @param {Source} source
  */
 export function nowebrtc(source) {
@@ -42,6 +45,7 @@ export function nowebrtc(source) {
 
 nowebrtc.names = [
     'nowebrtc',
+    'nowebrtc.js',
     'ubo-nowebrtc.js',
 ];
 
