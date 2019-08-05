@@ -161,6 +161,7 @@
 - title: prevent-fab-3.2.0
   comment: Fuckadblock 3.2.0 defuser
   aliases:
+    - fuckadblock.js-3.2.0
     - ubo-fuckadblock.js-3.2.0
   contentType: application/javascript
   content: |-
@@ -235,6 +236,7 @@
 - title: set-popads-dummy
   comment: Sets static properties PopAds and popns
   aliases:
+    - popads-dummy.js
     - ubo-popads-dummy.js
   contentType: application/javascript
   content: |-
@@ -297,6 +299,7 @@
     Aborts on property write (PopAds, popns), throws reference error with random
     id
   aliases:
+    - popads.net.js
     - ubo-popads.net.js
   contentType: application/javascript
   content: |-
@@ -381,6 +384,8 @@
 - title: noeval
   comment: Prevents page to use eval.
   aliases:
+    - noeval.js
+    - silent-noeval.js
     - ubo-noeval.js
     - ubo-silent-noeval.js
   contentType: application/javascript
