@@ -19,6 +19,7 @@ export function logSetInterval(source) {
 
 logSetInterval.names = [
     'log-setInterval',
+    'setInterval-logger.js',
     'ubo-setInterval-logger.js',
 ];
 

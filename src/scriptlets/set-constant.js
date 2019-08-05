@@ -85,6 +85,7 @@ export function setConstant(source, property, value) {
 
 setConstant.names = [
     'set-constant',
+    'set-constant.js',
     'ubo-set-constant.js',
 ];
 setConstant.injections = [getPropertyInChain, setPropertyAccess, hit];

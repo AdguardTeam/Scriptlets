@@ -28,6 +28,7 @@ export function preventSetTimeout(source, match, delay) {
 
 preventSetTimeout.names = [
     'prevent-setTimeout',
+    'setTimeout-defuser.js',
     'ubo-setTimeout-defuser.js',
 ];
 

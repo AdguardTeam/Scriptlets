@@ -40,6 +40,7 @@ export function adjustSetTimeout(source, match, timeout, boost) {
 
 adjustSetTimeout.names = [
     'adjust-setTimeout',
+    'nano-setTimeout-booster.js',
     'ubo-nano-setTimeout-booster.js',
 ];
 

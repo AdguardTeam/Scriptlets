@@ -40,6 +40,7 @@ export function adjustSetInterval(source, match, interval, boost) {
 
 adjustSetInterval.names = [
     'adjust-setInterval',
+    'nano-setInterval-booster.js',
     'ubo-nano-setInterval-booster.js',
 ];
 

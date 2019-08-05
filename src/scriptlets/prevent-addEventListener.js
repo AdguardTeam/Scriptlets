@@ -26,6 +26,7 @@ export function preventAddEventListener(source, event, funcStr) {
 
 preventAddEventListener.names = [
     'prevent-addEventListener',
+    'addEventListener-defuser.js',
     'ubo-addEventListener-defuser.js',
 ];
 

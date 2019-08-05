@@ -28,6 +28,7 @@ export function preventSetInterval(source, match, interval) {
 
 preventSetInterval.names = [
     'prevent-setInterval',
+    'setInterval-defuser.js',
     'ubo-setInterval-defuser.js',
 ];
 

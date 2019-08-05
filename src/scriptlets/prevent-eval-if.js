@@ -22,6 +22,7 @@ export function preventEvalIf(source, search) {
 
 preventEvalIf.names = [
     'prevent-eval-if',
+    'noeval-if.js',
     'ubo-noeval-if.js',
 ];
 

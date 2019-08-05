@@ -19,6 +19,7 @@ export function logAddEventListener(source) {
 
 logAddEventListener.names = [
     'log-addEventListener',
+    'addEventListener-logger.js',
     'ubo-addEventListener-logger.js',
 ];
 

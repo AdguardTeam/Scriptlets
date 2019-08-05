@@ -51,6 +51,7 @@ export function abortOnPropertyRead(source, property) {
 
 abortOnPropertyRead.names = [
     'abort-on-property-read',
+    'abort-on-property-read.js',
     'ubo-abort-on-property-read.js',
     'abp-abort-on-property-read',
 ];

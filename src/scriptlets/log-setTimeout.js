@@ -19,6 +19,7 @@ export function logSetTimeout(source) {
 
 logSetTimeout.names = [
     'log-setTimeout',
+    'setTimeout-logger.js',
     'ubo-setTimeout-logger.js',
 ];
 

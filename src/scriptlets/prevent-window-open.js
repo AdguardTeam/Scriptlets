@@ -29,6 +29,7 @@ export function preventWindowOpen(source, inverse, match) {
 
 preventWindowOpen.names = [
     'prevent-window-open',
+    'window.open-defuser.js',
     'ubo-window.open-defuser.js',
 ];
 

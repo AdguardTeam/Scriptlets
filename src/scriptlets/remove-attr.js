@@ -41,6 +41,7 @@ export function removeAttr(source, attrs, selector) {
 
 removeAttr.names = [
     'remove-attr',
+    'remove-attr.js',
     'ubo-remove-attr.js',
 ];
 

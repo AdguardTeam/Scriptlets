@@ -52,6 +52,7 @@ export function removeCookie(source, match) {
 
 removeCookie.names = [
     'remove-cookie',
+    'cookie-remover.js',
     'ubo-cookie-remover.js',
 ];
 

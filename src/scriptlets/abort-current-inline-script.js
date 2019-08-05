@@ -69,6 +69,7 @@ export function abortCurrentInlineScript(source, property, search = null) {
 
 abortCurrentInlineScript.names = [
     'abort-current-inline-script',
+    'abort-current-inline-script.js',
     'ubo-abort-current-inline-script.js',
     'abp-abort-current-inline-script',
 ];

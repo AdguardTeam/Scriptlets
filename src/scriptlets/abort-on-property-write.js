@@ -46,6 +46,7 @@ export function abortOnPropertyWrite(source, property) {
 
 abortOnPropertyWrite.names = [
     'abort-on-property-write',
+    'abort-on-property-write.js',
     'ubo-abort-on-property-write.js',
     'abp-abort-on-property-write',
 ];

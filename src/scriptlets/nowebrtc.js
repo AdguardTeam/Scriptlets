@@ -42,6 +42,7 @@ export function nowebrtc(source) {
 
 nowebrtc.names = [
     'nowebrtc',
+    'nowebrtc.js',
     'ubo-nowebrtc.js',
 ];
 

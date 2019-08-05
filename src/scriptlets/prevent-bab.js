@@ -61,6 +61,7 @@ export function preventBab(source) {
 
 preventBab.names = [
     'prevent-bab',
+    'bab-defuser.js',
     'ubo-bab-defuser.js',
 ];
 
