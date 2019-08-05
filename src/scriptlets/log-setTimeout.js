@@ -4,6 +4,9 @@ import { hit } from '../helpers';
 /**
  * Logs setTimeout calls
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#settimeout-loggerjs-
+ *
  * @param {Source} source
  */
 export function logSetTimeout(source) {

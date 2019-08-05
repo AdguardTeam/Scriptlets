@@ -4,6 +4,10 @@ import { toRegExp, hit } from '../helpers';
 
 /**
  * Prevents page to use eval matching payload
+ *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
+ *
  * @param {Source} source
  * @param {string|RegExp} [search] string or regexp matching stringified eval payload
  */

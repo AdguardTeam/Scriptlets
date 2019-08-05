@@ -4,6 +4,9 @@ import { noop, hit } from '../helpers';
 /**
  * Fuckadblock 3.2.0 defuser
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#fuckadblockjs-320-
+ *
  * @param {Source} source
  */
 export function preventFab(source) {

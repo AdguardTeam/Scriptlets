@@ -5,6 +5,9 @@ import { hit } from '../helpers';
  * Prevent calls to setTimeout for specified matching in passed callback and delay
  * by setting callback to empty function
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#settimeout-defuserjs-
+ *
  * @param {Source} source
  * @param {string|RegExp} match matching in string of callback function
  * @param {string|number} delay matching delay

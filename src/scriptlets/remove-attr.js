@@ -3,6 +3,9 @@ import { hit } from '../helpers';
 /**
  * Removes attributes from DOM nodes. Will run only once after page load.
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
+ *
  * @param {Source} source
  * @param {string} attrs attributes names separated by `|` which should be removed
  * @param {string} selector CSS selector specifies nodes from which attributes should be removed

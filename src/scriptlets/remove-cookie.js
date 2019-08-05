@@ -4,6 +4,10 @@ import { hit } from '../helpers';
 /**
  * Removes current page cookies specified by name.
  * For current domain, subdomains on load and before unload.
+ *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#cookie-removerjs-
+ *
  * @param {Source} source
  * @param {string} match string for matching with cookie name
  */

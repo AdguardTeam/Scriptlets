@@ -6,6 +6,12 @@ import { createOnErrorHandler, hit } from '../helpers';
 /**
  * Abort property reading even if it doesn't exist in execution moment
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-property-readjs-
+ *
+ * Related ABP source:
+ * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L864
+ *
  * @param {Source} source
  * @param {string} property property name
  */

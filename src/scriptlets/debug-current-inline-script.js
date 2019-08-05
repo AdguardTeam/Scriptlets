@@ -5,6 +5,13 @@ import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { toRegExp } from '../helpers/string-utils';
 import { hit, createOnErrorHandler } from '../helpers';
 
+/**
+ * Call debugger when script should be aborted
+ *
+ * @param {Source} source
+ * @param {string} property path to a property
+ * @param {string} search must match the inline script contents
+ */
 export function debugCurrentInlineScript(source, property, search = null) {
     const regex = search ? toRegExp(search) : null;
     const rid = randomId();

@@ -4,6 +4,9 @@ import { hit } from '../helpers';
 /**
  * Sets static properties PopAds and popns.
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#popads-dummyjs-
+ *
  * @param {Source} source
  */
 export function setPopadsDummy(source) {

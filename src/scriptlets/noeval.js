@@ -4,6 +4,11 @@ import { hit } from '../helpers';
 /**
  * Prevents page to use eval.
  * Notifies about attempts in the console
+ *
+ * Related UBO scriptlets:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#noevaljs-
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#silent-noevaljs-
+ *
  * @param {Source} source
  */
 export function noeval(source) {

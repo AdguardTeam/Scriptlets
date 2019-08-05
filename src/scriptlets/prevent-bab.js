@@ -5,6 +5,9 @@ import { hit } from '../helpers';
 /**
  * Prevents BlockAdblock
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#bab-defuserjs-
+ *
  * @param {Source} source
  */
 export function preventBab(source) {

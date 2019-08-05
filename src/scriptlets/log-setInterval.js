@@ -4,6 +4,9 @@ import { hit } from '../helpers';
 /**
  * Logs setInterval calls
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#setinterval-loggerjs-
+ *
  * @param {Source} source
  */
 export function logSetInterval(source) {

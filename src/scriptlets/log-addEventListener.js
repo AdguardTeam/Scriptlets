@@ -4,6 +4,9 @@ import { hit } from '../helpers';
 /**
  * Logs add event listener calls
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-loggerjs-
+ *
  * @param {Source} source
  */
 export function logAddEventListener(source) {

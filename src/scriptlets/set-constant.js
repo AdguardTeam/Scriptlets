@@ -2,6 +2,16 @@ import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { hit } from '../helpers';
 
+/**
+ * Creates a constant property and assigns it one of the values from the predefined list.
+ *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#set-constantjs-
+ *
+ * @param {Source} source
+ * @param {string} property path to a property
+ * @param {string} value
+ */
 export function setConstant(source, property, value) {
     if (!property) {
         return;

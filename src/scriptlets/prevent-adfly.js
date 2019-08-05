@@ -3,6 +3,10 @@ import { hit, setPropertyAccess } from '../helpers';
 
 /**
  * Prevents anti-adblock scripts on adfly short links.
+ *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#adfly-defuserjs-
+ *
  * @param {Source} source
  */
 export function preventAdfly(source) {

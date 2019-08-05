@@ -3,6 +3,10 @@ import { hit } from '../helpers';
 
 /**
  * Prevent calls `window.open` when URL match or not match with passed params
+ *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#windowopen-defuserjs-
+ *
  * @param {Source} source
  * @param {number|string} [inverse] inverse matching
  * @param {string} [match] matching with URL

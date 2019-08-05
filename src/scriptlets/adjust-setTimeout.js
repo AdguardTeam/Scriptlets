@@ -3,6 +3,10 @@ import { hit } from '../helpers';
 
 /**
  * Adjusts timeout for specified setTimout() callbacks.
+ *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-settimeout-boosterjs-
+ *
  * @param {Source} source
  * @param {string|RegExp} match matching in string of callback function
  * @param {string|number} timeout matching timeout
