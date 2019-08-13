@@ -13,8 +13,10 @@ global.scriptlets = {};
 require('./dist/scriptlets');
 
 const FILE_NAME = 'redirects.yml';
+const CORELIBS_FILE_NAME = 'redirects.json';
 const PATH_TO_DIST = './dist';
 const RESULT_PATH = path.resolve(PATH_TO_DIST, FILE_NAME);
+const CORELIBS_RESULT_PATH = path.resolve(PATH_TO_DIST, CORELIBS_FILE_NAME);
 const STATIC_REDIRECTS_PATH = './src/redirects/static-redirects.yml';
 const SCRIPTLET_REDIRECTS_PATH = './src/redirects/scriptlet-redirects.yml';
 const banner = `#
@@ -68,17 +70,54 @@ const scriptletRedirects = scriptletsToAdd.map((data) => {
 
 const mergedRedirects = [...staticRedirects, ...scriptletRedirects];
 
-try {
-    let yamlRedirects = yaml.safeDump(mergedRedirects);
-    // add empty line before titles
-    yamlRedirects = yamlRedirects.split('- title:').join(`${EOL}- title:`).trimLeft();
+if (process.env.REDIRECTS !== 'CORELIBS') {
+    // Build scriptlets.yml. It is used in the extension.
+    try {
+        let yamlRedirects = yaml.safeDump(mergedRedirects);
+        // add empty line before titles
+        yamlRedirects = yamlRedirects.split('- title:').join(`${EOL}- title:`).trimLeft();
 
-    // add version and title to the top
-    yamlRedirects = `${banner}${yamlRedirects}`;
+        // add version and title to the top
+        yamlRedirects = `${banner}${yamlRedirects}`;
 
-    fs.writeFileSync(RESULT_PATH, yamlRedirects, 'utf8');
-} catch (e) {
-    // eslint-disable-next-line no-console
-    console.log(`Couldn't save to ${RESULT_PATH}, because of: ${e}`);
-    throw e;
+        fs.writeFileSync(RESULT_PATH, yamlRedirects, 'utf8');
+    } catch (e) {
+        // eslint-disable-next-line no-console
+        console.log(`Couldn't save to ${RESULT_PATH}, because of: ${e.message}`);
+        throw e;
+    }
+}
+
+if (process.env.REDIRECTS === 'CORELIBS') {
+    // Build scriptlets.json. It is used in the corelibs
+    const base64Redirects = Object.values(mergedRedirects).map((redirect) => {
+        const {
+            contentType, content, title, aliases,
+        } = redirect;
+        let base64Content;
+        let bas64ContentType = contentType;
+        if (contentType.match(';base64')) {
+            // yaml leaves new lines or spaces
+            // replace them all because base64 isn't supposed to have them
+            base64Content = content.replace(/(\r\n|\n|\r|\s)/gm, '');
+        } else {
+            base64Content = Buffer.from(content, 'binary').toString('base64');
+            bas64ContentType = `${contentType};base64`;
+        }
+        return {
+            title,
+            aliases,
+            contentType: bas64ContentType,
+            content: base64Content.trim(),
+        };
+    });
+
+    try {
+        const jsonString = JSON.stringify(base64Redirects, null, 4);
+        fs.writeFileSync(CORELIBS_RESULT_PATH, jsonString, 'utf8');
+    } catch (e) {
+        // eslint-disable-next-line no-console
+        console.log(`Couldn't save to ${CORELIBS_RESULT_PATH}, because of: ${e.message}`);
+        throw e;
+    }
 }
