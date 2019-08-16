@@ -3,3 +3,6 @@ node_js:
   - "10"
 script:
   - bash -e ./build.sh
+
+notifications:
+  slack: $SLACK_TOKEN
