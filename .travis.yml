@@ -5,4 +5,9 @@ script:
   - bash -e ./build.sh
 
 notifications:
-  slack: $SLACK_TOKEN
+  slack:
+    rooms:
+      - $SLACK_TOKEN
+    on_success: always
+    on_failure: always
+  
