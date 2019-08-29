@@ -769,6 +769,7 @@ example.org#%#//scriptlet("googlesyndication-adsbygoogle")
 | [adjust-setInterval](#adjust-setInterval) | nano-setInterval-booster.js | |
 | [adjust-setTimeout](#adjust-setTimeout) | nano-setTimeout-booster.js | |
 | [dir-string](#dir-string) | | dir-string |
+| [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle) | | |
 
 ## <a id="redirect-resources"></a> Redirect resources
 
