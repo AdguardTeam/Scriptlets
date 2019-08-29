@@ -31,6 +31,7 @@
         * [debug-current-inline-script](#debug-current-inline-script)
         * [remove-attr](#remove-attr)
         * [disable-newtab-links](#disable-newtab-links)
+        * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle-scriptlet)
     * [Scriptlets compatibility table](#compatibility)
 * [Redirect resources](#redirect-resources)
     * [Syntax](#redirect-syntax)
@@ -49,6 +50,7 @@
         * [set-popads-dummy](#set-popads-dummy)
         * [prevent-popads-net](#prevent-popads-net)
         * [noeval.js](#noeval-js)
+        * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
     * [Redirect resources compatibility table](#redirect-compatibility)
 * [How to build](#how-to-build)
 
@@ -709,6 +711,19 @@ example.org#%#//scriptlet("dir-string"[, times])
 
 [scriptlet source](./src/scriptlets/dir-string.js)
 
+#### <a id="googlesyndication-adsbygoogle-scriptlet"></a> googlesyndication-adsbygoogle
+
+Mocks Google AdSense API.
+
+It mostly used as redirect rule.
+See [redirect description](#googlesyndication-adsbygoogle).
+
+**Example**
+```
+example.org#%#//scriptlet("googlesyndication-adsbygoogle")
+```
+[redirect source](./src/scriptlets/googlesyndication-adsbygoogle.js)
+
 
 ### <a id="compatibility"></a> Scriptlets compatibility table
 
@@ -754,6 +769,7 @@ example.org#%#//scriptlet("dir-string"[, times])
 | [adjust-setInterval](#adjust-setInterval) | nano-setInterval-booster.js | |
 | [adjust-setTimeout](#adjust-setTimeout) | nano-setTimeout-booster.js | |
 | [dir-string](#dir-string) | | dir-string |
+| [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle) | googlesyndication_adsbygoogle.js  | |
 
 ## <a id="redirect-resources"></a> Redirect resources
 
@@ -911,6 +927,17 @@ Prevents page to use eval
 ```
 [redirect source](./src/scriptlets/noeval.js)
 
+
+#### <a id="googlesyndication-adsbygoogle"></a> googlesyndication-adsbygoogle
+
+Mocks Google AdSense API
+
+**Example**
+```
+||example.org/index.js$script,redirect=googlesyndication-adsbygoogle
+```
+[redirect source](./src/scriptlets/googlesyndication-adsbygoogle.js)
+
 ### <a id="redirect-compatibility"></a> Redirect resources compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -929,7 +956,7 @@ Prevents page to use eval
 | [set-popads-dummy](#set-popads-dummy) | popads-dummy.js ||
 | [prevent-popads-net](#prevent-popads-net) | popads.net.js ||
 | [noeval.js](#noeval-js) | silent-noeval.js | noeval |
-| | googlesyndication.com/adsbygoogle.js | |
+| [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle) | googlesyndication_adsbygoogle.js | |
 | | hd-main.js | |
 | | googletagmanager.com/gtm.js | |
 | | google-analytics.com/analytics.js | |

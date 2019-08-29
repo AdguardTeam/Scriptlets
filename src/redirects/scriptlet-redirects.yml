@@ -6,3 +6,5 @@
   comment: Aborts on property write (PopAds, popns), throws reference error with random id
 - title: noeval
   comment: Prevents page to use eval.
+- title: googlesyndication-adsbygoogle
+  comment: Mocks Google AdSense API
