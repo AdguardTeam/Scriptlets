@@ -8,3 +8,5 @@
   comment: Prevents page to use eval.
 - title: googlesyndication-adsbygoogle
   comment: Mocks Google AdSense API
+- title: googletagmanager-gtm
+  comment: Mocks Google Tag Manager API
