@@ -432,7 +432,7 @@
     })({"name":"noeval"});
 
 - title: googlesyndication-adsbygoogle
-  comment: Hides Google AdSense ads
+  comment: Mocks Google AdSense API
   aliases:
     - ubo-googlesyndication_adsbygoogle.js
     - googlesyndication_adsbygoogle.js
