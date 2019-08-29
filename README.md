@@ -914,7 +914,7 @@ Prevents page to use eval
 
 #### <a id="googlesyndication-adsbygoogle"></a> googlesyndication-adsbygoogle
 
-Hides Google AdSense ads
+Mocks Google AdSense API
 
 **Example**
 ```
