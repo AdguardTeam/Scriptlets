@@ -31,6 +31,7 @@
         * [debug-current-inline-script](#debug-current-inline-script)
         * [remove-attr](#remove-attr)
         * [disable-newtab-links](#disable-newtab-links)
+        * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle-scriptlet)
     * [Scriptlets compatibility table](#compatibility)
 * [Redirect resources](#redirect-resources)
     * [Syntax](#redirect-syntax)
@@ -49,6 +50,7 @@
         * [set-popads-dummy](#set-popads-dummy)
         * [prevent-popads-net](#prevent-popads-net)
         * [noeval.js](#noeval-js)
+        * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
     * [Redirect resources compatibility table](#redirect-compatibility)
 * [How to build](#how-to-build)
 
@@ -709,6 +711,19 @@ example.org#%#//scriptlet("dir-string"[, times])
 
 [scriptlet source](./src/scriptlets/dir-string.js)
 
+#### <a id="googlesyndication-adsbygoogle-scriptlet"></a> googlesyndication-adsbygoogle
+
+Mocks Google AdSense API.
+
+It mostly used as redirect rule.
+See [redirect description](#googlesyndication-adsbygoogle).
+
+**Example**
+```
+example.org#%#//scriptlet("googlesyndication-adsbygoogle")
+```
+[redirect source](./src/scriptlets/googlesyndication-adsbygoogle.js)
+
 
 ### <a id="compatibility"></a> Scriptlets compatibility table
 
@@ -918,7 +933,7 @@ Mocks Google AdSense API
 
 **Example**
 ```
-||example.org/index.js$script,redirect=googlesyndication_adsbygoogle.js
+||example.org/index.js$script,redirect=googlesyndication-adsbygoogle
 ```
 [redirect source](./src/scriptlets/googlesyndication-adsbygoogle.js)
 
