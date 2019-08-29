@@ -911,6 +911,15 @@ Prevents page to use eval
 ```
 [redirect source](./src/scriptlets/noeval.js)
 
+
+#### <a id="googlesyndication-adsbygoogle"></a> googlesyndication-adsbygoogle
+
+**Example**
+```
+||example.org/index.js$script,redirect=googlesyndication_adsbygoogle.js
+```
+[redirect source](./src/scriptlets/googlesyndication-adsbygoogle.js)
+
 ### <a id="redirect-compatibility"></a> Redirect resources compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -929,7 +938,7 @@ Prevents page to use eval
 | [set-popads-dummy](#set-popads-dummy) | popads-dummy.js ||
 | [prevent-popads-net](#prevent-popads-net) | popads.net.js ||
 | [noeval.js](#noeval-js) | silent-noeval.js | noeval |
-| | googlesyndication.com/adsbygoogle.js | |
+| [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle) | googlesyndication_adsbygoogle.js | |
 | | hd-main.js | |
 | | googletagmanager.com/gtm.js | |
 | | google-analytics.com/analytics.js | |

@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.0.7
+ * Version 1.0.9
  */
 
 (function () {
@@ -1630,6 +1630,43 @@
     dirString.injections = [hit];
 
     /**
+     * Hides Google AdSense ads
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googlesyndication_adsbygoogle.js
+     */
+
+    function GooglesyndicationAdsbygoogle(source) {
+      window.adsbygoogle = window.adsbygoogle || {
+        length: 0,
+        loaded: true,
+        push: function push() {
+          this.length += 1;
+        }
+      };
+      var adElem = document.querySelectorAll('.adsbygoogle');
+      var css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
+      var executed = false;
+
+      for (var i = 0; i < adElem.length; i += 1) {
+        var fr = document.createElement('iframe');
+        fr.id = "aswift_".concat(i + 1);
+        fr.style = css;
+        var cfr = document.createElement('iframe');
+        cfr.id = "google_ads_frame".concat(i);
+        fr.appendChild(cfr);
+        document.body.appendChild(fr);
+        executed = true;
+      }
+
+      if (executed) {
+        hit(source);
+      }
+    }
+    GooglesyndicationAdsbygoogle.names = ['googlesyndication-adsbygoogle', 'ubo-googlesyndication-adsbygoogle.js', 'googlesyndication_adsbygoogle.js'];
+    GooglesyndicationAdsbygoogle.injections = [hit];
+
+    /**
      * This file must export all scriptlets which should be accessible
      */
 
@@ -1663,7 +1700,8 @@
         disableNewtabLinks: disableNewtabLinks,
         adjustSetInterval: adjustSetInterval,
         adjustSetTimeout: adjustSetTimeout,
-        dirString: dirString
+        dirString: dirString,
+        GooglesyndicationAdsbygoogle: GooglesyndicationAdsbygoogle
     });
 
     /**

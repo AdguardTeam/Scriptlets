@@ -31,3 +31,4 @@ export * from './disable-newtab-links';
 export * from './adjust-setInterval';
 export * from './adjust-setTimeout';
 export * from './dir-string';
+export * from './googlesyndication-adsbygoogle';
