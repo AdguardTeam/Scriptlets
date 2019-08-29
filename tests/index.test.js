@@ -30,3 +30,4 @@ import './adjust-setInterval.test';
 import './adjust-setTimeout.test';
 import './dir-string.test';
 import './googlesyndication-adsbygoogle.test';
+import './googletagmanager-gtm.test';

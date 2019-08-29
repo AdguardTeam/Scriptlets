@@ -1667,6 +1667,41 @@
     GooglesyndicationAdsbygoogle.injections = [hit];
 
     /**
+     * Mocks Google Tag Maneger API
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagmanager_gtm.js
+     */
+
+    function GoogletagmanagerGtm(source) {
+      var noopfn = function noopfn() {};
+
+      window.ga = window.ga || noopfn;
+      var _window = window,
+          dataLayer = _window.dataLayer;
+
+      if (dataLayer instanceof Object === false) {
+        return;
+      }
+
+      if (dataLayer.hide instanceof Object && typeof dataLayer.hide.end === 'function') {
+        dataLayer.hide.end();
+      }
+
+      if (typeof dataLayer.push === 'function') {
+        dataLayer.push = function (data) {
+          if (data instanceof Object && typeof data.eventCallback === 'function') {
+            setTimeout(data.eventCallback, 1);
+          }
+        };
+      }
+
+      hit(source);
+    }
+    GoogletagmanagerGtm.names = ['googletagmanager-gtm', 'ubo-googletagmanager_gtm.js', 'googletagmanager_gtm.js'];
+    GoogletagmanagerGtm.injections = [hit];
+
+    /**
      * This file must export all scriptlets which should be accessible
      */
 
@@ -1701,7 +1736,8 @@
         adjustSetInterval: adjustSetInterval,
         adjustSetTimeout: adjustSetTimeout,
         dirString: dirString,
-        GooglesyndicationAdsbygoogle: GooglesyndicationAdsbygoogle
+        GooglesyndicationAdsbygoogle: GooglesyndicationAdsbygoogle,
+        GoogletagmanagerGtm: GoogletagmanagerGtm
     });
 
     /**
