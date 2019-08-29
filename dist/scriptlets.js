@@ -1644,18 +1644,18 @@
           this.length += 1;
         }
       };
-      var adElem = document.querySelectorAll('.adsbygoogle');
+      var adElems = document.querySelectorAll('.adsbygoogle');
       var css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
       var executed = false;
 
-      for (var i = 0; i < adElem.length; i += 1) {
-        var fr = document.createElement('iframe');
-        fr.id = "aswift_".concat(i + 1);
-        fr.style = css;
-        var cfr = document.createElement('iframe');
-        cfr.id = "google_ads_frame".concat(i);
-        fr.appendChild(cfr);
-        document.body.appendChild(fr);
+      for (var i = 0; i < adElems.length; i += 1) {
+        var frame = document.createElement('iframe');
+        frame.id = "aswift_".concat(i + 1);
+        frame.style = css;
+        var childFrame = document.createElement('iframe');
+        childFrame.id = "google_ads_frame".concat(i);
+        frame.appendChild(childFrame);
+        document.body.appendChild(frame);
         executed = true;
       }
 
@@ -1663,7 +1663,7 @@
         hit(source);
       }
     }
-    GooglesyndicationAdsbygoogle.names = ['googlesyndication-adsbygoogle', 'ubo-googlesyndication-adsbygoogle.js', 'googlesyndication_adsbygoogle.js'];
+    GooglesyndicationAdsbygoogle.names = ['googlesyndication-adsbygoogle', 'ubo-googlesyndication_adsbygoogle.js', 'googlesyndication_adsbygoogle.js'];
     GooglesyndicationAdsbygoogle.injections = [hit];
 
     /**

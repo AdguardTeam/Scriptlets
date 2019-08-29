@@ -914,6 +914,8 @@ Prevents page to use eval
 
 #### <a id="googlesyndication-adsbygoogle"></a> googlesyndication-adsbygoogle
 
+Hides Google AdSense ads
+
 **Example**
 ```
 ||example.org/index.js$script,redirect=googlesyndication_adsbygoogle.js

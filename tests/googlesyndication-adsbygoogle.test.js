@@ -11,7 +11,7 @@ const evalWrapper = eval;
 
 test('ubo alias', (assert) => {
     const params = {
-        name: 'ubo-googlesyndication-adsbygoogle.js',
+        name: 'ubo-googlesyndication_adsbygoogle.js',
         verbose: true,
     };
     window.__debugScriptlets = () => {

@@ -14,17 +14,17 @@ export function GooglesyndicationAdsbygoogle(source) {
             this.length += 1;
         },
     };
-    const adElem = document.querySelectorAll('.adsbygoogle');
+    const adElems = document.querySelectorAll('.adsbygoogle');
     const css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
     let executed = false;
-    for (let i = 0; i < adElem.length; i += 1) {
-        const fr = document.createElement('iframe');
-        fr.id = `aswift_${i + 1}`;
-        fr.style = css;
-        const cfr = document.createElement('iframe');
-        cfr.id = `google_ads_frame${i}`;
-        fr.appendChild(cfr);
-        document.body.appendChild(fr);
+    for (let i = 0; i < adElems.length; i += 1) {
+        const frame = document.createElement('iframe');
+        frame.id = `aswift_${i + 1}`;
+        frame.style = css;
+        const childFrame = document.createElement('iframe');
+        childFrame.id = `google_ads_frame${i}`;
+        frame.appendChild(childFrame);
+        document.body.appendChild(frame);
         executed = true;
     }
     if (executed) {
@@ -34,7 +34,7 @@ export function GooglesyndicationAdsbygoogle(source) {
 
 GooglesyndicationAdsbygoogle.names = [
     'googlesyndication-adsbygoogle',
-    'ubo-googlesyndication-adsbygoogle.js',
+    'ubo-googlesyndication_adsbygoogle.js',
     'googlesyndication_adsbygoogle.js',
 ];
 
