@@ -33,6 +33,7 @@
         * [disable-newtab-links](#disable-newtab-links)
         * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle-scriptlet)
         * [googletagmanager-gtm](#googletagmanager-gtm-scriptlet)
+        * [google-analytics](#google-analytics-scriptlet)
 
     * [Scriptlets compatibility table](#compatibility)
 * [Redirect resources](#redirect-resources)
@@ -54,6 +55,7 @@
         * [noeval.js](#noeval-js)
         * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
         * [googletagmanager-gtm](#googletagmanager-gtm)
+        * [google-analytics](#google-analytics)
     * [Redirect resources compatibility table](#redirect-compatibility)
 * [How to build](#how-to-build)
 
@@ -725,7 +727,7 @@ See [redirect description](#googlesyndication-adsbygoogle).
 ```
 example.org#%#//scriptlet("googlesyndication-adsbygoogle")
 ```
-[redirect source](./src/scriptlets/googlesyndication-adsbygoogle.js)
+[scriptlet source](./src/scriptlets/googlesyndication-adsbygoogle.js)
 
 #### <a id="googletagmanager-gtm-scriptlet"></a> googletagmanager-gtm
 
@@ -738,7 +740,20 @@ See [redirect description](#googletagmanager-gtm).
 ```
 example.org#%#//scriptlet("googletagmanager-gtm")
 ```
-[redirect source](./src/scriptlets/googletagmanager-gtm.js)
+[scriptlet source](./src/scriptlets/googletagmanager-gtm.js)
+
+#### <a id="google-analytics-scriptlet"></a> google-analytics
+
+Mocks Google Analytics API.
+
+It mostly used as redirect rule.
+See [redirect description](#google-analytics).
+
+**Example**
+```
+example.org#%#//scriptlet("google-analytics")
+```
+[scriptlet source](./src/scriptlets/google-analytics.js)
 
 
 ### <a id="compatibility"></a> Scriptlets compatibility table
@@ -787,6 +802,7 @@ example.org#%#//scriptlet("googletagmanager-gtm")
 | [dir-string](#dir-string) | | dir-string |
 | [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle-scriptlet) | googlesyndication_adsbygoogle.js  | |
 | [googletagmanager-gtm](#googletagmanager-gtm-scriptlet) | googletagmanager_gtm.js | |
+| [google-analytics](#google-analytics-scriptlet) | google-analytics_analytics.js | |
 
 ## <a id="redirect-resources"></a> Redirect resources
 
@@ -965,6 +981,16 @@ Mocks Google Tag Manager API
 ```
 [redirect source](./src/scriptlets/googletagmanager-gtm.js)
 
+#### <a id="google-analytics"></a> google-analytics
+
+Mocks Google Analytics API
+
+**Example**
+```
+||example.org/index.js$script,redirect=google-analytics
+```
+[redirect source](./src/scriptlets/google-analytics.js)
+
 ### <a id="redirect-compatibility"></a> Redirect resources compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -986,6 +1012,7 @@ Mocks Google Tag Manager API
 | [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle) | googlesyndication_adsbygoogle.js | |
 | | hd-main.js | |
 | [googletagmanager-gtm](#googletagmanager-gtm) | googletagmanager_gtm.js | |
+| [google-analytics](#google-analytics) | google-analytics_analytics.js | |
 | | google-analytics.com/analytics.js | |
 | | ligatus.com/*/angular-tag.js | |
 | | scorecardresearch.com/beacon.js | |
