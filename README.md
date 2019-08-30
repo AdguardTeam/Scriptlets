@@ -785,6 +785,7 @@ example.org#%#//scriptlet("googletagmanager-gtm")
 | [adjust-setInterval](#adjust-setInterval) | nano-setInterval-booster.js | |
 | [adjust-setTimeout](#adjust-setTimeout) | nano-setTimeout-booster.js | |
 | [dir-string](#dir-string) | | dir-string |
+| [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle) | googlesyndication_adsbygoogle.js  | |
 | [googletagmanager-gtm](#googletagmanager-gtm-scriptlet) | googletagmanager_gtm.js | |
 
 ## <a id="redirect-resources"></a> Redirect resources
