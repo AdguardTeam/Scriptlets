@@ -1,4 +1,5 @@
 import { hit } from '../helpers/hit';
+import { noop } from '../helpers/plugs';
 
 /**
  * Mocks Google Tag Maneger API
@@ -6,9 +7,8 @@ import { hit } from '../helpers/hit';
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagmanager_gtm.js
  */
-export function GoogletagmanagerGtm(source) {
-    const noopfn = () => { };
-    window.ga = window.ga || noopfn;
+export function GoogleTagManagerGtm(source) {
+    window.ga = window.ga || noop;
     const { dataLayer } = window;
     if (dataLayer instanceof Object === false) {
         return;
@@ -29,12 +29,13 @@ export function GoogletagmanagerGtm(source) {
     hit(source);
 }
 
-GoogletagmanagerGtm.names = [
+GoogleTagManagerGtm.names = [
     'googletagmanager-gtm',
     'ubo-googletagmanager_gtm.js',
     'googletagmanager_gtm.js',
 ];
 
-GoogletagmanagerGtm.injections = [
+GoogleTagManagerGtm.injections = [
     hit,
+    noop,
 ];

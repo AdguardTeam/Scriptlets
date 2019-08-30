@@ -1636,7 +1636,7 @@
      * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googlesyndication_adsbygoogle.js
      */
 
-    function GooglesyndicationAdsbygoogle(source) {
+    function GoogleSyndicationAdsByGoogle(source) {
       window.adsbygoogle = window.adsbygoogle || {
         length: 0,
         loaded: true,
@@ -1663,8 +1663,8 @@
         hit(source);
       }
     }
-    GooglesyndicationAdsbygoogle.names = ['googlesyndication-adsbygoogle', 'ubo-googlesyndication_adsbygoogle.js', 'googlesyndication_adsbygoogle.js'];
-    GooglesyndicationAdsbygoogle.injections = [hit];
+    GoogleSyndicationAdsByGoogle.names = ['googlesyndication-adsbygoogle', 'ubo-googlesyndication_adsbygoogle.js', 'googlesyndication_adsbygoogle.js'];
+    GoogleSyndicationAdsByGoogle.injections = [hit];
 
     /**
      * Mocks Google Tag Maneger API
@@ -1673,10 +1673,8 @@
      * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagmanager_gtm.js
      */
 
-    function GoogletagmanagerGtm(source) {
-      var noopfn = function noopfn() {};
-
-      window.ga = window.ga || noopfn;
+    function GoogleTagManagerGtm(source) {
+      window.ga = window.ga || noop;
       var _window = window,
           dataLayer = _window.dataLayer;
 
@@ -1698,8 +1696,8 @@
 
       hit(source);
     }
-    GoogletagmanagerGtm.names = ['googletagmanager-gtm', 'ubo-googletagmanager_gtm.js', 'googletagmanager_gtm.js'];
-    GoogletagmanagerGtm.injections = [hit];
+    GoogleTagManagerGtm.names = ['googletagmanager-gtm', 'ubo-googletagmanager_gtm.js', 'googletagmanager_gtm.js'];
+    GoogleTagManagerGtm.injections = [hit, noop];
 
     /**
      * This file must export all scriptlets which should be accessible
@@ -1736,8 +1734,8 @@
         adjustSetInterval: adjustSetInterval,
         adjustSetTimeout: adjustSetTimeout,
         dirString: dirString,
-        GooglesyndicationAdsbygoogle: GooglesyndicationAdsbygoogle,
-        GoogletagmanagerGtm: GoogletagmanagerGtm
+        GoogleSyndicationAdsByGoogle: GoogleSyndicationAdsByGoogle,
+        GoogleTagManagerGtm: GoogleTagManagerGtm
     });
 
     /**
