@@ -1,5 +1,5 @@
 import { hit } from '../helpers/hit';
-import { noop } from '../helpers/plugs';
+import { noop } from '../helpers/noop';
 
 /**
  * Mocks Google Tag Maneger API
