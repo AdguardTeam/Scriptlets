@@ -32,6 +32,8 @@
         * [remove-attr](#remove-attr)
         * [disable-newtab-links](#disable-newtab-links)
         * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle-scriptlet)
+        * [googletagmanager-gtm](#googletagmanager-gtm-scriptlet)
+
     * [Scriptlets compatibility table](#compatibility)
 * [Redirect resources](#redirect-resources)
     * [Syntax](#redirect-syntax)
@@ -51,6 +53,7 @@
         * [prevent-popads-net](#prevent-popads-net)
         * [noeval.js](#noeval-js)
         * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
+        * [googletagmanager-gtm](#googletagmanager-gtm)
     * [Redirect resources compatibility table](#redirect-compatibility)
 * [How to build](#how-to-build)
 
@@ -724,6 +727,19 @@ example.org#%#//scriptlet("googlesyndication-adsbygoogle")
 ```
 [redirect source](./src/scriptlets/googlesyndication-adsbygoogle.js)
 
+#### <a id="googletagmanager-gtm-scriptlet"></a> googletagmanager-gtm
+
+Mocks Google Tag Manager API.
+
+It mostly used as redirect rule.
+See [redirect description](#googletagmanager-gtm).
+
+**Example**
+```
+example.org#%#//scriptlet("googletagmanager-gtm")
+```
+[redirect source](./src/scriptlets/googletagmanager-gtm.js)
+
 
 ### <a id="compatibility"></a> Scriptlets compatibility table
 
@@ -769,7 +785,8 @@ example.org#%#//scriptlet("googlesyndication-adsbygoogle")
 | [adjust-setInterval](#adjust-setInterval) | nano-setInterval-booster.js | |
 | [adjust-setTimeout](#adjust-setTimeout) | nano-setTimeout-booster.js | |
 | [dir-string](#dir-string) | | dir-string |
-| [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle) | googlesyndication_adsbygoogle.js  | |
+| [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle-scriptlet) | googlesyndication_adsbygoogle.js  | |
+| [googletagmanager-gtm](#googletagmanager-gtm-scriptlet) | googletagmanager_gtm.js | |
 
 ## <a id="redirect-resources"></a> Redirect resources
 
@@ -938,6 +955,16 @@ Mocks Google AdSense API
 ```
 [redirect source](./src/scriptlets/googlesyndication-adsbygoogle.js)
 
+#### <a id="googletagmanager-gtm"></a> googletagmanager-gtm
+
+Mocks Google Tag Manager API
+
+**Example**
+```
+||example.org/index.js$script,redirect=googletagmanager-gtm
+```
+[redirect source](./src/scriptlets/googletagmanager-gtm.js)
+
 ### <a id="redirect-compatibility"></a> Redirect resources compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -958,7 +985,7 @@ Mocks Google AdSense API
 | [noeval.js](#noeval-js) | silent-noeval.js | noeval |
 | [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle) | googlesyndication_adsbygoogle.js | |
 | | hd-main.js | |
-| | googletagmanager.com/gtm.js | |
+| [googletagmanager-gtm](#googletagmanager-gtm) | googletagmanager_gtm.js | |
 | | google-analytics.com/analytics.js | |
 | | ligatus.com/*/angular-tag.js | |
 | | scorecardresearch.com/beacon.js | |

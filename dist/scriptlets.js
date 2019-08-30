@@ -1636,7 +1636,7 @@
      * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googlesyndication_adsbygoogle.js
      */
 
-    function GooglesyndicationAdsbygoogle(source) {
+    function GoogleSyndicationAdsByGoogle(source) {
       window.adsbygoogle = window.adsbygoogle || {
         length: 0,
         loaded: true,
@@ -1663,8 +1663,41 @@
         hit(source);
       }
     }
-    GooglesyndicationAdsbygoogle.names = ['googlesyndication-adsbygoogle', 'ubo-googlesyndication_adsbygoogle.js', 'googlesyndication_adsbygoogle.js'];
-    GooglesyndicationAdsbygoogle.injections = [hit];
+    GoogleSyndicationAdsByGoogle.names = ['googlesyndication-adsbygoogle', 'ubo-googlesyndication_adsbygoogle.js', 'googlesyndication_adsbygoogle.js'];
+    GoogleSyndicationAdsByGoogle.injections = [hit];
+
+    /**
+     * Mocks Google Tag Maneger API
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagmanager_gtm.js
+     */
+
+    function GoogleTagManagerGtm(source) {
+      window.ga = window.ga || noop;
+      var _window = window,
+          dataLayer = _window.dataLayer;
+
+      if (dataLayer instanceof Object === false) {
+        return;
+      }
+
+      if (dataLayer.hide instanceof Object && typeof dataLayer.hide.end === 'function') {
+        dataLayer.hide.end();
+      }
+
+      if (typeof dataLayer.push === 'function') {
+        dataLayer.push = function (data) {
+          if (data instanceof Object && typeof data.eventCallback === 'function') {
+            setTimeout(data.eventCallback, 1);
+          }
+        };
+      }
+
+      hit(source);
+    }
+    GoogleTagManagerGtm.names = ['googletagmanager-gtm', 'ubo-googletagmanager_gtm.js', 'googletagmanager_gtm.js'];
+    GoogleTagManagerGtm.injections = [hit, noop];
 
     /**
      * This file must export all scriptlets which should be accessible
@@ -1701,7 +1734,8 @@
         adjustSetInterval: adjustSetInterval,
         adjustSetTimeout: adjustSetTimeout,
         dirString: dirString,
-        GooglesyndicationAdsbygoogle: GooglesyndicationAdsbygoogle
+        GoogleSyndicationAdsByGoogle: GoogleSyndicationAdsByGoogle,
+        GoogleTagManagerGtm: GoogleTagManagerGtm
     });
 
     /**

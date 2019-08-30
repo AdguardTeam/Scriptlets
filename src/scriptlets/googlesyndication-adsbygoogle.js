@@ -6,7 +6,7 @@ import { hit } from '../helpers/hit';
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googlesyndication_adsbygoogle.js
  */
-export function GooglesyndicationAdsbygoogle(source) {
+export function GoogleSyndicationAdsByGoogle(source) {
     window.adsbygoogle = window.adsbygoogle || {
         length: 0,
         loaded: true,
@@ -32,12 +32,12 @@ export function GooglesyndicationAdsbygoogle(source) {
     }
 }
 
-GooglesyndicationAdsbygoogle.names = [
+GoogleSyndicationAdsByGoogle.names = [
     'googlesyndication-adsbygoogle',
     'ubo-googlesyndication_adsbygoogle.js',
     'googlesyndication_adsbygoogle.js',
 ];
 
-GooglesyndicationAdsbygoogle.injections = [
+GoogleSyndicationAdsByGoogle.injections = [
     hit,
 ];
