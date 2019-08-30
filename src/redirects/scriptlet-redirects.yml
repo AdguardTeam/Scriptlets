@@ -10,3 +10,5 @@
   comment: Mocks Google AdSense API
 - title: googletagmanager-gtm
   comment: Mocks Google Tag Manager API
+- title: google-analytics
+  comment: Mocks Google Analytics API
