@@ -34,3 +34,4 @@ export * from './dir-string';
 export * from './googlesyndication-adsbygoogle';
 export * from './googletagmanager-gtm';
 export * from './google-analytics';
+export * from './scorecardresearch-beacon';
