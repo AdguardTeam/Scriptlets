@@ -31,3 +31,4 @@ import './adjust-setTimeout.test';
 import './dir-string.test';
 import './googlesyndication-adsbygoogle.test';
 import './googletagmanager-gtm.test';
+import './google-analytics.test';
