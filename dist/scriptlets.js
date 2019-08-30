@@ -129,6 +129,13 @@
      * Noop function
      */
     var noop = function noop() {};
+    /**
+     * Function returns null
+     */
+
+    var noopNull = function noopNull() {
+      return null;
+    };
 
     /* eslint-disable no-console, no-underscore-dangle */
 
@@ -180,6 +187,7 @@
         toRegExp: toRegExp,
         createOnErrorHandler: createOnErrorHandler,
         noop: noop,
+        noopNull: noopNull,
         hit: hit
     });
 
@@ -1700,6 +1708,68 @@
     GoogleTagManagerGtm.injections = [hit, noop];
 
     /**
+     * Mocks Google Analytics API
+     *
+     * Related UBO scriptlet:
+     https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_analytics.js
+     */
+
+    function GoogleAnalytics(source) {
+      // eslint-disable-next-line func-names
+      var Tracker = function Tracker() {}; // constructor
+
+
+      var proto = Tracker.prototype;
+      proto.get = noop;
+      proto.set = noop;
+      proto.send = noop;
+      var googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';
+
+      function ga() {
+        var len = arguments.length;
+
+        if (len === 0) {
+          return;
+        } // eslint-disable-next-line prefer-rest-params
+
+
+        var lastArg = arguments[len - 1];
+
+        if (typeof lastArg !== 'object' || lastArg === null || typeof lastArg.hitCallback !== 'function') {
+          return;
+        }
+
+        try {
+          lastArg.hitCallback(); // eslint-disable-next-line no-empty
+        } catch (ex) {}
+      }
+
+      ga.create = function () {
+        return new Tracker();
+      };
+
+      ga.getByName = noopNull;
+
+      ga.getAll = function () {
+        return [];
+      };
+
+      ga.remove = noop;
+      ga.loaded = true;
+      window[googleAnalyticsName] = ga;
+      var _window = window,
+          dataLayer = _window.dataLayer;
+
+      if (dataLayer instanceof Object && dataLayer.hide instanceof Object && typeof dataLayer.hide.end === 'function') {
+        dataLayer.hide.end();
+      }
+
+      hit(source);
+    }
+    GoogleAnalytics.names = ['google-analytics', 'ubo-google-analytics_analytics.js', 'google-analytics_analytics.js'];
+    GoogleAnalytics.injections = [hit, noop, noopNull];
+
+    /**
      * This file must export all scriptlets which should be accessible
      */
 
@@ -1735,7 +1805,8 @@
         adjustSetTimeout: adjustSetTimeout,
         dirString: dirString,
         GoogleSyndicationAdsByGoogle: GoogleSyndicationAdsByGoogle,
-        GoogleTagManagerGtm: GoogleTagManagerGtm
+        GoogleTagManagerGtm: GoogleTagManagerGtm,
+        GoogleAnalytics: GoogleAnalytics
     });
 
     /**

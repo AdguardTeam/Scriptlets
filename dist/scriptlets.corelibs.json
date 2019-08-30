@@ -250,6 +250,14 @@
                 "googletagmanager_gtm.js"
             ],
             "scriptlet": "function(source, args){function GoogleTagManagerGtm(source) {window.ga = window.ga || noop;var _window = window,dataLayer = _window.dataLayer;if (dataLayer instanceof Object === false) {return;}if (dataLayer.hide instanceof Object && typeof dataLayer.hide.end === 'function') {dataLayer.hide.end();}if (typeof dataLayer.push === 'function') {dataLayer.push = function (data) {if (data instanceof Object && typeof data.eventCallback === 'function') {setTimeout(data.eventCallback, 1);}};}hit(source);}function hit(source, message) {if (source.verbose !== true) {return;}try {var log = console.log.bind(console);var trace = console.trace.bind(console);if (message) {log(\"\".concat(source.ruleText, \" message:\\n\").concat(message));}log(\"\".concat(source.ruleText, \" trace start\"));if (trace) {trace();}log(\"\".concat(source.ruleText, \" trace end\"));} catch (e) {}if (typeof window.__debugScriptlets === 'function') {window.__debugScriptlets(source);}}function noop() {};const updatedArgs = args ? [].concat(source).concat(args) : [source];GoogleTagManagerGtm.apply(this, updatedArgs);}"
+        },
+        {
+            "names": [
+                "google-analytics",
+                "ubo-google-analytics_analytics.js",
+                "google-analytics_analytics.js"
+            ],
+            "scriptlet": "function(source, args){function GoogleAnalytics(source) {var Tracker = function Tracker() {};var proto = Tracker.prototype;proto.get = noop;proto.set = noop;proto.send = noop;var googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';function ga() {var len = arguments.length;if (len === 0) {return;}var lastArg = arguments[len - 1];if (typeof lastArg !== 'object' || lastArg === null || typeof lastArg.hitCallback !== 'function') {return;}try {lastArg.hitCallback();} catch (ex) {}}ga.create = function () {return new Tracker();};ga.getByName = noopNull;ga.getAll = function () {return [];};ga.remove = noop;ga.loaded = true;window[googleAnalyticsName] = ga;var _window = window,dataLayer = _window.dataLayer;if (dataLayer instanceof Object && dataLayer.hide instanceof Object && typeof dataLayer.hide.end === 'function') {dataLayer.hide.end();}hit(source);}function hit(source, message) {if (source.verbose !== true) {return;}try {var log = console.log.bind(console);var trace = console.trace.bind(console);if (message) {log(\"\".concat(source.ruleText, \" message:\\n\").concat(message));}log(\"\".concat(source.ruleText, \" trace start\"));if (trace) {trace();}log(\"\".concat(source.ruleText, \" trace end\"));} catch (e) {}if (typeof window.__debugScriptlets === 'function') {window.__debugScriptlets(source);}}function noop() {}function noopNull() {return null;};const updatedArgs = args ? [].concat(source).concat(args) : [source];GoogleAnalytics.apply(this, updatedArgs);}"
         }
     ]
 }

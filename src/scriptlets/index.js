@@ -33,3 +33,4 @@ export * from './adjust-setTimeout';
 export * from './dir-string';
 export * from './googlesyndication-adsbygoogle';
 export * from './googletagmanager-gtm';
+export * from './google-analytics';
