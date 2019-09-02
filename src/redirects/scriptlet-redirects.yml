@@ -16,3 +16,5 @@
   comment: Mocks Scorecard Research API
 - title: google-analytics-ga
   comment: Mocks old Google analytics library
+- title: googletagservices-gpt
+  comment: Mocks Google Publisher Tag API

@@ -5,7 +5,7 @@ import { noop, noopNull } from '../helpers/noop';
  * Mocks Google Analytics API
  *
  * Related UBO scriptlet:
- https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_analytics.js
+ * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_analytics.js
  */
 export function GoogleAnalytics(source) {
     // eslint-disable-next-line func-names
