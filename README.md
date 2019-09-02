@@ -60,6 +60,7 @@
         * [scorecardresearch-beacon](#scorecardresearch-beacon)
     * [Redirect resources compatibility table](#redirect-compatibility)
 * [How to build](#how-to-build)
+* [Browser compatibility](#browser-compatibility)
 
 ## <a id="scriptlets"></a> Scriptlets
 
@@ -1190,3 +1191,8 @@ const redirect = redirect.getRedirect('noopjs');
  * }
  */
 ```
+
+## <a id="browser-compatibility"> Browser Compatibility
+| Chrome | Edge | Firefox | IE | Opera |
+|--|--|--|--|--|
+| 55 | 15 | 52 | 11 | 42 |
