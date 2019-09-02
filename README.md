@@ -50,6 +50,8 @@
         * [noopcss](#noopcss)
         * [noopjs](#noopcss)
         * [nooptext](#nooptext)
+        * [noopvast-2.0](#noopvast-2-0)
+        * [noopvast-3.0](#noopvast-3-0)
         * [noopmp3-0.1s](#noopmp3-01s)
         * [noopmp4-1s](#noopmp4-1s)
         * [prevent-fab-3.2.0](#prevent-fab-3-2-0)
@@ -949,6 +951,22 @@ The value of the `$redirect` modifier must be the name of the resource, that wil
 ```
 [redirect source](./src/redirects/static-redirects.yml)
 
+#### <a id="noopvast-2-0"></a> noopvast-2.0
+
+**Example**
+```
+||example.org^$xmlhttprequest,redirect=noopvast-2.0
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
+#### <a id="noopvast-3-0"></a> noopvast-3.0
+
+**Example**
+```
+||example.org^$xmlhttprequest,redirect=noopvast-3.0
+```
+[redirect source](./src/redirects/static-redirects.yml)
+
 
 #### <a id="noopmp3-01s"></a> noopmp3-0.1s
 
@@ -1084,6 +1102,8 @@ Mocks Scorecard Research API.
 | [noopcss](#noopcss) | noopcss | blank-css |
 | [noopjs](#noopcss) | noopjs | blank-js |
 | [nooptext](#nooptext) | nooptext | blank-text |
+| [noopvast-2.0](#noopvast-2-0) | | |
+| [noopvast-3.0](#noopvast-3-0) | | |
 | [noopmp3-0.1s](#noopmp3-01s) | noopmp3-0.1s | blank-mp3 |
 | [noopmp4-1s](#noopmp4-1s) | noopmp4-1s |  blank-mp4 |
 | [prevent-fab-3.2.0](#prevent-fab-3-2-0) | fuckadblock.js-3.2.0 ||
