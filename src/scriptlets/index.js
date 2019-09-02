@@ -35,3 +35,4 @@ export * from './googlesyndication-adsbygoogle';
 export * from './googletagmanager-gtm';
 export * from './google-analytics';
 export * from './scorecardresearch-beacon';
+export * from './google-analytics-ga';
