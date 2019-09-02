@@ -34,8 +34,9 @@
         * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle-scriptlet)
         * [googletagmanager-gtm](#googletagmanager-gtm-scriptlet)
         * [google-analytics](#google-analytics-scriptlet)
+        * [google-analytics-ga](#google-analytics-ga-scriptlet)
         * [scorecardresearch-beacon](#scorecardresearch-beacon-scriptlet)
-
+        
     * [Scriptlets compatibility table](#compatibility)
 * [Redirect resources](#redirect-resources)
     * [Syntax](#redirect-syntax)
@@ -57,7 +58,9 @@
         * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
         * [googletagmanager-gtm](#googletagmanager-gtm)
         * [google-analytics](#google-analytics)
+        * [google-analytics-ga](#google-analytics-ga)
         * [scorecardresearch-beacon](#scorecardresearch-beacon)
+
     * [Redirect resources compatibility table](#redirect-compatibility)
 * [How to build](#how-to-build)
 * [Browser compatibility](#browser-compatibility)
@@ -758,6 +761,18 @@ example.org#%#//scriptlet("google-analytics")
 ```
 [scriptlet source](./src/scriptlets/google-analytics.js)
 
+#### <a id="google-analytics-ga-scriptlet"></a> google-analytics-ga
+
+Mocks old Google Analytics API.
+
+It mostly used as redirect rule.
+See [redirect description](#google-analytics-ga).
+
+**Example**
+```
+example.org#%#//scriptlet("google-analytics-ga")
+```
+[scriptlet source](./src/scriptlets/google-analytics-ga.js)
 
 #### <a id="scorecardresearch-beacon-scriptlet"></a> scorecardresearch-beacon
 
@@ -820,7 +835,9 @@ example.org#%#//scriptlet("scorecardresearch-beacon")
 | [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle-scriptlet) | googlesyndication_adsbygoogle.js  | |
 | [googletagmanager-gtm](#googletagmanager-gtm-scriptlet) | googletagmanager_gtm.js | |
 | [google-analytics](#google-analytics-scriptlet) | google-analytics_analytics.js | |
+| [google-analytics-ga](#google-analytics-ga-scriptlet) | google-analytics_ga.js | |
 | [scorecardresearch-beacon](#scorecardresearch-beacon-scriptlet) | scorecardresearch_beacon.js | |
+
 
 ## <a id="redirect-resources"></a> Redirect resources
 
@@ -1009,6 +1026,15 @@ Mocks Google Analytics API
 ```
 [redirect source](./src/scriptlets/google-analytics.js)
 
+#### <a id="google-analytics-ga"></a> google-analytics-ga
+
+Mocks old Google Analytics API.
+
+**Example**
+```
+||example.org/index.js$script,redirect=google-analytics-ga
+```
+[redirect source](./src/scriptlets/google-analytics-ga.js)
 
 #### <a id="scorecardresearch-beacon"></a> scorecardresearch-beacon
 
@@ -1039,14 +1065,13 @@ Mocks Scorecard Research API.
 | [prevent-popads-net](#prevent-popads-net) | popads.net.js ||
 | [noeval.js](#noeval-js) | silent-noeval.js | noeval |
 | [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle) | googlesyndication_adsbygoogle.js | |
-| | hd-main.js | |
 | [googletagmanager-gtm](#googletagmanager-gtm) | googletagmanager_gtm.js | |
 | [google-analytics](#google-analytics) | google-analytics_analytics.js | |
-| | google-analytics.com/analytics.js | |
-| | ligatus.com/*/angular-tag.js | |
+| [google-analytics-ga](#google-analytics-ga) | google-analytics_ga.js | |
 | [scorecardresearch-beacon](#scorecardresearch-beacon) | scorecardresearch_beacon.js | |
-| | google-analytics.com/ga.js | |
 | | googletagservices.com/gpt.js | |
+| | hd-main.js | |
+| | ligatus.com/*/angular-tag.js | |
 
 
 ## <a id="how-to-build"></a> How to build
