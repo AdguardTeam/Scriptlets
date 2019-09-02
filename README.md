@@ -34,6 +34,7 @@
         * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle-scriptlet)
         * [googletagmanager-gtm](#googletagmanager-gtm-scriptlet)
         * [google-analytics](#google-analytics-scriptlet)
+        * [scorecardresearch-beacon](#scorecardresearch-beacon-scriptlet)
 
     * [Scriptlets compatibility table](#compatibility)
 * [Redirect resources](#redirect-resources)
@@ -56,6 +57,7 @@
         * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
         * [googletagmanager-gtm](#googletagmanager-gtm)
         * [google-analytics](#google-analytics)
+        * [scorecardresearch-beacon](#scorecardresearch-beacon)
     * [Redirect resources compatibility table](#redirect-compatibility)
 * [How to build](#how-to-build)
 
@@ -756,6 +758,20 @@ example.org#%#//scriptlet("google-analytics")
 [scriptlet source](./src/scriptlets/google-analytics.js)
 
 
+#### <a id="scorecardresearch-beacon-scriptlet"></a> scorecardresearch-beacon
+
+Mocks Scorecard Research API.
+
+It mostly used as redirect rule.
+See [redirect description](#scorecardresearch-beacon).
+
+**Example**
+```
+example.org#%#//scriptlet("scorecardresearch-beacon")
+```
+[scriptlet source](./src/scriptlets/scorecardresearch-beacon.js)
+
+
 ### <a id="compatibility"></a> Scriptlets compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -803,6 +819,7 @@ example.org#%#//scriptlet("google-analytics")
 | [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle-scriptlet) | googlesyndication_adsbygoogle.js  | |
 | [googletagmanager-gtm](#googletagmanager-gtm-scriptlet) | googletagmanager_gtm.js | |
 | [google-analytics](#google-analytics-scriptlet) | google-analytics_analytics.js | |
+| [scorecardresearch-beacon](#scorecardresearch-beacon-scriptlet) | scorecardresearch_beacon.js | |
 
 ## <a id="redirect-resources"></a> Redirect resources
 
@@ -991,6 +1008,17 @@ Mocks Google Analytics API
 ```
 [redirect source](./src/scriptlets/google-analytics.js)
 
+
+#### <a id="scorecardresearch-beacon"></a> scorecardresearch-beacon
+
+Mocks Scorecard Research API.
+
+**Example**
+```
+||example.org/index.js$script,redirect=scorecardresearch-beacon
+```
+[redirect source](./src/scriptlets/scorecardresearch-beacon.js)
+
 ### <a id="redirect-compatibility"></a> Redirect resources compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -1015,7 +1043,7 @@ Mocks Google Analytics API
 | [google-analytics](#google-analytics) | google-analytics_analytics.js | |
 | | google-analytics.com/analytics.js | |
 | | ligatus.com/*/angular-tag.js | |
-| | scorecardresearch.com/beacon.js | |
+| [scorecardresearch-beacon](#scorecardresearch-beacon) | scorecardresearch_beacon.js | |
 | | google-analytics.com/ga.js | |
 | | googletagservices.com/gpt.js | |
 
