@@ -33,6 +33,7 @@
         * [disable-newtab-links](#disable-newtab-links)
         * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle-scriptlet)
         * [googletagmanager-gtm](#googletagmanager-gtm-scriptlet)
+        * [googletagservices-gpt](#googletagservices-gpt-scriptlet)
         * [google-analytics](#google-analytics-scriptlet)
         * [google-analytics-ga](#google-analytics-ga-scriptlet)
         * [scorecardresearch-beacon](#scorecardresearch-beacon-scriptlet)
@@ -57,6 +58,7 @@
         * [noeval.js](#noeval-js)
         * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
         * [googletagmanager-gtm](#googletagmanager-gtm)
+        * [googletagservices-gpt](#googletagservices-gpt)
         * [google-analytics](#google-analytics)
         * [google-analytics-ga](#google-analytics-ga)
         * [scorecardresearch-beacon](#scorecardresearch-beacon)
@@ -748,6 +750,19 @@ example.org#%#//scriptlet("googletagmanager-gtm")
 ```
 [scriptlet source](./src/scriptlets/googletagmanager-gtm.js)
 
+#### <a id="googletagservices-gpt-scriptlet"></a> googletagservices-gpt
+
+Mocks Google Publisher Tag API.
+
+It mostly used as redirect rule.
+See [redirect description](#googletagservices-gpt).
+
+**Example**
+```
+example.org#%#//scriptlet("googletagservices-gpt")
+```
+[scriptlet source](./src/scriptlets/googletagservices-gpt.js)
+
 #### <a id="google-analytics-scriptlet"></a> google-analytics
 
 Mocks Google Analytics API.
@@ -834,6 +849,7 @@ example.org#%#//scriptlet("scorecardresearch-beacon")
 | [dir-string](#dir-string) | | dir-string |
 | [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle-scriptlet) | googlesyndication_adsbygoogle.js  | |
 | [googletagmanager-gtm](#googletagmanager-gtm-scriptlet) | googletagmanager_gtm.js | |
+| [googletagservices-gpt](#googletagservices-gpt-scriptlet) | googletagservices_gpt.js | |
 | [google-analytics](#google-analytics-scriptlet) | google-analytics_analytics.js | |
 | [google-analytics-ga](#google-analytics-ga-scriptlet) | google-analytics_ga.js | |
 | [scorecardresearch-beacon](#scorecardresearch-beacon-scriptlet) | scorecardresearch_beacon.js | |
@@ -1016,6 +1032,16 @@ Mocks Google Tag Manager API
 ```
 [redirect source](./src/scriptlets/googletagmanager-gtm.js)
 
+#### <a id="googletagservices-gpt"></a> googletagservices-gpt
+
+Mocks Google Publisher Tag API.
+
+**Example**
+```
+||example.org/index.js$script,redirect=googletagservices-gpt
+```
+[redirect source](./src/scriptlets/googletagservices-gpt.js)
+
 #### <a id="google-analytics"></a> google-analytics
 
 Mocks Google Analytics API
@@ -1066,10 +1092,10 @@ Mocks Scorecard Research API.
 | [noeval.js](#noeval-js) | silent-noeval.js | noeval |
 | [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle) | googlesyndication_adsbygoogle.js | |
 | [googletagmanager-gtm](#googletagmanager-gtm) | googletagmanager_gtm.js | |
+| [googletagservices-gpt](#googletagservices-gpt) | googletagservices_gpt.js | |
 | [google-analytics](#google-analytics) | google-analytics_analytics.js | |
 | [google-analytics-ga](#google-analytics-ga) | google-analytics_ga.js | |
 | [scorecardresearch-beacon](#scorecardresearch-beacon) | scorecardresearch_beacon.js | |
-| | googletagservices.com/gpt.js | |
 | | hd-main.js | |
 | | ligatus.com/*/angular-tag.js | |
 
