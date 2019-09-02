@@ -3,7 +3,7 @@
     "test_path": [
         "tests/dist/tests.html"
     ],
-    "test_server_port": "10521",
+    "test_server_port": "9961",
     "exit_with_fail": true,
     "browsers": [
         {
@@ -37,6 +37,14 @@
             "os": "Windows",
             "os_version": "10",
             "cli_key": 4
+        },
+        {
+            "browser": "Safari",
+            "browser_version": "10",
+            "device": null,
+            "os": "OS X",
+            "os_version": "Sierra",
+            "cli_key": 5
         }
     ]
 }

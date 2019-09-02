@@ -28,7 +28,6 @@ export function GoogleAnalyticsGa(source) {
         if (Array.isArray(data) === false) {
             return;
         }
-        // https://twitter.com/catovitch/status/776442930345218048
         // https://developers.google.com/analytics/devguides/collection/gajs/methods/gaJSApiDomainDirectory#_gat.GA_Tracker_._link
         if (data[0] === '_link' && typeof data[1] === 'string') {
             window.location.assign(data[1]);
