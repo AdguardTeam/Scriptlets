@@ -62,6 +62,14 @@
   contentType: text/plain
   content: ''
 
+- title: noopvast-2.0
+  contentType: text/xml
+  content: <VAST version="2.0"></VAST>
+
+- title: noopvast-3.0
+  contentType: text/xml
+  content: <VAST version="3.0"></VAST>
+
 - title: noopmp3-0.1s
   aliases:
     - blank-mp3
