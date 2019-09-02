@@ -14,3 +14,5 @@
   comment: Mocks Google Analytics API
 - title: scorecardresearch-beacon
   comment: Mocks Scorecard Research API
+- title: google-analytics-ga
+  comment: Mocks old Google analytics library
