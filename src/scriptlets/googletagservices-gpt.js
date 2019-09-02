@@ -94,7 +94,7 @@ export function GoogleTagServicesGpt(source) {
     };
 
 
-    const { googletag = {} } = window.googletag;
+    const { googletag = {} } = window;
     const { cmd = [] } = googletag;
 
     googletag.apiReady = true;

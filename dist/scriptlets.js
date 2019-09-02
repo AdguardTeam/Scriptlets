@@ -2003,8 +2003,9 @@
         setVideoContent: noopThis,
         updateCorrelator: noop
       };
-      var _window$googletag$goo = window.googletag.googletag,
-          googletag = _window$googletag$goo === void 0 ? {} : _window$googletag$goo;
+      var _window = window,
+          _window$googletag = _window.googletag,
+          googletag = _window$googletag === void 0 ? {} : _window$googletag;
       var _googletag$cmd = googletag.cmd,
           cmd = _googletag$cmd === void 0 ? [] : _googletag$cmd;
       googletag.apiReady = true;
