@@ -33,3 +33,4 @@ import './googlesyndication-adsbygoogle.test';
 import './googletagmanager-gtm.test';
 import './google-analytics.test';
 import './scorecardresearch-beacon.test';
+import './google-analytics-ga.test';
