@@ -18,3 +18,5 @@
   comment: Mocks old Google analytics library
 - title: googletagservices-gpt
   comment: Mocks Google Publisher Tag API
+- title: metrika-yandex-watch
+  comment: Mocks old Yandex Metrika API

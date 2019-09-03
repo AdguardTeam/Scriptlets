@@ -37,3 +37,4 @@ export * from './google-analytics';
 export * from './scorecardresearch-beacon';
 export * from './google-analytics-ga';
 export * from './googletagservices-gpt';
+export * from './metrika-yandex-watch';
