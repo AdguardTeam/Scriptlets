@@ -1,4 +1,3 @@
-/* eslint-disable no-console, no-eval */
 import { hit } from '../helpers/hit';
 import { noop } from '../helpers/noop';
 

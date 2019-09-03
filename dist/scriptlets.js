@@ -2063,7 +2063,6 @@
     GoogleTagServicesGpt.names = ['googletagservices-gpt', 'ubo-googletagservices_gpt.js', 'googletagservices_gpt.js'];
     GoogleTagServicesGpt.injections = [hit, noop, noopThis, noopNull, noopArray, noopStr];
 
-    /* eslint-disable no-console, no-eval */
     /**
      * Mocks old Yandex Metrika API
      *
