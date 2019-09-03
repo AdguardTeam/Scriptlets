@@ -953,6 +953,8 @@ The value of the `$redirect` modifier must be the name of the resource, that wil
 
 #### <a id="noopvast-2-0"></a> noopvast-2.0
 
+Replaces video ad injected in player with VAST(Video Ad Serving Template) tag with empty one.
+
 **Example**
 ```
 ||example.org^$xmlhttprequest,redirect=noopvast-2.0
@@ -960,6 +962,8 @@ The value of the `$redirect` modifier must be the name of the resource, that wil
 [redirect source](./src/redirects/static-redirects.yml)
 
 #### <a id="noopvast-3-0"></a> noopvast-3.0
+
+Replaces video ad injected in player with VAST(Video Ad Serving Template) tag with empty one.
 
 **Example**
 ```
