@@ -3,7 +3,7 @@ import { noop } from '../helpers/noop';
 
 /**
  * Mocks Yandex Metrika API
- * https://yandex.ru/support/metrica/code/counter-initialize.html
+ * https://yandex.ru/support/metrica/objects/method-reference.html
  * @param {Source} source
  */
 export function metrikaYandexTag(source) {
