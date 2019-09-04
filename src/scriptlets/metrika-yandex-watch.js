@@ -9,6 +9,10 @@ import { noop } from '../helpers/noop';
 export function metrikaYandexWatch(source) {
     const cbName = 'yandex_metrika_callbacks';
 
+    /**
+     * Gets callback and its context from options and call it in async way
+     * @param {Object} options Yandex Metrika API options
+     */
     const asyncCallbackFromOptions = (options = {}) => {
         let { callback } = options;
         const { ctx } = options;
@@ -27,6 +31,7 @@ export function metrikaYandexWatch(source) {
     Metrika.prototype.userParams = noop;
 
     // Methods with options
+    // The order of arguments should be kept in according to API
     Metrika.prototype.extLink = (url, options) => {
         asyncCallbackFromOptions(options);
     };
