@@ -2084,13 +2084,12 @@
       Metrika.prototype.setUserID = noop;
       Metrika.prototype.userParams = noop;
 
-      Metrika.prototype.reachGoal = function () {
-        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-          args[_key] = arguments[_key];
-        }
-
-        if (typeof args[args.length - 1] === 'function') {
-          args[args.length - 1]();
+      Metrika.prototype.reachGoal = function (target, params, cb, ctx) {
+        if (typeof cb === 'function') {
+          cb = ctx !== undefined ? cb.bind(ctx) : cb;
+          setTimeout(function () {
+            return cb(ctx);
+          });
         }
       };
 

@@ -18,9 +18,10 @@ export function metrikaYandexWatch(source) {
     Metrika.prototype.notBounce = noop;
     Metrika.prototype.setUserID = noop;
     Metrika.prototype.userParams = noop;
-    Metrika.prototype.reachGoal = (...args) => {
-        if (typeof args[args.length - 1] === 'function') {
-            args[args.length - 1]();
+    Metrika.prototype.reachGoal = (target, params, cb, ctx) => {
+        if (typeof cb === 'function') {
+            cb = ctx !== undefined ? cb.bind(ctx) : cb;
+            setTimeout(() => cb(ctx));
         }
     };
 
