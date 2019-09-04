@@ -26,6 +26,7 @@ test('AdGuard: yandex metrika tag.js', (assert) => {
 
     assert.ok(window.ym, 'Metrika function was created');
 
+    // init
     assert.notOk(window.ym(1, 'init'), 'init function exists and returns undefined');
 
     // extLink
