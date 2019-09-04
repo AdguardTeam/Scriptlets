@@ -732,7 +732,7 @@ example.org#%#//scriptlet("dir-string"[, times])
 
 Mocks Google AdSense API.
 
-It mostly used as redirect rule.
+It is mostly used for `$redirect` rules.
 See [redirect description](#googlesyndication-adsbygoogle).
 
 **Example**
@@ -745,7 +745,7 @@ example.org#%#//scriptlet("googlesyndication-adsbygoogle")
 
 Mocks Google Tag Manager API.
 
-It mostly used as redirect rule.
+It is mostly used for `$redirect` rules.
 See [redirect description](#googletagmanager-gtm).
 
 **Example**
@@ -758,7 +758,7 @@ example.org#%#//scriptlet("googletagmanager-gtm")
 
 Mocks Google Publisher Tag API.
 
-It mostly used as redirect rule.
+It is mostly used for `$redirect` rules.
 See [redirect description](#googletagservices-gpt).
 
 **Example**
@@ -771,7 +771,7 @@ example.org#%#//scriptlet("googletagservices-gpt")
 
 Mocks Google Analytics API.
 
-It mostly used as redirect rule.
+It is mostly used for `$redirect` rules.
 See [redirect description](#google-analytics).
 
 **Example**
@@ -784,7 +784,7 @@ example.org#%#//scriptlet("google-analytics")
 
 Mocks old Google Analytics API.
 
-It mostly used as redirect rule.
+It is mostly used for `$redirect` rules.
 See [redirect description](#google-analytics-ga).
 
 **Example**
@@ -797,7 +797,7 @@ example.org#%#//scriptlet("google-analytics-ga")
 
 Mocks Scorecard Research API.
 
-It mostly used as redirect rule.
+It is mostly used for `$redirect` rules.
 See [redirect description](#scorecardresearch-beacon).
 
 **Example**
@@ -808,9 +808,10 @@ example.org#%#//scriptlet("scorecardresearch-beacon")
 
 #### <a id="metrika-yandex-watch-scriptlet"></a> metrika-yandex-watch
 
-Mocks old Yandex Metrika API.
+Mocks the old Yandex Metrika API.
+https://yandex.ru/support/metrica/objects/_method-reference.html
 
-It mostly used as redirect rule.
+It is mostly used for `$redirect` rules.
 See [redirect description](#metrika-yandex-watch).
 
 **Example**
@@ -1112,7 +1113,8 @@ Mocks Scorecard Research API.
 
 #### <a id="metrika-yandex-watch"></a> metrika-yandex-watch
 
-Mocks old Yandex Metrika API.
+Mocks the old Yandex Metrika API.
+https://yandex.ru/support/metrica/objects/_method-reference.html
 
 **Example**
 ```

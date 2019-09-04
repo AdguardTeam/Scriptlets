@@ -17,7 +17,7 @@ test('AdGuard: yandex metrika watch.js', (assert) => {
     };
     window.__debugScriptlets = () => { window.hit = 'FIRED'; };
 
-    assert.expect(4);
+    assert.expect(5);
 
     // yandex_metrika_callbacks: these callbacks needed for
     // creating an instance of Ya.Metrika after script loading
@@ -32,6 +32,7 @@ test('AdGuard: yandex metrika watch.js', (assert) => {
     assert.ok(window.Ya.Metrika, 'Metrika function was created');
     const ya = new window.Ya.Metrika();
     assert.notOk(ya.addFileExtension(), 'addFileExtension function created and executed');
+    ya.reachGoal('some param', () => assert.ok(true, 'callback passed in reachGoal method was executed'));
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
     clearGlobalProps('__debugScriptlets', 'hit');

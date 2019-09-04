@@ -19,4 +19,4 @@
 - title: googletagservices-gpt
   comment: Mocks Google Publisher Tag API
 - title: metrika-yandex-watch
-  comment: Mocks old Yandex Metrika API
+  comment: Mocks the old Yandex Metrika API

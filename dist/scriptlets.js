@@ -2064,7 +2064,7 @@
     GoogleTagServicesGpt.injections = [hit, noop, noopThis, noopNull, noopArray, noopStr];
 
     /**
-     * Mocks old Yandex Metrika API
+     * Mocks the old Yandex Metrika API
      *
      * @param {Source} source
      */
@@ -2081,9 +2081,18 @@
       Metrika.prototype.getClientID = noop;
       Metrika.prototype.hit = noop;
       Metrika.prototype.notBounce = noop;
-      Metrika.prototype.reachGoal = noop;
       Metrika.prototype.setUserID = noop;
       Metrika.prototype.userParams = noop;
+
+      Metrika.prototype.reachGoal = function () {
+        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        if (typeof args[args.length - 1] === 'function') {
+          args[args.length - 1]();
+        }
+      };
 
       if (window.Ya) {
         window.Ya.Metrika = Metrika;

@@ -2,7 +2,7 @@ import { hit } from '../helpers/hit';
 import { noop } from '../helpers/noop';
 
 /**
- * Mocks old Yandex Metrika API
+ * Mocks the old Yandex Metrika API
  *
  * @param {Source} source
  */
@@ -16,9 +16,13 @@ export function metrikaYandexWatch(source) {
     Metrika.prototype.getClientID = noop;
     Metrika.prototype.hit = noop;
     Metrika.prototype.notBounce = noop;
-    Metrika.prototype.reachGoal = noop;
     Metrika.prototype.setUserID = noop;
     Metrika.prototype.userParams = noop;
+    Metrika.prototype.reachGoal = (...args) => {
+        if (typeof args[args.length - 1] === 'function') {
+            args[args.length - 1]();
+        }
+    };
 
     if (window.Ya) {
         window.Ya.Metrika = Metrika;
