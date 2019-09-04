@@ -9,21 +9,37 @@ import { noop } from '../helpers/noop';
 export function metrikaYandexWatch(source) {
     const cbName = 'yandex_metrika_callbacks';
 
-    function Metrika() { } // constructor
-    Metrika.prototype.addFileExtension = noop;
-    Metrika.prototype.extLink = noop;
-    Metrika.prototype.file = noop;
-    Metrika.prototype.getClientID = noop;
-    Metrika.prototype.hit = noop;
-    Metrika.prototype.notBounce = noop;
-    Metrika.prototype.setUserID = noop;
-    Metrika.prototype.userParams = noop;
-    Metrika.prototype.reachGoal = (target, params, cb, ctx) => {
-        if (typeof cb === 'function') {
-            cb = ctx !== undefined ? cb.bind(ctx) : cb;
-            setTimeout(() => cb(ctx));
+    const asyncCallbackFromOptions = (options = {}) => {
+        let { callback } = options;
+        const { ctx } = options;
+        if (typeof callback === 'function') {
+            callback = ctx !== undefined ? callback.bind(ctx) : callback;
+            setTimeout(() => callback());
         }
     };
+
+    function Metrika() { } // constructor
+
+    // Methods without options
+    Metrika.prototype.addFileExtension = noop;
+    Metrika.prototype.getClientID = noop;
+    Metrika.prototype.setUserID = noop;
+    Metrika.prototype.userParams = noop;
+
+    // Methods with options
+    Metrika.prototype.extLink = (url, options) => {
+        asyncCallbackFromOptions(options);
+    };
+    Metrika.prototype.file = (url, options) => {
+        asyncCallbackFromOptions(options);
+    };
+    Metrika.prototype.hit = (url, options) => {
+        asyncCallbackFromOptions(options);
+    };
+    Metrika.prototype.reachGoal = (target, params, cb, ctx) => {
+        asyncCallbackFromOptions({ callback: cb, ctx });
+    };
+    Metrika.prototype.notBounce = asyncCallbackFromOptions;
 
     if (window.Ya) {
         window.Ya.Metrika = Metrika;
