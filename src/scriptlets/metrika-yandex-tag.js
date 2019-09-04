@@ -37,7 +37,9 @@ export function metrikaYandexTag(source) {
      * https://yandex.ru/support/metrica/objects/get-client-id.html
      * @param {Function} cb
      */
-    const getClientID = cb => cb(null);
+    const getClientID = (cb) => {
+        setTimeout(cb(null));
+    };
 
     /**
      * https://yandex.ru/support/metrica/objects/hit.html

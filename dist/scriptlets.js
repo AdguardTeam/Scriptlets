@@ -2156,7 +2156,7 @@
        */
 
       var getClientID = function getClientID(cb) {
-        return cb(null);
+        setTimeout(cb(null));
       };
       /**
        * https://yandex.ru/support/metrica/objects/hit.html
