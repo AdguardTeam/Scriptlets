@@ -20,3 +20,5 @@
   comment: Mocks Google Publisher Tag API
 - title: metrika-yandex-watch
   comment: Mocks the old Yandex Metrika API
+- title: metrika-yandex-tag
+  comment: Mocks Yandex Metrika API

@@ -2115,6 +2115,119 @@
     metrikaYandexWatch.injections = [hit, noop];
 
     /**
+     * Mocks Yandex Metrika API
+     * https://yandex.ru/support/metrica/code/counter-initialize.html
+     * @param {Source} source
+     */
+
+    function metrikaYandexTag(source) {
+      var asyncCallbackFromOptions = function asyncCallbackFromOptions(param) {
+        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        var callback = options.callback;
+        var ctx = options.ctx;
+
+        if (typeof callback === 'function') {
+          callback = ctx !== undefined ? callback.bind(ctx) : callback;
+          setTimeout(function () {
+            return callback();
+          });
+        }
+      };
+
+      var init = noop;
+      /**
+       * https://yandex.ru/support/metrica/objects/addfileextension.html
+       */
+
+      var addFileExtension = noop;
+      /**
+       * https://yandex.ru/support/metrica/objects/extlink.html
+       */
+
+      var extLink = asyncCallbackFromOptions;
+      /**
+       * https://yandex.ru/support/metrica/objects/file.html
+       */
+
+      var file = asyncCallbackFromOptions;
+      /**
+       * https://yandex.ru/support/metrica/objects/get-client-id.html
+       * @param {Function} cb
+       */
+
+      var getClientID = function getClientID(cb) {
+        return cb(null);
+      };
+      /**
+       * https://yandex.ru/support/metrica/objects/hit.html
+       */
+
+
+      var hitFunc = asyncCallbackFromOptions;
+      /**
+       * https://yandex.ru/support/metrica/objects/notbounce.html
+       */
+
+      var notBounce = asyncCallbackFromOptions;
+      /**
+       * https://yandex.ru/support/metrica/objects/params-method.html
+       */
+
+      var params = noop;
+      /**
+       * https://yandex.ru/support/metrica/objects/reachgoal.html
+       * @param {string} target
+       * @param {Object} params
+       * @param {Function} callback
+       * @param {any} ctx
+       */
+
+      var reachGoal = function reachGoal(target, params, callback, ctx) {
+        asyncCallbackFromOptions(null, {
+          callback: callback,
+          ctx: ctx
+        });
+      };
+      /**
+       * https://yandex.ru/support/metrica/objects/set-user-id.html
+       */
+
+
+      var setUserID = noop;
+      /**
+       * https://yandex.ru/support/metrica/objects/user-params.html
+       */
+
+      var userParams = noop;
+      var api = {
+        init: init,
+        addFileExtension: addFileExtension,
+        extLink: extLink,
+        file: file,
+        getClientID: getClientID,
+        hit: hitFunc,
+        notBounce: notBounce,
+        params: params,
+        reachGoal: reachGoal,
+        setUserID: setUserID,
+        userParams: userParams
+      };
+
+      function ym(id, funcName) {
+        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+          args[_key - 2] = arguments[_key];
+        }
+
+        return api[funcName] && api[funcName].apply(api, args);
+      }
+
+      window.ym = ym;
+      hit(source);
+    }
+    metrikaYandexTag.names = ['metrika-yandex-tag'];
+    metrikaYandexTag.injections = [hit, noop];
+
+    /**
      * This file must export all scriptlets which should be accessible
      */
 
@@ -2155,7 +2268,8 @@
         ScoreCardResearchBeacon: ScoreCardResearchBeacon,
         GoogleAnalyticsGa: GoogleAnalyticsGa,
         GoogleTagServicesGpt: GoogleTagServicesGpt,
-        metrikaYandexWatch: metrikaYandexWatch
+        metrikaYandexWatch: metrikaYandexWatch,
+        metrikaYandexTag: metrikaYandexTag
     });
 
     /**
