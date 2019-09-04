@@ -58,5 +58,5 @@ test('AdGuard: yandex metrika tag.js', (assert) => {
     window.ym(1, 'reachGoal', 'target', 'params', reachGoalCb, 123);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    clearGlobalProps('__debugScriptlets', 'hit');
+    clearGlobalProps('__debugScriptlets', 'hit', 'ym');
 });
