@@ -37,6 +37,7 @@
         * [google-analytics](#google-analytics-scriptlet)
         * [google-analytics-ga](#google-analytics-ga-scriptlet)
         * [scorecardresearch-beacon](#scorecardresearch-beacon-scriptlet)
+        * [metrika-yandex-watch](#metrika-yandex-watch-scriptlet)
         
     * [Scriptlets compatibility table](#compatibility)
 * [Redirect resources](#redirect-resources)
@@ -64,6 +65,7 @@
         * [google-analytics](#google-analytics)
         * [google-analytics-ga](#google-analytics-ga)
         * [scorecardresearch-beacon](#scorecardresearch-beacon)
+        * [metrika-yandex-watch](#metrika-yandex-watch)
 
     * [Redirect resources compatibility table](#redirect-compatibility)
 * [How to build](#how-to-build)
@@ -730,7 +732,7 @@ example.org#%#//scriptlet("dir-string"[, times])
 
 Mocks Google AdSense API.
 
-It mostly used as redirect rule.
+It is mostly used for `$redirect` rules.
 See [redirect description](#googlesyndication-adsbygoogle).
 
 **Example**
@@ -743,7 +745,7 @@ example.org#%#//scriptlet("googlesyndication-adsbygoogle")
 
 Mocks Google Tag Manager API.
 
-It mostly used as redirect rule.
+It is mostly used for `$redirect` rules.
 See [redirect description](#googletagmanager-gtm).
 
 **Example**
@@ -756,7 +758,7 @@ example.org#%#//scriptlet("googletagmanager-gtm")
 
 Mocks Google Publisher Tag API.
 
-It mostly used as redirect rule.
+It is mostly used for `$redirect` rules.
 See [redirect description](#googletagservices-gpt).
 
 **Example**
@@ -769,7 +771,7 @@ example.org#%#//scriptlet("googletagservices-gpt")
 
 Mocks Google Analytics API.
 
-It mostly used as redirect rule.
+It is mostly used for `$redirect` rules.
 See [redirect description](#google-analytics).
 
 **Example**
@@ -782,7 +784,7 @@ example.org#%#//scriptlet("google-analytics")
 
 Mocks old Google Analytics API.
 
-It mostly used as redirect rule.
+It is mostly used for `$redirect` rules.
 See [redirect description](#google-analytics-ga).
 
 **Example**
@@ -795,7 +797,7 @@ example.org#%#//scriptlet("google-analytics-ga")
 
 Mocks Scorecard Research API.
 
-It mostly used as redirect rule.
+It is mostly used for `$redirect` rules.
 See [redirect description](#scorecardresearch-beacon).
 
 **Example**
@@ -803,6 +805,20 @@ See [redirect description](#scorecardresearch-beacon).
 example.org#%#//scriptlet("scorecardresearch-beacon")
 ```
 [scriptlet source](./src/scriptlets/scorecardresearch-beacon.js)
+
+#### <a id="metrika-yandex-watch-scriptlet"></a> metrika-yandex-watch
+
+Mocks the old Yandex Metrika API.
+https://yandex.ru/support/metrica/objects/_method-reference.html
+
+It is mostly used for `$redirect` rules.
+See [redirect description](#metrika-yandex-watch).
+
+**Example**
+```
+example.org#%#//scriptlet("metrika-yandex-watch")
+```
+[scriptlet source](./src/scriptlets/metrika-yandex-watch.js)
 
 
 ### <a id="compatibility"></a> Scriptlets compatibility table
@@ -855,6 +871,7 @@ example.org#%#//scriptlet("scorecardresearch-beacon")
 | [google-analytics](#google-analytics-scriptlet) | google-analytics_analytics.js | |
 | [google-analytics-ga](#google-analytics-ga-scriptlet) | google-analytics_ga.js | |
 | [scorecardresearch-beacon](#scorecardresearch-beacon-scriptlet) | scorecardresearch_beacon.js | |
+| [metrika-yandex-watch](#metrika-yandex-watch-scriptlet) | | |
 
 
 ## <a id="redirect-resources"></a> Redirect resources
@@ -1094,6 +1111,17 @@ Mocks Scorecard Research API.
 ```
 [redirect source](./src/scriptlets/scorecardresearch-beacon.js)
 
+#### <a id="metrika-yandex-watch"></a> metrika-yandex-watch
+
+Mocks the old Yandex Metrika API.
+https://yandex.ru/support/metrica/objects/_method-reference.html
+
+**Example**
+```
+||example.org/index.js$script,redirect=metrika-yandex-watch
+```
+[redirect source](./src/scriptlets/metrika-yandex-watch.js)
+
 ### <a id="redirect-compatibility"></a> Redirect resources compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -1122,6 +1150,7 @@ Mocks Scorecard Research API.
 | [scorecardresearch-beacon](#scorecardresearch-beacon) | scorecardresearch_beacon.js | |
 | | hd-main.js | |
 | | ligatus.com/*/angular-tag.js | |
+| [metrika-yandex-watch](#metrika-yandex-watch)| | |
 
 
 ## <a id="how-to-build"></a> How to build

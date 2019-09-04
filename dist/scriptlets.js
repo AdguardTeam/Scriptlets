@@ -2064,6 +2064,57 @@
     GoogleTagServicesGpt.injections = [hit, noop, noopThis, noopNull, noopArray, noopStr];
 
     /**
+     * Mocks the old Yandex Metrika API
+     *
+     * @param {Source} source
+     */
+
+    function metrikaYandexWatch(source) {
+      var cbName = 'yandex_metrika_callbacks';
+
+      function Metrika() {} // constructor
+
+
+      Metrika.prototype.addFileExtension = noop;
+      Metrika.prototype.extLink = noop;
+      Metrika.prototype.file = noop;
+      Metrika.prototype.getClientID = noop;
+      Metrika.prototype.hit = noop;
+      Metrika.prototype.notBounce = noop;
+      Metrika.prototype.setUserID = noop;
+      Metrika.prototype.userParams = noop;
+
+      Metrika.prototype.reachGoal = function (target, params, cb, ctx) {
+        if (typeof cb === 'function') {
+          cb = ctx !== undefined ? cb.bind(ctx) : cb;
+          setTimeout(function () {
+            return cb(ctx);
+          });
+        }
+      };
+
+      if (window.Ya) {
+        window.Ya.Metrika = Metrika;
+      } else {
+        window.Ya = {
+          Metrika: Metrika
+        };
+      }
+
+      if (window[cbName] && Array.isArray(window[cbName])) {
+        window[cbName].forEach(function (func) {
+          if (typeof func === 'function') {
+            func();
+          }
+        });
+      }
+
+      hit(source);
+    }
+    metrikaYandexWatch.names = ['metrika-yandex-watch'];
+    metrikaYandexWatch.injections = [hit, noop];
+
+    /**
      * This file must export all scriptlets which should be accessible
      */
 
@@ -2103,7 +2154,8 @@
         GoogleAnalytics: GoogleAnalytics,
         ScoreCardResearchBeacon: ScoreCardResearchBeacon,
         GoogleAnalyticsGa: GoogleAnalyticsGa,
-        GoogleTagServicesGpt: GoogleTagServicesGpt
+        GoogleTagServicesGpt: GoogleTagServicesGpt,
+        metrikaYandexWatch: metrikaYandexWatch
     });
 
     /**
