@@ -2072,26 +2072,48 @@
     function metrikaYandexWatch(source) {
       var cbName = 'yandex_metrika_callbacks';
 
-      function Metrika() {} // constructor
+      var asyncCallbackFromOptions = function asyncCallbackFromOptions() {
+        var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+        var callback = options.callback;
+        var ctx = options.ctx;
 
-
-      Metrika.prototype.addFileExtension = noop;
-      Metrika.prototype.extLink = noop;
-      Metrika.prototype.file = noop;
-      Metrika.prototype.getClientID = noop;
-      Metrika.prototype.hit = noop;
-      Metrika.prototype.notBounce = noop;
-      Metrika.prototype.setUserID = noop;
-      Metrika.prototype.userParams = noop;
-
-      Metrika.prototype.reachGoal = function (target, params, cb, ctx) {
-        if (typeof cb === 'function') {
-          cb = ctx !== undefined ? cb.bind(ctx) : cb;
+        if (typeof callback === 'function') {
+          callback = ctx !== undefined ? callback.bind(ctx) : callback;
           setTimeout(function () {
-            return cb(ctx);
+            return callback();
           });
         }
       };
+
+      function Metrika() {} // constructor
+      // Methods without options
+
+
+      Metrika.prototype.addFileExtension = noop;
+      Metrika.prototype.getClientID = noop;
+      Metrika.prototype.setUserID = noop;
+      Metrika.prototype.userParams = noop; // Methods with options
+
+      Metrika.prototype.extLink = function (url, options) {
+        asyncCallbackFromOptions(options);
+      };
+
+      Metrika.prototype.file = function (url, options) {
+        asyncCallbackFromOptions(options);
+      };
+
+      Metrika.prototype.hit = function (url, options) {
+        asyncCallbackFromOptions(options);
+      };
+
+      Metrika.prototype.reachGoal = function (target, params, cb, ctx) {
+        asyncCallbackFromOptions({
+          callback: cb,
+          ctx: ctx
+        });
+      };
+
+      Metrika.prototype.notBounce = asyncCallbackFromOptions;
 
       if (window.Ya) {
         window.Ya.Metrika = Metrika;
