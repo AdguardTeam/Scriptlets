@@ -1,11 +1,10 @@
 /* eslint-disable no-console */
 const axios = require('axios');
-const { parse } = require('node-html-parser');
 
 /**
  * UBO redirects github page
  */
-const UBO_REDIRECTS_DIRECTORY_PAGE = 'https://github.com/gorhill/uBlock/tree/master/src/web_accessible_resources';
+const UBO_REDIRECTS_DIRECTORY_FILE = 'https://raw.githubusercontent.com/gorhill/uBlock/master/src/js/redirect-engine.js';
 
 /**
  * UBO Scriptlets github raw resources
@@ -75,18 +74,26 @@ const isEqualArrays = (arr1, arr2) => {
  */
 async function getCurrentUBORedirects() {
     console.log('Downloading UBO page...');
-    const { data } = await axios.get(UBO_REDIRECTS_DIRECTORY_PAGE);
+    let { data } = await axios.get(UBO_REDIRECTS_DIRECTORY_FILE);
     console.log('Done.');
 
-    const parsedHTML = parse(data);
-    const excludeFiles = ['README.txt'];
+    const startTrigger = 'const redirectableResources = new Map([';
+    const endTrigger = ']);';
 
-    const fileNameElems = parsedHTML.querySelectorAll('tr.js-navigation-item .content span a');
-    const fileNames = fileNameElems
-        .map(elem => elem.text)
-        .filter(fileName => !excludeFiles.includes(fileName));
+    const startIndex = data.indexOf(startTrigger);
+    const endIndex = data.indexOf(endTrigger);
 
-    return fileNames;
+    data = data.slice(startIndex, endIndex + endTrigger.length);
+
+    const regexp = /\[\s*['|"](\S*)['|"]\s*,\s*{/g;
+    const names = [];
+
+    let result;
+    // eslint-disable-next-line no-cond-assign
+    while (result = regexp.exec(data)) {
+        names.push(result[1]);
+    }
+    return names;
 }
 
 /**
