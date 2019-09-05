@@ -17,7 +17,7 @@ test('AdGuard: yandex metrika watch.js', (assert) => {
     };
     window.__debugScriptlets = () => { window.hit = 'FIRED'; };
 
-    assert.expect(6);
+    assert.expect(7);
 
     // yandex_metrika_callbacks: these callbacks needed for
     // creating an instance of Ya.Metrika after script loading
@@ -35,13 +35,21 @@ test('AdGuard: yandex metrika watch.js', (assert) => {
 
     // reachGoal method test
     const done = assert.async();
-    function cb() {
+    function reachGoalCb() {
         // eslint-disable-next-line eqeqeq
         assert.ok(this == 123, 'context was changed');
         assert.ok(true, 'callback passed in reachGoal method was executed');
         done();
     }
-    ya.reachGoal('some target', 'some param', cb, 123);
+    ya.reachGoal('some target', 'some param', reachGoalCb, 123);
+
+    const done1 = assert.async();
+    function extLinkCb() {
+        // eslint-disable-next-line eqeqeq
+        assert.ok(this == 123, 'extLinkCb was executed and context was changed');
+        done1();
+    }
+    ya.extLink('some url', { callback: extLinkCb, ctx: 123 });
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
     clearGlobalProps('__debugScriptlets', 'hit');
