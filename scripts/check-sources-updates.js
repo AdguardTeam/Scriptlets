@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 const axios = require('axios');
 const { parse } = require('node-html-parser');
 
@@ -5,7 +6,16 @@ const { parse } = require('node-html-parser');
  * UBO redirects github page
  */
 const UBO_REDIRECTS_DIRECTORY_PAGE = 'https://github.com/gorhill/uBlock/tree/master/src/web_accessible_resources';
-const UBO_SCRIPTLETS_PAGE = 'https://raw.githubusercontent.com/gorhill/uBlock/master/assets/resources/scriptlets.js';
+
+/**
+ * UBO Scriptlets github raw resources
+ */
+const UBO_SCRIPTLETS_FILE = 'https://raw.githubusercontent.com/gorhill/uBlock/master/assets/resources/scriptlets.js';
+
+/**
+ * ABP Snippets github raw resources
+ */
+const ABP_SNIPPETS_FILE = 'https://raw.githubusercontent.com/adblockplus/adblockpluscore/master/lib/content/snippets.js';
 
 /**
  * UBO Redirects
@@ -38,6 +48,17 @@ const UBO_SCRIPTLETS_LIST = [
 ];
 
 /**
+ * ABP Snippets
+ */
+const ABP_SNIPPETS_LIST = [
+    'log', 'trace', 'uabinject-defuser', 'hide-if-shadow-contains', 'hide-if-contains',
+    'hide-if-contains-visible-text', 'hide-if-contains-and-matches-style',
+    'hide-if-has-and-matches-style', 'hide-if-contains-image', 'readd', 'dir-string',
+    'abort-on-property-read', 'abort-on-property-write', 'abort-current-inline-script',
+    'strip-fetch-query-parameter', 'hide-if-contains-image-hash',
+];
+
+/**
  * Checks if arrays contain the same elements
  * @param {Array} arr1
  * @param {Array} arr2
@@ -53,7 +74,10 @@ const isEqualArrays = (arr1, arr2) => {
  * Make request to UBO repo(master), parses and returns the list of UBO redirects
  */
 async function getCurrentUBORedirects() {
+    console.log('Downloading UBO page...');
     const { data } = await axios.get(UBO_REDIRECTS_DIRECTORY_PAGE);
+    console.log('Done.');
+
     const parsedHTML = parse(data);
     const excludeFiles = ['README.txt'];
 
@@ -69,7 +93,10 @@ async function getCurrentUBORedirects() {
  * Make request to UBO repo(master), parses and returns the list of UBO scriptlets
  */
 async function getCurrentUBOScriptlets() {
-    const { data } = await axios.get(UBO_SCRIPTLETS_PAGE);
+    console.log('Downloading UBO file...');
+    const { data } = await axios.get(UBO_SCRIPTLETS_FILE);
+    console.log('UBO done');
+
     const regexp = /\/\/\/\s(\S*\.js)/g;
     const names = [];
 
@@ -81,19 +108,61 @@ async function getCurrentUBOScriptlets() {
     return names;
 }
 
+/**
+ * Checks for scriptlets and redirects updates
+ */
 // eslint-disable-next-line no-unused-expressions
-(async function checkForUBOUpdates() {
+async function checkForUBOUpdates() {
     // check redirects
     const redirects = await getCurrentUBORedirects();
     const isRedirectsEqual = isEqualArrays(UBO_REDIRECTS_LIST, redirects);
-    if (!isRedirectsEqual) {
-        // notify()
-    }
 
     // check scriptlets
     const scriptlets = await getCurrentUBOScriptlets();
     const isScriptletsEqual = isEqualArrays(UBO_SCRIPTLETS_LIST, scriptlets);
-    if (!isScriptletsEqual) {
+
+    if (!isScriptletsEqual || !isRedirectsEqual) {
+        console.log('UBO Changes found');
         // notify()
+        console.log('Notifications have been sent');
+    } else {
+        console.log('UBO changes not found');
     }
-}());
+}
+
+async function getCurrentABPSnippets() {
+    console.log('Downloading ABP file...');
+    const { data } = await axios.get(ABP_SNIPPETS_FILE);
+    console.log('ABP done.');
+
+    const regexp = /exports(\S*)/g;
+    const names = [];
+
+    let result;
+    // eslint-disable-next-line no-cond-assign
+    while (result = regexp.exec(data)) {
+        let [, rawName] = result;
+        rawName = rawName.replace(/\.|"|'|\[|\]/g, '');
+        names.push(rawName);
+    }
+    return names;
+}
+
+/**
+ * Checks for ABP Snippets updates
+ */
+async function checkForABPUpdates() {
+    // check snippets
+    const snippets = await getCurrentABPSnippets();
+    const isSnippetsEqual = isEqualArrays(ABP_SNIPPETS_LIST, snippets);
+    if (!isSnippetsEqual) {
+        console.log('ABP changes found');
+        // notify()
+        console.log('Notifications have been sent');
+    } else {
+        console.log('ABP changes not found');
+    }
+}
+
+checkForUBOUpdates();
+checkForABPUpdates();
