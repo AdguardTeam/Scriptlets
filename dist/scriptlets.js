@@ -2071,6 +2071,10 @@
 
     function metrikaYandexWatch(source) {
       var cbName = 'yandex_metrika_callbacks';
+      /**
+       * Gets callback and its context from options and call it in async way
+       * @param {Object} options Yandex Metrika API options
+       */
 
       var asyncCallbackFromOptions = function asyncCallbackFromOptions() {
         var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -2093,6 +2097,7 @@
       Metrika.prototype.getClientID = noop;
       Metrika.prototype.setUserID = noop;
       Metrika.prototype.userParams = noop; // Methods with options
+      // The order of arguments should be kept in according to API
 
       Metrika.prototype.extLink = function (url, options) {
         asyncCallbackFromOptions(options);
@@ -2138,7 +2143,7 @@
 
     /**
      * Mocks Yandex Metrika API
-     * https://yandex.ru/support/metrica/code/counter-initialize.html
+     * https://yandex.ru/support/metrica/objects/method-reference.html
      * @param {Source} source
      */
 
