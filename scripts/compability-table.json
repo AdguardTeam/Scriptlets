@@ -1,0 +1,197 @@
+{
+    "ABP": [
+        "log",
+        "trace",
+        "uabinject-defuser",
+        "hide-if-shadow-contains",
+        "hide-if-contains",
+        "hide-if-contains-visible-text",
+        "hide-if-contains-and-matches-style",
+        "hide-if-has-and-matches-style",
+        "hide-if-contains-image",
+        "readd",
+        "dir-string",
+        "abort-on-property-read",
+        "abort-on-property-write",
+        "abort-current-inline-script",
+        "strip-fetch-query-parameter",
+        "hide-if-contains-image-hash"
+    ],
+    "UBO_scriptlets": [
+        "abort-current-inline-script.js",
+        "abort-on-property-read.js",
+        "abort-on-property-write.js",
+        "addEventListener-defuser.js",
+        "addEventListener-logger.js",
+        "nano-setInterval-booster.js",
+        "nano-setTimeout-booster.js",
+        "noeval-if.js",
+        "remove-attr.js",
+        "raf-if.js",
+        "set-constant.js",
+        "setInterval-defuser.js",
+        "setInterval-if.js",
+        "setTimeout-defuser.js",
+        "setTimeout-if.js",
+        "webrtc-if.js",
+        "overlay-buster.js",
+        "alert-buster.js",
+        "gpt-defuser.js",
+        "nowebrtc.js",
+        "golem.de.js",
+        "upmanager-defuser.js",
+        "smartadserver.com.js",
+        "adfly-defuser.js",
+        "disable-newtab-links.js",
+        "damoh-defuser.js",
+        "twitch-videoad.js",
+        "fingerprint2.js",
+        "cookie-remover.js"
+    ],
+    "UBO_redirects": [
+        "1x1.gif",
+        "2x2.png",
+        "3x2.png",
+        "32x32.png",
+        "addthis_widget.js",
+        "amazon_ads.js",
+        "ampproject_v0.js",
+        "chartbeat.js",
+        "disqus_embed.js",
+        "disqus_forums_embed.js",
+        "doubleclick_instream_ad_status.js",
+        "empty",
+        "google-analytics_analytics.js",
+        "google-analytics_cx_api.js",
+        "google-analytics_ga.js",
+        "google-analytics_inpage_linkid.js",
+        "googlesyndication_adsbygoogle.js",
+        "googletagmanager_gtm.js",
+        "googletagservices_gpt.js",
+        "hd-main.js",
+        "ligatus_angular-tag.js",
+        "monkeybroker.js",
+        "noeval.js",
+        "noeval-silent.js",
+        "nobab.js",
+        "nofab.js",
+        "noop-0.1s.mp3",
+        "noop-1s.mp4",
+        "noop.html",
+        "noop.js",
+        "noop.txt",
+        "outbrain-widget.js",
+        "popads.js",
+        "popads-dummy.js",
+        "scorecardresearch_beacon.js",
+        "window.open-defuser.js"
+    ],
+    "compability_table": {
+        "scriptlets": {},
+        "redirects": [
+            {
+                "adg": "1x1-transparent.gif",
+                "ubo": "1x1-transparent.gif",
+                "abp": "1x1-transparent-gif"
+            },
+            {
+                "adg": "2x2-transparent.png",
+                "ubo": "2x2-transparent.png",
+                "abp": "2x2-transparent-png"
+            },
+            {
+                "adg": "3x2-transparent.png",
+                "ubo": "3x2-transparent.png",
+                "abp": "3x2-transparent-png"
+            },
+            {
+                "adg": "32x32-transparent.png",
+                "ubo": "32x32-transparent.png",
+                "abp": "32x32-transparent-png"
+            },
+            {
+                "adg": "noopframe",
+                "ubo": "noopframe",
+                "abp": "blank-html"
+            },
+            {
+                "adg": "noopcss",
+                "ubo": "noopcss",
+                "abp": "blank-css"
+            },
+            {
+                "adg": "noopjs",
+                "ubo": "noopjs",
+                "abp": "blank-js"
+            },
+            {
+                "adg": "nooptext",
+                "ubo": "nooptext",
+                "abp": "blank-text"
+            },
+            {
+                "adg": "noopvast-2.0"
+            },
+            {
+                "adg": "noopvast-3.0"
+            },
+            {
+                "adg": "noopmp3.0.1s",
+                "ubo": "noopmp3-0.1s",
+                "abp": "blank-mp3"
+            },
+            {
+                "adg": "noopmp4-1s",
+                "ubo": "noopmp4-1s",
+                "abp": "blank-mp4"
+            },
+            {
+                "adg": "prevent-fab-3.2.0",
+                "ubo": "fuckadblock.js-3.2.0"
+            },
+            {
+                "adg": "set-popads-dummy",
+                "ubo": "popads-dummy.js"
+            },
+            {
+                "adg": "prevent-popads-net",
+                "ubo": "popads.net.js"
+            },
+            {
+                "adg": "noeval.js",
+                "ubo": "silent-noeval.js",
+                "abp": "noeval"
+            },
+            {
+                "adg": "googlesyndication-adsbygoogle",
+                "ubo": "googlesyndication_adsbygoogle.js"
+            },
+            {
+                "adg": "googletagmanager-gtm",
+                "ubo": "googletagmanager_gtm.js"
+            },
+            {
+                "adg": "googletagservices-gpt",
+                "ubo": "googletagservices_gpt.js"
+            },
+            {
+                "adg": "google-analytics",
+                "ubo": "google-analytics_analytics.js"
+            },
+            {
+                "adg": "google-analytics-ga",
+                "ubo": "google-analytics_ga.js"
+            },
+            {
+                "adg": "scorecardresearch-beacon",
+                "ubo": "scorecardresearch_beacon.js"
+            },
+            {
+                "adg": "metrika-yandex-watch"
+            },
+            {
+                "adg": "metrika-yandex-tag"
+            }
+        ]
+    }
+}
