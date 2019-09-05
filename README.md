@@ -38,6 +38,7 @@
         * [google-analytics-ga](#google-analytics-ga-scriptlet)
         * [scorecardresearch-beacon](#scorecardresearch-beacon-scriptlet)
         * [metrika-yandex-watch](#metrika-yandex-watch-scriptlet)
+        * [metrika-yandex-tag](#metrika-yandex-tag-scriptlet)
         
     * [Scriptlets compatibility table](#compatibility)
 * [Redirect resources](#redirect-resources)
@@ -66,6 +67,7 @@
         * [google-analytics-ga](#google-analytics-ga)
         * [scorecardresearch-beacon](#scorecardresearch-beacon)
         * [metrika-yandex-watch](#metrika-yandex-watch)
+        * [metrika-yandex-tag](#metrika-yandex-tag)
 
     * [Redirect resources compatibility table](#redirect-compatibility)
 * [How to build](#how-to-build)
@@ -820,6 +822,20 @@ example.org#%#//scriptlet("metrika-yandex-watch")
 ```
 [scriptlet source](./src/scriptlets/metrika-yandex-watch.js)
 
+#### <a id="metrika-yandex-tag-scriptlet"></a> metrika-yandex-tag
+
+Mocks Yandex Metrika API.
+https://yandex.ru/support/metrica/objects/method-reference.html
+
+It is mostly used for `$redirect` rules.
+See [redirect description](#metrika-yandex-tag).
+
+**Example**
+```
+example.org#%#//scriptlet("metrika-yandex-watch")
+```
+[scriptlet source](./src/scriptlets/metrika-yandex-watch.js)
+
 
 ### <a id="compatibility"></a> Scriptlets compatibility table
 
@@ -872,6 +888,7 @@ example.org#%#//scriptlet("metrika-yandex-watch")
 | [google-analytics-ga](#google-analytics-ga-scriptlet) | google-analytics_ga.js | |
 | [scorecardresearch-beacon](#scorecardresearch-beacon-scriptlet) | scorecardresearch_beacon.js | |
 | [metrika-yandex-watch](#metrika-yandex-watch-scriptlet) | | |
+| [metrika-yandex-tag](#metrika-yandex-tag-scriptlet) | | |
 
 
 ## <a id="redirect-resources"></a> Redirect resources
@@ -1122,6 +1139,17 @@ https://yandex.ru/support/metrica/objects/_method-reference.html
 ```
 [redirect source](./src/scriptlets/metrika-yandex-watch.js)
 
+#### <a id="metrika-yandex-tag"></a> metrika-yandex-tag
+
+Mocks Yandex Metrika API.
+https://yandex.ru/support/metrica/objects/method-reference.html
+
+**Example**
+```
+||example.org/index.js$script,redirect=metrika-yandex-tag
+```
+[redirect source](./src/scriptlets/metrika-yandex-tag.js)
+
 ### <a id="redirect-compatibility"></a> Redirect resources compatibility table
 
 |AdGuard | uBO | Adblock Plus |
@@ -1151,6 +1179,7 @@ https://yandex.ru/support/metrica/objects/_method-reference.html
 | | hd-main.js | |
 | | ligatus.com/*/angular-tag.js | |
 | [metrika-yandex-watch](#metrika-yandex-watch)| | |
+| [metrika-yandex-tag](#metrika-yandex-tag)| | |
 
 
 ## <a id="how-to-build"></a> How to build
