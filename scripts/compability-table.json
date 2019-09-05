@@ -168,7 +168,7 @@
                 "ubo": "popads-dummy"
             },
             {
-                "adg": "`prevent-popads-net`",
+                "adg": "prevent-popads-net",
                 "ubo": "popads.net"
             },
             {
