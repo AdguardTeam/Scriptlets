@@ -87,7 +87,161 @@
         "window.open-defuser.js"
     ],
     "compability_table": {
-        "scriptlets": {},
+        "scriptlets": [
+            {
+                "adg": "abort-current-inline-script",
+                "ubo": "abort-current-inline-script",
+                "abp": "abort-current-inline-script"
+            },
+            {
+                "adg": "abort-on-property-read",
+                "ubo": "abort-on-property-read",
+                "abp": "abort-on-property-read"
+            },
+            {
+                "adg": "abort-on-property-write",
+                "ubo": "abort-on-property-write",
+                "abp": "abort-on-property-write"
+            },
+            {
+                "adg": "prevent-addEventListener",
+                "ubo": "addEventListener-defuser"
+            },
+            {
+                "adg": "log-addEventListener",
+                "ubo": "addEventListener-logger"
+            },
+            {
+                "adg": "remove-cookie",
+                "ubo": "cookie-remover"
+            },
+            {
+                "adg": "noeval",
+                "ubo": "noeval"
+            },
+            {
+                "adg": "noeval",
+                "ubo": "silent-noeval"
+            },
+            {
+                "adg": "prevent-eval-if",
+                "ubo": "noeval-if"
+            },
+            {
+                "adg": "nowebrtc",
+                "ubo": "nowebrtc"
+            },
+            {
+                "adg": "set-constant",
+                "ubo": "set-constant"
+            },
+            {
+                "adg": "prevent-setInterval",
+                "ubo": "setInterval-defuser"
+            },
+            {
+                "adg": "log-setInterval",
+                "ubo": "setInterval-logger"
+            },
+            {
+                "adg": "prevent-setTimeout",
+                "ubo": "setTimeout-defuser"
+            },
+            {
+                "adg": "log-setTimeout",
+                "ubo": "setTimeout-logger"
+            },
+            {
+                "adg": "prevent-window-open",
+                "ubo": "window.open-defuser"
+            },
+            {
+                "adg": "prevent-bab",
+                "ubo": "bab-defuser"
+            },
+            {
+                "adg": "prevent-fab-3.2.0",
+                "ubo": "fuckadblock.js-3.2.0"
+            },
+            {
+                "adg": "set-popads-dummy",
+                "ubo": "popads-dummy"
+            },
+            {
+                "adg": "`prevent-popads-net`",
+                "ubo": "popads.net"
+            },
+            {
+                "adg": "prevent-adfly",
+                "ubo": "adfly-defuser"
+            },
+            {
+                "adg": "log-eval"
+            },
+            {
+                "adg": "log",
+                "ubo": "log"
+            },
+            {
+                "adg": "debug-current-inline-script"
+            },
+            {
+                "adg": "debug-on-property-read"
+            },
+            {
+                "adg": "debug-on-property-write"
+            },
+            {
+                "adg": "remove-attr",
+                "ubo": "remove-attr"
+            },
+            {
+                "adg": "disable-newtab-links",
+                "ubo": "disable-newtab-links"
+            },
+            {
+                "adg": "adjust-setInterval",
+                "ubo": "nano-setInterval-booster"
+            },
+            {
+                "adg": "adjust-setTimeout",
+                "ubo": "nano-setTimeout-booster"
+            },
+            {
+                "adg": "dir-string",
+                "ubo": "dir-string"
+            },
+            {
+                "adg": "googlesyndication-adsbygoogle",
+                "ubo": "googlesyndication_adsbygoogle.js"
+            },
+            {
+                "adg": "googletagmanager-gtm",
+                "ubo": "googletagmanager_gtm"
+            },
+            {
+                "adg": "googletagservices-gpt",
+                "ubo": "googletagservices_gpt"
+            },
+            {
+                "adg": "google-analytics",
+                "ubo": "google-analytics_analytics"
+            },
+            {
+                "adg": "google-analytics-ga",
+                "ubo": "google-analytics_ga"
+            },
+            {
+                "adg": "scorecardresearch-beacon",
+                "ubo": "scorecardresearch_beacon"
+            },
+            {
+                "adg": "metrika-yandex-watch"
+            },
+            {
+                "adg":"metrika-yandex-tag"
+            }
+        ],
         "redirects": [
             {
                 "adg": "1x1-transparent.gif",
