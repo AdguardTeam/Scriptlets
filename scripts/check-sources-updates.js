@@ -1,5 +1,9 @@
-/* eslint-disable no-console */
+/* eslint-disable no-console, camelcase */
+const fs = require('fs');
+const path = require('path');
 const axios = require('axios');
+
+const COMPABILITY_TABLE_DATA = path.resolve(__dirname, './compability-table.json');
 
 /**
  * UBO redirects github page
@@ -17,47 +21,6 @@ const UBO_SCRIPTLETS_FILE = 'https://raw.githubusercontent.com/gorhill/uBlock/ma
 const ABP_SNIPPETS_FILE = 'https://raw.githubusercontent.com/adblockplus/adblockpluscore/master/lib/content/snippets.js';
 
 /**
- * UBO Redirects
- */
-const UBO_REDIRECTS_LIST = [
-    '1x1.gif', '2x2.png', '32x32.png', '3x2.png', 'addthis_widget.js', 'amazon_ads.js',
-    'ampproject_v0.js', 'chartbeat.js', 'disqus_embed.js', 'disqus_forums_embed.js',
-    'doubleclick_instream_ad_status.js', 'empty', 'google-analytics_analytics.js',
-    'google-analytics_cx_api.js', 'google-analytics_ga.js', 'google-analytics_inpage_linkid.js',
-    'googlesyndication_adsbygoogle.js', 'googletagmanager_gtm.js', 'googletagservices_gpt.js',
-    'hd-main.js', 'ligatus_angular-tag.js', 'monkeybroker.js', 'nobab.js', 'noeval-silent.js',
-    'noeval.js', 'nofab.js', 'noop-0.1s.mp3', 'noop-1s.mp4', 'noop.html', 'noop.js', 'noop.txt',
-    'outbrain-widget.js', 'popads-dummy.js', 'popads.js', 'scorecardresearch_beacon.js',
-    'window.open-defuser.js',
-];
-
-/**
- * UBO Scriptlets
- */
-const UBO_SCRIPTLETS_LIST = [
-    'abort-current-inline-script.js', 'abort-on-property-read.js',
-    'abort-on-property-write.js', 'addEventListener-defuser.js',
-    'addEventListener-logger.js', 'nano-setInterval-booster.js',
-    'nano-setTimeout-booster.js', 'noeval-if.js', 'remove-attr.js', 'raf-if.js',
-    'set-constant.js', 'setInterval-defuser.js', 'setInterval-if.js', 'setTimeout-defuser.js',
-    'setTimeout-if.js', 'webrtc-if.js', 'overlay-buster.js', 'alert-buster.js',
-    'gpt-defuser.js', 'nowebrtc.js', 'golem.de.js', 'upmanager-defuser.js',
-    'smartadserver.com.js', 'adfly-defuser.js', 'disable-newtab-links.js', 'damoh-defuser.js',
-    'twitch-videoad.js', 'fingerprint2.js', 'cookie-remover.js',
-];
-
-/**
- * ABP Snippets
- */
-const ABP_SNIPPETS_LIST = [
-    'log', 'trace', 'uabinject-defuser', 'hide-if-shadow-contains', 'hide-if-contains',
-    'hide-if-contains-visible-text', 'hide-if-contains-and-matches-style',
-    'hide-if-has-and-matches-style', 'hide-if-contains-image', 'readd', 'dir-string',
-    'abort-on-property-read', 'abort-on-property-write', 'abort-current-inline-script',
-    'strip-fetch-query-parameter', 'hide-if-contains-image-hash',
-];
-
-/**
  * Checks if arrays contain the same elements
  * @param {Array} arr1
  * @param {Array} arr2
@@ -67,6 +30,32 @@ const isEqualArrays = (arr1, arr2) => {
         return false;
     }
     return arr1.every(item => arr2.includes(item));
+};
+
+/**
+ * Returns data from store by key
+ * @param {string} key
+ */
+const getData = (key) => {
+    const rawdata = fs.readFileSync(COMPABILITY_TABLE_DATA);
+    const parsed = JSON.parse(rawdata);
+    return parsed[key];
+};
+
+/**
+ * Update data on store by key
+ * @param {string} key
+ * @param {any} data
+ */
+const updateData = (key, data) => {
+    const rawdata = fs.readFileSync(COMPABILITY_TABLE_DATA);
+    const parsed = JSON.parse(rawdata);
+    let res = {
+        ...parsed,
+        [key]: data,
+    };
+    res = JSON.stringify(res, null, 4);
+    fs.writeFileSync(COMPABILITY_TABLE_DATA, res);
 };
 
 /**
@@ -116,20 +105,23 @@ async function getCurrentUBOScriptlets() {
 }
 
 /**
- * Checks for scriptlets and redirects updates
+ * Make request to ABP repo(master), parses and returns the list of ABP snippets
  */
-// eslint-disable-next-line no-unused-expressions
 async function checkForUBOUpdates() {
     // check redirects
+    const oldRedirects = getData('UBO_redirects');
+    const oldScriptlets = getData('UBO_scriptlets');
     const redirects = await getCurrentUBORedirects();
-    const isRedirectsEqual = isEqualArrays(UBO_REDIRECTS_LIST, redirects);
+    const isRedirectsEqual = isEqualArrays(oldRedirects, redirects);
 
     // check scriptlets
     const scriptlets = await getCurrentUBOScriptlets();
-    const isScriptletsEqual = isEqualArrays(UBO_SCRIPTLETS_LIST, scriptlets);
+    const isScriptletsEqual = isEqualArrays(oldScriptlets, scriptlets);
 
     if (!isScriptletsEqual || !isRedirectsEqual) {
         console.log('UBO Changes found');
+        updateData('UBO_redirects', redirects);
+        updateData('UBO_scriptlets', scriptlets);
         // notify()
         console.log('Notifications have been sent');
     } else {
@@ -137,6 +129,9 @@ async function checkForUBOUpdates() {
     }
 }
 
+/**
+ * Checks for snippets updates
+ */
 async function getCurrentABPSnippets() {
     console.log('Downloading ABP file...');
     const { data } = await axios.get(ABP_SNIPPETS_FILE);
@@ -160,10 +155,12 @@ async function getCurrentABPSnippets() {
  */
 async function checkForABPUpdates() {
     // check snippets
+    const oldSnippets = getData('ABP');
     const snippets = await getCurrentABPSnippets();
-    const isSnippetsEqual = isEqualArrays(ABP_SNIPPETS_LIST, snippets);
+    const isSnippetsEqual = isEqualArrays(oldSnippets, snippets);
     if (!isSnippetsEqual) {
         console.log('ABP changes found');
+        updateData('ABP', snippets);
         // notify()
         console.log('Notifications have been sent');
     } else {
