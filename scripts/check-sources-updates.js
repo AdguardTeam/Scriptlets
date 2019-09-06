@@ -28,8 +28,7 @@ const isEqualArrays = (arr1, arr2) => {
 };
 
 /**
- * Returns data from store by key
- * @param {string} key
+ * Returns parsed compatibility table
  */
 const getCompabitilityTable = () => {
     const rawdata = fs.readFileSync(COMPATIBILITY_TABLE_DATA);
@@ -314,7 +313,7 @@ async function checkForABPRedirectsUpdates() {
     }
 
     if (ABPScriptletsDiff) {
-        markTableWithDiff(ABPScriptletsDiff, 'scriptlets', 'ubabpo');
+        markTableWithDiff(ABPScriptletsDiff, 'scriptlets', 'abp');
         // notify()
     }
 }());
