@@ -17,7 +17,7 @@ const COMPABILITY_TABLE = path.resolve(__dirname, '../wiki/compability-table.md'
 function getTableData() {
     const rawdata = fs.readFileSync(COMPABILITY_TABLE_DATA);
     const parsed = JSON.parse(rawdata);
-    return parsed.compability_table;
+    return parsed;
 }
 
 /**

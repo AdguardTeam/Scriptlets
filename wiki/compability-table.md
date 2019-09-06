@@ -8,23 +8,22 @@
 | prevent-addEventListener | addEventListener-defuser.js |  |
 | log-addEventListener | addEventListener-logger.js |  |
 | remove-cookie | cookie-remover.js |  |
-| noeval | noeval |  |
-| noeval | silent-noeval |  |
+| noeval |  |  |
 | prevent-eval-if | noeval-if.js |  |
 | nowebrtc | nowebrtc.js |  |
 | set-constant | set-constant.js |  |
 | prevent-setInterval | setInterval-defuser.js |  |
-| log-setInterval | setInterval-logger |  |
+| log-setInterval |  |  |
 | prevent-setTimeout | setTimeout-defuser.js |  |
-| log-setTimeout | setTimeout-logger |  |
-| prevent-window-open | window.open-defuser |  |
-| prevent-bab | bab-defuser |  |
-| prevent-fab-3.2.0 | fuckadblock.js-3.2.0 |  |
-| set-popads-dummy | popads-dummy |  |
-| prevent-popads-net | popads.net |  |
+| log-setTimeout |  |  |
+| prevent-window-open |  |  |
+| prevent-bab |  |  |
+| prevent-fab-3.2.0 |  |  |
+| set-popads-dummy |  |  |
+| prevent-popads-net |  |  |
 | prevent-adfly | adfly-defuser.js |  |
 | log-eval |  |  |
-| log | log |  |
+| log |  | log |
 | debug-current-inline-script |  |  |
 | debug-on-property-read |  |  |
 | debug-on-property-write |  |  |
@@ -32,13 +31,13 @@
 | disable-newtab-links | disable-newtab-links.js |  |
 | adjust-setInterval | nano-setInterval-booster.js |  |
 | adjust-setTimeout | nano-setTimeout-booster.js |  |
-| dir-string | dir-string |  |
-| googlesyndication-adsbygoogle | googlesyndication_adsbygoogle.js |  |
-| googletagmanager-gtm | googletagmanager_gtm |  |
-| googletagservices-gpt | googletagservices_gpt |  |
-| google-analytics | google-analytics_analytics |  |
-| google-analytics-ga | google-analytics_ga |  |
-| scorecardresearch-beacon | scorecardresearch_beacon |  |
+| dir-string |  | dir-string |
+| googlesyndication-adsbygoogle |  |  |
+| googletagmanager-gtm |  |  |
+| googletagservices-gpt |  |  |
+| google-analytics |  |  |
+| google-analytics-ga |  |  |
+| scorecardresearch-beacon |  |  |
 | metrika-yandex-watch |  |  |
 | metrika-yandex-tag |  |  |
 |  | raf-if.js |  |
@@ -54,6 +53,17 @@
 |  | damoh-defuser.js |  |
 |  | twitch-videoad.js |  |
 |  | fingerprint2.js |  |
+|  |  | trace |
+|  |  | uabinject-defuser |
+|  |  | hide-if-shadow-contains |
+|  |  | hide-if-contains |
+|  |  | hide-if-contains-visible-text |
+|  |  | hide-if-contains-and-matches-style |
+|  |  | hide-if-has-and-matches-style |
+|  |  | hide-if-contains-image |
+|  |  | readd |
+|  |  | strip-fetch-query-parameter |
+|  |  | hide-if-contains-image-hash |
 
 
 # <a id="scriptlets"></a> Redirects compatibility table
@@ -75,7 +85,7 @@
 | prevent-fab-3.2.0 | nofab.js |  |
 | set-popads-dummy | popads-dummy.js |  |
 | prevent-popads-net | popads.js |  |
-| noeval.js | silent-noeval.js | noeval |
+| noeval.js | noeval-silent.js | noeval |
 | googlesyndication-adsbygoogle | googlesyndication_adsbygoogle.js |  |
 | googletagmanager-gtm | googletagmanager_gtm.js |  |
 | googletagservices-gpt | googletagservices_gpt.js |  |
@@ -84,3 +94,20 @@
 | scorecardresearch-beacon | scorecardresearch_beacon.js |  |
 | metrika-yandex-watch |  |  |
 | metrika-yandex-tag |  |  |
+|  | addthis_widget.js |  |
+|  | amazon_ads.js |  |
+|  | ampproject_v0.js |  |
+|  | chartbeat.js |  |
+|  | disqus_embed.js |  |
+|  | disqus_forums_embed.js |  |
+|  | doubleclick_instream_ad_status.js |  |
+|  | empty |  |
+|  | google-analytics_cx_api.js |  |
+|  | google-analytics_inpage_linkid.js |  |
+|  | hd-main.js |  |
+|  | ligatus_angular-tag.js |  |
+|  | monkeybroker.js |  |
+|  | outbrain-widget.js |  |
+|  | window.open-defuser.js |  |
+|  | nobab.js |  |
+|  | noeval.js |  |

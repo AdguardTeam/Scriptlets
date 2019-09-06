@@ -34,7 +34,7 @@ const isEqualArrays = (arr1, arr2) => {
 const getCompabilityTable = () => {
     const rawdata = fs.readFileSync(COMPABILITY_TABLE_DATA);
     const parsed = JSON.parse(rawdata);
-    return parsed.compability_table;
+    return parsed;
 };
 
 /**
@@ -99,8 +99,6 @@ async function checkForUBOScriptletsUpdates() {
     const oldScriptlets = getUBOScriptletsFromTable();
     const scriptlets = await getCurrentUBOScriptlets();
     const isEqual = isEqualArrays(oldScriptlets, scriptlets);
-
-    console.log(oldScriptlets.sort(), scriptlets.sort());
 
     console.log(`UBO Scriptlets changes ${isEqual ? 'not ' : ''}found`);
 
