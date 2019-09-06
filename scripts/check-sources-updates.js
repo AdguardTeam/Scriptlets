@@ -82,14 +82,14 @@ const getDiff = (oldList, newList) => {
 /**
  * Marks removed rules with (removed) and adds new rules to the end of the table
  * @param {{removed: Array, added: Array}} diff Object with diffs for certain type and platform
- * @param {"scriptlets"|"redirects"} type
+ * @param {"scriptlets"|"redirects"} ruleType
  * @param {"ubo"|"abp"} platform
  */
-function markTableWithDiff(diff, type, platform) {
+function markTableWithDiff(diff, ruleType, platform) {
     const { removed, added } = diff;
     let table = getCompatibilityTable();
 
-    const newType = table[type].map((item) => {
+    const ruleList = table[ruleType].map((item) => {
         const rule = item[platform];
 
         if (removed.includes(rule)) {
@@ -101,11 +101,11 @@ function markTableWithDiff(diff, type, platform) {
         return item;
     });
 
-    added.forEach(item => newType.push({ [platform]: item }));
+    added.forEach(item => ruleList.push({ [platform]: item }));
 
     table = {
         ...table,
-        [type]: newType,
+        [ruleType]: ruleList,
     };
 
     table = JSON.stringify(table, null, 4);
