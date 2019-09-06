@@ -40,7 +40,7 @@
         * [metrika-yandex-watch](#metrika-yandex-watch-scriptlet)
         * [metrika-yandex-tag](#metrika-yandex-tag-scriptlet)
         
-    * [Scriptlets compatibility table](#compatibility)
+    * [Scriptlets compatibility table](./wiki/compatibility-table.md)
 * [Redirect resources](#redirect-resources)
     * [Syntax](#redirect-syntax)
     * [Available redirect resources](#available-resources)
@@ -69,7 +69,7 @@
         * [metrika-yandex-watch](#metrika-yandex-watch)
         * [metrika-yandex-tag](#metrika-yandex-tag)
 
-    * [Redirect resources compatibility table](#redirect-compatibility)
+    * [Redirect resources compatibility table](./wiki/compatibility-table.md)
 * [How to build](#how-to-build)
 * [Browser compatibility](#browser-compatibility)
 
@@ -104,7 +104,7 @@ This rule applies the `abort-on-property-read` scriptlet on all pages of `exampl
 
 ### <a id="available-scriptlets"></a> Available scriptlets
 
-This is a list of scriptlets supported by AdGuard. Please note, that in order to achieve cross-blocker compatibility, we also support syntax of uBO and ABP. You can check out the [compatibility table](#compatibility).
+This is a list of scriptlets supported by AdGuard. Please note, that in order to achieve cross-blocker compatibility, we also support syntax of uBO and ABP. You can check out the [compatibility table](./wiki/compatibility-table.md).
 
 #### <a id="set-constant"></a> set-constant
 
@@ -837,60 +837,6 @@ example.org#%#//scriptlet("metrika-yandex-watch")
 [scriptlet source](./src/scriptlets/metrika-yandex-watch.js)
 
 
-### <a id="compatibility"></a> Scriptlets compatibility table
-
-|AdGuard | uBO | Adblock Plus |
-|--|--|--|
-| [abort-current-inline-script](#abort-current-inline-script) | abort-current-inline-script.js | abort-current-inline-script |
-| [abort-on-property-read](#abort-on-property-read) | abort-on-property-read.js | abort-on-property-read |
-| [abort-on-property-write](#abort-on-property-write) | abort-on-property-write.js | abort-on-property-write |
-| [prevent-addEventListener](#prevent-addEventListener) | addEventListener-defuser.js |  |
-| [log-addEventListener](#log-addEventListener) | addEventListener-logger.js |  |
-| [remove-cookie](#remove-cookie) | cookie-remover.js |  |
-|  | csp.js (deprecated) |  |
-|  | disable-newtab-links.js |  |
-| [noeval](#noeval) | noeval.js |  |
-| [noeval](#noeval) | silent-noeval.js |  |
-| [prevent-eval-if](#prevent-eval-if) | noeval-if.js |  |
-| [nowebrtc](#nowebrtc) | nowebrtc.js |  |
-|  | remove-attr.js |  |
-| [set-constant](#set-constant) | set-constant.js |  |
-| [prevent-setInterval](#prevent-setInterval) | setInterval-defuser.js |  |
-| [log-setInterval](#log-setInterval) | setInterval-logger.js |  |
-| [prevent-setTimeout](#prevent-setTimeout) | setTimeout-defuser.js |  |
-| [log-setTimeout](#log-setInterval) | setTimeout-logger.js |  |
-|  | sharedWorker-defuser.js (deprecated) |  |
-| [prevent-window-open](#prevent-window-open) | window.open-defuser.js |  |
-| [prevent-bab](#prevent-bab) | bab-defuser.js |  |
-| [prevent-fab-3.2.0](#prevent-fab-3.2.0) | fuckadblock.js-3.2.0 |  |
-| [set-popads-dummy](#set-popads-dummy) | popads-dummy.js |  |
-| [prevent-popads-net](#prevent-popads-net) | popads.net.js |  |
-| [prevent-adfly](#prevent-adfly) | adfly-defuser.js |  |
-|  |  | hide-if-contains-image |
-|  |  | hide-if-has-and-matches-style |
-|  |  | hide-if-contains-and-matches-style |
-|  |  | hide-if-contains |
-|  |  | hide-if-shadow-contains |
-| [log-eval](#log-eval) |  | |
-| [log](#log) |  | log |
-| [debug-current-inline-script](#debug-current-inline-script) |  |  |
-| [debug-on-property-read](#debug-on-property-read) |  |  |
-| [debug-on-property-write](#debug-on-property-write) |  |  |
-| [remove-attr](#remove-attr) | remove-attr.js | |
-| [disable-newtab-links](#disable-newtab-links) | disable-newtab-links.js | |
-| [adjust-setInterval](#adjust-setInterval) | nano-setInterval-booster.js | |
-| [adjust-setTimeout](#adjust-setTimeout) | nano-setTimeout-booster.js | |
-| [dir-string](#dir-string) | | dir-string |
-| [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle-scriptlet) | googlesyndication_adsbygoogle.js  | |
-| [googletagmanager-gtm](#googletagmanager-gtm-scriptlet) | googletagmanager_gtm.js | |
-| [googletagservices-gpt](#googletagservices-gpt-scriptlet) | googletagservices_gpt.js | |
-| [google-analytics](#google-analytics-scriptlet) | google-analytics_analytics.js | |
-| [google-analytics-ga](#google-analytics-ga-scriptlet) | google-analytics_ga.js | |
-| [scorecardresearch-beacon](#scorecardresearch-beacon-scriptlet) | scorecardresearch_beacon.js | |
-| [metrika-yandex-watch](#metrika-yandex-watch-scriptlet) | | |
-| [metrika-yandex-tag](#metrika-yandex-tag-scriptlet) | | |
-
-
 ## <a id="redirect-resources"></a> Redirect resources
 
 AdGuard is able to redirect web requests to a local "resource".
@@ -1149,37 +1095,6 @@ https://yandex.ru/support/metrica/objects/method-reference.html
 ||example.org/index.js$script,redirect=metrika-yandex-tag
 ```
 [redirect source](./src/scriptlets/metrika-yandex-tag.js)
-
-### <a id="redirect-compatibility"></a> Redirect resources compatibility table
-
-|AdGuard | uBO | Adblock Plus |
-|--|--|--|
-| [1x1-transparent.gif](#1x1-transparent) | 1x1-transparent.gif | 1x1-transparent-gif |
-| [2x2-transparent.png](#2x2-transparent) | 2x2-transparent.png | 2x2-transparent-png |
-| [3x2-transparent.png](#3x2-transparent) | 3x2-transparent.png | 3x2-transparent-png |
-| [32x32-transparent.png](#32x32-transparent) | 32x32-transparent.png | 32x32-transparent-png |
-| [noopframe](#noopframe) | noopframe | blank-html |
-| [noopcss](#noopcss) | noopcss | blank-css |
-| [noopjs](#noopcss) | noopjs | blank-js |
-| [nooptext](#nooptext) | nooptext | blank-text |
-| [noopvast-2.0](#noopvast-2-0) | | |
-| [noopvast-3.0](#noopvast-3-0) | | |
-| [noopmp3-0.1s](#noopmp3-01s) | noopmp3-0.1s | blank-mp3 |
-| [noopmp4-1s](#noopmp4-1s) | noopmp4-1s |  blank-mp4 |
-| [prevent-fab-3.2.0](#prevent-fab-3-2-0) | fuckadblock.js-3.2.0 ||
-| [set-popads-dummy](#set-popads-dummy) | popads-dummy.js ||
-| [prevent-popads-net](#prevent-popads-net) | popads.net.js ||
-| [noeval.js](#noeval-js) | silent-noeval.js | noeval |
-| [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle) | googlesyndication_adsbygoogle.js | |
-| [googletagmanager-gtm](#googletagmanager-gtm) | googletagmanager_gtm.js | |
-| [googletagservices-gpt](#googletagservices-gpt) | googletagservices_gpt.js | |
-| [google-analytics](#google-analytics) | google-analytics_analytics.js | |
-| [google-analytics-ga](#google-analytics-ga) | google-analytics_ga.js | |
-| [scorecardresearch-beacon](#scorecardresearch-beacon) | scorecardresearch_beacon.js | |
-| | hd-main.js | |
-| | ligatus.com/*/angular-tag.js | |
-| [metrika-yandex-watch](#metrika-yandex-watch)| | |
-| [metrika-yandex-tag](#metrika-yandex-tag)| | |
 
 
 ## <a id="how-to-build"></a> How to build
