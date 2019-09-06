@@ -2,7 +2,8 @@
 
 | AdGuard | uBO | Adblock Plus |
 
-|--|--|--|
+|---|---|---|
+
 | abort-current-inline-script | abort-current-inline-script.js | abort-current-inline-script |
 
 | abort-on-property-read | abort-on-property-read.js | abort-on-property-read |
@@ -133,7 +134,7 @@
 
 | AdGuard | uBO | Adblock Plus |
 
-|--|--|--|
+|---|---|---|
 
 | 1x1-transparent.gif | 1x1.gif | 1x1-transparent-gif |
 

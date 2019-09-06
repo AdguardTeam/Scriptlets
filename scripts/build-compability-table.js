@@ -39,7 +39,7 @@ function buildScriptletsTable(data = []) {
     let res = '# <a id="scriptlets"></a> Scriptlets compatibility table\n\n';
     // header
     res += '| AdGuard | uBO | Adblock Plus |\n\n';
-    res += '|--|--|--|\n';
+    res += '|---|---|---|\n\n';
     // rows
     res += data.map(getRow).join('');
 
@@ -55,7 +55,7 @@ function buildRedirectsTable(data) {
     let res = '# <a id="scriptlets"></a> Redirects compatibility table\n\n';
     // header
     res += '| AdGuard | uBO | Adblock Plus |\n\n';
-    res += '|--|--|--|\n\n';
+    res += '|---|---|---|\n\n';
     // rows
     res += data.map(getRow).join('');
 
