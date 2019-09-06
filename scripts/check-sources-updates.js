@@ -21,15 +21,19 @@ const REMOVED_RULE_MARKER = '(removed)';
 const COMPATIBILITY_TABLE_DATA = path.resolve(__dirname, './compatibility-table.json');
 
 /**
- * Checks if arrays contain the same elements
+ * Checks if arrays contain the same strings
  * @param {Array} arr1
  * @param {Array} arr2
  */
-const isEqualArrays = (arr1, arr2) => {
+const isArraysOfStringsEqual = (arr1, arr2) => {
     if (arr1.length !== arr2.length) {
         return false;
     }
-    return arr1.every(item => arr2.includes(item));
+
+    const sorted1 = arr1.sort();
+    const sorted2 = arr2.sort();
+
+    return sorted1.every((value, index) => value === sorted2[index]);
 };
 
 /**
@@ -150,7 +154,7 @@ async function getCurrentUBOScriptlets() {
 async function checkForUBOScriptletsUpdates() {
     const oldList = getScriptletsFromTable('ubo');
     const newList = await getCurrentUBOScriptlets();
-    const isEqual = isEqualArrays(oldList, newList);
+    const isEqual = isArraysOfStringsEqual(oldList, newList);
     const diff = isEqual ? null : getDiff(oldList, newList);
 
     console.log(`UBO Redirects changes ${isEqual ? 'not ' : ''}found`);
@@ -204,7 +208,7 @@ async function checkForUBORedirectsUpdates() {
     const oldList = getRedirectsFromTable('ubo');
     const newList = await getCurrentUBORedirects();
 
-    const isEqual = isEqualArrays(oldList, newList);
+    const isEqual = isArraysOfStringsEqual(oldList, newList);
     const diff = isEqual ? null : getDiff(oldList, newList);
 
     console.log(`UBO Redirects changes ${isEqual ? 'not ' : ''}found`);
@@ -250,7 +254,7 @@ async function getCurrentABPSnippets() {
 async function checkForABPScriptletssUpdates() {
     const oldList = getScriptletsFromTable('abp');
     const newList = await getCurrentABPSnippets();
-    const isEqual = isEqualArrays(oldList, newList);
+    const isEqual = isArraysOfStringsEqual(oldList, newList);
     const diff = isEqual ? null : getDiff(oldList, newList);
 
     console.log(`UBO Redirects changes ${isEqual ? 'not ' : ''}found`);
@@ -288,7 +292,7 @@ async function getCurrentABPRedirects() {
 async function checkForABPRedirectsUpdates() {
     const oldList = getRedirectsFromTable('abp');
     const newList = await getCurrentABPRedirects();
-    const isEqual = isEqualArrays(oldList, newList);
+    const isEqual = isArraysOfStringsEqual(oldList, newList);
     const diff = isEqual ? null : getDiff(oldList, newList);
 
     console.log(`UBO Redirects changes ${isEqual ? 'not ' : ''}found`);
