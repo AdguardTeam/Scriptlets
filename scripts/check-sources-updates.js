@@ -30,7 +30,7 @@ const isEqualArrays = (arr1, arr2) => {
 /**
  * Returns parsed compatibility table
  */
-const getCompabitilityTable = () => {
+const getCompatibilityTable = () => {
     const rawData = fs.readFileSync(COMPATIBILITY_TABLE_DATA);
     const parsed = JSON.parse(rawData);
     return parsed;
@@ -41,7 +41,7 @@ const getCompabitilityTable = () => {
  * @param {"ubo"|"abp"} platform
  */
 const getScriptletsFromTable = (platform) => {
-    const { scriptlets } = getCompabitilityTable();
+    const { scriptlets } = getCompatibilityTable();
     return scriptlets.map(item => item[platform]).filter(item => !!item);
 };
 
@@ -50,7 +50,7 @@ const getScriptletsFromTable = (platform) => {
  * @param {"ubo"|"abp"} platform
  */
 const getRedirectsFromTable = (platform) => {
-    const { redirects } = getCompabitilityTable();
+    const { redirects } = getCompatibilityTable();
     return redirects.map(item => item[platform]).filter(item => !!item);
 };
 
@@ -79,7 +79,7 @@ const getDiff = (oldList, newList) => {
  */
 function markTableWithDiff(diff, type, platform) {
     const { removed, added } = diff;
-    let table = getCompabitilityTable();
+    let table = getCompatibilityTable();
 
     const newType = table[type].map((item) => {
         const rule = item[platform];
