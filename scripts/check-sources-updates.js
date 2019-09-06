@@ -11,6 +11,11 @@ const axios = require('axios');
  ************************************************************************** */
 
 /**
+ * Rules which were removed from the list should be marked with it
+ */
+const REMOVED_RULE_MARKER = '(removed)';
+
+/**
  * Path to compatibility data source json
  */
 const COMPATIBILITY_TABLE_DATA = path.resolve(__dirname, './compatibility-table.json');
@@ -65,7 +70,10 @@ const getDiff = (oldList, newList) => {
         added: [],
     };
 
-    diff.removed = oldList.filter(item => !newList.includes(item) && item.indexOf('(removed)') === -1);
+    diff.removed = oldList.filter(item => (
+        !newList.includes(item)
+        && item.indexOf(REMOVED_RULE_MARKER) === -1
+    ));
     diff.added = newList.filter(item => !oldList.includes(item));
 
     return diff;
@@ -87,7 +95,7 @@ function markTableWithDiff(diff, type, platform) {
         if (removed.includes(rule)) {
             return {
                 ...item,
-                [platform]: `${rule} (removed)`,
+                [platform]: `${rule} ${REMOVED_RULE_MARKER}`,
             };
         }
         return item;
