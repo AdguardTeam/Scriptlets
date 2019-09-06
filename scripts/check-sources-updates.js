@@ -56,20 +56,55 @@ const getRedirectsFromTable = (platform) => {
 };
 
 /**
- * Update data on store by key
- * @param {string} key
- * @param {any} data
+ * Finds a difference between old and new array
+ * @param {Array} oldList
+ * @param {Array} newList
  */
-// const updateData = (key, data) => {
-//     const rawdata = fs.readFileSync(COMPATIBILITY_TABLE_DATA);
-//     const parsed = JSON.parse(rawdata);
-//     let res = {
-//         ...parsed,
-//         [key]: data,
-//     };
-//     res = JSON.stringify(res, null, 4);
-//     fs.writeFileSync(COMPATIBILITY_TABLE_DATA, res);
-// };
+const getDiff = (oldList, newList) => {
+    const diff = {
+        removed: [],
+        added: [],
+    };
+
+    diff.removed = oldList.filter(item => !newList.includes(item) && item.indexOf('(removed)') === -1);
+    diff.added = newList.filter(item => !oldList.includes(item));
+
+    return diff;
+};
+
+/**
+ * Marks removed rules with (removed) and adds new rules to the end of the table
+ * @param {{removed: Array, added: Array}} diff Object with diffs for certain type and platform
+ * @param {"scriptlets"|"redirects"} type
+ * @param {"ubo"|"abp"} platform
+ */
+function markTableWithDiff(diff, type, platform) {
+    const { removed, added } = diff;
+    let table = getCompabitilityTable();
+
+    const newType = table[type].map((item) => {
+        const rule = item[platform];
+
+        if (removed.includes(rule)) {
+            return {
+                ...item,
+                [platform]: `${rule} (removed)`,
+            };
+        }
+        return item;
+    });
+
+    added.forEach(item => newType.push({ [platform]: item }));
+
+    table = {
+        ...table,
+        [type]: newType,
+    };
+
+    table = JSON.stringify(table, null, 4);
+
+    fs.writeFileSync(COMPATIBILITY_TABLE_DATA, table);
+}
 
 
 /* ************************************************************************
@@ -109,10 +144,11 @@ async function checkForUBOScriptletsUpdates() {
     const oldList = getScriptletsFromTable('ubo');
     const newList = await getCurrentUBOScriptlets();
     const isEqual = isEqualArrays(oldList, newList);
+    const diff = isEqual ? null : getDiff(oldList, newList);
 
-    console.log(`UBO Scriptlets changes ${isEqual ? 'not ' : ''}found`);
+    console.log(`UBO Redirects changes ${isEqual ? 'not ' : ''}found`);
 
-    return isEqual;
+    return diff;
 }
 
 
@@ -160,11 +196,13 @@ async function getCurrentUBORedirects() {
 async function checkForUBORedirectsUpdates() {
     const oldList = getRedirectsFromTable('ubo');
     const newList = await getCurrentUBORedirects();
+
     const isEqual = isEqualArrays(oldList, newList);
+    const diff = isEqual ? null : getDiff(oldList, newList);
 
     console.log(`UBO Redirects changes ${isEqual ? 'not ' : ''}found`);
 
-    return isEqual;
+    return diff;
 }
 
 /* ************************************************************************
@@ -202,14 +240,15 @@ async function getCurrentABPSnippets() {
 /**
  * Checks for ABP Snippets updates
  */
-async function checkForABPSnippetsUpdates() {
+async function checkForABPScriptletssUpdates() {
     const oldList = getScriptletsFromTable('abp');
     const newList = await getCurrentABPSnippets();
     const isEqual = isEqualArrays(oldList, newList);
+    const diff = isEqual ? null : getDiff(oldList, newList);
 
     console.log(`UBO Redirects changes ${isEqual ? 'not ' : ''}found`);
 
-    return isEqual;
+    return diff;
 }
 
 /* ************************************************************************
@@ -243,20 +282,39 @@ async function checkForABPRedirectsUpdates() {
     const oldList = getRedirectsFromTable('abp');
     const newList = await getCurrentABPRedirects();
     const isEqual = isEqualArrays(oldList, newList);
+    const diff = isEqual ? null : getDiff(oldList, newList);
 
     console.log(`UBO Redirects changes ${isEqual ? 'not ' : ''}found`);
 
-    return isEqual;
+    return diff;
 }
 
 /**
  * Entry point
  */
 (async function init() {
-    const one = await checkForUBORedirectsUpdates();
-    const two = await checkForUBOScriptletsUpdates();
-    const three = await checkForABPSnippetsUpdates();
-    const four = await checkForABPRedirectsUpdates();
+    const UBORedirectsDiff = await checkForUBORedirectsUpdates();
+    const UBOScriptletsDiff = await checkForUBOScriptletsUpdates();
+    const ABPRedirectsDiff = await checkForABPRedirectsUpdates();
+    const ABPScriptletsDiff = await checkForABPScriptletssUpdates();
 
-    console.log(one, two, three, four);
+    if (UBORedirectsDiff) {
+        markTableWithDiff(UBORedirectsDiff, 'redirects', 'ubo');
+        // notify()
+    }
+
+    if (UBOScriptletsDiff) {
+        markTableWithDiff(UBOScriptletsDiff, 'scriptlets', 'ubo');
+        // notify()
+    }
+
+    if (ABPRedirectsDiff) {
+        markTableWithDiff(ABPRedirectsDiff, 'redirects', 'abp');
+        // notify()
+    }
+
+    if (ABPScriptletsDiff) {
+        markTableWithDiff(ABPScriptletsDiff, 'scriptlets', 'ubabpo');
+        // notify()
+    }
 }());
