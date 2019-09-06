@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 /**
  * Source file for compatibility tables
@@ -12,11 +13,11 @@ const COMPATIBILITY_TABLE_DATA = path.resolve(__dirname, './compatibility-table.
 const COMPATIBILITY_TABLE = path.resolve(__dirname, '../wiki/compatibility-table.md');
 
 /**
- * Retutns data for compatibility tables
+ * Returns data for compatibility tables
  */
 function getTableData() {
-    const rawdata = fs.readFileSync(COMPATIBILITY_TABLE_DATA);
-    const parsed = JSON.parse(rawdata);
+    const rawData = fs.readFileSync(COMPATIBILITY_TABLE_DATA);
+    const parsed = JSON.parse(rawData);
     return parsed;
 }
 
@@ -28,14 +29,14 @@ function getTableData() {
  * abp: string
  * }} item { an }
  */
-const getRow = item => (`| ${item.adg || ''} | ${item.ubo || ''} | ${item.abp || ''} |\r`);
+const getRow = item => (`| ${item.adg || ''} | ${item.ubo || ''} | ${item.abp || ''} |${os.EOL}`);
 
 /**
  * Generates table header
  */
 const getTableHeader = () => {
-    let res = '| AdGuard | uBO | Adblock Plus |\r';
-    res += '|---|---|---|\r';
+    let res = `| AdGuard | uBO | Adblock Plus |${os.EOL}`;
+    res += `|---|---|---|${os.EOL}`;
     return res;
 };
 
@@ -45,7 +46,7 @@ const getTableHeader = () => {
  */
 function buildScriptletsTable(data = []) {
     // title
-    let res = '# <a id="scriptlets"></a> Scriptlets compatibility table\n\n';
+    let res = `# <a id="scriptlets"></a> Scriptlets compatibility table${os.EOL}${os.EOL}`;
     // header
     res += getTableHeader();
     // rows
@@ -60,7 +61,7 @@ function buildScriptletsTable(data = []) {
  */
 function buildRedirectsTable(data) {
     // title
-    let res = '# <a id="scriptlets"></a> Redirects compatibility table\n\n';
+    let res = `# <a id="scriptlets"></a> Redirects compatibility table${os.EOL}${os.EOL}`;
     // header
     res += getTableHeader();
     // rows
@@ -73,7 +74,7 @@ function buildRedirectsTable(data) {
  * Save tables to compatibility table
  */
 function saveTables(...args) {
-    const res = args.join('\n\n');
+    const res = args.join(`${os.EOL}${os.EOL}`);
     fs.writeFileSync(COMPATIBILITY_TABLE, res);
 }
 
