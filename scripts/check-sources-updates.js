@@ -31,8 +31,8 @@ const isEqualArrays = (arr1, arr2) => {
  * Returns parsed compatibility table
  */
 const getCompabitilityTable = () => {
-    const rawdata = fs.readFileSync(COMPATIBILITY_TABLE_DATA);
-    const parsed = JSON.parse(rawdata);
+    const rawData = fs.readFileSync(COMPATIBILITY_TABLE_DATA);
+    const parsed = JSON.parse(rawData);
     return parsed;
 };
 
