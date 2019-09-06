@@ -12,7 +12,8 @@
         "test-watch": "rollup -c -w --environment UI_TEST",
         "browserstack": "yarn build-test && node browserstack.js",
         "gui-test": "yarn build-test && open http://localhost:8585 && node ./tests/server.js",
-        "lint": "eslint ."
+        "lint": "eslint .",
+        "wiki:update": "node ./scripts/check-sources-updates.js && node ./scripts/build-compatibility-table.js"
     },
     "husky": {
         "hooks": {
