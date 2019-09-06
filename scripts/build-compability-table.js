@@ -31,6 +31,15 @@ function getTableData() {
 const getRow = item => (`| ${item.adg || ''} | ${item.ubo || ''} | ${item.abp || ''} |\r`);
 
 /**
+ * Generates table header
+ */
+const getTableHeader = () => {
+    let res = '| AdGuard | uBO | Adblock Plus |\r';
+    res += '|---|---|---|\r';
+    return res;
+};
+
+/**
  * Builds markdown string with scriptlets compatibility table
  * @param {Array} data array with scriptlets names
  */
@@ -38,8 +47,7 @@ function buildScriptletsTable(data = []) {
     // title
     let res = '# <a id="scriptlets"></a> Scriptlets compatibility table\n\n';
     // header
-    res += '| AdGuard | uBO | Adblock Plus |\r';
-    res += '|---|---|---|\r';
+    res += getTableHeader();
     // rows
     res += data.map(getRow).join('');
 
@@ -54,8 +62,7 @@ function buildRedirectsTable(data) {
     // title
     let res = '# <a id="scriptlets"></a> Redirects compatibility table\n\n';
     // header
-    res += '| AdGuard | uBO | Adblock Plus |\r';
-    res += '|---|---|---|\r';
+    res += getTableHeader();
     // rows
     res += data.map(getRow).join('');
 

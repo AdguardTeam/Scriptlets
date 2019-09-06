@@ -16,71 +16,12 @@
             "abp": "abort-on-property-write"
         },
         {
-            "adg": "prevent-addEventListener",
-            "ubo": "addEventListener-defuser.js"
+            "adg": "adjust-setInterval",
+            "ubo": "nano-setInterval-booster.js"
         },
         {
-            "adg": "log-addEventListener",
-            "ubo": "addEventListener-logger.js"
-        },
-        {
-            "adg": "remove-cookie",
-            "ubo": "cookie-remover.js"
-        },
-        {
-            "adg": "noeval"
-        },
-        {
-            "adg": "prevent-eval-if",
-            "ubo": "noeval-if.js"
-        },
-        {
-            "adg": "nowebrtc",
-            "ubo": "nowebrtc.js"
-        },
-        {
-            "adg": "set-constant",
-            "ubo": "set-constant.js"
-        },
-        {
-            "adg": "prevent-setInterval",
-            "ubo": "setInterval-defuser.js"
-        },
-        {
-            "adg": "log-setInterval"
-        },
-        {
-            "adg": "prevent-setTimeout",
-            "ubo": "setTimeout-defuser.js"
-        },
-        {
-            "adg": "log-setTimeout"
-        },
-        {
-            "adg": "prevent-window-open"
-        },
-        {
-            "adg": "prevent-bab"
-        },
-        {
-            "adg": "prevent-fab-3.2.0"
-        },
-        {
-            "adg": "set-popads-dummy"
-        },
-        {
-            "adg": "prevent-popads-net"
-        },
-        {
-            "adg": "prevent-adfly",
-            "ubo": "adfly-defuser.js"
-        },
-        {
-            "adg": "log-eval"
-        },
-        {
-            "adg": "log",
-            "abp": "log"
+            "adg": "adjust-setTimeout",
+            "ubo": "nano-setTimeout-booster.js"
         },
         {
             "adg": "debug-current-inline-script"
@@ -92,24 +33,18 @@
             "adg": "debug-on-property-write"
         },
         {
-            "adg": "remove-attr",
-            "ubo": "remove-attr.js"
+            "adg": "dir-string",
+            "abp": "dir-string"
         },
         {
             "adg": "disable-newtab-links",
             "ubo": "disable-newtab-links.js"
         },
         {
-            "adg": "adjust-setInterval",
-            "ubo": "nano-setInterval-booster.js"
+            "adg": "google-analytics-ga"
         },
         {
-            "adg": "adjust-setTimeout",
-            "ubo": "nano-setTimeout-booster.js"
-        },
-        {
-            "adg": "dir-string",
-            "abp": "dir-string"
+            "adg": "google-analytics"
         },
         {
             "adg": "googlesyndication-adsbygoogle"
@@ -121,19 +56,84 @@
             "adg": "googletagservices-gpt"
         },
         {
-            "adg": "google-analytics"
+            "adg": "log-addEventListener",
+            "ubo": "addEventListener-logger.js"
         },
         {
-            "adg": "google-analytics-ga"
+            "adg": "log-eval"
         },
         {
-            "adg": "scorecardresearch-beacon"
+            "adg": "log-setInterval"
+        },
+        {
+            "adg": "log-setTimeout"
+        },
+        {
+            "adg": "log",
+            "abp": "log"
+        },
+        {
+            "adg": "metrika-yandex-tag"
         },
         {
             "adg": "metrika-yandex-watch"
         },
         {
-            "adg": "metrika-yandex-tag"
+            "adg": "noeval"
+        },
+        {
+            "adg": "nowebrtc",
+            "ubo": "nowebrtc.js"
+        },
+        {
+            "adg": "prevent-addEventListener",
+            "ubo": "addEventListener-defuser.js"
+        },
+        {
+            "adg": "prevent-adfly",
+            "ubo": "adfly-defuser.js"
+        },
+        {
+            "adg": "prevent-bab"
+        },
+        {
+            "adg": "prevent-eval-if",
+            "ubo": "noeval-if.js"
+        },
+        {
+            "adg": "prevent-fab-3.2.0"
+        },
+        {
+            "adg": "prevent-popads-net"
+        },
+        {
+            "adg": "prevent-setInterval",
+            "ubo": "setInterval-defuser.js"
+        },
+        {
+            "adg": "prevent-setTimeout",
+            "ubo": "setTimeout-defuser.js"
+        },
+        {
+            "adg": "prevent-window-open"
+        },
+        {
+            "adg": "remove-attr",
+            "ubo": "remove-attr.js"
+        },
+        {
+            "adg": "remove-cookie",
+            "ubo": "cookie-remover.js"
+        },
+        {
+            "adg": "scorecardresearch-beacon"
+        },
+        {
+            "adg": "set-constant",
+            "ubo": "set-constant.js"
+        },
+        {
+            "adg": "set-popads-dummy"
         },
         {
             "ubo": "raf-if.js"
