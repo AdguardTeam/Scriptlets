@@ -9,7 +9,7 @@ const COMPABILITY_TABLE_DATA = path.resolve(__dirname, './compability-table.json
 /**
  * File with compability tables
  */
-const COMPABILITY_TABLE = path.resolve(__dirname, './compability-table.md');
+const COMPABILITY_TABLE = path.resolve(__dirname, '../wiki/compability-table.md');
 
 /**
  * Retutns data for compability tables
