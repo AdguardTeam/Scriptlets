@@ -40,7 +40,7 @@
 | scorecardresearch-beacon |  |  |
 | set-constant | set-constant.js |  |
 | set-popads-dummy |  |  |
-|  | raf-if.js |  |
+|  | raf-if.js (removed) |  |
 |  | setInterval-if.js |  |
 |  | setTimeout-if.js |  |
 |  | webrtc-if.js |  |
@@ -64,9 +64,10 @@
 |  |  | readd |
 |  |  | strip-fetch-query-parameter |
 |  |  | hide-if-contains-image-hash |
+|  | requestAnimationFrame-if.js |  |
 
 
-# <a id="scriptlets"></a> Redirects compatibility table
+# <a id="redirects"></a> Redirects compatibility table
 
 | AdGuard | uBO | Adblock Plus |
 |---|---|---|

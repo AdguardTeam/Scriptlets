@@ -136,7 +136,7 @@
             "adg": "set-popads-dummy"
         },
         {
-            "ubo": "raf-if.js"
+            "ubo": "raf-if.js (removed)"
         },
         {
             "ubo": "setInterval-if.js"
@@ -206,6 +206,9 @@
         },
         {
             "abp": "hide-if-contains-image-hash"
+        },
+        {
+            "ubo": "requestAnimationFrame-if.js"
         }
     ],
     "redirects": [

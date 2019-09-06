@@ -40,7 +40,7 @@
         * [metrika-yandex-watch](#metrika-yandex-watch-scriptlet)
         * [metrika-yandex-tag](#metrika-yandex-tag-scriptlet)
         
-    * [Scriptlets compatibility table](./wiki/compatibility-table.md)
+    * [Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)
 * [Redirect resources](#redirect-resources)
     * [Syntax](#redirect-syntax)
     * [Available redirect resources](#available-resources)
@@ -69,7 +69,7 @@
         * [metrika-yandex-watch](#metrika-yandex-watch)
         * [metrika-yandex-tag](#metrika-yandex-tag)
 
-    * [Redirect resources compatibility table](./wiki/compatibility-table.md)
+    * [Redirect resources compatibility table](./wiki/compatibility-table.md#redirects)
 * [How to build](#how-to-build)
 * [Browser compatibility](#browser-compatibility)
 

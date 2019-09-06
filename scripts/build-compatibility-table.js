@@ -44,24 +44,9 @@ const getTableHeader = () => {
  * Builds markdown string with scriptlets compatibility table
  * @param {Array} data array with scriptlets names
  */
-function buildScriptletsTable(data = []) {
+function buildTable(title, data = [], id = '') {
     // title
-    let res = `# <a id="scriptlets"></a> Scriptlets compatibility table${os.EOL}${os.EOL}`;
-    // header
-    res += getTableHeader();
-    // rows
-    res += data.map(getRow).join('');
-
-    return res;
-}
-
-/**
- * Builds markdown string with redirects compatibility table
- * @param {Array} data array with redirects names
- */
-function buildRedirectsTable(data) {
-    // title
-    let res = `# <a id="scriptlets"></a> Redirects compatibility table${os.EOL}${os.EOL}`;
+    let res = `# <a id="${id}"></a> ${title}${os.EOL}${os.EOL}`;
     // header
     res += getTableHeader();
     // rows
@@ -84,8 +69,16 @@ function saveTables(...args) {
 function init() {
     const { scriptlets, redirects } = getTableData();
 
-    const scriptletsTable = buildScriptletsTable(scriptlets);
-    const redirectsTable = buildRedirectsTable(redirects);
+    const scriptletsTable = buildTable(
+        'Scriptlets compatibility table',
+        scriptlets,
+        'scriptlets',
+    );
+    const redirectsTable = buildTable(
+        'Redirects compatibility table',
+        redirects,
+        'redirects',
+    );
 
     saveTables(scriptletsTable, redirectsTable);
 }
