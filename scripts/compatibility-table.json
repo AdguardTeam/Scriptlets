@@ -230,55 +230,12 @@
             "abp": "32x32-transparent-png"
         },
         {
-            "adg": "noopframe",
-            "ubo": "noop.html",
-            "abp": "blank-html"
+            "adg": "google-analytics",
+            "ubo": "google-analytics_analytics.js"
         },
         {
-            "adg": "noopcss",
-            "abp": "blank-css"
-        },
-        {
-            "adg": "noopjs",
-            "ubo": "noop.js",
-            "abp": "blank-js"
-        },
-        {
-            "adg": "nooptext",
-            "ubo": "noop.txt",
-            "abp": "blank-text"
-        },
-        {
-            "adg": "noopvast-2.0"
-        },
-        {
-            "adg": "noopvast-3.0"
-        },
-        {
-            "adg": "noopmp3.0.1s",
-            "ubo": "noop-0.1s.mp3",
-            "abp": "blank-mp3"
-        },
-        {
-            "adg": "noopmp4-1s",
-            "ubo": "noop-1s.mp4",
-            "abp": "blank-mp4"
-        },
-        {
-            "adg": "prevent-fab-3.2.0",
-            "ubo": "nofab.js"
-        },
-        {
-            "adg": "set-popads-dummy",
-            "ubo": "popads-dummy.js"
-        },
-        {
-            "adg": "prevent-popads-net",
-            "ubo": "popads.js"
-        },
-        {
-            "adg": "noeval.js",
-            "ubo": "noeval-silent.js"
+            "adg": "google-analytics-ga",
+            "ubo": "google-analytics_ga.js"
         },
         {
             "adg": "googlesyndication-adsbygoogle",
@@ -293,22 +250,65 @@
             "ubo": "googletagservices_gpt.js"
         },
         {
-            "adg": "google-analytics",
-            "ubo": "google-analytics_analytics.js"
+            "adg": "metrika-yandex-watch"
         },
         {
-            "adg": "google-analytics-ga",
-            "ubo": "google-analytics_ga.js"
+            "adg": "metrika-yandex-tag"
+        },
+        {
+            "adg": "noeval.js",
+            "ubo": "noeval-silent.js"
+        },
+        {
+            "adg": "noopcss",
+            "abp": "blank-css"
+        },
+        {
+            "adg": "noopframe",
+            "ubo": "noop.html",
+            "abp": "blank-html"
+        },
+        {
+            "adg": "noopjs",
+            "ubo": "noop.js",
+            "abp": "blank-js"
+        },
+        {
+            "adg": "nooptext",
+            "ubo": "noop.txt",
+            "abp": "blank-text"
+        },
+        {
+            "adg": "noopmp3.0.1s",
+            "ubo": "noop-0.1s.mp3",
+            "abp": "blank-mp3"
+        },
+        {
+            "adg": "noopmp4-1s",
+            "ubo": "noop-1s.mp4",
+            "abp": "blank-mp4"
+        },
+        {
+            "adg": "noopvast-2.0"
+        },
+        {
+            "adg": "noopvast-3.0"
+        },
+        {
+            "adg": "prevent-fab-3.2.0",
+            "ubo": "nofab.js"
+        },
+        {
+            "adg": "prevent-popads-net",
+            "ubo": "popads.js"
         },
         {
             "adg": "scorecardresearch-beacon",
             "ubo": "scorecardresearch_beacon.js"
         },
         {
-            "adg": "metrika-yandex-watch"
-        },
-        {
-            "adg": "metrika-yandex-tag"
+            "adg": "set-popads-dummy",
+            "ubo": "popads-dummy.js"
         },
         {
             "ubo": "addthis_widget.js"
