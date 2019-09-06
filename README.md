@@ -1206,8 +1206,6 @@ Schema
 }
 ```
 
-#### Redirect resources library
-
 #### Redirects library
 ```
 dist/redirects.js

@@ -28,7 +28,7 @@ function getTableData() {
  * abp: string
  * }} item { an }
  */
-const getRow = item => (`| ${item.adg || ''} | ${item.ubo || ''} | ${item.abp || ''} |\n\n`);
+const getRow = item => (`| ${item.adg || ''} | ${item.ubo || ''} | ${item.abp || ''} |\r`);
 
 /**
  * Builds markdown string with scriptlets compatibility table
@@ -38,8 +38,8 @@ function buildScriptletsTable(data = []) {
     // title
     let res = '# <a id="scriptlets"></a> Scriptlets compatibility table\n\n';
     // header
-    res += '| AdGuard | uBO | Adblock Plus |\n\n';
-    res += '|---|---|---|\n\n';
+    res += '| AdGuard | uBO | Adblock Plus |\r';
+    res += '|---|---|---|\r';
     // rows
     res += data.map(getRow).join('');
 
@@ -54,8 +54,8 @@ function buildRedirectsTable(data) {
     // title
     let res = '# <a id="scriptlets"></a> Redirects compatibility table\n\n';
     // header
-    res += '| AdGuard | uBO | Adblock Plus |\n\n';
-    res += '|---|---|---|\n\n';
+    res += '| AdGuard | uBO | Adblock Plus |\r';
+    res += '|---|---|---|\r';
     // rows
     res += data.map(getRow).join('');
 
