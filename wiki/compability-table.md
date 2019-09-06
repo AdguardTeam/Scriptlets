@@ -85,7 +85,7 @@
 | prevent-fab-3.2.0 | nofab.js |  |
 | set-popads-dummy | popads-dummy.js |  |
 | prevent-popads-net | popads.js |  |
-| noeval.js | noeval-silent.js | noeval |
+| noeval.js | noeval-silent.js |  |
 | googlesyndication-adsbygoogle | googlesyndication_adsbygoogle.js |  |
 | googletagmanager-gtm | googletagmanager_gtm.js |  |
 | googletagservices-gpt | googletagservices_gpt.js |  |

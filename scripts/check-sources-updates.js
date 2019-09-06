@@ -38,6 +38,24 @@ const getCompabilityTable = () => {
 };
 
 /**
+ * Returns list of scriptlets listed in table for specified platform
+ * @param {"ubo"|"abp"} platform
+ */
+const getScriptletsFromTable = (platform) => {
+    const { scriptlets } = getCompabilityTable();
+    return scriptlets.map(item => item[platform]).filter(item => !!item);
+};
+
+/**
+ * Returns list of redirects listed in table for specified platform
+ * @param {"ubo"|"abp"} platform
+ */
+const getRedirectsFromTable = (platform) => {
+    const { redirects } = getCompabilityTable();
+    return redirects.map(item => item[platform]).filter(item => !!item);
+};
+
+/**
  * Update data on store by key
  * @param {string} key
  * @param {any} data
@@ -66,14 +84,6 @@ const getCompabilityTable = () => {
 const UBO_SCRIPTLETS_FILE = 'https://raw.githubusercontent.com/gorhill/uBlock/master/assets/resources/scriptlets.js';
 
 /**
- * Returns list of UBO scriptlets listed in table
- */
-const getUBOScriptletsFromTable = () => {
-    const { scriptlets } = getCompabilityTable();
-    return scriptlets.map(item => item.ubo).filter(item => !!item);
-};
-
-/**
  * Make request to UBO repo(master), parses and returns the list of UBO scriptlets
  */
 async function getCurrentUBOScriptlets() {
@@ -96,9 +106,9 @@ async function getCurrentUBOScriptlets() {
  * Check updates for UBO Scriptlets
  */
 async function checkForUBOScriptletsUpdates() {
-    const oldScriptlets = getUBOScriptletsFromTable();
-    const scriptlets = await getCurrentUBOScriptlets();
-    const isEqual = isEqualArrays(oldScriptlets, scriptlets);
+    const oldList = getScriptletsFromTable('ubo');
+    const newList = await getCurrentUBOScriptlets();
+    const isEqual = isEqualArrays(oldList, newList);
 
     console.log(`UBO Scriptlets changes ${isEqual ? 'not ' : ''}found`);
 
@@ -116,14 +126,6 @@ async function checkForUBOScriptletsUpdates() {
  * UBO redirects github page
  */
 const UBO_REDIRECTS_DIRECTORY_FILE = 'https://raw.githubusercontent.com/gorhill/uBlock/master/src/js/redirect-engine.js';
-
-/**
- * Returns list of UBO scriptlets listed in table
- */
-const getUBORedirectsFromTable = () => {
-    const { redirects } = getCompabilityTable();
-    return redirects.map(item => item.ubo).filter(item => !!item);
-};
 
 /**
  * Make request to UBO repo(master), parses and returns the list of UBO redirects
@@ -156,9 +158,9 @@ async function getCurrentUBORedirects() {
  * Checks updates for UBO redirects
  */
 async function checkForUBORedirectsUpdates() {
-    const oldRedirects = getUBORedirectsFromTable();
-    const redirects = await getCurrentUBORedirects();
-    const isEqual = isEqualArrays(oldRedirects, redirects);
+    const oldList = getRedirectsFromTable('ubo');
+    const newList = await getCurrentUBORedirects();
+    const isEqual = isEqualArrays(oldList, newList);
 
     console.log(`UBO Redirects changes ${isEqual ? 'not ' : ''}found`);
 
@@ -175,14 +177,6 @@ async function checkForUBORedirectsUpdates() {
  * ABP Snippets github raw resources
  */
 const ABP_SNIPPETS_FILE = 'https://raw.githubusercontent.com/adblockplus/adblockpluscore/master/lib/content/snippets.js';
-
-/**
- * Returns list of ABP snippets listed in table
- */
-const getABPSnippetsFromTable = () => {
-    const { scriptlets } = getCompabilityTable();
-    return scriptlets.map(item => item.abp).filter(item => !!item);
-};
 
 /**
  * Checks for snippets updates
@@ -209,9 +203,46 @@ async function getCurrentABPSnippets() {
  * Checks for ABP Snippets updates
  */
 async function checkForABPSnippetsUpdates() {
-    const oldSnippets = getABPSnippetsFromTable();
-    const snippets = await getCurrentABPSnippets();
-    const isEqual = isEqualArrays(oldSnippets, snippets);
+    const oldList = getScriptletsFromTable('abp');
+    const newList = await getCurrentABPSnippets();
+    const isEqual = isEqualArrays(oldList, newList);
+
+    console.log(`UBO Redirects changes ${isEqual ? 'not ' : ''}found`);
+
+    return isEqual;
+}
+
+/* ************************************************************************
+ *
+ * ABP Redirects
+ *
+ ************************************************************************** */
+
+/**
+ * ABP redirects github raw resource
+ */
+const ABP_REDIRECTS_FILE = 'https://raw.githubusercontent.com/adblockplus/adblockpluscore/master/data/resources.json';
+
+/**
+ * Checks for snippets updates
+ */
+async function getCurrentABPRedirects() {
+    console.log('Downloading ABP file...');
+    const { data } = await axios.get(ABP_REDIRECTS_FILE);
+    console.log('ABP done.');
+
+    const names = Object.keys(data);
+
+    return names;
+}
+
+/**
+ * Checks for ABP Snippets updates
+ */
+async function checkForABPRedirectsUpdates() {
+    const oldList = getRedirectsFromTable('abp');
+    const newList = await getCurrentABPRedirects();
+    const isEqual = isEqualArrays(oldList, newList);
 
     console.log(`UBO Redirects changes ${isEqual ? 'not ' : ''}found`);
 
@@ -225,6 +256,7 @@ async function checkForABPSnippetsUpdates() {
     const one = await checkForUBORedirectsUpdates();
     const two = await checkForUBOScriptletsUpdates();
     const three = await checkForABPSnippetsUpdates();
+    const four = await checkForABPRedirectsUpdates();
 
-    console.log(one, two, three);
+    console.log(one, two, three, four);
 }());

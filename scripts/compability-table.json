@@ -278,8 +278,7 @@
         },
         {
             "adg": "noeval.js",
-            "ubo": "noeval-silent.js",
-            "abp": "noeval"
+            "ubo": "noeval-silent.js"
         },
         {
             "adg": "googlesyndication-adsbygoogle",
