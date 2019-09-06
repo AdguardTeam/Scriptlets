@@ -116,12 +116,7 @@
                 "ubo": "cookie-remover.js"
             },
             {
-                "adg": "noeval",
-                "ubo": "noeval.js"
-            },
-            {
-                "adg": "noeval",
-                "ubo": "noeval-silent.js"
+                "adg": "noeval"
             },
             {
                 "adg": "prevent-eval-if",
@@ -140,36 +135,29 @@
                 "ubo": "setInterval-defuser.js"
             },
             {
-                "adg": "log-setInterval",
-                "ubo": "setInterval-logger.js"
+                "adg": "log-setInterval"
             },
             {
                 "adg": "prevent-setTimeout",
                 "ubo": "setTimeout-defuser.js"
             },
             {
-                "adg": "log-setTimeout",
-                "ubo": "setTimeout-logger.js"
+                "adg": "log-setTimeout"
             },
             {
-                "adg": "prevent-window-open",
-                "ubo": "window.open-defuser.js"
+                "adg": "prevent-window-open"
             },
             {
-                "adg": "prevent-bab",
-                "ubo": "nobab.js"
+                "adg": "prevent-bab"
             },
             {
-                "adg": "prevent-fab-3.2.0",
-                "ubo": "nofab.js"
+                "adg": "prevent-fab-3.2.0"
             },
             {
-                "adg": "set-popads-dummy",
-                "ubo": "popads-dummy.js"
+                "adg": "set-popads-dummy"
             },
             {
-                "adg": "prevent-popads-net",
-                "ubo": "popads.js"
+                "adg": "prevent-popads-net"
             },
             {
                 "adg": "prevent-adfly",
@@ -212,28 +200,22 @@
                 "abp": "dir-string"
             },
             {
-                "adg": "googlesyndication-adsbygoogle",
-                "ubo": "googlesyndication_adsbygoogle.js"
+                "adg": "googlesyndication-adsbygoogle"
             },
             {
-                "adg": "googletagmanager-gtm",
-                "ubo": "googletagmanager_gtm.js"
+                "adg": "googletagmanager-gtm"
             },
             {
-                "adg": "googletagservices-gpt",
-                "ubo": "googletagservices_gpt,js"
+                "adg": "googletagservices-gpt"
             },
             {
-                "adg": "google-analytics",
-                "ubo": "google-analytics_analytics.js"
+                "adg": "google-analytics"
             },
             {
-                "adg": "google-analytics-ga",
-                "ubo": "google-analytics_ga.js"
+                "adg": "google-analytics-ga"
             },
             {
-                "adg": "scorecardresearch-beacon",
-                "ubo": "scorecardresearch_beacon.js"
+                "adg": "scorecardresearch-beacon"
             },
             {
                 "adg": "metrika-yandex-watch"
@@ -458,6 +440,9 @@
             },
             {
                 "ubo": "outbrain-widget.js"
+            },
+            {
+                "ubo": "window.open-defuser.js"
             }
         ]
     }

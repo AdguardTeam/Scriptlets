@@ -100,6 +100,8 @@ async function checkForUBOScriptletsUpdates() {
     const scriptlets = await getCurrentUBOScriptlets();
     const isEqual = isEqualArrays(oldScriptlets, scriptlets);
 
+    console.log(oldScriptlets.sort(), scriptlets.sort());
+
     console.log(`UBO Scriptlets changes ${isEqual ? 'not ' : ''}found`);
 
     return isEqual;
