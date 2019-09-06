@@ -2,26 +2,26 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Source file for compability tables
+ * Source file for compatibility tables
  */
-const COMPABILITY_TABLE_DATA = path.resolve(__dirname, './compability-table.json');
+const COMPATIBILITY_TABLE_DATA = path.resolve(__dirname, './compatibility-table.json');
 
 /**
- * File with compability tables
+ * File with compatibility tables
  */
-const COMPABILITY_TABLE = path.resolve(__dirname, '../wiki/compability-table.md');
+const COMPATIBILITY_TABLE = path.resolve(__dirname, '../wiki/compatibility-table.md');
 
 /**
- * Retutns data for compability tables
+ * Retutns data for compatibility tables
  */
 function getTableData() {
-    const rawdata = fs.readFileSync(COMPABILITY_TABLE_DATA);
+    const rawdata = fs.readFileSync(COMPATIBILITY_TABLE_DATA);
     const parsed = JSON.parse(rawdata);
     return parsed;
 }
 
 /**
- * Returns markdown row of compability table
+ * Returns markdown row of compatibility table
  * @param {{
  * adg: string,
  * ubo: string,
@@ -31,7 +31,7 @@ function getTableData() {
 const getRow = item => (`| ${item.adg || ''} | ${item.ubo || ''} | ${item.abp || ''} |\n`);
 
 /**
- * Builds markdown string with scriptlets compability table
+ * Builds markdown string with scriptlets compatibility table
  * @param {Array} data array with scriptlets names
  */
 function buildScriptletsTable(data = []) {
@@ -47,7 +47,7 @@ function buildScriptletsTable(data = []) {
 }
 
 /**
- * Builds markdown string with redirects compability table
+ * Builds markdown string with redirects compatibility table
  * @param {Array} data array with redirects names
  */
 function buildRedirectsTable(data) {
@@ -63,11 +63,11 @@ function buildRedirectsTable(data) {
 }
 
 /**
- * Save tables to compability table
+ * Save tables to compatibility table
  */
 function saveTables(...args) {
     const res = args.join('\n\n');
-    fs.writeFileSync(COMPABILITY_TABLE, res);
+    fs.writeFileSync(COMPATIBILITY_TABLE, res);
 }
 
 /**

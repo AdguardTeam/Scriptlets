@@ -11,9 +11,9 @@ const axios = require('axios');
  ************************************************************************** */
 
 /**
- * Path to compability data source json
+ * Path to compatibility data source json
  */
-const COMPABILITY_TABLE_DATA = path.resolve(__dirname, './compability-table.json');
+const COMPATIBILITY_TABLE_DATA = path.resolve(__dirname, './compatibility-table.json');
 
 /**
  * Checks if arrays contain the same elements
@@ -31,8 +31,8 @@ const isEqualArrays = (arr1, arr2) => {
  * Returns data from store by key
  * @param {string} key
  */
-const getCompabilityTable = () => {
-    const rawdata = fs.readFileSync(COMPABILITY_TABLE_DATA);
+const getCompabitilityTable = () => {
+    const rawdata = fs.readFileSync(COMPATIBILITY_TABLE_DATA);
     const parsed = JSON.parse(rawdata);
     return parsed;
 };
@@ -42,7 +42,7 @@ const getCompabilityTable = () => {
  * @param {"ubo"|"abp"} platform
  */
 const getScriptletsFromTable = (platform) => {
-    const { scriptlets } = getCompabilityTable();
+    const { scriptlets } = getCompabitilityTable();
     return scriptlets.map(item => item[platform]).filter(item => !!item);
 };
 
@@ -51,7 +51,7 @@ const getScriptletsFromTable = (platform) => {
  * @param {"ubo"|"abp"} platform
  */
 const getRedirectsFromTable = (platform) => {
-    const { redirects } = getCompabilityTable();
+    const { redirects } = getCompabitilityTable();
     return redirects.map(item => item[platform]).filter(item => !!item);
 };
 
@@ -61,14 +61,14 @@ const getRedirectsFromTable = (platform) => {
  * @param {any} data
  */
 // const updateData = (key, data) => {
-//     const rawdata = fs.readFileSync(COMPABILITY_TABLE_DATA);
+//     const rawdata = fs.readFileSync(COMPATIBILITY_TABLE_DATA);
 //     const parsed = JSON.parse(rawdata);
 //     let res = {
 //         ...parsed,
 //         [key]: data,
 //     };
 //     res = JSON.stringify(res, null, 4);
-//     fs.writeFileSync(COMPABILITY_TABLE_DATA, res);
+//     fs.writeFileSync(COMPATIBILITY_TABLE_DATA, res);
 // };
 
 
