@@ -25,7 +25,7 @@ const COMPATIBILITY_TABLE_DATA = path.resolve(__dirname, './compatibility-table.
  * @param {Array} arr1
  * @param {Array} arr2
  */
-const isArraysOfStringsEqual = (arr1, arr2) => {
+const areArraysOfStringsEqual = (arr1, arr2) => {
     if (arr1.length !== arr2.length) {
         return false;
     }
@@ -154,7 +154,7 @@ async function getCurrentUBOScriptlets() {
 async function checkForUBOScriptletsUpdates() {
     const oldList = getScriptletsFromTable('ubo');
     const newList = await getCurrentUBOScriptlets();
-    const isEqual = isArraysOfStringsEqual(oldList, newList);
+    const isEqual = areArraysOfStringsEqual(oldList, newList);
     const diff = isEqual ? null : getDiff(oldList, newList);
 
     console.log(`UBO Redirects changes ${isEqual ? 'not ' : ''}found`);
@@ -208,7 +208,7 @@ async function checkForUBORedirectsUpdates() {
     const oldList = getRedirectsFromTable('ubo');
     const newList = await getCurrentUBORedirects();
 
-    const isEqual = isArraysOfStringsEqual(oldList, newList);
+    const isEqual = areArraysOfStringsEqual(oldList, newList);
     const diff = isEqual ? null : getDiff(oldList, newList);
 
     console.log(`UBO Redirects changes ${isEqual ? 'not ' : ''}found`);
@@ -254,7 +254,7 @@ async function getCurrentABPSnippets() {
 async function checkForABPScriptletssUpdates() {
     const oldList = getScriptletsFromTable('abp');
     const newList = await getCurrentABPSnippets();
-    const isEqual = isArraysOfStringsEqual(oldList, newList);
+    const isEqual = areArraysOfStringsEqual(oldList, newList);
     const diff = isEqual ? null : getDiff(oldList, newList);
 
     console.log(`UBO Redirects changes ${isEqual ? 'not ' : ''}found`);
@@ -292,7 +292,7 @@ async function getCurrentABPRedirects() {
 async function checkForABPRedirectsUpdates() {
     const oldList = getRedirectsFromTable('abp');
     const newList = await getCurrentABPRedirects();
-    const isEqual = isArraysOfStringsEqual(oldList, newList);
+    const isEqual = areArraysOfStringsEqual(oldList, newList);
     const diff = isEqual ? null : getDiff(oldList, newList);
 
     console.log(`UBO Redirects changes ${isEqual ? 'not ' : ''}found`);
