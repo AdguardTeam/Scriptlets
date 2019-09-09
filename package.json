@@ -1,6 +1,6 @@
 {
     "name": "scriptlets",
-    "version": "1.0.9",
+    "version": "1.0.10",
     "scripts": {
         "build": "rollup -c && yarn run build:redirects",
         "watch": "rollup -c -w",
