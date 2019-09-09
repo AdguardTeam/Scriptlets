@@ -180,3 +180,31 @@ test('searches script by regexp', (assert) => {
     assert.strictEqual(window.hit, 'FIRED');
     clearGlobalProps(...changingGlobals);
 });
+
+test('Patched textContent', (assert) => {
+    const property = '___aaa';
+    const search = '/a{3}/';
+    const params = {
+        name,
+        args: [property, search],
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
+    const resString = window.scriptlets.invoke(params);
+
+
+    window.onerror = onError(assert);
+
+    evalWrapper(resString);
+    addAndRemoveInlineScript(`
+        Object.defineProperty(document.currentScript, 'textContent', {
+            get: () => '',
+        });
+        window.${property};
+    `);
+
+    assert.strictEqual(window.hit, 'FIRED');
+    clearGlobalProps(...changingGlobals);
+});

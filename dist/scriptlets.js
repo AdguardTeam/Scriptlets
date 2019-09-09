@@ -481,8 +481,14 @@
 
       var abort = function abort() {
         var scriptEl = getCurrentScript();
+        var content = scriptEl.textContent;
 
-        if (scriptEl instanceof HTMLScriptElement && scriptEl.textContent.length > 0 && scriptEl !== ourScript && (!regex || regex.test(scriptEl.textContent))) {
+        try {
+          var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
+          content = textContentGetter.call(scriptEl); // eslint-disable-next-line no-empty
+        } catch (e) {}
+
+        if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && (!regex || regex.test(scriptEl.textContent))) {
           hit(source);
           throw new ReferenceError(rid);
         }
