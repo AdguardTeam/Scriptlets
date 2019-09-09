@@ -74,7 +74,7 @@
 | 1x1-transparent.gif | 1x1.gif | 1x1-transparent-gif |
 | 2x2-transparent.png | 2x2.png | 2x2-transparent-png |
 | 3x2-transparent.png | 3x2.png | 3x2-transparent-png |
-| 32x32-transparent.png | 32x32.png | 32x32-transparent-png |
+| 32x32-transparent.png | 32x32.png | 32x32-transparent-png (removed) |
 | google-analytics | google-analytics_analytics.js |  |
 | google-analytics-ga | google-analytics_ga.js |  |
 | googlesyndication-adsbygoogle | googlesyndication_adsbygoogle.js |  |

@@ -292,9 +292,6 @@ async function getCurrentABPRedirects() {
 async function checkForABPRedirectsUpdates() {
     const oldList = getRedirectsFromTable('abp');
     const newList = await getCurrentABPRedirects();
-
-    oldList.pop();
-
     const isEqual = areArraysOfStringsEqual(oldList, newList);
     const diff = isEqual ? null : getDiff(oldList, newList);
 
