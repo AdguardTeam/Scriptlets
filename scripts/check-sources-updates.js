@@ -80,7 +80,7 @@ const getDiff = (oldList, newList) => {
     ));
     diff.added = newList.filter(item => !oldList.includes(item));
 
-    return diff;
+    return (diff.removed.length || diff.added.length) ? diff : null;
 };
 
 /**
@@ -292,6 +292,9 @@ async function getCurrentABPRedirects() {
 async function checkForABPRedirectsUpdates() {
     const oldList = getRedirectsFromTable('abp');
     const newList = await getCurrentABPRedirects();
+
+    oldList.pop();
+
     const isEqual = areArraysOfStringsEqual(oldList, newList);
     const diff = isEqual ? null : getDiff(oldList, newList);
 
@@ -311,21 +314,37 @@ async function checkForABPRedirectsUpdates() {
 
     if (UBORedirectsDiff) {
         markTableWithDiff(UBORedirectsDiff, 'redirects', 'ubo');
-        // notify()
     }
 
     if (UBOScriptletsDiff) {
         markTableWithDiff(UBOScriptletsDiff, 'scriptlets', 'ubo');
-        // notify()
     }
 
     if (ABPRedirectsDiff) {
         markTableWithDiff(ABPRedirectsDiff, 'redirects', 'abp');
-        // notify()
     }
 
     if (ABPScriptletsDiff) {
         markTableWithDiff(ABPScriptletsDiff, 'scriptlets', 'abp');
-        // notify()
+    }
+
+    const diffs = [UBORedirectsDiff, UBOScriptletsDiff, ABPRedirectsDiff, ABPScriptletsDiff];
+
+    if (diffs.some(diff => !!diff)) {
+        const removed = diffs
+            .map(diff => (diff ? diff.removed.join() : ''))
+            .filter(item => !!item)
+            .join();
+        const added = diffs
+            .map(diff => (diff ? diff.added.join() : ''))
+            .filter(item => !!item)
+            .join();
+        const message = `
+            Some sources were changed.
+            ${removed.length ? `Removed: ${removed}.` : ''}
+            ${added.length ? `Added: ${added}.` : ''}
+        `;
+
+        throw new Error(message);
     }
 }());
