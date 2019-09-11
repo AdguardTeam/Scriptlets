@@ -37,8 +37,17 @@ export function abortCurrentInlineScript(source, property, search = null) {
 
     const abort = () => {
         const scriptEl = getCurrentScript();
+        let content = scriptEl.textContent;
+
+        try {
+            const textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
+            content = textContentGetter.call(scriptEl);
+            // eslint-disable-next-line no-empty
+        } catch (e) { }
+
+
         if (scriptEl instanceof HTMLScriptElement
-            && scriptEl.textContent.length > 0
+            && content.length > 0
             && scriptEl !== ourScript
             && (!regex || regex.test(scriptEl.textContent))) {
             hit(source);
