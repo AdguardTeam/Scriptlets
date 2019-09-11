@@ -1,4 +1,4 @@
-// this config is used to check compability with browsers
+// this config is used to check compatibility with browsers
 {
   "extends": [
     "plugin:compat/recommended"
