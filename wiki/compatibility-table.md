@@ -41,8 +41,8 @@
 | set-constant | set-constant.js |  |
 | set-popads-dummy |  |  |
 |  | raf-if.js (removed) |  |
-|  | setInterval-if.js |  |
-|  | setTimeout-if.js |  |
+|  | setInterval-if.js (removed) |  |
+|  | setTimeout-if.js (removed) |  |
 |  | webrtc-if.js |  |
 |  | overlay-buster.js |  |
 |  | alert-buster.js |  |
@@ -65,6 +65,9 @@
 |  |  | strip-fetch-query-parameter |
 |  |  | hide-if-contains-image-hash |
 |  | requestAnimationFrame-if.js |  |
+|  | json-prune.js |  |
+|  | no-setInterval-if.js |  |
+|  | no-setTimeout-if.js |  |
 
 
 # <a id="redirects"></a> Redirects compatibility table
