@@ -7,3 +7,5 @@ yarn browserstack
 
 yarn build
 yarn corelibs
+
+yarn wiki:check-updates

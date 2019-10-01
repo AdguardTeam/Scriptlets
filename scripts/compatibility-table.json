@@ -139,10 +139,10 @@
             "ubo": "raf-if.js (removed)"
         },
         {
-            "ubo": "setInterval-if.js"
+            "ubo": "setInterval-if.js (removed)"
         },
         {
-            "ubo": "setTimeout-if.js"
+            "ubo": "setTimeout-if.js (removed)"
         },
         {
             "ubo": "webrtc-if.js"
@@ -209,6 +209,15 @@
         },
         {
             "ubo": "requestAnimationFrame-if.js"
+        },
+        {
+            "ubo": "json-prune.js"
+        },
+        {
+            "ubo": "no-setInterval-if.js"
+        },
+        {
+            "ubo": "no-setTimeout-if.js"
         }
     ],
     "redirects": [
