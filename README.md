@@ -36,10 +36,10 @@
         * [googletagservices-gpt](#googletagservices-gpt-scriptlet)
         * [google-analytics](#google-analytics-scriptlet)
         * [google-analytics-ga](#google-analytics-ga-scriptlet)
+        * [json-prune](#json-prune)
         * [scorecardresearch-beacon](#scorecardresearch-beacon-scriptlet)
         * [metrika-yandex-watch](#metrika-yandex-watch-scriptlet)
         * [metrika-yandex-tag](#metrika-yandex-tag-scriptlet)
-        * [json-prune](#json-prune)
 
         
     * [Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)
@@ -807,8 +807,8 @@ and returns the caller
 example.org#%#//scriptlet("json-prune"[, propsToRemove [, obligatoryProps]])
 ```
 
-- `propsToRemove` - optional, string of space-separated or dot-separated properties to remove
-- `obligatoryProps` - optional, string of space-separated or dot-separated properties which must be all present for the pruning to occur
+- `propsToRemove` - optional, string of space-separated properties to remove
+- `obligatoryProps` - optional, string of space-separated properties which must be all present for the pruning to occur
 
 **Examples**
 1. Removes property `example` from the results of JSON.parse call

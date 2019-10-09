@@ -5,8 +5,6 @@ const { test, module } = QUnit;
 const name = 'json-prune';
 
 const nativeParse = JSON.parse;
-const nativeLog = console.log;
-
 module(name);
 
 const runScriptlet = (name, propsToRemove, obligatoryProps) => {
@@ -28,7 +26,12 @@ test('removes correct properties', (assert) => {
     assert.deepEqual(JSON.parse('{"a":1,"b":2,"c":3}'), { a: 1 }, 'should remove multiple properties');
 });
 
-test('doesnt removes properties if invoked without parameter propsToRemove and return hostname', (assert) => {
+test('removes nested props correct properties', (assert) => {
+    runScriptlet('json-prune', 'nested.a');
+    assert.deepEqual(JSON.parse('{"nested":{"a":1,"b":2,"c":3}}'), { nested: { b: 2, c: 3 } }, 'should remove one property');
+});
+
+test('does NOT removes properties if invoked without parameter propsToRemove and return hostname', (assert) => {
     console.log = function (host, params) {
         assert.strictEqual(host, window.location.hostname, 'should log hostname in console');
         assert.deepEqual(params, {
@@ -41,8 +44,6 @@ test('doesnt removes properties if invoked without parameter propsToRemove and r
         a: 1,
         b: 2,
     }, 'should not remove any property if invoked without propsToRemove parameter');
-    // reset console.log to the initial state
-    console.log = nativeLog;
 });
 
 test('removes property only if it exists', (assert) => {
