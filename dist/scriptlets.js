@@ -1670,11 +1670,10 @@
     /**
      * Removes properties from the results of JSON.parse call
      * @param {Source} source
-     * @param {string} propsToRemove list of space-separated properties to remove
-     * @param {string} [obligatoryProps] list of space-separated properties
+     * @param {string} [propsToRemove] list of space-separated or dot-separated properties to remove
+     * @param {string} [obligatoryProps] list of space-separated or dot-separated properties
      * which must be all present for the pruning to occur
      */
-
     function jsonPrune(source, propsToRemove, obligatoryProps) {
       var prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
       var needlePaths = obligatoryProps !== undefined && obligatoryProps !== '' ? obligatoryProps.split(/ +/) : [];
@@ -1741,8 +1740,7 @@
 
       JSON.parse = parseWrapper;
     }
-    jsonPrune.names = ['json-prune'];
-    jsonPrune.injections = [hit];
+    jsonPrune.names = ['json-prune', 'json-prune.js', 'ubo-json-prune.js'];
 
     /**
      * Mocks Google AdSense API
