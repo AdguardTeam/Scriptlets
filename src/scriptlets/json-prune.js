@@ -1,10 +1,8 @@
-import {hit} from '../helpers';
-
 /**
  * Removes properties from the results of JSON.parse call
  * @param {Source} source
- * @param {string} propsToRemove list of space-separated properties to remove
- * @param {string} [obligatoryProps] list of space-separated properties
+ * @param {string} [propsToRemove] list of space-separated or dot-separated properties to remove
+ * @param {string} [obligatoryProps] list of space-separated or dot-separated properties
  * which must be all present for the pruning to occur
  */
 
@@ -65,5 +63,6 @@ export function jsonPrune(source, propsToRemove, obligatoryProps) {
 
 jsonPrune.names = [
     'json-prune',
+    'json-prune.js',
+    'ubo-json-prune.js',
 ];
-jsonPrune.injections = [hit];

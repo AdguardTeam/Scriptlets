@@ -1735,13 +1735,7 @@
           if (findOwner(r, path) !== undefined) {
             delete findOwner(r, path)[0][findOwner(r, path)[1]];
           }
-        }); // for (const path of prunePaths) {
-        //     const details = findOwner(r, path);
-        //     if (details !== undefined) {
-        //         delete details[0][details[1]];
-        //     }
-        // }
-
+        });
         return r;
       };
 

@@ -17,6 +17,7 @@
 | googlesyndication-adsbygoogle |  |  |
 | googletagmanager-gtm |  |  |
 | googletagservices-gpt |  |  |
+| json-prune | json-prune.js |  |
 | log-addEventListener | addEventListener-logger.js |  |
 | log-eval |  |  |
 | log-setInterval |  |  |
@@ -65,7 +66,6 @@
 |  |  | strip-fetch-query-parameter |
 |  |  | hide-if-contains-image-hash |
 |  | requestAnimationFrame-if.js |  |
-|  | json-prune.js |  |
 |  | no-setInterval-if.js |  |
 |  | no-setTimeout-if.js |  |
 

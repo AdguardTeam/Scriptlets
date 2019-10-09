@@ -56,6 +56,10 @@
             "adg": "googletagservices-gpt"
         },
         {
+            "adg": "json-prune",
+            "ubo": "json-prune.js"
+        },
+        {
             "adg": "log-addEventListener",
             "ubo": "addEventListener-logger.js"
         },
@@ -209,9 +213,6 @@
         },
         {
             "ubo": "requestAnimationFrame-if.js"
-        },
-        {
-            "ubo": "json-prune.js"
         },
         {
             "ubo": "no-setInterval-if.js"
