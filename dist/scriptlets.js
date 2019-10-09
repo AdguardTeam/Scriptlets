@@ -1668,6 +1668,89 @@
     dirString.injections = [hit];
 
     /**
+     * Removes properties from the results of JSON.parse call
+     * @param {Source} source
+     * @param {string} propsToRemove list of space-separated properties to remove
+     * @param {string} [obligatoryProps] list of space-separated properties
+     * which must be all present for the pruning to occur
+     */
+
+    function jsonPrune(source, propsToRemove, obligatoryProps) {
+      var prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
+      var needlePaths = obligatoryProps !== undefined && obligatoryProps !== '' ? obligatoryProps.split(/ +/) : [];
+
+      var findOwner = function findOwner(root, path) {
+        var owner = root;
+        var chain = path;
+
+        for (;;) {
+          if (owner instanceof Object === false) {
+            return;
+          }
+
+          var pos = chain.indexOf('.');
+
+          if (pos === -1) {
+            // eslint-disable-next-line no-prototype-builtins,consistent-return
+            return owner.hasOwnProperty(chain) ? [owner, chain] : undefined;
+          }
+
+          var prop = chain.slice(0, pos); // eslint-disable-next-line no-prototype-builtins
+
+          if (owner.hasOwnProperty(prop) === false) {
+            return;
+          }
+
+          owner = owner[prop];
+          chain = chain.slice(pos + 1);
+        }
+      };
+
+      var mustProcess = function mustProcess(root) {
+        if (needlePaths.some(function (needlePath) {
+          return findOwner(root, needlePath) === undefined;
+        })) return false;
+        return true;
+      };
+
+      var nativeParse = JSON.parse;
+
+      var parseWrapper = function parseWrapper() {
+        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        var r = nativeParse.apply(window, args);
+
+        if (prunePaths.length === 0) {
+          console.log(window.location.hostname, r);
+          return r;
+        }
+
+        if (mustProcess(r) === false) {
+          return r;
+        }
+
+        prunePaths.forEach(function (path) {
+          if (findOwner(r, path) !== undefined) {
+            delete findOwner(r, path)[0][findOwner(r, path)[1]];
+          }
+        }); // for (const path of prunePaths) {
+        //     const details = findOwner(r, path);
+        //     if (details !== undefined) {
+        //         delete details[0][details[1]];
+        //     }
+        // }
+
+        return r;
+      };
+
+      JSON.parse = parseWrapper;
+    }
+    jsonPrune.names = ['json-prune'];
+    jsonPrune.injections = [hit];
+
+    /**
      * Mocks Google AdSense API
      *
      * Related UBO scriptlet:
@@ -2295,6 +2378,7 @@
         adjustSetInterval: adjustSetInterval,
         adjustSetTimeout: adjustSetTimeout,
         dirString: dirString,
+        jsonPrune: jsonPrune,
         GoogleSyndicationAdsByGoogle: GoogleSyndicationAdsByGoogle,
         GoogleTagManagerGtm: GoogleTagManagerGtm,
         GoogleAnalytics: GoogleAnalytics,
