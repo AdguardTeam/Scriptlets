@@ -1671,21 +1671,24 @@
      * Removes properties from the results of JSON.parse call
      * @param {Source} source
      * @param {string} propsToRemove list of space-separated properties to remove
-     * @param {string} [obligatoryProps] list of space-separated properties
-     * which must be all present for the pruning to occur
+     * @param {string} [requiredInitialProps] list of space-separated properties
+     * which must be all present in the object for the pruning to occur
      */
 
-    function jsonPrune(source, propsToRemove, obligatoryProps) {
+    function jsonPrune(source, propsToRemove, requiredInitialProps) {
       var log = console.log.bind(console);
       var prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
-      var needlePaths = obligatoryProps !== undefined && obligatoryProps !== '' ? obligatoryProps.split(/ +/) : [];
+      var needlePaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
 
       function isPruningNeeded(root) {
         for (var i = 0; i < needlePaths.length; i += 1) {
           var needlePath = needlePaths[i];
           var details = getPropertyInChain(root, needlePath);
           var nestedPropName = needlePath.split('').pop();
-          if (details.base[nestedPropName] === undefined) return false;
+
+          if (details.base[nestedPropName] === undefined) {
+            return false;
+          }
         }
 
         return true;
@@ -1705,8 +1708,6 @@
           return r;
         }
 
-        hit(source);
-
         if (isPruningNeeded(r) === false) {
           return r;
         }
@@ -1714,6 +1715,7 @@
         prunePaths.forEach(function (path) {
           var ownerObj = getPropertyInChain(r, path);
           delete ownerObj.base[ownerObj.prop];
+          hit(source);
         });
         return r;
       };
