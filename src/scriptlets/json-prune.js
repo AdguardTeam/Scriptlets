@@ -44,8 +44,8 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps) {
         prunePaths.forEach((path) => {
             const ownerObj = getPropertyInChain(r, path);
             delete ownerObj.base[ownerObj.prop];
-            hit(source);
         });
+        hit(source);
         return r;
     };
 
