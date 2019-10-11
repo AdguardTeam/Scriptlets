@@ -807,7 +807,7 @@ and returns the caller
 example.org#%#//scriptlet("json-prune"[, propsToRemove [, obligatoryProps]])
 ```
 
-- `propsToRemove` - optional, string of space-separated properties to remove
+- `propsToRemove` - string of space-separated properties to remove
 - `obligatoryProps` - optional, string of space-separated properties which must be all present for the pruning to occur
 
 **Examples**
