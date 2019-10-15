@@ -1668,6 +1668,64 @@
     dirString.injections = [hit];
 
     /**
+     * Removes properties from the results of JSON.parse call
+     * @param {Source} source
+     * @param {string} propsToRemove list of space-separated properties to remove
+     * @param {string} [requiredInitialProps] list of space-separated properties
+     * which must be all present in the object for the pruning to occur
+     */
+
+    function jsonPrune(source, propsToRemove, requiredInitialProps) {
+      var log = console.log.bind(console);
+      var prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
+      var needlePaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
+
+      function isPruningNeeded(root) {
+        for (var i = 0; i < needlePaths.length; i += 1) {
+          var needlePath = needlePaths[i];
+          var details = getPropertyInChain(root, needlePath);
+          var nestedPropName = needlePath.split('').pop();
+
+          if (details.base[nestedPropName] === undefined) {
+            return false;
+          }
+        }
+
+        return true;
+      }
+
+      var nativeParse = JSON.parse;
+
+      var parseWrapper = function parseWrapper() {
+        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        var r = nativeParse.apply(window, args);
+
+        if (prunePaths.length === 0) {
+          log(window.location.hostname, r);
+          return r;
+        }
+
+        if (isPruningNeeded(r) === false) {
+          return r;
+        }
+
+        prunePaths.forEach(function (path) {
+          var ownerObj = getPropertyInChain(r, path);
+          delete ownerObj.base[ownerObj.prop];
+          hit(source);
+        });
+        return r;
+      };
+
+      JSON.parse = parseWrapper;
+    }
+    jsonPrune.names = ['json-prune', 'json-prune.js', 'ubo-json-prune.js'];
+    jsonPrune.injections = [hit, getPropertyInChain];
+
+    /**
      * Mocks Google AdSense API
      *
      * Related UBO scriptlet:
@@ -2295,6 +2353,7 @@
         adjustSetInterval: adjustSetInterval,
         adjustSetTimeout: adjustSetTimeout,
         dirString: dirString,
+        jsonPrune: jsonPrune,
         GoogleSyndicationAdsByGoogle: GoogleSyndicationAdsByGoogle,
         GoogleTagManagerGtm: GoogleTagManagerGtm,
         GoogleAnalytics: GoogleAnalytics,

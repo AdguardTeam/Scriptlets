@@ -37,3 +37,4 @@ import './googletagservices-gpt.test';
 import './scorecardresearch-beacon.test';
 import './metrika-yandex-watch.test';
 import './metrika-yandex-tag.test';
+import './json-prune.test';
