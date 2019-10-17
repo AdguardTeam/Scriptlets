@@ -10,6 +10,7 @@ import { hit, getPropertyInChain } from '../helpers';
 
 
 export function jsonPrune(source, propsToRemove, requiredInitialProps) {
+    // eslint-disable-next-line no-console
     const log = console.log.bind(console);
     const prunePaths = propsToRemove !== undefined && propsToRemove !== ''
         ? propsToRemove.split(/ +/)
