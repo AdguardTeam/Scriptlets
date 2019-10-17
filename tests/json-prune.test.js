@@ -93,7 +93,8 @@ test('removes propsToRemove if single nested requiredInitialProps is specified',
 });
 
 test('does NOT remove propsToRemove if invoked without parameter propsToRemove and return hostname', (assert) => {
-    console.log = function (host, params) {
+    // eslint-disable-next-line no-console
+    console.log = (host, params) => {
         assert.strictEqual(host, window.location.hostname, 'should log hostname in console');
         assert.deepEqual(params, {
             a: 1,
