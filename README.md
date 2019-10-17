@@ -884,9 +884,9 @@ See [redirect description](#metrika-yandex-tag).
 
 **Example**
 ```
-example.org#%#//scriptlet("metrika-yandex-watch")
+example.org#%#//scriptlet("metrika-yandex-tag")
 ```
-[scriptlet source](./src/scriptlets/metrika-yandex-watch.js)
+[scriptlet source](./src/scriptlets/metrika-yandex-tag.js)
 
 ## <a id="redirect-resources"></a> Redirect resources
 
