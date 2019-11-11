@@ -2,12 +2,18 @@
 import { hit } from '../helpers';
 
 /**
- * Logs setTimeout calls
+ * @scriptlet log-setTimeout
+ *
+ * @description
+ * Logs all setTimeout call to the console.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#settimeout-loggerjs-
  *
- * @param {Source} source
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("log-setTimeout")
+ * ```
  */
 export function logSetTimeout(source) {
     const log = console.log.bind(console);

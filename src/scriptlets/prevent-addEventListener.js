@@ -1,15 +1,42 @@
+/* eslint-disable max-len */
 import { toRegExp } from '../helpers/string-utils';
 import { hit } from '../helpers';
 
 /**
- * Prevents adding event listeners
+ * @scriptlet prevent-addEventListener
+ *
+ * @description
+ * Prevents adding event listeners for the specified events and callbacks.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-defuserjs-
  *
- * @param {Source} source
- * @param {string|RegExp} [event] - event name or regexp matching event name
- * @param {string|RegExp} [funcStr] - string or regexp matching stringified handler function
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("prevent-addEventListener"[, eventSearch[, functionSearch]])
+ * ```
+ *
+ * **Parameters**
+ * - `eventSearch` (optional) String or regex matching the event name. If not specified, the scriptlets prevents all event listeners.
+ * - `functionSearch` (optional) String or regex matching the event listener function body. If not set, the scriptlet prevents all event listeners with event name matching `eventSearch`.
+ *
+ * **Examples**
+ * 1. Prevent all `click` listeners:
+ * ```
+ *     example.org#%#//scriptlet("prevent-addEventListener", "click")
+ * ```
+
+2. Prevent 'click' listeners with the callback body containing `searchString`.
+ * ```
+ *     example.org#%#//scriptlet("prevent-addEventListener", "click", "searchString")
+ * ```
+ *
+ *     For instance, this listener will not be called:
+ * ```javascript
+ *     el.addEventListener('click', () => {
+ *         window.test = 'searchString';
+ *     });
+ * ```
  */
 export function preventAddEventListener(source, event, funcStr) {
     event = event ? toRegExp(event) : toRegExp('/.?/');

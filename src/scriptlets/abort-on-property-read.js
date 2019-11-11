@@ -1,10 +1,14 @@
+/* eslint-disable max-len */
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { createOnErrorHandler, hit } from '../helpers';
 
 /**
- * Abort property reading even if it doesn't exist in execution moment
+ * @scriptlet abort-on-property-read
+ *
+ * @description
+ * Aborts a script when it attempts to **read** the specified property.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-property-readjs-
@@ -12,8 +16,22 @@ import { createOnErrorHandler, hit } from '../helpers';
  * Related ABP source:
  * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L864
  *
- * @param {Source} source
- * @param {string} property property name
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("abort-on-property-read", <property>)
+ * ```
+ *
+ * **Parameters**
+ * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
+ *
+ * **Examples**
+ * ```
+ * ! Aborts script when it tries to access `window.alert`
+ * example.org#%#//scriptlet("abort-on-property-read", "alert")
+ *
+ * ! Aborts script when it tries to access `navigator.language`
+ * example.org#%#//scriptlet("abort-on-property-read", "navigator.language")
+ * ```
  */
 export function abortOnPropertyRead(source, property) {
     if (!property) {

@@ -2,9 +2,32 @@ import { hit } from '../helpers/hit';
 import { noop } from '../helpers/noop';
 
 /**
+ * @scriptlet metrika-yandex-tag
+ *
+ * @description
  * Mocks Yandex Metrika API
  * https://yandex.ru/support/metrica/objects/method-reference.html
- * @param {Source} source
+ *
+ * It is mostly used for `$redirect` rules.
+ * See [redirect description](#scorecardresearch-beacon-redirect).
+ *
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("metrika-yandex-tag")
+ * ```
+ */
+
+/**
+ * @redirect metrika-yandex-tag
+ *
+ * @description
+ * Mocks Yandex Metrika API.
+ * https://yandex.ru/support/metrica/objects/method-reference.html
+ *
+ * **Example**
+ * ```
+ * ||example.org/index.js$script,redirect=metrika-yandex-watch
+ * ```
  */
 export function metrikaYandexTag(source) {
     const asyncCallbackFromOptions = (param, options = {}) => {

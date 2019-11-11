@@ -3,12 +3,22 @@
 import { toRegExp, hit } from '../helpers';
 
 /**
+ * @scriptlet prevent-eval-if
+ *
+ * @description
  * Prevents page to use eval matching payload
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
  *
- * @param {Source} source
+ * **Parameters**
+ * - `search` string or regexp matching stringified eval payload
+ *
+ * **Examples**
+ * ```
+ * !
+ * ```
+ *
  * @param {string|RegExp} [search] string or regexp matching stringified eval payload
  */
 export function preventEvalIf(source, search) {

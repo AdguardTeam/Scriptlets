@@ -3,12 +3,18 @@
 import { hit } from '../helpers';
 
 /**
- * Prevents BlockAdblock
+ * @scriptlet prevent-bab
+ *
+ * @description
+ * Prevents BlockAdblock script from detecting an ad blocker.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#bab-defuserjs-
  *
- * @param {Source} source
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("prevent-bab")
+ * ```
  */
 export function preventBab(source) {
     const nativeSetTimeout = window.setTimeout;

@@ -1,11 +1,53 @@
+/* eslint-disable max-len */
 import { hit, getPropertyInChain } from '../helpers';
 
 /**
- * Removes properties from the results of JSON.parse call
- * @param {Source} source
- * @param {string} propsToRemove list of space-separated properties to remove
- * @param {string} [requiredInitialProps] list of space-separated properties
- * which must be all present in the object for the pruning to occur
+ * @scriptlet json-prune
+ *
+ * @description
+ * Removes specified properties from the result of calling JSON.parse and returns the caller
+ *
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("json-prune"[, propsToRemove [, obligatoryProps]])
+ * ```
+ *
+ * - `propsToRemove` - string of space-separated properties to remove
+ * - `obligatoryProps` - optional, string of space-separated properties which must be all present for the pruning to occur
+ *
+ * **Examples**
+ * 1. Removes property `example` from the results of JSON.parse call
+ *     ```
+ *     example.org#%#//scriptlet("json-prune", "example")
+ *     ```
+ *
+ *     For instance, the following call will return `{ one: 1}`
+ *
+ *     ```html
+ *     JSON.parse('{"one":1,"example":true}')
+ *     ```
+ *
+ * 2. If there are no specified properties in the result of JSON.parse call, pruning will NOT occur
+ *     ```
+ *     example.org#%#//scriptlet("json-prune", "one", "obligatoryProp")
+ *     ```
+ *
+ *     For instance, the following call will return `{ one: 1, two: 2}`
+ *
+ *     ```html
+ *     JSON.parse('{"one":1,"two":2}')
+ *     ```
+ *
+ * 3. A property in a list of properties can be a chain of properties
+ *
+ *     ```
+ *     example.org#%#//scriptlet("json-prune", "a.b", "adpath.url.first")
+ *     ```
+ *
+ * 4. Call with no arguments will log the current hostname and json payload at the console
+ *     ```
+ *     example.org#%#//scriptlet("json-prune")
+ *     ```
  */
 
 

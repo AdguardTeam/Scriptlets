@@ -1,16 +1,45 @@
+/* eslint-disable max-len */
 import { toRegExp } from '../helpers/string-utils';
 import { hit } from '../helpers';
 
 /**
+ * @scriptlet adjust-setInterval
+ *
+ * @description
  * Adjusts interval for specified setInterval() callbacks.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-setinterval-boosterjs-
  *
- * @param {Source} source
- * @param {string|RegExp} match matching in string of callback function
- * @param {string|number} interval matching interval
- * @param {string|number} boost interval multiplier
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("adjust-setInterval"[, match [, interval[, boost]]])
+ * ```
+ *
+ * - `match` - optional, string/regular expression, matching in stringified callback function
+ * - `interval` - optional, defaults to 1000, decimal integer, matching interval
+ * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down, interval multiplier
+ *
+ * **Examples**
+ * 1. Adjust all setInterval() x20 times where interval equal 1000ms:
+ *     ```
+ *     example.org#%#//scriptlet("adjust-setInterval")
+ *     ```
+ *
+ * 2. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 1000ms
+ *     ```
+ *     example.org#%#//scriptlet("adjust-setInterval", "example")
+ *     ```
+ *
+ * 3. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 400ms
+ *     ```
+ *     example.org#%#//scriptlet("adjust-setInterval", "example", "400")
+ *     ```
+ *
+ * 4. Slow down setInterval() x2 times where callback matched with `example` and interval equal 400ms
+ *     ```
+ *     example.org#%#//scriptlet("adjust-setInterval", "example", "400", "2")
+ *     ```
  */
 export function adjustSetInterval(source, match, interval, boost) {
     const nativeInterval = window.setInterval;

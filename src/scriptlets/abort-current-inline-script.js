@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /* eslint-disable no-new-func */
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
@@ -7,6 +8,9 @@ import { hit, createOnErrorHandler } from '../helpers';
 
 
 /**
+ * @scriptlet abort-current-inline-script
+ *
+ * @description
  * Aborts an inline script when it attempts to **read** the specified property
  * AND when the contents of the `<script>` element contains the specified
  * text or matches the regular expression.
@@ -17,9 +21,48 @@ import { hit, createOnErrorHandler } from '../helpers';
  * Related ABP source:
  * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L928
  *
- * @param {Source} source
- * @param {string} property path to a property
- * @param {string} search must match the inline script contents
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>])
+ * ```
+ *
+ * **Parameters**
+ * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
+ * - `search` (optional) string or regular expression that must match the inline script contents. If not set, abort all inline scripts which are trying to access the specified property.
+ *
+ * **Examples**
+ * 1. Aborts all inline scripts trying to access `window.alert`
+ *     ```
+ *     example.org#%#//scriptlet("abort-current-inline-script", "alert")
+ *     ```
+ *
+ * 2. Aborts inline scripts which are trying to access `window.alert` and contain `Hello, world`.
+ *     ```
+ *     example.org#%#//scriptlet("abort-current-inline-script", "alert", "Hello, world")
+ *     ```
+ *
+ *     For instance, the following script will be aborted
+ *     ```html
+ *     <script>alert("Hello, world");</script>
+ *     ```
+ *
+ * 3. Aborts inline scripts which are trying to access `window.alert` and match this regexp: `/Hello.+world/`.
+ *     ```
+ *     example.org#%#//scriptlet("abort-current-inline-script", "alert", "/Hello.+world/")
+ *     ```
+ *
+ *     For instance, the following scripts will be aborted:
+ *     ```html
+ *     <script>alert("Hello, big world");</script>
+ *     ```
+ *     ```html
+ *     <script>alert("Hello, little world");</script>
+ *     ```
+ *
+ *     This script will not be aborted:
+ *     ```html
+ *     <script>alert("Hi, little world");</script>
+ *     ```
  */
 export function abortCurrentInlineScript(source, property, search = null) {
     const regex = search ? toRegExp(search) : null;

@@ -2,10 +2,33 @@ import { hit } from '../helpers/hit';
 import { noop, noopNull } from '../helpers/noop';
 
 /**
- * Mocks Google Analytics API
+ * @scriptlet google-analytics
+ *
+ * @description
+ * Mocks Google Analytics API.
+ *
+ * It is mostly used for `$redirect` rules.
+ * See [redirect description](#google-analytics-redirect).\
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_analytics.js
+ *
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("google-analytics")
+ * ```
+ */
+
+/**
+ * @redirect google-analytics
+ *
+ * @description
+ * Mocks Google Analytics API.
+ *
+ * **Example**
+ * ```
+ * ||example.org/index.js$script,redirect=google-analytics
+ * ```
  */
 export function GoogleAnalytics(source) {
     // eslint-disable-next-line func-names

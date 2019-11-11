@@ -2,12 +2,30 @@
 import { noop, hit } from '../helpers';
 
 /**
- * Fuckadblock 3.2.0 defuser
+ * @scriptlet prevent-fab-3.2.0
+ *
+ * @description
+ * Prevents execution of the FAB script v3.2.0
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#fuckadblockjs-320-
  *
- * @param {Source} source
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("prevent-fab-3.2.0")
+ * ```
+ */
+
+/**
+ * @redirect prevent-fab-3.2.0
+ *
+ * @description
+ * Redirects fuckadblock script to the source js file
+ *
+ * **Example**
+ * ```
+ * \*\/fuckadblock-$script,redirect=prevent-fab-3.2.0
+ * ```
  */
 export function preventFab(source) {
     hit(source);

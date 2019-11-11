@@ -1,12 +1,18 @@
 import { hit } from '../helpers';
 
 /**
- * Prevents opening new tabs and windows if there is `target` attribute in element
+ * @scriptlet disable-newtab-links
+ *
+ * @description
+ * Prevents opening new tabs and windows if there is `target` attribute in element.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#disable-newtab-linksjs-
  *
- * @param {Source} source
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("disable-newtab-links")
+ * ```
  */
 export function disableNewtabLinks(source) {
     document.addEventListener('click', (ev) => {

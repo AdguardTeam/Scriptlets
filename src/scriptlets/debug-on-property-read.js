@@ -1,13 +1,22 @@
+/* eslint-disable max-len */
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { createOnErrorHandler, hit } from '../helpers';
 
 /**
- * Call debugger on property reading
+ * @scriptlet debug-on-property-read
  *
- * @param {Source} source
- * @param {string} property property name
+ * @description
+ * This scriptlet is basically the same as [abort-on-property-read](#abort-on-property-read), but instead of aborting it starts the debugger.
+ *
+ * **It is not supposed to be used in production filter lists!**
+ *
+ * **Syntax**
+ * ```
+ * ! Aborts script when it tries to access `window.alert`
+ * example.org#%#//scriptlet("debug-on-property-read", "alert")
+ * ```
  */
 export function debugOnPropertyRead(source, property) {
     if (!property) {

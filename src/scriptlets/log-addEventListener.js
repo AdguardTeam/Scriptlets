@@ -2,12 +2,18 @@
 import { hit } from '../helpers';
 
 /**
- * Logs add event listener calls
+ * @scriptlet log-addEventListener
+ *
+ * @description
+ * Logs all addEventListener calls to the console
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-loggerjs-
  *
- * @param {Source} source
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("log-addEventListener")
+ * ```
  */
 export function logAddEventListener(source) {
     const log = console.log.bind(console);

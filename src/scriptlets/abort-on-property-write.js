@@ -1,10 +1,14 @@
+/* eslint-disable max-len */
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { createOnErrorHandler, hit } from '../helpers';
 
 /**
- * Abort property writing
+ * @scriptlet abort-on-property-write
+ *
+ * @description
+ * Aborts a script when it attempts to **write** the specified property.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-property-writejs-
@@ -12,8 +16,20 @@ import { createOnErrorHandler, hit } from '../helpers';
  * Related ABP source:
  * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L896
  *
- * @param {Source} source
- * @param {string} property propery name
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("abort-on-property-write", <property>)
+ * ```
+ *
+ * **Parameters**
+ * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
+ *
+ * **Examples**
+ * ```
+ * ! Aborts all inline scripts trying to access `window.alert`
+ * utils.escape('<script></script>')
+ * // => '&lt;script&gt;&lt;/script&gt;'
+ * ```
  */
 export function abortOnPropertyWrite(source, property) {
     if (!property) {

@@ -2,10 +2,33 @@ import { hit } from '../helpers/hit';
 import { noop } from '../helpers/noop';
 
 /**
- * Mocks Google Tag Maneger API
+ * @scriptlet googletagmanager-gtm
+ *
+ * @description
+ * Mocks Google Tag Manager API.
+ *
+ * It is mostly used for `$redirect` rules.
+ * See [redirect description](#googletagmanager-gtm-redirect).
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagmanager_gtm.js
+ *
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("googletagmanager-gtm")
+ * ```
+ */
+
+/**
+ * @redirect googletagmanager-gtm
+ *
+ * @description
+ * Mocks Google Tag Manager API.
+ *
+ * **Example**
+ * ```
+ * ||example.org/index.js$script,redirect=googletagmanager-gtm
+ * ```
  */
 export function GoogleTagManagerGtm(source) {
     window.ga = window.ga || noop;
