@@ -1,4 +1,4 @@
-/* eslint-disable max-len */
+// eslint-disable-next-line import/no-extraneous-dependencies
 const dox = require('dox');
 const fs = require('fs');
 const path = require('path');
@@ -14,18 +14,24 @@ const getFilesList = (dirPath) => {
     return filesList;
 };
 
-// parsing files in directory and collect describing comments
+/**
+ * Gets required comments from file
+ * @param {string} srcPath path to file
+ */
 const getComments = (srcPath) => {
     const srcCode = fs.readFileSync(srcPath, { encoding: 'utf8' });
     const parsedCommentsFromFile = dox.parseComments(srcCode);
     const describingComment = Object.values(parsedCommentsFromFile)
         .filter((comment) => {
-            const isNeededComment = ((comment.tags[0]) && ((comment.tags[0].type === 'scriptlet') || (comment.tags[0].type === 'redirect')));
+            const [base] = comment.tags;
+            const isNeededComment = (base
+                && (base.type === 'scriptlet' || base.type === 'redirect'));
             return isNeededComment;
         });
 
     if (describingComment.length === 0) {
         warnNoDescription(srcPath);
+        throw new Error(`no description in ${srcPath}`);
     }
 
     return describingComment;
@@ -34,11 +40,11 @@ const getComments = (srcPath) => {
 // make comment data convenient to use
 const prepareData = (requiredComments, sourcePath) => {
     return requiredComments.map((el) => {
-        const dataItem = el.tags;
+        const [base, sup] = el.tags;
         const preparedInfo = {
-            type: dataItem[0].type,
-            name: dataItem[0].string,
-            description: dataItem[1].string,
+            type: base.type,
+            name: base.string,
+            description: sup.string,
             source: sourcePath,
         };
         return preparedInfo;
@@ -76,7 +82,7 @@ const redirectsData = manageDataFromFiles(SCRIPTLETS_PATH, REDIRECTS_PATH)
     .filter(el => el.type === 'redirect');
 
 const isDoubled = (name) => {
-    const dublicates = [
+    const duplicates = [
         'prevent-fab-3.2.0',
         'set-popads-dummy',
         'prevent-popads-net',
@@ -90,7 +96,7 @@ const isDoubled = (name) => {
         'metrika-yandex-watch',
         'metrika-yandex-tag',
     ];
-    return dublicates.includes(name);
+    return duplicates.includes(name);
 };
 
 const generateMDListLink = (name, type) => {

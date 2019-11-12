@@ -1,7 +1,7 @@
-/* eslint-disable max-len */
 import { toRegExp } from '../helpers/string-utils';
 import { hit } from '../helpers';
 
+/* eslint-disable max-len */
 /**
  * @scriptlet prevent-setTimeout
  *
@@ -46,6 +46,7 @@ import { hit } from '../helpers';
  *     }, 100);
  *     ```
  */
+/* eslint-enable max-len */
 export function preventSetTimeout(source, match, delay) {
     const nativeTimeout = window.setTimeout;
     const nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat

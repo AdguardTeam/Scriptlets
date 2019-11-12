@@ -1,9 +1,9 @@
-/* eslint-disable max-len */
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { createOnErrorHandler, hit } from '../helpers';
 
+/* eslint-disable max-len */
 /**
  * @scriptlet debug-on-property-read
  *
@@ -18,6 +18,7 @@ import { createOnErrorHandler, hit } from '../helpers';
  * example.org#%#//scriptlet("debug-on-property-read", "alert")
  * ```
  */
+/* eslint-enable max-len */
 export function debugOnPropertyRead(source, property) {
     if (!property) {
         return;

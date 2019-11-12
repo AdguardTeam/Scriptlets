@@ -1,7 +1,7 @@
-/* eslint-disable max-len */
 import { toRegExp } from '../helpers/string-utils';
 import { hit } from '../helpers';
 
+/* eslint-disable max-len */
 /**
  * @scriptlet prevent-setInterval
  *
@@ -46,6 +46,7 @@ import { hit } from '../helpers';
  *     }, 100);
  *     ```
  */
+/* eslint-enable max-len */
 export function preventSetInterval(source, match, interval) {
     const nativeInterval = window.setInterval;
     const nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat

@@ -1,6 +1,6 @@
-/* eslint-disable max-len */
 import { hit } from '../helpers';
 
+/* eslint-disable max-len */
 /**
  * @scriptlet dir-string
  *
@@ -23,6 +23,7 @@ import { hit } from '../helpers';
  * example.org#%#//scriptlet("dir-string", "2")
  * ```
  */
+/* eslint-enable max-len */
 export function dirString(source, times) {
     const { dir } = console;
     times = parseInt(times, 10);

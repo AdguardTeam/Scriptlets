@@ -1,7 +1,7 @@
-/* eslint-disable max-len */
 import { toRegExp } from '../helpers/string-utils';
 import { hit } from '../helpers';
 
+/* eslint-disable max-len */
 /**
  * @scriptlet remove-cookie
  *
@@ -35,6 +35,7 @@ import { hit } from '../helpers';
  *     document.cookie = '__example=randomValue';
  *     ```
  */
+/* eslint-enable max-len */
 export function removeCookie(source, match) {
     const regex = match ? toRegExp(match) : toRegExp('/.?/');
 

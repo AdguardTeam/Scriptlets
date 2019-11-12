@@ -1,7 +1,7 @@
-/* eslint-disable max-len */
 import { toRegExp } from '../helpers/string-utils';
 import { hit } from '../helpers';
 
+/* eslint-disable max-len */
 /**
  * @scriptlet prevent-window-open
  *
@@ -42,6 +42,7 @@ import { hit } from '../helpers';
  *     example.org#%#//scriptlet("prevent-window-open", "0", "example")
  * ```
  */
+/* eslint-enable max-len */
 export function preventWindowOpen(source, inverse, match) {
     const nativeOpen = window.open;
 

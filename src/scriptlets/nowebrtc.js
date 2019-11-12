@@ -1,7 +1,7 @@
-/* eslint-disable max-len */
 /* eslint-disable no-unused-vars, no-extra-bind, func-names */
 import { hit } from '../helpers';
 
+/* eslint-disable max-len */
 /**
  * @scriptlet nowebrtc
  *
@@ -16,6 +16,7 @@ import { hit } from '../helpers';
  * example.org#%#//scriptlet("nowebrtc")
  * ```
  */
+/* eslint-enable max-len */
 export function nowebrtc(source) {
     let propertyName = '';
     if (window.RTCPeerConnection) {

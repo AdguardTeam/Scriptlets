@@ -1,8 +1,8 @@
-/* eslint-disable max-len */
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { hit } from '../helpers';
 
+/* eslint-disable max-len */
 /**
  * @scriptlet set-constant
  *
@@ -42,6 +42,7 @@ import { hit } from '../helpers';
  * example.org#%#//scriptlet("set-constant", "secondConst", "trueFunc")
  * ```
  */
+/* eslint-enable max-len */
 export function setConstant(source, property, value) {
     if (!property) {
         return;

@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 /* eslint-disable no-new-func */
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
@@ -6,6 +5,7 @@ import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { toRegExp } from '../helpers/string-utils';
 import { hit, createOnErrorHandler } from '../helpers';
 
+/* eslint-disable max-len */
 /**
  * @scriptlet debug-current-inline-script
  *
@@ -20,6 +20,7 @@ import { hit, createOnErrorHandler } from '../helpers';
  * example.org#%#//scriptlet("debug-current-inline-script", "alert")
  * ```
  */
+/* eslint-enable max-len */
 export function debugCurrentInlineScript(source, property, search = null) {
     const regex = search ? toRegExp(search) : null;
     const rid = randomId();

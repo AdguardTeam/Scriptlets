@@ -1,7 +1,7 @@
-/* eslint-disable max-len */
 import { toRegExp } from '../helpers/string-utils';
 import { hit } from '../helpers';
 
+/* eslint-disable max-len */
 /**
  * @scriptlet prevent-addEventListener
  *
@@ -38,6 +38,7 @@ import { hit } from '../helpers';
  *     });
  * ```
  */
+/* eslint-enable max-len */
 export function preventAddEventListener(source, event, funcStr) {
     event = event ? toRegExp(event) : toRegExp('/.?/');
     funcStr = funcStr ? toRegExp(funcStr) : toRegExp('/.?/');

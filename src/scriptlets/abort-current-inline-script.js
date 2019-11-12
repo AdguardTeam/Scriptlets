@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 /* eslint-disable no-new-func */
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
@@ -6,7 +5,7 @@ import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { toRegExp } from '../helpers/string-utils';
 import { hit, createOnErrorHandler } from '../helpers';
 
-
+/* eslint-disable max-len */
 /**
  * @scriptlet abort-current-inline-script
  *
@@ -64,6 +63,7 @@ import { hit, createOnErrorHandler } from '../helpers';
  *     <script>alert("Hi, little world");</script>
  *     ```
  */
+/* eslint-enable max-len */
 export function abortCurrentInlineScript(source, property, search = null) {
     const regex = search ? toRegExp(search) : null;
     const rid = randomId();

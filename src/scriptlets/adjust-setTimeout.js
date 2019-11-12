@@ -1,7 +1,7 @@
-/* eslint-disable max-len */
 import { toRegExp } from '../helpers/string-utils';
 import { hit } from '../helpers';
 
+/* eslint-disable max-len */
 /**
  * @scriptlet adjust-setTimeout
  *
@@ -41,6 +41,7 @@ import { hit } from '../helpers';
  *     example.org#%#//scriptlet("adjust-setTimeout", "example", "400", "2")
  *     ```
  */
+/* eslint-enable max-len */
 export function adjustSetTimeout(source, match, timeout, boost) {
     const nativeTimeout = window.setTimeout;
     const nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat

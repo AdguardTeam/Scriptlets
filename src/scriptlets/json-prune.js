@@ -1,6 +1,6 @@
-/* eslint-disable max-len */
 import { hit, getPropertyInChain } from '../helpers';
 
+/* eslint-disable max-len */
 /**
  * @scriptlet json-prune
  *
@@ -49,8 +49,7 @@ import { hit, getPropertyInChain } from '../helpers';
  *     example.org#%#//scriptlet("json-prune")
  *     ```
  */
-
-
+/* eslint-enable max-len */
 export function jsonPrune(source, propsToRemove, requiredInitialProps) {
     // eslint-disable-next-line no-console
     const log = console.log.bind(console);
