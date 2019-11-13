@@ -115,15 +115,6 @@ const isDoubled = (name) => {
 };
 
 /**
- * Generates entity's markdown link if it has duplicate
- * @param {string} name name of entity
- * @param {string} type scriptlet or redidect
- */
-const generateMDListLink = (name, type) => {
-    return `${name}-${type}`;
-};
-
-/**
  * Generates markdown list and describing text
  * @param {Object} data array of filtered objects - scriptlets or redirects
  */
@@ -132,7 +123,7 @@ const generateMD = (data) => {
     let outputBody = '';
 
     data.forEach((el) => {
-        const mdListLink = isDoubled(el.name) ? generateMDListLink(el.name, el.type) : el.name;
+        const mdListLink = isDoubled(el.name) ? `${el.name}-${el.type}` : el.name;
 
         outputList += `        * [${el.name}](#${mdListLink})\n`;
 
