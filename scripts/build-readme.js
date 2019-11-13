@@ -120,7 +120,7 @@ const generateMD = (data) => {
     data.forEach((el) => {
         const mdListLink = isDoubled(el.name) ? `${el.name}-${el.type}` : el.name;
 
-        outputList += `        * [${el.name}](#${mdListLink})\n`;
+        outputList += `    * [${el.name}](#${mdListLink})\n`;
 
         const typeOfSrc = el.type === 'scriptlet' ? 'Scriptlet' : 'Redirect';
 
@@ -133,6 +133,9 @@ ${el.description}
     return { outputList, outputBody };
 };
 
+/**
+ * Entry function
+ */
 function init() {
     try {
         const scriptletsData = manageDataFromFiles().filter(el => el.type === 'scriptlet');
@@ -141,18 +144,24 @@ function init() {
         const scriptletsMarkdownData = generateMD(scriptletsData);
         const redirectsMarkdownData = generateMD(redirectsData);
 
-        const source = fs.readFileSync(path.resolve(__dirname, './readmeTemplate.md'), { encoding: 'utf8' });
 
-        const template = Handlebars.compile(source);
-
-        const result = template({
+        // generate wiki/about-scriptlets.md from template
+        const scriptletsSource = fs.readFileSync(path.resolve(__dirname, './scriptletsTemplate.md'), { encoding: 'utf8' });
+        const scriptletsTemplate = Handlebars.compile(scriptletsSource);
+        const scriptletsResult = scriptletsTemplate({
             scriptletsList: scriptletsMarkdownData.outputList,
-            redirectsList: redirectsMarkdownData.outputList,
             scriptletsBody: scriptletsMarkdownData.outputBody,
+        });
+        fs.writeFileSync(path.resolve(__dirname, '../wiki/about-scriptlets.md'), scriptletsResult);
+
+        // generate wiki/about-redirects.md from template
+        const redirectsSource = fs.readFileSync(path.resolve(__dirname, './redirectsTemplate.md'), { encoding: 'utf8' });
+        const redirectsTemplate = Handlebars.compile(redirectsSource);
+        const redirectsResult = redirectsTemplate({
+            redirectsList: redirectsMarkdownData.outputList,
             redirectsBody: redirectsMarkdownData.outputBody,
         });
-
-        fs.writeFileSync(path.resolve(__dirname, '../README.md'), result);
+        fs.writeFileSync(path.resolve(__dirname, '../wiki/about-redirects.md'), redirectsResult);
     } catch (e) {
         throw (e);
     }
