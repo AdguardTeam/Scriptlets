@@ -5,10 +5,6 @@ const path = require('path');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const Handlebars = require('handlebars');
 
-const warnNoDescription = (path) => {
-    console.log(`Warning: No description has been found in ${path}`);
-};
-
 /**
  * Gets list of files
  * @param {string} dirPath path to directory
@@ -37,8 +33,7 @@ const getComments = (srcPath) => {
         });
 
     if (describingComment.length === 0) {
-        warnNoDescription(srcPath);
-        throw new Error(`no description in ${srcPath}`);
+        throw new Error(`No description in ${srcPath}`);
     }
 
     return describingComment;
@@ -138,21 +133,29 @@ ${el.description}
     return { outputList, outputBody };
 };
 
-const scriptletsData = manageDataFromFiles().filter(el => el.type === 'scriptlet');
-const redirectsData = manageDataFromFiles().filter(el => el.type === 'redirect');
+function init() {
+    try {
+        const scriptletsData = manageDataFromFiles().filter(el => el.type === 'scriptlet');
+        const redirectsData = manageDataFromFiles().filter(el => el.type === 'redirect');
 
-const scriptletsMarkdownData = generateMD(scriptletsData);
-const redirectsMarkdownData = generateMD(redirectsData);
+        const scriptletsMarkdownData = generateMD(scriptletsData);
+        const redirectsMarkdownData = generateMD(redirectsData);
 
-const source = fs.readFileSync(path.resolve(__dirname, './readmeTemplate.md'), { encoding: 'utf8' });
+        const source = fs.readFileSync(path.resolve(__dirname, './readmeTemplate.md'), { encoding: 'utf8' });
 
-const template = Handlebars.compile(source);
+        const template = Handlebars.compile(source);
 
-const result = template({
-    scriptletsList: scriptletsMarkdownData.outputList,
-    redirectsList: redirectsMarkdownData.outputList,
-    scriptletsBody: scriptletsMarkdownData.outputBody,
-    redirectsBody: redirectsMarkdownData.outputBody,
-});
+        const result = template({
+            scriptletsList: scriptletsMarkdownData.outputList,
+            redirectsList: redirectsMarkdownData.outputList,
+            scriptletsBody: scriptletsMarkdownData.outputBody,
+            redirectsBody: redirectsMarkdownData.outputBody,
+        });
 
-fs.writeFileSync(path.resolve(__dirname, '../README.md'), result);
+        fs.writeFileSync(path.resolve(__dirname, '../README.md'), result);
+    } catch (e) {
+        throw (e);
+    }
+}
+
+init();
