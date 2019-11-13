@@ -1,7 +1,7 @@
 /**
- * scriptlet log
+ * @scriptlet log
  *
- * description
+ * @description
  * A simple scriptlet which only purpose is to print arguments to console.
  * This scriptlet can be helpful for debugging and troubleshooting other scriptlets.
  * **Example**
