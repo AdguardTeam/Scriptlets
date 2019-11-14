@@ -17,7 +17,7 @@ AdGuard is able to redirect web requests to a local "resource".
     * [noopvast-3.0](#noopvast-3-0)
     * [noopmp3-0.1s](#noopmp3-01s)
     * [noopmp4-1s](#noopmp4-1s)
-{{{redirectsList}}}
+{{{list}}}
 * **[Redirects compatibility table](./wiki/compatibility-table.md#scriptlets)**
 * * *
 
@@ -151,4 +151,4 @@ Redirects request to an empty [VAST](https://en.wikipedia.org/wiki/Video_Ad_Serv
 [Redirect source](./src/redirects/static-redirects.yml)
 * * *
 
-{{{redirectsBody}}}
+{{{body}}}

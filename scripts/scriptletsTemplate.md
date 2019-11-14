@@ -5,7 +5,7 @@ Scriptlet is a JavaScript function that provides extended capabilities for conte
 
 * **[Syntax](#syntax)**
 * **[Available scriptlets](#available-scriptlets)**
-{{{scriptletsList}}}
+{{{list}}}
 * **[Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)**
 * * *
 
@@ -38,4 +38,4 @@ This rule applies the `abort-on-property-read` scriptlet on all pages of `exampl
 
 This is a list of scriptlets supported by AdGuard. Please note, that in order to achieve cross-blocker compatibility, we also support syntax of uBO and ABP. You can check out the [compatibility table](./wiki/compatibility-table.md).
 
-{{{scriptletsBody}}}
+{{{body}}}
