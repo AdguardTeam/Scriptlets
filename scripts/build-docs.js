@@ -169,10 +169,7 @@ const buildAboutFile = (type, mdData) => {
 
     const source = fs.readFileSync(path.resolve(__dirname, templatePath), { encoding: 'utf8' });
     const template = Handlebars.compile(source);
-    const result = template({
-        list: mdData.list,
-        body: mdData.body,
-    });
+    const result = template(mdData);
     fs.writeFileSync(path.resolve(__dirname, aboutPath), result);
 };
 
