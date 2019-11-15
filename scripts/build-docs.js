@@ -137,10 +137,6 @@ const manageDataFromFiles = () => {
  * @param {object} data array of filtered objects - scriptlets or redirects
  */
 const generateMD = (data) => {
-    const list = [];
-    const body = [];
-    const acc = { list, body };
-
     const output = data.reduce((acc, el) => {
         const mdListLink = DUPLICATES.includes(el.name) ? `${el.name}-${el.type}` : el.name;
         acc.list.push(`    * [${el.name}](#${mdListLink})\n`);
@@ -154,9 +150,12 @@ ${el.description}
         acc.body.push(body);
 
         return acc;
-    }, acc);
+    }, { list: [], body: [] });
 
-    return output;
+    const list = output.list.join('');
+    const body = output.body.join('');
+
+    return { list, body };
 };
 
 /**
@@ -171,8 +170,8 @@ const buildAboutFile = (type, mdData) => {
     const source = fs.readFileSync(path.resolve(__dirname, templatePath), { encoding: 'utf8' });
     const template = Handlebars.compile(source);
     const result = template({
-        list: mdData.list.join(''),
-        body: mdData.body.join(''),
+        list: mdData.list,
+        body: mdData.body,
     });
     fs.writeFileSync(path.resolve(__dirname, aboutPath), result);
 };
