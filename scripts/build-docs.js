@@ -1,48 +1,45 @@
 const dox = require('dox');
 const fs = require('fs');
 const path = require('path');
-const Handlebars = require('handlebars');
 
+const yaml = require('js-yaml');
 
 const SCRIPTLETS_FILES_DIRECTORY = path.resolve(__dirname, '../src/scriptlets');
 const REDIRECTS_FILES_DIRECTORY = path.resolve(__dirname, '../src/redirects');
+const STATIC_REDIRECTS = path.resolve(__dirname, '../src/redirects/static-redirects.yml');
 
-const SCRIPTLETS_TEMPLATE_PATH = path.resolve(__dirname, './scriptletsTemplate.md');
-const REDIRECTS_TEMPLATE_PATH = path.resolve(__dirname, './redirectsTemplate.md');
+const DUPLICATES_LIST = path.resolve(__dirname, '../src/redirects/scriptlet-redirects.yml');
 
 const ABOUT_SCRIPTLETS_PATH = path.resolve(__dirname, '../wiki/about-scriptlets.md');
 const ABOUT_REDIRECTS_PATH = path.resolve(__dirname, '../wiki/about-redirects.md');
 
-const TYPES = {
-    SCRIPTLETS: 'scriptlets',
-    REDIRECTS: 'redirects',
-};
+// const TYPES = {
+//     SCRIPTLETS: 'scriptlets',
+//     REDIRECTS: 'redirects',
+// };
 
-const SETS = {
+/* const SETS = {
     [TYPES.SCRIPTLETS]: {
-        templatePath: SCRIPTLETS_TEMPLATE_PATH,
+        // templatePath: SCRIPTLETS_TEMPLATE_PATH,
         aboutPath: ABOUT_SCRIPTLETS_PATH,
     },
     [TYPES.REDIRECTS]: {
-        templatePath: REDIRECTS_TEMPLATE_PATH,
+        // templatePath: REDIRECTS_TEMPLATE_PATH,
         aboutPath: ABOUT_REDIRECTS_PATH,
     },
-};
+}; */
 
-const DUPLICATES = [
-    'prevent-fab-3.2.0',
-    'set-popads-dummy',
-    'prevent-popads-net',
-    'noeval',
-    'googlesyndication-adsbygoogle',
-    'googletagmanager-gtm',
-    'googletagservices-gpt',
-    'google-analytics',
-    'google-analytics-ga',
-    'scorecardresearch-beacon',
-    'metrika-yandex-watch',
-    'metrika-yandex-tag',
-];
+// List of redirects which have scriptlet duplicates
+const duplicates = (() => {
+    const duplicatesFile = fs.readFileSync(path.resolve(__dirname, DUPLICATES_LIST), { encoding: 'utf8' });
+    const parsedDuplicatesFile = yaml.safeLoad(duplicatesFile);
+
+    return parsedDuplicatesFile
+        .reduce((acc, el) => {
+            acc.push(`${el.title}`);
+            return acc;
+        }, []);
+})();
 
 /**
  * Gets list of files
@@ -138,8 +135,8 @@ const manageDataFromFiles = () => {
  */
 const generateMD = (data) => {
     const output = data.reduce((acc, el) => {
-        const mdListLink = DUPLICATES.includes(el.name) ? `${el.name}-${el.type}` : el.name;
-        acc.list.push(`    * [${el.name}](#${mdListLink})\n`);
+        const mdListLink = duplicates.includes(el.name) ? `${el.name}-${el.type}` : el.name;
+        acc.list.push(`* [${el.name}](#${mdListLink})\n`);
 
         const typeOfSrc = el.type === 'scriptlet' ? 'Scriptlet' : 'Redirect';
 
@@ -159,19 +156,34 @@ ${el.description}
 };
 
 /**
- * Builds final about file from template
- * @param {string} type scriptlet ot redirect
- * @param {object} mdData previously generated markdown data
+ * Generates markdown list and describing text for static redirect resources
  */
-const buildAboutFile = (type, mdData) => {
-    const { templatePath } = SETS[type];
-    const { aboutPath } = SETS[type];
+const mdForStaticRedirects = () => {
+    const staticRedirects = fs.readFileSync(path.resolve(__dirname, STATIC_REDIRECTS), { encoding: 'utf8' });
+    const parsedSR = yaml.safeLoad(staticRedirects);
 
-    const source = fs.readFileSync(path.resolve(__dirname, templatePath), { encoding: 'utf8' });
-    const template = Handlebars.compile(source);
-    const result = template(mdData);
-    fs.writeFileSync(path.resolve(__dirname, aboutPath), result);
+    const output = parsedSR.reduce((acc, el) => {
+        if (el.description) {
+            acc.list.push(`* [${el.title}](#${el.title})\n`);
+
+            const body = `### <a id="${el.title}"></a> ⚡️ ${el.title}
+${el.description}
+[Redirect source](./src/redirects/static-redirects.yml)
+* * *\n\n`;
+            acc.body.push(body);
+        } else {
+            throw new Error(`No description for ${el.title}`);
+        }
+
+        return acc;
+    }, { list: [], body: [] });
+
+    const list = output.list.join('');
+    const body = output.body.join('');
+
+    return { list, body };
 };
+
 
 /**
  * Entry function
@@ -180,9 +192,13 @@ function init() {
     try {
         const scriptletsMarkdownData = generateMD(manageDataFromFiles().scriptletsData);
         const redirectsMarkdownData = generateMD(manageDataFromFiles().redirectsData);
+        const staticRedirectsMarkdownData = mdForStaticRedirects();
 
-        buildAboutFile(TYPES.SCRIPTLETS, scriptletsMarkdownData);
-        buildAboutFile(TYPES.REDIRECTS, redirectsMarkdownData);
+        const scriptletsAbout = `## <a id="scriptlets"></a> Available Scriptlets\n${scriptletsMarkdownData.list}* * *\n${scriptletsMarkdownData.body}`;
+        fs.writeFileSync(path.resolve(__dirname, ABOUT_SCRIPTLETS_PATH), scriptletsAbout);
+
+        const redirectsAbout = `## <a id="redirect-resources"></a> Available Redirect resources\n${staticRedirectsMarkdownData.list}${redirectsMarkdownData.list}* * *\n${staticRedirectsMarkdownData.body}${redirectsMarkdownData.body}`;
+        fs.writeFileSync(path.resolve(__dirname, ABOUT_REDIRECTS_PATH), redirectsAbout);
     } catch (e) {
         throw (e);
     }

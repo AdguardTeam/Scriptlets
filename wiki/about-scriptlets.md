@@ -1,81 +1,43 @@
-# <a id="scriptlets"></a> AdGuard Scriptlets
-
-Scriptlet is a JavaScript function that provides extended capabilities for content blocking. These functions can be used in a declarative manner in AdGuard filtering rules.
-
-
-* **[Syntax](#syntax)**
-* **[Available scriptlets](#available-scriptlets)**
-    * [abort-current-inline-script](#abort-current-inline-script)
-    * [abort-on-property-read](#abort-on-property-read)
-    * [abort-on-property-write](#abort-on-property-write)
-    * [adjust-setInterval](#adjust-setInterval)
-    * [adjust-setTimeout](#adjust-setTimeout)
-    * [debug-current-inline-script](#debug-current-inline-script)
-    * [debug-on-property-read](#debug-on-property-read)
-    * [debug-on-property-write](#debug-on-property-write)
-    * [dir-string](#dir-string)
-    * [disable-newtab-links](#disable-newtab-links)
-    * [google-analytics-ga](#google-analytics-ga-scriptlet)
-    * [google-analytics](#google-analytics-scriptlet)
-    * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle-scriptlet)
-    * [googletagmanager-gtm](#googletagmanager-gtm-scriptlet)
-    * [googletagservices-gpt](#googletagservices-gpt-scriptlet)
-    * [json-prune](#json-prune)
-    * [log-addEventListener](#log-addEventListener)
-    * [log-eval](#log-eval)
-    * [log-setInterval](#log-setInterval)
-    * [log-setTimeout](#log-setTimeout)
-    * [log](#log)
-    * [metrika-yandex-tag](#metrika-yandex-tag-scriptlet)
-    * [metrika-yandex-watch](#metrika-yandex-watch-scriptlet)
-    * [nowebrtc](#nowebrtc)
-    * [prevent-addEventListener](#prevent-addEventListener)
-    * [prevent-adfly](#prevent-adfly)
-    * [prevent-bab](#prevent-bab)
-    * [prevent-eval-if](#prevent-eval-if)
-    * [prevent-fab-3.2.0](#prevent-fab-3.2.0-scriptlet)
-    * [prevent-popads-net](#prevent-popads-net-scriptlet)
-    * [prevent-setInterval](#prevent-setInterval)
-    * [prevent-setTimeout](#prevent-setTimeout)
-    * [prevent-window-open](#prevent-window-open)
-    * [remove-attr](#remove-attr)
-    * [remove-cookie](#remove-cookie)
-    * [scorecardresearch-beacon](#scorecardresearch-beacon-scriptlet)
-    * [set-constant](#set-constant)
-    * [set-popads-dummy](#set-popads-dummy-scriptlet)
-
-* **[Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)**
+## <a id="scriptlets"></a> Available Scriptlets
+* [abort-current-inline-script](#abort-current-inline-script)
+* [abort-on-property-read](#abort-on-property-read)
+* [abort-on-property-write](#abort-on-property-write)
+* [adjust-setInterval](#adjust-setInterval)
+* [adjust-setTimeout](#adjust-setTimeout)
+* [debug-current-inline-script](#debug-current-inline-script)
+* [debug-on-property-read](#debug-on-property-read)
+* [debug-on-property-write](#debug-on-property-write)
+* [dir-string](#dir-string)
+* [disable-newtab-links](#disable-newtab-links)
+* [google-analytics-ga](#google-analytics-ga-scriptlet)
+* [google-analytics](#google-analytics-scriptlet)
+* [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle-scriptlet)
+* [googletagmanager-gtm](#googletagmanager-gtm-scriptlet)
+* [googletagservices-gpt](#googletagservices-gpt-scriptlet)
+* [json-prune](#json-prune)
+* [log-addEventListener](#log-addEventListener)
+* [log-eval](#log-eval)
+* [log-setInterval](#log-setInterval)
+* [log-setTimeout](#log-setTimeout)
+* [log](#log)
+* [metrika-yandex-tag](#metrika-yandex-tag-scriptlet)
+* [metrika-yandex-watch](#metrika-yandex-watch-scriptlet)
+* [nowebrtc](#nowebrtc)
+* [prevent-addEventListener](#prevent-addEventListener)
+* [prevent-adfly](#prevent-adfly)
+* [prevent-bab](#prevent-bab)
+* [prevent-eval-if](#prevent-eval-if)
+* [prevent-fab-3.2.0](#prevent-fab-3.2.0-scriptlet)
+* [prevent-popads-net](#prevent-popads-net-scriptlet)
+* [prevent-setInterval](#prevent-setInterval)
+* [prevent-setTimeout](#prevent-setTimeout)
+* [prevent-window-open](#prevent-window-open)
+* [remove-attr](#remove-attr)
+* [remove-cookie](#remove-cookie)
+* [scorecardresearch-beacon](#scorecardresearch-beacon-scriptlet)
+* [set-constant](#set-constant)
+* [set-popads-dummy](#set-popads-dummy-scriptlet)
 * * *
-
-### <a id="syntax"></a> Syntax
-
-```
-rule = [domains]  "#%#//scriptlet(" scriptletName arguments ")"
-```
-
-* `scriptletName` (mandatory) is a name of the scriptlet from AdGuard's scriptlets library
-* `arguments` (optional) a list of `String` arguments (no other types of arguments are supported)
-
-> **Remarks**
-> * The meanining of the arguments depends on the scriptlet.
-> * You can use either single or double quotes for the scriptlet name and arguments.
-> * Special characters must be escaped properly:
->     * `"prop[\"nested\"]"` - valid
->     * `"prop['nested']"` - also valid
->     * `"prop["nested"]"` - not valid
-
-#### Example
-
-```
-example.org#%#//scriptlet("abort-on-property-read", "alert")
-```
-
-This rule applies the `abort-on-property-read` scriptlet on all pages of `example.org` and its subdomains, and passes one orgument to it (`alert`).
-
-## <a id="available-scriptlets"></a> Available scriptlets
-
-This is a list of scriptlets supported by AdGuard. Please note, that in order to achieve cross-blocker compatibility, we also support syntax of uBO and ABP. You can check out the [compatibility table](./wiki/compatibility-table.md).
-
 ### <a id="abort-current-inline-script"></a> ⚡️ abort-current-inline-script
 
 Aborts an inline script when it attempts to **read** the specified property
