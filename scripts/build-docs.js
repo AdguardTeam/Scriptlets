@@ -13,22 +13,6 @@ const DUPLICATES_LIST = path.resolve(__dirname, '../src/redirects/scriptlet-redi
 const ABOUT_SCRIPTLETS_PATH = path.resolve(__dirname, '../wiki/about-scriptlets.md');
 const ABOUT_REDIRECTS_PATH = path.resolve(__dirname, '../wiki/about-redirects.md');
 
-// const TYPES = {
-//     SCRIPTLETS: 'scriptlets',
-//     REDIRECTS: 'redirects',
-// };
-
-/* const SETS = {
-    [TYPES.SCRIPTLETS]: {
-        // templatePath: SCRIPTLETS_TEMPLATE_PATH,
-        aboutPath: ABOUT_SCRIPTLETS_PATH,
-    },
-    [TYPES.REDIRECTS]: {
-        // templatePath: REDIRECTS_TEMPLATE_PATH,
-        aboutPath: ABOUT_REDIRECTS_PATH,
-    },
-}; */
-
 // List of redirects which have scriptlet duplicates
 const duplicates = (() => {
     const duplicatesFile = fs.readFileSync(path.resolve(__dirname, DUPLICATES_LIST), { encoding: 'utf8' });
