@@ -110,11 +110,11 @@ test('sets values correctly', (assert) => {
     clearGlobalProps(numberProp);
     
     // setting constant to -1;
-    const minusOne = 'minusOne';
-    counter = runSetConstantScriptlet(minusOne, -1);
-    assert.strictEqual(window[minusOne], -1);
+    const minusOneProp = 'minusOneProp';
+    counter = runSetConstantScriptlet(minusOneProp, '-1');
+    assert.strictEqual(window[minusOneProp], -1);
     assert.strictEqual(window.counter, counter);
-    clearGlobalProps(minusOne);
+    clearGlobalProps(minusOneProp);
     
     // setting constant to empty string;
     const emptyStringProp = 'emptyStringProp';
