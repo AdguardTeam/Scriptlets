@@ -1,5 +1,5 @@
 # AdGuard Scriptlets and Resources
-[![Build Status](https://travis-ci.org/AdguardTeam/Scriptlets.svg?branch=master)](https://travis-ci.org/AdguardTeam/Scriptlets)
+[![Build Status](https://travis-ci.com/AdguardTeam/Scriptlets.svg?branch=master)](https://travis-ci.com/AdguardTeam/Scriptlets)
 
 * [Scriptlets](#scriptlets)
     * [Syntax](#syntax)
