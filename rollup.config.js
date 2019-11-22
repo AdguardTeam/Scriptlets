@@ -3,6 +3,7 @@ import commonjs from 'rollup-plugin-commonjs';
 import babel from 'rollup-plugin-babel';
 import cleanup from 'rollup-plugin-cleanup';
 import copy from 'rollup-plugin-copy';
+import clear from 'rollup-plugin-clear';
 
 import project from './package.json';
 
@@ -23,6 +24,8 @@ const footer = `
  * -------------------------------------------
  */
 `;
+
+const TESTS_DIST = 'tests/dist';
 
 const bundleBuild = {
     input: {
@@ -75,13 +78,16 @@ const testBuild = {
         tests: 'tests/index.test.js',
     },
     output: {
-        dir: 'tests/dist',
+        dir: TESTS_DIST,
         entryFileNames: '[name].js',
         format: 'iife',
         strict: false,
         sourcemap: true,
     },
     plugins: [
+        clear({
+            targets: [TESTS_DIST],
+        }),
         resolve(),
         commonjs({
             include: 'node_modules/**',
@@ -91,14 +97,16 @@ const testBuild = {
             runtimeHelpers: true,
         }),
         copy({
-            targets: [
-                'tests/tests.html',
-                'tests/styles.css',
-                'node_modules/qunit/qunit/qunit.js',
-                'node_modules/sinon/pkg/sinon.js',
-                'dist/scriptlets.js',
-            ],
-            outputFolder: 'tests/dist',
+            targets: [{
+                src: [
+                    'tests/tests.html',
+                    'tests/styles.css',
+                    'node_modules/qunit/qunit/qunit.js',
+                    'node_modules/sinon/pkg/sinon.js',
+                    'dist/scriptlets.js',
+                ],
+                dest: TESTS_DIST,
+            }],
         }),
     ],
 };

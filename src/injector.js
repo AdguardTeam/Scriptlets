@@ -67,9 +67,9 @@ export function wrapInNonameFunc(code) {
  * @param {string} name
  */
 export function getScriptletByName(name) {
-    const scriptlets = Object.keys(scriptletList).map(key => scriptletList[key]);
+    const scriptlets = Object.keys(scriptletList).map((key) => scriptletList[key]);
     return scriptlets
-        .find(s => s.names && s.names.indexOf(name) > -1);
+        .find((s) => s.names && s.names.indexOf(name) > -1);
 }
 
 /**

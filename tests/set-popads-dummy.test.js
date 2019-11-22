@@ -35,7 +35,7 @@ const fillPopAdsWithValues = () => {
     window[popnsProp] = popnsProp;
 };
 
-const isEmpty = obj => Object.keys(obj).length === 0 && obj.constructor === Object;
+const isEmpty = (obj) => Object.keys(obj).length === 0 && obj.constructor === Object;
 
 test('works', (assert) => {
     fillPopAdsWithValues();

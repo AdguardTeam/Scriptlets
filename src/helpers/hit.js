@@ -13,15 +13,17 @@ export const hit = (source, message) => {
         const log = console.log.bind(console);
         const trace = console.trace.bind(console);
 
+        const prefix = source.ruleText || '';
+
         if (message) {
-            log(`${source.ruleText} message:\n${message}`);
+            log(`${prefix} message:\n${message}`);
         }
 
-        log(`${source.ruleText} trace start`);
+        log(`${prefix} trace start`);
         if (trace) {
             trace();
         }
-        log(`${source.ruleText} trace end`);
+        log(`${prefix} trace end`);
     } catch (e) {
         // try catch for Edge 15
         // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/

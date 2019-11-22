@@ -51,7 +51,7 @@ class Redirects {
 
         // look title among aliases
         const values = Object.keys(this.redirects)
-            .map(key => this.redirects[key]);
+            .map((key) => this.redirects[key]);
         return values.find((redirect) => {
             const { aliases } = redirect;
             if (!aliases) {

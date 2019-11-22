@@ -44,7 +44,7 @@ const scriptletsObject = Object
     .values(scriptletList)
     .filter((s) => {
         const name = s.names[0];
-        return scriptletsToAdd.some(scriptletToAdd => scriptletToAdd.title === name);
+        return scriptletsToAdd.some((scriptletToAdd) => scriptletToAdd.title === name);
     })
     .map((s) => {
         const [name, ...aliases] = s.names;
@@ -55,7 +55,7 @@ const scriptletsObject = Object
 
 const scriptletRedirects = scriptletsToAdd.map((data) => {
     const { title } = data;
-    const complement = scriptletsObject.find(obj => obj.name === title);
+    const complement = scriptletsObject.find((obj) => obj.name === title);
 
     if (complement) {
         return {

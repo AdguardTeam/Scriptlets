@@ -11,7 +11,7 @@ const evalWrapper = eval;
 
 const changingGlobals = ['hit', '__debugScriptlets'];
 
-const onError = assert => (message) => {
+const onError = (assert) => (message) => {
     const browserErrorMessage = 'Script error.';
     const nodePuppeteerErrorMessageRgx = /Reference error/g;
     const checkResult = message === browserErrorMessage
