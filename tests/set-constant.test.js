@@ -13,7 +13,7 @@ module(name, { afterEach });
 
 const evalWrapper = eval;
 
-const createScriptletRunner = counter => (property, value) => {
+const createScriptletRunner = (counter) => (property, value) => {
     const params = {
         name,
         args: [property, value],

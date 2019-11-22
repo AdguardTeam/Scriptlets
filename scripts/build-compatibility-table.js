@@ -29,7 +29,7 @@ function getTableData() {
  * abp: string
  * }} item { an }
  */
-const getRow = item => (`| ${item.adg || ''} | ${item.ubo || ''} | ${item.abp || ''} |${os.EOL}`);
+const getRow = (item) => (`| ${item.adg || ''} | ${item.ubo || ''} | ${item.abp || ''} |${os.EOL}`);
 
 /**
  * Generates table header

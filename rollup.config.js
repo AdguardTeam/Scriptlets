@@ -91,14 +91,16 @@ const testBuild = {
             runtimeHelpers: true,
         }),
         copy({
-            targets: [
-                'tests/tests.html',
-                'tests/styles.css',
-                'node_modules/qunit/qunit/qunit.js',
-                'node_modules/sinon/pkg/sinon.js',
-                'dist/scriptlets.js',
-            ],
-            outputFolder: 'tests/dist',
+            targets: {
+                src: [
+                    'tests/tests.html',
+                    'tests/styles.css',
+                    'node_modules/qunit/qunit/qunit.js',
+                    'node_modules/sinon/pkg/sinon.js',
+                    'dist/scriptlets.js',
+                ],
+                dest: 'tests/dist',
+            },
         }),
     ],
 };
