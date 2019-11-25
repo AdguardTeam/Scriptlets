@@ -53,8 +53,7 @@
         "axios": "^0.19.0",
         "browserstack-runner": "^0.9.0",
         "dotenv": "^8.2.0",
-        "js-yaml": "^3.13.1",
-        "serve-static": "^1.14.1"
+        "js-yaml": "^3.13.1"
     },
     "files": [
         "./dist/"
