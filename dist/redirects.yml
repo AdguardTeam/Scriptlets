@@ -220,7 +220,6 @@
             log("".concat(prefix, " message:\n").concat(message));
           }
 
-          log('fuck');
           log("".concat(prefix, " trace start"));
 
           if (trace) {
@@ -283,7 +282,6 @@
             log("".concat(prefix, " message:\n").concat(message));
           }
 
-          log('fuck');
           log("".concat(prefix, " trace start"));
 
           if (trace) {
@@ -372,7 +370,6 @@
             log("".concat(prefix, " message:\n").concat(message));
           }
 
-          log('fuck');
           log("".concat(prefix, " trace start"));
 
           if (trace) {
@@ -424,7 +421,6 @@
             log("".concat(prefix, " message:\n").concat(message));
           }
 
-          log('fuck');
           log("".concat(prefix, " trace start"));
 
           if (trace) {
@@ -496,7 +492,6 @@
             log("".concat(prefix, " message:\n").concat(message));
           }
 
-          log('fuck');
           log("".concat(prefix, " trace start"));
 
           if (trace) {
@@ -564,7 +559,6 @@
             log("".concat(prefix, " message:\n").concat(message));
           }
 
-          log('fuck');
           log("".concat(prefix, " trace start"));
 
           if (trace) {
@@ -662,7 +656,6 @@
             log("".concat(prefix, " message:\n").concat(message));
           }
 
-          log('fuck');
           log("".concat(prefix, " trace start"));
 
           if (trace) {
@@ -721,7 +714,6 @@
             log("".concat(prefix, " message:\n").concat(message));
           }
 
-          log('fuck');
           log("".concat(prefix, " trace start"));
 
           if (trace) {
@@ -850,7 +842,6 @@
             log("".concat(prefix, " message:\n").concat(message));
           }
 
-          log('fuck');
           log("".concat(prefix, " trace start"));
 
           if (trace) {
@@ -1041,7 +1032,6 @@
             log("".concat(prefix, " message:\n").concat(message));
           }
 
-          log('fuck');
           log("".concat(prefix, " trace start"));
 
           if (trace) {
@@ -1166,7 +1156,6 @@
             log("".concat(prefix, " message:\n").concat(message));
           }
 
-          log('fuck');
           log("".concat(prefix, " trace start"));
 
           if (trace) {
@@ -1314,7 +1303,6 @@
             log("".concat(prefix, " message:\n").concat(message));
           }
 
-          log('fuck');
           log("".concat(prefix, " trace start"));
 
           if (trace) {

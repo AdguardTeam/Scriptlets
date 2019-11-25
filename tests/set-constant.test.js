@@ -116,6 +116,13 @@ test('sets values correctly', (assert) => {
     assert.strictEqual(window.counter, counter);
     clearGlobalProps(emptyStringProp);
 
+    // setting constant to -1
+    const minusOneProp = 'minusOneProp';
+    counter = runSetConstantScriptlet(minusOneProp, '-1');
+    assert.strictEqual(window[minusOneProp], -1);
+    assert.strictEqual(window.counter, counter);
+    clearGlobalProps(minusOneProp);
+
     // setting constant to illegalNumber doesn't works;
     const illegalNumberProp = 'illegalNumberProp';
     counter = runSetConstantScriptlet(illegalNumberProp, 32768);
