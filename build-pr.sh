@@ -3,7 +3,6 @@
 yarn install
 
 yarn test
-yarn browserstack
 
 yarn corelibs
 yarn build

@@ -2,7 +2,8 @@ language: node_js
 node_js:
   - "10"
 script:
-  - bash -e ./build.sh
+    - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then bash -e ./build-pr.sh; fi'
+    - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash -e ./build.sh; fi'
 
 notifications:
   slack: performix:yXTihlSzsLFSZiqbXMNzvTSX
