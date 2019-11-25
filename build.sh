@@ -3,7 +3,11 @@
 yarn install
 
 yarn test
-yarn browserstack
+
+if [[ ! $TRAVIS || ($TRAVIS && ( $TRAVIS_PULL_REQUEST_SLUG == "$TRAVIS_REPO_SLUG" || $TRAVIS_PULL_REQUEST_SLUG == "" )) ]];
+then
+  yarn browserstack
+fi
 
 yarn corelibs
 yarn build
