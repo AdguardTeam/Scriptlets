@@ -32,7 +32,7 @@ const runScriptlet = () => {
 test('log scriptlet', (assert) => {
     console.log = function log(input) {
         assert.ok(input instanceof Array);
-        TEST_ARGS.forEach(el => assert.ok(input.includes(el)));
+        TEST_ARGS.forEach((el) => assert.ok(input.includes(el)));
     };
     runScriptlet();
 });

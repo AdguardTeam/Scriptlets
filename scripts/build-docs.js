@@ -31,7 +31,7 @@ const duplicates = (() => {
  */
 const getFilesList = (dirPath) => {
     const filesList = fs.readdirSync(dirPath, { encoding: 'utf8' })
-        .filter(el => el.includes('.js'));
+        .filter((el) => el.includes('.js'));
     return filesList;
 };
 
@@ -94,8 +94,8 @@ const getDataFromFiles = (filesList, directoryPath) => {
  * returns describing object for scriptlets and redirects
  */
 const manageDataFromFiles = () => {
-    const scriptletsFilesList = getFilesList(SCRIPTLETS_FILES_DIRECTORY).filter(el => !el.includes('index.js'));
-    const redirectsFilesList = getFilesList(REDIRECTS_FILES_DIRECTORY).filter(el => !el.includes('redirects.js'));
+    const scriptletsFilesList = getFilesList(SCRIPTLETS_FILES_DIRECTORY).filter((el) => !el.includes('index.js'));
+    const redirectsFilesList = getFilesList(REDIRECTS_FILES_DIRECTORY).filter((el) => !el.includes('redirects.js'));
 
     // eslint-disable-next-line max-len
     const dataFromScriptletsFiles = getDataFromFiles(scriptletsFilesList, SCRIPTLETS_FILES_DIRECTORY);
@@ -184,7 +184,7 @@ function init() {
         const redirectsAbout = `## <a id="redirect-resources"></a> Available Redirect resources\n${staticRedirectsMarkdownData.list}${redirectsMarkdownData.list}* * *\n${staticRedirectsMarkdownData.body}${redirectsMarkdownData.body}`;
         fs.writeFileSync(path.resolve(__dirname, ABOUT_REDIRECTS_PATH), redirectsAbout);
     } catch (e) {
-        throw (e);
+        console.log(e.message);
     }
 }
 

@@ -51,7 +51,7 @@ const getCompatibilityTable = () => {
  */
 const getScriptletsFromTable = (platform) => {
     const { scriptlets } = getCompatibilityTable();
-    return scriptlets.map(item => item[platform]).filter(item => !!item);
+    return scriptlets.map((item) => item[platform]).filter((item) => !!item);
 };
 
 /**
@@ -60,7 +60,7 @@ const getScriptletsFromTable = (platform) => {
  */
 const getRedirectsFromTable = (platform) => {
     const { redirects } = getCompatibilityTable();
-    return redirects.map(item => item[platform]).filter(item => !!item);
+    return redirects.map((item) => item[platform]).filter((item) => !!item);
 };
 
 /**
@@ -74,11 +74,11 @@ const getDiff = (oldList, newList) => {
         added: [],
     };
 
-    diff.removed = oldList.filter(item => (
+    diff.removed = oldList.filter((item) => (
         !newList.includes(item)
         && item.indexOf(REMOVED_RULE_MARKER) === -1
     ));
-    diff.added = newList.filter(item => !oldList.includes(item));
+    diff.added = newList.filter((item) => !oldList.includes(item));
 
     return (diff.removed.length || diff.added.length) ? diff : null;
 };
@@ -105,7 +105,7 @@ function markTableWithDiff(diff, ruleType, platform) {
         return item;
     });
 
-    added.forEach(item => ruleList.push({ [platform]: item }));
+    added.forEach((item) => ruleList.push({ [platform]: item }));
 
     table = {
         ...table,
@@ -327,14 +327,14 @@ async function checkForABPRedirectsUpdates() {
 
     const diffs = [UBORedirectsDiff, UBOScriptletsDiff, ABPRedirectsDiff, ABPScriptletsDiff];
 
-    if (diffs.some(diff => !!diff)) {
+    if (diffs.some((diff) => !!diff)) {
         const removed = diffs
-            .map(diff => (diff ? diff.removed.join() : ''))
-            .filter(item => !!item)
+            .map((diff) => (diff ? diff.removed.join() : ''))
+            .filter((item) => !!item)
             .join();
         const added = diffs
-            .map(diff => (diff ? diff.added.join() : ''))
-            .filter(item => !!item)
+            .map((diff) => (diff ? diff.added.join() : ''))
+            .filter((item) => !!item)
             .join();
         const message = `
             Some sources were changed.

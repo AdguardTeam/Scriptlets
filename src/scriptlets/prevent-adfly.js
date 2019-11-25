@@ -16,7 +16,7 @@ import { hit, setPropertyAccess } from '../helpers';
  * ```
  */
 export function preventAdfly(source) {
-    const isDigit = data => /^\d$/.test(data);
+    const isDigit = (data) => /^\d$/.test(data);
     const handler = function (encodedURL) {
         let evenChars = '';
         let oddChars = '';

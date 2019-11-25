@@ -98,7 +98,7 @@ export function GoogleAnalyticsGa(source) {
         res[funcName] = noop;
         return res;
     }, {});
-    tracker._getLinkerUrl = a => a;
+    tracker._getLinkerUrl = (a) => a;
 
     Gat.prototype._anonymizeIP = noop;
     Gat.prototype._createTracker = noop;

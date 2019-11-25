@@ -173,18 +173,19 @@
       try {
         var log = console.log.bind(console);
         var trace = console.trace.bind(console);
+        var prefix = source.ruleText || '';
 
         if (message) {
-          log("".concat(source.ruleText, " message:\n").concat(message));
+          log("".concat(prefix, " message:\n").concat(message));
         }
 
-        log("".concat(source.ruleText, " trace start"));
+        log("".concat(prefix, " trace start"));
 
         if (trace) {
           trace();
         }
 
-        log("".concat(source.ruleText, " trace end"));
+        log("".concat(prefix, " trace end"));
       } catch (e) {} // try catch for Edge 15
       // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
       // console.log throws an error
@@ -201,6 +202,7 @@
      */
 
     var dependencies = /*#__PURE__*/Object.freeze({
+        __proto__: null,
         randomId: randomId,
         setPropertyAccess: setPropertyAccess,
         getPropertyInChain: getPropertyInChain,
@@ -2340,6 +2342,7 @@
      */
 
     var scriptletList = /*#__PURE__*/Object.freeze({
+        __proto__: null,
         abortOnPropertyRead: abortOnPropertyRead,
         abortOnPropertyWrite: abortOnPropertyWrite,
         preventSetTimeout: preventSetTimeout,

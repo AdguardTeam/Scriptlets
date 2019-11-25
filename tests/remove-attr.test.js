@@ -22,7 +22,7 @@ const evalWrapper = eval;
 const createElem = (className, attrs) => {
     const elem = document.createElement('div');
     if (className) elem.classList.add(className);
-    attrs.forEach(a => elem.setAttribute(a, true));
+    attrs.forEach((a) => elem.setAttribute(a, true));
     document.body.appendChild(elem);
 
     return elem;

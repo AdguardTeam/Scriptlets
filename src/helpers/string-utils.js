@@ -3,7 +3,7 @@
  * @param {string} str
  * @returns {string}
  */
-export const escapeRegExp = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+export const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
  * Converts search string to the regexp
