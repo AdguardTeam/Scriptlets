@@ -42,6 +42,8 @@ export function setConstant(source, property, value) {
         if (Math.abs(constantValue) > 0x7FFF) {
             return;
         }
+    } else if (value === '-1') {
+        constantValue = -1;
     } else if (value === '') {
         constantValue = '';
     } else {
