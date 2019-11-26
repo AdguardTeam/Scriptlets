@@ -1,13 +1,25 @@
-# AdGuard Scriptlets and Resources
+# AdGuard Scriptlets and Redirect resources
 [![Build Status](https://travis-ci.com/AdguardTeam/Scriptlets.svg?branch=master)](https://travis-ci.com/AdguardTeam/Scriptlets)
 
+* [Scriptlets](#scriptlets)
+    * [Syntax](#scriptlet-syntax)
+    * [Available scriptlets](./wiki/about-scriptlets.md#scriptlets)        
+    * [Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)
+* [Redirect resources](#redirect-resources)
+    * [Syntax](#redirect-syntax)
+    * [Available redirect resources](./wiki/about-redirects.md#redirect-resources)
+    * [Redirect resources compatibility table](./wiki/compatibility-table.md#redirects)
+* [How to build](#how-to-build)
+* [Browser compatibility](#browser-compatibility)
+
+* * *
 ## Scriptlets
 
 Scriptlet is a JavaScript function that provides extended capabilities for content blocking. These functions can be used in a declarative manner in AdGuard filtering rules.
 
 AdGuard supports a lot of different scriptlets. Please note, that in order to achieve cross-blocker compatibility, we also support syntax of uBO and ABP. 
 
-### <a id="syntax"></a> Syntax
+### <a id="scriptlet-syntax"></a> Syntax
 
 ```
 rule = [domains]  "#%#//scriptlet(" scriptletName arguments ")"
@@ -33,7 +45,7 @@ example.org#%#//scriptlet("abort-on-property-read", "alert")
 This rule applies the `abort-on-property-read` scriptlet on all pages of `example.org` and its subdomains, and passes one orgument to it (`alert`).
 
 * **[Scriptlets list](./wiki/about-scriptlets.md#scriptlets)**
-* **[Scriptlets compatibility table](./wiki/about-scriptlets.md#scriptlets)**
+* **[Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)**
 
 
 ## Redirect resources
