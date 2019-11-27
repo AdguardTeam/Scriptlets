@@ -1,3 +1,4 @@
+/* eslint-disable no-console, no-underscore-dangle */
 import browser from './api';
 /**
  * Hit used only for debug purposes now
