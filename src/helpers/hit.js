@@ -1,11 +1,15 @@
-/* eslint-disable no-console, no-underscore-dangle */
+import browser from './api';
 /**
  * Hit used only for debug purposes now
  * @param {Source} source
  * @param {String} message optional message
  */
 export const hit = (source, message) => {
-    if (source.verbose !== true) {
+
+    const logEnabled = (browser.location.hash && browser.location.hash.includes('adguard_logging'))
+        || browser.location.href.includes('adguard_logging');
+
+    if (!logEnabled || source.verbose !== true) {
         return;
     }
 
