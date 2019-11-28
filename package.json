@@ -13,6 +13,7 @@
         "browserstack": "yarn build-test && node browserstack.js",
         "gui-test": "yarn build-test && open http://localhost:8585 && node ./tests/server.js",
         "lint": "eslint .",
+        "wiki:build-docs": "node scripts/build-docs.js",
         "wiki:check-updates": "node ./scripts/check-sources-updates.js",
         "wiki:update": "yarn wiki:check-updates && node ./scripts/build-compatibility-table.js"
     },
@@ -25,11 +26,12 @@
     "license": "LGPL-3.0",
     "devDependencies": {
         "@babel/cli": "^7.7.0",
-        "@babel/core": "^7.7.2",
+        "@babel/core": "^7.2.2",
         "@babel/node": "^7.7.0",
         "@babel/plugin-transform-regenerator": "^7.7.0",
         "@babel/plugin-transform-runtime": "^7.6.2",
         "@babel/preset-env": "^7.7.1",
+        "dox": "^0.9.0",
         "eslint": "^6.6.0",
         "eslint-config-airbnb-base": "^14.0.0",
         "eslint-plugin-compat": "^3.3.0",

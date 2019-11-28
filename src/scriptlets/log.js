@@ -1,6 +1,13 @@
 /**
- * Log an array of passed arguments
- * @param {string} args test arguments
+ * @scriptlet log
+ *
+ * @description
+ * A simple scriptlet which only purpose is to print arguments to console.
+ * This scriptlet can be helpful for debugging and troubleshooting other scriptlets.
+ * **Example**
+ * ```
+ * example.org#%#//scriptlet("log", "arg1", "arg2")
+ * ```
  */
 export function log(...args) {
     console.log(args); // eslint-disable-line no-console

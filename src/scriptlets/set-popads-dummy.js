@@ -2,12 +2,30 @@
 import { hit } from '../helpers';
 
 /**
+ * @scriptlet set-popads-dummy
+ *
+ * @description
  * Sets static properties PopAds and popns.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#popads-dummyjs-
  *
- * @param {Source} source
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("set-popads-dummy")
+ * ```
+ */
+
+/**
+ * @redirect set-popads-dummy
+ *
+ * @description
+ * Redirects request to the source which sets static properties to PopAds and popns objectss
+ *
+ * **Example**
+ * ```
+ * ||popads.net^$script,redirect=set-popads-dummy,domain=example.org
+ * ```
  */
 export function setPopadsDummy(source) {
     delete window.PopAds;

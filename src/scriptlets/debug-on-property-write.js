@@ -3,12 +3,22 @@ import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { createOnErrorHandler, hit } from '../helpers';
 
+/* eslint-disable max-len */
 /**
- * Call debugger on property writing
+ * @scriptlet debug-on-property-write
  *
- * @param {Source} source
- * @param {string} property propery name
+ * @description
+ * This scriptlet is basically the same as [abort-on-property-write](#abort-on-property-write), but instead of aborting it starts the debugger.
+ *
+ * **It is not supposed to be used in production filter lists!**
+ *
+ * **Syntax**
+ * ```
+ * ! Aborts script when it tries to write in property `window.test`
+ * example.org#%#//scriptlet("debug-on-property-write", "test")
+ * ```
  */
+/* eslint-enable max-len */
 export function debugOnPropertyWrite(source, property) {
     if (!property) {
         return;

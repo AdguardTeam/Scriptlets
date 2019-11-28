@@ -2,12 +2,18 @@
 import { hit, setPropertyAccess } from '../helpers';
 
 /**
+ * @scriptlet prevent-adfly
+ *
+ * @description
  * Prevents anti-adblock scripts on adfly short links.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#adfly-defuserjs-
  *
- * @param {Source} source
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("prevent-adfly")
+ * ```
  */
 export function preventAdfly(source) {
     const isDigit = (data) => /^\d$/.test(data);

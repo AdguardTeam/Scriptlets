@@ -1,17 +1,47 @@
 import { toRegExp } from '../helpers/string-utils';
 import { hit } from '../helpers';
 
+/* eslint-disable max-len */
 /**
+ * @scriptlet adjust-setTimeout
+ *
+ * @description
  * Adjusts timeout for specified setTimout() callbacks.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-settimeout-boosterjs-
  *
- * @param {Source} source
- * @param {string|RegExp} match matching in string of callback function
- * @param {string|number} timeout matching timeout
- * @param {string|number} boost timeout multiplier
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("adjust-setTimeout"[, match [, timeout[, boost]]])
+ * ```
+ *
+ * - `match` - optional, string/regular expression, matching in stringified callback function
+ * - `timeout` - optional, defaults to 1000, decimal integer, matching interval
+ * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down, interval multiplier
+ *
+ * **Examples**
+ * 1. Adjust all setTimeout() x20 times where interval equal 1000ms:
+ *     ```
+ *     example.org#%#//scriptlet("adjust-setTimeout")
+ *     ```
+ *
+ * 2. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 1000ms
+ *     ```
+ *     example.org#%#//scriptlet("adjust-setTimeout", "example")
+ *     ```
+ *
+ * 3. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 400ms
+ *     ```
+ *     example.org#%#//scriptlet("adjust-setTimeout", "example", "400")
+ *     ```
+ *
+ * 4. Slow down setTimeout() x2 times where callback matched with `example` and interval equal 400ms
+ *     ```
+ *     example.org#%#//scriptlet("adjust-setTimeout", "example", "400", "2")
+ *     ```
  */
+/* eslint-enable max-len */
 export function adjustSetTimeout(source, match, timeout, boost) {
     const nativeTimeout = window.setTimeout;
     const nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat

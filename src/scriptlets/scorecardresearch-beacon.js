@@ -1,10 +1,33 @@
 import { hit } from '../helpers/hit';
 
 /**
- * Mocks Scorecard Research API
+ * @scriptlet scorecardresearch-beacon
+ *
+ * @description
+ * Mocks Scorecard Research API.
+ *
+ * It is mostly used for `$redirect` rules.
+ * See [redirect description](#scorecardresearch-beacon-redirect).
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/scorecardresearch_beacon.js
+ *
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("scorecardresearch-beacon")
+ * ```
+ */
+
+/**
+ * @redirect scorecardresearch-beacon
+ *
+ * @description
+ * Mocks Scorecard Research API.
+ *
+ * **Example**
+ * ```
+ * ||example.org/index.js$script,redirect=scorecardresearch-beacon
+ * ```
  */
 export function ScoreCardResearchBeacon(source) {
     window.COMSCORE = {

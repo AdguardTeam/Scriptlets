@@ -1,14 +1,22 @@
 /* eslint-disable no-unused-vars, no-extra-bind, func-names */
 import { hit } from '../helpers';
 
+/* eslint-disable max-len */
 /**
- * Disables WebRTC via blocking calls to the RTCPeerConnection()
+ * @scriptlet nowebrtc
+ *
+ * @description
+ * Disables WebRTC by overriding `RTCPeerConnection`. The overriden function will log every attempt to create a new connection.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-
  *
- * @param {Source} source
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("nowebrtc")
+ * ```
  */
+/* eslint-enable max-len */
 export function nowebrtc(source) {
     let propertyName = '';
     if (window.RTCPeerConnection) {

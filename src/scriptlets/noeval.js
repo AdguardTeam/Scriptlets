@@ -2,6 +2,11 @@
 import { hit } from '../helpers';
 
 /**
+ * @redirect noeval.js
+ *
+ * @description
+ * Redirects request to the source which sets static properties to PopAds and popns objects
+ *
  * Prevents page to use eval.
  * Notifies about attempts in the console
  *
@@ -9,7 +14,10 @@ import { hit } from '../helpers';
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#noevaljs-
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#silent-noevaljs-
  *
- * @param {Source} source
+ * **Example**
+ * ```
+ * ||example.org/index.js$script,redirect=noeval.js
+ * ```
  */
 export function noeval(source) {
     window.eval = function evalWrapper(s) {

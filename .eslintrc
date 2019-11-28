@@ -5,7 +5,8 @@
     "no-param-reassign": "off",
     "no-shadow": "off",
     "import/prefer-default-export": "off",
-    "arrow-body-style": "off"
+    "arrow-body-style": "off",
+    "import/no-extraneous-dependencies": "off"
   },
   "env": {
     "browser": true

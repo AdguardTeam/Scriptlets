@@ -5,13 +5,22 @@ import { getPropertyInChain } from '../helpers/get-property-in-chain';
 import { toRegExp } from '../helpers/string-utils';
 import { hit, createOnErrorHandler } from '../helpers';
 
+/* eslint-disable max-len */
 /**
- * Call debugger when script should be aborted
+ * @scriptlet debug-current-inline-script
  *
- * @param {Source} source
- * @param {string} property path to a property
- * @param {string} search must match the inline script contents
+ * @description
+ * This scriptlet is basically the same as [abort-current-inline-script](#abort-current-inline-script), but instead of aborting it starts the debugger.
+ *
+ * **It is not supposed to be used in production filter lists!**
+ *
+ * **Syntax**
+ *```
+ * ! Aborts script when it tries to access `window.alert`
+ * example.org#%#//scriptlet("debug-current-inline-script", "alert")
+ * ```
  */
+/* eslint-enable max-len */
 export function debugCurrentInlineScript(source, property, search = null) {
     const regex = search ? toRegExp(search) : null;
     const rid = randomId();

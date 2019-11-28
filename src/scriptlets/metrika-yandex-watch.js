@@ -2,9 +2,32 @@ import { hit } from '../helpers/hit';
 import { noop } from '../helpers/noop';
 
 /**
- * Mocks the old Yandex Metrika API
+ * @scriptlet metrika-yandex-watch
  *
- * @param {Source} source
+ * @description
+ * Mocks the old Yandex Metrika API.
+ * https://yandex.ru/support/metrica/objects/_method-reference.html
+ *
+ * It is mostly used for `$redirect` rules.
+ * See [redirect description](#scorecardresearch-beacon-redirect).
+ *
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("metrika-yandex-watch")
+ * ```
+ */
+
+/**
+ * @redirect metrika-yandex-watch
+ *
+ * @description
+ * Mocks the old Yandex Metrika API.
+ * https://yandex.ru/support/metrica/objects/_method-reference.html
+ *
+ * **Example**
+ * ```
+ * ||example.org/index.js$script,redirect=metrika-yandex-watch
+ * ```
  */
 export function metrikaYandexWatch(source) {
     const cbName = 'yandex_metrika_callbacks';

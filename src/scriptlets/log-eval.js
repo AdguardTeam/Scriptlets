@@ -2,9 +2,15 @@
 import { hit } from '../helpers';
 
 /**
- * Logs all eval() and Function() calls
+ * @scriptlet log-eval
  *
- * @param {Source} source
+ * @description
+ * Logs all `eval()` or `new Function()` calls to the console
+ *
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("log-eval")
+ * ```
  */
 export function logEval(source) {
     const log = console.log.bind(console);

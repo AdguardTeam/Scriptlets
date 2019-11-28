@@ -278,7 +278,11 @@
     abortOnPropertyRead.names = ['abort-on-property-read', 'abort-on-property-read.js', 'ubo-abort-on-property-read.js', 'abp-abort-on-property-read'];
     abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
+    /* eslint-disable max-len */
     /**
+     * @scriptlet abort-on-property-write
+     *
+     * @description
      * Abort property writing
      *
      * Related UBO scriptlet:
@@ -287,8 +291,20 @@
      * Related ABP source:
      * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L896
      *
-     * @param {Source} source
-     * @param {string} property propery name
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("abort-on-property-write", <property>)
+     * ```
+     *
+     * **Parameters**
+     * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
+     *
+     * **Examples**
+     * ```
+     * ! Aborts all inline scripts trying to access `window.alert`
+     * utils.escape('<script></script>')
+     * // => '&lt;script&gt;&lt;/script&gt;'
+     * ```
      */
 
     function abortOnPropertyWrite(source, property) {

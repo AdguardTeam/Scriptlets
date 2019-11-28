@@ -1,16 +1,29 @@
 import { hit } from '../helpers';
 
+/* eslint-disable max-len */
 /**
- * Wraps the `console.dir` API to call the `toString`
- * method of the argument.
+ * @scriptlet dir-string
+ *
+ * @description
+ * Wraps the `console.dir` API to call the `toString` method of the argument.
+ * There are several adblock circumvention systems that detect browser devtools and hide themselves. Therefore, if we force them to think that devtools are open (using this scrciptlet), it will automatically disable the adblock circumvention script.
  *
  * Related ABP source:
  * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L766
  *
- * @param {Source} source
- * @param {string|number} times the number of times to call the
- * `toString` method of the argument to `console.dir`.
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("dir-string"[, times])
+ * ```
+ * - `times` - optional, the number of times to call the `toString` method of the argument to `console.dir`
+ *
+ * **Example**
+ * ```
+ * ! Run 2 times
+ * example.org#%#//scriptlet("dir-string", "2")
+ * ```
  */
+/* eslint-enable max-len */
 export function dirString(source, times) {
     const { dir } = console;
     times = parseInt(times, 10);

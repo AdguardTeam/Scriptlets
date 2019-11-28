@@ -3,6 +3,11 @@
 # add ";base64" into contentType if your source already in base64
 
 - title: 1x1-transparent.gif
+  description: |-
+    **Example**
+    ```
+    ||example.org^$image,redirect=1x1-transparent.gif
+    ```
   aliases:
     - 1x1-transparent-gif
   comment: http://probablyprogramming.com/2009/03/15/the-tiniest-gif-ever
@@ -10,6 +15,11 @@
   content: R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 
 - title: 2x2-transparent.png
+  description: |-
+    **Example**
+    ```
+    ||example.org^$image,redirect=2x2-transparent.png
+    ```
   aliases:
     - 2x2-transparent-png
   contentType: image/png;base64
@@ -18,6 +28,11 @@
     SUVORK5CYII=
 
 - title: 3x2-transparent.png
+  description: |-
+    **Example**
+    ```
+    ||example.org^$image,redirect=3x2-transparent.png
+    ```
   aliases:
     - 3x2-transparent-png
   contentType: image/png;base64
@@ -26,6 +41,11 @@
     SUVORK5CYII=
 
 - title: 32x32-transparent.png
+  description: |-
+    **Example**
+    ```
+    ||example.org^$image,redirect=32x32-transparent.png
+    ```
   aliases:
     - 32x32-transparent-png
   contentType: image/png;base64
@@ -34,6 +54,11 @@
     AO8GECAAAZf3V9cAAAAASUVORK5CYII=
 
 - title: noopframe
+  description: |-
+    **Example**
+    ```
+    ||example.com^$subdocument,redirect=noopframe,domain=example.org
+    ```
   aliases:
     - blank-html
   contentType: text/html
@@ -45,32 +70,64 @@
     </html>
 
 - title: noopcss
+  description: |-
+    **Example**
+    ```
+    ||example.org^$stylesheet,redirect=noopcss
+    ```
   aliases:
     - blank-css
   contentType: text/css
   content: ''
 
 - title: noopjs
+  description: |-
+    **Example**
+    ```
+    ||example.org^$script,redirect=noopjs
+    ```
   aliases:
     - blank-js
   contentType: application/javascript
   content: (function() {})()
 
 - title: nooptext
+  description: |-
+    **Example**
+    ```
+    ||example.org^$xmlhttprequest,redirect=nooptext
+    ```
   aliases:
     - blank-text
   contentType: text/plain
   content: ''
 
 - title: noopvast-2.0
+  description: |-
+    Redirects request to an empty VAST response.
+    **Example**
+    ```
+    ||example.org^$xmlhttprequest,redirect=noopvast-2.0
+    ```
   contentType: text/xml
   content: <VAST version="2.0"></VAST>
 
 - title: noopvast-3.0
+  description: |-
+    Redirects request to an empty VAST response.
+    **Example**
+    ```
+    ||example.org^$xmlhttprequest,redirect=noopvast-3.0
+    ```
   contentType: text/xml
   content: <VAST version="3.0"></VAST>
 
 - title: noopmp3-0.1s
+  description: |-
+    **Example**
+    ```
+    ||example.org^$media,redirect=noopmp3-0.1s
+    ```
   aliases:
     - blank-mp3
   comment: >
@@ -95,6 +152,11 @@
     VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 
 - title: noopmp4-1s
+  description: |-
+    **Example**
+    ```
+    ||example.org^$media,redirect=noopmp4-1s
+    ```
   aliases:
     - blank-mp4
   comment: >

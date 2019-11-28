@@ -1,16 +1,41 @@
 import { toRegExp } from '../helpers/string-utils';
 import { hit } from '../helpers';
 
+/* eslint-disable max-len */
 /**
- * Removes current page cookies specified by name.
- * For current domain, subdomains on load and before unload.
+ * @scriptlet remove-cookie
+ *
+ * @description
+ * Removes current page cookies by passed string matching with name. For current domain and subdomains. Runs on load and before unload.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#cookie-removerjs-
  *
- * @param {Source} source
- * @param {string} match string for matching with cookie name
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet("remove-cookie"[, match])
+ * ```
+ *
+ * **Parameters**
+ * - `match` (optional) String or regex matching the cookie name. If not specified all accessible cookies will be removed.
+ *
+ * **Examples**
+ * 1. Removes all cookies:
+ * ```
+ *     example.org#%#//scriptlet("remove-cookie")
+ * ```
+ *
+ * 2. Removes cookies which name contains `example` string.
+ * ```
+ *     example.org#%#//scriptlet("remove-cookie", "example")
+ * ```
+ *
+ *     For instance this cookie will be removed
+ *     ```javascript
+ *     document.cookie = '__example=randomValue';
+ *     ```
  */
+/* eslint-enable max-len */
 export function removeCookie(source, match) {
     const regex = match ? toRegExp(match) : toRegExp('/.?/');
 
