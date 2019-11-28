@@ -17,18 +17,6 @@ import { hit } from '../helpers/hit';
  * example.org#%#//scriptlet("googlesyndication-adsbygoogle")
  * ```
  */
-
-/**
- * @redirect googlesyndication-adsbygoogle
- *
- * @description
- * Mocks Google AdSense API.
- *
- * **Example**
- * ```
- * ||example.org/index.js$script,redirect=googlesyndication-adsbygoogle
- * ```
- */
 export function GoogleSyndicationAdsByGoogle(source) {
     window.adsbygoogle = window.adsbygoogle || {
         length: 0,

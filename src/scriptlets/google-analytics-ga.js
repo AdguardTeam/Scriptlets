@@ -19,18 +19,6 @@ import { noop } from '../helpers/noop';
  * example.org#%#//scriptlet("google-analytics-ga")
  * ```
  */
-
-/**
- * @redirect google-analytics-ga
- *
- * @description
- * Mocks old Google Analytics API.
- *
- * **Example**
- * ```
- * ||example.org/index.js$script,redirect=google-analytics-ga
- * ```
- */
 export function GoogleAnalyticsGa(source) {
     // Gaq constructor
     function Gaq() { }

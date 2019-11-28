@@ -3,7 +3,6 @@ import commonjs from 'rollup-plugin-commonjs';
 import babel from 'rollup-plugin-babel';
 import cleanup from 'rollup-plugin-cleanup';
 import copy from 'rollup-plugin-copy';
-import clear from 'rollup-plugin-clear';
 
 import project from './package.json';
 
@@ -24,8 +23,6 @@ const footer = `
  * -------------------------------------------
  */
 `;
-
-const TESTS_DIST = 'tests/dist';
 
 const bundleBuild = {
     input: {
@@ -78,16 +75,13 @@ const testBuild = {
         tests: 'tests/index.test.js',
     },
     output: {
-        dir: TESTS_DIST,
+        dir: 'tests/dist',
         entryFileNames: '[name].js',
         format: 'iife',
         strict: false,
         sourcemap: true,
     },
     plugins: [
-        clear({
-            targets: [TESTS_DIST],
-        }),
         resolve(),
         commonjs({
             include: 'node_modules/**',
@@ -97,16 +91,38 @@ const testBuild = {
             runtimeHelpers: true,
         }),
         copy({
-            targets: [{
-                src: [
-                    'tests/tests.html',
-                    'tests/styles.css',
-                    'node_modules/qunit/qunit/qunit.js',
-                    'node_modules/sinon/pkg/sinon.js',
-                    'dist/scriptlets.js',
-                ],
-                dest: TESTS_DIST,
-            }],
+            targets: [
+                'tests/tests.html',
+                'tests/styles.css',
+                'node_modules/qunit/qunit/qunit.js',
+                'node_modules/sinon/pkg/sinon.js',
+                'dist/scriptlets.js',
+            ],
+            outputFolder: 'tests/dist',
+        }),
+    ],
+};
+
+const testRedirects = {
+    input: {
+        redirectsTest: 'src/redirects/index.js',
+    },
+    output: {
+        name: 'redirectsTest',
+        dir: 'dist',
+        entryFileNames: '[name].js',
+        format: 'iife',
+        strict: false,
+        sourcemap: true,
+    },
+    plugins: [
+        resolve(),
+        commonjs({
+            include: 'node_modules/**',
+        }),
+        babel({
+            exclude: 'node_modules/**',
+            runtimeHelpers: true,
         }),
     ],
 };
@@ -119,6 +135,6 @@ if (isCleanBuild) {
 const isTest = process.env.UI_TEST === 'true';
 const resultBuilds = isTest
     ? [bundleBuild, testBuild]
-    : [bundleBuild, redirectsBuild];
+    : [bundleBuild, redirectsBuild, testRedirects];
 
 module.exports = resultBuilds;

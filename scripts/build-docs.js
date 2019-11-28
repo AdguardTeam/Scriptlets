@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-unresolved
 const dox = require('dox');
 const fs = require('fs');
 const path = require('path');
@@ -184,6 +185,7 @@ function init() {
         const redirectsAbout = `## <a id="redirect-resources"></a> Available Redirect resources\n${staticRedirectsMarkdownData.list}${redirectsMarkdownData.list}* * *\n${staticRedirectsMarkdownData.body}${redirectsMarkdownData.body}`;
         fs.writeFileSync(path.resolve(__dirname, ABOUT_REDIRECTS_PATH), redirectsAbout);
     } catch (e) {
+        // eslint-disable-next-line no-console
         console.log(e.message);
     }
 }

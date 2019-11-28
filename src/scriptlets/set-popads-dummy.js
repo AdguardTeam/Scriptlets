@@ -15,18 +15,6 @@ import { hit } from '../helpers';
  * example.org#%#//scriptlet("set-popads-dummy")
  * ```
  */
-
-/**
- * @redirect set-popads-dummy
- *
- * @description
- * Redirects request to the source which sets static properties to PopAds and popns objectss
- *
- * **Example**
- * ```
- * ||popads.net^$script,redirect=set-popads-dummy,domain=example.org
- * ```
- */
 export function setPopadsDummy(source) {
     delete window.PopAds;
     delete window.popns;

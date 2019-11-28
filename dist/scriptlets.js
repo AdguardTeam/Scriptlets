@@ -217,8 +217,13 @@
         hit: hit
     });
 
+    /* eslint-disable max-len */
+
     /**
-     * Abort property reading even if it doesn't exist in execution moment
+     * @scriptlet abort-on-property-read
+     *
+     * @description
+     * Aborts a script when it attempts to **read** the specified property.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-property-readjs-
@@ -226,9 +231,25 @@
      * Related ABP source:
      * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L864
      *
-     * @param {Source} source
-     * @param {string} property property name
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("abort-on-property-read", <property>)
+     * ```
+     *
+     * **Parameters**
+     * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
+     *
+     * **Examples**
+     * ```
+     * ! Aborts script when it tries to access `window.alert`
+     * example.org#%#//scriptlet("abort-on-property-read", "alert")
+     *
+     * ! Aborts script when it tries to access `navigator.language`
+     * example.org#%#//scriptlet("abort-on-property-read", "navigator.language")
+     * ```
      */
+
+    /* eslint-enable max-len */
 
     function abortOnPropertyRead(source, property) {
       if (!property) {
@@ -279,11 +300,12 @@
     abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
     /* eslint-disable max-len */
+
     /**
      * @scriptlet abort-on-property-write
      *
      * @description
-     * Abort property writing
+     * Aborts a script when it attempts to **write** the specified property.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-property-writejs-
@@ -306,6 +328,8 @@
      * // => '&lt;script&gt;&lt;/script&gt;'
      * ```
      */
+
+    /* eslint-enable max-len */
 
     function abortOnPropertyWrite(source, property) {
       if (!property) {
@@ -354,17 +378,54 @@
     abortOnPropertyWrite.names = ['abort-on-property-write', 'abort-on-property-write.js', 'ubo-abort-on-property-write.js', 'abp-abort-on-property-write'];
     abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
+    /* eslint-disable max-len */
+
     /**
-     * Prevent calls to setTimeout for specified matching in passed callback and delay
-     * by setting callback to empty function
+     * @scriptlet prevent-setTimeout
+     *
+     * @description
+     * Prevents a `setTimeout` call if the text of the callback is matching the specified search string/regexp and (optionally) have the specified delay.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#settimeout-defuserjs-
      *
-     * @param {Source} source
-     * @param {string|RegExp} match matching in string of callback function
-     * @param {string|number} delay matching delay
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("prevent-setTimeout"[, <search>[, <delay>]])
+     * ```
+     *
+     * **Parameters**
+     * - `search` (optional) string or regular expression that must match the stringified callback . If not set, prevents all `setTimeout` calls.
+     * - `delay` (optional) must be an integer. If set, it matches the delay passed to the `setTimeout` call.
+     *
+     * **Examples**
+     *
+     * 1. Prevents `setTimeout` calls if the callback contains `value` and the delay is set to `300`.
+     *     ```
+     *     example.org#%#//scriptlet("prevent-setTimeout", "value", "300")
+     *     ```
+     *
+     *     For instance, the followiing call will be prevented:
+     *     ```javascript
+     *     setTimeout(function () {
+     *         window.test = "value";
+     *     }, 300);
+     *     ```
+     *
+     * 2. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.
+     *     ```bash
+     *     example.org#%#//scriptlet("prevent-setTimeout", "/\.test/")
+     *     ```
+     *
+     *     For instance, the followiing call will be prevented:
+     *     ```javascript
+     *     setTimeout(function () {
+     *         window.test = "value";
+     *     }, 100);
+     *     ```
      */
+
+    /* eslint-enable max-len */
 
     function preventSetTimeout(source, match, delay) {
       var nativeTimeout = window.setTimeout;
@@ -392,17 +453,54 @@
     preventSetTimeout.names = ['prevent-setTimeout', 'setTimeout-defuser.js', 'ubo-setTimeout-defuser.js'];
     preventSetTimeout.injections = [toRegExp, hit];
 
+    /* eslint-disable max-len */
+
     /**
-     * Prevent calls to setInterval for specified matching in passed callback and delay
-     * by setting callback to empty function
+     * @scriptlet prevent-setInterval
+     *
+     * @description
+     * Prevents a `setInterval` call if the text of the callback is matching the specified search string/regexp and (optionally) have the specified interval.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#setinterval-defuserjs-
      *
-     * @param {Source} source
-     * @param {string|RegExp} match matching in string of callback function
-     * @param {string|number} interval matching interval
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("prevent-setInterval"[, <search>[, <interval>]])
+     * ```
+     *
+     * **Parameters**
+     * - `search` (optional) string or regular expression that must match the stringified callback . If not set, prevents all `setInterval` calls.
+     * - `interval` (optional) must be an integer. If set, it matches the interval passed to the `setInterval` call.
+     *
+     * **Example**
+     *
+     * 1. Prevents `setInterval` calls if the callback contains `value` and the interval is set to `300`.
+     *     ```
+     *     example.org#%#//scriptlet("prevent-setInterval", "value", "300")
+     *     ```
+     *
+     *     For instance, the followiing call will be prevented:
+     *     ```javascript
+     *     setInterval(function () {
+     *         window.test = "value";
+     *     }, 300);
+     *     ```
+     *
+     * 2. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the interval.
+     *     ```
+     *     example.org#%#//scriptlet("prevent-setInterval", "/\.test/")
+     *     ```
+     *
+     *     For instance, the followiing call will be prevented:
+     *     ```javascript
+     *     setInterval(function () {
+     *         window.test = "value";
+     *     }, 100);
+     *     ```
      */
+
+    /* eslint-enable max-len */
 
     function preventSetInterval(source, match, interval) {
       var nativeInterval = window.setInterval;
@@ -430,16 +528,50 @@
     preventSetInterval.names = ['prevent-setInterval', 'setInterval-defuser.js', 'ubo-setInterval-defuser.js'];
     preventSetInterval.injections = [toRegExp, hit];
 
+    /* eslint-disable max-len */
+
     /**
-     * Prevent calls `window.open` when URL match or not match with passed params
+     * @scriptlet prevent-window-open
+     *
+     * @description
+     * Prevents `window.open` calls when URL either matches or not matches the specified string/regexp. Using it without parameters prevents all `window.open` calls.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#windowopen-defuserjs-
      *
-     * @param {Source} source
-     * @param {number|string} [inverse] inverse matching
-     * @param {string} [match] matching with URL
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
+     * ```
+     *
+     * **Parameters**
+     * - `match` (optional) defaults to "matching", any positive number for "matching", 0 or any string for "not matching",
+     * - `search` (optional) string or regexp for matching the URL passed to `window.open` call.
+     *
+     * **Example**
+     *
+     * 1. Prevent all `window.open` calls:
+     * ```
+     *     example.org#%#//scriptlet("prevent-window-open")
+     * ```
+     *
+     * 2. Prevent `window.open` for all URLs containing `example`:
+     * ```
+     *     example.org#%#//scriptlet("prevent-window-open", "1", "example")
+     * ```
+     *
+     * 3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
+     * ```
+     *     example.org#%#//scriptlet("prevent-window-open", "1", "/example\./")
+     * ```
+     *
+     * 4. Prevent `window.open` for all URLs **NOT** containing `example`:
+     * ```
+     *     example.org#%#//scriptlet("prevent-window-open", "0", "example")
+     * ```
      */
+
+    /* eslint-enable max-len */
 
     function preventWindowOpen(source, inverse, match) {
       var nativeOpen = window.open;
@@ -464,7 +596,12 @@
     preventWindowOpen.injections = [toRegExp, hit];
 
     /* eslint-disable no-new-func */
+    /* eslint-disable max-len */
+
     /**
+     * @scriptlet abort-current-inline-script
+     *
+     * @description
      * Aborts an inline script when it attempts to **read** the specified property
      * AND when the contents of the `<script>` element contains the specified
      * text or matches the regular expression.
@@ -475,10 +612,51 @@
      * Related ABP source:
      * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L928
      *
-     * @param {Source} source
-     * @param {string} property path to a property
-     * @param {string} search must match the inline script contents
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>])
+     * ```
+     *
+     * **Parameters**
+     * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
+     * - `search` (optional) string or regular expression that must match the inline script contents. If not set, abort all inline scripts which are trying to access the specified property.
+     *
+     * **Examples**
+     * 1. Aborts all inline scripts trying to access `window.alert`
+     *     ```
+     *     example.org#%#//scriptlet("abort-current-inline-script", "alert")
+     *     ```
+     *
+     * 2. Aborts inline scripts which are trying to access `window.alert` and contain `Hello, world`.
+     *     ```
+     *     example.org#%#//scriptlet("abort-current-inline-script", "alert", "Hello, world")
+     *     ```
+     *
+     *     For instance, the following script will be aborted
+     *     ```html
+     *     <script>alert("Hello, world");</script>
+     *     ```
+     *
+     * 3. Aborts inline scripts which are trying to access `window.alert` and match this regexp: `/Hello.+world/`.
+     *     ```
+     *     example.org#%#//scriptlet("abort-current-inline-script", "alert", "/Hello.+world/")
+     *     ```
+     *
+     *     For instance, the following scripts will be aborted:
+     *     ```html
+     *     <script>alert("Hello, big world");</script>
+     *     ```
+     *     ```html
+     *     <script>alert("Hello, little world");</script>
+     *     ```
+     *
+     *     This script will not be aborted:
+     *     ```html
+     *     <script>alert("Hi, little world");</script>
+     *     ```
      */
+
+    /* eslint-enable max-len */
 
     function abortCurrentInlineScript(source, property) {
       var search = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
@@ -555,16 +733,49 @@
     abortCurrentInlineScript.names = ['abort-current-inline-script', 'abort-current-inline-script.js', 'ubo-abort-current-inline-script.js', 'abp-abort-current-inline-script'];
     abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit];
 
+    /* eslint-disable max-len */
+
     /**
+     * @scriptlet set-constant
+     *
+     * @description
      * Creates a constant property and assigns it one of the values from the predefined list.
+     *
+     * > Actually, it's not a constant. Please note, that it can be rewritten with a value of a different type.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#set-constantjs-
      *
-     * @param {Source} source
-     * @param {string} property path to a property
-     * @param {string} value
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("set-constant", <property>, <value>)
+     * ```
+     *
+     * **Parameters**
+     * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
+     * - `value` (required). Possible values:
+     *     - positive decimal integer `<= 32767`
+     *     - one of the predefined constants:
+     *         - `undefined`
+     *         - `false`
+     *         - `true`
+     *         - `null`
+     *         - `noopFunc` - function with empty body
+     *         - `trueFunc` - function returning true
+     *         - `falseFunc` - function returning false
+     *         - `''` - empty string
+     *
+     * **Examples**
+     * ```
+     * ! window.firstConst === false // this comparision will return true
+     * example.org#%#//scriptlet("set-constant", "firstConst", "false")
+     *
+     * ! window.secondConst() === true // call to the secondConst will return true
+     * example.org#%#//scriptlet("set-constant", "secondConst", "trueFunc")
+     * ```
      */
+
+    /* eslint-enable max-len */
 
     function setConstant(source, property, value) {
       if (!property) {
@@ -603,6 +814,8 @@
         if (Math.abs(constantValue) > 0x7FFF) {
           return;
         }
+      } else if (value === '-1') {
+        constantValue = -1;
       } else if (value === '') {
         constantValue = '';
       } else {
@@ -666,16 +879,43 @@
     setConstant.names = ['set-constant', 'set-constant.js', 'ubo-set-constant.js'];
     setConstant.injections = [getPropertyInChain, setPropertyAccess, hit];
 
+    /* eslint-disable max-len */
+
     /**
-     * Removes current page cookies specified by name.
-     * For current domain, subdomains on load and before unload.
+     * @scriptlet remove-cookie
+     *
+     * @description
+     * Removes current page cookies by passed string matching with name. For current domain and subdomains. Runs on load and before unload.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#cookie-removerjs-
      *
-     * @param {Source} source
-     * @param {string} match string for matching with cookie name
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("remove-cookie"[, match])
+     * ```
+     *
+     * **Parameters**
+     * - `match` (optional) String or regex matching the cookie name. If not specified all accessible cookies will be removed.
+     *
+     * **Examples**
+     * 1. Removes all cookies:
+     * ```
+     *     example.org#%#//scriptlet("remove-cookie")
+     * ```
+     *
+     * 2. Removes cookies which name contains `example` string.
+     * ```
+     *     example.org#%#//scriptlet("remove-cookie", "example")
+     * ```
+     *
+     *     For instance this cookie will be removed
+     *     ```javascript
+     *     document.cookie = '__example=randomValue';
+     *     ```
      */
+
+    /* eslint-enable max-len */
 
     function removeCookie(source, match) {
       var regex = match ? toRegExp(match) : toRegExp('/.?/');
@@ -727,16 +967,46 @@
     removeCookie.names = ['remove-cookie', 'cookie-remover.js', 'ubo-cookie-remover.js'];
     removeCookie.injections = [toRegExp, hit];
 
+    /* eslint-disable max-len */
+
     /**
-     * Prevents adding event listeners
+     * @scriptlet prevent-addEventListener
+     *
+     * @description
+     * Prevents adding event listeners for the specified events and callbacks.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-defuserjs-
      *
-     * @param {Source} source
-     * @param {string|RegExp} [event] - event name or regexp matching event name
-     * @param {string|RegExp} [funcStr] - string or regexp matching stringified handler function
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("prevent-addEventListener"[, eventSearch[, functionSearch]])
+     * ```
+     *
+     * **Parameters**
+     * - `eventSearch` (optional) String or regex matching the event name. If not specified, the scriptlets prevents all event listeners.
+     * - `functionSearch` (optional) String or regex matching the event listener function body. If not set, the scriptlet prevents all event listeners with event name matching `eventSearch`.
+     *
+     * **Examples**
+     * 1. Prevent all `click` listeners:
+     * ```
+     *     example.org#%#//scriptlet("prevent-addEventListener", "click")
+     * ```
+
+    2. Prevent 'click' listeners with the callback body containing `searchString`.
+     * ```
+     *     example.org#%#//scriptlet("prevent-addEventListener", "click", "searchString")
+     * ```
+     *
+     *     For instance, this listener will not be called:
+     * ```javascript
+     *     el.addEventListener('click', () => {
+     *         window.test = 'searchString';
+     *     });
+     * ```
      */
+
+    /* eslint-enable max-len */
 
     function preventAddEventListener(source, event, funcStr) {
       event = event ? toRegExp(event) : toRegExp('/.?/');
@@ -763,12 +1033,18 @@
 
     /* eslint-disable consistent-return, no-eval */
     /**
-     * Prevents BlockAdblock
+     * @scriptlet prevent-bab
+     *
+     * @description
+     * Prevents BlockAdblock script from detecting an ad blocker.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#bab-defuserjs-
      *
-     * @param {Source} source
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("prevent-bab")
+     * ```
      */
 
     function preventBab(source) {
@@ -838,14 +1114,24 @@
     preventBab.injections = [hit];
 
     /* eslint-disable no-unused-vars, no-extra-bind, func-names */
+    /* eslint-disable max-len */
+
     /**
-     * Disables WebRTC via blocking calls to the RTCPeerConnection()
+     * @scriptlet nowebrtc
+     *
+     * @description
+     * Disables WebRTC by overriding `RTCPeerConnection`. The overriden function will log every attempt to create a new connection.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-
      *
-     * @param {Source} source
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("nowebrtc")
+     * ```
      */
+
+    /* eslint-enable max-len */
 
     function nowebrtc(source) {
       var propertyName = '';
@@ -889,12 +1175,18 @@
 
     /* eslint-disable no-console */
     /**
-     * Logs add event listener calls
+     * @scriptlet log-addEventListener
+     *
+     * @description
+     * Logs all addEventListener calls to the console
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-loggerjs-
      *
-     * @param {Source} source
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("log-addEventListener")
+     * ```
      */
 
     function logAddEventListener(source) {
@@ -919,12 +1211,18 @@
 
     /* eslint-disable no-console */
     /**
-     * Logs setInterval calls
+     * @scriptlet log-setInterval
+     *
+     * @description
+     * Logs all setInterval calls to the console
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#setinterval-loggerjs-
      *
-     * @param {Source} source
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("log-setInterval")
+     * ```
      */
 
     function logSetInterval(source) {
@@ -949,12 +1247,18 @@
 
     /* eslint-disable no-console */
     /**
-     * Logs setTimeout calls
+     * @scriptlet log-setTimeout
+     *
+     * @description
+     * Logs all setTimeout call to the console.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#settimeout-loggerjs-
      *
-     * @param {Source} source
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("log-setTimeout")
+     * ```
      */
 
     function logSetTimeout(source) {
@@ -979,9 +1283,15 @@
 
     /* eslint-disable no-console, no-eval */
     /**
-     * Logs all eval() and Function() calls
+     * @scriptlet log-eval
      *
-     * @param {Source} source
+     * @description
+     * Logs all `eval()` or `new Function()` calls to the console
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("log-eval")
+     * ```
      */
 
     function logEval(source) {
@@ -1018,8 +1328,15 @@
     logEval.injections = [hit];
 
     /**
-     * Log an array of passed arguments
-     * @param {string} args test arguments
+     * @scriptlet log
+     *
+     * @description
+     * A simple scriptlet which only purpose is to print arguments to console.
+     * This scriptlet can be helpful for debugging and troubleshooting other scriptlets.
+     * **Example**
+     * ```
+     * example.org#%#//scriptlet("log", "arg1", "arg2")
+     * ```
      */
     function log() {
       for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
@@ -1032,6 +1349,11 @@
 
     /* eslint-disable no-eval, no-extra-bind */
     /**
+     * @redirect noeval.js
+     *
+     * @description
+     * Redirects request to the source which sets static properties to PopAds and popns objects
+     *
      * Prevents page to use eval.
      * Notifies about attempts in the console
      *
@@ -1039,7 +1361,10 @@
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#noevaljs-
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#silent-noevaljs-
      *
-     * @param {Source} source
+     * **Example**
+     * ```
+     * ||example.org/index.js$script,redirect=noeval.js
+     * ```
      */
 
     function noeval(source) {
@@ -1052,12 +1377,22 @@
 
     /* eslint-disable no-eval, no-extra-bind, func-names */
     /**
+     * @scriptlet prevent-eval-if
+     *
+     * @description
      * Prevents page to use eval matching payload
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
      *
-     * @param {Source} source
+     * **Parameters**
+     * - `search` string or regexp matching stringified eval payload
+     *
+     * **Examples**
+     * ```
+     * !
+     * ```
+     *
      * @param {string|RegExp} [search] string or regexp matching stringified eval payload
      */
 
@@ -1079,12 +1414,18 @@
 
     /* eslint-disable no-console, func-names, no-multi-assign */
     /**
-     * Fuckadblock 3.2.0 defuser
+     * @scriptlet prevent-fab-3.2.0
+     *
+     * @description
+     * Prevents execution of the FAB script v3.2.0
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#fuckadblockjs-320-
      *
-     * @param {Source} source
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("prevent-fab-3.2.0")
+     * ```
      */
 
     function preventFab(source) {
@@ -1123,12 +1464,18 @@
 
     /* eslint-disable no-console, func-names, no-multi-assign */
     /**
+     * @scriptlet set-popads-dummy
+     *
+     * @description
      * Sets static properties PopAds and popns.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#popads-dummyjs-
      *
-     * @param {Source} source
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("set-popads-dummy")
+     * ```
      */
 
     function setPopadsDummy(source) {
@@ -1153,12 +1500,18 @@
     setPopadsDummy.injections = [hit];
 
     /**
+     * @scriptlet prevent-popads-net
+     *
+     * @description
      * Aborts on property write (PopAds, popns), throws reference error with random id
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#popadsnetjs-
      *
-     * @param {Source} source
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("prevent-popads-net")
+     * ```
      */
 
     function preventPopadsNet(source) {
@@ -1186,12 +1539,18 @@
 
     /* eslint-disable func-names */
     /**
+     * @scriptlet prevent-adfly
+     *
+     * @description
      * Prevents anti-adblock scripts on adfly short links.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#adfly-defuserjs-
      *
-     * @param {Source} source
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("prevent-adfly")
+     * ```
      */
 
     function preventAdfly(source) {
@@ -1278,12 +1637,24 @@
     preventAdfly.names = ['prevent-adfly', 'adfly-defuser.js', 'ubo-adfly-defuser.js'];
     preventAdfly.injections = [setPropertyAccess, hit];
 
+    /* eslint-disable max-len */
+
     /**
-     * Call debugger on property reading
+     * @scriptlet debug-on-property-read
      *
-     * @param {Source} source
-     * @param {string} property property name
+     * @description
+     * This scriptlet is basically the same as [abort-on-property-read](#abort-on-property-read), but instead of aborting it starts the debugger.
+     *
+     * **It is not supposed to be used in production filter lists!**
+     *
+     * **Syntax**
+     * ```
+     * ! Aborts script when it tries to access `window.alert`
+     * example.org#%#//scriptlet("debug-on-property-read", "alert")
+     * ```
      */
+
+    /* eslint-enable max-len */
 
     function debugOnPropertyRead(source, property) {
       if (!property) {
@@ -1334,12 +1705,24 @@
     debugOnPropertyRead.names = ['debug-on-property-read'];
     debugOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
+    /* eslint-disable max-len */
+
     /**
-     * Call debugger on property writing
+     * @scriptlet debug-on-property-write
      *
-     * @param {Source} source
-     * @param {string} property propery name
+     * @description
+     * This scriptlet is basically the same as [abort-on-property-write](#abort-on-property-write), but instead of aborting it starts the debugger.
+     *
+     * **It is not supposed to be used in production filter lists!**
+     *
+     * **Syntax**
+     * ```
+     * ! Aborts script when it tries to write in property `window.test`
+     * example.org#%#//scriptlet("debug-on-property-write", "test")
+     * ```
      */
+
+    /* eslint-enable max-len */
 
     function debugOnPropertyWrite(source, property) {
       if (!property) {
@@ -1390,13 +1773,24 @@
     debugOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
     /* eslint-disable no-new-func */
+    /* eslint-disable max-len */
+
     /**
-     * Call debugger when script should be aborted
+     * @scriptlet debug-current-inline-script
      *
-     * @param {Source} source
-     * @param {string} property path to a property
-     * @param {string} search must match the inline script contents
+     * @description
+     * This scriptlet is basically the same as [abort-current-inline-script](#abort-current-inline-script), but instead of aborting it starts the debugger.
+     *
+     * **It is not supposed to be used in production filter lists!**
+     *
+     * **Syntax**
+     *```
+     * ! Aborts script when it tries to access `window.alert`
+     * example.org#%#//scriptlet("debug-current-inline-script", "alert")
+     * ```
      */
+
+    /* eslint-enable max-len */
 
     function debugCurrentInlineScript(source, property) {
       var search = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
@@ -1469,14 +1863,52 @@
     debugCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit];
 
     /**
+     * @scriptlet remove-attr
+     *
+     * @description
      * Removes attributes from DOM nodes. Will run only once after page load.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
      *
-     * @param {Source} source
-     * @param {string} attrs attributes names separated by `|` which should be removed
-     * @param {string} selector CSS selector specifies nodes from which attributes should be removed
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("remove-attr", attrs[, selector])
+     * ```
+     *
+     * - `attrs` - required, attribute or list of attributes joined by |
+     * - `selector` - optional, CSS selector, specifies nodes from which attributes will be removed
+     *
+     * **Examples**
+     * 1.  Removes by attribute
+     *     ```
+     *     example.org#%#//scriptlet("remove-attr", "example|test")
+     *     ```
+     *
+     *     ```html
+     *     <!-- before  -->
+     *     <div example="true" test="true">Some text</div>
+     *
+     *     <!-- after -->
+     *     <div>Some text</div>
+     *     ```
+     *
+     * 2. Removes with specified selector
+     *     ```
+     *     example.org#%#//scriptlet("remove-attr", "example", ".inner")
+     *     ```
+     *
+     *     ```html
+     *     <!-- before -->
+     *     <div class="wrapper" example="true">
+     *         <div class="inner" example="true">Some text</div>
+     *     </div>
+     *
+     *     <!-- after -->
+     *     <div class="wrapper" example="true">
+     *         <div class="inner">Some text</div>
+     *     </div>
+     *     ```
      */
 
     function removeAttr(source, attrs, selector) {
@@ -1519,12 +1951,18 @@
     removeAttr.injections = [hit];
 
     /**
-     * Prevents opening new tabs and windows if there is `target` attribute in element
+     * @scriptlet disable-newtab-links
+     *
+     * @description
+     * Prevents opening new tabs and windows if there is `target` attribute in element.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#disable-newtab-linksjs-
      *
-     * @param {Source} source
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("disable-newtab-links")
+     * ```
      */
 
     function disableNewtabLinks(source) {
@@ -1546,17 +1984,49 @@
     disableNewtabLinks.names = ['disable-newtab-links', 'disable-newtab-links.js', 'ubo-disable-newtab-links.js'];
     disableNewtabLinks.injections = [hit];
 
+    /* eslint-disable max-len */
+
     /**
+     * @scriptlet adjust-setInterval
+     *
+     * @description
      * Adjusts interval for specified setInterval() callbacks.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-setinterval-boosterjs-
      *
-     * @param {Source} source
-     * @param {string|RegExp} match matching in string of callback function
-     * @param {string|number} interval matching interval
-     * @param {string|number} boost interval multiplier
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("adjust-setInterval"[, match [, interval[, boost]]])
+     * ```
+     *
+     * - `match` - optional, string/regular expression, matching in stringified callback function
+     * - `interval` - optional, defaults to 1000, decimal integer, matching interval
+     * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down, interval multiplier
+     *
+     * **Examples**
+     * 1. Adjust all setInterval() x20 times where interval equal 1000ms:
+     *     ```
+     *     example.org#%#//scriptlet("adjust-setInterval")
+     *     ```
+     *
+     * 2. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 1000ms
+     *     ```
+     *     example.org#%#//scriptlet("adjust-setInterval", "example")
+     *     ```
+     *
+     * 3. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 400ms
+     *     ```
+     *     example.org#%#//scriptlet("adjust-setInterval", "example", "400")
+     *     ```
+     *
+     * 4. Slow down setInterval() x2 times where callback matched with `example` and interval equal 400ms
+     *     ```
+     *     example.org#%#//scriptlet("adjust-setInterval", "example", "400", "2")
+     *     ```
      */
+
+    /* eslint-enable max-len */
 
     function adjustSetInterval(source, match, interval, boost) {
       var nativeInterval = window.setInterval;
@@ -1596,17 +2066,49 @@
     adjustSetInterval.names = ['adjust-setInterval', 'nano-setInterval-booster.js', 'ubo-nano-setInterval-booster.js'];
     adjustSetInterval.injections = [toRegExp, hit];
 
+    /* eslint-disable max-len */
+
     /**
+     * @scriptlet adjust-setTimeout
+     *
+     * @description
      * Adjusts timeout for specified setTimout() callbacks.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-settimeout-boosterjs-
      *
-     * @param {Source} source
-     * @param {string|RegExp} match matching in string of callback function
-     * @param {string|number} timeout matching timeout
-     * @param {string|number} boost timeout multiplier
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("adjust-setTimeout"[, match [, timeout[, boost]]])
+     * ```
+     *
+     * - `match` - optional, string/regular expression, matching in stringified callback function
+     * - `timeout` - optional, defaults to 1000, decimal integer, matching interval
+     * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down, interval multiplier
+     *
+     * **Examples**
+     * 1. Adjust all setTimeout() x20 times where interval equal 1000ms:
+     *     ```
+     *     example.org#%#//scriptlet("adjust-setTimeout")
+     *     ```
+     *
+     * 2. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 1000ms
+     *     ```
+     *     example.org#%#//scriptlet("adjust-setTimeout", "example")
+     *     ```
+     *
+     * 3. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 400ms
+     *     ```
+     *     example.org#%#//scriptlet("adjust-setTimeout", "example", "400")
+     *     ```
+     *
+     * 4. Slow down setTimeout() x2 times where callback matched with `example` and interval equal 400ms
+     *     ```
+     *     example.org#%#//scriptlet("adjust-setTimeout", "example", "400", "2")
+     *     ```
      */
+
+    /* eslint-enable max-len */
 
     function adjustSetTimeout(source, match, timeout, boost) {
       var nativeTimeout = window.setTimeout;
@@ -1646,17 +2148,32 @@
     adjustSetTimeout.names = ['adjust-setTimeout', 'nano-setTimeout-booster.js', 'ubo-nano-setTimeout-booster.js'];
     adjustSetTimeout.injections = [toRegExp, hit];
 
+    /* eslint-disable max-len */
+
     /**
-     * Wraps the `console.dir` API to call the `toString`
-     * method of the argument.
+     * @scriptlet dir-string
+     *
+     * @description
+     * Wraps the `console.dir` API to call the `toString` method of the argument.
+     * There are several adblock circumvention systems that detect browser devtools and hide themselves. Therefore, if we force them to think that devtools are open (using this scrciptlet), it will automatically disable the adblock circumvention script.
      *
      * Related ABP source:
      * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L766
      *
-     * @param {Source} source
-     * @param {string|number} times the number of times to call the
-     * `toString` method of the argument to `console.dir`.
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("dir-string"[, times])
+     * ```
+     * - `times` - optional, the number of times to call the `toString` method of the argument to `console.dir`
+     *
+     * **Example**
+     * ```
+     * ! Run 2 times
+     * example.org#%#//scriptlet("dir-string", "2")
+     * ```
      */
+
+    /* eslint-enable max-len */
 
     function dirString(source, times) {
       var _console = console,
@@ -1685,13 +2202,58 @@
     dirString.names = ['dir-string', 'abp-dir-string'];
     dirString.injections = [hit];
 
+    /* eslint-disable max-len */
+
     /**
-     * Removes properties from the results of JSON.parse call
-     * @param {Source} source
-     * @param {string} propsToRemove list of space-separated properties to remove
-     * @param {string} [requiredInitialProps] list of space-separated properties
-     * which must be all present in the object for the pruning to occur
+     * @scriptlet json-prune
+     *
+     * @description
+     * Removes specified properties from the result of calling JSON.parse and returns the caller
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("json-prune"[, propsToRemove [, obligatoryProps]])
+     * ```
+     *
+     * - `propsToRemove` - string of space-separated properties to remove
+     * - `obligatoryProps` - optional, string of space-separated properties which must be all present for the pruning to occur
+     *
+     * **Examples**
+     * 1. Removes property `example` from the results of JSON.parse call
+     *     ```
+     *     example.org#%#//scriptlet("json-prune", "example")
+     *     ```
+     *
+     *     For instance, the following call will return `{ one: 1}`
+     *
+     *     ```html
+     *     JSON.parse('{"one":1,"example":true}')
+     *     ```
+     *
+     * 2. If there are no specified properties in the result of JSON.parse call, pruning will NOT occur
+     *     ```
+     *     example.org#%#//scriptlet("json-prune", "one", "obligatoryProp")
+     *     ```
+     *
+     *     For instance, the following call will return `{ one: 1, two: 2}`
+     *
+     *     ```html
+     *     JSON.parse('{"one":1,"two":2}')
+     *     ```
+     *
+     * 3. A property in a list of properties can be a chain of properties
+     *
+     *     ```
+     *     example.org#%#//scriptlet("json-prune", "a.b", "adpath.url.first")
+     *     ```
+     *
+     * 4. Call with no arguments will log the current hostname and json payload at the console
+     *     ```
+     *     example.org#%#//scriptlet("json-prune")
+     *     ```
      */
+
+    /* eslint-enable max-len */
 
     function jsonPrune(source, propsToRemove, requiredInitialProps) {
       // eslint-disable-next-line no-console
@@ -1745,10 +2307,21 @@
     jsonPrune.injections = [hit, getPropertyInChain];
 
     /**
-     * Mocks Google AdSense API
+     * @scriptlet googlesyndication-adsbygoogle
+     *
+     * @description
+     * Mocks Google AdSense API.
+     *
+     * It is mostly used for `$redirect` rules.
+     * See [redirect description](#googlesyndication-adsbygoogle-redirect).
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googlesyndication_adsbygoogle.js
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("googlesyndication-adsbygoogle")
+     * ```
      */
 
     function GoogleSyndicationAdsByGoogle(source) {
@@ -1782,10 +2355,21 @@
     GoogleSyndicationAdsByGoogle.injections = [hit];
 
     /**
-     * Mocks Google Tag Maneger API
+     * @scriptlet googletagmanager-gtm
+     *
+     * @description
+     * Mocks Google Tag Manager API.
+     *
+     * It is mostly used for `$redirect` rules.
+     * See [redirect description](#googletagmanager-gtm-redirect).
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagmanager_gtm.js
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("googletagmanager-gtm")
+     * ```
      */
 
     function GoogleTagManagerGtm(source) {
@@ -1815,10 +2399,21 @@
     GoogleTagManagerGtm.injections = [hit, noop];
 
     /**
-     * Mocks Google Analytics API
+     * @scriptlet google-analytics
+     *
+     * @description
+     * Mocks Google Analytics API.
+     *
+     * It is mostly used for `$redirect` rules.
+     * See [redirect description](#google-analytics-redirect).\
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_analytics.js
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("google-analytics")
+     * ```
      */
 
     function GoogleAnalytics(source) {
@@ -1877,10 +2472,21 @@
     GoogleAnalytics.injections = [hit, noop, noopNull];
 
     /**
-     * Mocks Scorecard Research API
+     * @scriptlet scorecardresearch-beacon
+     *
+     * @description
+     * Mocks Scorecard Research API.
+     *
+     * It is mostly used for `$redirect` rules.
+     * See [redirect description](#scorecardresearch-beacon-redirect).
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/scorecardresearch_beacon.js
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("scorecardresearch-beacon")
+     * ```
      */
 
     function ScoreCardResearchBeacon(source) {
@@ -1898,10 +2504,21 @@
 
     /* eslint-disable no-underscore-dangle */
     /**
-     * Mocks old Google analytics library
+     * @scriptlet google-analytics-ga
+     *
+     * @description
+     * Mocks old Google Analytics API.
+     *
+     * It is mostly used for `$redirect` rules.
+     * See [redirect description](#google-analytics-redirect).\
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_ga.js
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("google-analytics-ga")
+     * ```
      */
 
     function GoogleAnalyticsGa(source) {
@@ -1992,10 +2609,21 @@
     GoogleAnalyticsGa.injections = [hit, noop];
 
     /**
+     * @scriptlet googletagservices-gpt
+     *
+     * @description
      * Mocks Google Publisher Tag API
+     *
+     * It is mostly used for `$redirect` rules.
+     * See [redirect description](#googletagmanager-gpt-redirect).
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagservices_gpt.js
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("googletagservices-gpt")
+     * ```
      */
 
     function GoogleTagServicesGpt(source) {
@@ -2147,9 +2775,19 @@
     GoogleTagServicesGpt.injections = [hit, noop, noopThis, noopNull, noopArray, noopStr];
 
     /**
-     * Mocks the old Yandex Metrika API
+     * @scriptlet metrika-yandex-watch
      *
-     * @param {Source} source
+     * @description
+     * Mocks the old Yandex Metrika API.
+     * https://yandex.ru/support/metrica/objects/_method-reference.html
+     *
+     * It is mostly used for `$redirect` rules.
+     * See [redirect description](#scorecardresearch-beacon-redirect).
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("metrika-yandex-watch")
+     * ```
      */
 
     function metrikaYandexWatch(source) {
@@ -2225,9 +2863,19 @@
     metrikaYandexWatch.injections = [hit, noop];
 
     /**
+     * @scriptlet metrika-yandex-tag
+     *
+     * @description
      * Mocks Yandex Metrika API
      * https://yandex.ru/support/metrica/objects/method-reference.html
-     * @param {Source} source
+     *
+     * It is mostly used for `$redirect` rules.
+     * See [redirect description](#scorecardresearch-beacon-redirect).
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("metrika-yandex-tag")
+     * ```
      */
 
     function metrikaYandexTag(source) {

@@ -18,18 +18,6 @@ import { noop } from '../helpers/noop';
  * example.org#%#//scriptlet("googletagmanager-gtm")
  * ```
  */
-
-/**
- * @redirect googletagmanager-gtm
- *
- * @description
- * Mocks Google Tag Manager API.
- *
- * **Example**
- * ```
- * ||example.org/index.js$script,redirect=googletagmanager-gtm
- * ```
- */
 export function GoogleTagManagerGtm(source) {
     window.ga = window.ga || noop;
     const { dataLayer } = window;

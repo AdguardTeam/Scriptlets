@@ -18,18 +18,6 @@ import { noop, noopNull } from '../helpers/noop';
  * example.org#%#//scriptlet("google-analytics")
  * ```
  */
-
-/**
- * @redirect google-analytics
- *
- * @description
- * Mocks Google Analytics API.
- *
- * **Example**
- * ```
- * ||example.org/index.js$script,redirect=google-analytics
- * ```
- */
 export function GoogleAnalytics(source) {
     // eslint-disable-next-line func-names
     const Tracker = function () { }; // constructor

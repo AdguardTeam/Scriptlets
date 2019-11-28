@@ -16,19 +16,6 @@ import { noop } from '../helpers/noop';
  * example.org#%#//scriptlet("metrika-yandex-tag")
  * ```
  */
-
-/**
- * @redirect metrika-yandex-tag
- *
- * @description
- * Mocks Yandex Metrika API.
- * https://yandex.ru/support/metrica/objects/method-reference.html
- *
- * **Example**
- * ```
- * ||example.org/index.js$script,redirect=metrika-yandex-watch
- * ```
- */
 export function metrikaYandexTag(source) {
     const asyncCallbackFromOptions = (param, options = {}) => {
         let { callback } = options;

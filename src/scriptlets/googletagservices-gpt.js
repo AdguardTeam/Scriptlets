@@ -24,18 +24,6 @@ import {
  * example.org#%#//scriptlet("googletagservices-gpt")
  * ```
  */
-
-/**
- * @redirect googletagservices-gpt
- *
- * @description
- * Mocks Google Publisher Tag API.
- *
- * **Example**
- * ```
- * ||example.org/index.js$script,redirect=googletagservices-gpt
- * ```
- */
 export function GoogleTagServicesGpt(source) {
     const companionAdsService = {
         addEventListener: noopThis,
