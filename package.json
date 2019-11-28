@@ -5,6 +5,7 @@
         "build": "rollup -c && yarn run build:redirects",
         "watch": "rollup -c -w",
         "build:redirects-TEST": "yarn build && node ./dist/redirectsTest.js",
+        "corelibs:redirects-TEST": "REDIRECTS=CORELIBS node ./dist/redirectsTest.js",
         "build:redirects": "babel-node redirects.build.js",
         "corelibs:redirects": "REDIRECTS=CORELIBS babel-node redirects.build.js",
         "corelibs": "rollup -c --environment CLEAN && babel-node corelibs.build.js && npm run corelibs:redirects",
