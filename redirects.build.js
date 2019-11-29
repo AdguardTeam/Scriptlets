@@ -1,34 +1,33 @@
-import fs from 'fs';
-import path from 'path';
-// eslint-disable-next-line import/no-extraneous-dependencies
 import yaml from 'js-yaml';
-import { EOL } from 'os';
+import * as redirectsList from './src/redirects';
 
-import * as scriptletList from './src/scriptlets';
-import project from './package';
+const fs = require('fs');
+const path = require('path');
+const { EOL } = require('os');
 
-// define global variable scriptlets
-// because require('./dist/scriptlets') trying to put scriptlets code in it
-global.scriptlets = {};
-require('./dist/scriptlets');
+// define global variable redirects
+// because require('./tmp/tmpRedirects') trying to put redirects code in it
+global.redirects = {};
+require('./tmp/tmpRedirects');
 
 const FILE_NAME = 'redirects.yml';
 const CORELIBS_FILE_NAME = 'redirects.json';
 const PATH_TO_DIST = './dist';
 const RESULT_PATH = path.resolve(PATH_TO_DIST, FILE_NAME);
 const CORELIBS_RESULT_PATH = path.resolve(PATH_TO_DIST, CORELIBS_FILE_NAME);
+
+const DUPLICATES_LIST = './src/redirects/scriptlet-redirects.yml';
 const STATIC_REDIRECTS_PATH = './src/redirects/static-redirects.yml';
-const SCRIPTLET_REDIRECTS_PATH = './src/redirects/scriptlet-redirects.yml';
 const banner = `#
 #    AdGuard Scriptlets (Redirects Source)
-#    Version ${project.version}
+#    Version (version from package json)
 #
 `;
 
-let scriptletsToAdd;
+let redirectsToAdd;
 let staticRedirects;
 try {
-    scriptletsToAdd = yaml.safeLoad(fs.readFileSync(SCRIPTLET_REDIRECTS_PATH, 'utf8'));
+    redirectsToAdd = yaml.safeLoad(fs.readFileSync(DUPLICATES_LIST, 'utf8'));
     staticRedirects = yaml.safeLoad(fs.readFileSync(STATIC_REDIRECTS_PATH, 'utf8'));
 } catch (e) {
     // eslint-disable-next-line no-console
@@ -36,44 +35,38 @@ try {
     throw e;
 }
 
-if (!fs.existsSync(PATH_TO_DIST)) {
-    fs.mkdirSync(PATH_TO_DIST);
-}
+const redirectsObject = Object
+    .values(redirectsList)
+    .map((rr) => {
+        const [name, ...aliases] = rr.names;
+        let redirect = global.redirects.getCode(name);
+        redirect = redirect.replace(/\n/g, '');
+        redirect = redirect.replace(/\s{2,}/g, '');
 
-const scriptletsObject = Object
-    .values(scriptletList)
-    .filter((s) => {
-        const name = s.names[0];
-        return scriptletsToAdd.some((scriptletToAdd) => scriptletToAdd.title === name);
-    })
-    .map((s) => {
-        const [name, ...aliases] = s.names;
-        const source = { name };
-        const scriptlet = global.scriptlets.invoke(source);
-        return { name, scriptlet, aliases };
+        return { name, redirect, aliases };
     });
 
-const scriptletRedirects = scriptletsToAdd.map((data) => {
+const nonStaticRedirects = redirectsToAdd.map((data) => {
     const { title } = data;
-    const complement = scriptletsObject.find((obj) => obj.name === title);
+    const complement = redirectsObject.find((obj) => obj.name === title);
 
     if (complement) {
         return {
             ...data,
             aliases: complement.aliases,
             contentType: 'application/javascript',
-            content: complement.scriptlet,
+            content: complement.redirect,
         };
     }
-    throw new Error(`Couldn't find source for scriptlets redirect: ${title}`);
-});
+    throw new Error(`Couldn't find source for non-static redirect: ${title}`);
+}).filter((i) => i);
 
-const mergedRedirects = [...staticRedirects, ...scriptletRedirects];
+const mergedRedirects = [...staticRedirects, ...nonStaticRedirects];
 
 if (process.env.REDIRECTS !== 'CORELIBS') {
-    // Build scriptlets.yml. It is used in the extension.
     try {
         let yamlRedirects = yaml.safeDump(mergedRedirects);
+
         // add empty line before titles
         yamlRedirects = yamlRedirects.split('- title:').join(`${EOL}- title:`).trimLeft();
 

@@ -103,13 +103,13 @@ const testBuild = {
     ],
 };
 
-const testRedirects = {
+const tmpRedirects = {
     input: {
-        redirectsTest: 'src/redirects/index.js',
+        tmpRedirects: 'scripts/build-tmp-redirects.js',
     },
     output: {
-        name: 'redirectsTest',
-        dir: 'dist',
+        name: 'tmpRedirects',
+        dir: 'tmp',
         entryFileNames: '[name].js',
         format: 'iife',
         strict: false,
@@ -130,11 +130,12 @@ const testRedirects = {
 const isCleanBuild = process.env.CLEAN === 'true'; // strip comments
 if (isCleanBuild) {
     bundleBuild.plugins.push(cleanup());
+    tmpRedirects.plugins.push(cleanup());
 }
 
 const isTest = process.env.UI_TEST === 'true';
 const resultBuilds = isTest
     ? [bundleBuild, testBuild]
-    : [bundleBuild, redirectsBuild, testRedirects];
+    : [bundleBuild, redirectsBuild, tmpRedirects];
 
 module.exports = resultBuilds;
