@@ -95,8 +95,12 @@ const getDataFromFiles = (filesList, directoryPath) => {
  * returns describing object for scriptlets and redirects
  */
 const manageDataFromFiles = () => {
-    const scriptletsFilesList = getFilesList(SCRIPTLETS_FILES_DIRECTORY).filter((el) => !el.includes('index.js'));
-    const redirectsFilesList = getFilesList(REDIRECTS_FILES_DIRECTORY).filter((el) => !el.includes('redirects.js'));
+    const scriptletsFilesList = getFilesList(SCRIPTLETS_FILES_DIRECTORY)
+        .filter((el) => !el.includes('index.js'));
+    const redirectsFilesList = getFilesList(REDIRECTS_FILES_DIRECTORY)
+        .filter((el) => !el.includes('index.js'))
+        .filter((el) => !el.includes('jsRedirects.js'))
+        .filter((el) => !el.includes('redirects.js'));
 
     // eslint-disable-next-line max-len
     const dataFromScriptletsFiles = getDataFromFiles(scriptletsFilesList, SCRIPTLETS_FILES_DIRECTORY);

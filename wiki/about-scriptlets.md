@@ -9,19 +9,12 @@
 * [debug-on-property-write](#debug-on-property-write)
 * [dir-string](#dir-string)
 * [disable-newtab-links](#disable-newtab-links)
-* [google-analytics-ga](#google-analytics-ga-scriptlet)
-* [google-analytics](#google-analytics-scriptlet)
-* [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle-scriptlet)
-* [googletagmanager-gtm](#googletagmanager-gtm-scriptlet)
-* [googletagservices-gpt](#googletagservices-gpt-scriptlet)
 * [json-prune](#json-prune)
 * [log-addEventListener](#log-addEventListener)
 * [log-eval](#log-eval)
 * [log-setInterval](#log-setInterval)
 * [log-setTimeout](#log-setTimeout)
 * [log](#log)
-* [metrika-yandex-tag](#metrika-yandex-tag-scriptlet)
-* [metrika-yandex-watch](#metrika-yandex-watch-scriptlet)
 * [nowebrtc](#nowebrtc)
 * [prevent-addEventListener](#prevent-addEventListener)
 * [prevent-adfly](#prevent-adfly)
@@ -34,7 +27,6 @@
 * [prevent-window-open](#prevent-window-open)
 * [remove-attr](#remove-attr)
 * [remove-cookie](#remove-cookie)
-* [scorecardresearch-beacon](#scorecardresearch-beacon-scriptlet)
 * [set-constant](#set-constant)
 * [set-popads-dummy](#set-popads-dummy-scriptlet)
 * * *
@@ -307,91 +299,6 @@ example.org#%#//scriptlet("disable-newtab-links")
 [Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/disable-newtab-links.js)
 * * *
 
-### <a id="google-analytics-ga-scriptlet"></a> ⚡️ google-analytics-ga
-
-Mocks old Google Analytics API.
-
-It is mostly used for `$redirect` rules.
-See [redirect description](#google-analytics-redirect).\
-
-Related UBO scriptlet:
-https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_ga.js
-
-**Syntax**
-```
-example.org#%#//scriptlet("google-analytics-ga")
-```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/google-analytics-ga.js)
-* * *
-
-### <a id="google-analytics-scriptlet"></a> ⚡️ google-analytics
-
-Mocks Google Analytics API.
-
-It is mostly used for `$redirect` rules.
-See [redirect description](#google-analytics-redirect).\
-
-Related UBO scriptlet:
-https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_analytics.js
-
-**Syntax**
-```
-example.org#%#//scriptlet("google-analytics")
-```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/google-analytics.js)
-* * *
-
-### <a id="googlesyndication-adsbygoogle-scriptlet"></a> ⚡️ googlesyndication-adsbygoogle
-
-Mocks Google AdSense API.
-
-It is mostly used for `$redirect` rules.
-See [redirect description](#googlesyndication-adsbygoogle-redirect).
-
-Related UBO scriptlet:
-https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googlesyndication_adsbygoogle.js
-
-**Syntax**
-```
-example.org#%#//scriptlet("googlesyndication-adsbygoogle")
-```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/googlesyndication-adsbygoogle.js)
-* * *
-
-### <a id="googletagmanager-gtm-scriptlet"></a> ⚡️ googletagmanager-gtm
-
-Mocks Google Tag Manager API.
-
-It is mostly used for `$redirect` rules.
-See [redirect description](#googletagmanager-gtm-redirect).
-
-Related UBO scriptlet:
-https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagmanager_gtm.js
-
-**Syntax**
-```
-example.org#%#//scriptlet("googletagmanager-gtm")
-```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/googletagmanager-gtm.js)
-* * *
-
-### <a id="googletagservices-gpt-scriptlet"></a> ⚡️ googletagservices-gpt
-
-Mocks Google Publisher Tag API
-
-It is mostly used for `$redirect` rules.
-See [redirect description](#googletagmanager-gpt-redirect).
-
-Related UBO scriptlet:
-https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagservices_gpt.js
-
-**Syntax**
-```
-example.org#%#//scriptlet("googletagservices-gpt")
-```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/googletagservices-gpt.js)
-* * *
-
 ### <a id="json-prune"></a> ⚡️ json-prune
 
 Removes specified properties from the result of calling JSON.parse and returns the caller
@@ -502,36 +409,6 @@ This scriptlet can be helpful for debugging and troubleshooting other scriptlets
 example.org#%#//scriptlet("log", "arg1", "arg2")
 ```
 [Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/log.js)
-* * *
-
-### <a id="metrika-yandex-tag-scriptlet"></a> ⚡️ metrika-yandex-tag
-
-Mocks Yandex Metrika API
-https://yandex.ru/support/metrica/objects/method-reference.html
-
-It is mostly used for `$redirect` rules.
-See [redirect description](#scorecardresearch-beacon-redirect).
-
-**Syntax**
-```
-example.org#%#//scriptlet("metrika-yandex-tag")
-```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/metrika-yandex-tag.js)
-* * *
-
-### <a id="metrika-yandex-watch-scriptlet"></a> ⚡️ metrika-yandex-watch
-
-Mocks the old Yandex Metrika API.
-https://yandex.ru/support/metrica/objects/_method-reference.html
-
-It is mostly used for `$redirect` rules.
-See [redirect description](#scorecardresearch-beacon-redirect).
-
-**Syntax**
-```
-example.org#%#//scriptlet("metrika-yandex-watch")
-```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/metrika-yandex-watch.js)
 * * *
 
 ### <a id="nowebrtc"></a> ⚡️ nowebrtc
@@ -864,23 +741,6 @@ example.org#%#//scriptlet("remove-cookie"[, match])
     document.cookie = '__example=randomValue';
     ```
 [Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/remove-cookie.js)
-* * *
-
-### <a id="scorecardresearch-beacon-scriptlet"></a> ⚡️ scorecardresearch-beacon
-
-Mocks Scorecard Research API.
-
-It is mostly used for `$redirect` rules.
-See [redirect description](#scorecardresearch-beacon-redirect).
-
-Related UBO scriptlet:
-https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/scorecardresearch_beacon.js
-
-**Syntax**
-```
-example.org#%#//scriptlet("scorecardresearch-beacon")
-```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/scorecardresearch-beacon.js)
 * * *
 
 ### <a id="set-constant"></a> ⚡️ set-constant

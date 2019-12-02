@@ -17,7 +17,7 @@
 * [googletagmanager-gtm](#googletagmanager-gtm-redirect)
 * [googletagservices-gpt](#googletagservices-gpt-redirect)
 * [metrika-yandex-tag](#metrika-yandex-tag-redirect)
-* [metrika-yandex-watch](#metrika-yandex-watch-redirect)
+* [metrika-yandex-watch11](#metrika-yandex-watch11)
 * [noeval.js](#noeval.js)
 * [prevent-fab-3.2.0](#prevent-fab-3.2.0-redirect)
 * [prevent-popads-net](#prevent-popads-net-redirect)
@@ -126,70 +126,85 @@ Redirects request to an empty VAST response.
 
 Mocks old Google Analytics API.
 
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_ga.js
+
 **Example**
 ```
 ||example.org/index.js$script,redirect=google-analytics-ga
 ```
-[Redirect source](/Volumes/dev/scriptlets/src/scriptlets/google-analytics-ga.js)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/google-analytics-ga.js)
 * * *
 
 ### <a id="google-analytics-redirect"></a> ⚡️ google-analytics
 
 Mocks Google Analytics API.
 
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_analytics.js
+
 **Example**
 ```
 ||example.org/index.js$script,redirect=google-analytics
 ```
-[Redirect source](/Volumes/dev/scriptlets/src/scriptlets/google-analytics.js)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/google-analytics.js)
 * * *
 
 ### <a id="googlesyndication-adsbygoogle-redirect"></a> ⚡️ googlesyndication-adsbygoogle
 
 Mocks Google AdSense API.
 
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googlesyndication_adsbygoogle.js
+
 **Example**
 ```
 ||example.org/index.js$script,redirect=googlesyndication-adsbygoogle
 ```
-[Redirect source](/Volumes/dev/scriptlets/src/scriptlets/googlesyndication-adsbygoogle.js)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/googlesyndication-adsbygoogle.js)
 * * *
 
 ### <a id="googletagmanager-gtm-redirect"></a> ⚡️ googletagmanager-gtm
 
 Mocks Google Tag Manager API.
 
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagmanager_gtm.js
+
 **Example**
 ```
 ||example.org/index.js$script,redirect=googletagmanager-gtm
 ```
-[Redirect source](/Volumes/dev/scriptlets/src/scriptlets/googletagmanager-gtm.js)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/googletagmanager-gtm.js)
 * * *
 
 ### <a id="googletagservices-gpt-redirect"></a> ⚡️ googletagservices-gpt
 
 Mocks Google Publisher Tag API.
 
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagservices_gpt.js
+
 **Example**
 ```
 ||example.org/index.js$script,redirect=googletagservices-gpt
 ```
-[Redirect source](/Volumes/dev/scriptlets/src/scriptlets/googletagservices-gpt.js)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/googletagservices-gpt.js)
 * * *
 
 ### <a id="metrika-yandex-tag-redirect"></a> ⚡️ metrika-yandex-tag
 
-Mocks Yandex Metrika API.
+Mocks Yandex Metrika API
 https://yandex.ru/support/metrica/objects/method-reference.html
 
 **Example**
 ```
 ||example.org/index.js$script,redirect=metrika-yandex-watch
 ```
-[Redirect source](/Volumes/dev/scriptlets/src/scriptlets/metrika-yandex-tag.js)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/metrika-yandex-tag.js)
 * * *
 
-### <a id="metrika-yandex-watch-redirect"></a> ⚡️ metrika-yandex-watch
+### <a id="metrika-yandex-watch11"></a> ⚡️ metrika-yandex-watch11
 
 Mocks the old Yandex Metrika API.
 https://yandex.ru/support/metrica/objects/_method-reference.html
@@ -198,7 +213,7 @@ https://yandex.ru/support/metrica/objects/_method-reference.html
 ```
 ||example.org/index.js$script,redirect=metrika-yandex-watch
 ```
-[Redirect source](/Volumes/dev/scriptlets/src/scriptlets/metrika-yandex-watch.js)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/metrika-yandex-watch.js)
 * * *
 
 ### <a id="noeval.js"></a> ⚡️ noeval.js
@@ -216,7 +231,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#silent-noevaljs-
 ```
 ||example.org/index.js$script,redirect=noeval.js
 ```
-[Redirect source](/Volumes/dev/scriptlets/src/scriptlets/noeval.js)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/noeval.js)
 * * *
 
 ### <a id="prevent-fab-3.2.0-redirect"></a> ⚡️ prevent-fab-3.2.0
@@ -227,7 +242,7 @@ Redirects fuckadblock script to the source js file
 ```
 \*\/fuckadblock-$script,redirect=prevent-fab-3.2.0
 ```
-[Redirect source](/Volumes/dev/scriptlets/src/scriptlets/prevent-fab-3.2.0.js)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/prevent-fab-3.2.0.js)
 * * *
 
 ### <a id="prevent-popads-net-redirect"></a> ⚡️ prevent-popads-net
@@ -238,18 +253,21 @@ Redirects request to the source which sets static properties to PopAds and popns
 ```
 ||popads.net/pop.js$script,redirect=prevent-popads-net
 ```
-[Redirect source](/Volumes/dev/scriptlets/src/scriptlets/prevent-popads-net.js)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/prevent-popads-net.js)
 * * *
 
 ### <a id="scorecardresearch-beacon-redirect"></a> ⚡️ scorecardresearch-beacon
 
 Mocks Scorecard Research API.
 
+Related UBO redirect resources:
+https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/scorecardresearch_beacon.js
+
 **Example**
 ```
 ||example.org/index.js$script,redirect=scorecardresearch-beacon
 ```
-[Redirect source](/Volumes/dev/scriptlets/src/scriptlets/scorecardresearch-beacon.js)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/scorecardresearch-beacon.js)
 * * *
 
 ### <a id="set-popads-dummy-redirect"></a> ⚡️ set-popads-dummy
@@ -260,6 +278,6 @@ Redirects request to the source which sets static properties to PopAds and popns
 ```
 ||popads.net^$script,redirect=set-popads-dummy,domain=example.org
 ```
-[Redirect source](/Volumes/dev/scriptlets/src/scriptlets/set-popads-dummy.js)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/set-popads-dummy.js)
 * * *
 
