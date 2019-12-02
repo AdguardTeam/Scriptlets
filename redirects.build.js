@@ -1,5 +1,6 @@
 import yaml from 'js-yaml';
 import * as redirectsList from './src/redirects';
+import { version } from './package.json';
 
 const fs = require('fs');
 const path = require('path');
@@ -20,7 +21,7 @@ const DUPLICATES_LIST = './src/redirects/scriptlet-redirects.yml';
 const STATIC_REDIRECTS_PATH = './src/redirects/static-redirects.yml';
 const banner = `#
 #    AdGuard Scriptlets (Redirects Source)
-#    Version (version from package json)
+#    Version ${version}
 #
 `;
 
@@ -39,9 +40,7 @@ const redirectsObject = Object
     .values(redirectsList)
     .map((rr) => {
         const [name, ...aliases] = rr.names;
-        let redirect = global.redirects.getCode(name);
-        redirect = redirect.replace(/\n/g, '');
-        redirect = redirect.replace(/\s{2,}/g, '');
+        const redirect = global.redirects.getCode(name);
 
         return { name, redirect, aliases };
     });
