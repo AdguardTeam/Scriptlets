@@ -7,12 +7,18 @@ const yaml = require('js-yaml');
 
 const SCRIPTLETS_FILES_DIRECTORY = path.resolve(__dirname, '../src/scriptlets');
 const REDIRECTS_FILES_DIRECTORY = path.resolve(__dirname, '../src/redirects');
-const STATIC_REDIRECTS = path.resolve(__dirname, '../src/redirects/static-redirects.yml');
+const STATIC_REDIRECTS = path.resolve(__dirname, './src/redirects/static-redirects.yml');
 
 const DUPLICATES_LIST = path.resolve(__dirname, '../src/redirects/scriptlet-redirects.yml');
 
 const ABOUT_SCRIPTLETS_PATH = path.resolve(__dirname, '../wiki/about-scriptlets.md');
 const ABOUT_REDIRECTS_PATH = path.resolve(__dirname, '../wiki/about-redirects.md');
+
+// files which are not redirects in ./src/redirects
+const NON_REDIRECTS_FILES = [
+    'index.js',
+    'redirects.js',
+];
 
 // List of redirects which have scriptlet duplicates
 const duplicates = (() => {
@@ -98,9 +104,7 @@ const manageDataFromFiles = () => {
     const scriptletsFilesList = getFilesList(SCRIPTLETS_FILES_DIRECTORY)
         .filter((el) => !el.includes('index.js'));
     const redirectsFilesList = getFilesList(REDIRECTS_FILES_DIRECTORY)
-        .filter((el) => !el.includes('index.js'))
-        .filter((el) => !el.includes('jsRedirects.js'))
-        .filter((el) => !el.includes('redirects.js'));
+        .filter((el) => NON_REDIRECTS_FILES.some((nonrf) => el.includes(nonrf)));
 
     // eslint-disable-next-line max-len
     const dataFromScriptletsFiles = getDataFromFiles(scriptletsFilesList, SCRIPTLETS_FILES_DIRECTORY);

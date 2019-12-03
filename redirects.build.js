@@ -58,7 +58,7 @@ const nonStaticRedirects = redirectsToAdd.map((data) => {
         };
     }
     throw new Error(`Couldn't find source for non-static redirect: ${title}`);
-}).filter((i) => i);
+});
 
 const mergedRedirects = [...staticRedirects, ...nonStaticRedirects];
 

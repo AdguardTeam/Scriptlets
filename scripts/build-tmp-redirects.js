@@ -1,6 +1,6 @@
 import {
     attachDependencies,
-    addScriptletCall,
+    addCall,
     passSourceAndPropsToScriptlet,
 } from '../src/injector';
 
@@ -15,7 +15,7 @@ const getRedirectByName = (redirectsList, name) => {
 const getRedirectCode = (name) => {
     const redirect = getRedirectByName(redirectsList, name);
     let result = attachDependencies(redirect);
-    result = addScriptletCall(redirect, result);
+    result = addCall(redirect, result);
 
     return passSourceAndPropsToScriptlet({ name }, result);
 };

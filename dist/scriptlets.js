@@ -2360,7 +2360,7 @@
      * @param {string} code
      */
 
-    function addScriptletCall(scriptlet, code) {
+    function addCall(scriptlet, code) {
       return "".concat(code, ";\n        const updatedArgs = args ? [].concat(source).concat(args) : [source];\n        ").concat(scriptlet.name, ".apply(this, updatedArgs);\n    ");
     }
     /**
@@ -2447,7 +2447,7 @@
 
       var scriptlet = getScriptletByName(source.name);
       var result = attachDependencies(scriptlet);
-      result = addScriptletCall(scriptlet, result);
+      result = addCall(scriptlet, result);
       result = source.engine === 'corelibs' ? wrapInNonameFunc(result) : passSourceAndPropsToScriptlet(source, result);
       return result;
     }

@@ -15,7 +15,7 @@ export function attachDependencies(scriptlet) {
  * @param {Function} scriptlet
  * @param {string} code
  */
-export function addScriptletCall(scriptlet, code) {
+export function addCall(scriptlet, code) {
     return `${code};
         const updatedArgs = args ? [].concat(source).concat(args) : [source];
         ${scriptlet.name}.apply(this, updatedArgs);
@@ -98,7 +98,7 @@ export function getScriptletCode(source) {
 
     const scriptlet = getScriptletByName(source.name);
     let result = attachDependencies(scriptlet);
-    result = addScriptletCall(scriptlet, result);
+    result = addCall(scriptlet, result);
     result = source.engine === 'corelibs'
         ? wrapInNonameFunc(result)
         : passSourceAndPropsToScriptlet(source, result);
