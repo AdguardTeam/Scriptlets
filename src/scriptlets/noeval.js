@@ -13,7 +13,7 @@ import { hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("noeval")
+ * example.org#%#//scriptlet("noeval.js")
  * ```
  */
 export function noeval(source) {

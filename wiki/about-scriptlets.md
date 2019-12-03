@@ -15,6 +15,7 @@
 * [log-setInterval](#log-setInterval)
 * [log-setTimeout](#log-setTimeout)
 * [log](#log)
+* [noeval.js](#noeval.js)
 * [nowebrtc](#nowebrtc)
 * [prevent-addEventListener](#prevent-addEventListener)
 * [prevent-adfly](#prevent-adfly)
@@ -84,7 +85,7 @@ example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>]
     ```html
     <script>alert("Hi, little world");</script>
     ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/abort-current-inline-script.js)
+[Scriptlet source](../src/scriptlets/abort-current-inline-script.js)
 * * *
 
 ### <a id="abort-on-property-read"></a> ⚡️ abort-on-property-read
@@ -113,7 +114,7 @@ example.org#%#//scriptlet("abort-on-property-read", "alert")
 ! Aborts script when it tries to access `navigator.language`
 example.org#%#//scriptlet("abort-on-property-read", "navigator.language")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/abort-on-property-read.js)
+[Scriptlet source](../src/scriptlets/abort-on-property-read.js)
 * * *
 
 ### <a id="abort-on-property-write"></a> ⚡️ abort-on-property-write
@@ -140,7 +141,7 @@ example.org#%#//scriptlet("abort-on-property-write", <property>)
 utils.escape('<script></script>')
 // => '&lt;script&gt;&lt;/script&gt;'
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/abort-on-property-write.js)
+[Scriptlet source](../src/scriptlets/abort-on-property-write.js)
 * * *
 
 ### <a id="adjust-setInterval"></a> ⚡️ adjust-setInterval
@@ -179,7 +180,7 @@ example.org#%#//scriptlet("adjust-setInterval"[, match [, interval[, boost]]])
     ```
     example.org#%#//scriptlet("adjust-setInterval", "example", "400", "2")
     ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/adjust-setInterval.js)
+[Scriptlet source](../src/scriptlets/adjust-setInterval.js)
 * * *
 
 ### <a id="adjust-setTimeout"></a> ⚡️ adjust-setTimeout
@@ -218,7 +219,7 @@ example.org#%#//scriptlet("adjust-setTimeout"[, match [, timeout[, boost]]])
     ```
     example.org#%#//scriptlet("adjust-setTimeout", "example", "400", "2")
     ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/adjust-setTimeout.js)
+[Scriptlet source](../src/scriptlets/adjust-setTimeout.js)
 * * *
 
 ### <a id="debug-current-inline-script"></a> ⚡️ debug-current-inline-script
@@ -232,7 +233,7 @@ This scriptlet is basically the same as [abort-current-inline-script](#abort-cur
 ! Aborts script when it tries to access `window.alert`
 example.org#%#//scriptlet("debug-current-inline-script", "alert")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/debug-current-inline-script.js)
+[Scriptlet source](../src/scriptlets/debug-current-inline-script.js)
 * * *
 
 ### <a id="debug-on-property-read"></a> ⚡️ debug-on-property-read
@@ -246,7 +247,7 @@ This scriptlet is basically the same as [abort-on-property-read](#abort-on-prope
 ! Aborts script when it tries to access `window.alert`
 example.org#%#//scriptlet("debug-on-property-read", "alert")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/debug-on-property-read.js)
+[Scriptlet source](../src/scriptlets/debug-on-property-read.js)
 * * *
 
 ### <a id="debug-on-property-write"></a> ⚡️ debug-on-property-write
@@ -260,7 +261,7 @@ This scriptlet is basically the same as [abort-on-property-write](#abort-on-prop
 ! Aborts script when it tries to write in property `window.test`
 example.org#%#//scriptlet("debug-on-property-write", "test")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/debug-on-property-write.js)
+[Scriptlet source](../src/scriptlets/debug-on-property-write.js)
 * * *
 
 ### <a id="dir-string"></a> ⚡️ dir-string
@@ -282,7 +283,7 @@ example.org#%#//scriptlet("dir-string"[, times])
 ! Run 2 times
 example.org#%#//scriptlet("dir-string", "2")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/dir-string.js)
+[Scriptlet source](../src/scriptlets/dir-string.js)
 * * *
 
 ### <a id="disable-newtab-links"></a> ⚡️ disable-newtab-links
@@ -296,7 +297,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#disable-newtab-linksjs-
 ```
 example.org#%#//scriptlet("disable-newtab-links")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/disable-newtab-links.js)
+[Scriptlet source](../src/scriptlets/disable-newtab-links.js)
 * * *
 
 ### <a id="json-prune"></a> ⚡️ json-prune
@@ -344,7 +345,7 @@ example.org#%#//scriptlet("json-prune"[, propsToRemove [, obligatoryProps]])
     ```
     example.org#%#//scriptlet("json-prune")
     ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/json-prune.js)
+[Scriptlet source](../src/scriptlets/json-prune.js)
 * * *
 
 ### <a id="log-addEventListener"></a> ⚡️ log-addEventListener
@@ -358,7 +359,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-logger
 ```
 example.org#%#//scriptlet("log-addEventListener")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/log-addEventListener.js)
+[Scriptlet source](../src/scriptlets/log-addEventListener.js)
 * * *
 
 ### <a id="log-eval"></a> ⚡️ log-eval
@@ -369,7 +370,7 @@ Logs all `eval()` or `new Function()` calls to the console
 ```
 example.org#%#//scriptlet("log-eval")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/log-eval.js)
+[Scriptlet source](../src/scriptlets/log-eval.js)
 * * *
 
 ### <a id="log-setInterval"></a> ⚡️ log-setInterval
@@ -383,7 +384,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#setinterval-loggerjs-
 ```
 example.org#%#//scriptlet("log-setInterval")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/log-setInterval.js)
+[Scriptlet source](../src/scriptlets/log-setInterval.js)
 * * *
 
 ### <a id="log-setTimeout"></a> ⚡️ log-setTimeout
@@ -397,7 +398,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#settimeout-loggerjs-
 ```
 example.org#%#//scriptlet("log-setTimeout")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/log-setTimeout.js)
+[Scriptlet source](../src/scriptlets/log-setTimeout.js)
 * * *
 
 ### <a id="log"></a> ⚡️ log
@@ -408,7 +409,22 @@ This scriptlet can be helpful for debugging and troubleshooting other scriptlets
 ```
 example.org#%#//scriptlet("log", "arg1", "arg2")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/log.js)
+[Scriptlet source](../src/scriptlets/log.js)
+* * *
+
+### <a id="noeval.js"></a> ⚡️ noeval.js
+
+Prevents page to use eval.
+Notifies about attempts in the console
+
+It is mostly used for `$redirect` rules.
+See [redirect description](#googlesyndication-adsbygoogle-redirect).
+
+**Syntax**
+```
+example.org#%#//scriptlet("noeval.js")
+```
+[Scriptlet source](../src/scriptlets/noeval.js)
 * * *
 
 ### <a id="nowebrtc"></a> ⚡️ nowebrtc
@@ -422,7 +438,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-
 ```
 example.org#%#//scriptlet("nowebrtc")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/nowebrtc.js)
+[Scriptlet source](../src/scriptlets/nowebrtc.js)
 * * *
 
 ### <a id="prevent-addEventListener"></a> ⚡️ prevent-addEventListener
@@ -458,7 +474,7 @@ example.org#%#//scriptlet("prevent-addEventListener"[, eventSearch[, functionSea
         window.test = 'searchString';
     });
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-addEventListener.js)
+[Scriptlet source](../src/scriptlets/prevent-addEventListener.js)
 * * *
 
 ### <a id="prevent-adfly"></a> ⚡️ prevent-adfly
@@ -472,7 +488,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#adfly-defuserjs-
 ```
 example.org#%#//scriptlet("prevent-adfly")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-adfly.js)
+[Scriptlet source](../src/scriptlets/prevent-adfly.js)
 * * *
 
 ### <a id="prevent-bab"></a> ⚡️ prevent-bab
@@ -486,7 +502,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#bab-defuserjs-
 ```
 example.org#%#//scriptlet("prevent-bab")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-bab.js)
+[Scriptlet source](../src/scriptlets/prevent-bab.js)
 * * *
 
 ### <a id="prevent-eval-if"></a> ⚡️ prevent-eval-if
@@ -503,7 +519,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
 ```
 !
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-eval-if.js)
+[Scriptlet source](../src/scriptlets/prevent-eval-if.js)
 * * *
 
 ### <a id="prevent-fab-3.2.0-scriptlet"></a> ⚡️ prevent-fab-3.2.0
@@ -517,7 +533,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#fuckadblockjs-320-
 ```
 example.org#%#//scriptlet("prevent-fab-3.2.0")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-fab-3.2.0.js)
+[Scriptlet source](../src/scriptlets/prevent-fab-3.2.0.js)
 * * *
 
 ### <a id="prevent-popads-net-scriptlet"></a> ⚡️ prevent-popads-net
@@ -531,7 +547,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#popadsnetjs-
 ```
 example.org#%#//scriptlet("prevent-popads-net")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-popads-net.js)
+[Scriptlet source](../src/scriptlets/prevent-popads-net.js)
 * * *
 
 ### <a id="prevent-setInterval"></a> ⚡️ prevent-setInterval
@@ -575,7 +591,7 @@ example.org#%#//scriptlet("prevent-setInterval"[, <search>[, <interval>]])
         window.test = "value";
     }, 100);
     ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-setInterval.js)
+[Scriptlet source](../src/scriptlets/prevent-setInterval.js)
 * * *
 
 ### <a id="prevent-setTimeout"></a> ⚡️ prevent-setTimeout
@@ -619,7 +635,7 @@ example.org#%#//scriptlet("prevent-setTimeout"[, <search>[, <delay>]])
         window.test = "value";
     }, 100);
     ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-setTimeout.js)
+[Scriptlet source](../src/scriptlets/prevent-setTimeout.js)
 * * *
 
 ### <a id="prevent-window-open"></a> ⚡️ prevent-window-open
@@ -659,7 +675,7 @@ example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
 ```
     example.org#%#//scriptlet("prevent-window-open", "0", "example")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-window-open.js)
+[Scriptlet source](../src/scriptlets/prevent-window-open.js)
 * * *
 
 ### <a id="remove-attr"></a> ⚡️ remove-attr
@@ -707,7 +723,7 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
         <div class="inner">Some text</div>
     </div>
     ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/remove-attr.js)
+[Scriptlet source](../src/scriptlets/remove-attr.js)
 * * *
 
 ### <a id="remove-cookie"></a> ⚡️ remove-cookie
@@ -740,7 +756,7 @@ example.org#%#//scriptlet("remove-cookie"[, match])
     ```javascript
     document.cookie = '__example=randomValue';
     ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/remove-cookie.js)
+[Scriptlet source](../src/scriptlets/remove-cookie.js)
 * * *
 
 ### <a id="set-constant"></a> ⚡️ set-constant
@@ -779,7 +795,7 @@ example.org#%#//scriptlet("set-constant", "firstConst", "false")
 ! window.secondConst() === true // call to the secondConst will return true
 example.org#%#//scriptlet("set-constant", "secondConst", "trueFunc")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/set-constant.js)
+[Scriptlet source](../src/scriptlets/set-constant.js)
 * * *
 
 ### <a id="set-popads-dummy-scriptlet"></a> ⚡️ set-popads-dummy
@@ -793,6 +809,6 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#popads-dummyjs-
 ```
 example.org#%#//scriptlet("set-popads-dummy")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/set-popads-dummy.js)
+[Scriptlet source](../src/scriptlets/set-popads-dummy.js)
 * * *
 

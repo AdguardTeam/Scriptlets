@@ -5,11 +5,11 @@ const path = require('path');
 
 const yaml = require('js-yaml');
 
-const SCRIPTLETS_FILES_DIRECTORY = path.resolve(__dirname, '../src/scriptlets');
-const REDIRECTS_FILES_DIRECTORY = path.resolve(__dirname, '../src/redirects');
-const STATIC_REDIRECTS = path.resolve(__dirname, '../src/redirects/static-redirects.yml');
+const SCRIPTLETS_FILES_DIRECTORY = '../src/scriptlets';
+const REDIRECTS_FILES_DIRECTORY = '../src/redirects';
+const STATIC_REDIRECTS = '../src/redirects/static-redirects.yml';
 
-const DUPLICATES_LIST = path.resolve(__dirname, '../src/redirects/scriptlet-redirects.yml');
+const SCRIPTLET_REDIRECTS_PATH = path.resolve(__dirname, '../src/redirects/scriptlet-redirects.yml');
 
 const ABOUT_SCRIPTLETS_PATH = path.resolve(__dirname, '../wiki/about-scriptlets.md');
 const ABOUT_REDIRECTS_PATH = path.resolve(__dirname, '../wiki/about-redirects.md');
@@ -21,11 +21,11 @@ const NON_REDIRECTS_FILES = [
 ];
 
 // List of redirects which have scriptlet duplicates
-const duplicates = (() => {
-    const duplicatesFile = fs.readFileSync(path.resolve(__dirname, DUPLICATES_LIST), { encoding: 'utf8' });
-    const parsedDuplicatesFile = yaml.safeLoad(duplicatesFile);
+const scriptletsRedirects = (() => {
+    const scriptletsRedirectsFile = fs.readFileSync(path.resolve(__dirname, SCRIPTLET_REDIRECTS_PATH), { encoding: 'utf8' });
+    const parsedScriptletsRedirectsFile = yaml.safeLoad(scriptletsRedirectsFile);
 
-    return parsedDuplicatesFile
+    return parsedScriptletsRedirectsFile
         .reduce((acc, el) => {
             acc.push(`${el.title}`);
             return acc;
@@ -37,7 +37,7 @@ const duplicates = (() => {
  * @param {string} dirPath path to directory
  */
 const getFilesList = (dirPath) => {
-    const filesList = fs.readdirSync(dirPath, { encoding: 'utf8' })
+    const filesList = fs.readdirSync(path.resolve(__dirname, dirPath), { encoding: 'utf8' })
         .filter((el) => el.includes('.js'));
     return filesList;
 };
@@ -88,11 +88,12 @@ const prepareData = (requiredComments, sourcePath) => {
  * @param {string} directoryPath path to directory
  */
 const getDataFromFiles = (filesList, directoryPath) => {
+    const pathToDir = path.resolve(__dirname, directoryPath);
     return filesList.map((file) => {
-        const sourcePath = `${directoryPath}/${file}`;
-        const requiredComments = getComments(sourcePath);
+        const pathToFile = path.resolve(pathToDir, file);
+        const requiredComments = getComments(pathToFile);
 
-        return prepareData(requiredComments, sourcePath);
+        return prepareData(requiredComments, `${directoryPath}/${file}`);
     });
 };
 
@@ -104,7 +105,9 @@ const manageDataFromFiles = () => {
     const scriptletsFilesList = getFilesList(SCRIPTLETS_FILES_DIRECTORY)
         .filter((el) => !el.includes('index.js'));
     const redirectsFilesList = getFilesList(REDIRECTS_FILES_DIRECTORY)
-        .filter((el) => NON_REDIRECTS_FILES.some((nonrf) => el.includes(nonrf)));
+        .filter((el) => {
+            NON_REDIRECTS_FILES.some((nonrf) => nonrf === el);
+        });
 
     // eslint-disable-next-line max-len
     const dataFromScriptletsFiles = getDataFromFiles(scriptletsFilesList, SCRIPTLETS_FILES_DIRECTORY);
@@ -128,14 +131,14 @@ const manageDataFromFiles = () => {
  */
 const generateMD = (data) => {
     const output = data.reduce((acc, el) => {
-        const mdListLink = duplicates.includes(el.name) ? `${el.name}-${el.type}` : el.name;
+        const mdListLink = scriptletsRedirects.includes(el.name) ? `${el.name}-${el.type}` : el.name;
         acc.list.push(`* [${el.name}](#${mdListLink})\n`);
 
         const typeOfSrc = el.type === 'scriptlet' ? 'Scriptlet' : 'Redirect';
 
         const body = `### <a id="${mdListLink}"></a> ⚡️ ${el.name}
 ${el.description}
-[${typeOfSrc} source](${path.resolve(__dirname, el.source)})
+[${typeOfSrc} source](${el.source})
 * * *\n\n`;
         acc.body.push(body);
 
@@ -152,8 +155,7 @@ ${el.description}
  * Generates markdown list and describing text for static redirect resources
  */
 const mdForStaticRedirects = () => {
-    // const staticRedirectsDirPath = path.resolve(__dirname, STATIC_REDIRECTS);
-    const staticRedirects = fs.readFileSync(STATIC_REDIRECTS, { encoding: 'utf8' });
+    const staticRedirects = fs.readFileSync(path.resolve(__dirname, STATIC_REDIRECTS), { encoding: 'utf8' });
     const parsedSR = yaml.safeLoad(staticRedirects);
 
     const output = parsedSR.reduce((acc, el) => {
