@@ -105,6 +105,7 @@ const manageDataFromFiles = () => {
     const scriptletsFilesList = getFilesList(SCRIPTLETS_FILES_DIRECTORY)
         .filter((el) => !el.includes('index.js'));
     const redirectsFilesList = getFilesList(REDIRECTS_FILES_DIRECTORY)
+        // eslint-disable-next-line array-callback-return
         .filter((el) => {
             NON_REDIRECTS_FILES.some((nonrf) => nonrf === el);
         });
