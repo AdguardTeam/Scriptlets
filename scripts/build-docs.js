@@ -7,7 +7,7 @@ const yaml = require('js-yaml');
 
 const SCRIPTLETS_FILES_DIRECTORY = path.resolve(__dirname, '../src/scriptlets');
 const REDIRECTS_FILES_DIRECTORY = path.resolve(__dirname, '../src/redirects');
-const STATIC_REDIRECTS = path.resolve(__dirname, './src/redirects/static-redirects.yml');
+const STATIC_REDIRECTS = path.resolve(__dirname, '../src/redirects/static-redirects.yml');
 
 const DUPLICATES_LIST = path.resolve(__dirname, '../src/redirects/scriptlet-redirects.yml');
 
@@ -152,7 +152,8 @@ ${el.description}
  * Generates markdown list and describing text for static redirect resources
  */
 const mdForStaticRedirects = () => {
-    const staticRedirects = fs.readFileSync(path.resolve(__dirname, STATIC_REDIRECTS), { encoding: 'utf8' });
+    const staticRedirectsDirPath = path.resolve(__dirname, STATIC_REDIRECTS);
+    const staticRedirects = fs.readFileSync(staticRedirectsDirPath, { encoding: 'utf8' });
     const parsedSR = yaml.safeLoad(staticRedirects);
 
     const output = parsedSR.reduce((acc, el) => {
@@ -161,7 +162,7 @@ const mdForStaticRedirects = () => {
 
             const body = `### <a id="${el.title}"></a> ⚡️ ${el.title}
 ${el.description}
-[Redirect source](${path.resolve(__dirname, STATIC_REDIRECTS)})
+[Redirect source](${staticRedirectsDirPath})
 * * *\n\n`;
             acc.body.push(body);
         } else {
