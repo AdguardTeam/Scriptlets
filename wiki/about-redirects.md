@@ -17,7 +17,7 @@
 * [googletagmanager-gtm](#googletagmanager-gtm-redirect)
 * [googletagservices-gpt](#googletagservices-gpt-redirect)
 * [metrika-yandex-tag](#metrika-yandex-tag-redirect)
-* [metrika-yandex-watch11](#metrika-yandex-watch11)
+* [metrika-yandex-watch](#metrika-yandex-watch-redirect)
 * [noeval.js](#noeval.js)
 * [prevent-fab-3.2.0](#prevent-fab-3.2.0-redirect)
 * [prevent-popads-net](#prevent-popads-net-redirect)
@@ -29,7 +29,7 @@
 ```
 ||example.org^$image,redirect=1x1-transparent.gif
 ```
-[Redirect source](./src/redirects/static-redirects.yml)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/static-redirects.yml)
 * * *
 
 ### <a id="2x2-transparent.png"></a> ⚡️ 2x2-transparent.png
@@ -37,7 +37,7 @@
 ```
 ||example.org^$image,redirect=2x2-transparent.png
 ```
-[Redirect source](./src/redirects/static-redirects.yml)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/static-redirects.yml)
 * * *
 
 ### <a id="3x2-transparent.png"></a> ⚡️ 3x2-transparent.png
@@ -45,7 +45,7 @@
 ```
 ||example.org^$image,redirect=3x2-transparent.png
 ```
-[Redirect source](./src/redirects/static-redirects.yml)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/static-redirects.yml)
 * * *
 
 ### <a id="32x32-transparent.png"></a> ⚡️ 32x32-transparent.png
@@ -53,7 +53,7 @@
 ```
 ||example.org^$image,redirect=32x32-transparent.png
 ```
-[Redirect source](./src/redirects/static-redirects.yml)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/static-redirects.yml)
 * * *
 
 ### <a id="noopframe"></a> ⚡️ noopframe
@@ -61,7 +61,7 @@
 ```
 ||example.com^$subdocument,redirect=noopframe,domain=example.org
 ```
-[Redirect source](./src/redirects/static-redirects.yml)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/static-redirects.yml)
 * * *
 
 ### <a id="noopcss"></a> ⚡️ noopcss
@@ -69,7 +69,7 @@
 ```
 ||example.org^$stylesheet,redirect=noopcss
 ```
-[Redirect source](./src/redirects/static-redirects.yml)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/static-redirects.yml)
 * * *
 
 ### <a id="noopjs"></a> ⚡️ noopjs
@@ -77,7 +77,7 @@
 ```
 ||example.org^$script,redirect=noopjs
 ```
-[Redirect source](./src/redirects/static-redirects.yml)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/static-redirects.yml)
 * * *
 
 ### <a id="nooptext"></a> ⚡️ nooptext
@@ -85,7 +85,7 @@
 ```
 ||example.org^$xmlhttprequest,redirect=nooptext
 ```
-[Redirect source](./src/redirects/static-redirects.yml)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/static-redirects.yml)
 * * *
 
 ### <a id="noopvast-2.0"></a> ⚡️ noopvast-2.0
@@ -94,7 +94,7 @@ Redirects request to an empty VAST response.
 ```
 ||example.org^$xmlhttprequest,redirect=noopvast-2.0
 ```
-[Redirect source](./src/redirects/static-redirects.yml)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/static-redirects.yml)
 * * *
 
 ### <a id="noopvast-3.0"></a> ⚡️ noopvast-3.0
@@ -103,7 +103,7 @@ Redirects request to an empty VAST response.
 ```
 ||example.org^$xmlhttprequest,redirect=noopvast-3.0
 ```
-[Redirect source](./src/redirects/static-redirects.yml)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/static-redirects.yml)
 * * *
 
 ### <a id="noopmp3-0.1s"></a> ⚡️ noopmp3-0.1s
@@ -111,7 +111,7 @@ Redirects request to an empty VAST response.
 ```
 ||example.org^$media,redirect=noopmp3-0.1s
 ```
-[Redirect source](./src/redirects/static-redirects.yml)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/static-redirects.yml)
 * * *
 
 ### <a id="noopmp4-1s"></a> ⚡️ noopmp4-1s
@@ -119,7 +119,7 @@ Redirects request to an empty VAST response.
 ```
 ||example.org^$media,redirect=noopmp4-1s
 ```
-[Redirect source](./src/redirects/static-redirects.yml)
+[Redirect source](/Volumes/dev/scriptlets/src/redirects/static-redirects.yml)
 * * *
 
 ### <a id="google-analytics-ga-redirect"></a> ⚡️ google-analytics-ga
@@ -204,7 +204,7 @@ https://yandex.ru/support/metrica/objects/method-reference.html
 [Redirect source](/Volumes/dev/scriptlets/src/redirects/metrika-yandex-tag.js)
 * * *
 
-### <a id="metrika-yandex-watch11"></a> ⚡️ metrika-yandex-watch11
+### <a id="metrika-yandex-watch-redirect"></a> ⚡️ metrika-yandex-watch
 
 Mocks the old Yandex Metrika API.
 https://yandex.ru/support/metrica/objects/_method-reference.html

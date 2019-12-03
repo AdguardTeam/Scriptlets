@@ -131,7 +131,7 @@ const generateMD = (data) => {
 
         const body = `### <a id="${mdListLink}"></a> ⚡️ ${el.name}
 ${el.description}
-[${typeOfSrc} source](${el.source})
+[${typeOfSrc} source](${path.resolve(__dirname, el.source)})
 * * *\n\n`;
         acc.body.push(body);
 
@@ -157,7 +157,7 @@ const mdForStaticRedirects = () => {
 
             const body = `### <a id="${el.title}"></a> ⚡️ ${el.title}
 ${el.description}
-[Redirect source](./src/redirects/static-redirects.yml)
+[Redirect source](${path.resolve(__dirname, STATIC_REDIRECTS)})
 * * *\n\n`;
             acc.body.push(body);
         } else {
