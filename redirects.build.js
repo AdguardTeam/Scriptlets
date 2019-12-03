@@ -17,7 +17,7 @@ const PATH_TO_DIST = './dist';
 const RESULT_PATH = path.resolve(PATH_TO_DIST, FILE_NAME);
 const CORELIBS_RESULT_PATH = path.resolve(PATH_TO_DIST, CORELIBS_FILE_NAME);
 
-const DUPLICATES_LIST = './src/redirects/scriptlet-redirects.yml';
+const SCRIPTLET_REDIRECTS_PATH = './src/redirects/scriptlet-redirects.yml';
 const STATIC_REDIRECTS_PATH = './src/redirects/static-redirects.yml';
 const banner = `#
 #    AdGuard Scriptlets (Redirects Source)
@@ -28,7 +28,7 @@ const banner = `#
 let redirectsToAdd;
 let staticRedirects;
 try {
-    redirectsToAdd = yaml.safeLoad(fs.readFileSync(DUPLICATES_LIST, 'utf8'));
+    redirectsToAdd = yaml.safeLoad(fs.readFileSync(SCRIPTLET_REDIRECTS_PATH, 'utf8'));
     staticRedirects = yaml.safeLoad(fs.readFileSync(STATIC_REDIRECTS_PATH, 'utf8'));
 } catch (e) {
     // eslint-disable-next-line no-console
