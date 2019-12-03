@@ -152,8 +152,8 @@ ${el.description}
  * Generates markdown list and describing text for static redirect resources
  */
 const mdForStaticRedirects = () => {
-    const staticRedirectsDirPath = path.resolve(__dirname, STATIC_REDIRECTS);
-    const staticRedirects = fs.readFileSync(staticRedirectsDirPath, { encoding: 'utf8' });
+    // const staticRedirectsDirPath = path.resolve(__dirname, STATIC_REDIRECTS);
+    const staticRedirects = fs.readFileSync(STATIC_REDIRECTS, { encoding: 'utf8' });
     const parsedSR = yaml.safeLoad(staticRedirects);
 
     const output = parsedSR.reduce((acc, el) => {
@@ -162,7 +162,7 @@ const mdForStaticRedirects = () => {
 
             const body = `### <a id="${el.title}"></a> ⚡️ ${el.title}
 ${el.description}
-[Redirect source](${staticRedirectsDirPath})
+[Redirect source](${STATIC_REDIRECTS})
 * * *\n\n`;
             acc.body.push(body);
         } else {
