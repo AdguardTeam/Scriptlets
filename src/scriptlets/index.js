@@ -17,7 +17,7 @@ export * from './log-setInterval';
 export * from './log-setTimeout';
 export * from './log-eval';
 export * from './log';
-export * from '../redirects/noeval';
+export * from './noeval';
 export * from './prevent-eval-if';
 export * from './prevent-fab-3.2.0';
 export * from './set-popads-dummy';

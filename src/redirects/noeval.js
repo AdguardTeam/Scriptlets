@@ -1,5 +1,4 @@
-/* eslint-disable no-eval, no-extra-bind */
-import { hit } from '../helpers';
+import { noeval } from '../scriptlets/noeval';
 
 /**
  * @redirect noeval.js
@@ -10,27 +9,13 @@ import { hit } from '../helpers';
  * Prevents page to use eval.
  * Notifies about attempts in the console
  *
- * Related UBO scriptlets:
+ * Related UBO redirect resource:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#noevaljs-
- * https://github.com/gorhill/uBlock/wiki/Resources-Library#silent-noevaljs-
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-silentjs-
  *
  * **Example**
  * ```
  * ||example.org/index.js$script,redirect=noeval.js
  * ```
  */
-export function noeval(source) {
-    window.eval = function evalWrapper(s) {
-        hit(source, `AdGuard has prevented eval:\n${s}`);
-    }.bind();
-}
-
-noeval.names = [
-    'noeval',
-    'noeval.js',
-    'silent-noeval.js',
-    'ubo-noeval.js',
-    'ubo-silent-noeval.js',
-];
-
-noeval.injections = [hit];
+export { noeval };

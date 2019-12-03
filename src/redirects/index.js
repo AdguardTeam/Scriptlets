@@ -8,5 +8,5 @@ export * from './googlesyndication-adsbygoogle';
 export * from './googletagmanager-gtm';
 export * from './googletagservices-gpt';
 export * from './scorecardresearch-beacon';
-export * from './metrika-yandex-watch';
 export * from './metrika-yandex-tag';
+export * from './metrika-yandex-watch';
