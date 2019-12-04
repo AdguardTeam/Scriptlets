@@ -6,7 +6,7 @@ import {
  * @scriptlet prevent-popads-net
  *
  * @description
- * Aborts on property write (PopAds, popns), throws reference error with random id
+ * Aborts on property write (PopAds, popns), throws reference error with random id.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#popadsnetjs-

@@ -4,7 +4,7 @@ import { noeval } from '../scriptlets/noeval';
  * @redirect noeval.js
  *
  * @description
- * Redirects request to the source which sets static properties to PopAds and popns objects
+ * Redirects request to the source which sets static properties to PopAds and popns objects.
  *
  * Prevents page to use eval.
  * Notifies about attempts in the console

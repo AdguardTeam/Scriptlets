@@ -9,8 +9,6 @@ const SCRIPTLETS_FILES_DIRECTORY = '../src/scriptlets';
 const REDIRECTS_FILES_DIRECTORY = '../src/redirects';
 const STATIC_REDIRECTS = '../src/redirects/static-redirects.yml';
 
-const SCRIPTLET_REDIRECTS_PATH = path.resolve(__dirname, '../src/redirects/scriptlet-redirects.yml');
-
 const ABOUT_SCRIPTLETS_PATH = path.resolve(__dirname, '../wiki/about-scriptlets.md');
 const ABOUT_REDIRECTS_PATH = path.resolve(__dirname, '../wiki/about-redirects.md');
 
@@ -19,18 +17,6 @@ const NON_REDIRECTS_FILES = [
     'index.js',
     'redirects.js',
 ];
-
-// List of redirects which have scriptlet duplicates
-const scriptletsRedirects = (() => {
-    const scriptletsRedirectsFile = fs.readFileSync(path.resolve(__dirname, SCRIPTLET_REDIRECTS_PATH), { encoding: 'utf8' });
-    const parsedScriptletsRedirectsFile = yaml.safeLoad(scriptletsRedirectsFile);
-
-    return parsedScriptletsRedirectsFile
-        .reduce((acc, el) => {
-            acc.push(`${el.title}`);
-            return acc;
-        }, []);
-})();
 
 /**
  * Gets list of files
@@ -132,12 +118,11 @@ const manageDataFromFiles = () => {
  */
 const generateMD = (data) => {
     const output = data.reduce((acc, el) => {
-        const mdListLink = scriptletsRedirects.includes(el.name) ? `${el.name}-${el.type}` : el.name;
-        acc.list.push(`* [${el.name}](#${mdListLink})\n`);
+        acc.list.push(`* [${el.name}](#${el.name})\n`);
 
         const typeOfSrc = el.type === 'scriptlet' ? 'Scriptlet' : 'Redirect';
 
-        const body = `### <a id="${mdListLink}"></a> ⚡️ ${el.name}
+        const body = `### <a id="${el.name}"></a> ⚡️ ${el.name}
 ${el.description}
 [${typeOfSrc} source](${el.source})
 * * *\n\n`;

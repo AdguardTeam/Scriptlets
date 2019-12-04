@@ -21,15 +21,15 @@
 * [prevent-adfly](#prevent-adfly)
 * [prevent-bab](#prevent-bab)
 * [prevent-eval-if](#prevent-eval-if)
-* [prevent-fab-3.2.0](#prevent-fab-3.2.0-scriptlet)
-* [prevent-popads-net](#prevent-popads-net-scriptlet)
+* [prevent-fab-3.2.0](#prevent-fab-3.2.0)
+* [prevent-popads-net](#prevent-popads-net)
 * [prevent-setInterval](#prevent-setInterval)
 * [prevent-setTimeout](#prevent-setTimeout)
 * [prevent-window-open](#prevent-window-open)
 * [remove-attr](#remove-attr)
 * [remove-cookie](#remove-cookie)
 * [set-constant](#set-constant)
-* [set-popads-dummy](#set-popads-dummy-scriptlet)
+* [set-popads-dummy](#set-popads-dummy)
 * * *
 ### <a id="abort-current-inline-script"></a> ⚡️ abort-current-inline-script
 
@@ -522,7 +522,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
 [Scriptlet source](../src/scriptlets/prevent-eval-if.js)
 * * *
 
-### <a id="prevent-fab-3.2.0-scriptlet"></a> ⚡️ prevent-fab-3.2.0
+### <a id="prevent-fab-3.2.0"></a> ⚡️ prevent-fab-3.2.0
 
 Prevents execution of the FAB script v3.2.0
 
@@ -536,7 +536,7 @@ example.org#%#//scriptlet("prevent-fab-3.2.0")
 [Scriptlet source](../src/scriptlets/prevent-fab-3.2.0.js)
 * * *
 
-### <a id="prevent-popads-net-scriptlet"></a> ⚡️ prevent-popads-net
+### <a id="prevent-popads-net"></a> ⚡️ prevent-popads-net
 
 Aborts on property write (PopAds, popns), throws reference error with random id
 
@@ -798,7 +798,7 @@ example.org#%#//scriptlet("set-constant", "secondConst", "trueFunc")
 [Scriptlet source](../src/scriptlets/set-constant.js)
 * * *
 
-### <a id="set-popads-dummy-scriptlet"></a> ⚡️ set-popads-dummy
+### <a id="set-popads-dummy"></a> ⚡️ set-popads-dummy
 
 Sets static properties PopAds and popns.
 

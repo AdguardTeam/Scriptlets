@@ -5,7 +5,7 @@ import { noop } from '../helpers/noop';
  * @redirect metrika-yandex-tag
  *
  * @description
- * Mocks Yandex Metrika API
+ * Mocks Yandex Metrika API.
  * https://yandex.ru/support/metrica/objects/method-reference.html
  *
  * **Example**

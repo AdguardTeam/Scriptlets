@@ -44,7 +44,7 @@ export function addCall(scriptlet, code) {
  *      noeval.apply(this, args);
  * )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])`
  */
-export function passSourceAndPropsToScriptlet(source, code) {
+export function passSourceAndProps(source, code) {
     if (source.hit) {
         source.hit = source.hit.toString();
     }
@@ -101,6 +101,6 @@ export function getScriptletCode(source) {
     result = addCall(scriptlet, result);
     result = source.engine === 'corelibs'
         ? wrapInNonameFunc(result)
-        : passSourceAndPropsToScriptlet(source, result);
+        : passSourceAndProps(source, result);
     return result;
 }

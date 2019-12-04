@@ -1143,7 +1143,7 @@
     function addCall(scriptlet, code) {
       return "".concat(code, ";\n        const updatedArgs = args ? [].concat(source).concat(args) : [source];\n        ").concat(scriptlet.name, ".apply(this, updatedArgs);\n    ");
     }
-    function passSourceAndPropsToScriptlet(source, code) {
+    function passSourceAndProps(source, code) {
       if (source.hit) {
         source.hit = source.hit.toString();
       }
@@ -1180,7 +1180,7 @@
       var scriptlet = getScriptletByName(source.name);
       var result = attachDependencies(scriptlet);
       result = addCall(scriptlet, result);
-      result = source.engine === 'corelibs' ? wrapInNonameFunc(result) : passSourceAndPropsToScriptlet(source, result);
+      result = source.engine === 'corelibs' ? wrapInNonameFunc(result) : passSourceAndProps(source, result);
       return result;
     }
 

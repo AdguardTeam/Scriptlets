@@ -9,7 +9,7 @@ import { hit } from '../helpers';
  * Notifies about attempts in the console
  *
  * It is mostly used for `$redirect` rules.
- * See [redirect description](#googlesyndication-adsbygoogle-redirect).
+ * See [redirect description](../wiki/about-redirects.md#noeval.js).
  *
  * **Syntax**
  * ```

@@ -6,3 +6,19 @@
   comment: Aborts on property write (PopAds, popns), throws reference error with random id
 - title: noeval
   comment: Prevents page to use eval.
+- title: googlesyndication-adsbygoogle
+  comment: Mocks Google AdSense API
+- title: googletagmanager-gtm
+  comment: Mocks Google Tag Manager API
+- title: google-analytics
+  comment: Mocks Google Analytics API
+- title: scorecardresearch-beacon
+  comment: Mocks Scorecard Research API
+- title: google-analytics-ga
+  comment: Mocks old Google analytics library
+- title: googletagservices-gpt
+  comment: Mocks Google Publisher Tag API
+- title: metrika-yandex-watch
+  comment: Mocks the old Yandex Metrika API
+- title: metrika-yandex-tag
+  comment: Mocks Yandex Metrika API
