@@ -8,7 +8,7 @@ import * as redirectsList from '../src/redirects';
 
 
 const getRedirectByName = (redirectsList, name) => {
-    const redirects = Object.values(redirectsList).map((r) => r);
+    const redirects = Object.values(redirectsList);
     return redirects.find((r) => r.names && r.names.indexOf(name) > -1);
 };
 

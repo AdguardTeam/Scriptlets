@@ -199,7 +199,7 @@ https://yandex.ru/support/metrica/objects/method-reference.html
 
 **Example**
 ```
-||example.org/index.js$script,redirect=metrika-yandex-watch
+||example.org/index.js$script,redirect=metrika-yandex-tag
 ```
 [Redirect source](../src/redirects/metrika-yandex-tag.js)
 * * *
