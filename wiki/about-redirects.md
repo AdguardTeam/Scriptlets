@@ -229,7 +229,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-silentjs-
 
 **Example**
 ```
-||example.org/index.js$script,redirect=noeval.js
+||example.org/index.js$script,redirect=noeval
 ```
 [Redirect source](../src/redirects/noeval.js)
 * * *

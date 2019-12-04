@@ -2,18 +2,18 @@
 import { hit } from '../helpers';
 
 /**
- * @scriptlet noeval.js
+ * @scriptlet noeval
  *
  * @description
  * Prevents page to use eval.
  * Notifies about attempts in the console
  *
  * It is mostly used for `$redirect` rules.
- * See [redirect description](../wiki/about-redirects.md#noeval.js).
+ * See [redirect description](../wiki/about-redirects.md#noeval).
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("noeval.js")
+ * example.org#%#//scriptlet("noeval")
  * ```
  */
 export function noeval(source) {

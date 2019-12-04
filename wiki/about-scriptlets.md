@@ -15,7 +15,7 @@
 * [log-setInterval](#log-setInterval)
 * [log-setTimeout](#log-setTimeout)
 * [log](#log)
-* [noeval.js](#noeval.js)
+* [noeval](#noeval)
 * [nowebrtc](#nowebrtc)
 * [prevent-addEventListener](#prevent-addEventListener)
 * [prevent-adfly](#prevent-adfly)
@@ -415,17 +415,17 @@ example.org#%#//scriptlet("log", "arg1", "arg2")
 [Scriptlet source](../src/scriptlets/log.js)
 * * *
 
-### <a id="noeval.js"></a> ⚡️ noeval.js
+### <a id="noeval"></a> ⚡️ noeval
 
 Prevents page to use eval.
 Notifies about attempts in the console
 
 It is mostly used for `$redirect` rules.
-See [redirect description](../wiki/about-redirects.md#noeval.js).
+See [redirect description](../wiki/about-redirects.md#noeval).
 
 **Syntax**
 ```
-example.org#%#//scriptlet("noeval.js")
+example.org#%#//scriptlet("noeval")
 ```
 [Scriptlet source](../src/scriptlets/noeval.js)
 * * *

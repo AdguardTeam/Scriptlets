@@ -15,7 +15,7 @@ import { noeval } from '../scriptlets/noeval';
  *
  * **Example**
  * ```
- * ||example.org/index.js$script,redirect=noeval.js
+ * ||example.org/index.js$script,redirect=noeval
  * ```
  */
 export { noeval };
