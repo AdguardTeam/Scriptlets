@@ -6,6 +6,8 @@ const fs = require('fs');
 const path = require('path');
 const { EOL } = require('os');
 
+const { redirectsFilesList, getDataFromFiles } = require('./scripts/build-docs');
+
 // define global variable redirects
 // because require('./tmp/tmpRedirects') trying to put redirects code in it
 global.redirects = {};
@@ -17,7 +19,7 @@ const PATH_TO_DIST = './dist';
 const RESULT_PATH = path.resolve(PATH_TO_DIST, FILE_NAME);
 const CORELIBS_RESULT_PATH = path.resolve(PATH_TO_DIST, CORELIBS_FILE_NAME);
 
-const SCRIPTLET_REDIRECTS_PATH = './src/redirects/scriptlet-redirects.yml';
+const REDIRECTS_DIRECTORY = '../src/redirects';
 const STATIC_REDIRECTS_PATH = './src/redirects/static-redirects.yml';
 const banner = `#
 #    AdGuard Scriptlets (Redirects Source)
@@ -25,10 +27,8 @@ const banner = `#
 #
 `;
 
-let redirectsToAdd;
 let staticRedirects;
 try {
-    redirectsToAdd = yaml.safeLoad(fs.readFileSync(SCRIPTLET_REDIRECTS_PATH, 'utf8'));
     staticRedirects = yaml.safeLoad(fs.readFileSync(STATIC_REDIRECTS_PATH, 'utf8'));
 } catch (e) {
     // eslint-disable-next-line no-console
@@ -45,19 +45,34 @@ const redirectsObject = Object
         return { name, redirect, aliases };
     });
 
-const nonStaticRedirects = redirectsToAdd.map((data) => {
-    const { title } = data;
-    const complement = redirectsObject.find((obj) => obj.name === title);
+const redirectsDescriptions = getDataFromFiles(redirectsFilesList, REDIRECTS_DIRECTORY).flat(1);
+
+/**
+ * Returns first line of describing comment from redirect resource file
+ * @param {string} rrName redirect resource name
+ */
+const getComment = (rrName) => {
+    const { description } = redirectsDescriptions.find((rr) => rr.name === rrName);
+    const descrArr = description.split('\n');
+
+    return descrArr.find((str) => str !== '');
+};
+
+const nonStaticRedirects = redirectsFilesList.map((el) => {
+    const rrName = el.replace(/\.js/, '');
+    const complement = redirectsObject.find((obj) => obj.name === rrName);
+    const comment = getComment(rrName);
 
     if (complement) {
         return {
-            ...data,
+            title: rrName,
+            comment,
             aliases: complement.aliases,
             contentType: 'application/javascript',
             content: complement.redirect,
         };
     }
-    throw new Error(`Couldn't find source for non-static redirect: ${title}`);
+    throw new Error(`Couldn't find source for non-static redirect: ${el}`);
 });
 
 const mergedRedirects = [...staticRedirects, ...nonStaticRedirects];

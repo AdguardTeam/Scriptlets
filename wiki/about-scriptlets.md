@@ -267,7 +267,10 @@ example.org#%#//scriptlet("debug-on-property-write", "test")
 ### <a id="dir-string"></a> ⚡️ dir-string
 
 Wraps the `console.dir` API to call the `toString` method of the argument.
-There are several adblock circumvention systems that detect browser devtools and hide themselves. Therefore, if we force them to think that devtools are open (using this scrciptlet), it will automatically disable the adblock circumvention script.
+There are several adblock circumvention systems that detect browser devtools
+and hide themselves. Therefore, if we force them to think
+that devtools are open (using this scrciptlet),
+it will automatically disable the adblock circumvention script.
 
 Related ABP source:
 https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L766
@@ -350,7 +353,7 @@ example.org#%#//scriptlet("json-prune"[, propsToRemove [, obligatoryProps]])
 
 ### <a id="log-addEventListener"></a> ⚡️ log-addEventListener
 
-Logs all addEventListener calls to the console
+Logs all addEventListener calls to the console.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-loggerjs-
@@ -364,7 +367,7 @@ example.org#%#//scriptlet("log-addEventListener")
 
 ### <a id="log-eval"></a> ⚡️ log-eval
 
-Logs all `eval()` or `new Function()` calls to the console
+Logs all `eval()` or `new Function()` calls to the console.
 
 **Syntax**
 ```
@@ -375,7 +378,7 @@ example.org#%#//scriptlet("log-eval")
 
 ### <a id="log-setInterval"></a> ⚡️ log-setInterval
 
-Logs all setInterval calls to the console
+Logs all setInterval calls to the console.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#setinterval-loggerjs-
@@ -418,7 +421,7 @@ Prevents page to use eval.
 Notifies about attempts in the console
 
 It is mostly used for `$redirect` rules.
-See [redirect description](#googlesyndication-adsbygoogle-redirect).
+See [redirect description](../wiki/about-redirects.md#noeval.js).
 
 **Syntax**
 ```
@@ -507,7 +510,7 @@ example.org#%#//scriptlet("prevent-bab")
 
 ### <a id="prevent-eval-if"></a> ⚡️ prevent-eval-if
 
-Prevents page to use eval matching payload
+Prevents page to use eval matching payload.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
@@ -524,7 +527,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
 
 ### <a id="prevent-fab-3.2.0"></a> ⚡️ prevent-fab-3.2.0
 
-Prevents execution of the FAB script v3.2.0
+Prevents execution of the FAB script v3.2.0.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#fuckadblockjs-320-
@@ -538,7 +541,7 @@ example.org#%#//scriptlet("prevent-fab-3.2.0")
 
 ### <a id="prevent-popads-net"></a> ⚡️ prevent-popads-net
 
-Aborts on property write (PopAds, popns), throws reference error with random id
+Aborts on property write (PopAds, popns), throws reference error with random id.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#popadsnetjs-
