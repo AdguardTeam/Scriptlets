@@ -10,7 +10,7 @@ import { noop } from '../helpers/noop';
  *
  * **Example**
  * ```
- * ||example.org/index.js$script,redirect=metrika-yandex-watch
+ * ||example.org/index.js$script,redirect=metrika-yandex-tag
  * ```
  */
 export function metrikaYandexTag(source) {
