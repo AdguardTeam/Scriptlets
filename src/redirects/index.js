@@ -1,12 +1,24 @@
-export * from './prevent-fab-3.2.0';
-export * from './set-popads-dummy';
-export * from './prevent-popads-net';
-export * from './noeval';
-export * from './google-analytics';
-export * from './google-analytics-ga';
-export * from './googlesyndication-adsbygoogle';
-export * from './googletagmanager-gtm';
-export * from './googletagservices-gpt';
-export * from './scorecardresearch-beacon';
-export * from './metrika-yandex-tag';
-export * from './metrika-yandex-watch';
+import {
+    attachDependencies,
+    addCall,
+    passSourceAndProps,
+} from '../helpers/injector';
+
+import * as redirectsList from './redirectsList';
+
+
+const getRedirectByName = (redirectsList, name) => {
+    // eslint-disable-next-line compat/compat
+    const redirects = Object.values(redirectsList);
+    return redirects.find((r) => r.names && r.names.indexOf(name) > -1);
+};
+
+const getRedirectCode = (name) => {
+    const redirect = getRedirectByName(redirectsList, name);
+    let result = attachDependencies(redirect);
+    result = addCall(redirect, result);
+
+    return passSourceAndProps({ name }, result);
+};
+
+redirects = (() => ({ getCode: getRedirectCode }))(); // eslint-disable-line no-undef

@@ -1,5 +1,5 @@
 import yaml from 'js-yaml';
-import * as redirectsList from './src/redirects';
+import * as redirectsList from './src/redirects/redirectsList';
 import { version } from './package.json';
 
 const fs = require('fs');
@@ -11,6 +11,7 @@ const { redirectsFilesList, getDataFromFiles } = require('./scripts/build-docs')
 // define global variable redirects
 // because require('./tmp/tmpRedirects') trying to put redirects code in it
 global.redirects = {};
+// eslint-disable-next-line import/no-unresolved
 require('./tmp/tmpRedirects');
 
 const FILE_NAME = 'redirects.yml';

@@ -12,10 +12,16 @@ const STATIC_REDIRECTS = '../src/redirects/static-redirects.yml';
 const ABOUT_SCRIPTLETS_PATH = path.resolve(__dirname, '../wiki/about-scriptlets.md');
 const ABOUT_REDIRECTS_PATH = path.resolve(__dirname, '../wiki/about-redirects.md');
 
-// files which are not redirects in ./src/redirects
+// files which are not scriptlets or redirects in their directories
+const NON_SCRIPTLETS_FILES = [
+    'index.js',
+    'scriptletsList.js',
+];
+
 const NON_REDIRECTS_FILES = [
     'index.js',
     'redirects.js',
+    'redirectsList.js',
 ];
 
 /**
@@ -27,6 +33,12 @@ const getFilesList = (dirPath) => {
         .filter((el) => el.includes('.js'));
     return filesList;
 };
+
+const scriptletsFilesList = getFilesList(SCRIPTLETS_FILES_DIRECTORY)
+    .filter((el) => !NON_SCRIPTLETS_FILES.includes(el));
+
+const redirectsFilesList = getFilesList(REDIRECTS_FILES_DIRECTORY)
+    .filter((el) => !NON_REDIRECTS_FILES.includes(el));
 
 /**
  * Gets required comments from file.
@@ -76,18 +88,13 @@ const prepareData = (requiredComments, sourcePath) => {
 const getDataFromFiles = (filesList, directoryPath) => {
     const pathToDir = path.resolve(__dirname, directoryPath);
     return filesList.map((file) => {
+        // console.log(file);
         const pathToFile = path.resolve(pathToDir, file);
         const requiredComments = getComments(pathToFile);
 
         return prepareData(requiredComments, `${directoryPath}/${file}`);
     });
 };
-
-const scriptletsFilesList = getFilesList(SCRIPTLETS_FILES_DIRECTORY)
-    .filter((el) => !el.includes('index.js'));
-
-const redirectsFilesList = getFilesList(REDIRECTS_FILES_DIRECTORY)
-    .filter((el) => !NON_REDIRECTS_FILES.includes(el));
 
 /**
  * Collects required comments from files and

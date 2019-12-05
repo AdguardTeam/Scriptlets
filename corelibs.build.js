@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import * as scriptletList from './src/scriptlets';
+import * as scriptletList from './src/scriptlets/scriptletsList';
 import { version } from './package.json';
 
 // define global variable scriptlets

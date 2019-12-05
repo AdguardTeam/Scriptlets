@@ -1,5 +1,5 @@
-import * as dependencies from './helpers';
-import * as scriptletList from './scriptlets';
+import * as dependencies from '.';
+
 
 /**
  * Concat dependencies to scriptlet code
@@ -60,47 +60,4 @@ export function passSourceAndProps(source, code) {
  */
 export function wrapInNonameFunc(code) {
     return `function(source, args){\n${code}\n}`;
-}
-
-/**
- * Find scriptlet by it's name
- * @param {string} name
- */
-export function getScriptletByName(name) {
-    const scriptlets = Object.keys(scriptletList).map((key) => scriptletList[key]);
-    return scriptlets
-        .find((s) => s.names && s.names.indexOf(name) > -1);
-}
-
-/**
- * Check is scriptlet params valid
- * @param {Object} source
- */
-export function isValidScriptletSource(source) {
-    if (!source.name) {
-        return false;
-    }
-    const scriptlet = getScriptletByName(source.name);
-    if (!scriptlet) {
-        return false;
-    }
-    return true;
-}
-
-/**
-* Returns scriptlet code by param
-* @param {Source} source
-*/
-export function getScriptletCode(source) {
-    if (!isValidScriptletSource(source)) {
-        return null;
-    }
-
-    const scriptlet = getScriptletByName(source.name);
-    let result = attachDependencies(scriptlet);
-    result = addCall(scriptlet, result);
-    result = source.engine === 'corelibs'
-        ? wrapInNonameFunc(result)
-        : passSourceAndProps(source, result);
-    return result;
 }

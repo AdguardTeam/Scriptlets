@@ -217,6 +217,69 @@
         hit: hit
     });
 
+    /**
+     * Concat dependencies to scriptlet code
+     * @param {string} scriptlet string view of scriptlet
+     */
+
+    function attachDependencies(scriptlet) {
+      var _scriptlet$injections = scriptlet.injections,
+          injections = _scriptlet$injections === void 0 ? [] : _scriptlet$injections;
+      return injections.reduce(function (accum, dep) {
+        return "".concat(accum, "\n").concat(dependencies[dep.name]);
+      }, scriptlet.toString());
+    }
+    /**
+     * Add scriptlet call to existing code
+     * @param {Function} scriptlet
+     * @param {string} code
+     */
+
+    function addCall(scriptlet, code) {
+      return "".concat(code, ";\n        const updatedArgs = args ? [].concat(source).concat(args) : [source];\n        ").concat(scriptlet.name, ".apply(this, updatedArgs);\n    ");
+    }
+    /**
+     * Wrap function into IIFE (Immediately invoked function expression)
+     *
+     * @param {Source} source - object with scriptlet properties
+     * @param {string} code - scriptlet source code with dependencies
+     *
+     * @returns {string} full scriptlet code
+     *
+     * @example
+     * const source = {
+     *      args: ["aaa", "bbb"],
+     *      name: 'noeval',
+     * };
+     * const code = "function noeval(source, args) { alert(source); } noeval.apply(this, args);"
+     * const result = wrapInIIFE(source, code);
+     *
+     * // result
+     * `(function(source, args) {
+     *      function noeval(source) { alert(source); }
+     *      noeval.apply(this, args);
+     * )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])`
+     */
+
+    function passSourceAndProps(source, code) {
+      if (source.hit) {
+        source.hit = source.hit.toString();
+      }
+
+      var sourceString = JSON.stringify(source);
+      var argsString = source.args ? "[".concat(source.args.map(JSON.stringify), "]") : undefined;
+      var params = argsString ? "".concat(sourceString, ", ").concat(argsString) : sourceString;
+      return "(function(source, args){\n".concat(code, "\n})(").concat(params, ");");
+    }
+    /**
+     * Wrap code in no name function
+     * @param {string} code which must be wrapped
+     */
+
+    function wrapInNonameFunc(code) {
+      return "function(source, args){\n".concat(code, "\n}");
+    }
+
     /* eslint-disable max-len */
 
     /**
@@ -2310,7 +2373,7 @@
      * This file must export all scriptlets which should be accessible
      */
 
-    var scriptletList = /*#__PURE__*/Object.freeze({
+    var scriptletsList = /*#__PURE__*/Object.freeze({
         __proto__: null,
         abortOnPropertyRead: abortOnPropertyRead,
         abortOnPropertyWrite: abortOnPropertyWrite,
@@ -2346,75 +2409,23 @@
     });
 
     /**
-     * Concat dependencies to scriptlet code
-     * @param {string} scriptlet string view of scriptlet
+     * @typedef {Object} Source - scriptlet properties
+     * @property {string} name Scriptlet name
+     * @property {Array<string>} args Arguments for scriptlet function
+     * @property {'extension'|'corelibs'} engine Defines the final form of scriptlet string presentation
+     * @property {string} [version]
+     * @property {boolean} [verbose] flag to enable printing to console debug information
+     * @property {string} [ruleText] Source rule text is used for debugging purposes
      */
 
-    function attachDependencies(scriptlet) {
-      var _scriptlet$injections = scriptlet.injections,
-          injections = _scriptlet$injections === void 0 ? [] : _scriptlet$injections;
-      return injections.reduce(function (accum, dep) {
-        return "".concat(accum, "\n").concat(dependencies[dep.name]);
-      }, scriptlet.toString());
-    }
-    /**
-     * Add scriptlet call to existing code
-     * @param {Function} scriptlet
-     * @param {string} code
-     */
-
-    function addCall(scriptlet, code) {
-      return "".concat(code, ";\n        const updatedArgs = args ? [].concat(source).concat(args) : [source];\n        ").concat(scriptlet.name, ".apply(this, updatedArgs);\n    ");
-    }
-    /**
-     * Wrap function into IIFE (Immediately invoked function expression)
-     *
-     * @param {Source} source - object with scriptlet properties
-     * @param {string} code - scriptlet source code with dependencies
-     *
-     * @returns {string} full scriptlet code
-     *
-     * @example
-     * const source = {
-     *      args: ["aaa", "bbb"],
-     *      name: 'noeval',
-     * };
-     * const code = "function noeval(source, args) { alert(source); } noeval.apply(this, args);"
-     * const result = wrapInIIFE(source, code);
-     *
-     * // result
-     * `(function(source, args) {
-     *      function noeval(source) { alert(source); }
-     *      noeval.apply(this, args);
-     * )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])`
-     */
-
-    function passSourceAndProps(source, code) {
-      if (source.hit) {
-        source.hit = source.hit.toString();
-      }
-
-      var sourceString = JSON.stringify(source);
-      var argsString = source.args ? "[".concat(source.args.map(JSON.stringify), "]") : undefined;
-      var params = argsString ? "".concat(sourceString, ", ").concat(argsString) : sourceString;
-      return "(function(source, args){\n".concat(code, "\n})(").concat(params, ");");
-    }
-    /**
-     * Wrap code in no name function
-     * @param {string} code which must be wrapped
-     */
-
-    function wrapInNonameFunc(code) {
-      return "function(source, args){\n".concat(code, "\n}");
-    }
     /**
      * Find scriptlet by it's name
      * @param {string} name
      */
 
     function getScriptletByName(name) {
-      var scriptlets = Object.keys(scriptletList).map(function (key) {
-        return scriptletList[key];
+      var scriptlets = Object.keys(scriptletsList).map(function (key) {
+        return scriptletsList[key];
       });
       return scriptlets.find(function (s) {
         return s.names && s.names.indexOf(name) > -1;
@@ -2424,6 +2435,7 @@
      * Check is scriptlet params valid
      * @param {Object} source
      */
+
 
     function isValidScriptletSource(source) {
       if (!source.name) {
@@ -2443,6 +2455,7 @@
     * @param {Source} source
     */
 
+
     function getScriptletCode(source) {
       if (!isValidScriptletSource(source)) {
         return null;
@@ -2454,23 +2467,13 @@
       result = source.engine === 'corelibs' ? wrapInNonameFunc(result) : passSourceAndProps(source, result);
       return result;
     }
-
-    /**
-     * @typedef {Object} Source - scriptlet properties
-     * @property {string} name Scriptlet name
-     * @property {Array<string>} args Arguments for scriptlet function
-     * @property {'extension'|'corelibs'} engine Defines the final form of scriptlet string presentation
-     * @property {string} [version]
-     * @property {boolean} [verbose] flag to enable printing to console debug information
-     * @property {string} [ruleText] Source rule text is used for debugging purposes
-     */
-
     /**
      * Global scriptlet variable
      *
      * @returns {Object} object with method `invoke`
      * `invoke` method receives one argument with `Source` type
      */
+
 
     scriptlets = function () {
       return {
