@@ -88,7 +88,6 @@ const prepareData = (requiredComments, sourcePath) => {
 const getDataFromFiles = (filesList, directoryPath) => {
     const pathToDir = path.resolve(__dirname, directoryPath);
     return filesList.map((file) => {
-        // console.log(file);
         const pathToFile = path.resolve(pathToDir, file);
         const requiredComments = getComments(pathToFile);
 
