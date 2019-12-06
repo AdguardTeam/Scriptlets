@@ -80,9 +80,9 @@ Install dependencies
 yarn install
 ```
 
-Build for Corelibs (without comments)
+Build for CoreLibs
 ```
-yarn build:cl
+yarn corelibs
 ```
 
 Build for Extension
