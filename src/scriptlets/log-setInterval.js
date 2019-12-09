@@ -5,7 +5,7 @@ import { hit } from '../helpers';
  * @scriptlet log-setInterval
  *
  * @description
- * Logs all setInterval calls to the console
+ * Logs all setInterval calls to the console.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#setinterval-loggerjs-

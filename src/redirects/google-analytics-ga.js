@@ -3,28 +3,13 @@ import { hit } from '../helpers/hit';
 import { noop } from '../helpers/noop';
 
 /**
- * @scriptlet google-analytics-ga
- *
- * @description
- * Mocks old Google Analytics API.
- *
- * It is mostly used for `$redirect` rules.
- * See [redirect description](#google-analytics-redirect).\
- *
- * Related UBO scriptlet:
- * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_ga.js
- *
- * **Syntax**
- * ```
- * example.org#%#//scriptlet("google-analytics-ga")
- * ```
- */
-
-/**
  * @redirect google-analytics-ga
  *
  * @description
  * Mocks old Google Analytics API.
+ *
+ * Related UBO redirect resource:
+ * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_ga.js
  *
  * **Example**
  * ```

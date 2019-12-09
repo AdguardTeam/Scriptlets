@@ -2,21 +2,18 @@
 import { hit } from '../helpers';
 
 /**
- * @redirect noeval.js
+ * @scriptlet noeval
  *
  * @description
- * Redirects request to the source which sets static properties to PopAds and popns objects
- *
  * Prevents page to use eval.
  * Notifies about attempts in the console
  *
- * Related UBO scriptlets:
- * https://github.com/gorhill/uBlock/wiki/Resources-Library#noevaljs-
- * https://github.com/gorhill/uBlock/wiki/Resources-Library#silent-noevaljs-
+ * It is mostly used for `$redirect` rules.
+ * See [redirect description](../wiki/about-redirects.md#noeval).
  *
- * **Example**
+ * **Syntax**
  * ```
- * ||example.org/index.js$script,redirect=noeval.js
+ * example.org#%#//scriptlet("noeval")
  * ```
  */
 export function noeval(source) {

@@ -5,7 +5,7 @@ import { noop, hit } from '../helpers';
  * @scriptlet prevent-fab-3.2.0
  *
  * @description
- * Prevents execution of the FAB script v3.2.0
+ * Prevents execution of the FAB script v3.2.0.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#fuckadblockjs-320-
@@ -13,18 +13,6 @@ import { noop, hit } from '../helpers';
  * **Syntax**
  * ```
  * example.org#%#//scriptlet("prevent-fab-3.2.0")
- * ```
- */
-
-/**
- * @redirect prevent-fab-3.2.0
- *
- * @description
- * Redirects fuckadblock script to the source js file
- *
- * **Example**
- * ```
- * \*\/fuckadblock-$script,redirect=prevent-fab-3.2.0
  * ```
  */
 export function preventFab(source) {

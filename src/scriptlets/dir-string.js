@@ -6,7 +6,10 @@ import { hit } from '../helpers';
  *
  * @description
  * Wraps the `console.dir` API to call the `toString` method of the argument.
- * There are several adblock circumvention systems that detect browser devtools and hide themselves. Therefore, if we force them to think that devtools are open (using this scrciptlet), it will automatically disable the adblock circumvention script.
+ * There are several adblock circumvention systems that detect browser devtools
+ * and hide themselves. Therefore, if we force them to think
+ * that devtools are open (using this scrciptlet),
+ * it will automatically disable the adblock circumvention script.
  *
  * Related ABP source:
  * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L766

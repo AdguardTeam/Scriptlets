@@ -8,28 +8,13 @@ import {
 } from '../helpers/noop';
 
 /**
- * @scriptlet googletagservices-gpt
- *
- * @description
- * Mocks Google Publisher Tag API
- *
- * It is mostly used for `$redirect` rules.
- * See [redirect description](#googletagmanager-gpt-redirect).
- *
- * Related UBO scriptlet:
- * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagservices_gpt.js
- *
- * **Syntax**
- * ```
- * example.org#%#//scriptlet("googletagservices-gpt")
- * ```
- */
-
-/**
  * @redirect googletagservices-gpt
  *
  * @description
  * Mocks Google Publisher Tag API.
+ *
+ * Related UBO redirect resource:
+ * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagservices_gpt.js
  *
  * **Example**
  * ```

@@ -5,7 +5,7 @@ import { hit } from '../helpers';
  * @scriptlet log-addEventListener
  *
  * @description
- * Logs all addEventListener calls to the console
+ * Logs all addEventListener calls to the console.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-loggerjs-

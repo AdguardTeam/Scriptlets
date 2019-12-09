@@ -80,14 +80,14 @@ Install dependencies
 yarn install
 ```
 
+Build for CoreLibs
+```
+yarn corelibs
+```
+
 Build for Extension
 ```
 yarn build
-```
-
-Build for Corelibs
-```
-yarn corelibs
 ```
 
 Build dev (rebuild js files on every change)

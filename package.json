@@ -1,12 +1,10 @@
 {
     "name": "scriptlets",
-    "version": "1.0.10",
+    "version": "1.0.11",
     "scripts": {
-        "build": "rollup -c && yarn run build:redirects",
         "watch": "rollup -c -w",
-        "build:redirects": "babel-node redirects.build.js",
-        "corelibs:redirects": "REDIRECTS=CORELIBS babel-node redirects.build.js",
-        "corelibs": "rollup -c --environment CLEAN && babel-node corelibs.build.js && npm run corelibs:redirects",
+        "build": "rollup -c && babel-node redirects.build.js",
+        "corelibs": "rollup -c --environment CLEAN && babel-node corelibs.build.js && REDIRECTS=CORELIBS babel-node redirects.build.js",
         "build-test": "rollup -c --environment UI_TEST",
         "test": "yarn build-test && node tests/index.js",
         "test-watch": "rollup -c -w --environment UI_TEST",

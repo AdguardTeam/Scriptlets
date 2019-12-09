@@ -26,10 +26,11 @@ const footer = `
 `;
 
 const TESTS_DIST = 'tests/dist';
+const TMP_DIR = 'tmp';
 
 const bundleBuild = {
     input: {
-        scriptlets: 'src/index.js',
+        scriptlets: 'src/scriptlets/index.js',
     },
     output: {
         dir: 'dist',
@@ -39,27 +40,6 @@ const bundleBuild = {
         sourcemap: true,
         banner,
         footer,
-    },
-    plugins: [
-        resolve(),
-        commonjs({
-            include: 'node_modules/**',
-        }),
-        babel({
-            exclude: 'node_modules/**',
-            runtimeHelpers: true,
-        }),
-    ],
-};
-
-const redirectsBuild = {
-    input: 'src/redirects/redirects.js',
-    output: {
-        dir: 'dist',
-        name: 'Redirects',
-        format: 'iife',
-        strict: false,
-        sourcemap: true,
     },
     plugins: [
         resolve(),
@@ -111,14 +91,39 @@ const testBuild = {
     ],
 };
 
+const tmpRedirectsBuild = {
+    input: {
+        tmpRedirects: 'src/redirects/index.js',
+    },
+    output: {
+        name: 'tmpRedirects',
+        dir: TMP_DIR,
+        entryFileNames: '[name].js',
+        format: 'iife',
+        strict: false,
+        sourcemap: true,
+    },
+    plugins: [
+        resolve(),
+        commonjs({
+            include: 'node_modules/**',
+        }),
+        babel({
+            exclude: 'node_modules/**',
+            runtimeHelpers: true,
+        }),
+    ],
+};
+
 const isCleanBuild = process.env.CLEAN === 'true'; // strip comments
 if (isCleanBuild) {
     bundleBuild.plugins.push(cleanup());
+    tmpRedirectsBuild.plugins.push(cleanup());
 }
 
 const isTest = process.env.UI_TEST === 'true';
 const resultBuilds = isTest
     ? [bundleBuild, testBuild]
-    : [bundleBuild, redirectsBuild];
+    : [bundleBuild, tmpRedirectsBuild];
 
 module.exports = resultBuilds;

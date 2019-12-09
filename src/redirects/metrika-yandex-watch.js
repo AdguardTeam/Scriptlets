@@ -2,22 +2,6 @@ import { hit } from '../helpers/hit';
 import { noop } from '../helpers/noop';
 
 /**
- * @scriptlet metrika-yandex-watch
- *
- * @description
- * Mocks the old Yandex Metrika API.
- * https://yandex.ru/support/metrica/objects/_method-reference.html
- *
- * It is mostly used for `$redirect` rules.
- * See [redirect description](#scorecardresearch-beacon-redirect).
- *
- * **Syntax**
- * ```
- * example.org#%#//scriptlet("metrika-yandex-watch")
- * ```
- */
-
-/**
  * @redirect metrika-yandex-watch
  *
  * @description

@@ -1,5 +1,5 @@
-import * as dependencies from './helpers';
-import * as scriptletList from './scriptlets';
+import * as dependencies from '.';
+
 
 /**
  * Concat dependencies to scriptlet code
@@ -15,7 +15,7 @@ export function attachDependencies(scriptlet) {
  * @param {Function} scriptlet
  * @param {string} code
  */
-export function addScriptletCall(scriptlet, code) {
+export function addCall(scriptlet, code) {
     return `${code};
         const updatedArgs = args ? [].concat(source).concat(args) : [source];
         ${scriptlet.name}.apply(this, updatedArgs);
@@ -44,7 +44,7 @@ export function addScriptletCall(scriptlet, code) {
  *      noeval.apply(this, args);
  * )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])`
  */
-export function passSourceAndPropsToScriptlet(source, code) {
+export function passSourceAndProps(source, code) {
     if (source.hit) {
         source.hit = source.hit.toString();
     }
@@ -60,47 +60,4 @@ export function passSourceAndPropsToScriptlet(source, code) {
  */
 export function wrapInNonameFunc(code) {
     return `function(source, args){\n${code}\n}`;
-}
-
-/**
- * Find scriptlet by it's name
- * @param {string} name
- */
-export function getScriptletByName(name) {
-    const scriptlets = Object.keys(scriptletList).map((key) => scriptletList[key]);
-    return scriptlets
-        .find((s) => s.names && s.names.indexOf(name) > -1);
-}
-
-/**
- * Check is scriptlet params valid
- * @param {Object} source
- */
-export function isValidScriptletSource(source) {
-    if (!source.name) {
-        return false;
-    }
-    const scriptlet = getScriptletByName(source.name);
-    if (!scriptlet) {
-        return false;
-    }
-    return true;
-}
-
-/**
-* Returns scriptlet code by param
-* @param {Source} source
-*/
-export function getScriptletCode(source) {
-    if (!isValidScriptletSource(source)) {
-        return null;
-    }
-
-    const scriptlet = getScriptletByName(source.name);
-    let result = attachDependencies(scriptlet);
-    result = addScriptletCall(scriptlet, result);
-    result = source.engine === 'corelibs'
-        ? wrapInNonameFunc(result)
-        : passSourceAndPropsToScriptlet(source, result);
-    return result;
 }

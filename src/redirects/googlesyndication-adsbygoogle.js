@@ -1,28 +1,13 @@
 import { hit } from '../helpers/hit';
 
 /**
- * @scriptlet googlesyndication-adsbygoogle
- *
- * @description
- * Mocks Google AdSense API.
- *
- * It is mostly used for `$redirect` rules.
- * See [redirect description](#googlesyndication-adsbygoogle-redirect).
- *
- * Related UBO scriptlet:
- * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googlesyndication_adsbygoogle.js
- *
- * **Syntax**
- * ```
- * example.org#%#//scriptlet("googlesyndication-adsbygoogle")
- * ```
- */
-
-/**
  * @redirect googlesyndication-adsbygoogle
  *
  * @description
  * Mocks Google AdSense API.
+ *
+ * Related UBO redirect resource:
+ * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googlesyndication_adsbygoogle.js
  *
  * **Example**
  * ```

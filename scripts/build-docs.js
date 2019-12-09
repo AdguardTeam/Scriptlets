@@ -4,36 +4,40 @@ const path = require('path');
 
 const yaml = require('js-yaml');
 
-const SCRIPTLETS_FILES_DIRECTORY = path.resolve(__dirname, '../src/scriptlets');
-const REDIRECTS_FILES_DIRECTORY = path.resolve(__dirname, '../src/redirects');
-const STATIC_REDIRECTS = path.resolve(__dirname, '../src/redirects/static-redirects.yml');
-
-const DUPLICATES_LIST = path.resolve(__dirname, '../src/redirects/scriptlet-redirects.yml');
+const SCRIPTLETS_FILES_DIRECTORY = '../src/scriptlets';
+const REDIRECTS_FILES_DIRECTORY = '../src/redirects';
+const STATIC_REDIRECTS = '../src/redirects/static-redirects.yml';
 
 const ABOUT_SCRIPTLETS_PATH = path.resolve(__dirname, '../wiki/about-scriptlets.md');
 const ABOUT_REDIRECTS_PATH = path.resolve(__dirname, '../wiki/about-redirects.md');
 
-// List of redirects which have scriptlet duplicates
-const duplicates = (() => {
-    const duplicatesFile = fs.readFileSync(path.resolve(__dirname, DUPLICATES_LIST), { encoding: 'utf8' });
-    const parsedDuplicatesFile = yaml.safeLoad(duplicatesFile);
+// files which are not scriptlets or redirects in their directories
+const NON_SCRIPTLETS_FILES = [
+    'index.js',
+    'scriptletsList.js',
+];
 
-    return parsedDuplicatesFile
-        .reduce((acc, el) => {
-            acc.push(`${el.title}`);
-            return acc;
-        }, []);
-})();
+const NON_REDIRECTS_FILES = [
+    'index.js',
+    'redirects.js',
+    'redirectsList.js',
+];
 
 /**
  * Gets list of files
  * @param {string} dirPath path to directory
  */
 const getFilesList = (dirPath) => {
-    const filesList = fs.readdirSync(dirPath, { encoding: 'utf8' })
+    const filesList = fs.readdirSync(path.resolve(__dirname, dirPath), { encoding: 'utf8' })
         .filter((el) => el.includes('.js'));
     return filesList;
 };
+
+const scriptletsFilesList = getFilesList(SCRIPTLETS_FILES_DIRECTORY)
+    .filter((el) => !NON_SCRIPTLETS_FILES.includes(el));
+
+const redirectsFilesList = getFilesList(REDIRECTS_FILES_DIRECTORY)
+    .filter((el) => !NON_REDIRECTS_FILES.includes(el));
 
 /**
  * Gets required comments from file.
@@ -81,11 +85,12 @@ const prepareData = (requiredComments, sourcePath) => {
  * @param {string} directoryPath path to directory
  */
 const getDataFromFiles = (filesList, directoryPath) => {
+    const pathToDir = path.resolve(__dirname, directoryPath);
     return filesList.map((file) => {
-        const sourcePath = `${directoryPath}/${file}`;
-        const requiredComments = getComments(sourcePath);
+        const pathToFile = path.resolve(pathToDir, file);
+        const requiredComments = getComments(pathToFile);
 
-        return prepareData(requiredComments, sourcePath);
+        return prepareData(requiredComments, `${directoryPath}/${file}`);
     });
 };
 
@@ -94,9 +99,6 @@ const getDataFromFiles = (filesList, directoryPath) => {
  * returns describing object for scriptlets and redirects
  */
 const manageDataFromFiles = () => {
-    const scriptletsFilesList = getFilesList(SCRIPTLETS_FILES_DIRECTORY).filter((el) => !el.includes('index.js'));
-    const redirectsFilesList = getFilesList(REDIRECTS_FILES_DIRECTORY).filter((el) => !el.includes('redirects.js'));
-
     // eslint-disable-next-line max-len
     const dataFromScriptletsFiles = getDataFromFiles(scriptletsFilesList, SCRIPTLETS_FILES_DIRECTORY);
     const dataFromRedirectsFiles = getDataFromFiles(redirectsFilesList, REDIRECTS_FILES_DIRECTORY);
@@ -119,12 +121,11 @@ const manageDataFromFiles = () => {
  */
 const generateMD = (data) => {
     const output = data.reduce((acc, el) => {
-        const mdListLink = duplicates.includes(el.name) ? `${el.name}-${el.type}` : el.name;
-        acc.list.push(`* [${el.name}](#${mdListLink})\n`);
+        acc.list.push(`* [${el.name}](#${el.name})\n`);
 
         const typeOfSrc = el.type === 'scriptlet' ? 'Scriptlet' : 'Redirect';
 
-        const body = `### <a id="${mdListLink}"></a> ⚡️ ${el.name}
+        const body = `### <a id="${el.name}"></a> ⚡️ ${el.name}
 ${el.description}
 [${typeOfSrc} source](${el.source})
 * * *\n\n`;
@@ -152,7 +153,7 @@ const mdForStaticRedirects = () => {
 
             const body = `### <a id="${el.title}"></a> ⚡️ ${el.title}
 ${el.description}
-[Redirect source](./src/redirects/static-redirects.yml)
+[Redirect source](${STATIC_REDIRECTS})
 * * *\n\n`;
             acc.body.push(body);
         } else {
@@ -184,8 +185,14 @@ function init() {
         const redirectsAbout = `## <a id="redirect-resources"></a> Available Redirect resources\n${staticRedirectsMarkdownData.list}${redirectsMarkdownData.list}* * *\n${staticRedirectsMarkdownData.body}${redirectsMarkdownData.body}`;
         fs.writeFileSync(path.resolve(__dirname, ABOUT_REDIRECTS_PATH), redirectsAbout);
     } catch (e) {
+        // eslint-disable-next-line no-console
         console.log(e.message);
     }
 }
 
 init();
+
+module.exports = {
+    redirectsFilesList,
+    getDataFromFiles,
+};

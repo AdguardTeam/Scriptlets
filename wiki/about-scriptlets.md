@@ -9,34 +9,27 @@
 * [debug-on-property-write](#debug-on-property-write)
 * [dir-string](#dir-string)
 * [disable-newtab-links](#disable-newtab-links)
-* [google-analytics-ga](#google-analytics-ga-scriptlet)
-* [google-analytics](#google-analytics-scriptlet)
-* [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle-scriptlet)
-* [googletagmanager-gtm](#googletagmanager-gtm-scriptlet)
-* [googletagservices-gpt](#googletagservices-gpt-scriptlet)
 * [json-prune](#json-prune)
 * [log-addEventListener](#log-addEventListener)
 * [log-eval](#log-eval)
 * [log-setInterval](#log-setInterval)
 * [log-setTimeout](#log-setTimeout)
 * [log](#log)
-* [metrika-yandex-tag](#metrika-yandex-tag-scriptlet)
-* [metrika-yandex-watch](#metrika-yandex-watch-scriptlet)
+* [noeval](#noeval)
 * [nowebrtc](#nowebrtc)
 * [prevent-addEventListener](#prevent-addEventListener)
 * [prevent-adfly](#prevent-adfly)
 * [prevent-bab](#prevent-bab)
 * [prevent-eval-if](#prevent-eval-if)
-* [prevent-fab-3.2.0](#prevent-fab-3.2.0-scriptlet)
-* [prevent-popads-net](#prevent-popads-net-scriptlet)
+* [prevent-fab-3.2.0](#prevent-fab-3.2.0)
+* [prevent-popads-net](#prevent-popads-net)
 * [prevent-setInterval](#prevent-setInterval)
 * [prevent-setTimeout](#prevent-setTimeout)
 * [prevent-window-open](#prevent-window-open)
 * [remove-attr](#remove-attr)
 * [remove-cookie](#remove-cookie)
-* [scorecardresearch-beacon](#scorecardresearch-beacon-scriptlet)
 * [set-constant](#set-constant)
-* [set-popads-dummy](#set-popads-dummy-scriptlet)
+* [set-popads-dummy](#set-popads-dummy)
 * * *
 ### <a id="abort-current-inline-script"></a> ⚡️ abort-current-inline-script
 
@@ -92,7 +85,7 @@ example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>]
     ```html
     <script>alert("Hi, little world");</script>
     ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/abort-current-inline-script.js)
+[Scriptlet source](../src/scriptlets/abort-current-inline-script.js)
 * * *
 
 ### <a id="abort-on-property-read"></a> ⚡️ abort-on-property-read
@@ -121,7 +114,7 @@ example.org#%#//scriptlet("abort-on-property-read", "alert")
 ! Aborts script when it tries to access `navigator.language`
 example.org#%#//scriptlet("abort-on-property-read", "navigator.language")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/abort-on-property-read.js)
+[Scriptlet source](../src/scriptlets/abort-on-property-read.js)
 * * *
 
 ### <a id="abort-on-property-write"></a> ⚡️ abort-on-property-write
@@ -148,7 +141,7 @@ example.org#%#//scriptlet("abort-on-property-write", <property>)
 utils.escape('<script></script>')
 // => '&lt;script&gt;&lt;/script&gt;'
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/abort-on-property-write.js)
+[Scriptlet source](../src/scriptlets/abort-on-property-write.js)
 * * *
 
 ### <a id="adjust-setInterval"></a> ⚡️ adjust-setInterval
@@ -187,7 +180,7 @@ example.org#%#//scriptlet("adjust-setInterval"[, match [, interval[, boost]]])
     ```
     example.org#%#//scriptlet("adjust-setInterval", "example", "400", "2")
     ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/adjust-setInterval.js)
+[Scriptlet source](../src/scriptlets/adjust-setInterval.js)
 * * *
 
 ### <a id="adjust-setTimeout"></a> ⚡️ adjust-setTimeout
@@ -226,7 +219,7 @@ example.org#%#//scriptlet("adjust-setTimeout"[, match [, timeout[, boost]]])
     ```
     example.org#%#//scriptlet("adjust-setTimeout", "example", "400", "2")
     ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/adjust-setTimeout.js)
+[Scriptlet source](../src/scriptlets/adjust-setTimeout.js)
 * * *
 
 ### <a id="debug-current-inline-script"></a> ⚡️ debug-current-inline-script
@@ -240,7 +233,7 @@ This scriptlet is basically the same as [abort-current-inline-script](#abort-cur
 ! Aborts script when it tries to access `window.alert`
 example.org#%#//scriptlet("debug-current-inline-script", "alert")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/debug-current-inline-script.js)
+[Scriptlet source](../src/scriptlets/debug-current-inline-script.js)
 * * *
 
 ### <a id="debug-on-property-read"></a> ⚡️ debug-on-property-read
@@ -254,7 +247,7 @@ This scriptlet is basically the same as [abort-on-property-read](#abort-on-prope
 ! Aborts script when it tries to access `window.alert`
 example.org#%#//scriptlet("debug-on-property-read", "alert")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/debug-on-property-read.js)
+[Scriptlet source](../src/scriptlets/debug-on-property-read.js)
 * * *
 
 ### <a id="debug-on-property-write"></a> ⚡️ debug-on-property-write
@@ -268,13 +261,16 @@ This scriptlet is basically the same as [abort-on-property-write](#abort-on-prop
 ! Aborts script when it tries to write in property `window.test`
 example.org#%#//scriptlet("debug-on-property-write", "test")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/debug-on-property-write.js)
+[Scriptlet source](../src/scriptlets/debug-on-property-write.js)
 * * *
 
 ### <a id="dir-string"></a> ⚡️ dir-string
 
 Wraps the `console.dir` API to call the `toString` method of the argument.
-There are several adblock circumvention systems that detect browser devtools and hide themselves. Therefore, if we force them to think that devtools are open (using this scrciptlet), it will automatically disable the adblock circumvention script.
+There are several adblock circumvention systems that detect browser devtools
+and hide themselves. Therefore, if we force them to think
+that devtools are open (using this scrciptlet),
+it will automatically disable the adblock circumvention script.
 
 Related ABP source:
 https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L766
@@ -290,7 +286,7 @@ example.org#%#//scriptlet("dir-string"[, times])
 ! Run 2 times
 example.org#%#//scriptlet("dir-string", "2")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/dir-string.js)
+[Scriptlet source](../src/scriptlets/dir-string.js)
 * * *
 
 ### <a id="disable-newtab-links"></a> ⚡️ disable-newtab-links
@@ -304,92 +300,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#disable-newtab-linksjs-
 ```
 example.org#%#//scriptlet("disable-newtab-links")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/disable-newtab-links.js)
-* * *
-
-### <a id="google-analytics-ga-scriptlet"></a> ⚡️ google-analytics-ga
-
-Mocks old Google Analytics API.
-
-It is mostly used for `$redirect` rules.
-See [redirect description](#google-analytics-redirect).\
-
-Related UBO scriptlet:
-https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_ga.js
-
-**Syntax**
-```
-example.org#%#//scriptlet("google-analytics-ga")
-```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/google-analytics-ga.js)
-* * *
-
-### <a id="google-analytics-scriptlet"></a> ⚡️ google-analytics
-
-Mocks Google Analytics API.
-
-It is mostly used for `$redirect` rules.
-See [redirect description](#google-analytics-redirect).\
-
-Related UBO scriptlet:
-https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_analytics.js
-
-**Syntax**
-```
-example.org#%#//scriptlet("google-analytics")
-```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/google-analytics.js)
-* * *
-
-### <a id="googlesyndication-adsbygoogle-scriptlet"></a> ⚡️ googlesyndication-adsbygoogle
-
-Mocks Google AdSense API.
-
-It is mostly used for `$redirect` rules.
-See [redirect description](#googlesyndication-adsbygoogle-redirect).
-
-Related UBO scriptlet:
-https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googlesyndication_adsbygoogle.js
-
-**Syntax**
-```
-example.org#%#//scriptlet("googlesyndication-adsbygoogle")
-```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/googlesyndication-adsbygoogle.js)
-* * *
-
-### <a id="googletagmanager-gtm-scriptlet"></a> ⚡️ googletagmanager-gtm
-
-Mocks Google Tag Manager API.
-
-It is mostly used for `$redirect` rules.
-See [redirect description](#googletagmanager-gtm-redirect).
-
-Related UBO scriptlet:
-https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagmanager_gtm.js
-
-**Syntax**
-```
-example.org#%#//scriptlet("googletagmanager-gtm")
-```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/googletagmanager-gtm.js)
-* * *
-
-### <a id="googletagservices-gpt-scriptlet"></a> ⚡️ googletagservices-gpt
-
-Mocks Google Publisher Tag API
-
-It is mostly used for `$redirect` rules.
-See [redirect description](#googletagmanager-gpt-redirect).
-
-Related UBO scriptlet:
-https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagservices_gpt.js
-
-**Syntax**
-```
-example.org#%#//scriptlet("googletagservices-gpt")
-```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/googletagservices-gpt.js)
+[Scriptlet source](../src/scriptlets/disable-newtab-links.js)
 * * *
 
 ### <a id="json-prune"></a> ⚡️ json-prune
@@ -437,12 +348,12 @@ example.org#%#//scriptlet("json-prune"[, propsToRemove [, obligatoryProps]])
     ```
     example.org#%#//scriptlet("json-prune")
     ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/json-prune.js)
+[Scriptlet source](../src/scriptlets/json-prune.js)
 * * *
 
 ### <a id="log-addEventListener"></a> ⚡️ log-addEventListener
 
-Logs all addEventListener calls to the console
+Logs all addEventListener calls to the console.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-loggerjs-
@@ -451,23 +362,23 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-logger
 ```
 example.org#%#//scriptlet("log-addEventListener")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/log-addEventListener.js)
+[Scriptlet source](../src/scriptlets/log-addEventListener.js)
 * * *
 
 ### <a id="log-eval"></a> ⚡️ log-eval
 
-Logs all `eval()` or `new Function()` calls to the console
+Logs all `eval()` or `new Function()` calls to the console.
 
 **Syntax**
 ```
 example.org#%#//scriptlet("log-eval")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/log-eval.js)
+[Scriptlet source](../src/scriptlets/log-eval.js)
 * * *
 
 ### <a id="log-setInterval"></a> ⚡️ log-setInterval
 
-Logs all setInterval calls to the console
+Logs all setInterval calls to the console.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#setinterval-loggerjs-
@@ -476,7 +387,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#setinterval-loggerjs-
 ```
 example.org#%#//scriptlet("log-setInterval")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/log-setInterval.js)
+[Scriptlet source](../src/scriptlets/log-setInterval.js)
 * * *
 
 ### <a id="log-setTimeout"></a> ⚡️ log-setTimeout
@@ -490,7 +401,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#settimeout-loggerjs-
 ```
 example.org#%#//scriptlet("log-setTimeout")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/log-setTimeout.js)
+[Scriptlet source](../src/scriptlets/log-setTimeout.js)
 * * *
 
 ### <a id="log"></a> ⚡️ log
@@ -501,37 +412,22 @@ This scriptlet can be helpful for debugging and troubleshooting other scriptlets
 ```
 example.org#%#//scriptlet("log", "arg1", "arg2")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/log.js)
+[Scriptlet source](../src/scriptlets/log.js)
 * * *
 
-### <a id="metrika-yandex-tag-scriptlet"></a> ⚡️ metrika-yandex-tag
+### <a id="noeval"></a> ⚡️ noeval
 
-Mocks Yandex Metrika API
-https://yandex.ru/support/metrica/objects/method-reference.html
+Prevents page to use eval.
+Notifies about attempts in the console
 
 It is mostly used for `$redirect` rules.
-See [redirect description](#scorecardresearch-beacon-redirect).
+See [redirect description](../wiki/about-redirects.md#noeval).
 
 **Syntax**
 ```
-example.org#%#//scriptlet("metrika-yandex-tag")
+example.org#%#//scriptlet("noeval")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/metrika-yandex-tag.js)
-* * *
-
-### <a id="metrika-yandex-watch-scriptlet"></a> ⚡️ metrika-yandex-watch
-
-Mocks the old Yandex Metrika API.
-https://yandex.ru/support/metrica/objects/_method-reference.html
-
-It is mostly used for `$redirect` rules.
-See [redirect description](#scorecardresearch-beacon-redirect).
-
-**Syntax**
-```
-example.org#%#//scriptlet("metrika-yandex-watch")
-```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/metrika-yandex-watch.js)
+[Scriptlet source](../src/scriptlets/noeval.js)
 * * *
 
 ### <a id="nowebrtc"></a> ⚡️ nowebrtc
@@ -545,7 +441,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-
 ```
 example.org#%#//scriptlet("nowebrtc")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/nowebrtc.js)
+[Scriptlet source](../src/scriptlets/nowebrtc.js)
 * * *
 
 ### <a id="prevent-addEventListener"></a> ⚡️ prevent-addEventListener
@@ -581,7 +477,7 @@ example.org#%#//scriptlet("prevent-addEventListener"[, eventSearch[, functionSea
         window.test = 'searchString';
     });
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-addEventListener.js)
+[Scriptlet source](../src/scriptlets/prevent-addEventListener.js)
 * * *
 
 ### <a id="prevent-adfly"></a> ⚡️ prevent-adfly
@@ -595,7 +491,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#adfly-defuserjs-
 ```
 example.org#%#//scriptlet("prevent-adfly")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-adfly.js)
+[Scriptlet source](../src/scriptlets/prevent-adfly.js)
 * * *
 
 ### <a id="prevent-bab"></a> ⚡️ prevent-bab
@@ -609,12 +505,12 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#bab-defuserjs-
 ```
 example.org#%#//scriptlet("prevent-bab")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-bab.js)
+[Scriptlet source](../src/scriptlets/prevent-bab.js)
 * * *
 
 ### <a id="prevent-eval-if"></a> ⚡️ prevent-eval-if
 
-Prevents page to use eval matching payload
+Prevents page to use eval matching payload.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
@@ -626,12 +522,12 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
 ```
 !
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-eval-if.js)
+[Scriptlet source](../src/scriptlets/prevent-eval-if.js)
 * * *
 
-### <a id="prevent-fab-3.2.0-scriptlet"></a> ⚡️ prevent-fab-3.2.0
+### <a id="prevent-fab-3.2.0"></a> ⚡️ prevent-fab-3.2.0
 
-Prevents execution of the FAB script v3.2.0
+Prevents execution of the FAB script v3.2.0.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#fuckadblockjs-320-
@@ -640,12 +536,12 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#fuckadblockjs-320-
 ```
 example.org#%#//scriptlet("prevent-fab-3.2.0")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-fab-3.2.0.js)
+[Scriptlet source](../src/scriptlets/prevent-fab-3.2.0.js)
 * * *
 
-### <a id="prevent-popads-net-scriptlet"></a> ⚡️ prevent-popads-net
+### <a id="prevent-popads-net"></a> ⚡️ prevent-popads-net
 
-Aborts on property write (PopAds, popns), throws reference error with random id
+Aborts on property write (PopAds, popns), throws reference error with random id.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#popadsnetjs-
@@ -654,7 +550,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#popadsnetjs-
 ```
 example.org#%#//scriptlet("prevent-popads-net")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-popads-net.js)
+[Scriptlet source](../src/scriptlets/prevent-popads-net.js)
 * * *
 
 ### <a id="prevent-setInterval"></a> ⚡️ prevent-setInterval
@@ -698,7 +594,7 @@ example.org#%#//scriptlet("prevent-setInterval"[, <search>[, <interval>]])
         window.test = "value";
     }, 100);
     ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-setInterval.js)
+[Scriptlet source](../src/scriptlets/prevent-setInterval.js)
 * * *
 
 ### <a id="prevent-setTimeout"></a> ⚡️ prevent-setTimeout
@@ -742,7 +638,7 @@ example.org#%#//scriptlet("prevent-setTimeout"[, <search>[, <delay>]])
         window.test = "value";
     }, 100);
     ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-setTimeout.js)
+[Scriptlet source](../src/scriptlets/prevent-setTimeout.js)
 * * *
 
 ### <a id="prevent-window-open"></a> ⚡️ prevent-window-open
@@ -782,7 +678,7 @@ example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
 ```
     example.org#%#//scriptlet("prevent-window-open", "0", "example")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/prevent-window-open.js)
+[Scriptlet source](../src/scriptlets/prevent-window-open.js)
 * * *
 
 ### <a id="remove-attr"></a> ⚡️ remove-attr
@@ -830,7 +726,7 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
         <div class="inner">Some text</div>
     </div>
     ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/remove-attr.js)
+[Scriptlet source](../src/scriptlets/remove-attr.js)
 * * *
 
 ### <a id="remove-cookie"></a> ⚡️ remove-cookie
@@ -863,24 +759,7 @@ example.org#%#//scriptlet("remove-cookie"[, match])
     ```javascript
     document.cookie = '__example=randomValue';
     ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/remove-cookie.js)
-* * *
-
-### <a id="scorecardresearch-beacon-scriptlet"></a> ⚡️ scorecardresearch-beacon
-
-Mocks Scorecard Research API.
-
-It is mostly used for `$redirect` rules.
-See [redirect description](#scorecardresearch-beacon-redirect).
-
-Related UBO scriptlet:
-https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/scorecardresearch_beacon.js
-
-**Syntax**
-```
-example.org#%#//scriptlet("scorecardresearch-beacon")
-```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/scorecardresearch-beacon.js)
+[Scriptlet source](../src/scriptlets/remove-cookie.js)
 * * *
 
 ### <a id="set-constant"></a> ⚡️ set-constant
@@ -919,10 +798,10 @@ example.org#%#//scriptlet("set-constant", "firstConst", "false")
 ! window.secondConst() === true // call to the secondConst will return true
 example.org#%#//scriptlet("set-constant", "secondConst", "trueFunc")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/set-constant.js)
+[Scriptlet source](../src/scriptlets/set-constant.js)
 * * *
 
-### <a id="set-popads-dummy-scriptlet"></a> ⚡️ set-popads-dummy
+### <a id="set-popads-dummy"></a> ⚡️ set-popads-dummy
 
 Sets static properties PopAds and popns.
 
@@ -933,6 +812,6 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#popads-dummyjs-
 ```
 example.org#%#//scriptlet("set-popads-dummy")
 ```
-[Scriptlet source](/Volumes/dev/scriptlets/src/scriptlets/set-popads-dummy.js)
+[Scriptlet source](../src/scriptlets/set-popads-dummy.js)
 * * *
 

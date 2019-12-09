@@ -6,7 +6,7 @@ import { toRegExp, hit } from '../helpers';
  * @scriptlet prevent-eval-if
  *
  * @description
- * Prevents page to use eval matching payload
+ * Prevents page to use eval matching payload.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
