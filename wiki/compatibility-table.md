@@ -12,19 +12,12 @@
 | debug-on-property-write |  |  |
 | dir-string |  | dir-string |
 | disable-newtab-links | disable-newtab-links.js |  |
-| google-analytics-ga |  |  |
-| google-analytics |  |  |
-| googlesyndication-adsbygoogle |  |  |
-| googletagmanager-gtm |  |  |
-| googletagservices-gpt |  |  |
 | json-prune | json-prune.js |  |
 | log-addEventListener | addEventListener-logger.js |  |
 | log-eval |  |  |
 | log-setInterval |  |  |
 | log-setTimeout |  |  |
 | log |  | log |
-| metrika-yandex-tag |  |  |
-| metrika-yandex-watch |  |  |
 | noeval |  |  |
 | nowebrtc | nowebrtc.js |  |
 | prevent-addEventListener | addEventListener-defuser.js |  |
@@ -38,10 +31,8 @@
 | prevent-window-open |  |  |
 | remove-attr | remove-attr.js |  |
 | remove-cookie | cookie-remover.js |  |
-| scorecardresearch-beacon |  |  |
 | set-constant | set-constant.js |  |
 | set-popads-dummy |  |  |
-|  | raf-if.js (removed) |  |
 |  | setInterval-if.js (removed) |  |
 |  | setTimeout-if.js (removed) |  |
 |  | webrtc-if.js |  |
@@ -68,6 +59,8 @@
 |  | requestAnimationFrame-if.js |  |
 |  | no-setInterval-if.js |  |
 |  | no-setTimeout-if.js |  |
+|  |  | ml-hide-if-graph-matches |
+|  |  | debug |
 
 
 # <a id="redirects"></a> Redirects compatibility table
@@ -85,7 +78,7 @@
 | googletagservices-gpt | googletagservices_gpt.js |  |
 | metrika-yandex-watch |  |  |
 | metrika-yandex-tag |  |  |
-| noeval.js | noeval-silent.js |  |
+| noeval | noeval-silent.js |  |
 | noopcss |  | blank-css |
 | noopframe | noop.html | blank-html |
 | noopjs | noop.js | blank-js |

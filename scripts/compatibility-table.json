@@ -41,21 +41,6 @@
             "ubo": "disable-newtab-links.js"
         },
         {
-            "adg": "google-analytics-ga"
-        },
-        {
-            "adg": "google-analytics"
-        },
-        {
-            "adg": "googlesyndication-adsbygoogle"
-        },
-        {
-            "adg": "googletagmanager-gtm"
-        },
-        {
-            "adg": "googletagservices-gpt"
-        },
-        {
             "adg": "json-prune",
             "ubo": "json-prune.js"
         },
@@ -75,12 +60,6 @@
         {
             "adg": "log",
             "abp": "log"
-        },
-        {
-            "adg": "metrika-yandex-tag"
-        },
-        {
-            "adg": "metrika-yandex-watch"
         },
         {
             "adg": "noeval"
@@ -130,17 +109,11 @@
             "ubo": "cookie-remover.js"
         },
         {
-            "adg": "scorecardresearch-beacon"
-        },
-        {
             "adg": "set-constant",
             "ubo": "set-constant.js"
         },
         {
             "adg": "set-popads-dummy"
-        },
-        {
-            "ubo": "raf-if.js (removed)"
         },
         {
             "ubo": "setInterval-if.js (removed)"
@@ -219,6 +192,12 @@
         },
         {
             "ubo": "no-setTimeout-if.js"
+        },
+        {
+            "abp": "ml-hide-if-graph-matches"
+        },
+        {
+            "abp": "debug"
         }
     ],
     "redirects": [
@@ -269,7 +248,7 @@
             "adg": "metrika-yandex-tag"
         },
         {
-            "adg": "noeval.js",
+            "adg": "noeval",
             "ubo": "noeval-silent.js"
         },
         {
