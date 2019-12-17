@@ -45,6 +45,9 @@
 |  | damoh-defuser.js |  |
 |  | twitch-videoad.js |  |
 |  | fingerprint2.js |  |
+|  | requestAnimationFrame-if.js (raf-if.js) |  |
+|  | no-setInterval-if.js (nosiif.js) |  |
+|  | no-setTimeout-if.js (nostif.js) |  |
 |  |  | trace |
 |  |  | uabinject-defuser |
 |  |  | hide-if-shadow-contains |
@@ -56,9 +59,6 @@
 |  |  | readd |
 |  |  | strip-fetch-query-parameter |
 |  |  | hide-if-contains-image-hash |
-|  | requestAnimationFrame-if.js (raf-if.js) |  |
-|  | no-setInterval-if.js (nosiif.js) |  |
-|  | no-setTimeout-if.js (nostif.js) |  |
 |  |  | ml-hide-if-graph-matches |
 |  |  | debug |
 
