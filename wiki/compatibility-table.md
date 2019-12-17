@@ -2,36 +2,36 @@
 
 | AdGuard | uBO | Adblock Plus |
 |---|---|---|
-| abort-current-inline-script | abort-current-inline-script.js | abort-current-inline-script |
-| abort-on-property-read | abort-on-property-read.js | abort-on-property-read |
-| abort-on-property-write | abort-on-property-write.js | abort-on-property-write |
-| adjust-setInterval | nano-setInterval-booster.js |  |
-| adjust-setTimeout | nano-setTimeout-booster.js |  |
+| abort-current-inline-script | abort-current-inline-script.js (acis.js) | abort-current-inline-script |
+| abort-on-property-read | abort-on-property-read.js (aopr.js) | abort-on-property-read |
+| abort-on-property-write | abort-on-property-write.js (aopw.js) | abort-on-property-write |
+| adjust-setInterval | nano-setInterval-booster.js (nano-sib.js) |  |
+| adjust-setTimeout | nano-setTimeout-booster.js (nano-stb.js) |  |
 | debug-current-inline-script |  |  |
 | debug-on-property-read |  |  |
 | debug-on-property-write |  |  |
 | dir-string |  | dir-string |
 | disable-newtab-links | disable-newtab-links.js |  |
 | json-prune | json-prune.js |  |
-| log-addEventListener | addEventListener-logger.js |  |
+| log-addEventListener | addEventListener-logger.js (aell.js) |  |
 | log-eval |  |  |
 | log-setInterval |  |  |
 | log-setTimeout |  |  |
 | log |  | log |
 | noeval |  |  |
 | nowebrtc | nowebrtc.js |  |
-| prevent-addEventListener | addEventListener-defuser.js |  |
+| prevent-addEventListener | addEventListener-defuser.js (aeld.js) |  |
 | prevent-adfly | adfly-defuser.js |  |
 | prevent-bab |  |  |
 | prevent-eval-if | noeval-if.js |  |
 | prevent-fab-3.2.0 |  |  |
 | prevent-popads-net |  |  |
-| prevent-setInterval | setInterval-defuser.js |  |
-| prevent-setTimeout | setTimeout-defuser.js |  |
+| prevent-setInterval | setInterval-defuser.js (sid.js) |  |
+| prevent-setTimeout | setTimeout-defuser.js (std.js) |  |
 | prevent-window-open |  |  |
-| remove-attr | remove-attr.js |  |
+| remove-attr | remove-attr.js (ra.js) |  |
 | remove-cookie | cookie-remover.js |  |
-| set-constant | set-constant.js |  |
+| set-constant | set-constant.js (set.js) |  |
 | set-popads-dummy |  |  |
 |  | setInterval-if.js (removed) |  |
 |  | setTimeout-if.js (removed) |  |
@@ -56,9 +56,9 @@
 |  |  | readd |
 |  |  | strip-fetch-query-parameter |
 |  |  | hide-if-contains-image-hash |
-|  | requestAnimationFrame-if.js |  |
-|  | no-setInterval-if.js |  |
-|  | no-setTimeout-if.js |  |
+|  | requestAnimationFrame-if.js (raf-if.js) |  |
+|  | no-setInterval-if.js (nosiif.js) |  |
+|  | no-setTimeout-if.js (nostif.js) |  |
 |  |  | ml-hide-if-graph-matches |
 |  |  | debug |
 
