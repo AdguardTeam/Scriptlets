@@ -2,26 +2,26 @@
     "scriptlets": [
         {
             "adg": "abort-current-inline-script",
-            "ubo": "abort-current-inline-script.js",
+            "ubo": "abort-current-inline-script.js (acis.js)",
             "abp": "abort-current-inline-script"
         },
         {
             "adg": "abort-on-property-read",
-            "ubo": "abort-on-property-read.js",
+            "ubo": "abort-on-property-read.js (aopr.js)",
             "abp": "abort-on-property-read"
         },
         {
             "adg": "abort-on-property-write",
-            "ubo": "abort-on-property-write.js",
+            "ubo": "abort-on-property-write.js (aopw.js)",
             "abp": "abort-on-property-write"
         },
         {
             "adg": "adjust-setInterval",
-            "ubo": "nano-setInterval-booster.js"
+            "ubo": "nano-setInterval-booster.js (nano-sib.js)"
         },
         {
             "adg": "adjust-setTimeout",
-            "ubo": "nano-setTimeout-booster.js"
+            "ubo": "nano-setTimeout-booster.js (nano-stb.js)"
         },
         {
             "adg": "debug-current-inline-script"
@@ -41,27 +41,12 @@
             "ubo": "disable-newtab-links.js"
         },
         {
-            "adg": "google-analytics-ga"
-        },
-        {
-            "adg": "google-analytics"
-        },
-        {
-            "adg": "googlesyndication-adsbygoogle"
-        },
-        {
-            "adg": "googletagmanager-gtm"
-        },
-        {
-            "adg": "googletagservices-gpt"
-        },
-        {
             "adg": "json-prune",
             "ubo": "json-prune.js"
         },
         {
             "adg": "log-addEventListener",
-            "ubo": "addEventListener-logger.js"
+            "ubo": "addEventListener-logger.js (aell.js)"
         },
         {
             "adg": "log-eval"
@@ -77,12 +62,6 @@
             "abp": "log"
         },
         {
-            "adg": "metrika-yandex-tag"
-        },
-        {
-            "adg": "metrika-yandex-watch"
-        },
-        {
             "adg": "noeval"
         },
         {
@@ -91,7 +70,7 @@
         },
         {
             "adg": "prevent-addEventListener",
-            "ubo": "addEventListener-defuser.js"
+            "ubo": "addEventListener-defuser.js (aeld.js)"
         },
         {
             "adg": "prevent-adfly",
@@ -112,35 +91,29 @@
         },
         {
             "adg": "prevent-setInterval",
-            "ubo": "setInterval-defuser.js"
+            "ubo": "setInterval-defuser.js (sid.js)"
         },
         {
             "adg": "prevent-setTimeout",
-            "ubo": "setTimeout-defuser.js"
+            "ubo": "setTimeout-defuser.js (std.js)"
         },
         {
             "adg": "prevent-window-open"
         },
         {
             "adg": "remove-attr",
-            "ubo": "remove-attr.js"
+            "ubo": "remove-attr.js (ra.js)"
         },
         {
             "adg": "remove-cookie",
             "ubo": "cookie-remover.js"
         },
         {
-            "adg": "scorecardresearch-beacon"
-        },
-        {
             "adg": "set-constant",
-            "ubo": "set-constant.js"
+            "ubo": "set-constant.js (set.js)"
         },
         {
             "adg": "set-popads-dummy"
-        },
-        {
-            "ubo": "raf-if.js (removed)"
         },
         {
             "ubo": "setInterval-if.js (removed)"
@@ -179,6 +152,15 @@
             "ubo": "fingerprint2.js"
         },
         {
+            "ubo": "requestAnimationFrame-if.js (raf-if.js)"
+        },
+        {
+            "ubo": "no-setInterval-if.js (nosiif.js)"
+        },
+        {
+            "ubo": "no-setTimeout-if.js (nostif.js)"
+        },
+        {
             "abp": "trace"
         },
         {
@@ -212,13 +194,10 @@
             "abp": "hide-if-contains-image-hash"
         },
         {
-            "ubo": "requestAnimationFrame-if.js"
+            "abp": "ml-hide-if-graph-matches"
         },
         {
-            "ubo": "no-setInterval-if.js"
-        },
-        {
-            "ubo": "no-setTimeout-if.js"
+            "abp": "debug"
         }
     ],
     "redirects": [
@@ -269,7 +248,7 @@
             "adg": "metrika-yandex-tag"
         },
         {
-            "adg": "noeval.js",
+            "adg": "noeval",
             "ubo": "noeval-silent.js"
         },
         {

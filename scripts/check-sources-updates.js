@@ -128,6 +128,7 @@ function markTableWithDiff(diff, ruleType, platform) {
  * UBO Scriptlets github raw resources
  */
 const UBO_SCRIPTLETS_FILE = 'https://raw.githubusercontent.com/gorhill/uBlock/master/assets/resources/scriptlets.js';
+const ALIAS_MARKER = 'alias';
 
 /**
  * Make request to UBO repo(master), parses and returns the list of UBO scriptlets
@@ -137,14 +138,42 @@ async function getCurrentUBOScriptlets() {
     const { data } = await axios.get(UBO_SCRIPTLETS_FILE);
     console.log('UBO done');
 
-    const regexp = /\/\/\/\s(\S*\.js)/g;
-    const names = [];
+    const regexp = /\/\/\/\s(\S*\.js|alias\s\S*\.js)/g;
+    const parsedNames = [];
 
     let result;
     // eslint-disable-next-line no-cond-assign
     while (result = regexp.exec(data)) {
-        names.push(result[1]);
+        // array of parsed UBO scriptlets and their aliases
+        parsedNames.push(result[1]);
     }
+
+    let nameRecord;
+    const names = [];
+    let aliasName;
+    let aliases = [];
+    let i = 0;
+    while (i < parsedNames.length) {
+        let k = 1;
+        // check if scriptlet has aliases (which might be next after it)
+        while ((i + k < parsedNames.length) && (parsedNames[i + k].includes(ALIAS_MARKER))) {
+            aliasName = parsedNames[i + k].replace(/alias\s/, '');
+            aliases.push(aliasName);
+            k += 1;
+        }
+
+        if (aliases.length > 0) {
+            nameRecord = `${parsedNames[i]} (${aliases.join(', ')})`;
+            aliases = [];
+            i += k;
+        } else {
+            nameRecord = parsedNames[i];
+            i += 1;
+        }
+
+        names.push(nameRecord);
+    }
+
     return names;
 }
 
