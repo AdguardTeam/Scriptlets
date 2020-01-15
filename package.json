@@ -55,5 +55,6 @@
     },
     "files": [
         "./dist/"
-    ]
+    ],
+    "browserslist": ["chrome 70", "last 1 versions", "not ie <= 9"]
 }

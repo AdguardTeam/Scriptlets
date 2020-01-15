@@ -27,6 +27,7 @@
 * [prevent-setTimeout](#prevent-setTimeout)
 * [prevent-window-open](#prevent-window-open)
 * [remove-attr](#remove-attr)
+* [remove-class](#remove-class)
 * [remove-cookie](#remove-cookie)
 * [set-constant](#set-constant)
 * [set-popads-dummy](#set-popads-dummy)
@@ -727,6 +728,51 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
     </div>
     ```
 [Scriptlet source](../src/scriptlets/remove-attr.js)
+* * *
+
+### <a id="remove-class"></a> ⚡️ remove-class
+
+Removes class from DOM nodes. Will run only once after page load.
+
+**Syntax**
+```
+example.org#%#//scriptlet("remove-attr", classes[, selector])
+```
+
+- `classes` - required, class or list of classes joined by |
+- `selector` - optional, CSS selector, specifies nodes from which classes will be removed
+
+**Examples**
+1.  Removes by classes
+    ```
+    example.org#%#//scriptlet("remove-class", "example|test")
+    ```
+
+    ```html
+    <!-- before  -->
+    <div class="nice example test">Some text</div>
+
+    <!-- after -->
+    <div class="nice">Some text</div>
+    ```
+
+2. Removes with specified selector
+    ```
+    example.org#%#//scriptlet("remove-class", "branding", ".inner")
+    ```
+
+    ```html
+    <!-- before -->
+    <div class="wrapper true branding">
+        <div class="inner bad branding">Some text</div>
+    </div>
+
+    <!-- after -->
+    <div class="wrapper true branding">
+        <div class="inner bad">Some text</div>
+    </div>
+    ```
+[Scriptlet source](../src/scriptlets/remove-class.js)
 * * *
 
 ### <a id="remove-cookie"></a> ⚡️ remove-cookie
