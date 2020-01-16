@@ -56,5 +56,5 @@
     "files": [
         "./dist/"
     ],
-    "browserslist": ["chrome 55", "firefox 52", "opera 42", "not ie < 9"]
+    "browserslist": ["chrome 55", "last 1 versions", "not ie <= 9"]
 }

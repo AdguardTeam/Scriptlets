@@ -2021,7 +2021,8 @@
      * example.org#%#//scriptlet("remove-attr", classes[, selector])
      * ```
      *
-     * - `classes` - required, class or list of classes joined by |
+     * - `classes` - required, class or list of classes separated by '|';
+     * if there is no selector is following this parameter, each class becomes a selector in rotation
      * - `selector` - optional, CSS selector, specifies nodes from which classes will be removed
      *
      * **Examples**
@@ -2061,8 +2062,7 @@
         return;
       }
 
-      classNames = classNames.split(/\s*\|\s*/); // console.log(classNames);
-
+      classNames = classNames.split(/\s*\|\s*/);
       var selectors = [];
 
       if (!selector) {
@@ -2085,11 +2085,11 @@
           });
         } else if (selectors.length > 0) {
           selectors.forEach(function (s) {
-            var els = document.querySelectorAll(s);
+            var elements = document.querySelectorAll(s);
 
-            for (var i = 0; i < els.length; i += 1) {
-              var el = els[i];
-              nodes.add(el);
+            for (var i = 0; i < elements.length; i += 1) {
+              var element = elements[i];
+              nodes.add(element);
             }
           });
         }

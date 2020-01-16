@@ -53,20 +53,22 @@ test('Adg rule: no selector', (assert) => {
 test('Adg rule', (assert) => {
     createHit();
     const classNames = ['test11', 'test22', 'test33'];
-    const selectorClassName = 'test-with-selector';
+    const parentSelectorClassName = 'iamyourfather';
+    const childSelectorClassName = 'daaamn';
     const params = {
         name,
-        args: [classNames.join('|'), `.${selectorClassName}`],
+        args: [classNames.join('|'), `.${childSelectorClassName}`],
         verbose: true,
     };
-
-    const elem = createElem(selectorClassName, classNames);
+    const parentElement = createElem(parentSelectorClassName, classNames);
+    const childElement = createElem(childSelectorClassName, classNames);
+    parentElement.appendChild(childElement);
 
     const resString = window.scriptlets.invoke(params);
     evalWrapper(resString);
 
     classNames.forEach((a) => {
-        assert.notOk(elem.classList.contains(a), `Class ${a} has been removed`);
+        assert.notOk(childElement.classList.contains(a), `Class ${a} has been removed`);
     });
     assert.strictEqual(window.hit, 'FIRED');
 });

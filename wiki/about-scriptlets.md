@@ -739,7 +739,8 @@ Removes class from DOM nodes. Will run only once after page load.
 example.org#%#//scriptlet("remove-attr", classes[, selector])
 ```
 
-- `classes` - required, class or list of classes joined by |
+- `classes` - required, class or list of classes separated by '|';
+if there is no selector is following this parameter, each class becomes a selector in rotation
 - `selector` - optional, CSS selector, specifies nodes from which classes will be removed
 
 **Examples**
