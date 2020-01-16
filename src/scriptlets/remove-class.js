@@ -11,7 +11,8 @@ import { hit } from '../helpers';
  * example.org#%#//scriptlet("remove-attr", classes[, selector])
  * ```
  *
- * - `classes` - required, class or list of classes joined by |
+ * - `classes` - required, class or list of classes separated by '|';
+ * if there is no selector is following this parameter, each class becomes a selector in rotation
  * - `selector` - optional, CSS selector, specifies nodes from which classes will be removed
  *
  * **Examples**
@@ -48,7 +49,6 @@ import { hit } from '../helpers';
 export function removeClass(source, classNames, selector) {
     if (!classNames) { return; }
     classNames = classNames.split(/\s*\|\s*/);
-    // console.log(classNames);
     let selectors = [];
     if (!selector) {
         selectors = classNames.map((className) => {
@@ -67,10 +67,10 @@ export function removeClass(source, classNames, selector) {
             foundedNodes.forEach((n) => nodes.add(n));
         } else if (selectors.length > 0) {
             selectors.forEach((s) => {
-                const els = document.querySelectorAll(s);
-                for (let i = 0; i < els.length; i += 1) {
-                    const el = els[i];
-                    nodes.add(el);
+                const elements = document.querySelectorAll(s);
+                for (let i = 0; i < elements.length; i += 1) {
+                    const element = elements[i];
+                    nodes.add(element);
                 }
             });
         }

@@ -10,10 +10,5 @@
   },
   "env": {
     "browser": true
-  },
-  "settings": {
-    "polyfills": [
-      "Set"
-    ]
   }
 }

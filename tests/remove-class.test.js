@@ -19,10 +19,10 @@ const createHit = () => {
 
 const evalWrapper = eval;
 
-const createElem = (selectorClassName, attrs) => {
+const createElem = (selectorClassName, classNames) => {
     const elem = document.createElement('div');
     if (selectorClassName) elem.classList.add(selectorClassName);
-    attrs.forEach((a) => elem.classList.add(a));
+    classNames.forEach((a) => elem.classList.add(a));
     document.body.appendChild(elem);
 
     return elem;
@@ -40,12 +40,11 @@ test('Adg rule: no selector', (assert) => {
 
     const elem = createElem(null, classNames);
     elem.classList.add('test-no-selector');
+
     const resString = window.scriptlets.invoke(params);
-    // console.log(resString);
     evalWrapper(resString);
 
     classNames.forEach((a) => {
-        // console.log(elem.classList.contains(a));
         assert.notOk(elem.classList.contains(a), `Class ${a} has been removed`);
     });
     assert.strictEqual(window.hit, 'FIRED');
