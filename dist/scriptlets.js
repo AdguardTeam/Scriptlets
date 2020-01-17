@@ -2023,7 +2023,7 @@
      *
      * - `classes` - required, class or list of classes separated by '|'
      * - `selector` - optional, CSS selector, specifies nodes from which classes will be removed;
-     * if there is no selector, every class independently will be considered as a selector
+     * if there is no selector, every class independently will be removed from all nodes which has one
      *
      * **Examples**
      * 1.  Removes by classes

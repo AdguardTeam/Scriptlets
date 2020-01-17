@@ -22,7 +22,7 @@ const evalWrapper = eval;
 const createElem = (selector, classNames) => {
     const elem = document.createElement('div');
     if (selector) elem.classList.add(selector);
-    classNames.forEach((a) => elem.classList.add(a));
+    elem.classList.add(...classNames);
     document.body.appendChild(elem);
 
     return elem;
@@ -47,9 +47,9 @@ test('Adg rule: no selector', (assert) => {
     evalWrapper(resString);
 
     classNames.forEach((a) => {
-        assert.notOk(first.classList.contains(a), `Class ${a} has been removed`);
-        assert.notOk(second.classList.contains(a), `Class ${a} has been removed`);
-        assert.notOk(third.classList.contains(a), `Class ${a} has been removed`);
+        assert.notOk(first.classList.contains(a), `Class '${a}' has been removed`);
+        assert.notOk(second.classList.contains(a), `Class '${a}' has been removed`);
+        assert.notOk(third.classList.contains(a), `Class '${a}' has been removed`);
     });
     assert.strictEqual(window.hit, 'FIRED');
 });
@@ -72,7 +72,7 @@ test('Adg rule', (assert) => {
     evalWrapper(resString);
 
     classNames.forEach((a) => {
-        assert.notOk(childElement.classList.contains(a), `Class ${a} has been removed`);
+        assert.notOk(childElement.classList.contains(a), `Class '${a}' has been removed`);
     });
     assert.strictEqual(window.hit, 'FIRED');
 });
