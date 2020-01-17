@@ -19,9 +19,9 @@ const createHit = () => {
 
 const evalWrapper = eval;
 
-const createElem = (selectorClassName, classNames) => {
+const createElem = (selector, classNames) => {
     const elem = document.createElement('div');
-    if (selectorClassName) elem.classList.add(selectorClassName);
+    if (selector) elem.classList.add(selector);
     classNames.forEach((a) => elem.classList.add(a));
     document.body.appendChild(elem);
 
