@@ -2021,9 +2021,9 @@
      * example.org#%#//scriptlet("remove-attr", classes[, selector])
      * ```
      *
-     * - `classes` - required, class or list of classes separated by '|';
-     * if there is no selector is following this parameter, each class becomes a selector in rotation
-     * - `selector` - optional, CSS selector, specifies nodes from which classes will be removed
+     * - `classes` - required, class or list of classes separated by '|'
+     * - `selector` - optional, CSS selector, specifies nodes from which classes will be removed;
+     * if there is no selector, every class independently will be considered as a selector
      *
      * **Examples**
      * 1.  Removes by classes
@@ -2033,10 +2033,14 @@
      *
      *     ```html
      *     <!-- before  -->
-     *     <div class="nice example test">Some text</div>
+     *     <div id="first" class="nice test">Some text</div>
+     *     <div id="second" class="rare example for test">Some text</div>
+     *     <div id="third" class="testing better example">Some text</div>
      *
      *     <!-- after -->
-     *     <div class="nice">Some text</div>
+     *     <div id="first" class="nice">Some text</div>
+     *     <div id="second" class="rare for">Some text</div>
+     *     <div id="third" class="testing better">Some text</div>
      *     ```
      *
      * 2. Removes with specified selector

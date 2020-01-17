@@ -31,21 +31,25 @@ const createElem = (selectorClassName, classNames) => {
 
 test('Adg rule: no selector', (assert) => {
     createHit();
-    const classNames = ['test1', 'test2', 'test3'];
+    const classNames = ['example', 'test'];
     const params = {
         name,
         args: [classNames.join('|')],
         verbose: true,
     };
 
-    const elem = createElem(null, classNames);
-    elem.classList.add('test-no-selector');
+    const first = createElem(null, ['first', 'nice', 'test']);
+    const second = createElem(null, ['second', 'rare', 'example', 'for', 'test']);
+    const third = createElem(null, ['third', 'testing', 'better', 'example']);
+
 
     const resString = window.scriptlets.invoke(params);
     evalWrapper(resString);
 
     classNames.forEach((a) => {
-        assert.notOk(elem.classList.contains(a), `Class ${a} has been removed`);
+        assert.notOk(first.classList.contains(a), `Class ${a} has been removed`);
+        assert.notOk(second.classList.contains(a), `Class ${a} has been removed`);
+        assert.notOk(third.classList.contains(a), `Class ${a} has been removed`);
     });
     assert.strictEqual(window.hit, 'FIRED');
 });
