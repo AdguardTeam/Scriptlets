@@ -2432,8 +2432,8 @@
       });
     }
     /**
-     * Check is scriptlet params valid
-     * @param {Object} source
+     * Checks if the scriptlet name is valid
+     * @param {String} name - Scriptlet name
      */
 
 
@@ -2472,7 +2472,7 @@
      *
      * @returns {Object} object with method `invoke`
      * `invoke` method receives one argument with `Source` type
-     * `validate` method receives one argument with `Source` type
+     * `validate` method receives one argument with `String` type
      */
     // eslint-disable-next-line no-undef
 

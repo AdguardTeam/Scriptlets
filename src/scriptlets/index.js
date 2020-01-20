@@ -30,7 +30,7 @@ function getScriptletByName(name) {
 }
 
 /**
- * Returns if the scriptlet name is valid
+ * Checks if the scriptlet name is valid
  * @param {String} name - Scriptlet name
  */
 function isValidScriptletSource(name) {
