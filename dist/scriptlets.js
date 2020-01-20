@@ -2359,7 +2359,7 @@
         prunePaths.forEach(function (path) {
           var ownerObj = getPropertyInChain(r, path);
 
-          if (ownerObj.base) {
+          if (Object.prototype.hasOwnProperty.call(ownerObj.base, ownerObj.prop)) {
             delete ownerObj.base[ownerObj.prop];
           }
         });
