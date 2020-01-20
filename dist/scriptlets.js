@@ -1922,11 +1922,13 @@
     debugCurrentInlineScript.names = ['debug-current-inline-script'];
     debugCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit];
 
+    /* eslint-disable max-len */
+
     /**
      * @scriptlet remove-attr
      *
      * @description
-     * Removes attributes from DOM nodes. Will run only once after page load.
+     * Removes the specified attributes from DOM notes. This scriptlet runs only once after the page load (DOMContentLoaded).
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
@@ -1936,8 +1938,8 @@
      * example.org#%#//scriptlet("remove-attr", attrs[, selector])
      * ```
      *
-     * - `attrs` - required, attribute or list of attributes joined by |
-     * - `selector` - optional, CSS selector, specifies nodes from which attributes will be removed
+     * - `attrs` — required, attribute or list of attributes joined by '|';
+     * - `selector` — optional, CSS selector, specifies DOM nodes from which the attributes will be removed
      *
      * **Examples**
      * 1.  Removes by attribute
@@ -1970,6 +1972,8 @@
      *     </div>
      *     ```
      */
+
+    /* eslint-enable max-len */
 
     function removeAttr(source, attrs, selector) {
       if (!attrs) {
@@ -2010,19 +2014,21 @@
     removeAttr.names = ['remove-attr', 'remove-attr.js', 'ubo-remove-attr.js'];
     removeAttr.injections = [hit];
 
+    /* eslint-disable max-len */
+
     /**
      * @scriptlet remove-class
      *
      * @description
-     * Removes class from DOM nodes. Will run only once after page load.
+     * Removes the specified classes from DOM notes. This scriptlet runs only once after the page load (DOMContentLoaded).
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("remove-attr", classes[, selector])
+     * example.org#%#//scriptlet("remove-class", classes[, selector])
      * ```
      *
-     * - `classes` - required, class or list of classes separated by '|'
-     * - `selector` - optional, CSS selector, specifies nodes from which classes will be removed;
+     * - `classes` — required, class or list of classes separated by '|';
+     * - `selector` — optional, CSS selector, specifies DOM nodes from which the classes will be removed;
      * if there is no selector, every class independently will be removed from all nodes which has one
      *
      * **Examples**
@@ -2060,6 +2066,8 @@
      *     </div>
      *     ```
      */
+
+    /* eslint-enable max-len */
 
     function removeClass(source, classNames, selector) {
       if (!classNames) {

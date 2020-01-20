@@ -684,7 +684,7 @@ example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
 
 ### <a id="remove-attr"></a> ⚡️ remove-attr
 
-Removes attributes from DOM nodes. Will run only once after page load.
+Removes the specified attributes from DOM notes. This scriptlet runs only once after the page load (DOMContentLoaded).
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
@@ -694,8 +694,8 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
 example.org#%#//scriptlet("remove-attr", attrs[, selector])
 ```
 
-- `attrs` - required, attribute or list of attributes joined by |
-- `selector` - optional, CSS selector, specifies nodes from which attributes will be removed
+- `attrs` — required, attribute or list of attributes joined by '|';
+- `selector` — optional, CSS selector, specifies DOM nodes from which the attributes will be removed
 
 **Examples**
 1.  Removes by attribute
@@ -732,15 +732,15 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
 
 ### <a id="remove-class"></a> ⚡️ remove-class
 
-Removes class from DOM nodes. Will run only once after page load.
+Removes the specified classes from DOM notes. This scriptlet runs only once after the page load (DOMContentLoaded).
 
 **Syntax**
 ```
-example.org#%#//scriptlet("remove-attr", classes[, selector])
+example.org#%#//scriptlet("remove-class", classes[, selector])
 ```
 
-- `classes` - required, class or list of classes separated by '|'
-- `selector` - optional, CSS selector, specifies nodes from which classes will be removed;
+- `classes` — required, class or list of classes separated by '|';
+- `selector` — optional, CSS selector, specifies DOM nodes from which the classes will be removed;
 if there is no selector, every class independently will be removed from all nodes which has one
 
 **Examples**

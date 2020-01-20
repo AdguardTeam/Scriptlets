@@ -12,8 +12,8 @@ import { hit } from '../helpers';
  * example.org#%#//scriptlet("remove-class", classes[, selector])
  * ```
  *
- * - `classes` - required, class or list of classes separated by '|';
- * - `selector` - optional, CSS selector, specifies DOM nodes from which the classes will be removed;
+ * - `classes` — required, class or list of classes separated by '|';
+ * - `selector` — optional, CSS selector, specifies DOM nodes from which the classes will be removed;
  * if there is no selector, every class independently will be removed from all nodes which has one
  *
  * **Examples**
