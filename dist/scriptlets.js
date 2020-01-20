@@ -2472,14 +2472,17 @@
      *
      * @returns {Object} object with method `invoke`
      * `invoke` method receives one argument with `Source` type
+     * `validate` method receives one argument with `Source` type
      */
+    // eslint-disable-next-line no-undef
 
 
     scriptlets = function () {
       return {
-        invoke: getScriptletCode
+        invoke: getScriptletCode,
+        validate: isValidScriptletSource
       };
-    }(); // eslint-disable-line no-undef
+    }();
 
 }());
 

@@ -132,6 +132,16 @@ Creates a global variable `scriptlets`.
 scriptlets.invoke(source)
 ```
 
+```javascript
+/**
+* Returns if the scriptlet is valid
+*
+* @param {Source} source
+* @returns {boolean}
+*/
+scriptlets.validate(source)
+```
+
 #### Corelibs library
 
 `dist/scriptlets.corelibs.json`

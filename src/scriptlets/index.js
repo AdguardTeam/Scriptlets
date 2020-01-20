@@ -67,5 +67,10 @@ function getScriptletCode(source) {
  *
  * @returns {Object} object with method `invoke`
  * `invoke` method receives one argument with `Source` type
+ * `validate` method receives one argument with `Source` type
  */
-scriptlets = (() => ({ invoke: getScriptletCode }))(); // eslint-disable-line no-undef
+// eslint-disable-next-line no-undef
+scriptlets = (() => ({
+    invoke: getScriptletCode,
+    validate: isValidScriptletSource,
+}))();
