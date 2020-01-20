@@ -134,12 +134,12 @@ scriptlets.invoke(source)
 
 ```javascript
 /**
-* Returns if the scriptlet is valid
+* Returns if the scriptlet name is valid
 *
-* @param {Source} source
+* @param {String} name - scriptlet name
 * @returns {boolean}
 */
-scriptlets.validate(source)
+scriptlets.validate(name)
 ```
 
 #### Corelibs library

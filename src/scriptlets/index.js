@@ -30,14 +30,14 @@ function getScriptletByName(name) {
 }
 
 /**
- * Check is scriptlet params valid
- * @param {Object} source
+ * Returns if the scriptlet name is valid
+ * @param {String} name - Scriptlet name
  */
-function isValidScriptletSource(source) {
-    if (!source.name) {
+function isValidScriptletSource(name) {
+    if (!name) {
         return false;
     }
-    const scriptlet = getScriptletByName(source.name);
+    const scriptlet = getScriptletByName(name);
     if (!scriptlet) {
         return false;
     }
@@ -49,7 +49,7 @@ function isValidScriptletSource(source) {
 * @param {Source} source
 */
 function getScriptletCode(source) {
-    if (!isValidScriptletSource(source)) {
+    if (!isValidScriptletSource(source.name)) {
         return null;
     }
 
@@ -67,7 +67,7 @@ function getScriptletCode(source) {
  *
  * @returns {Object} object with method `invoke`
  * `invoke` method receives one argument with `Source` type
- * `validate` method receives one argument with `Source` type
+ * `validate` method receives one argument with `String` type
  */
 // eslint-disable-next-line no-undef
 scriptlets = (() => ({

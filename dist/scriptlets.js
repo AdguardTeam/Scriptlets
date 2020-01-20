@@ -2437,12 +2437,12 @@
      */
 
 
-    function isValidScriptletSource(source) {
-      if (!source.name) {
+    function isValidScriptletSource(name) {
+      if (!name) {
         return false;
       }
 
-      var scriptlet = getScriptletByName(source.name);
+      var scriptlet = getScriptletByName(name);
 
       if (!scriptlet) {
         return false;
@@ -2457,7 +2457,7 @@
 
 
     function getScriptletCode(source) {
-      if (!isValidScriptletSource(source)) {
+      if (!isValidScriptletSource(source.name)) {
         return null;
       }
 
