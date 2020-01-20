@@ -1,18 +1,19 @@
 import { hit } from '../helpers';
 
+/* eslint-disable max-len */
 /**
  * @scriptlet remove-class
  *
  * @description
- * Removes class from DOM nodes. Will run only once after page load.
+ * Removes the specified classes from DOM notes. This scriptlet runs only once after the page load (DOMContentLoaded).
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("remove-attr", classes[, selector])
+ * example.org#%#//scriptlet("remove-class", classes[, selector])
  * ```
  *
  * - `classes` - required, class or list of classes separated by '|'
- * - `selector` - optional, CSS selector, specifies nodes from which classes will be removed;
+ * - `selector` - optional, CSS selector, specifies DOM nodes from which the classes will be removed;
  * if there is no selector, every class independently will be removed from all nodes which has one
  *
  * **Examples**
@@ -50,6 +51,8 @@ import { hit } from '../helpers';
  *     </div>
  *     ```
  */
+/* eslint-enable max-len */
+
 export function removeClass(source, classNames, selector) {
     if (!classNames) { return; }
     classNames = classNames.split(/\s*\|\s*/);
