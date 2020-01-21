@@ -1,10 +1,11 @@
 import { hit } from '../helpers';
 
+/* eslint-disable max-len */
 /**
  * @scriptlet remove-attr
  *
  * @description
- * Removes attributes from DOM nodes. Will run only once after page load.
+ * Removes the specified attributes from DOM notes. This scriptlet runs only once after the page load (DOMContentLoaded).
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
@@ -14,8 +15,8 @@ import { hit } from '../helpers';
  * example.org#%#//scriptlet("remove-attr", attrs[, selector])
  * ```
  *
- * - `attrs` - required, attribute or list of attributes joined by |
- * - `selector` - optional, CSS selector, specifies nodes from which attributes will be removed
+ * - `attrs` — required, attribute or list of attributes joined by '|';
+ * - `selector` — optional, CSS selector, specifies DOM nodes from which the attributes will be removed
  *
  * **Examples**
  * 1.  Removes by attribute
@@ -48,6 +49,7 @@ import { hit } from '../helpers';
  *     </div>
  *     ```
  */
+/* eslint-enable max-len */
 export function removeAttr(source, attrs, selector) {
     if (!attrs) { return; }
     attrs = attrs.split(/\s*\|\s*/);
