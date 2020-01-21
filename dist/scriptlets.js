@@ -1922,11 +1922,13 @@
     debugCurrentInlineScript.names = ['debug-current-inline-script'];
     debugCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit];
 
+    /* eslint-disable max-len */
+
     /**
      * @scriptlet remove-attr
      *
      * @description
-     * Removes attributes from DOM nodes. Will run only once after page load.
+     * Removes the specified attributes from DOM notes. This scriptlet runs only once after the page load (DOMContentLoaded).
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
@@ -1936,8 +1938,8 @@
      * example.org#%#//scriptlet("remove-attr", attrs[, selector])
      * ```
      *
-     * - `attrs` - required, attribute or list of attributes joined by |
-     * - `selector` - optional, CSS selector, specifies nodes from which attributes will be removed
+     * - `attrs` — required, attribute or list of attributes joined by '|';
+     * - `selector` — optional, CSS selector, specifies DOM nodes from which the attributes will be removed
      *
      * **Examples**
      * 1.  Removes by attribute
@@ -1970,6 +1972,8 @@
      *     </div>
      *     ```
      */
+
+    /* eslint-enable max-len */
 
     function removeAttr(source, attrs, selector) {
       if (!attrs) {
@@ -2009,6 +2013,122 @@
     }
     removeAttr.names = ['remove-attr', 'remove-attr.js', 'ubo-remove-attr.js'];
     removeAttr.injections = [hit];
+
+    /* eslint-disable max-len */
+
+    /**
+     * @scriptlet remove-class
+     *
+     * @description
+     * Removes the specified classes from DOM notes. This scriptlet runs only once after the page load (DOMContentLoaded).
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet("remove-class", classes[, selector])
+     * ```
+     *
+     * - `classes` — required, class or list of classes separated by '|';
+     * - `selector` — optional, CSS selector, specifies DOM nodes from which the classes will be removed;
+     * if there is no selector, every class independently will be removed from all nodes which has one
+     *
+     * **Examples**
+     * 1.  Removes by classes
+     *     ```
+     *     example.org#%#//scriptlet("remove-class", "example|test")
+     *     ```
+     *
+     *     ```html
+     *     <!-- before  -->
+     *     <div id="first" class="nice test">Some text</div>
+     *     <div id="second" class="rare example for test">Some text</div>
+     *     <div id="third" class="testing better example">Some text</div>
+     *
+     *     <!-- after -->
+     *     <div id="first" class="nice">Some text</div>
+     *     <div id="second" class="rare for">Some text</div>
+     *     <div id="third" class="testing better">Some text</div>
+     *     ```
+     *
+     * 2. Removes with specified selector
+     *     ```
+     *     example.org#%#//scriptlet("remove-class", "branding", ".inner")
+     *     ```
+     *
+     *     ```html
+     *     <!-- before -->
+     *     <div class="wrapper true branding">
+     *         <div class="inner bad branding">Some text</div>
+     *     </div>
+     *
+     *     <!-- after -->
+     *     <div class="wrapper true branding">
+     *         <div class="inner bad">Some text</div>
+     *     </div>
+     *     ```
+     */
+
+    /* eslint-enable max-len */
+
+    function removeClass(source, classNames, selector) {
+      if (!classNames) {
+        return;
+      }
+
+      classNames = classNames.split(/\s*\|\s*/);
+      var selectors = [];
+
+      if (!selector) {
+        selectors = classNames.map(function (className) {
+          return ".".concat(className);
+        });
+      }
+
+      var removeClassHandler = function removeClassHandler(ev) {
+        if (ev) {
+          window.removeEventListener(ev.type, removeClassHandler, true);
+        }
+
+        var nodes = new Set();
+
+        if (selector) {
+          var foundedNodes = [].slice.call(document.querySelectorAll(selector));
+          foundedNodes.forEach(function (n) {
+            return nodes.add(n);
+          });
+        } else if (selectors.length > 0) {
+          selectors.forEach(function (s) {
+            var elements = document.querySelectorAll(s);
+
+            for (var i = 0; i < elements.length; i += 1) {
+              var element = elements[i];
+              nodes.add(element);
+            }
+          });
+        }
+
+        var removed = false;
+        nodes.forEach(function (node) {
+          classNames.forEach(function (className) {
+            if (node.classList.contains(className)) {
+              node.classList.remove(className);
+              removed = true;
+            }
+          });
+        });
+
+        if (removed) {
+          hit(source);
+        }
+      };
+
+      if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', removeClassHandler, true);
+      } else {
+        removeClassHandler();
+      }
+    }
+    removeClass.names = ['remove-class'];
+    removeClass.injections = [hit];
 
     /**
      * @scriptlet disable-newtab-links
@@ -2401,6 +2521,7 @@
         debugOnPropertyWrite: debugOnPropertyWrite,
         debugCurrentInlineScript: debugCurrentInlineScript,
         removeAttr: removeAttr,
+        removeClass: removeClass,
         disableNewtabLinks: disableNewtabLinks,
         adjustSetInterval: adjustSetInterval,
         adjustSetTimeout: adjustSetTimeout,

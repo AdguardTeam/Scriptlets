@@ -59,7 +59,6 @@ test('Adg rule: no selector', (assert) => {
     };
 
     const elem = createElem(null, attrs);
-
     const resString = window.scriptlets.invoke(params);
     evalWrapper(resString);
 

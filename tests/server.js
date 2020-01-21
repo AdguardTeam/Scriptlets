@@ -7,7 +7,7 @@ const PORT = 8585;
 
 const server = http.createServer((req, res) => {
     const indexFile = 'tests.html';
-    const filename = req.url === '/' ? indexFile : req.url;
+    const filename = req.url === '/' || req.url.match(/\/\?/) ? indexFile : req.url;
     fs.readFile(path.join(__dirname, 'dist', filename), (err, data) => {
         if (err) {
             console.log(err.message);
