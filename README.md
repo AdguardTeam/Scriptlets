@@ -125,21 +125,58 @@ Creates a global variable `scriptlets`.
 ```javascript
 /**
 * Returns scriptlet code
-*
 * @param {Source} source
-* @returns {string}
+* @returns {String}
 */
-scriptlets.invoke(source)
+scriptlets.invoke(source);
 ```
 
 ```javascript
 /**
 * Checks if the scriptlet name is valid
-*
 * @param {String} name - scriptlet name
-* @returns {boolean}
+* @returns {Boolean}
 */
-scriptlets.validate(name)
+scriptlets.validateName(name);
+```
+
+```javascript
+/**
+* Validates any scriptlet rule
+* @param {String} input - can be Adguard or Ubo or Abp scriptlet rule
+* @returns {Boolean}
+*/
+scriptlets.validateRule(input);
+```
+
+```javascript
+/**
+* Checks is AdGuard / Ubo / Abp scriptlet rule
+* @param {String} rule - rule text
+* @returns {Boolean}
+*/
+scriptlets.isAdgScriptletRule(rule);
+scriptlets.isAdgScriptletRule(rule);
+scriptlets.isAdgScriptletRule(rule);
+```
+
+```javascript
+/**
+* Converts Ubo / Abp scriptlet rule to AdGuard
+* @param {String} rule - rule text
+* @returns {String} - AdGuard scriptlet rule
+*/
+scriptlets.convertUboToAdg(rule);
+scriptlets.convertAbpToAdg(rule);
+```
+
+```javascript
+/**
+* Checks is any scriptlet rule and converts to AdGuard
+* @param {String} rule - rule text
+* @returns {String} - AdGuard scriptlet rule
+*/
+scriptlets.convertScriptletToAdg(rule);
 ```
 
 #### Corelibs library

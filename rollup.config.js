@@ -26,6 +26,7 @@ const footer = `
 `;
 
 const TESTS_DIST = 'tests/dist';
+const LIB_TESTS_DIST = 'tests/dist/lib-tests';
 const TMP_DIR = 'tmp';
 
 const bundleBuild = {
@@ -91,6 +92,83 @@ const testBuild = {
     ],
 };
 
+const debugLib = {
+    input: 'src/scriptlets/index.js',
+    output: {
+        dir: 'dist',
+        entryFileNames: '[name].js',
+        format: 'iife',
+        strict: false,
+        sourcemap: true,
+    },
+    watch: {
+        include: ['*/**'],
+        chokidar: false,
+    },
+    plugins: [
+        clear({
+            targets: [LIB_TESTS_DIST],
+        }),
+        resolve(),
+        commonjs({
+            include: 'node_modules/**',
+        }),
+        babel({
+            exclude: 'node_modules/**',
+            runtimeHelpers: true,
+        }),
+        copy({
+            targets: [{
+                src: [
+                    'tests/lib-tests/tests.html',
+                    'tests/styles.css',
+                    'node_modules/qunit/qunit/qunit.js',
+                    'node_modules/sinon/pkg/sinon.js',
+                    'dist/scriptlets.js',
+                ],
+                dest: LIB_TESTS_DIST,
+            }],
+        }),
+    ],
+};
+
+const testLibTests = {
+    input: 'tests/lib-tests/index.test.js',
+    output: {
+        dir: LIB_TESTS_DIST,
+        entryFileNames: '[name].js',
+        format: 'iife',
+        strict: false,
+        sourcemap: true,
+    },
+    watch: {
+        include: ['tests/lib-tests/**'],
+        chokidar: false,
+    },
+    plugins: [
+        clear({
+            targets: [LIB_TESTS_DIST],
+        }),
+        resolve(),
+        commonjs({
+            include: 'node_modules/**',
+        }),
+        babel({
+            exclude: 'node_modules/**',
+            runtimeHelpers: true,
+        }),
+        copy({
+            targets: [{
+                src: [
+                    'tests/lib-tests/index.test.js',
+                    'dist/scriptlets.js',
+                ],
+                dest: LIB_TESTS_DIST,
+            }],
+        }),
+    ],
+};
+
 const tmpRedirectsBuild = {
     input: {
         tmpRedirects: 'src/redirects/index.js',
@@ -122,8 +200,23 @@ if (isCleanBuild) {
 }
 
 const isTest = process.env.UI_TEST === 'true';
-const resultBuilds = isTest
-    ? [bundleBuild, testBuild]
-    : [bundleBuild, tmpRedirectsBuild];
+const isLibTest = process.env.UI_LIB_TEST === 'true';
+const isDebugLib = process.env.DEBUG_LIB === 'true';
+
+let resultBuilds = [];
+
+if (isDebugLib) {
+    resultBuilds = [bundleBuild, debugLib];
+} else if (isLibTest) {
+    resultBuilds = [debugLib, testLibTests];
+} else if (isTest) {
+    resultBuilds = [bundleBuild, testBuild];
+} else {
+    resultBuilds = [bundleBuild, tmpRedirectsBuild];
+}
+
+// const resultBuilds = isTest
+//     ? [bundleBuild, testBuild]
+//     : [bundleBuild, tmpRedirectsBuild];
 
 module.exports = resultBuilds;

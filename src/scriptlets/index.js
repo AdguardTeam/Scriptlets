@@ -5,8 +5,18 @@ import {
     wrapInNonameFunc,
 } from '../helpers/injector';
 
-import * as scriptletsList from './scriptletsList';
+import {
+    isAdgScriptletRule,
+    isUboScriptletRule,
+    isAbpSnippetRule,
+    convertUboToAdg,
+    convertAbpToAdg,
+    convertScriptletToAdg,
+} from '../helpers/converter';
 
+import parseRule from '../helpers/parse-rule';
+
+import * as scriptletsList from './scriptletsList';
 
 /**
  * @typedef {Object} Source - scriptlet properties
@@ -33,7 +43,7 @@ function getScriptletByName(name) {
  * Checks if the scriptlet name is valid
  * @param {String} name - Scriptlet name
  */
-function isValidScriptletSource(name) {
+function isValidScriptletName(name) {
     if (!name) {
         return false;
     }
@@ -49,7 +59,7 @@ function isValidScriptletSource(name) {
 * @param {Source} source
 */
 function getScriptletCode(source) {
-    if (!isValidScriptletSource(source.name)) {
+    if (!isValidScriptletName(source.name)) {
         return null;
     }
 
@@ -63,6 +73,23 @@ function getScriptletCode(source) {
 }
 
 /**
+ * Validates any scriptlet rule
+ * @param {String} input - can be Adguard or Ubo or Abp scriptlet rule
+ */
+function isValidScriptletRule(input) {
+    if (!input) {
+        return false;
+    }
+
+    const rule = convertScriptletToAdg(input);
+
+    const parsedRule = parseRule(rule);
+
+    return isValidScriptletName(parsedRule.name);
+}
+
+
+/**
  * Global scriptlet variable
  *
  * @returns {Object} object with method `invoke`
@@ -72,5 +99,12 @@ function getScriptletCode(source) {
 // eslint-disable-next-line no-undef
 scriptlets = (() => ({
     invoke: getScriptletCode,
-    validate: isValidScriptletSource,
+    validateName: isValidScriptletName,
+    validateRule: isValidScriptletRule,
+    isAdgScriptletRule,
+    isUboScriptletRule,
+    isAbpSnippetRule,
+    convertUboToAdg,
+    convertAbpToAdg,
+    convertScriptletToAdg,
 }))();
