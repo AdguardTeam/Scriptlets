@@ -162,11 +162,19 @@ scriptlets.isAdgScriptletRule(rule);
 
 ```javascript
 /**
-* Converts Ubo / Abp scriptlet rule to AdGuard
+* Converts Ubo scriptlet rule to AdGuard
 * @param {String} rule - rule text
 * @returns {String} - AdGuard scriptlet rule
 */
 scriptlets.convertUboToAdg(rule);
+```
+
+```javascript
+/**
+* Converts Abp snippet rule to AdGuard
+* @param {String} rule - rule text
+* @returns {Array} - AdGuard scriptlet rule or rules if Abp-rule has few snippet in one line
+*/
 scriptlets.convertAbpToAdg(rule);
 ```
 
@@ -174,7 +182,7 @@ scriptlets.convertAbpToAdg(rule);
 /**
 * Checks is any scriptlet rule and converts to AdGuard
 * @param {String} rule - rule text
-* @returns {String} - AdGuard scriptlet rule
+* @returns {String|Array} - AdGuard scriptlet rule (for Adg and Ubo) or array of rules (for Abp)
 */
 scriptlets.convertScriptletToAdg(rule);
 ```

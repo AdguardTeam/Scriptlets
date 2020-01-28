@@ -215,8 +215,4 @@ if (isDebugLib) {
     resultBuilds = [bundleBuild, tmpRedirectsBuild];
 }
 
-// const resultBuilds = isTest
-//     ? [bundleBuild, testBuild]
-//     : [bundleBuild, tmpRedirectsBuild];
-
 module.exports = resultBuilds;

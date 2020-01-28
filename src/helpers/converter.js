@@ -25,7 +25,6 @@ const UBO_SCRIPTLET_MASK_1 = '##+js';
 const UBO_SCRIPTLET_MASK_2 = '##script:inject';
 const UBO_SCRIPTLET_EXCEPTION_MASK_1 = '#@#+js';
 const UBO_SCRIPTLET_EXCEPTION_MASK_2 = '#@#script:inject';
-// const UBO_SCRIPT_TAG_MASK = '##^script';
 
 /**
  * AdBlock Plus snippet rule mask
@@ -50,7 +49,7 @@ const getSentences = (str) => {
 /**
  * Replace string with data by placeholders
  * @param {string} str
- * @param {Object} data where keys is placeholdes names
+ * @param {Object} data - where keys are placeholders names
  */
 const replacePlaceholders = (str, data) => {
     return Object.keys(data).reduce((acc, key) => {
@@ -141,8 +140,7 @@ export const convertAbpToAdg = (rule) => {
             .map((arg, index) => (index === 0 ? `abp-${arg}` : arg))
             .map((arg) => wrapInDoubleQuotes(arg))
             .join(', '))
-        .map((args) => replacePlaceholders(template, { domains, args }))
-        .toString('');
+        .map((args) => replacePlaceholders(template, { domains, args }));
 };
 
 /**
