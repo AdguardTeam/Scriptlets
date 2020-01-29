@@ -6,11 +6,14 @@ import {
     getStringInBraces,
 } from './string-utils';
 
-import { ADG_SCRIPTLET_MASK } from './parse-rule';
+import { parseRule, ADG_SCRIPTLET_MASK } from './parse-rule';
+
+import * as scriptletList from '../scriptlets/scriptletsList';
 
 /**
  * AdGuard scriptlet rule
  */
+const ADGUARD_SCRIPTLET_MASK_REG = /#@?%#\/\/scriptlet\(.+\)/;
 // eslint-disable-next-line no-template-curly-in-string
 const ADGUARD_SCRIPTLET_TEMPLATE = '${domains}#%#//scriptlet(${args})';
 // eslint-disable-next-line no-template-curly-in-string
@@ -24,6 +27,12 @@ const UBO_SCRIPTLET_MASK_1 = '##+js';
 const UBO_SCRIPTLET_MASK_2 = '##script:inject';
 const UBO_SCRIPTLET_EXCEPTION_MASK_1 = '#@#+js';
 const UBO_SCRIPTLET_EXCEPTION_MASK_2 = '#@#script:inject';
+// eslint-disable-next-line no-template-curly-in-string
+const UBO_SCRIPTLET_TEMPLATE = '${domains}##+js(${args})';
+// eslint-disable-next-line no-template-curly-in-string
+const UBO_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@#+js(${args})';
+
+const UBO_ALIAS_NAME_MARKER = 'ubo-';
 
 /**
  * AdBlock Plus snippet rule mask
@@ -37,7 +46,7 @@ const ABP_SCRIPTLET_EXCEPTION_MASK = '#@$#';
 const ADG_CSS_MASK_REG = /#@?\$#.+?\s*\{.*\}\s*$/g;
 
 /**
- * Return array of strings separated by space which not in quotes
+ * Returns array of strings separated by space which not in quotes
  * @param {string} str
  */
 const getSentences = (str) => {
@@ -46,7 +55,7 @@ const getSentences = (str) => {
 };
 
 /**
- * Replace string with data by placeholders
+ * Replaces string with data by placeholders
  * @param {string} str
  * @param {Object} data - where keys are placeholders names
  */
@@ -60,7 +69,7 @@ const replacePlaceholders = (str, data) => {
 
 
 /**
- * Check is AdGuard scriptlet rule
+ * Checks is AdGuard scriptlet rule
  * @param {string} rule rule text
  */
 export const isAdgScriptletRule = (rule) => {
@@ -68,7 +77,7 @@ export const isAdgScriptletRule = (rule) => {
 };
 
 /**
- * Check is uBO scriptlet rule
+ * Checks is uBO scriptlet rule
  * @param {string} rule rule text
  */
 export const isUboScriptletRule = (rule) => {
@@ -82,7 +91,7 @@ export const isUboScriptletRule = (rule) => {
 };
 
 /**
- * Check is AdBlock Plus snippet
+ * Checks is AdBlock Plus snippet
  * @param {string} rule rule text
  */
 export const isAbpSnippetRule = (rule) => {
@@ -94,8 +103,8 @@ export const isAbpSnippetRule = (rule) => {
 };
 
 /**
- * Convert string of UBO scriptlet rule to AdGuard scritlet rule
- * @param {string} rule UBO scriptlet rule
+ * Converts string of UBO scriptlet rule to AdGuard scritlet rule
+ * @param {String} rule - UBO scriptlet rule
  */
 export const convertUboToAdg = (rule) => {
     const domains = getBeforeRegExp(rule, UBO_SCRIPTLET_MASK_REG);
@@ -111,16 +120,16 @@ export const convertUboToAdg = (rule) => {
         .map((arg, index) => (index === 0 ? `ubo-${arg}` : arg))
         .map((arg) => (wrapInDoubleQuotes(arg)))
         .join(', ');
-
-    return replacePlaceholders(
+    const adgRule = replacePlaceholders(
         template,
         { domains, args },
-    ).split();
+    );
+    return [adgRule];
 };
 
 /**
  * Convert string of ABP scriptlet rule to AdGuard scritlet rule
- * @param {string} rule ABP scriptlet rule
+ * @param {String} rule - ABP scriptlet rule
  */
 export const convertAbpToAdg = (rule) => {
     const SEMICOLON_DIVIDER = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
@@ -157,4 +166,58 @@ export const convertScriptletToAdg = (rule) => {
     }
 
     return result;
+};
+
+/**
+ * Converts UBO scriptlet rule to AdGuard one
+ * @param {String} rule - AdGuard scriptlet rule
+ * @returns {String} - UBO scriptlet rule
+ */
+export const convertAdgToUbo = (rule) => {
+    let res;
+
+    if (isAdgScriptletRule(rule)) {
+        const { name: parsedName, args: parsedParams } = parseRule(rule);
+
+        // object of name and aliases for the Adg-scriptlet
+        const adgScriptletObject = Object
+            .keys(scriptletList)
+            .map((el) => scriptletList[el])
+            .map((s) => {
+                const [name, ...aliases] = s.names;
+                return { name, aliases };
+            })
+            .find((el) => (el.name === parsedName));
+
+        const { aliases } = adgScriptletObject;
+
+        if (aliases.length > 0) {
+            const uboAlias = adgScriptletObject.aliases
+                // eslint-disable-next-line no-restricted-properties
+                .find((alias) => (alias.includes(UBO_ALIAS_NAME_MARKER)));
+
+            if (uboAlias) {
+                const mask = rule.match(ADGUARD_SCRIPTLET_MASK_REG)[0];
+                let template;
+                if (mask.indexOf('@') > -1) {
+                    template = UBO_SCRIPTLET_EXCEPTION_TEMPLATE;
+                } else {
+                    template = UBO_SCRIPTLET_TEMPLATE;
+                }
+                const domains = getBeforeRegExp(rule, ADGUARD_SCRIPTLET_MASK_REG);
+                const uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '');
+
+                const args = `${uboName}, ${parsedParams.join(', ')}`;
+
+                const uboRule = replacePlaceholders(
+                    template,
+                    { domains, args },
+                );
+
+                res = uboRule;
+            }
+        }
+    }
+
+    return res;
 };

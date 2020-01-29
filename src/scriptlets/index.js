@@ -12,9 +12,10 @@ import {
     convertUboToAdg,
     convertAbpToAdg,
     convertScriptletToAdg,
+    convertAdgToUbo,
 } from '../helpers/converter';
 
-import parseRule from '../helpers/parse-rule';
+import { parseRule } from '../helpers/parse-rule';
 
 import * as scriptletsList from './scriptletsList';
 
@@ -107,4 +108,5 @@ scriptlets = (() => ({
     convertUboToAdg,
     convertAbpToAdg,
     convertScriptletToAdg,
+    convertAdgToUbo,
 }))();

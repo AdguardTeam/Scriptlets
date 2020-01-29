@@ -50,7 +50,7 @@ const substringAfter = (str, separator) => {
  * @param {*} ruleText
  * @returns {{name: string, args: Array<string>}}
  */
-const parseRule = (ruleText) => {
+export const parseRule = (ruleText) => {
     ruleText = substringAfter(ruleText, ADG_SCRIPTLET_MASK);
     /**
      * Transition names
@@ -144,5 +144,3 @@ const parseRule = (ruleText) => {
         args: args.slice(1),
     };
 };
-
-export default parseRule;

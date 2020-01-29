@@ -1,6 +1,6 @@
 /* global QUnit */
 
-import { convertScriptletToAdg } from '../../src/helpers/converter';
+import { convertScriptletToAdg, convertAdgToUbo } from '../../src/helpers/converter';
 
 const { test, module } = QUnit;
 const name = 'debug-current-inline-script';
@@ -55,5 +55,17 @@ test('Test converter scriptlet multiple abp rule', (assert) => {
     assert.equal(res.length, 2);
     assert.equal(res[0], exp1);
     assert.equal(res[1], exp2);
+});
+
+test('Test converter UBO scriptlet rule to AdGuard one', (assert) => {
+    // blocking rule
+    const rule = 'example.org#%#//scriptlet("prevent-setTimeout", "[native code]", "8000")';
+    const exp = 'example.org##+js(setTimeout-defuser.js, [native code], 8000)';
+    const res = convertAdgToUbo(rule);
+    assert.equal(res, exp);
+    // whitelist rule
+    const whitelistRule = 'example.org#@%#//scriptlet("prevent-setTimeout", "[native code]", "8000")';
+    const expectedResult = 'example.org#@#+js(setTimeout-defuser.js, [native code], 8000)';
+    assert.equal(convertAdgToUbo(whitelistRule), expectedResult);
 });
 /* eslint-enable max-len */
