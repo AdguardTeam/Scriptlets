@@ -16,7 +16,6 @@ const ADGUARD_SCRIPTLET_TEMPLATE = '${domains}#%#//scriptlet(${args})';
 // eslint-disable-next-line no-template-curly-in-string
 const ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@%#//scriptlet(${args})';
 
-
 /**
  * uBlock scriptlet rule mask
  */
@@ -116,7 +115,7 @@ export const convertUboToAdg = (rule) => {
     return replacePlaceholders(
         template,
         { domains, args },
-    );
+    ).split();
 };
 
 /**
@@ -147,7 +146,6 @@ export const convertAbpToAdg = (rule) => {
  * Converts scriptlet rule to AdGuard one
  * @param {*} rule
  */
-
 export const convertScriptletToAdg = (rule) => {
     let result;
     if (isUboScriptletRule(rule)) {
