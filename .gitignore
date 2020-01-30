@@ -3,10 +3,7 @@
 .idea/
 .vscode/
 *.iml
-# dist/
-dist/index.js
-dist/index.js.map
-dist/scriptlets.js.map
+dist/
 yarn-error.log
 node_modules
 private
