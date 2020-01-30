@@ -9,7 +9,6 @@
         "test": "yarn build-test && node tests/index.js",
         "test-watch": "rollup -c --watch --environment UI_TEST",
         "test-lib-watch": "rollup -c --watch --environment UI_LIB_TEST",
-        "debug-lib-watch": "rollup -c --watch --environment DEBUG_LIB",
         "browserstack": "yarn build-test && node browserstack.js",
         "gui-test": "yarn build-test && open http://localhost:8585 && node ./tests/server.js",
         "lint": "eslint .",

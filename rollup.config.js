@@ -33,15 +33,26 @@ const bundleBuild = {
     input: {
         scriptlets: 'src/scriptlets/index.js',
     },
-    output: {
-        dir: 'dist',
-        entryFileNames: '[name].js',
-        format: 'iife',
-        strict: false,
-        sourcemap: true,
-        banner,
-        footer,
-    },
+    output: [
+        {
+            dir: 'dist',
+            entryFileNames: '[name].js',
+            format: 'iife',
+            strict: false,
+            sourcemap: true,
+            banner,
+            footer,
+        },
+        {
+            dir: 'dist/cjs',
+            chunkFileNames: '[name].[format].js',
+            format: 'cjs',
+            strict: false,
+            sourcemap: false,
+            banner,
+            footer,
+        },
+    ],
     plugins: [
         resolve(),
         commonjs({
@@ -92,46 +103,6 @@ const testBuild = {
     ],
 };
 
-const debugLib = {
-    input: 'src/scriptlets/index.js',
-    output: {
-        dir: 'dist',
-        entryFileNames: '[name].js',
-        format: 'iife',
-        strict: false,
-        sourcemap: true,
-    },
-    watch: {
-        include: ['*/**'],
-        chokidar: false,
-    },
-    plugins: [
-        clear({
-            targets: [LIB_TESTS_DIST],
-        }),
-        resolve(),
-        commonjs({
-            include: 'node_modules/**',
-        }),
-        babel({
-            exclude: 'node_modules/**',
-            runtimeHelpers: true,
-        }),
-        copy({
-            targets: [{
-                src: [
-                    'tests/lib-tests/tests.html',
-                    'tests/styles.css',
-                    'node_modules/qunit/qunit/qunit.js',
-                    'node_modules/sinon/pkg/sinon.js',
-                    'dist/scriptlets.js',
-                ],
-                dest: LIB_TESTS_DIST,
-            }],
-        }),
-    ],
-};
-
 const testLibTests = {
     input: 'tests/lib-tests/index.test.js',
     output: {
@@ -160,7 +131,10 @@ const testLibTests = {
         copy({
             targets: [{
                 src: [
-                    'tests/lib-tests/index.test.js',
+                    'tests/lib-tests/tests.html',
+                    'tests/styles.css',
+                    'node_modules/qunit/qunit/qunit.js',
+                    'node_modules/sinon/pkg/sinon.js',
                     'dist/scriptlets.js',
                 ],
                 dest: LIB_TESTS_DIST,
@@ -201,14 +175,11 @@ if (isCleanBuild) {
 
 const isTest = process.env.UI_TEST === 'true';
 const isLibTest = process.env.UI_LIB_TEST === 'true';
-const isDebugLib = process.env.DEBUG_LIB === 'true';
 
 let resultBuilds = [];
 
-if (isDebugLib) {
-    resultBuilds = [bundleBuild, debugLib];
-} else if (isLibTest) {
-    resultBuilds = [debugLib, testLibTests];
+if (isLibTest) {
+    resultBuilds = [bundleBuild, testLibTests];
 } else if (isTest) {
     resultBuilds = [bundleBuild, testBuild];
 } else {
