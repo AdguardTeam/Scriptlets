@@ -25,6 +25,7 @@ import './debug-on-property-read.test';
 import './debug-on-property-write.test';
 import './debug-current-inline-script.test';
 import './remove-attr.test';
+import './remove-class.test';
 import './disable-newtab-links.test';
 import './adjust-setInterval.test';
 import './adjust-setTimeout.test';

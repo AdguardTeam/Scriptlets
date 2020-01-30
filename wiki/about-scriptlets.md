@@ -27,6 +27,7 @@
 * [prevent-setTimeout](#prevent-setTimeout)
 * [prevent-window-open](#prevent-window-open)
 * [remove-attr](#remove-attr)
+* [remove-class](#remove-class)
 * [remove-cookie](#remove-cookie)
 * [set-constant](#set-constant)
 * [set-popads-dummy](#set-popads-dummy)
@@ -683,7 +684,7 @@ example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
 
 ### <a id="remove-attr"></a> ⚡️ remove-attr
 
-Removes attributes from DOM nodes. Will run only once after page load.
+Removes the specified attributes from DOM notes. This scriptlet runs only once after the page load (DOMContentLoaded).
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
@@ -693,8 +694,8 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
 example.org#%#//scriptlet("remove-attr", attrs[, selector])
 ```
 
-- `attrs` - required, attribute or list of attributes joined by |
-- `selector` - optional, CSS selector, specifies nodes from which attributes will be removed
+- `attrs` — required, attribute or list of attributes joined by '|';
+- `selector` — optional, CSS selector, specifies DOM nodes from which the attributes will be removed
 
 **Examples**
 1.  Removes by attribute
@@ -727,6 +728,56 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
     </div>
     ```
 [Scriptlet source](../src/scriptlets/remove-attr.js)
+* * *
+
+### <a id="remove-class"></a> ⚡️ remove-class
+
+Removes the specified classes from DOM notes. This scriptlet runs only once after the page load (DOMContentLoaded).
+
+**Syntax**
+```
+example.org#%#//scriptlet("remove-class", classes[, selector])
+```
+
+- `classes` — required, class or list of classes separated by '|';
+- `selector` — optional, CSS selector, specifies DOM nodes from which the classes will be removed;
+if there is no selector, every class independently will be removed from all nodes which has one
+
+**Examples**
+1.  Removes by classes
+    ```
+    example.org#%#//scriptlet("remove-class", "example|test")
+    ```
+
+    ```html
+    <!-- before  -->
+    <div id="first" class="nice test">Some text</div>
+    <div id="second" class="rare example for test">Some text</div>
+    <div id="third" class="testing better example">Some text</div>
+
+    <!-- after -->
+    <div id="first" class="nice">Some text</div>
+    <div id="second" class="rare for">Some text</div>
+    <div id="third" class="testing better">Some text</div>
+    ```
+
+2. Removes with specified selector
+    ```
+    example.org#%#//scriptlet("remove-class", "branding", ".inner")
+    ```
+
+    ```html
+    <!-- before -->
+    <div class="wrapper true branding">
+        <div class="inner bad branding">Some text</div>
+    </div>
+
+    <!-- after -->
+    <div class="wrapper true branding">
+        <div class="inner bad">Some text</div>
+    </div>
+    ```
+[Scriptlet source](../src/scriptlets/remove-class.js)
 * * *
 
 ### <a id="remove-cookie"></a> ⚡️ remove-cookie
