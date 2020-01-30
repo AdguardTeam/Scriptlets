@@ -48,7 +48,7 @@ const bundleBuild = {
             chunkFileNames: '[name].[format].js',
             format: 'cjs',
             strict: false,
-            sourcemap: false,
+            sourcemap: true,
             banner,
             footer,
         },
