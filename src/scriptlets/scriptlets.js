@@ -111,4 +111,3 @@ const scriptlets = {
 };
 
 export default scriptlets;
-// module.exports = scriptlets;

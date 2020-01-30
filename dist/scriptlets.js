@@ -3124,7 +3124,6 @@
       convertScriptletToAdg: convertScriptletToAdg,
       convertAdgToUbo: convertAdgToUbo
     };
-     // module.exports = scriptlets;
 
     scriptlets = scriptlets$1;
 
