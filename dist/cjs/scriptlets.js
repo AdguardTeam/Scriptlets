@@ -3112,20 +3112,21 @@ function isValidScriptletRule(input) {
 // eslint-disable-next-line no-undef
 
 
-scriptlets = function () {
-  return {
-    invoke: getScriptletCode,
-    validateName: isValidScriptletName,
-    validateRule: isValidScriptletRule,
-    isAdgScriptletRule: isAdgScriptletRule,
-    isUboScriptletRule: isUboScriptletRule,
-    isAbpSnippetRule: isAbpSnippetRule,
-    convertUboToAdg: convertUboToAdg,
-    convertAbpToAdg: convertAbpToAdg,
-    convertScriptletToAdg: convertScriptletToAdg,
-    convertAdgToUbo: convertAdgToUbo
-  };
-}();
+var scriptlets = {
+  invoke: getScriptletCode,
+  validateName: isValidScriptletName,
+  validateRule: isValidScriptletRule,
+  isAdgScriptletRule: isAdgScriptletRule,
+  isUboScriptletRule: isUboScriptletRule,
+  isAbpSnippetRule: isAbpSnippetRule,
+  convertUboToAdg: convertUboToAdg,
+  convertAbpToAdg: convertAbpToAdg,
+  convertScriptletToAdg: convertScriptletToAdg,
+  convertAdgToUbo: convertAdgToUbo
+};
+ // module.exports = scriptlets;
+
+module.exports = scriptlets;
 
 /**
  * -------------------------------------------

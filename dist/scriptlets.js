@@ -3106,27 +3106,27 @@
     /**
      * Global scriptlet variable
      *
-     * @returns {Object} object with method `invoke`
+     * @returns {Object} object with methods:
      * `invoke` method receives one argument with `Source` type
      * `validate` method receives one argument with `String` type
      */
-    // eslint-disable-next-line no-undef
 
 
-    scriptlets = function () {
-      return {
-        invoke: getScriptletCode,
-        validateName: isValidScriptletName,
-        validateRule: isValidScriptletRule,
-        isAdgScriptletRule: isAdgScriptletRule,
-        isUboScriptletRule: isUboScriptletRule,
-        isAbpSnippetRule: isAbpSnippetRule,
-        convertUboToAdg: convertUboToAdg,
-        convertAbpToAdg: convertAbpToAdg,
-        convertScriptletToAdg: convertScriptletToAdg,
-        convertAdgToUbo: convertAdgToUbo
-      };
-    }();
+    var scriptlets$1 = {
+      invoke: getScriptletCode,
+      validateName: isValidScriptletName,
+      validateRule: isValidScriptletRule,
+      isAdgScriptletRule: isAdgScriptletRule,
+      isUboScriptletRule: isUboScriptletRule,
+      isAbpSnippetRule: isAbpSnippetRule,
+      convertUboToAdg: convertUboToAdg,
+      convertAbpToAdg: convertAbpToAdg,
+      convertScriptletToAdg: convertScriptletToAdg,
+      convertAdgToUbo: convertAdgToUbo
+    };
+     // module.exports = scriptlets;
+
+    scriptlets = scriptlets$1;
 
 }());
 

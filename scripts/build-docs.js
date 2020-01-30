@@ -14,6 +14,7 @@ const ABOUT_REDIRECTS_PATH = path.resolve(__dirname, '../wiki/about-redirects.md
 // files which are not scriptlets or redirects in their directories
 const NON_SCRIPTLETS_FILES = [
     'index.js',
+    'scriptlets.js',
     'scriptletsList.js',
 ];
 

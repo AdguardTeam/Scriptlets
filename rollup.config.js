@@ -29,30 +29,19 @@ const TESTS_DIST = 'tests/dist';
 const LIB_TESTS_DIST = 'tests/dist/lib-tests';
 const TMP_DIR = 'tmp';
 
-const bundleBuild = {
+const mainConfig = {
     input: {
         scriptlets: 'src/scriptlets/index.js',
     },
-    output: [
-        {
-            dir: 'dist',
-            entryFileNames: '[name].js',
-            format: 'iife',
-            strict: false,
-            sourcemap: true,
-            banner,
-            footer,
-        },
-        {
-            dir: 'dist/cjs',
-            chunkFileNames: '[name].[format].js',
-            format: 'cjs',
-            strict: false,
-            sourcemap: true,
-            banner,
-            footer,
-        },
-    ],
+    output: {
+        dir: 'dist',
+        entryFileNames: '[name].js',
+        format: 'iife',
+        strict: false,
+        sourcemap: true,
+        banner,
+        footer,
+    },
     plugins: [
         resolve(),
         commonjs({
@@ -65,7 +54,32 @@ const bundleBuild = {
     ],
 };
 
-const testBuild = {
+const cjsConfig = {
+    input: {
+        scriptletsCjs: 'src/scriptlets/scriptlets.js',
+    },
+    output: {
+        dir: 'dist/cjs',
+        chunkFileNames: '[name].js',
+        format: 'cjs',
+        strict: false,
+        sourcemap: true,
+        banner,
+        footer,
+    },
+    plugins: [
+        resolve(),
+        commonjs({
+            include: 'node_modules/**',
+        }),
+        babel({
+            exclude: 'node_modules/**',
+            runtimeHelpers: true,
+        }),
+    ],
+};
+
+const testConfig = {
     input: {
         tests: 'tests/index.test.js',
     },
@@ -103,7 +117,7 @@ const testBuild = {
     ],
 };
 
-const testLibTests = {
+const testLibConfig = {
     input: 'tests/lib-tests/index.test.js',
     output: {
         dir: LIB_TESTS_DIST,
@@ -143,7 +157,7 @@ const testLibTests = {
     ],
 };
 
-const tmpRedirectsBuild = {
+const tmpRedirectsConfig = {
     input: {
         tmpRedirects: 'src/redirects/index.js',
     },
@@ -169,21 +183,21 @@ const tmpRedirectsBuild = {
 
 const isCleanBuild = process.env.CLEAN === 'true'; // strip comments
 if (isCleanBuild) {
-    bundleBuild.plugins.push(cleanup());
-    tmpRedirectsBuild.plugins.push(cleanup());
+    mainConfig.plugins.push(cleanup());
+    tmpRedirectsConfig.plugins.push(cleanup());
 }
 
 const isTest = process.env.UI_TEST === 'true';
 const isLibTest = process.env.UI_LIB_TEST === 'true';
 
-let resultBuilds = [];
+let resultConfig = [];
 
 if (isLibTest) {
-    resultBuilds = [bundleBuild, testLibTests];
+    resultConfig = [mainConfig, testLibConfig];
 } else if (isTest) {
-    resultBuilds = [bundleBuild, testBuild];
+    resultConfig = [mainConfig, testConfig];
 } else {
-    resultBuilds = [bundleBuild, tmpRedirectsBuild];
+    resultConfig = [mainConfig, cjsConfig, tmpRedirectsConfig];
 }
 
-module.exports = resultBuilds;
+module.exports = resultConfig;
