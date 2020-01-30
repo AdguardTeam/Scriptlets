@@ -26,9 +26,10 @@ const footer = `
 `;
 
 const TESTS_DIST = 'tests/dist';
+const LIB_TESTS_DIST = 'tests/dist/lib-tests';
 const TMP_DIR = 'tmp';
 
-const bundleBuild = {
+const mainConfig = {
     input: {
         scriptlets: 'src/scriptlets/index.js',
     },
@@ -53,7 +54,32 @@ const bundleBuild = {
     ],
 };
 
-const testBuild = {
+const cjsConfig = {
+    input: {
+        scriptletsCjs: 'src/scriptlets/scriptlets.js',
+    },
+    output: {
+        dir: 'dist/cjs',
+        chunkFileNames: '[name].js',
+        format: 'cjs',
+        strict: false,
+        sourcemap: true,
+        banner,
+        footer,
+    },
+    plugins: [
+        resolve(),
+        commonjs({
+            include: 'node_modules/**',
+        }),
+        babel({
+            exclude: 'node_modules/**',
+            runtimeHelpers: true,
+        }),
+    ],
+};
+
+const testConfig = {
     input: {
         tests: 'tests/index.test.js',
     },
@@ -91,7 +117,47 @@ const testBuild = {
     ],
 };
 
-const tmpRedirectsBuild = {
+const testLibConfig = {
+    input: 'tests/lib-tests/index.test.js',
+    output: {
+        dir: LIB_TESTS_DIST,
+        entryFileNames: '[name].js',
+        format: 'iife',
+        strict: false,
+        sourcemap: true,
+    },
+    watch: {
+        include: ['tests/lib-tests/**'],
+        chokidar: false,
+    },
+    plugins: [
+        clear({
+            targets: [LIB_TESTS_DIST],
+        }),
+        resolve(),
+        commonjs({
+            include: 'node_modules/**',
+        }),
+        babel({
+            exclude: 'node_modules/**',
+            runtimeHelpers: true,
+        }),
+        copy({
+            targets: [{
+                src: [
+                    'tests/lib-tests/tests.html',
+                    'tests/styles.css',
+                    'node_modules/qunit/qunit/qunit.js',
+                    'node_modules/sinon/pkg/sinon.js',
+                    'dist/scriptlets.js',
+                ],
+                dest: LIB_TESTS_DIST,
+            }],
+        }),
+    ],
+};
+
+const tmpRedirectsConfig = {
     input: {
         tmpRedirects: 'src/redirects/index.js',
     },
@@ -117,13 +183,21 @@ const tmpRedirectsBuild = {
 
 const isCleanBuild = process.env.CLEAN === 'true'; // strip comments
 if (isCleanBuild) {
-    bundleBuild.plugins.push(cleanup());
-    tmpRedirectsBuild.plugins.push(cleanup());
+    mainConfig.plugins.push(cleanup());
+    tmpRedirectsConfig.plugins.push(cleanup());
 }
 
 const isTest = process.env.UI_TEST === 'true';
-const resultBuilds = isTest
-    ? [bundleBuild, testBuild]
-    : [bundleBuild, tmpRedirectsBuild];
+const isLibTest = process.env.UI_LIB_TEST === 'true';
 
-module.exports = resultBuilds;
+let resultConfig = [];
+
+if (isLibTest) {
+    resultConfig = [mainConfig, testLibConfig];
+} else if (isTest) {
+    resultConfig = [mainConfig, testConfig];
+} else {
+    resultConfig = [mainConfig, cjsConfig, tmpRedirectsConfig];
+}
+
+module.exports = resultConfig;

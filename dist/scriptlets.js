@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.1.0
+ * Version 1.1.1
  */
 
 (function () {
@@ -97,6 +97,60 @@
 
       var escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       return new RegExp(escaped);
+    };
+    /**
+     * Get string before regexp first match
+     * @param {string} str
+     * @param {RegExp} rx
+     */
+
+    var getBeforeRegExp = function getBeforeRegExp(str, rx) {
+      var index = str.search(rx);
+      return str.substring(0, index);
+    };
+    var substringAfter = function substringAfter(str, separator) {
+      if (!str) {
+        return str;
+      }
+
+      var index = str.indexOf(separator);
+      return index < 0 ? '' : str.substring(index + separator.length);
+    };
+    var substringBefore = function substringBefore(str, separator) {
+      if (!str || !separator) {
+        return str;
+      }
+
+      var index = str.indexOf(separator);
+      return index < 0 ? str : str.substring(0, index);
+    };
+    /**
+     * Wrap str in double qoutes and replaces single quotes if need
+     * @param {string} str
+     */
+
+    var wrapInDoubleQuotes = function wrapInDoubleQuotes(str) {
+      if (str[0] === '\'' && str[str.length - 1] === '\'') {
+        str = str.substring(1, str.length - 1); // eslint-disable-next-line no-useless-escape
+
+        str = str.replace(/\"/g, '\\"');
+      } else if (str[0] === '"' && str[str.length - 1] === '"') {
+        str = str.substring(1, str.length - 1); // eslint-disable-next-line no-useless-escape
+
+        str = str.replace(/\'/g, '\\\'');
+      }
+
+      return "\"".concat(str, "\"");
+    };
+    /**
+     * Returns substring enclosed in the widest braces
+     * @param {string} str
+     */
+
+    var getStringInBraces = function getStringInBraces(str) {
+      var firstIndex = str.indexOf('(');
+      var lastIndex = str.lastIndexOf(')');
+      return str.substring(firstIndex + 1, lastIndex);
     };
 
     /**
@@ -208,6 +262,11 @@
         getPropertyInChain: getPropertyInChain,
         escapeRegExp: escapeRegExp,
         toRegExp: toRegExp,
+        getBeforeRegExp: getBeforeRegExp,
+        substringAfter: substringAfter,
+        substringBefore: substringBefore,
+        wrapInDoubleQuotes: wrapInDoubleQuotes,
+        getStringInBraces: getStringInBraces,
         createOnErrorHandler: createOnErrorHandler,
         noop: noop,
         noopNull: noopNull,
@@ -279,6 +338,229 @@
     function wrapInNonameFunc(code) {
       return "function(source, args){\n".concat(code, "\n}");
     }
+
+    function _arrayWithHoles(arr) {
+      if (Array.isArray(arr)) return arr;
+    }
+
+    var arrayWithHoles = _arrayWithHoles;
+
+    function _iterableToArray(iter) {
+      if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+    }
+
+    var iterableToArray = _iterableToArray;
+
+    function _nonIterableRest() {
+      throw new TypeError("Invalid attempt to destructure non-iterable instance");
+    }
+
+    var nonIterableRest = _nonIterableRest;
+
+    function _toArray(arr) {
+      return arrayWithHoles(arr) || iterableToArray(arr) || nonIterableRest();
+    }
+
+    var toArray = _toArray;
+
+    function _defineProperty(obj, key, value) {
+      if (key in obj) {
+        Object.defineProperty(obj, key, {
+          value: value,
+          enumerable: true,
+          configurable: true,
+          writable: true
+        });
+      } else {
+        obj[key] = value;
+      }
+
+      return obj;
+    }
+
+    var defineProperty = _defineProperty;
+
+    /**
+     * Iterate over iterable argument and evaluate current state with transitions
+     * @param {string} init first transition name
+     * @param {Array|Collection|string} iterable
+     * @param {Object} transitions transtion functions
+     * @param {any} args arguments which should be passed to transition functions
+     */
+    function iterateWithTransitions(iterable, transitions, init, args) {
+      var state = init || Object.keys(transitions)[0];
+
+      for (var i = 0; i < iterable.length; i += 1) {
+        state = transitions[state](iterable, i, args);
+      }
+
+      return state;
+    }
+    /**
+     * AdGuard scriptlet rule mask
+     */
+
+
+    var ADG_SCRIPTLET_MASK = '#//scriptlet';
+    /**
+     * Helper to accumulate an array of strings char by char
+     */
+
+    var wordSaver = function wordSaver() {
+      var str = '';
+      var strs = [];
+
+      var saveSymb = function saveSymb(s) {
+        str += s;
+        return str;
+      };
+
+      var saveStr = function saveStr() {
+        strs.push(str);
+        str = '';
+      };
+
+      var getAll = function getAll() {
+        return [].concat(strs);
+      };
+
+      return {
+        saveSymb: saveSymb,
+        saveStr: saveStr,
+        getAll: getAll
+      };
+    };
+
+    var substringAfter$1 = function substringAfter(str, separator) {
+      if (!str) {
+        return str;
+      }
+
+      var index = str.indexOf(separator);
+      return index < 0 ? '' : str.substring(index + separator.length);
+    };
+    /**
+     * Parse and validate scriptlet rule
+     * @param {*} ruleText
+     * @returns {{name: string, args: Array<string>}}
+     */
+
+
+    var parseRule = function parseRule(ruleText) {
+      var _transitions;
+
+      ruleText = substringAfter$1(ruleText, ADG_SCRIPTLET_MASK);
+      /**
+       * Transition names
+       */
+
+      var TRANSITION = {
+        OPENED: 'opened',
+        PARAM: 'param',
+        CLOSED: 'closed'
+      };
+      /**
+       * Transition function: the current index position in start, end or between params
+       * @param {string} rule
+       * @param {number} index
+       * @param {Object} Object
+       * @property {Object} Object.sep contains prop symb with current separator char
+       */
+
+      var opened = function opened(rule, index, _ref) {
+        var sep = _ref.sep;
+        var char = rule[index];
+        var transition;
+
+        switch (char) {
+          case ' ':
+          case '(':
+          case ',':
+            {
+              transition = TRANSITION.OPENED;
+              break;
+            }
+
+          case '\'':
+          case '"':
+            {
+              sep.symb = char;
+              transition = TRANSITION.PARAM;
+              break;
+            }
+
+          case ')':
+            {
+              transition = index === rule.length - 1 ? TRANSITION.CLOSED : TRANSITION.OPENED;
+              break;
+            }
+
+          default:
+            {
+              throw new Error('The rule is not a scriptlet');
+            }
+        }
+
+        return transition;
+      };
+      /**
+       * Transition function: the current index position inside param
+       * @param {string} rule
+       * @param {number} index
+       * @param {Object} Object
+       * @property {Object} Object.sep contains prop `symb` with current separator char
+       * @property {Object} Object.saver helper which allow to save strings by car by char
+       */
+
+
+      var param = function param(rule, index, _ref2) {
+        var saver = _ref2.saver,
+            sep = _ref2.sep;
+        var char = rule[index];
+
+        switch (char) {
+          case '\'':
+          case '"':
+            {
+              var preIndex = index - 1;
+              var before = rule[preIndex];
+
+              if (char === sep.symb && before !== '\\') {
+                sep.symb = null;
+                saver.saveStr();
+                return TRANSITION.OPENED;
+              }
+            }
+          // eslint-disable-next-line no-fallthrough
+
+          default:
+            {
+              saver.saveSymb(char);
+              return TRANSITION.PARAM;
+            }
+        }
+      };
+
+      var transitions = (_transitions = {}, defineProperty(_transitions, TRANSITION.OPENED, opened), defineProperty(_transitions, TRANSITION.PARAM, param), defineProperty(_transitions, TRANSITION.CLOSED, function () {}), _transitions);
+      var sep = {
+        symb: null
+      };
+      var saver = wordSaver();
+      var state = iterateWithTransitions(ruleText, transitions, TRANSITION.OPENED, {
+        sep: sep,
+        saver: saver
+      });
+
+      if (state !== 'closed') {
+        throw new Error("Invalid scriptlet rule ".concat(ruleText));
+      }
+
+      var args = saver.getAll();
+      return {
+        name: args[0],
+        args: args.slice(1)
+      };
+    };
 
     /* eslint-disable max-len */
 
@@ -2533,6 +2815,221 @@
     });
 
     /**
+     * AdGuard scriptlet rule
+     */
+
+    var ADGUARD_SCRIPTLET_MASK_REG = /#@?%#\/\/scriptlet\(.+\)/; // eslint-disable-next-line no-template-curly-in-string
+
+    var ADGUARD_SCRIPTLET_TEMPLATE = '${domains}#%#//scriptlet(${args})'; // eslint-disable-next-line no-template-curly-in-string
+
+    var ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@%#//scriptlet(${args})';
+    /**
+     * uBlock scriptlet rule mask
+     */
+
+    var UBO_SCRIPTLET_MASK_REG = /#@?#script:inject|#@?#\s*\+js/;
+    var UBO_SCRIPTLET_MASK_1 = '##+js';
+    var UBO_SCRIPTLET_MASK_2 = '##script:inject';
+    var UBO_SCRIPTLET_EXCEPTION_MASK_1 = '#@#+js';
+    var UBO_SCRIPTLET_EXCEPTION_MASK_2 = '#@#script:inject'; // eslint-disable-next-line no-template-curly-in-string
+
+    var UBO_SCRIPTLET_TEMPLATE = '${domains}##+js(${args})'; // eslint-disable-next-line no-template-curly-in-string
+
+    var UBO_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@#+js(${args})';
+    var UBO_ALIAS_NAME_MARKER = 'ubo-';
+    /**
+     * AdBlock Plus snippet rule mask
+     */
+
+    var ABP_SCRIPTLET_MASK = '#$#';
+    var ABP_SCRIPTLET_EXCEPTION_MASK = '#@$#';
+    /**
+     * AdGuard CSS rule mask
+     */
+
+    var ADG_CSS_MASK_REG = /#@?\$#.+?\s*\{.*\}\s*$/g;
+    /**
+     * Returns array of strings separated by space which not in quotes
+     * @param {string} str
+     */
+
+    var getSentences = function getSentences(str) {
+      var reg = /'.*?'|".*?"|\S+/g;
+      return str.match(reg);
+    };
+    /**
+     * Replaces string with data by placeholders
+     * @param {string} str
+     * @param {Object} data - where keys are placeholders names
+     */
+
+
+    var replacePlaceholders = function replacePlaceholders(str, data) {
+      return Object.keys(data).reduce(function (acc, key) {
+        var reg = new RegExp("\\$\\{".concat(key, "\\}"), 'g');
+        acc = acc.replace(reg, data[key]);
+        return acc;
+      }, str);
+    };
+    /**
+     * Checks is AdGuard scriptlet rule
+     * @param {string} rule rule text
+     */
+
+
+    var isAdgScriptletRule = function isAdgScriptletRule(rule) {
+      return rule.indexOf(ADG_SCRIPTLET_MASK) > -1;
+    };
+    /**
+     * Checks is uBO scriptlet rule
+     * @param {string} rule rule text
+     */
+
+    var isUboScriptletRule = function isUboScriptletRule(rule) {
+      return (rule.indexOf(UBO_SCRIPTLET_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_MASK_2) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_2) > -1) && UBO_SCRIPTLET_MASK_REG.test(rule);
+    };
+    /**
+     * Checks is AdBlock Plus snippet
+     * @param {string} rule rule text
+     */
+
+    var isAbpSnippetRule = function isAbpSnippetRule(rule) {
+      return (rule.indexOf(ABP_SCRIPTLET_MASK) > -1 || rule.indexOf(ABP_SCRIPTLET_EXCEPTION_MASK) > -1) && rule.search(ADG_CSS_MASK_REG) === -1;
+    };
+    /**
+     * Converts string of UBO scriptlet rule to AdGuard scritlet rule
+     * @param {String} rule - UBO scriptlet rule
+     */
+
+    var convertUboToAdg = function convertUboToAdg(rule) {
+      var domains = getBeforeRegExp(rule, UBO_SCRIPTLET_MASK_REG);
+      var mask = rule.match(UBO_SCRIPTLET_MASK_REG)[0];
+      var template;
+
+      if (mask.indexOf('@') > -1) {
+        template = ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
+      } else {
+        template = ADGUARD_SCRIPTLET_TEMPLATE;
+      }
+
+      var args = getStringInBraces(rule).split(/, /g).map(function (arg, index) {
+        return index === 0 ? "ubo-".concat(arg) : arg;
+      }).map(function (arg) {
+        return wrapInDoubleQuotes(arg);
+      }).join(', ');
+      var adgRule = replacePlaceholders(template, {
+        domains: domains,
+        args: args
+      });
+      return [adgRule];
+    };
+    /**
+     * Convert string of ABP scriptlet rule to AdGuard scritlet rule
+     * @param {String} rule - ABP scriptlet rule
+     */
+
+    var convertAbpToAdg = function convertAbpToAdg(rule) {
+      var SEMICOLON_DIVIDER = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
+      var mask = rule.indexOf(ABP_SCRIPTLET_MASK) > -1 ? ABP_SCRIPTLET_MASK : ABP_SCRIPTLET_EXCEPTION_MASK;
+      var template = mask === ABP_SCRIPTLET_MASK ? ADGUARD_SCRIPTLET_TEMPLATE : ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
+      var domains = substringBefore(rule, mask);
+      var args = substringAfter(rule, mask);
+      return args.split(SEMICOLON_DIVIDER).map(function (args) {
+        return getSentences(args).filter(function (arg) {
+          return arg;
+        }).map(function (arg, index) {
+          return index === 0 ? "abp-".concat(arg) : arg;
+        }).map(function (arg) {
+          return wrapInDoubleQuotes(arg);
+        }).join(', ');
+      }).map(function (args) {
+        return replacePlaceholders(template, {
+          domains: domains,
+          args: args
+        });
+      });
+    };
+    /**
+     * Converts scriptlet rule to AdGuard one
+     * @param {*} rule
+     */
+
+    var convertScriptletToAdg = function convertScriptletToAdg(rule) {
+      var result;
+
+      if (isUboScriptletRule(rule)) {
+        result = convertUboToAdg(rule);
+      } else if (isAbpSnippetRule(rule)) {
+        result = convertAbpToAdg(rule);
+      } else if (isAdgScriptletRule(rule)) {
+        result = rule;
+      }
+
+      return result;
+    };
+    /**
+     * Converts UBO scriptlet rule to AdGuard one
+     * @param {String} rule - AdGuard scriptlet rule
+     * @returns {String} - UBO scriptlet rule
+     */
+
+    var convertAdgToUbo = function convertAdgToUbo(rule) {
+      var res;
+
+      if (isAdgScriptletRule(rule)) {
+        var _parseRule = parseRule(rule),
+            parsedName = _parseRule.name,
+            parsedParams = _parseRule.args; // object of name and aliases for the Adg-scriptlet
+
+
+        var adgScriptletObject = Object.keys(scriptletsList).map(function (el) {
+          return scriptletsList[el];
+        }).map(function (s) {
+          var _s$names = toArray(s.names),
+              name = _s$names[0],
+              aliases = _s$names.slice(1);
+
+          return {
+            name: name,
+            aliases: aliases
+          };
+        }).find(function (el) {
+          return el.name === parsedName;
+        });
+        var aliases = adgScriptletObject.aliases;
+
+        if (aliases.length > 0) {
+          var uboAlias = adgScriptletObject.aliases // eslint-disable-next-line no-restricted-properties
+          .find(function (alias) {
+            return alias.includes(UBO_ALIAS_NAME_MARKER);
+          });
+
+          if (uboAlias) {
+            var mask = rule.match(ADGUARD_SCRIPTLET_MASK_REG)[0];
+            var template;
+
+            if (mask.indexOf('@') > -1) {
+              template = UBO_SCRIPTLET_EXCEPTION_TEMPLATE;
+            } else {
+              template = UBO_SCRIPTLET_TEMPLATE;
+            }
+
+            var domains = getBeforeRegExp(rule, ADGUARD_SCRIPTLET_MASK_REG);
+            var uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '');
+            var args = "".concat(uboName, ", ").concat(parsedParams.join(', '));
+            var uboRule = replacePlaceholders(template, {
+              domains: domains,
+              args: args
+            });
+            res = uboRule;
+          }
+        }
+      }
+
+      return res;
+    };
+
+    /**
      * @typedef {Object} Source - scriptlet properties
      * @property {string} name Scriptlet name
      * @property {Array<string>} args Arguments for scriptlet function
@@ -2556,17 +3053,17 @@
       });
     }
     /**
-     * Check is scriptlet params valid
-     * @param {Object} source
+     * Checks if the scriptlet name is valid
+     * @param {String} name - Scriptlet name
      */
 
 
-    function isValidScriptletSource(source) {
-      if (!source.name) {
+    function isValidScriptletName(name) {
+      if (!name) {
         return false;
       }
 
-      var scriptlet = getScriptletByName(source.name);
+      var scriptlet = getScriptletByName(name);
 
       if (!scriptlet) {
         return false;
@@ -2581,7 +3078,7 @@
 
 
     function getScriptletCode(source) {
-      if (!isValidScriptletSource(source)) {
+      if (!isValidScriptletName(source.name)) {
         return null;
       }
 
@@ -2592,18 +3089,43 @@
       return result;
     }
     /**
-     * Global scriptlet variable
-     *
-     * @returns {Object} object with method `invoke`
-     * `invoke` method receives one argument with `Source` type
+     * Validates any scriptlet rule
+     * @param {String} input - can be Adguard or Ubo or Abp scriptlet rule
      */
 
 
-    scriptlets = function () {
-      return {
-        invoke: getScriptletCode
-      };
-    }(); // eslint-disable-line no-undef
+    function isValidScriptletRule(input) {
+      if (!input) {
+        return false;
+      }
+
+      var rule = convertScriptletToAdg(input);
+      var parsedRule = parseRule(rule);
+      return isValidScriptletName(parsedRule.name);
+    }
+    /**
+     * Global scriptlet variable
+     *
+     * @returns {Object} object with methods:
+     * `invoke` method receives one argument with `Source` type
+     * `validate` method receives one argument with `String` type
+     */
+
+
+    var scriptlets$1 = {
+      invoke: getScriptletCode,
+      validateName: isValidScriptletName,
+      validateRule: isValidScriptletRule,
+      isAdgScriptletRule: isAdgScriptletRule,
+      isUboScriptletRule: isUboScriptletRule,
+      isAbpSnippetRule: isAbpSnippetRule,
+      convertUboToAdg: convertUboToAdg,
+      convertAbpToAdg: convertAbpToAdg,
+      convertScriptletToAdg: convertScriptletToAdg,
+      convertAdgToUbo: convertAdgToUbo
+    };
+
+    scriptlets = scriptlets$1;
 
 }());
 

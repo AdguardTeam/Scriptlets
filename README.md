@@ -118,18 +118,82 @@ yarn browserstack
 
 #### Scriptlets library
 
-`dist/scriptlets.js`
+Finally we have build Scriptlets as a CJS module which can be imported from `dist/cjs/scriptlets.js`.
 
-Creates a global variable `scriptlets`.
+And also there is a module at `dist/scriptlets.js` which has been exported to a global variable `scriptlets` with such methods:
 
 ```javascript
 /**
 * Returns scriptlet code
-*
 * @param {Source} source
-* @returns {string}
+* @returns {String}
 */
-scriptlets.invoke(source)
+scriptlets.invoke(source);
+```
+
+```javascript
+/**
+* Checks if the scriptlet name is valid
+* @param {String} name - scriptlet name
+* @returns {Boolean}
+*/
+scriptlets.validateName(name);
+```
+
+```javascript
+/**
+* Validates any scriptlet rule
+* @param {String} input - can be Adguard or Ubo or Abp scriptlet rule
+* @returns {Boolean}
+*/
+scriptlets.validateRule(input);
+```
+
+```javascript
+/**
+* Checks is AdGuard / Ubo / Abp scriptlet rule
+* @param {String} rule - rule text
+* @returns {Boolean}
+*/
+scriptlets.isAdgScriptletRule(rule);
+scriptlets.isAdgScriptletRule(rule);
+scriptlets.isAdgScriptletRule(rule);
+```
+
+```javascript
+/**
+* Converts Ubo scriptlet rule to AdGuard
+* @param {String} rule - rule text
+* @returns {Array} - array with one item - AdGuard scriptlet rule
+*/
+scriptlets.convertUboToAdg(rule);
+```
+
+```javascript
+/**
+* Converts Abp snippet rule to AdGuard
+* @param {String} rule - rule text
+* @returns {Array} - array with AdGuard scriptlet rule or rules if Abp-rule has few snippets in one line
+*/
+scriptlets.convertAbpToAdg(rule);
+```
+
+```javascript
+/**
+* Checks is any scriptlet rule and converts to AdGuard
+* @param {String} rule - rule text
+* @returns {Array} - array of AdGuard scriptlet rule - one item for Adg and Ubo or few items for Abp
+*/
+scriptlets.convertScriptletToAdg(rule);
+```
+
+```javascript
+/**
+ * Converts UBO scriptlet rule to AdGuard one
+ * @param {String} rule - AdGuard scriptlet rule
+ * @returns {String} - UBO scriptlet rule
+ */
+scriptlets.convertAdgToUbo(rule);
 ```
 
 #### Corelibs library

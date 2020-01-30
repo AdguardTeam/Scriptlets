@@ -1,13 +1,14 @@
 {
     "name": "scriptlets",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "scripts": {
         "watch": "rollup -c -w",
         "build": "rollup -c && babel-node redirects.build.js",
         "corelibs": "rollup -c --environment CLEAN && babel-node corelibs.build.js && REDIRECTS=CORELIBS babel-node redirects.build.js",
         "build-test": "rollup -c --environment UI_TEST",
         "test": "yarn build-test && node tests/index.js",
-        "test-watch": "rollup -c -w --environment UI_TEST",
+        "test-watch": "rollup -c --watch --environment UI_TEST",
+        "test-lib-watch": "rollup -c --watch --environment UI_LIB_TEST",
         "browserstack": "yarn build-test && node browserstack.js",
         "gui-test": "yarn build-test && open http://localhost:8585 && node ./tests/server.js",
         "lint": "eslint .",
@@ -22,6 +23,7 @@
     },
     "author": "devteam@adguard.com",
     "license": "LGPL-3.0",
+    "main": "dist/cjs/scriptlets.js",
     "devDependencies": {
         "@babel/cli": "^7.7.0",
         "@babel/core": "^7.2.2",
@@ -37,7 +39,7 @@
         "husky": "^3.1.0",
         "node-qunit-puppeteer": "^1.0.16",
         "qunit": "^2.9.3",
-        "rollup": "^1.27.4",
+        "rollup": "^1.29.1",
         "rollup-plugin-babel": "^4.3.3",
         "rollup-plugin-cleanup": "^3.1.1",
         "rollup-plugin-clear": "^2.0.7",

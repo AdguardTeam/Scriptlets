@@ -18,3 +18,56 @@ export const toRegExp = (str) => {
     const escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     return new RegExp(escaped);
 };
+
+/**
+ * Get string before regexp first match
+ * @param {string} str
+ * @param {RegExp} rx
+ */
+export const getBeforeRegExp = (str, rx) => {
+    const index = str.search(rx);
+    return str.substring(0, index);
+};
+
+export const substringAfter = (str, separator) => {
+    if (!str) {
+        return str;
+    }
+    const index = str.indexOf(separator);
+    return index < 0 ? '' : str.substring(index + separator.length);
+};
+
+export const substringBefore = (str, separator) => {
+    if (!str || !separator) {
+        return str;
+    }
+    const index = str.indexOf(separator);
+    return index < 0 ? str : str.substring(0, index);
+};
+
+/**
+ * Wrap str in double qoutes and replaces single quotes if need
+ * @param {string} str
+ */
+export const wrapInDoubleQuotes = (str) => {
+    if (str[0] === '\'' && str[str.length - 1] === '\'') {
+        str = str.substring(1, str.length - 1);
+        // eslint-disable-next-line no-useless-escape
+        str = str.replace(/\"/g, '\\"');
+    } else if (str[0] === '"' && str[str.length - 1] === '"') {
+        str = str.substring(1, str.length - 1);
+        // eslint-disable-next-line no-useless-escape
+        str = str.replace(/\'/g, '\\\'');
+    }
+    return `"${str}"`;
+};
+
+/**
+ * Returns substring enclosed in the widest braces
+ * @param {string} str
+ */
+export const getStringInBraces = (str) => {
+    const firstIndex = str.indexOf('(');
+    const lastIndex = str.lastIndexOf(')');
+    return str.substring(firstIndex + 1, lastIndex);
+};
