@@ -32,6 +32,7 @@ import { hit } from '../helpers';
  *         - `trueFunc` - function returning true
  *         - `falseFunc` - function returning false
  *         - `''` - empty string
+ *         - `-1` - number value `-1`
  *
  * **Examples**
  * ```
