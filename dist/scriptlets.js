@@ -251,68 +251,10 @@
       }
     };
 
-    function _arrayWithoutHoles(arr) {
-      if (Array.isArray(arr)) {
-        for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) {
-          arr2[i] = arr[i];
-        }
-
-        return arr2;
-      }
-    }
-
-    var arrayWithoutHoles = _arrayWithoutHoles;
-
-    function _iterableToArray(iter) {
-      if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
-    }
-
-    var iterableToArray = _iterableToArray;
-
-    function _nonIterableSpread() {
-      throw new TypeError("Invalid attempt to spread non-iterable instance");
-    }
-
-    var nonIterableSpread = _nonIterableSpread;
-
-    function _toConsumableArray(arr) {
-      return arrayWithoutHoles(arr) || iterableToArray(arr) || nonIterableSpread();
-    }
-
-    var toConsumableArray = _toConsumableArray;
-
-    var throttle = function throttle(method, delay) {
-      var wait = false;
-      var savedArgs;
-
-      var wrapper = function wrapper() {
-        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-          args[_key] = arguments[_key];
-        }
-
-        if (wait) {
-          savedArgs = args;
-          return;
-        }
-
-        method.apply(void 0, args);
-        wait = true;
-        setTimeout(function () {
-          wait = false;
-
-          if (savedArgs) {
-            wrapper.apply(void 0, toConsumableArray(savedArgs));
-            savedArgs = null;
-          }
-        }, delay);
-      };
-
-      return wrapper;
-    };
-
     /**
      * This file must export all used dependencies
      */
+     // export * from './throttle';
 
     var dependencies = /*#__PURE__*/Object.freeze({
         __proto__: null,
@@ -332,8 +274,7 @@
         noopThis: noopThis,
         noopArray: noopArray,
         noopStr: noopStr,
-        hit: hit,
-        throttle: throttle
+        hit: hit
     });
 
     /**
@@ -404,6 +345,12 @@
     }
 
     var arrayWithHoles = _arrayWithHoles;
+
+    function _iterableToArray(iter) {
+      if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+    }
+
+    var iterableToArray = _iterableToArray;
 
     function _nonIterableRest() {
       throw new TypeError("Invalid attempt to destructure non-iterable instance");
@@ -1163,7 +1110,6 @@
      *         - `trueFunc` - function returning true
      *         - `falseFunc` - function returning false
      *         - `''` - empty string
-     *         - `-1` - number value `-1`
      *
      * **Examples**
      * ```
@@ -2259,6 +2205,59 @@
     debugCurrentInlineScript.names = ['debug-current-inline-script'];
     debugCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit];
 
+    function _arrayWithoutHoles(arr) {
+      if (Array.isArray(arr)) {
+        for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) {
+          arr2[i] = arr[i];
+        }
+
+        return arr2;
+      }
+    }
+
+    var arrayWithoutHoles = _arrayWithoutHoles;
+
+    function _nonIterableSpread() {
+      throw new TypeError("Invalid attempt to spread non-iterable instance");
+    }
+
+    var nonIterableSpread = _nonIterableSpread;
+
+    function _toConsumableArray(arr) {
+      return arrayWithoutHoles(arr) || iterableToArray(arr) || nonIterableSpread();
+    }
+
+    var toConsumableArray = _toConsumableArray;
+
+    var throttle = function throttle(method, delay) {
+      var wait = false;
+      var savedArgs;
+
+      var wrapper = function wrapper() {
+        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        if (wait) {
+          savedArgs = args;
+          return;
+        }
+
+        method.apply(void 0, args);
+        wait = true;
+        setTimeout(function () {
+          wait = false;
+
+          if (savedArgs) {
+            wrapper.apply(void 0, toConsumableArray(savedArgs));
+            savedArgs = null;
+          }
+        }, delay);
+      };
+
+      return wrapper;
+    };
+
     /* eslint-disable max-len */
 
     /**
@@ -2340,20 +2339,40 @@
         if (removed) {
           hit(source);
         }
-      };
+      }; // const throttle = (method, delay) => {
+      //     let wait = false;
+      //     let savedArgs;
+      //     const wrapper = (...args) => {
+      //         if (wait) {
+      //             savedArgs = args;
+      //             return;
+      //         }
+      //         method(...args);
+      //         wait = true;
+      //         setTimeout(() => {
+      //             wait = false;
+      //             if (savedArgs) {
+      //                 wrapper(...savedArgs);
+      //                 savedArgs = null;
+      //             }
+      //         }, delay);
+      //     };
+      //     return wrapper;
+      // };
+
 
       var THROTTLE_DELAY_MS = 20;
       var observer = new MutationObserver(throttle(rmattr, THROTTLE_DELAY_MS));
+      observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true
+      }); // if (document.readyState === 'loading') {
+      //     window.addEventListener('DOMContentLoaded', rmattr, true);
+      // } else {
+      //     observer.observe(document.documentElement, { childList: true, subtree: true });
+      // }
+    } // console.log(throttle);
 
-      if (document.readyState === 'loading') {
-        window.addEventListener('DOMContentLoaded', rmattr, true);
-      } else {
-        observer.observe(document.documentElement, {
-          childList: true,
-          subtree: true
-        });
-      }
-    }
     removeAttr.names = ['remove-attr', 'remove-attr.js', 'ubo-remove-attr.js'];
     removeAttr.injections = [hit];
 

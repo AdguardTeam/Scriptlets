@@ -75,6 +75,11 @@ export function removeAttr(source, attrs, selector) {
         }
     };
 
+
+    // здесь throttle не распечатывается
+    // console.log(throttle);
+
+
     const THROTTLE_DELAY_MS = 20;
     const observer = new MutationObserver(throttle(rmattr, THROTTLE_DELAY_MS));
 
@@ -84,6 +89,9 @@ export function removeAttr(source, attrs, selector) {
         observer.observe(document.documentElement, { childList: true, subtree: true });
     }
 }
+
+// а здесь throttle распечатывает
+// console.log(throttle);
 
 removeAttr.names = [
     'remove-attr',
