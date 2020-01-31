@@ -1108,6 +1108,7 @@ abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyI
  *         - `trueFunc` - function returning true
  *         - `falseFunc` - function returning false
  *         - `''` - empty string
+ *         - `-1` - number value `-1`
  *
  * **Examples**
  * ```
@@ -3015,7 +3016,7 @@ var convertAdgToUbo = function convertAdgToUbo(rule) {
 
         var domains = getBeforeRegExp(rule, ADGUARD_SCRIPTLET_MASK_REG);
         var uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '');
-        var args = "".concat(uboName, ", ").concat(parsedParams.join(', '));
+        var args = parsedParams.length > 0 ? "".concat(uboName, ", ").concat(parsedParams.join(', ')) : uboName;
         var uboRule = replacePlaceholders(template, {
           domains: domains,
           args: args
@@ -3105,11 +3106,10 @@ function isValidScriptletRule(input) {
 /**
  * Global scriptlet variable
  *
- * @returns {Object} object with method `invoke`
+ * @returns {Object} object with methods:
  * `invoke` method receives one argument with `Source` type
  * `validate` method receives one argument with `String` type
  */
-// eslint-disable-next-line no-undef
 
 
 var scriptlets = {
@@ -3124,7 +3124,6 @@ var scriptlets = {
   convertScriptletToAdg: convertScriptletToAdg,
   convertAdgToUbo: convertAdgToUbo
 };
- // module.exports = scriptlets;
 
 module.exports = scriptlets;
 
@@ -3136,4 +3135,4 @@ module.exports = scriptlets;
  * |                                         |
  * -------------------------------------------
  */
-//# sourceMappingURL=scriptlets.js.map
+//# sourceMappingURL=scriptletsCjs.js.map
