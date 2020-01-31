@@ -840,6 +840,7 @@ example.org#%#//scriptlet("set-constant", <property>, <value>)
         - `trueFunc` - function returning true
         - `falseFunc` - function returning false
         - `''` - empty string
+        - `-1` - number value `-1`
 
 **Examples**
 ```

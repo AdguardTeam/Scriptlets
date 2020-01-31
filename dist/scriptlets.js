@@ -1109,6 +1109,7 @@
      *         - `trueFunc` - function returning true
      *         - `falseFunc` - function returning false
      *         - `''` - empty string
+     *         - `-1` - number value `-1`
      *
      * **Examples**
      * ```
@@ -3016,7 +3017,7 @@
 
             var domains = getBeforeRegExp(rule, ADGUARD_SCRIPTLET_MASK_REG);
             var uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '');
-            var args = "".concat(uboName, ", ").concat(parsedParams.join(', '));
+            var args = parsedParams.length > 0 ? "".concat(uboName, ", ").concat(parsedParams.join(', ')) : uboName;
             var uboRule = replacePlaceholders(template, {
               domains: domains,
               args: args
