@@ -207,8 +207,7 @@ export const convertAdgToUbo = (rule) => {
                 const domains = getBeforeRegExp(rule, ADGUARD_SCRIPTLET_MASK_REG);
                 const uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '');
 
-                const args = `${uboName}, ${parsedParams.join(', ')}`;
-
+                const args = (parsedParams.length > 0) ? `${uboName}, ${parsedParams.join(', ')}` : uboName;
                 const uboRule = replacePlaceholders(
                     template,
                     { domains, args },
