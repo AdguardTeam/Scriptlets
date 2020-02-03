@@ -118,7 +118,7 @@ yarn browserstack
 
 #### Scriptlets library
 
-Finally we have build Scriptlets as a CJS module which can be imported from `dist/cjs/scriptlets.js`.
+Finally we have build Scriptlets as a CJS module which can be imported from `dist/cjs/scriptletsCjs.js`.
 
 And also there is a module at `dist/scriptlets.js` which has been exported to a global variable `scriptlets` with such methods:
 
