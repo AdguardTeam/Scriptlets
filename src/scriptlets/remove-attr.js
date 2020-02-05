@@ -1,4 +1,4 @@
-import { hit, throttle } from '../helpers';
+import { hit } from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -76,9 +76,36 @@ export function removeAttr(source, attrs, selector) {
     };
 
 
-    // здесь throttle не распечатывается
+    // здесь импортнутый throttle не распечатывается
     // console.log(throttle);
 
+    const throttle = (method, delay) => {
+        let wait = false;
+        let savedArgs;
+
+        const wrapper = (...args) => {
+            if (wait) {
+                savedArgs = args;
+                return;
+            }
+
+            method(...args);
+            wait = true;
+
+            setTimeout(() => {
+                wait = false;
+                if (savedArgs) {
+                    wrapper(...savedArgs);
+                    savedArgs = null;
+                }
+            }, delay);
+        };
+
+        return wrapper;
+    };
+
+    // const rmattrThrottle = throttle(rmattr, THROTTLE_DELAY_MS);
+    // console.log(rmattrThrottle);
 
     const THROTTLE_DELAY_MS = 20;
     const observer = new MutationObserver(throttle(rmattr, THROTTLE_DELAY_MS));
@@ -90,7 +117,7 @@ export function removeAttr(source, attrs, selector) {
     }
 }
 
-// а здесь throttle распечатывает
+// а здесь импортнутый throttle распечатывает
 // console.log(throttle);
 
 removeAttr.names = [
