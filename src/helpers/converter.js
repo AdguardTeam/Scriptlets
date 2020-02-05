@@ -1,5 +1,6 @@
 import {
     getBeforeRegExp,
+    startWith,
     substringAfter,
     substringBefore,
     wrapInDoubleQuotes,
@@ -9,6 +10,9 @@ import {
 import { parseRule, ADG_SCRIPTLET_MASK } from './parse-rule';
 
 import * as scriptletList from '../scriptlets/scriptletsList';
+
+
+const COMMENT_MARKER = '!';
 
 /**
  * AdGuard scriptlet rule
@@ -69,11 +73,21 @@ const replacePlaceholders = (str, data) => {
 
 
 /**
+ * Checks if rule text is comment e.g. !!example.org##+js(set-constant.js, test, false)
+ * @param {string} rule
+ * @return {boolean}
+ */
+const isComment = (rule) => startWith(rule, COMMENT_MARKER);
+
+/**
  * Checks is AdGuard scriptlet rule
  * @param {string} rule rule text
  */
 export const isAdgScriptletRule = (rule) => {
-    return rule.indexOf(ADG_SCRIPTLET_MASK) > -1;
+    return (
+        !isComment(rule)
+        && rule.indexOf(ADG_SCRIPTLET_MASK) > -1
+    );
 };
 
 /**
@@ -87,7 +101,8 @@ export const isUboScriptletRule = (rule) => {
         || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_1) > -1
         || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_2) > -1
     )
-        && UBO_SCRIPTLET_MASK_REG.test(rule);
+        && UBO_SCRIPTLET_MASK_REG.test(rule)
+        && !isComment(rule);
 };
 
 /**
@@ -99,7 +114,8 @@ export const isAbpSnippetRule = (rule) => {
         rule.indexOf(ABP_SCRIPTLET_MASK) > -1
         || rule.indexOf(ABP_SCRIPTLET_EXCEPTION_MASK) > -1
     )
-    && rule.search(ADG_CSS_MASK_REG) === -1;
+    && rule.search(ADG_CSS_MASK_REG) === -1
+    && !isComment(rule);
 };
 
 /**

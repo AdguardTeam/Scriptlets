@@ -40,7 +40,8 @@ function setPropertyAccess(object, property, descriptor) {
  * Check is property exist in base object recursively
  *
  * If property doesn't exist in base object,
- * defines this property (for addProp = true) and returns base, property name and remaining part of property chain
+ * defines this property (for addProp = true)
+ * and returns base, property name and remaining part of property chain
  *
  * @param {Object} base
  * @param {string} chain
@@ -112,6 +113,9 @@ var toRegExp = function toRegExp(str) {
 var getBeforeRegExp = function getBeforeRegExp(str, rx) {
   var index = str.search(rx);
   return str.substring(0, index);
+};
+var startWith = function startWith(str, prefix) {
+  return str && str.indexOf(prefix) === 0;
 };
 var substringAfter = function substringAfter(str, separator) {
   if (!str) {
@@ -268,6 +272,7 @@ var dependencies = /*#__PURE__*/Object.freeze({
     escapeRegExp: escapeRegExp,
     toRegExp: toRegExp,
     getBeforeRegExp: getBeforeRegExp,
+    startWith: startWith,
     substringAfter: substringAfter,
     substringBefore: substringBefore,
     wrapInDoubleQuotes: wrapInDoubleQuotes,
@@ -2824,6 +2829,7 @@ var scriptletsList = /*#__PURE__*/Object.freeze({
     jsonPrune: jsonPrune
 });
 
+var COMMENT_MARKER = '!';
 /**
  * AdGuard scriptlet rule
  */
@@ -2882,13 +2888,23 @@ var replacePlaceholders = function replacePlaceholders(str, data) {
   }, str);
 };
 /**
+ * Checks if rule text is comment e.g. !!example.org##+js(set-constant.js, test, false)
+ * @param {string} rule
+ * @return {boolean}
+ */
+
+
+var isComment = function isComment(rule) {
+  return startWith(rule, COMMENT_MARKER);
+};
+/**
  * Checks is AdGuard scriptlet rule
  * @param {string} rule rule text
  */
 
 
 var isAdgScriptletRule = function isAdgScriptletRule(rule) {
-  return rule.indexOf(ADG_SCRIPTLET_MASK) > -1;
+  return !isComment(rule) && rule.indexOf(ADG_SCRIPTLET_MASK) > -1;
 };
 /**
  * Checks is uBO scriptlet rule
@@ -2896,7 +2912,7 @@ var isAdgScriptletRule = function isAdgScriptletRule(rule) {
  */
 
 var isUboScriptletRule = function isUboScriptletRule(rule) {
-  return (rule.indexOf(UBO_SCRIPTLET_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_MASK_2) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_2) > -1) && UBO_SCRIPTLET_MASK_REG.test(rule);
+  return (rule.indexOf(UBO_SCRIPTLET_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_MASK_2) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_2) > -1) && UBO_SCRIPTLET_MASK_REG.test(rule) && !isComment(rule);
 };
 /**
  * Checks is AdBlock Plus snippet
@@ -2904,7 +2920,7 @@ var isUboScriptletRule = function isUboScriptletRule(rule) {
  */
 
 var isAbpSnippetRule = function isAbpSnippetRule(rule) {
-  return (rule.indexOf(ABP_SCRIPTLET_MASK) > -1 || rule.indexOf(ABP_SCRIPTLET_EXCEPTION_MASK) > -1) && rule.search(ADG_CSS_MASK_REG) === -1;
+  return (rule.indexOf(ABP_SCRIPTLET_MASK) > -1 || rule.indexOf(ABP_SCRIPTLET_EXCEPTION_MASK) > -1) && rule.search(ADG_CSS_MASK_REG) === -1 && !isComment(rule);
 };
 /**
  * Converts string of UBO scriptlet rule to AdGuard scritlet rule
