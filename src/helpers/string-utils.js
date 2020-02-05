@@ -29,7 +29,7 @@ export const getBeforeRegExp = (str, rx) => {
     return str.substring(0, index);
 };
 
-export const startWith = (str, prefix) => {
+export const startsWith = (str, prefix) => {
     return str && str.indexOf(prefix) === 0;
 };
 

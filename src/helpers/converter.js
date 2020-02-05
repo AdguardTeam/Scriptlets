@@ -1,6 +1,6 @@
 import {
     getBeforeRegExp,
-    startWith,
+    startsWith,
     substringAfter,
     substringBefore,
     wrapInDoubleQuotes,
@@ -77,7 +77,7 @@ const replacePlaceholders = (str, data) => {
  * @param {string} rule
  * @return {boolean}
  */
-const isComment = (rule) => startWith(rule, COMMENT_MARKER);
+const isComment = (rule) => startsWith(rule, COMMENT_MARKER);
 
 /**
  * Checks is AdGuard scriptlet rule
