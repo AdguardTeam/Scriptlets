@@ -40,14 +40,16 @@
     /**
      * Check is property exist in base object recursively
      *
-     * If property doesn't exist in base object
-     * defines this property and returns base, property name and remaining part of property chain
+     * If property doesn't exist in base object,
+     * defines this property (for addProp = true) and returns base, property name and remaining part of property chain
      *
      * @param {Object} base
      * @param {string} chain
+     * @param {Booleam} addProp - defines is nonexistent base property should be assigned as 'undefined'
      * @returns {Chain}
      */
     function getPropertyInChain(base, chain) {
+      var addProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
       var pos = chain.indexOf('.');
 
       if (pos === -1) {
@@ -62,7 +64,11 @@
       chain = chain.slice(pos + 1);
 
       if (own !== undefined) {
-        return getPropertyInChain(own, chain);
+        return getPropertyInChain(own, chain, addProp);
+      }
+
+      if (!addProp) {
+        return false;
       }
 
       Object.defineProperty(base, prop, {
@@ -2728,12 +2734,16 @@
       var needlePaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
 
       function isPruningNeeded(root) {
+        if (!root) {
+          return false;
+        }
+
         for (var i = 0; i < needlePaths.length; i += 1) {
           var needlePath = needlePaths[i];
-          var details = getPropertyInChain(root, needlePath);
+          var details = getPropertyInChain(root, needlePath, false);
           var nestedPropName = needlePath.split('').pop();
 
-          if (details.base[nestedPropName] === undefined) {
+          if (details && details.base[nestedPropName] === undefined) {
             return false;
           }
         }
@@ -2760,9 +2770,9 @@
         }
 
         prunePaths.forEach(function (path) {
-          var ownerObj = getPropertyInChain(r, path);
+          var ownerObj = getPropertyInChain(r, path, false);
 
-          if (ownerObj.base) {
+          if (ownerObj !== undefined && ownerObj.base) {
             delete ownerObj.base[ownerObj.prop];
           }
         });

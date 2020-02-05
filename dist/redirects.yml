@@ -105,6 +105,7 @@
 - title: noopvast-2.0
   description: |-
     Redirects request to an empty VAST response.
+
     **Example**
     ```
     ||example.org^$xmlhttprequest,redirect=noopvast-2.0
@@ -115,6 +116,7 @@
 - title: noopvast-3.0
   description: |-
     Redirects request to an empty VAST response.
+
     **Example**
     ```
     ||example.org^$xmlhttprequest,redirect=noopvast-3.0

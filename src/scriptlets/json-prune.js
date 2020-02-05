@@ -61,11 +61,15 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps) {
         : [];
 
     function isPruningNeeded(root) {
+        if (!root) {
+            return false;
+        }
+
         for (let i = 0; i < needlePaths.length; i += 1) {
             const needlePath = needlePaths[i];
-            const details = getPropertyInChain(root, needlePath);
+            const details = getPropertyInChain(root, needlePath, false);
             const nestedPropName = needlePath.split('').pop();
-            if (details.base[nestedPropName] === undefined) {
+            if (details && details.base[nestedPropName] === undefined) {
                 return false;
             }
         }
@@ -84,8 +88,8 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps) {
             return r;
         }
         prunePaths.forEach((path) => {
-            const ownerObj = getPropertyInChain(r, path);
-            if (ownerObj.base) {
+            const ownerObj = getPropertyInChain(r, path, false);
+            if (ownerObj !== undefined && ownerObj.base) {
                 delete ownerObj.base[ownerObj.prop];
             }
         });

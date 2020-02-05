@@ -90,6 +90,7 @@
 
 ### <a id="noopvast-2.0"></a> ⚡️ noopvast-2.0
 Redirects request to an empty VAST response.
+
 **Example**
 ```
 ||example.org^$xmlhttprequest,redirect=noopvast-2.0
@@ -99,6 +100,7 @@ Redirects request to an empty VAST response.
 
 ### <a id="noopvast-3.0"></a> ⚡️ noopvast-3.0
 Redirects request to an empty VAST response.
+
 **Example**
 ```
 ||example.org^$xmlhttprequest,redirect=noopvast-3.0
