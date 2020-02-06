@@ -151,7 +151,7 @@ scriptlets.validateRule(input);
 
 ```javascript
 /**
-* Checks is comment or AdGuard / Ubo / Abp scriptlet rule
+* Checks is AdGuard / Ubo / Abp scriptlet rule
 * @param {String} rule - rule text
 * @returns {Boolean}
 */
