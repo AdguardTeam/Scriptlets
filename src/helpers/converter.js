@@ -177,7 +177,7 @@ export const convertScriptletToAdg = (rule) => {
         result = convertUboToAdg(rule);
     } else if (isAbpSnippetRule(rule)) {
         result = convertAbpToAdg(rule);
-    } else if (isAdgScriptletRule(rule)) {
+    } else if (isAdgScriptletRule(rule) || (isComment(rule))) {
         result = rule;
     }
 

@@ -115,7 +115,7 @@
       var index = str.search(rx);
       return str.substring(0, index);
     };
-    var startWith = function startWith(str, prefix) {
+    var startsWith = function startsWith(str, prefix) {
       return str && str.indexOf(prefix) === 0;
     };
     var substringAfter = function substringAfter(str, separator) {
@@ -273,7 +273,7 @@
         escapeRegExp: escapeRegExp,
         toRegExp: toRegExp,
         getBeforeRegExp: getBeforeRegExp,
-        startWith: startWith,
+        startsWith: startsWith,
         substringAfter: substringAfter,
         substringBefore: substringBefore,
         wrapInDoubleQuotes: wrapInDoubleQuotes,
@@ -2896,7 +2896,7 @@
 
 
     var isComment = function isComment(rule) {
-      return startWith(rule, COMMENT_MARKER);
+      return startsWith(rule, COMMENT_MARKER);
     };
     /**
      * Checks is AdGuard scriptlet rule
@@ -2988,7 +2988,7 @@
         result = convertUboToAdg(rule);
       } else if (isAbpSnippetRule(rule)) {
         result = convertAbpToAdg(rule);
-      } else if (isAdgScriptletRule(rule)) {
+      } else if (isAdgScriptletRule(rule) || isComment(rule)) {
         result = rule;
       }
 

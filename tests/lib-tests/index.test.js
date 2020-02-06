@@ -9,6 +9,12 @@ module(name);
 
 
 /* eslint-disable max-len */
+test('Test comment', (assert) => {
+    const comment = "! example.org#%#//scriptlet('abort-on-property-read', 'I10C')";
+    const expComment = "! example.org#%#//scriptlet('abort-on-property-read', 'I10C')";
+    assert.equal(convertScriptletToAdg(comment), expComment);
+});
+
 test('Test Adguard scriptlet rule', (assert) => {
     const rule = "example.org#%#//scriptlet('abort-on-property-read', 'I10C')";
     const exp = "example.org#%#//scriptlet('abort-on-property-read', 'I10C')";
