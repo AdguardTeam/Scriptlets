@@ -155,7 +155,6 @@ scriptlets.validateRule(input);
 * @param {String} rule - rule text
 * @returns {Boolean}
 */
-scriptlets.isComment(rule);
 scriptlets.isAdgScriptletRule(rule);
 scriptlets.isUboScriptletRule(rule);
 scriptlets.isAbpSnippetRule(rule);
