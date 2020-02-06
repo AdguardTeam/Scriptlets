@@ -251,36 +251,6 @@
       }
     };
 
-    function _arrayWithoutHoles(arr) {
-      if (Array.isArray(arr)) {
-        for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) {
-          arr2[i] = arr[i];
-        }
-
-        return arr2;
-      }
-    }
-
-    var arrayWithoutHoles = _arrayWithoutHoles;
-
-    function _iterableToArray(iter) {
-      if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
-    }
-
-    var iterableToArray = _iterableToArray;
-
-    function _nonIterableSpread() {
-      throw new TypeError("Invalid attempt to spread non-iterable instance");
-    }
-
-    var nonIterableSpread = _nonIterableSpread;
-
-    function _toConsumableArray(arr) {
-      return arrayWithoutHoles(arr) || iterableToArray(arr) || nonIterableSpread();
-    }
-
-    var toConsumableArray = _toConsumableArray;
-
     var throttle = function throttle(method, delay) {
       var wait = false;
       var savedArgs;
@@ -301,7 +271,7 @@
           wait = false;
 
           if (savedArgs) {
-            wrapper.apply(void 0, toConsumableArray(savedArgs));
+            wrapper(savedArgs);
             savedArgs = null;
           }
         }, delay);
@@ -404,6 +374,12 @@
     }
 
     var arrayWithHoles = _arrayWithHoles;
+
+    function _iterableToArray(iter) {
+      if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+    }
+
+    var iterableToArray = _iterableToArray;
 
     function _nonIterableRest() {
       throw new TypeError("Invalid attempt to destructure non-iterable instance");
@@ -2322,10 +2298,10 @@
         selector = "[".concat(attrs.join('],['), "]");
       }
 
-      var rmattr = function rmattr(ev) {
-        if (ev) {
-          window.removeEventListener(ev.type, rmattr, true);
-        }
+      var rmattr = function rmattr() {
+        console.log('rmattr started'); // if (ev) {
+        //     window.removeEventListener(ev.type, rmattr, true);
+        // }
 
         var nodes = [].slice.call(document.querySelectorAll(selector));
         var removed = false;
@@ -2363,28 +2339,38 @@
             wait = false;
 
             if (savedArgs) {
-              wrapper.apply(void 0, toConsumableArray(savedArgs));
+              wrapper(savedArgs);
               savedArgs = null;
             }
           }, delay);
         };
 
         return wrapper;
-      }; // const rmattrThrottle = throttle(rmattr, THROTTLE_DELAY_MS);
-      // console.log(rmattrThrottle);
+      }; // function callback(mutationsList, observer) {
+      //     console.log('Mutations:', mutationsList)
+      //     console.log('Observer:', observer)
+      // }
+      // const mutationObserver = new MutationObserver(callback)
+      // mutationObserver.observe(
+      //     document.getElementById('main'),
+      //     { attributes: true }
+      // )
 
 
-      var THROTTLE_DELAY_MS = 20;
+      var THROTTLE_DELAY_MS = 20; // const rmattrThrottle = throttle(rmattr, THROTTLE_DELAY_MS);
+
       var observer = new MutationObserver(throttle(rmattr, THROTTLE_DELAY_MS));
-
-      if (document.readyState === 'loading') {
-        window.addEventListener('DOMContentLoaded', rmattr, true);
-      } else {
-        observer.observe(document.documentElement, {
-          childList: true,
-          subtree: true
-        });
-      }
+      observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: true
+      }); // observer.observe(document.documentElement, { childList: true, subtree: true });
+      // if (document.readyState !== 'complete') { observer.disconnect(); return; }
+      // if (document.readyState === 'loading') {
+      //     window.addEventListener('DOMContentLoaded', rmattr, true);
+      // } else {
+      //     observer.observe(document.documentElement, { childList: true, subtree: true });
+      // }
     } // а здесь импортнутый throttle распечатывает
     // console.log(throttle);
 

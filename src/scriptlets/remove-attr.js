@@ -57,10 +57,11 @@ export function removeAttr(source, attrs, selector) {
         selector = `[${attrs.join('],[')}]`;
     }
 
-    const rmattr = (ev) => {
-        if (ev) {
-            window.removeEventListener(ev.type, rmattr, true);
-        }
+    const rmattr = () => {
+        console.log('rmattr started');
+        // if (ev) {
+        //     window.removeEventListener(ev.type, rmattr, true);
+        // }
 
         const nodes = [].slice.call(document.querySelectorAll(selector));
         let removed = false;
@@ -95,7 +96,7 @@ export function removeAttr(source, attrs, selector) {
             setTimeout(() => {
                 wait = false;
                 if (savedArgs) {
-                    wrapper(...savedArgs);
+                    wrapper(savedArgs);
                     savedArgs = null;
                 }
             }, delay);
@@ -104,17 +105,26 @@ export function removeAttr(source, attrs, selector) {
         return wrapper;
     };
 
-    // const rmattrThrottle = throttle(rmattr, THROTTLE_DELAY_MS);
-    // console.log(rmattrThrottle);
 
     const THROTTLE_DELAY_MS = 20;
+    // const rmattrThrottle = throttle(rmattr, THROTTLE_DELAY_MS);
+
     const observer = new MutationObserver(throttle(rmattr, THROTTLE_DELAY_MS));
 
-    if (document.readyState === 'loading') {
-        window.addEventListener('DOMContentLoaded', rmattr, true);
-    } else {
-        observer.observe(document.documentElement, { childList: true, subtree: true });
-    }
+    observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+    });
+
+    // observer.observe(document.documentElement, { childList: true, subtree: true });
+    // if (document.readyState !== 'complete') { observer.disconnect(); return; }
+
+    // if (document.readyState === 'loading') {
+    //     window.addEventListener('DOMContentLoaded', rmattr, true);
+    // } else {
+    //     observer.observe(document.documentElement, { childList: true, subtree: true });
+    // }
 }
 
 // а здесь импортнутый throttle распечатывает

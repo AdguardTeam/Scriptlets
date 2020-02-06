@@ -14,7 +14,7 @@ export const throttle = (method, delay) => {
         setTimeout(() => {
             wait = false;
             if (savedArgs) {
-                wrapper(...savedArgs);
+                wrapper(savedArgs);
                 savedArgs = null;
             }
         }, delay);
