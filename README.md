@@ -156,8 +156,8 @@ scriptlets.validateRule(input);
 * @returns {Boolean}
 */
 scriptlets.isAdgScriptletRule(rule);
-scriptlets.isAdgScriptletRule(rule);
-scriptlets.isAdgScriptletRule(rule);
+scriptlets.isUboScriptletRule(rule);
+scriptlets.isAbpSnippetRule(rule);
 ```
 
 ```javascript

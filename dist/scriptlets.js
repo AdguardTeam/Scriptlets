@@ -40,14 +40,17 @@
     /**
      * Check is property exist in base object recursively
      *
-     * If property doesn't exist in base object
-     * defines this property and returns base, property name and remaining part of property chain
+     * If property doesn't exist in base object,
+     * defines this property (for addProp = true)
+     * and returns base, property name and remaining part of property chain
      *
      * @param {Object} base
      * @param {string} chain
+     * @param {Booleam} addProp - defines is nonexistent base property should be assigned as 'undefined'
      * @returns {Chain}
      */
     function getPropertyInChain(base, chain) {
+      var addProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
       var pos = chain.indexOf('.');
 
       if (pos === -1) {
@@ -62,7 +65,11 @@
       chain = chain.slice(pos + 1);
 
       if (own !== undefined) {
-        return getPropertyInChain(own, chain);
+        return getPropertyInChain(own, chain, addProp);
+      }
+
+      if (!addProp) {
+        return false;
       }
 
       Object.defineProperty(base, prop, {
@@ -107,6 +114,9 @@
     var getBeforeRegExp = function getBeforeRegExp(str, rx) {
       var index = str.search(rx);
       return str.substring(0, index);
+    };
+    var startsWith = function startsWith(str, prefix) {
+      return str && str.indexOf(prefix) === 0;
     };
     var substringAfter = function substringAfter(str, separator) {
       if (!str) {
@@ -263,6 +273,7 @@
         escapeRegExp: escapeRegExp,
         toRegExp: toRegExp,
         getBeforeRegExp: getBeforeRegExp,
+        startsWith: startsWith,
         substringAfter: substringAfter,
         substringBefore: substringBefore,
         wrapInDoubleQuotes: wrapInDoubleQuotes,
@@ -2728,12 +2739,16 @@
       var needlePaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
 
       function isPruningNeeded(root) {
+        if (!root) {
+          return false;
+        }
+
         for (var i = 0; i < needlePaths.length; i += 1) {
           var needlePath = needlePaths[i];
-          var details = getPropertyInChain(root, needlePath);
+          var details = getPropertyInChain(root, needlePath, false);
           var nestedPropName = needlePath.split('').pop();
 
-          if (details.base[nestedPropName] === undefined) {
+          if (details && details.base[nestedPropName] === undefined) {
             return false;
           }
         }
@@ -2760,9 +2775,9 @@
         }
 
         prunePaths.forEach(function (path) {
-          var ownerObj = getPropertyInChain(r, path);
+          var ownerObj = getPropertyInChain(r, path, false);
 
-          if (ownerObj.base) {
+          if (ownerObj !== undefined && ownerObj.base) {
             delete ownerObj.base[ownerObj.prop];
           }
         });
@@ -2815,6 +2830,7 @@
         jsonPrune: jsonPrune
     });
 
+    var COMMENT_MARKER = '!';
     /**
      * AdGuard scriptlet rule
      */
@@ -2873,13 +2889,23 @@
       }, str);
     };
     /**
+     * Checks if rule text is comment e.g. !!example.org##+js(set-constant.js, test, false)
+     * @param {string} rule
+     * @return {boolean}
+     */
+
+
+    var isComment = function isComment(rule) {
+      return startsWith(rule, COMMENT_MARKER);
+    };
+    /**
      * Checks is AdGuard scriptlet rule
      * @param {string} rule rule text
      */
 
 
     var isAdgScriptletRule = function isAdgScriptletRule(rule) {
-      return rule.indexOf(ADG_SCRIPTLET_MASK) > -1;
+      return !isComment(rule) && rule.indexOf(ADG_SCRIPTLET_MASK) > -1;
     };
     /**
      * Checks is uBO scriptlet rule
@@ -2887,7 +2913,7 @@
      */
 
     var isUboScriptletRule = function isUboScriptletRule(rule) {
-      return (rule.indexOf(UBO_SCRIPTLET_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_MASK_2) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_2) > -1) && UBO_SCRIPTLET_MASK_REG.test(rule);
+      return (rule.indexOf(UBO_SCRIPTLET_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_MASK_2) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_2) > -1) && UBO_SCRIPTLET_MASK_REG.test(rule) && !isComment(rule);
     };
     /**
      * Checks is AdBlock Plus snippet
@@ -2895,7 +2921,7 @@
      */
 
     var isAbpSnippetRule = function isAbpSnippetRule(rule) {
-      return (rule.indexOf(ABP_SCRIPTLET_MASK) > -1 || rule.indexOf(ABP_SCRIPTLET_EXCEPTION_MASK) > -1) && rule.search(ADG_CSS_MASK_REG) === -1;
+      return (rule.indexOf(ABP_SCRIPTLET_MASK) > -1 || rule.indexOf(ABP_SCRIPTLET_EXCEPTION_MASK) > -1) && rule.search(ADG_CSS_MASK_REG) === -1 && !isComment(rule);
     };
     /**
      * Converts string of UBO scriptlet rule to AdGuard scritlet rule
@@ -2962,7 +2988,7 @@
         result = convertUboToAdg(rule);
       } else if (isAbpSnippetRule(rule)) {
         result = convertAbpToAdg(rule);
-      } else if (isAdgScriptletRule(rule)) {
+      } else if (isAdgScriptletRule(rule) || isComment(rule)) {
         result = rule;
       }
 
