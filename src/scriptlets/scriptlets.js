@@ -6,6 +6,7 @@ import {
 } from '../helpers/injector';
 
 import {
+    isComment,
     isAdgScriptletRule,
     isUboScriptletRule,
     isAbpSnippetRule,
@@ -101,6 +102,7 @@ const scriptlets = {
     invoke: getScriptletCode,
     validateName: isValidScriptletName,
     validateRule: isValidScriptletRule,
+    isComment,
     isAdgScriptletRule,
     isUboScriptletRule,
     isAbpSnippetRule,

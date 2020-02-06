@@ -2902,7 +2902,6 @@ var isComment = function isComment(rule) {
  * @param {string} rule rule text
  */
 
-
 var isAdgScriptletRule = function isAdgScriptletRule(rule) {
   return !isComment(rule) && rule.indexOf(ADG_SCRIPTLET_MASK) > -1;
 };
@@ -3142,6 +3141,7 @@ var scriptlets = {
   invoke: getScriptletCode,
   validateName: isValidScriptletName,
   validateRule: isValidScriptletRule,
+  isComment: isComment,
   isAdgScriptletRule: isAdgScriptletRule,
   isUboScriptletRule: isUboScriptletRule,
   isAbpSnippetRule: isAbpSnippetRule,

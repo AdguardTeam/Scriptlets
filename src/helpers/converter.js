@@ -77,7 +77,7 @@ const replacePlaceholders = (str, data) => {
  * @param {string} rule
  * @return {boolean}
  */
-const isComment = (rule) => startsWith(rule, COMMENT_MARKER);
+export const isComment = (rule) => startsWith(rule, COMMENT_MARKER);
 
 /**
  * Checks is AdGuard scriptlet rule
