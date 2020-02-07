@@ -2299,10 +2299,6 @@
       }
 
       var rmattr = function rmattr() {
-        console.log('rmattr started'); // if (ev) {
-        //     window.removeEventListener(ev.type, rmattr, true);
-        // }
-
         var nodes = [].slice.call(document.querySelectorAll(selector));
         var removed = false;
         nodes.forEach(function (node) {
@@ -2315,50 +2311,9 @@
         if (removed) {
           hit(source);
         }
-      }; // здесь импортнутый throttle не распечатывается
-      // console.log(throttle);
+      };
 
-
-      var throttle = function throttle(method, delay) {
-        var wait = false;
-        var savedArgs;
-
-        var wrapper = function wrapper() {
-          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-            args[_key] = arguments[_key];
-          }
-
-          if (wait) {
-            savedArgs = args;
-            return;
-          }
-
-          method.apply(void 0, args);
-          wait = true;
-          setTimeout(function () {
-            wait = false;
-
-            if (savedArgs) {
-              wrapper(savedArgs);
-              savedArgs = null;
-            }
-          }, delay);
-        };
-
-        return wrapper;
-      }; // function callback(mutationsList, observer) {
-      //     console.log('Mutations:', mutationsList)
-      //     console.log('Observer:', observer)
-      // }
-      // const mutationObserver = new MutationObserver(callback)
-      // mutationObserver.observe(
-      //     document.getElementById('main'),
-      //     { attributes: true }
-      // )
-
-
-      var THROTTLE_DELAY_MS = 20; // const rmattrThrottle = throttle(rmattr, THROTTLE_DELAY_MS);
-
+      var THROTTLE_DELAY_MS = 20;
       var observer = new MutationObserver(throttle(rmattr, THROTTLE_DELAY_MS));
       observer.observe(document.documentElement, {
         childList: true,
@@ -2371,11 +2326,9 @@
       // } else {
       //     observer.observe(document.documentElement, { childList: true, subtree: true });
       // }
-    } // а здесь импортнутый throttle распечатывает
-    // console.log(throttle);
-
+    }
     removeAttr.names = ['remove-attr', 'remove-attr.js', 'ubo-remove-attr.js'];
-    removeAttr.injections = [hit];
+    removeAttr.injections = [hit, throttle];
 
     /* eslint-disable max-len */
 

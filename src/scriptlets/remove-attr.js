@@ -1,4 +1,4 @@
-import { hit } from '../helpers';
+import { hit, throttle } from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -58,11 +58,6 @@ export function removeAttr(source, attrs, selector) {
     }
 
     const rmattr = () => {
-        console.log('rmattr started');
-        // if (ev) {
-        //     window.removeEventListener(ev.type, rmattr, true);
-        // }
-
         const nodes = [].slice.call(document.querySelectorAll(selector));
         let removed = false;
         nodes.forEach((node) => {
@@ -76,38 +71,7 @@ export function removeAttr(source, attrs, selector) {
         }
     };
 
-
-    // здесь импортнутый throttle не распечатывается
-    // console.log(throttle);
-
-    const throttle = (method, delay) => {
-        let wait = false;
-        let savedArgs;
-
-        const wrapper = (...args) => {
-            if (wait) {
-                savedArgs = args;
-                return;
-            }
-
-            method(...args);
-            wait = true;
-
-            setTimeout(() => {
-                wait = false;
-                if (savedArgs) {
-                    wrapper(savedArgs);
-                    savedArgs = null;
-                }
-            }, delay);
-        };
-
-        return wrapper;
-    };
-
-
     const THROTTLE_DELAY_MS = 20;
-    // const rmattrThrottle = throttle(rmattr, THROTTLE_DELAY_MS);
 
     const observer = new MutationObserver(throttle(rmattr, THROTTLE_DELAY_MS));
 
@@ -127,13 +91,10 @@ export function removeAttr(source, attrs, selector) {
     // }
 }
 
-// а здесь импортнутый throttle распечатывает
-// console.log(throttle);
-
 removeAttr.names = [
     'remove-attr',
     'remove-attr.js',
     'ubo-remove-attr.js',
 ];
 
-removeAttr.injections = [hit];
+removeAttr.injections = [hit, throttle];
