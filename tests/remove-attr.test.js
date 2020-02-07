@@ -28,6 +28,11 @@ const createElem = (className, attrs) => {
     return elem;
 };
 
+function addAttr(elem, attr) {
+    elem.setAttribute(attr, true);
+}
+
+
 test('ubo alias', (assert) => {
     createHit();
     const attrs = ['test1', 'test2'];
@@ -38,16 +43,24 @@ test('ubo alias', (assert) => {
         verbose: true,
     };
 
+    const resString = window.scriptlets.invoke(params);
+    const done = assert.async();
+
     const elem = createElem(className, attrs);
 
-    const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    setTimeout(() => { addAttr(elem, 'test2'); }, 34);
 
-    attrs.forEach((a) => {
-        assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
-    });
-    assert.strictEqual(window.hit, 'FIRED');
+    setTimeout(() => {
+        attrs.forEach((a) => {
+            assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
+        });
+        assert.strictEqual(window.hit, 'FIRED');
+        done();
+    }, 50);
+
+    evalWrapper(resString);
 });
+
 
 test('Adg rule: no selector', (assert) => {
     createHit();
@@ -58,15 +71,25 @@ test('Adg rule: no selector', (assert) => {
         verbose: true,
     };
 
-    const elem = createElem(null, attrs);
     const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    const done = assert.async();
 
-    attrs.forEach((a) => {
-        assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
-    });
-    assert.strictEqual(window.hit, 'FIRED');
+    const elem = createElem(null, attrs);
+
+    setTimeout(() => { addAttr(elem, 'test1'); }, 62);
+    setTimeout(() => { addAttr(elem, 'test2'); }, 75);
+
+    setTimeout(() => {
+        attrs.forEach((a) => {
+            assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
+        });
+        assert.strictEqual(window.hit, 'FIRED');
+        done();
+    }, 200);
+
+    evalWrapper(resString);
 });
+
 
 test('Adg rule', (assert) => {
     createHit();
@@ -78,13 +101,20 @@ test('Adg rule', (assert) => {
         verbose: true,
     };
 
+    const resString = window.scriptlets.invoke(params);
+    const done = assert.async();
+
     const elem = createElem(className, attrs);
 
-    const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    setTimeout(() => { addAttr(elem, 'test1'); }, 87);
 
-    attrs.forEach((a) => {
-        assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
-    });
-    assert.strictEqual(window.hit, 'FIRED');
+    setTimeout(() => {
+        attrs.forEach((a) => {
+            assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
+        });
+        assert.strictEqual(window.hit, 'FIRED');
+        done();
+    }, 300);
+
+    evalWrapper(resString);
 });

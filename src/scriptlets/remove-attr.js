@@ -1,4 +1,4 @@
-import { hit } from '../helpers';
+import { hit, throttle } from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -57,11 +57,7 @@ export function removeAttr(source, attrs, selector) {
         selector = `[${attrs.join('],[')}]`;
     }
 
-    const rmattr = (ev) => {
-        if (ev) {
-            window.removeEventListener(ev.type, rmattr, true);
-        }
-
+    const rmattr = () => {
         const nodes = [].slice.call(document.querySelectorAll(selector));
         let removed = false;
         nodes.forEach((node) => {
@@ -75,11 +71,15 @@ export function removeAttr(source, attrs, selector) {
         }
     };
 
-    if (document.readyState === 'loading') {
-        window.addEventListener('DOMContentLoaded', rmattr, true);
-    } else {
-        rmattr();
-    }
+    const THROTTLE_DELAY_MS = 20;
+
+    const observer = new MutationObserver(throttle(rmattr, THROTTLE_DELAY_MS));
+
+    observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+    });
 }
 
 removeAttr.names = [
@@ -88,4 +88,4 @@ removeAttr.names = [
     'ubo-remove-attr.js',
 ];
 
-removeAttr.injections = [hit];
+removeAttr.injections = [hit, throttle];
