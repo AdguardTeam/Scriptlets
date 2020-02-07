@@ -208,6 +208,7 @@ export const convertAdgToUbo = (rule) => {
                 const uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '');
 
                 const args = (parsedParams.length > 0) ? `${uboName}, ${parsedParams.join(', ')}` : uboName;
+
                 const uboRule = replacePlaceholders(
                     template,
                     { domains, args },
