@@ -2252,7 +2252,7 @@
      * @scriptlet remove-attr
      *
      * @description
-     * Removes the specified attributes from DOM notes. This scriptlet runs only once after the page load (DOMContentLoaded).
+     * Removes the specified attributes from DOM notes. This scriptlet runs NOT only once after the page load (DOMContentLoaded) but serially.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
@@ -2342,7 +2342,7 @@
      * @scriptlet remove-class
      *
      * @description
-     * Removes the specified classes from DOM notes. This scriptlet runs only once after the page load (DOMContentLoaded).
+     * Removes the specified classes from DOM notes. This scriptlet runs NOT only once after the page load (DOMContentLoaded) but serially.
      *
      * **Syntax**
      * ```
@@ -2405,11 +2405,7 @@
         });
       }
 
-      var removeClassHandler = function removeClassHandler(ev) {
-        if (ev) {
-          window.removeEventListener(ev.type, removeClassHandler, true);
-        }
-
+      var removeClassHandler = function removeClassHandler() {
         var nodes = new Set();
 
         if (selector) {
@@ -2443,14 +2439,16 @@
         }
       };
 
-      if (document.readyState === 'loading') {
-        window.addEventListener('DOMContentLoaded', removeClassHandler, true);
-      } else {
-        removeClassHandler();
-      }
+      var THROTTLE_DELAY_MS = 20;
+      var observer = new MutationObserver(throttle(removeClassHandler, THROTTLE_DELAY_MS));
+      observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: true
+      });
     }
     removeClass.names = ['remove-class'];
-    removeClass.injections = [hit];
+    removeClass.injections = [hit, throttle];
 
     /**
      * @scriptlet disable-newtab-links

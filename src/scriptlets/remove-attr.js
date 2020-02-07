@@ -5,7 +5,7 @@ import { hit, throttle } from '../helpers';
  * @scriptlet remove-attr
  *
  * @description
- * Removes the specified attributes from DOM notes. This scriptlet runs only once after the page load (DOMContentLoaded).
+ * Removes the specified attributes from DOM notes. This scriptlet runs NOT only once after the page load (DOMContentLoaded) but serially.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-

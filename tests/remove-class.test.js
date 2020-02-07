@@ -42,17 +42,24 @@ test('Adg rule: no selector', (assert) => {
     const second = createElem(null, ['second', 'rare', 'example', 'for', 'test']);
     const third = createElem(null, ['third', 'testing', 'better', 'example']);
 
-
     const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    const done = assert.async();
 
-    classNames.forEach((a) => {
-        assert.notOk(first.classList.contains(a), `Class '${a}' has been removed`);
-        assert.notOk(second.classList.contains(a), `Class '${a}' has been removed`);
-        assert.notOk(third.classList.contains(a), `Class '${a}' has been removed`);
-    });
-    assert.strictEqual(window.hit, 'FIRED');
+    setTimeout(() => { first.classList.add('example'); }, 34);
+
+    setTimeout(() => {
+        classNames.forEach((a) => {
+            assert.notOk(first.classList.contains(a), `Class '${a}' has been removed`);
+            assert.notOk(second.classList.contains(a), `Class '${a}' has been removed`);
+            assert.notOk(third.classList.contains(a), `Class '${a}' has been removed`);
+        });
+        assert.strictEqual(window.hit, 'FIRED');
+        done();
+    }, 50);
+
+    evalWrapper(resString);
 });
+
 
 test('Adg rule', (assert) => {
     createHit();
@@ -69,10 +76,18 @@ test('Adg rule', (assert) => {
     parentElement.appendChild(childElement);
 
     const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    const done = assert.async();
 
-    classNames.forEach((a) => {
-        assert.notOk(childElement.classList.contains(a), `Class '${a}' has been removed`);
-    });
-    assert.strictEqual(window.hit, 'FIRED');
+    setTimeout(() => { childElement.classList.add('test11'); }, 52);
+    setTimeout(() => { childElement.classList.add('test22'); }, 143);
+
+    setTimeout(() => {
+        classNames.forEach((a) => {
+            assert.notOk(childElement.classList.contains(a), `Class '${a}' has been removed`);
+        });
+        assert.strictEqual(window.hit, 'FIRED');
+        done();
+    }, 150);
+
+    evalWrapper(resString);
 });
