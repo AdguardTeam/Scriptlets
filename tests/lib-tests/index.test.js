@@ -77,5 +77,13 @@ test('Test converter AdGuard scriptlet rule to Ubo one', (assert) => {
     const whitelistRule = 'example.org#@%#//scriptlet("prevent-setTimeout", "[native code]", "8000")';
     const expectedResult = 'example.org#@#+js(setTimeout-defuser.js, [native code], 8000)';
     assert.equal(convertAdgToUbo(whitelistRule), expectedResult);
+
+    let actual = convertAdgToUbo('example.org#%#//scriptlet("ubo-abort-on-property-read.js", "alert")');
+    let expected = 'example.org##+js(abort-on-property-read.js, alert)';
+    assert.equal(actual, expected);
+
+    actual = convertAdgToUbo('example.com#%#//scriptlet("abp-abort-current-inline-script", "console.log", "Hello")');
+    expected = 'example.com##+js(abort-current-inline-script.js, console.log, Hello)';
+    assert.equal(actual, expected);
 });
 /* eslint-enable max-len */
