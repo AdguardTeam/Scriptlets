@@ -189,11 +189,11 @@ scriptlets.convertScriptletToAdg(rule);
 
 ```javascript
 /**
- * Converts UBO scriptlet rule to AdGuard one
+ * Converts Adg scriptlet rule to AdGuard one
  * @param {String} rule - AdGuard scriptlet rule
  * @returns {String} - UBO scriptlet rule
  */
-scriptlets.convertAdgToUbo(rule);
+scriptlets.convertAdgScriptletToUbo(rule);
 ```
 
 #### Corelibs library

@@ -350,30 +350,6 @@
       return "function(source, args){\n".concat(code, "\n}");
     }
 
-    function _arrayWithHoles(arr) {
-      if (Array.isArray(arr)) return arr;
-    }
-
-    var arrayWithHoles = _arrayWithHoles;
-
-    function _iterableToArray(iter) {
-      if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
-    }
-
-    var iterableToArray = _iterableToArray;
-
-    function _nonIterableRest() {
-      throw new TypeError("Invalid attempt to destructure non-iterable instance");
-    }
-
-    var nonIterableRest = _nonIterableRest;
-
-    function _toArray(arr) {
-      return arrayWithHoles(arr) || iterableToArray(arr) || nonIterableRest();
-    }
-
-    var toArray = _toArray;
-
     function _defineProperty(obj, key, value) {
       if (key in obj) {
         Object.defineProperty(obj, key, {
@@ -572,6 +548,126 @@
         args: args.slice(1)
       };
     };
+
+    const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm",ubo:"googletagmanager_gtm.js"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3.0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"disqus_embed.js"},{ubo:"disqus_forums_embed.js"},{ubo:"doubleclick_instream_ad_status.js"},{ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"}];
+
+    var COMMENT_MARKER = '!';
+    /**
+     * Checks if rule text is comment e.g. !!example.org##+js(set-constant.js, test, false)
+     * @param {string} rule
+     * @return {boolean}
+     */
+
+    var isComment = function isComment(rule) {
+      return startsWith(rule, COMMENT_MARKER);
+    };
+    /* ************************************************************************
+     *
+     * Scriptlets
+     *
+     ************************************************************************** */
+
+    /**
+     * uBlock scriptlet rule mask
+     */
+
+    var UBO_SCRIPTLET_MASK_REG = /#@?#script:inject|#@?#\s*\+js/;
+    var UBO_SCRIPTLET_MASK_1 = '##+js';
+    var UBO_SCRIPTLET_MASK_2 = '##script:inject';
+    var UBO_SCRIPTLET_EXCEPTION_MASK_1 = '#@#+js';
+    var UBO_SCRIPTLET_EXCEPTION_MASK_2 = '#@#script:inject';
+    /**
+     * AdBlock Plus snippet rule mask
+     */
+
+    var ABP_SCRIPTLET_MASK = '#$#';
+    var ABP_SCRIPTLET_EXCEPTION_MASK = '#@$#';
+    /**
+     * AdGuard CSS rule mask
+     */
+
+    var ADG_CSS_MASK_REG = /#@?\$#.+?\s*\{.*\}\s*$/g;
+    /**
+     * Checks is AdGuard scriptlet rule
+     * @param {string} rule rule text
+     */
+
+    var isAdgScriptletRule = function isAdgScriptletRule(rule) {
+      return !isComment(rule) && rule.indexOf(ADG_SCRIPTLET_MASK) > -1;
+    };
+    /**
+     * Checks is uBO scriptlet rule
+     * @param {string} rule rule text
+     */
+
+    var isUboScriptletRule = function isUboScriptletRule(rule) {
+      return (rule.indexOf(UBO_SCRIPTLET_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_MASK_2) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_2) > -1) && UBO_SCRIPTLET_MASK_REG.test(rule) && !isComment(rule);
+    };
+    /**
+     * Checks is AdBlock Plus snippet
+     * @param {string} rule rule text
+     */
+
+    var isAbpSnippetRule = function isAbpSnippetRule(rule) {
+      return (rule.indexOf(ABP_SCRIPTLET_MASK) > -1 || rule.indexOf(ABP_SCRIPTLET_EXCEPTION_MASK) > -1) && rule.search(ADG_CSS_MASK_REG) === -1 && !isComment(rule);
+    };
+    var validAdgRedirects = redirects.filter(function (el) {
+      return el.adg;
+    });
+    /**
+     * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
+     * It's used for UBO -> ADG  converting
+     */
+
+    var uboToAdgCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
+      return el.ubo;
+    }).map(function (el) {
+      return [el.ubo, el.adg];
+    }));
+    /**
+     * Compatibility object where KEYS = ABP redirect names and VALUES = ADG redirect names
+     * It's used for ABP -> ADG  converting
+     */
+
+    var abpToAdgCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
+      return el.abp;
+    }).map(function (el) {
+      return [el.abp, el.adg];
+    }));
+    /**
+     * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
+     * It's used for ADG -> UBO  converting
+     */
+
+    var adgToUboCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
+      return el.ubo;
+    }).map(function (el) {
+      return [el.adg, el.ubo];
+    }));
+
+    function _arrayWithHoles(arr) {
+      if (Array.isArray(arr)) return arr;
+    }
+
+    var arrayWithHoles = _arrayWithHoles;
+
+    function _iterableToArray(iter) {
+      if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+    }
+
+    var iterableToArray = _iterableToArray;
+
+    function _nonIterableRest() {
+      throw new TypeError("Invalid attempt to destructure non-iterable instance");
+    }
+
+    var nonIterableRest = _nonIterableRest;
+
+    function _toArray(arr) {
+      return arrayWithHoles(arr) || iterableToArray(arr) || nonIterableRest();
+    }
+
+    var toArray = _toArray;
 
     /* eslint-disable max-len */
 
@@ -2830,7 +2926,6 @@
         jsonPrune: jsonPrune
     });
 
-    var COMMENT_MARKER = '!';
     /**
      * AdGuard scriptlet rule
      */
@@ -2843,28 +2938,12 @@
     /**
      * uBlock scriptlet rule mask
      */
-
-    var UBO_SCRIPTLET_MASK_REG = /#@?#script:inject|#@?#\s*\+js/;
-    var UBO_SCRIPTLET_MASK_1 = '##+js';
-    var UBO_SCRIPTLET_MASK_2 = '##script:inject';
-    var UBO_SCRIPTLET_EXCEPTION_MASK_1 = '#@#+js';
-    var UBO_SCRIPTLET_EXCEPTION_MASK_2 = '#@#script:inject'; // eslint-disable-next-line no-template-curly-in-string
+    // eslint-disable-next-line no-template-curly-in-string
 
     var UBO_SCRIPTLET_TEMPLATE = '${domains}##+js(${args})'; // eslint-disable-next-line no-template-curly-in-string
 
     var UBO_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@#+js(${args})';
     var UBO_ALIAS_NAME_MARKER = 'ubo-';
-    /**
-     * AdBlock Plus snippet rule mask
-     */
-
-    var ABP_SCRIPTLET_MASK = '#$#';
-    var ABP_SCRIPTLET_EXCEPTION_MASK = '#@$#';
-    /**
-     * AdGuard CSS rule mask
-     */
-
-    var ADG_CSS_MASK_REG = /#@?\$#.+?\s*\{.*\}\s*$/g;
     /**
      * Returns array of strings separated by space which not in quotes
      * @param {string} str
@@ -2889,46 +2968,12 @@
       }, str);
     };
     /**
-     * Checks if rule text is comment e.g. !!example.org##+js(set-constant.js, test, false)
-     * @param {string} rule
-     * @return {boolean}
-     */
-
-
-    var isComment = function isComment(rule) {
-      return startsWith(rule, COMMENT_MARKER);
-    };
-    /**
-     * Checks is AdGuard scriptlet rule
-     * @param {string} rule rule text
-     */
-
-
-    var isAdgScriptletRule = function isAdgScriptletRule(rule) {
-      return !isComment(rule) && rule.indexOf(ADG_SCRIPTLET_MASK) > -1;
-    };
-    /**
-     * Checks is uBO scriptlet rule
-     * @param {string} rule rule text
-     */
-
-    var isUboScriptletRule = function isUboScriptletRule(rule) {
-      return (rule.indexOf(UBO_SCRIPTLET_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_MASK_2) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_2) > -1) && UBO_SCRIPTLET_MASK_REG.test(rule) && !isComment(rule);
-    };
-    /**
-     * Checks is AdBlock Plus snippet
-     * @param {string} rule rule text
-     */
-
-    var isAbpSnippetRule = function isAbpSnippetRule(rule) {
-      return (rule.indexOf(ABP_SCRIPTLET_MASK) > -1 || rule.indexOf(ABP_SCRIPTLET_EXCEPTION_MASK) > -1) && rule.search(ADG_CSS_MASK_REG) === -1 && !isComment(rule);
-    };
-    /**
      * Converts string of UBO scriptlet rule to AdGuard scritlet rule
      * @param {String} rule - UBO scriptlet rule
      */
 
-    var convertUboToAdg = function convertUboToAdg(rule) {
+
+    var convertUboScriptletToAdg = function convertUboScriptletToAdg(rule) {
       var domains = getBeforeRegExp(rule, UBO_SCRIPTLET_MASK_REG);
       var mask = rule.match(UBO_SCRIPTLET_MASK_REG)[0];
       var template;
@@ -2951,11 +2996,11 @@
       return [adgRule];
     };
     /**
-     * Convert string of ABP scriptlet rule to AdGuard scritlet rule
+     * Convert string of ABP snippet rule to AdGuard scritlet rule
      * @param {String} rule - ABP scriptlet rule
      */
 
-    var convertAbpToAdg = function convertAbpToAdg(rule) {
+    var convertAbpSnippetToAdg = function convertAbpSnippetToAdg(rule) {
       var SEMICOLON_DIVIDER = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
       var mask = rule.indexOf(ABP_SCRIPTLET_MASK) > -1 ? ABP_SCRIPTLET_MASK : ABP_SCRIPTLET_EXCEPTION_MASK;
       var template = mask === ABP_SCRIPTLET_MASK ? ADGUARD_SCRIPTLET_TEMPLATE : ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
@@ -2985,9 +3030,9 @@
       var result;
 
       if (isUboScriptletRule(rule)) {
-        result = convertUboToAdg(rule);
+        result = convertUboScriptletToAdg(rule);
       } else if (isAbpSnippetRule(rule)) {
-        result = convertAbpToAdg(rule);
+        result = convertAbpSnippetToAdg(rule);
       } else if (isAdgScriptletRule(rule) || isComment(rule)) {
         result = rule;
       }
@@ -3000,7 +3045,7 @@
      * @returns {String} - UBO scriptlet rule
      */
 
-    var convertAdgToUbo = function convertAdgToUbo(rule) {
+    var convertAdgScriptletToUbo = function convertAdgScriptletToUbo(rule) {
       var res;
 
       if (isAdgScriptletRule(rule)) {
@@ -3146,10 +3191,10 @@
       isAdgScriptletRule: isAdgScriptletRule,
       isUboScriptletRule: isUboScriptletRule,
       isAbpSnippetRule: isAbpSnippetRule,
-      convertUboToAdg: convertUboToAdg,
-      convertAbpToAdg: convertAbpToAdg,
+      convertUboToAdg: convertUboScriptletToAdg,
+      convertAbpToAdg: convertAbpSnippetToAdg,
       convertScriptletToAdg: convertScriptletToAdg,
-      convertAdgToUbo: convertAdgToUbo
+      convertAdgToUbo: convertAdgScriptletToUbo
     };
 
     scriptlets = scriptlets$1;

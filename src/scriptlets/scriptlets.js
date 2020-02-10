@@ -9,10 +9,13 @@ import {
     isAdgScriptletRule,
     isUboScriptletRule,
     isAbpSnippetRule,
-    convertUboToAdg,
-    convertAbpToAdg,
+} from '../helpers/validator';
+
+import {
+    convertUboScriptletToAdg,
+    convertAbpSnippetToAdg,
     convertScriptletToAdg,
-    convertAdgToUbo,
+    convertAdgScriptletToUbo,
 } from '../helpers/converter';
 
 import { parseRule } from '../helpers/parse-rule';
@@ -104,10 +107,10 @@ const scriptlets = {
     isAdgScriptletRule,
     isUboScriptletRule,
     isAbpSnippetRule,
-    convertUboToAdg,
-    convertAbpToAdg,
+    convertUboToAdg: convertUboScriptletToAdg,
+    convertAbpToAdg: convertAbpSnippetToAdg,
     convertScriptletToAdg,
-    convertAdgToUbo,
+    convertAdgToUbo: convertAdgScriptletToUbo,
 };
 
 export default scriptlets;

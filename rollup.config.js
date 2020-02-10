@@ -4,6 +4,7 @@ import babel from 'rollup-plugin-babel';
 import cleanup from 'rollup-plugin-cleanup';
 import copy from 'rollup-plugin-copy';
 import clear from 'rollup-plugin-clear';
+import json from 'rollup-plugin-json';
 
 import project from './package.json';
 
@@ -47,6 +48,12 @@ const mainConfig = {
         commonjs({
             include: 'node_modules/**',
         }),
+        json({
+            preferConst: true,
+            indent: '  ',
+            compact: true,
+            namedExports: true,
+        }),
         babel({
             exclude: 'node_modules/**',
             runtimeHelpers: true,
@@ -71,6 +78,12 @@ const cjsConfig = {
         resolve(),
         commonjs({
             include: 'node_modules/**',
+        }),
+        json({
+            preferConst: true,
+            indent: '  ',
+            compact: true,
+            namedExports: true,
         }),
         babel({
             exclude: 'node_modules/**',
@@ -97,6 +110,12 @@ const testConfig = {
         resolve(),
         commonjs({
             include: 'node_modules/**',
+        }),
+        json({
+            preferConst: true,
+            indent: '  ',
+            compact: true,
+            namedExports: true,
         }),
         babel({
             exclude: 'node_modules/**',
@@ -138,6 +157,12 @@ const testLibConfig = {
         commonjs({
             include: 'node_modules/**',
         }),
+        json({
+            preferConst: true,
+            indent: '  ',
+            compact: true,
+            namedExports: true,
+        }),
         babel({
             exclude: 'node_modules/**',
             runtimeHelpers: true,
@@ -173,6 +198,12 @@ const tmpRedirectsConfig = {
         resolve(),
         commonjs({
             include: 'node_modules/**',
+        }),
+        json({
+            preferConst: true,
+            indent: '  ',
+            compact: true,
+            namedExports: true,
         }),
         babel({
             exclude: 'node_modules/**',
