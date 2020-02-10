@@ -203,7 +203,8 @@ export const convertAdgToUbo = (rule) => {
                 const [name, ...aliases] = s.names;
                 return { name, aliases };
             })
-            .find((el) => (el.name === parsedName));
+            .find((el) => (el.name === parsedName
+                || el.aliases.indexOf(parsedName) >= 0));
 
         const { aliases } = adgScriptletObject;
 

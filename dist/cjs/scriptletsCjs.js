@@ -3020,7 +3020,7 @@ var convertAdgToUbo = function convertAdgToUbo(rule) {
         aliases: aliases
       };
     }).find(function (el) {
-      return el.name === parsedName;
+      return el.name === parsedName || el.aliases.indexOf(parsedName) >= 0;
     });
     var aliases = adgScriptletObject.aliases;
 

@@ -31,3 +31,4 @@ import './adjust-setInterval.test';
 import './adjust-setTimeout.test';
 import './dir-string.test';
 import './json-prune.test';
+import './lib-tests/index.test';
