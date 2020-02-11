@@ -684,7 +684,8 @@ example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
 
 ### <a id="remove-attr"></a> ⚡️ remove-attr
 
-Removes the specified attributes from DOM notes. This scriptlet runs NOT only once after the page load (DOMContentLoaded) but serially.
+Removes the specified attributes from DOM nodes. This scriptlet runs NOT only once after the page load (DOMContentLoaded)
+but periodically after detecting DOM tree changes.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
@@ -732,7 +733,8 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
 
 ### <a id="remove-class"></a> ⚡️ remove-class
 
-Removes the specified classes from DOM notes. This scriptlet runs NOT only once after the page load (DOMContentLoaded) but serially.
+Removes the specified classes from DOM nodes. This scriptlet runs NOT only once after the page load (DOMContentLoaded)
+but periodically after detecting DOM tree changes.
 
 **Syntax**
 ```

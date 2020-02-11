@@ -85,7 +85,7 @@ test('Adg rule: no selector', (assert) => {
         });
         assert.strictEqual(window.hit, 'FIRED');
         done();
-    }, 200);
+    }, 100);
 
     evalWrapper(resString);
 });
@@ -114,7 +114,7 @@ test('Adg rule', (assert) => {
         });
         assert.strictEqual(window.hit, 'FIRED');
         done();
-    }, 300);
+    }, 100);
 
     evalWrapper(resString);
 });

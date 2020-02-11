@@ -1,11 +1,12 @@
-import { hit, throttle } from '../helpers';
+import { hit, observeDOMChanges } from '../helpers';
 
 /* eslint-disable max-len */
 /**
  * @scriptlet remove-attr
  *
  * @description
- * Removes the specified attributes from DOM notes. This scriptlet runs NOT only once after the page load (DOMContentLoaded) but serially.
+ * Removes the specified attributes from DOM nodes. This scriptlet runs NOT only once after the page load (DOMContentLoaded)
+ * but periodically after detecting DOM tree changes.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
@@ -71,15 +72,7 @@ export function removeAttr(source, attrs, selector) {
         }
     };
 
-    const THROTTLE_DELAY_MS = 20;
-
-    const observer = new MutationObserver(throttle(rmattr, THROTTLE_DELAY_MS));
-
-    observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-    });
+    observeDOMChanges(rmattr);
 }
 
 removeAttr.names = [
@@ -88,4 +81,4 @@ removeAttr.names = [
     'ubo-remove-attr.js',
 ];
 
-removeAttr.injections = [hit, throttle];
+removeAttr.injections = [hit, observeDOMChanges];

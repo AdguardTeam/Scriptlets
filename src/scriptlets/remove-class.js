@@ -1,11 +1,12 @@
-import { hit, throttle } from '../helpers';
+import { hit, observeDOMChanges } from '../helpers';
 
 /* eslint-disable max-len */
 /**
  * @scriptlet remove-class
  *
  * @description
- * Removes the specified classes from DOM notes. This scriptlet runs NOT only once after the page load (DOMContentLoaded) but serially.
+ * Removes the specified classes from DOM nodes. This scriptlet runs NOT only once after the page load (DOMContentLoaded)
+ * but periodically after detecting DOM tree changes.
  *
  * **Syntax**
  * ```
@@ -94,19 +95,11 @@ export function removeClass(source, classNames, selector) {
         }
     };
 
-    const THROTTLE_DELAY_MS = 20;
-
-    const observer = new MutationObserver(throttle(removeClassHandler, THROTTLE_DELAY_MS));
-
-    observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-    });
+    observeDOMChanges(removeClassHandler);
 }
 
 removeClass.names = [
     'remove-class',
 ];
 
-removeClass.injections = [hit, throttle];
+removeClass.injections = [hit, observeDOMChanges];

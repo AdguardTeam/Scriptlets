@@ -261,33 +261,57 @@
       }
     };
 
-    var throttle = function throttle(method, delay) {
-      var wait = false;
-      var savedArgs;
+    /**
+     * DOM tree changes observer. Used for 'remove-attr' and 'remove-class' scriptlets
+     * @param {Function} callback 
+     */
+    var observeDOMChanges = function observeDOMChanges(callback) {
+      /**
+       * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds. 
+       * Those calls that fall into the “cooldown” period, are ignored
+       * @param {Function} method
+       * @param {Number} delay - milliseconds
+       */
+      var throttle = function throttle(method, delay) {
+        var wait = false;
+        var savedArgs;
 
-      var wrapper = function wrapper() {
-        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-          args[_key] = arguments[_key];
-        }
-
-        if (wait) {
-          savedArgs = args;
-          return;
-        }
-
-        method.apply(void 0, args);
-        wait = true;
-        setTimeout(function () {
-          wait = false;
-
-          if (savedArgs) {
-            wrapper(savedArgs);
-            savedArgs = null;
+        var wrapper = function wrapper() {
+          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
           }
-        }, delay);
-      };
 
-      return wrapper;
+          if (wait) {
+            savedArgs = args;
+            return;
+          }
+
+          method.apply(void 0, args);
+          wait = true;
+          setTimeout(function () {
+            wait = false;
+
+            if (savedArgs) {
+              wrapper(savedArgs);
+              savedArgs = null;
+            }
+          }, delay);
+        };
+
+        return wrapper;
+      };
+      /**
+       * 'delay' in milliseconds for 'throttle' method
+       */
+
+
+      var THROTTLE_DELAY_MS = 20;
+      var observer = new MutationObserver(throttle(callback, THROTTLE_DELAY_MS));
+      observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: true
+      });
     };
 
     /**
@@ -314,7 +338,7 @@
         noopArray: noopArray,
         noopStr: noopStr,
         hit: hit,
-        throttle: throttle
+        observeDOMChanges: observeDOMChanges
     });
 
     /**
@@ -2252,7 +2276,8 @@
      * @scriptlet remove-attr
      *
      * @description
-     * Removes the specified attributes from DOM notes. This scriptlet runs NOT only once after the page load (DOMContentLoaded) but serially.
+     * Removes the specified attributes from DOM nodes. This scriptlet runs NOT only once after the page load (DOMContentLoaded)
+     * but periodically after detecting DOM tree changes.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
@@ -2325,16 +2350,10 @@
         }
       };
 
-      var THROTTLE_DELAY_MS = 20;
-      var observer = new MutationObserver(throttle(rmattr, THROTTLE_DELAY_MS));
-      observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-        attributes: true
-      });
+      observeDOMChanges(rmattr);
     }
     removeAttr.names = ['remove-attr', 'remove-attr.js', 'ubo-remove-attr.js'];
-    removeAttr.injections = [hit, throttle];
+    removeAttr.injections = [hit, observeDOMChanges];
 
     /* eslint-disable max-len */
 
@@ -2342,7 +2361,8 @@
      * @scriptlet remove-class
      *
      * @description
-     * Removes the specified classes from DOM notes. This scriptlet runs NOT only once after the page load (DOMContentLoaded) but serially.
+     * Removes the specified classes from DOM nodes. This scriptlet runs NOT only once after the page load (DOMContentLoaded)
+     * but periodically after detecting DOM tree changes.
      *
      * **Syntax**
      * ```
@@ -2439,16 +2459,10 @@
         }
       };
 
-      var THROTTLE_DELAY_MS = 20;
-      var observer = new MutationObserver(throttle(removeClassHandler, THROTTLE_DELAY_MS));
-      observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-        attributes: true
-      });
+      observeDOMChanges(removeClassHandler);
     }
     removeClass.names = ['remove-class'];
-    removeClass.injections = [hit, throttle];
+    removeClass.injections = [hit, observeDOMChanges];
 
     /**
      * @scriptlet disable-newtab-links
