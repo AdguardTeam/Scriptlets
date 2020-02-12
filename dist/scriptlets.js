@@ -263,11 +263,14 @@
 
     /**
      * DOM tree changes observer. Used for 'remove-attr' and 'remove-class' scriptlets
-     * @param {Function} callback 
+     * @param {Function} callback
+     * @param {Boolean} observeAttrs - optional parameter - should observer check attibutes changes
      */
     var observeDOMChanges = function observeDOMChanges(callback) {
+      var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
       /**
-       * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds. 
+       * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
        * Those calls that fall into the “cooldown” period, are ignored
        * @param {Function} method
        * @param {Number} delay - milliseconds
@@ -307,11 +310,28 @@
 
       var THROTTLE_DELAY_MS = 20;
       var observer = new MutationObserver(throttle(callback, THROTTLE_DELAY_MS));
-      observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-        attributes: true
-      });
+      var finalProps; // if (observeAttrs) {
+      //     finalProps = Object.assign(defaultObserveProps, attributes);
+      // } else {
+      //     finalProps = defaultObserveProps;
+      // }
+
+      if (observeAttrs) {
+        finalProps = {
+          childList: true,
+          subtree: true,
+          attributes: true
+        };
+      } else {
+        finalProps = {
+          childList: true,
+          subtree: true
+        };
+      } // const finalProps = !observeAttrs ? defaultObserveProps : defaultObserveProps.attributes = 'true';
+
+
+      console.log(finalProps);
+      observer.observe(document.documentElement, finalProps);
     };
 
     /**
@@ -2350,7 +2370,7 @@
         }
       };
 
-      observeDOMChanges(rmattr);
+      observeDOMChanges(rmattr, true);
     }
     removeAttr.names = ['remove-attr', 'remove-attr.js', 'ubo-remove-attr.js'];
     removeAttr.injections = [hit, observeDOMChanges];
