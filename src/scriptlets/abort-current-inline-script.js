@@ -139,6 +139,8 @@ abortCurrentInlineScript.names = [
     'abort-current-inline-script',
     'abort-current-inline-script.js',
     'ubo-abort-current-inline-script.js',
+    'acis.js',
+    'ubo-acis.js',
     'abp-abort-current-inline-script',
 ];
 

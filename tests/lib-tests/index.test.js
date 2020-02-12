@@ -31,18 +31,30 @@ test('Test Adguard scriptlet rule exception', (assert) => {
 
 test('Test converter Ubo scriptlet rule', (assert) => {
     // blocking rule
-    const rule = 'example.org##+js(setTimeout-defuser.js, [native code], 8000)';
-    const exp = 'example.org#%#//scriptlet("ubo-setTimeout-defuser.js", "[native code]", "8000")';
-    const res = convertScriptletToAdg(rule);
-    assert.equal(res, exp);
+    let blockingRule = 'example.org##+js(setTimeout-defuser.js, [native code], 8000)';
+    let expBlockRule = 'example.org#%#//scriptlet("ubo-setTimeout-defuser.js", "[native code]", "8000")';
+    assert.equal(convertScriptletToAdg(blockingRule)[0], expBlockRule);
+    // name without '.js' at the end
+    blockingRule = 'example.org##+js(addEventListener-defuser, load, 2000)';
+    expBlockRule = 'example.org#%#//scriptlet("ubo-addEventListener-defuser.js", "load", "2000")';
+    assert.equal(convertScriptletToAdg(blockingRule)[0], expBlockRule);
+    // short form of name
+    blockingRule = 'example.org##+js(nano-stb, timeDown)';
+    expBlockRule = 'example.org#%#//scriptlet("ubo-nano-stb.js", "timeDown")';
+    assert.equal(convertScriptletToAdg(blockingRule)[0], expBlockRule);
+
     // whitelist rule
     let whitelistRule = 'example.org#@#+js(setTimeout-defuser.js, [native code], 8000)';
     let expectedResult = 'example.org#@%#//scriptlet("ubo-setTimeout-defuser.js", "[native code]", "8000")';
-    assert.equal(convertScriptletToAdg(whitelistRule), expectedResult);
+    assert.equal(convertScriptletToAdg(whitelistRule)[0], expectedResult);
 
     whitelistRule = 'example.org#@#script:inject(abort-on-property-read.js, some.prop)';
     expectedResult = 'example.org#@%#//scriptlet("ubo-abort-on-property-read.js", "some.prop")';
-    assert.equal(convertScriptletToAdg(whitelistRule), expectedResult);
+    assert.equal(convertScriptletToAdg(whitelistRule)[0], expectedResult);
+
+    whitelistRule = 'example.org#@#+js(aonw, notDetected)';
+    expectedResult = 'example.org#@%#//scriptlet("ubo-aonw.js", "notDetected")';
+    assert.equal(convertScriptletToAdg(whitelistRule)[0], expectedResult);
 });
 
 test('Test converter Abp scriptlet rule', (assert) => {

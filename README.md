@@ -182,7 +182,7 @@ scriptlets.convertAbpToAdg(rule);
 /**
 * Checks is any scriptlet rule and converts to AdGuard
 * @param {String} rule - rule text
-* @returns {Array} - array of AdGuard scriptlet rule - one item for Adg and Ubo or few items for Abp
+* @returns {Array} - array of AdGuard scriptlet rules - one item for Adg and Ubo or few items for Abp
 */
 scriptlets.convertScriptletToAdg(rule);
 ```
