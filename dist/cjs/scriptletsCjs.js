@@ -4,6 +4,8 @@
  * Version 1.1.3
  */
 
+Object.defineProperty(exports, '__esModule', { value: true });
+
 /**
  * Generate random six symbols id
  */
@@ -3136,11 +3138,17 @@ function getScriptletCode(source) {
 function isValidScriptletRule(input) {
   if (!input) {
     return false;
-  }
+  } // ABP 'input' rule may contain more than one snippet
 
-  var rule = convertScriptletToAdg(input);
-  var parsedRule = parseRule(rule);
-  return isValidScriptletName(parsedRule.name);
+
+  var rulesArray = convertScriptletToAdg(input); // checking if each of parsed scriptlets is valid
+  // if at least one of them is not valid - whole 'input' rule is not valid too
+
+  var isValid = rulesArray.reduce(function (acc, rule) {
+    var parsedRule = parseRule(rule);
+    return isValidScriptletName(parsedRule.name) && acc;
+  }, true);
+  return isValid;
 }
 /**
  * Global scriptlet variable
@@ -3149,7 +3157,6 @@ function isValidScriptletRule(input) {
  * `invoke` method receives one argument with `Source` type
  * `validate` method receives one argument with `String` type
  */
-
 
 var scriptlets = {
   invoke: getScriptletCode,
@@ -3164,7 +3171,8 @@ var scriptlets = {
   convertAdgToUbo: convertAdgToUbo
 };
 
-module.exports = scriptlets;
+exports.default = scriptlets;
+exports.isValidScriptletRule = isValidScriptletRule;
 
 /**
  * -------------------------------------------

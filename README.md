@@ -118,7 +118,7 @@ yarn browserstack
 
 #### Scriptlets library
 
-Finally we have build Scriptlets as a CJS module which can be imported from `dist/cjs/scriptletsCjs.js`.
+You are welcome to use Scriptlets as a CJS module. It can be imported from `dist/cjs/scriptletsCjs.js`.
 
 And also there is a module at `dist/scriptlets.js` which has been exported to a global variable `scriptlets` with such methods:
 
@@ -143,6 +143,9 @@ scriptlets.validateName(name);
 ```javascript
 /**
 * Validates any scriptlet rule
+*
+* ADG or UBO rule is single-scriptlet, but ABP rule may contain more than one snippet
+* so if at least one of them is not valid - whole 'input' rule is not valid too.
 * @param {string} input - can be Adguard or Ubo or Abp scriptlet rule
 * @returns {boolean}
 */
