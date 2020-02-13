@@ -77,16 +77,21 @@ function getScriptletCode(source) {
  * Validates any scriptlet rule
  * @param {string} input - can be Adguard or Ubo or Abp scriptlet rule
  */
-function isValidScriptletRule(input) {
+export function isValidScriptletRule(input) {
     if (!input) {
         return false;
     }
+    // ABP 'input' rule may contain more than one snippet
+    const rulesArray = convertScriptletToAdg(input);
 
-    const rule = convertScriptletToAdg(input);
+    // checking if each of parsed scriptlets is valid
+    // if at least one of them is not valid - whole 'input' rule is not valid too
+    const isValid = rulesArray.reduce((acc, rule) => {
+        const parsedRule = parseRule(rule);
+        return isValidScriptletName(parsedRule.name) && acc;
+    }, true);
 
-    const parsedRule = parseRule(rule);
-
-    return isValidScriptletName(parsedRule.name);
+    return isValid;
 }
 
 
