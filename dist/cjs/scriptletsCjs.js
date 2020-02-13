@@ -226,7 +226,7 @@ var noopStr = function noopStr() {
 /**
  * Hit used only for debug purposes now
  * @param {Source} source
- * @param {String} message optional message
+ * @param {string} message optional message
  */
 var hit = function hit(source, message) {
   if (source.verbose !== true) {
@@ -2924,7 +2924,7 @@ var isAbpSnippetRule = function isAbpSnippetRule(rule) {
 };
 /**
  * Converts string of UBO scriptlet rule to AdGuard scritlet rule
- * @param {String} rule - UBO scriptlet rule
+ * @param {string} rule - UBO scriptlet rule
  * @returns {Array} - array with one AdGuard scriptlet rule
  */
 
@@ -2960,7 +2960,7 @@ var convertUboToAdg = function convertUboToAdg(rule) {
 };
 /**
  * Convert string of ABP scriptlet rule to AdGuard scritlet rule
- * @param {String} rule - ABP scriptlet rule
+ * @param {string} rule - ABP scriptlet rule
  * @returns {Array} - array of AdGuard scriptlet rules -
  * one or few items depends on Abp-rule
  */
@@ -2988,8 +2988,9 @@ var convertAbpToAdg = function convertAbpToAdg(rule) {
 };
 /**
  * Converts scriptlet rule to AdGuard one
- * @param {String} rule
- * @returns {Array} - array of AdGuard scriptlet rules - one item for Adg and Ubo or few items for Abp
+ * @param {string} rule
+ * @returns {Array} - array of AdGuard scriptlet rules -
+ * one item for Adg and Ubo or few items for Abp
  */
 
 var convertScriptletToAdg = function convertScriptletToAdg(rule) {
@@ -3007,8 +3008,8 @@ var convertScriptletToAdg = function convertScriptletToAdg(rule) {
 };
 /**
  * Converts UBO scriptlet rule to AdGuard one
- * @param {String} rule - AdGuard scriptlet rule
- * @returns {String} - UBO scriptlet rule
+ * @param {string} rule - AdGuard scriptlet rule
+ * @returns {string} - UBO scriptlet rule
  */
 
 var convertAdgToUbo = function convertAdgToUbo(rule) {
@@ -3092,7 +3093,7 @@ function getScriptletByName(name) {
 }
 /**
  * Checks if the scriptlet name is valid
- * @param {String} name - Scriptlet name
+ * @param {string} name - Scriptlet name
  */
 
 
@@ -3128,7 +3129,7 @@ function getScriptletCode(source) {
 }
 /**
  * Validates any scriptlet rule
- * @param {String} input - can be Adguard or Ubo or Abp scriptlet rule
+ * @param {string} input - can be Adguard or Ubo or Abp scriptlet rule
  */
 
 

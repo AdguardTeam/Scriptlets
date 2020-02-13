@@ -42,7 +42,7 @@ function getScriptletByName(name) {
 
 /**
  * Checks if the scriptlet name is valid
- * @param {String} name - Scriptlet name
+ * @param {string} name - Scriptlet name
  */
 function isValidScriptletName(name) {
     if (!name) {
@@ -75,7 +75,7 @@ function getScriptletCode(source) {
 
 /**
  * Validates any scriptlet rule
- * @param {String} input - can be Adguard or Ubo or Abp scriptlet rule
+ * @param {string} input - can be Adguard or Ubo or Abp scriptlet rule
  */
 function isValidScriptletRule(input) {
     if (!input) {

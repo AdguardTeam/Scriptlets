@@ -120,7 +120,7 @@ export const isAbpSnippetRule = (rule) => {
 
 /**
  * Converts string of UBO scriptlet rule to AdGuard scritlet rule
- * @param {String} rule - UBO scriptlet rule
+ * @param {string} rule - UBO scriptlet rule
  * @returns {Array} - array with one AdGuard scriptlet rule
  */
 export const convertUboToAdg = (rule) => {
@@ -154,7 +154,7 @@ export const convertUboToAdg = (rule) => {
 
 /**
  * Convert string of ABP scriptlet rule to AdGuard scritlet rule
- * @param {String} rule - ABP scriptlet rule
+ * @param {string} rule - ABP scriptlet rule
  * @returns {Array} - array of AdGuard scriptlet rules -
  * one or few items depends on Abp-rule
  */
@@ -180,7 +180,7 @@ export const convertAbpToAdg = (rule) => {
 
 /**
  * Converts scriptlet rule to AdGuard one
- * @param {String} rule
+ * @param {string} rule
  * @returns {Array} - array of AdGuard scriptlet rules -
  * one item for Adg and Ubo or few items for Abp
  */
@@ -199,8 +199,8 @@ export const convertScriptletToAdg = (rule) => {
 
 /**
  * Converts UBO scriptlet rule to AdGuard one
- * @param {String} rule - AdGuard scriptlet rule
- * @returns {String} - UBO scriptlet rule
+ * @param {string} rule - AdGuard scriptlet rule
+ * @returns {string} - UBO scriptlet rule
  */
 export const convertAdgToUbo = (rule) => {
     let res;
