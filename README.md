@@ -125,7 +125,7 @@ And also there is a module at `dist/scriptlets.js` which has been exported to a 
 ```javascript
 /**
 * Returns scriptlet code
-* @param {source} source
+* @param {Source} source
 * @returns {string}
 */
 scriptlets.invoke(source);
