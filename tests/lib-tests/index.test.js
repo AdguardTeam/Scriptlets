@@ -21,6 +21,7 @@ test('Test scriptlet rule validation', (assert) => {
 
     inputRule = 'example.org#@%#//scriptlet("ubo-aopw.js", "notDetected")';
     assert.strictEqual(isValidScriptletRule(inputRule), true);
+
     // invalid scriptlet name
     inputRule = 'example.org#@%#//scriptlet("ubo-abort-scriptlet.js", "notDetected")';
     assert.strictEqual(isValidScriptletRule(inputRule), false);
