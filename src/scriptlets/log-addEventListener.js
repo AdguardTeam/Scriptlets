@@ -30,6 +30,8 @@ logAddEventListener.names = [
     'log-addEventListener',
     'addEventListener-logger.js',
     'ubo-addEventListener-logger.js',
+    'aell.js',
+    'ubo-aell.js',
 ];
 
 logAddEventListener.injections = [hit];

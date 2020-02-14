@@ -1,8 +1,10 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.1.2
+ * Version 1.1.3
  */
+
+Object.defineProperty(exports, '__esModule', { value: true });
 
 /**
  * Generate random six symbols id
@@ -226,7 +228,7 @@ var noopStr = function noopStr() {
 /**
  * Hit used only for debug purposes now
  * @param {Source} source
- * @param {String} message optional message
+ * @param {string} message optional message
  */
 var hit = function hit(source, message) {
   if (source.verbose !== true) {
@@ -651,7 +653,7 @@ function abortOnPropertyRead(source, property) {
   setChainPropAccess(window, property);
   window.onerror = createOnErrorHandler(rid).bind();
 }
-abortOnPropertyRead.names = ['abort-on-property-read', 'abort-on-property-read.js', 'ubo-abort-on-property-read.js', 'abp-abort-on-property-read'];
+abortOnPropertyRead.names = ['abort-on-property-read', 'abort-on-property-read.js', 'ubo-abort-on-property-read.js', 'aopr.js', 'ubo-aopr.js', 'abp-abort-on-property-read'];
 abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
 /* eslint-disable max-len */
@@ -730,7 +732,7 @@ function abortOnPropertyWrite(source, property) {
   setChainPropAccess(window, property);
   window.onerror = createOnErrorHandler(rid).bind();
 }
-abortOnPropertyWrite.names = ['abort-on-property-write', 'abort-on-property-write.js', 'ubo-abort-on-property-write.js', 'abp-abort-on-property-write'];
+abortOnPropertyWrite.names = ['abort-on-property-write', 'abort-on-property-write.js', 'ubo-abort-on-property-write.js', 'aopw.js', 'ubo-aopw.js', 'abp-abort-on-property-write'];
 abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
 /* eslint-disable max-len */
@@ -805,7 +807,7 @@ function preventSetTimeout(source, match, delay) {
 
   window.setTimeout = timeoutWrapper;
 }
-preventSetTimeout.names = ['prevent-setTimeout', 'setTimeout-defuser.js', 'ubo-setTimeout-defuser.js'];
+preventSetTimeout.names = ['prevent-setTimeout', 'setTimeout-defuser.js', 'ubo-setTimeout-defuser.js', 'std.js', 'ubo-std.js'];
 preventSetTimeout.injections = [toRegExp, hit];
 
 /* eslint-disable max-len */
@@ -880,7 +882,7 @@ function preventSetInterval(source, match, interval) {
 
   window.setInterval = intervalWrapper;
 }
-preventSetInterval.names = ['prevent-setInterval', 'setInterval-defuser.js', 'ubo-setInterval-defuser.js'];
+preventSetInterval.names = ['prevent-setInterval', 'setInterval-defuser.js', 'ubo-setInterval-defuser.js', 'sid.js', 'ubo-sid.js'];
 preventSetInterval.injections = [toRegExp, hit];
 
 /* eslint-disable max-len */
@@ -1085,7 +1087,7 @@ function abortCurrentInlineScript(source, property) {
   setChainPropAccess(window, property);
   window.onerror = createOnErrorHandler(rid).bind();
 }
-abortCurrentInlineScript.names = ['abort-current-inline-script', 'abort-current-inline-script.js', 'ubo-abort-current-inline-script.js', 'abp-abort-current-inline-script'];
+abortCurrentInlineScript.names = ['abort-current-inline-script', 'abort-current-inline-script.js', 'ubo-abort-current-inline-script.js', 'acis.js', 'ubo-acis.js', 'abp-abort-current-inline-script'];
 abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit];
 
 /* eslint-disable max-len */
@@ -1232,7 +1234,7 @@ function setConstant(source, property, value) {
 
   setChainPropAccess(window, property);
 }
-setConstant.names = ['set-constant', 'set-constant.js', 'ubo-set-constant.js'];
+setConstant.names = ['set-constant', 'set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js'];
 setConstant.injections = [getPropertyInChain, setPropertyAccess, hit];
 
 /* eslint-disable max-len */
@@ -1384,7 +1386,7 @@ function preventAddEventListener(source, event, funcStr) {
 
   window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
 }
-preventAddEventListener.names = ['prevent-addEventListener', 'addEventListener-defuser.js', 'ubo-addEventListener-defuser.js'];
+preventAddEventListener.names = ['prevent-addEventListener', 'addEventListener-defuser.js', 'ubo-addEventListener-defuser.js', 'aeld.js', 'ubo-aeld.js'];
 preventAddEventListener.injections = [toRegExp, hit];
 
 /* eslint-disable consistent-return, no-eval */
@@ -1466,7 +1468,7 @@ function preventBab(source) {
     }
   };
 }
-preventBab.names = ['prevent-bab', 'bab-defuser.js', 'ubo-bab-defuser.js'];
+preventBab.names = ['prevent-bab', 'bab-defuser.js', 'ubo-bab-defuser.js', 'nobab.js', 'ubo-nobab.js'];
 preventBab.injections = [hit];
 
 /* eslint-disable no-unused-vars, no-extra-bind, func-names */
@@ -1562,7 +1564,7 @@ function logAddEventListener(source) {
 
   window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
 }
-logAddEventListener.names = ['log-addEventListener', 'addEventListener-logger.js', 'ubo-addEventListener-logger.js'];
+logAddEventListener.names = ['log-addEventListener', 'addEventListener-logger.js', 'ubo-addEventListener-logger.js', 'aell.js', 'ubo-aell.js'];
 logAddEventListener.injections = [hit];
 
 /* eslint-disable no-console */
@@ -1812,7 +1814,7 @@ function preventFab(source) {
 
   window.fuckAdBlock = window.blockAdBlock = new Fab();
 }
-preventFab.names = ['prevent-fab-3.2.0', 'fuckadblock.js-3.2.0', 'ubo-fuckadblock.js-3.2.0'];
+preventFab.names = ['prevent-fab-3.2.0', 'fuckadblock.js-3.2.0', 'ubo-fuckadblock.js-3.2.0', 'nofab.js', 'ubo-nofab.js'];
 preventFab.injections = [noop, hit];
 
 /* eslint-disable no-console, func-names, no-multi-assign */
@@ -2304,7 +2306,7 @@ function removeAttr(source, attrs, selector) {
     rmattr();
   }
 }
-removeAttr.names = ['remove-attr', 'remove-attr.js', 'ubo-remove-attr.js'];
+removeAttr.names = ['remove-attr', 'remove-attr.js', 'ubo-remove-attr.js', 'ra.js', 'ubo-ra.js'];
 removeAttr.injections = [hit];
 
 /* eslint-disable max-len */
@@ -2536,7 +2538,7 @@ function adjustSetInterval(source, match, interval, boost) {
 
   window.setInterval = intervalWrapper;
 }
-adjustSetInterval.names = ['adjust-setInterval', 'nano-setInterval-booster.js', 'ubo-nano-setInterval-booster.js'];
+adjustSetInterval.names = ['adjust-setInterval', 'nano-setInterval-booster.js', 'ubo-nano-setInterval-booster.js', 'nano-sib.js', 'ubo-nano-sib.js'];
 adjustSetInterval.injections = [toRegExp, hit];
 
 /* eslint-disable max-len */
@@ -2618,7 +2620,7 @@ function adjustSetTimeout(source, match, timeout, boost) {
 
   window.setTimeout = timeoutWrapper;
 }
-adjustSetTimeout.names = ['adjust-setTimeout', 'nano-setTimeout-booster.js', 'ubo-nano-setTimeout-booster.js'];
+adjustSetTimeout.names = ['adjust-setTimeout', 'nano-setTimeout-booster.js', 'ubo-nano-setTimeout-booster.js', 'nano-stb.js', 'ubo-nano-stb.js'];
 adjustSetTimeout.injections = [toRegExp, hit];
 
 /* eslint-disable max-len */
@@ -2924,7 +2926,8 @@ var isAbpSnippetRule = function isAbpSnippetRule(rule) {
 };
 /**
  * Converts string of UBO scriptlet rule to AdGuard scritlet rule
- * @param {String} rule - UBO scriptlet rule
+ * @param {string} rule - UBO scriptlet rule
+ * @returns {Array} - array with one AdGuard scriptlet rule
  */
 
 var convertUboToAdg = function convertUboToAdg(rule) {
@@ -2939,7 +2942,15 @@ var convertUboToAdg = function convertUboToAdg(rule) {
   }
 
   var args = getStringInBraces(rule).split(/, /g).map(function (arg, index) {
-    return index === 0 ? "ubo-".concat(arg) : arg;
+    var outputArg;
+
+    if (index === 0) {
+      outputArg = arg.indexOf('.js') > -1 ? "ubo-".concat(arg) : "ubo-".concat(arg, ".js");
+    } else {
+      outputArg = arg;
+    }
+
+    return outputArg;
   }).map(function (arg) {
     return wrapInDoubleQuotes(arg);
   }).join(', ');
@@ -2951,7 +2962,9 @@ var convertUboToAdg = function convertUboToAdg(rule) {
 };
 /**
  * Convert string of ABP scriptlet rule to AdGuard scritlet rule
- * @param {String} rule - ABP scriptlet rule
+ * @param {string} rule - ABP scriptlet rule
+ * @returns {Array} - array of AdGuard scriptlet rules -
+ * one or few items depends on Abp-rule
  */
 
 var convertAbpToAdg = function convertAbpToAdg(rule) {
@@ -2977,7 +2990,9 @@ var convertAbpToAdg = function convertAbpToAdg(rule) {
 };
 /**
  * Converts scriptlet rule to AdGuard one
- * @param {*} rule
+ * @param {string} rule
+ * @returns {Array} - array of AdGuard scriptlet rules -
+ * one item for Adg and Ubo or few items for Abp
  */
 
 var convertScriptletToAdg = function convertScriptletToAdg(rule) {
@@ -2988,15 +3003,15 @@ var convertScriptletToAdg = function convertScriptletToAdg(rule) {
   } else if (isAbpSnippetRule(rule)) {
     result = convertAbpToAdg(rule);
   } else if (isAdgScriptletRule(rule) || isComment(rule)) {
-    result = rule;
+    result = [rule];
   }
 
   return result;
 };
 /**
  * Converts UBO scriptlet rule to AdGuard one
- * @param {String} rule - AdGuard scriptlet rule
- * @returns {String} - UBO scriptlet rule
+ * @param {string} rule - AdGuard scriptlet rule
+ * @returns {string} - UBO scriptlet rule
  */
 
 var convertAdgToUbo = function convertAdgToUbo(rule) {
@@ -3080,7 +3095,7 @@ function getScriptletByName(name) {
 }
 /**
  * Checks if the scriptlet name is valid
- * @param {String} name - Scriptlet name
+ * @param {string} name - Scriptlet name
  */
 
 
@@ -3116,18 +3131,24 @@ function getScriptletCode(source) {
 }
 /**
  * Validates any scriptlet rule
- * @param {String} input - can be Adguard or Ubo or Abp scriptlet rule
+ * @param {string} input - can be Adguard or Ubo or Abp scriptlet rule
  */
 
 
 function isValidScriptletRule(input) {
   if (!input) {
     return false;
-  }
+  } // ABP 'input' rule may contain more than one snippet
 
-  var rule = convertScriptletToAdg(input);
-  var parsedRule = parseRule(rule);
-  return isValidScriptletName(parsedRule.name);
+
+  var rulesArray = convertScriptletToAdg(input); // checking if each of parsed scriptlets is valid
+  // if at least one of them is not valid - whole 'input' rule is not valid too
+
+  var isValid = rulesArray.reduce(function (acc, rule) {
+    var parsedRule = parseRule(rule);
+    return isValidScriptletName(parsedRule.name) && acc;
+  }, true);
+  return isValid;
 }
 /**
  * Global scriptlet variable
@@ -3136,7 +3157,6 @@ function isValidScriptletRule(input) {
  * `invoke` method receives one argument with `Source` type
  * `validate` method receives one argument with `String` type
  */
-
 
 var scriptlets = {
   invoke: getScriptletCode,
@@ -3151,7 +3171,8 @@ var scriptlets = {
   convertAdgToUbo: convertAdgToUbo
 };
 
-module.exports = scriptlets;
+exports.default = scriptlets;
+exports.isValidScriptletRule = isValidScriptletRule;
 
 /**
  * -------------------------------------------

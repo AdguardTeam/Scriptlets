@@ -68,6 +68,8 @@ preventSetInterval.names = [
     'prevent-setInterval',
     'setInterval-defuser.js',
     'ubo-setInterval-defuser.js',
+    'sid.js',
+    'ubo-sid.js',
 ];
 
 preventSetInterval.injections = [toRegExp, hit];

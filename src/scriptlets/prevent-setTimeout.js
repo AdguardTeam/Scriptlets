@@ -68,6 +68,8 @@ preventSetTimeout.names = [
     'prevent-setTimeout',
     'setTimeout-defuser.js',
     'ubo-setTimeout-defuser.js',
+    'std.js',
+    'ubo-std.js',
 ];
 
 preventSetTimeout.injections = [toRegExp, hit];
