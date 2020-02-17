@@ -1,6 +1,6 @@
 #
 #    AdGuard Scriptlets (Redirects Source)
-#    Version 1.1.1
+#    Version 1.1.3
 #
 - title: 1x1-transparent.gif
   description: |-
@@ -9,6 +9,7 @@
     ||example.org^$image,redirect=1x1-transparent.gif
     ```
   aliases:
+    - 1x1.gif
     - 1x1-transparent-gif
   comment: 'http://probablyprogramming.com/2009/03/15/the-tiniest-gif-ever'
   contentType: image/gif;base64
@@ -21,6 +22,7 @@
     ||example.org^$image,redirect=2x2-transparent.png
     ```
   aliases:
+    - 2x2.png
     - 2x2-transparent-png
   contentType: image/png;base64
   content: >
@@ -34,6 +36,7 @@
     ||example.org^$image,redirect=3x2-transparent.png
     ```
   aliases:
+    - 3x2.png
     - 3x2-transparent-png
   contentType: image/png;base64
   content: >
@@ -47,6 +50,7 @@
     ||example.org^$image,redirect=32x32-transparent.png
     ```
   aliases:
+    - 32x32.png
     - 32x32-transparent-png
   contentType: image/png;base64
   content: >
@@ -60,6 +64,7 @@
     ||example.com^$subdocument,redirect=noopframe,domain=example.org
     ```
   aliases:
+    - noop.html
     - blank-html
   contentType: text/html
   content: |-
@@ -87,6 +92,7 @@
     ||example.org^$script,redirect=noopjs
     ```
   aliases:
+    - noop.js
     - blank-js
   contentType: application/javascript
   content: '(function() {})()'
@@ -98,6 +104,7 @@
     ||example.org^$xmlhttprequest,redirect=nooptext
     ```
   aliases:
+    - noop.txt
     - blank-text
   contentType: text/plain
   content: ''
@@ -131,6 +138,7 @@
     ||example.org^$media,redirect=noopmp3-0.1s
     ```
   aliases:
+    - noopmp3-0.1s
     - blank-mp3
   comment: >
     From:
@@ -161,6 +169,7 @@
     ||example.org^$media,redirect=noopmp4-1s
     ```
   aliases:
+    - noop-1s.mp4
     - blank-mp4
   comment: |
     From https://github.com/kud/blank-video
@@ -1117,6 +1126,8 @@
   aliases:
     - fuckadblock.js-3.2.0
     - ubo-fuckadblock.js-3.2.0
+    - nofab.js
+    - ubo-nofab.js
   contentType: application/javascript
   content: |-
     (function(source, args){

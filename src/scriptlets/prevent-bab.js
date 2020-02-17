@@ -72,6 +72,8 @@ preventBab.names = [
     'prevent-bab',
     'bab-defuser.js',
     'ubo-bab-defuser.js',
+    'nobab.js',
+    'ubo-nobab.js',
 ];
 
 preventBab.injections = [hit];

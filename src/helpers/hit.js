@@ -2,7 +2,7 @@
 /**
  * Hit used only for debug purposes now
  * @param {Source} source
- * @param {String} message optional message
+ * @param {string} message optional message
  */
 export const hit = (source, message) => {
     if (source.verbose !== true) {

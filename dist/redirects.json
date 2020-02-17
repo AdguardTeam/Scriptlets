@@ -2,6 +2,7 @@
     {
         "title": "1x1-transparent.gif",
         "aliases": [
+            "1x1.gif",
             "1x1-transparent-gif"
         ],
         "contentType": "image/gif;base64",
@@ -10,6 +11,7 @@
     {
         "title": "2x2-transparent.png",
         "aliases": [
+            "2x2.png",
             "2x2-transparent-png"
         ],
         "contentType": "image/png;base64",
@@ -18,6 +20,7 @@
     {
         "title": "3x2-transparent.png",
         "aliases": [
+            "3x2.png",
             "3x2-transparent-png"
         ],
         "contentType": "image/png;base64",
@@ -26,6 +29,7 @@
     {
         "title": "32x32-transparent.png",
         "aliases": [
+            "32x32.png",
             "32x32-transparent-png"
         ],
         "contentType": "image/png;base64",
@@ -34,6 +38,7 @@
     {
         "title": "noopframe",
         "aliases": [
+            "noop.html",
             "blank-html"
         ],
         "contentType": "text/html;base64",
@@ -50,6 +55,7 @@
     {
         "title": "noopjs",
         "aliases": [
+            "noop.js",
             "blank-js"
         ],
         "contentType": "application/javascript;base64",
@@ -58,6 +64,7 @@
     {
         "title": "nooptext",
         "aliases": [
+            "noop.txt",
             "blank-text"
         ],
         "contentType": "text/plain;base64",
@@ -76,6 +83,7 @@
     {
         "title": "noopmp3-0.1s",
         "aliases": [
+            "noopmp3-0.1s",
             "blank-mp3"
         ],
         "contentType": "audio/mp3;base64",
@@ -84,6 +92,7 @@
     {
         "title": "noopmp4-1s",
         "aliases": [
+            "noop-1s.mp4",
             "blank-mp4"
         ],
         "contentType": "video/mp4;base64",
@@ -161,7 +170,9 @@
         "title": "prevent-fab-3.2.0",
         "aliases": [
             "fuckadblock.js-3.2.0",
-            "ubo-fuckadblock.js-3.2.0"
+            "ubo-fuckadblock.js-3.2.0",
+            "nofab.js",
+            "ubo-nofab.js"
         ],
         "contentType": "application/javascript;base64",
         "content": "KGZ1bmN0aW9uKHNvdXJjZSwgYXJncyl7CmZ1bmN0aW9uIHByZXZlbnRGYWIoc291cmNlKSB7CiAgICBoaXQoc291cmNlKTsKCiAgICB2YXIgRmFiID0gZnVuY3Rpb24gRmFiKCkge307CgogICAgRmFiLnByb3RvdHlwZS5jaGVjayA9IG5vb3A7CiAgICBGYWIucHJvdG90eXBlLmNsZWFyRXZlbnQgPSBub29wOwogICAgRmFiLnByb3RvdHlwZS5lbWl0RXZlbnQgPSBub29wOwoKICAgIEZhYi5wcm90b3R5cGUub24gPSBmdW5jdGlvbiAoYSwgYikgewogICAgICBpZiAoIWEpIHsKICAgICAgICBiKCk7CiAgICAgIH0KCiAgICAgIHJldHVybiB0aGlzOwogICAgfTsKCiAgICBGYWIucHJvdG90eXBlLm9uRGV0ZWN0ZWQgPSBmdW5jdGlvbiAoKSB7CiAgICAgIHJldHVybiB0aGlzOwogICAgfTsKCiAgICBGYWIucHJvdG90eXBlLm9uTm90RGV0ZWN0ZWQgPSBmdW5jdGlvbiAoYSkgewogICAgICBhKCk7CiAgICAgIHJldHVybiB0aGlzOwogICAgfTsKCiAgICBGYWIucHJvdG90eXBlLnNldE9wdGlvbiA9IG5vb3A7CiAgICB3aW5kb3cuRnVja0FkQmxvY2sgPSB3aW5kb3cuQmxvY2tBZEJsb2NrID0gRmFiOwogICAgd2luZG93LmZ1Y2tBZEJsb2NrID0gd2luZG93LmJsb2NrQWRCbG9jayA9IG5ldyBGYWIoKTsKICB9CmZ1bmN0aW9uIG5vb3AoKSB7fQpmdW5jdGlvbiBoaXQoc291cmNlLCBtZXNzYWdlKSB7CiAgICBpZiAoc291cmNlLnZlcmJvc2UgIT09IHRydWUpIHsKICAgICAgcmV0dXJuOwogICAgfQoKICAgIHRyeSB7CiAgICAgIHZhciBsb2cgPSBjb25zb2xlLmxvZy5iaW5kKGNvbnNvbGUpOwogICAgICB2YXIgdHJhY2UgPSBjb25zb2xlLnRyYWNlLmJpbmQoY29uc29sZSk7CiAgICAgIHZhciBwcmVmaXggPSBzb3VyY2UucnVsZVRleHQgfHwgJyc7CgogICAgICBpZiAobWVzc2FnZSkgewogICAgICAgIGxvZygiIi5jb25jYXQocHJlZml4LCAiIG1lc3NhZ2U6XG4iKS5jb25jYXQobWVzc2FnZSkpOwogICAgICB9CgogICAgICBsb2coIiIuY29uY2F0KHByZWZpeCwgIiB0cmFjZSBzdGFydCIpKTsKCiAgICAgIGlmICh0cmFjZSkgewogICAgICAgIHRyYWNlKCk7CiAgICAgIH0KCiAgICAgIGxvZygiIi5jb25jYXQocHJlZml4LCAiIHRyYWNlIGVuZCIpKTsKICAgIH0gY2F0Y2ggKGUpIHt9CgogICAgaWYgKHR5cGVvZiB3aW5kb3cuX19kZWJ1Z1NjcmlwdGxldHMgPT09ICdmdW5jdGlvbicpIHsKICAgICAgd2luZG93Ll9fZGVidWdTY3JpcHRsZXRzKHNvdXJjZSk7CiAgICB9CiAgfTsKICAgICAgICBjb25zdCB1cGRhdGVkQXJncyA9IGFyZ3MgPyBbXS5jb25jYXQoc291cmNlKS5jb25jYXQoYXJncykgOiBbc291cmNlXTsKICAgICAgICBwcmV2ZW50RmFiLmFwcGx5KHRoaXMsIHVwZGF0ZWRBcmdzKTsKICAgIAp9KSh7Im5hbWUiOiJwcmV2ZW50LWZhYi0zLjIuMCJ9KTs="

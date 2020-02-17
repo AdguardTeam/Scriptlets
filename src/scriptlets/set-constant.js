@@ -131,5 +131,7 @@ setConstant.names = [
     'set-constant',
     'set-constant.js',
     'ubo-set-constant.js',
+    'set.js',
+    'ubo-set.js',
 ];
 setConstant.injections = [getPropertyInChain, setPropertyAccess, hit];
