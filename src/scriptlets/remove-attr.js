@@ -72,7 +72,7 @@ export function removeAttr(source, attrs, selector) {
         }
     };
 
-    observeDOMChanges(rmattr, true);
+    observeDOMChanges(rmattr);
 }
 
 removeAttr.names = [

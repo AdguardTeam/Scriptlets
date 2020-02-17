@@ -3,7 +3,7 @@
  * @param {Function} callback
  * @param {Boolean} observeAttrs - optional parameter - should observer check attibutes changes
  */
-export const observeDOMChanges = (callback, observeAttrs = false) => {
+export const observeDOMChanges = (callback, observeClasses = false) => {
     /**
      * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
      * Those calls that fall into the "cooldown" period, are ignored
@@ -35,15 +35,26 @@ export const observeDOMChanges = (callback, observeAttrs = false) => {
      * 'delay' in milliseconds for 'throttle' method
      */
     const THROTTLE_DELAY_MS = 20;
+    /**
+     * Used for remove-class
+     */
+    const CLASS_ATTR_NAME = ['class'];
     // eslint-disable-next-line no-use-before-define
     const observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
 
     const connect = () => {
-        observer.observe(document.documentElement, {
-            childList: true,
-            subtree: true,
-            attributes: observeAttrs,
-        });
+        if (observeClasses) {
+            observer.observe(document.documentElement, {
+                subtree: true,
+                attributes: true,
+                attributeFilter: CLASS_ATTR_NAME,
+            });
+        } else {
+            observer.observe(document.documentElement, {
+                subtree: true,
+                attributes: true,
+            });
+        }
     };
     const disconnect = () => {
         observer.disconnect();

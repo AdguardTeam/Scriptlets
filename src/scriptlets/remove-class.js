@@ -95,7 +95,8 @@ export function removeClass(source, classNames, selector) {
         }
     };
 
-    observeDOMChanges(removeClassHandler);
+    // 'true' for observing the classes only
+    observeDOMChanges(removeClassHandler, true);
 }
 
 removeClass.names = [
