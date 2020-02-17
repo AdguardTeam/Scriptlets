@@ -43,10 +43,18 @@ test('ubo alias', (assert) => {
         verbose: true,
     };
 
-    const resString = window.scriptlets.invoke(params);
-    const done = assert.async();
-
     const elem = createElem(className, attrs);
+
+    const resString = window.scriptlets.invoke(params);
+    evalWrapper(resString);
+
+    attrs.forEach((a) => {
+        assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
+    });
+    assert.strictEqual(window.hit, 'FIRED');
+
+
+    const done = assert.async();
 
     setTimeout(() => { addAttr(elem, 'test2'); }, 34);
 
@@ -57,8 +65,6 @@ test('ubo alias', (assert) => {
         assert.strictEqual(window.hit, 'FIRED');
         done();
     }, 50);
-
-    evalWrapper(resString);
 });
 
 
@@ -71,10 +77,18 @@ test('Adg rule: no selector', (assert) => {
         verbose: true,
     };
 
-    const resString = window.scriptlets.invoke(params);
-    const done = assert.async();
-
     const elem = createElem(null, attrs);
+
+    const resString = window.scriptlets.invoke(params);
+    evalWrapper(resString);
+
+    attrs.forEach((a) => {
+        assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
+    });
+    assert.strictEqual(window.hit, 'FIRED');
+
+
+    const done = assert.async();
 
     setTimeout(() => { addAttr(elem, 'test1'); }, 62);
     setTimeout(() => { addAttr(elem, 'test2'); }, 75);
@@ -86,8 +100,6 @@ test('Adg rule: no selector', (assert) => {
         assert.strictEqual(window.hit, 'FIRED');
         done();
     }, 100);
-
-    evalWrapper(resString);
 });
 
 
@@ -101,10 +113,18 @@ test('Adg rule', (assert) => {
         verbose: true,
     };
 
-    const resString = window.scriptlets.invoke(params);
-    const done = assert.async();
-
     const elem = createElem(className, attrs);
+
+    const resString = window.scriptlets.invoke(params);
+    evalWrapper(resString);
+
+    attrs.forEach((a) => {
+        assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
+    });
+    assert.strictEqual(window.hit, 'FIRED');
+
+
+    const done = assert.async();
 
     setTimeout(() => { addAttr(elem, 'test1'); }, 87);
 
@@ -115,6 +135,4 @@ test('Adg rule', (assert) => {
         assert.strictEqual(window.hit, 'FIRED');
         done();
     }, 100);
-
-    evalWrapper(resString);
 });

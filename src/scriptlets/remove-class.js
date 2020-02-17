@@ -95,10 +95,14 @@ export function removeClass(source, classNames, selector) {
         }
     };
 
-    const CLASS_ATTR_NAME = ['class'];
+    if (document.readyState === 'complete') {
+        removeClassHandler();
 
-    // 'true' for observing attributes
-    observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
+        const CLASS_ATTR_NAME = ['class'];
+        // 'true' for observing attributes
+        // 'class' for observing only classes
+        observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
+    }
 }
 
 removeClass.names = [

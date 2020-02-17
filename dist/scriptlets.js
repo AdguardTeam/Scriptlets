@@ -2381,7 +2381,11 @@
         }
       };
 
-      observeDOMChanges(rmattr, true);
+      if (document.readyState === 'complete') {
+        rmattr(); // 'true' for observing attributes
+
+        observeDOMChanges(rmattr, true);
+      }
     }
     removeAttr.names = ['remove-attr', 'remove-attr.js', 'ubo-remove-attr.js', 'ra.js', 'ubo-ra.js'];
     removeAttr.injections = [hit, observeDOMChanges];
@@ -2490,9 +2494,13 @@
         }
       };
 
-      var CLASS_ATTR_NAME = ['class']; // 'true' for observing attributes
+      if (document.readyState === 'complete') {
+        removeClassHandler();
+        var CLASS_ATTR_NAME = ['class']; // 'true' for observing attributes
+        // 'class' for observing only classes
 
-      observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
+        observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
+      }
     }
     removeClass.names = ['remove-class'];
     removeClass.injections = [hit, observeDOMChanges];

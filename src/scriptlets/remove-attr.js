@@ -72,7 +72,12 @@ export function removeAttr(source, attrs, selector) {
         }
     };
 
-    observeDOMChanges(rmattr, true);
+    if (document.readyState === 'complete') {
+        rmattr();
+
+        // 'true' for observing attributes
+        observeDOMChanges(rmattr, true);
+    }
 }
 
 removeAttr.names = [

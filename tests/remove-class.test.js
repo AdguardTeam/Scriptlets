@@ -43,6 +43,14 @@ test('Adg rule: no selector', (assert) => {
     const third = createElem(null, ['third', 'testing', 'better', 'example']);
 
     const resString = window.scriptlets.invoke(params);
+    evalWrapper(resString);
+
+    classNames.forEach((a) => {
+        assert.notOk(first.classList.contains(a), `Class '${a}' has been removed`);
+    });
+    assert.strictEqual(window.hit, 'FIRED');
+
+
     const done = assert.async();
 
     setTimeout(() => { first.classList.add('example'); }, 34);
@@ -56,8 +64,6 @@ test('Adg rule: no selector', (assert) => {
         assert.strictEqual(window.hit, 'FIRED');
         done();
     }, 50);
-
-    evalWrapper(resString);
 });
 
 
@@ -76,6 +82,14 @@ test('Adg rule', (assert) => {
     parentElement.appendChild(childElement);
 
     const resString = window.scriptlets.invoke(params);
+    evalWrapper(resString);
+
+    classNames.forEach((a) => {
+        assert.notOk(childElement.classList.contains(a), `Class '${a}' has been removed`);
+    });
+    assert.strictEqual(window.hit, 'FIRED');
+
+
     const done = assert.async();
 
     setTimeout(() => { childElement.classList.add('test11'); }, 52);
@@ -88,6 +102,4 @@ test('Adg rule', (assert) => {
         assert.strictEqual(window.hit, 'FIRED');
         done();
     }, 150);
-
-    evalWrapper(resString);
 });
