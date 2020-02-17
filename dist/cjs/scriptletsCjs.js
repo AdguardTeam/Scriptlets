@@ -272,7 +272,7 @@ var observeDOMChanges = function observeDOMChanges(callback) {
 
   /**
    * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
-   * Those calls that fall into the “cooldown” period, are ignored
+   * Those calls that fall into the "cooldown" period, are ignored
    * @param {Function} method
    * @param {Number} delay - milliseconds
    */
@@ -309,30 +309,29 @@ var observeDOMChanges = function observeDOMChanges(callback) {
    */
 
 
-  var THROTTLE_DELAY_MS = 20;
-  var observer = new MutationObserver(throttle(callback, THROTTLE_DELAY_MS));
-  var defaultObserveProps = {
-    childList: true,
-    subtree: true
+  var THROTTLE_DELAY_MS = 20; // eslint-disable-next-line no-use-before-define
+
+  var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+
+  var connect = function connect() {
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: observeAttrs
+    });
   };
-  var observeAttrsProps = {
-    childList: true,
-    subtree: true,
-    attributes: true
-  };
-  var finalProps;
 
-  if (observeAttrs) {
-    finalProps = observeAttrsProps;
-  } else {
-    finalProps = defaultObserveProps;
-  }
-
-  observer.observe(document.documentElement, finalProps);
-
-  if (document.readyState === 'complete') {
+  var disconnect = function disconnect() {
     observer.disconnect();
+  };
+
+  function callbackWrapper() {
+    disconnect();
+    callback();
+    connect();
   }
+
+  connect();
 };
 
 /**

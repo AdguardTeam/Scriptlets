@@ -6,23 +6,20 @@
 export const observeDOMChanges = (callback, observeAttrs = false) => {
     /**
      * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
-     * Those calls that fall into the “cooldown” period, are ignored
+     * Those calls that fall into the "cooldown" period, are ignored
      * @param {Function} method
      * @param {Number} delay - milliseconds
      */
     const throttle = (method, delay) => {
         let wait = false;
         let savedArgs;
-
         const wrapper = (...args) => {
             if (wait) {
                 savedArgs = args;
                 return;
             }
-
             method(...args);
             wait = true;
-
             setTimeout(() => {
                 wait = false;
                 if (savedArgs) {
@@ -31,7 +28,6 @@ export const observeDOMChanges = (callback, observeAttrs = false) => {
                 }
             }, delay);
         };
-
         return wrapper;
     };
 
@@ -39,30 +35,24 @@ export const observeDOMChanges = (callback, observeAttrs = false) => {
      * 'delay' in milliseconds for 'throttle' method
      */
     const THROTTLE_DELAY_MS = 20;
+    // eslint-disable-next-line no-use-before-define
+    const observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
 
-    const observer = new MutationObserver(throttle(callback, THROTTLE_DELAY_MS));
-
-    const defaultObserveProps = {
-        childList: true,
-        subtree: true,
+    const connect = () => {
+        observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            attributes: observeAttrs,
+        });
     };
-    const observeAttrsProps = {
-        childList: true,
-        subtree: true,
-        attributes: true,
-    };
-
-    let finalProps;
-
-    if (observeAttrs) {
-        finalProps = observeAttrsProps;
-    } else {
-        finalProps = defaultObserveProps;
-    }
-
-    observer.observe(document.documentElement, finalProps);
-
-    if (document.readyState === 'complete') {
+    const disconnect = () => {
         observer.disconnect();
+    };
+    function callbackWrapper() {
+        disconnect();
+        callback();
+        connect();
     }
+
+    connect();
 };
