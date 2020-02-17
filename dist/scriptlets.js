@@ -267,7 +267,8 @@
      * @param {Boolean} observeAttrs - optional parameter - should observer check attibutes changes
      */
     var observeDOMChanges = function observeDOMChanges(callback) {
-      var observeClasses = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      var attrsToObserv = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
 
       /**
        * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
@@ -312,22 +313,21 @@
       /**
        * Used for remove-class
        */
-
-      var CLASS_ATTR_NAME = ['class']; // eslint-disable-next-line no-use-before-define
+      // eslint-disable-next-line no-use-before-define
 
       var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
 
       var connect = function connect() {
-        if (observeClasses) {
+        if (attrsToObserv.length > 0) {
           observer.observe(document.documentElement, {
             subtree: true,
-            attributes: true,
-            attributeFilter: CLASS_ATTR_NAME
+            attributes: observeAttrs,
+            attributeFilter: attrsToObserv
           });
         } else {
           observer.observe(document.documentElement, {
             subtree: true,
-            attributes: true
+            attributes: observeAttrs
           });
         }
       };
@@ -2381,7 +2381,7 @@
         }
       };
 
-      observeDOMChanges(rmattr);
+      observeDOMChanges(rmattr, true);
     }
     removeAttr.names = ['remove-attr', 'remove-attr.js', 'ubo-remove-attr.js', 'ra.js', 'ubo-ra.js'];
     removeAttr.injections = [hit, observeDOMChanges];
@@ -2488,10 +2488,11 @@
         if (removed) {
           hit(source);
         }
-      }; // 'true' for observing the classes only
+      };
 
+      var CLASS_ATTR_NAME = ['class']; // 'true' for observing attributes
 
-      observeDOMChanges(removeClassHandler, true);
+      observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
     }
     removeClass.names = ['remove-class'];
     removeClass.injections = [hit, observeDOMChanges];

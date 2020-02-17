@@ -95,8 +95,10 @@ export function removeClass(source, classNames, selector) {
         }
     };
 
-    // 'true' for observing the classes only
-    observeDOMChanges(removeClassHandler, true);
+    const CLASS_ATTR_NAME = ['class'];
+
+    // 'true' for observing attributes
+    observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
 }
 
 removeClass.names = [
