@@ -1,5 +1,52 @@
 import jsYaml from 'js-yaml';
 
+import {
+    attachDependencies,
+    addCall,
+    passSourceAndProps,
+} from '../helpers/injector';
+
+import {
+    isAdgScriptletRule,
+    isAbpRewriteResourceRule,
+    isUboRedirectResourceRule,
+} from '../helpers/validator';
+
+import {
+    convertUboRedirectToAdg,
+    convertAbpRedirectToAdg,
+    convertRedirectToAdg,
+    convertAdgRedirectToUbo,
+} from '../helpers/converter';
+
+import * as redirectsList from './redirectsList';
+
+
+const getRedirectByName = (redirectsList, name) => {
+    // eslint-disable-next-line compat/compat
+    const redirects = Object.values(redirectsList);
+    return redirects.find((r) => r.names && r.names.indexOf(name) > -1);
+};
+
+const getRedirectCode = (name) => {
+    const redirect = getRedirectByName(redirectsList, name);
+    let result = attachDependencies(redirect);
+    result = addCall(redirect, result);
+
+    return passSourceAndProps({ name }, result);
+};
+
+export const redirectsCjs = {
+    getCode: getRedirectCode,
+    isAdgScriptletRule,
+    isAbpRewriteResourceRule,
+    isUboRedirectResourceRule,
+    convertUboRedirectToAdg,
+    convertAbpRedirectToAdg,
+    convertRedirectToAdg,
+    convertAdgRedirectToUbo,
+};
+
 /**
  * Redirect - object used to redirect some requests
  * e.g.

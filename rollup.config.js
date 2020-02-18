@@ -67,7 +67,39 @@ const cjsConfig = {
     },
     output: {
         dir: 'dist/cjs',
-        chunkFileNames: '[name].js',
+        entryFileNames: '[name].js',
+        format: 'cjs',
+        exports: 'named',
+        strict: false,
+        sourcemap: true,
+        banner,
+        footer,
+    },
+    plugins: [
+        resolve(),
+        commonjs({
+            include: 'node_modules/**',
+        }),
+        json({
+            preferConst: true,
+            indent: '  ',
+            compact: true,
+            namedExports: true,
+        }),
+        babel({
+            exclude: 'node_modules/**',
+            runtimeHelpers: true,
+        }),
+    ],
+};
+
+const cjsRedirectsConfig = {
+    input: {
+        redirectsCjs: 'src/redirects/redirects.js',
+    },
+    output: {
+        dir: 'dist/cjs',
+        entryFileNames: '[name].js',
         format: 'cjs',
         exports: 'named',
         strict: false,
@@ -229,7 +261,7 @@ if (isLibTest) {
 } else if (isTest) {
     resultConfig = [mainConfig, testConfig];
 } else {
-    resultConfig = [mainConfig, cjsConfig, tmpRedirectsConfig];
+    resultConfig = [mainConfig, cjsConfig, cjsRedirectsConfig, tmpRedirectsConfig];
 }
 
 module.exports = resultConfig;

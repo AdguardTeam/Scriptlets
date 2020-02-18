@@ -22,6 +22,7 @@ const NON_REDIRECTS_FILES = [
     'index.js',
     'redirects.js',
     'redirectsList.js',
+    'redirectsModule.js',
 ];
 
 /**
