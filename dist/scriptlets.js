@@ -2943,7 +2943,7 @@
     var UBO_SCRIPTLET_TEMPLATE = '${domains}##+js(${args})'; // eslint-disable-next-line no-template-curly-in-string
 
     var UBO_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@#+js(${args})';
-    var UBO_ALIAS_NAME_MARKER = 'ubo-';
+    var UBO_ALIAS_NAME_MARKER = 'ubo-'; // https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#xhr
     /**
      * Returns array of strings separated by space which not in quotes
      * @param {string} str
@@ -3100,7 +3100,9 @@
             }
 
             var domains = getBeforeRegExp(rule, ADGUARD_SCRIPTLET_MASK_REG);
-            var uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '');
+            var uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '') // '.js' in the Ubo scriptlet name can be omitted
+            // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
+            .replace('.js', '');
             var args = parsedParams.length > 0 ? "".concat(uboName, ", ").concat(parsedParams.join(', ')) : uboName;
             var uboRule = replacePlaceholders(template, {
               domains: domains,

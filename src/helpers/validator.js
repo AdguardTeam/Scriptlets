@@ -94,8 +94,8 @@ export const isAbpSnippetRule = (rule) => {
 /**
  * Redirect resources markers
  */
-export const ADG_UBO_REDIRECT_RESOURSE_MARKER = 'redirect=';
-export const ABP_REDIRECT_RESOURSE_MARKER = 'rewrite=abp-resource:';
+export const ADG_UBO_REDIRECT_RESOURCE_MARKER = 'redirect=';
+export const ABP_REDIRECT_RESOURCE_MARKER = 'rewrite=abp-resource:';
 
 const VALID_SOURCE_TYPES = [
     'image',
@@ -103,7 +103,6 @@ const VALID_SOURCE_TYPES = [
     'stylesheet',
     'script',
     'xmlhttprequest',
-    'xhr',
     'media',
 ];
 
@@ -152,7 +151,12 @@ export const adgToUboCompatibility = Object.fromEntries(
  */
 export const parseModifiers = (rule) => (substringAfter(rule, '$').split(','));
 
-
+/**
+ * Gets redirect resource name
+ * @param {string} rule
+ * @param {string} marker - specific Adg/Ubo or Abp redirect resources marker
+ * @returns {string} - redirect resource name
+ */
 export const getRedirectName = (rule, marker) => {
     const ruleModifiers = parseModifiers(rule);
     const redirectNamePart = ruleModifiers
@@ -167,8 +171,8 @@ export const getRedirectName = (rule, marker) => {
 export const isAdgRedirectResourceRule = (rule) => {
     if ((!isComment(rule))
         && (rule.indexOf('||') > -1)
-        && (rule.indexOf(ADG_UBO_REDIRECT_RESOURSE_MARKER) > -1)) {
-        const redirectName = getRedirectName(rule, ADG_UBO_REDIRECT_RESOURSE_MARKER);
+        && (rule.indexOf(ADG_UBO_REDIRECT_RESOURCE_MARKER) > -1)) {
+        const redirectName = getRedirectName(rule, ADG_UBO_REDIRECT_RESOURCE_MARKER);
 
         return redirectName === Object
             .keys(adgToUboCompatibility)
@@ -184,8 +188,8 @@ export const isAdgRedirectResourceRule = (rule) => {
 export const isUboRedirectResourceRule = (rule) => {
     if ((!isComment(rule))
         && (rule.indexOf('||') > -1)
-        && (rule.indexOf(ADG_UBO_REDIRECT_RESOURSE_MARKER) > -1)) {
-        const redirectName = getRedirectName(rule, ADG_UBO_REDIRECT_RESOURSE_MARKER);
+        && (rule.indexOf(ADG_UBO_REDIRECT_RESOURCE_MARKER) > -1)) {
+        const redirectName = getRedirectName(rule, ADG_UBO_REDIRECT_RESOURCE_MARKER);
 
         return redirectName === Object
             .keys(uboToAdgCompatibility)
@@ -201,8 +205,8 @@ export const isUboRedirectResourceRule = (rule) => {
 export const isAbpRewriteResourceRule = (rule) => {
     if ((!isComment(rule))
         && (rule.indexOf('||') > -1)
-        && (rule.indexOf(ABP_REDIRECT_RESOURSE_MARKER) > -1)) {
-        const redirectName = getRedirectName(rule, ABP_REDIRECT_RESOURSE_MARKER);
+        && (rule.indexOf(ABP_REDIRECT_RESOURCE_MARKER) > -1)) {
+        const redirectName = getRedirectName(rule, ABP_REDIRECT_RESOURCE_MARKER);
 
         return redirectName === Object
             .keys(abpToAdgCompatibility)
@@ -212,8 +216,20 @@ export const isAbpRewriteResourceRule = (rule) => {
 };
 
 /**
- * Checks is source type's in rule before Adg -> Ubo convertation
- * @param {String} rule
+ * Validates rule for Adg -> Ubo convertation
+ *
+ * Used ONLY for Adg -> Ubo convertation
+ * because Ubo redirect rules must contain source type, but Adg and Abp must not.
+ *
+ * Also source type can not be added automatically because of such valid rules
+ * ! Abp:
+ * $rewrite=abp-resource:blank-js,xmlhttprequest
+ * ! Adg:
+ * $script,redirect=noopvast-2.0
+ * $xmlhttprequest,redirect=noopvast-2.0
+ *
+ * @param {string} rule
+ * @returns {boolean}
  */
 export const isValidRedirectRule = (rule) => {
     if (isAdgRedirectResourceRule) {

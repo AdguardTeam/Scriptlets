@@ -14,8 +14,8 @@ import {
     isAdgScriptletRule,
     isUboScriptletRule,
     isAbpSnippetRule,
-    ADG_UBO_REDIRECT_RESOURSE_MARKER,
-    ABP_REDIRECT_RESOURSE_MARKER,
+    ADG_UBO_REDIRECT_RESOURCE_MARKER,
+    ABP_REDIRECT_RESOURCE_MARKER,
     uboToAdgCompatibility,
     abpToAdgCompatibility,
     adgToUboCompatibility,
@@ -49,6 +49,12 @@ const UBO_SCRIPTLET_TEMPLATE = '${domains}##+js(${args})';
 const UBO_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@#+js(${args})';
 
 const UBO_ALIAS_NAME_MARKER = 'ubo-';
+
+// https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#xhr
+const UBO_XHR_TYPE = 'xhr';
+
+const ADG_XHR_TYPE = 'xmlhttprequest';
+
 
 /**
  * Returns array of strings separated by space which not in quotes
@@ -189,7 +195,11 @@ export const convertAdgScriptletToUbo = (rule) => {
                     template = UBO_SCRIPTLET_TEMPLATE;
                 }
                 const domains = getBeforeRegExp(rule, ADGUARD_SCRIPTLET_MASK_REG);
-                const uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '');
+                const uboName = uboAlias
+                    .replace(UBO_ALIAS_NAME_MARKER, '')
+                    // '.js' in the Ubo scriptlet name can be omitted
+                    // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
+                    .replace('.js', '');
 
                 const args = (parsedParams.length > 0) ? `${uboName}, ${parsedParams.join(', ')}` : uboName;
 
@@ -216,10 +226,13 @@ export const convertUboRedirectToAdg = (rule) => {
     const uboModifiers = parseModifiers(rule);
     const adgModifiers = uboModifiers
         .map((el) => {
-            if (el.indexOf(ADG_UBO_REDIRECT_RESOURSE_MARKER) > -1) {
-                const uboName = getRedirectName(rule, ADG_UBO_REDIRECT_RESOURSE_MARKER);
+            if (el.indexOf(ADG_UBO_REDIRECT_RESOURCE_MARKER) > -1) {
+                const uboName = getRedirectName(rule, ADG_UBO_REDIRECT_RESOURCE_MARKER);
                 const adgName = uboToAdgCompatibility[`${uboName}`]; // redirect names may contain '-'
-                return `${ADG_UBO_REDIRECT_RESOURSE_MARKER}${adgName}`;
+                return `${ADG_UBO_REDIRECT_RESOURCE_MARKER}${adgName}`;
+            }
+            if (el === UBO_XHR_TYPE) {
+                return ADG_XHR_TYPE;
             }
             return el;
         })
@@ -238,10 +251,10 @@ export const convertAbpRedirectToAdg = (rule) => {
     const abpModifiers = parseModifiers(rule);
     const adgModifiers = abpModifiers
         .map((el) => {
-            if (el.indexOf(ABP_REDIRECT_RESOURSE_MARKER) > -1) {
-                const abpName = getRedirectName(rule, ABP_REDIRECT_RESOURSE_MARKER);
+            if (el.indexOf(ABP_REDIRECT_RESOURCE_MARKER) > -1) {
+                const abpName = getRedirectName(rule, ABP_REDIRECT_RESOURCE_MARKER);
                 const adgName = abpToAdgCompatibility[`${abpName}`]; // redirect names may contain '-'
-                return `${ADG_UBO_REDIRECT_RESOURSE_MARKER}${adgName}`;
+                return `${ADG_UBO_REDIRECT_RESOURCE_MARKER}${adgName}`;
             }
             return el;
         })
@@ -281,10 +294,10 @@ Source type is not specified in the rule: ${rule}`);
         const uboModifiers = parseModifiers(rule);
         const adgModifiers = uboModifiers
             .map((el) => {
-                if (el.indexOf(ADG_UBO_REDIRECT_RESOURSE_MARKER) > -1) {
-                    const adgName = getRedirectName(rule, ADG_UBO_REDIRECT_RESOURSE_MARKER);
+                if (el.indexOf(ADG_UBO_REDIRECT_RESOURCE_MARKER) > -1) {
+                    const adgName = getRedirectName(rule, ADG_UBO_REDIRECT_RESOURCE_MARKER);
                     const uboName = adgToUboCompatibility[`${adgName}`]; // redirect names may contain '-'
-                    return `${ADG_UBO_REDIRECT_RESOURSE_MARKER}${uboName}`;
+                    return `${ADG_UBO_REDIRECT_RESOURCE_MARKER}${uboName}`;
                 }
                 return el;
             })

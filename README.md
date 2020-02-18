@@ -196,7 +196,7 @@ scriptlets.convertScriptletToAdg(rule);
  * @param {string} rule - AdGuard scriptlet rule
  * @returns {string} - UBO scriptlet rule
  */
-scriptlets.convertAdgScriptletToUbo(rule);
+scriptlets.convertAdgToUbo(rule);
 ```
 
 #### Corelibs library
