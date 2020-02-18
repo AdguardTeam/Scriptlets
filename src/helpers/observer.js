@@ -44,12 +44,14 @@ export const observeDOMChanges = (callback, observeAttrs = false, attrsToObserv 
     const connect = () => {
         if (attrsToObserv.length > 0) {
             observer.observe(document.documentElement, {
+                childList: true,
                 subtree: true,
                 attributes: observeAttrs,
                 attributeFilter: attrsToObserv,
             });
         } else {
             observer.observe(document.documentElement, {
+                childList: true,
                 subtree: true,
                 attributes: observeAttrs,
             });

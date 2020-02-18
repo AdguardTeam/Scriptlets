@@ -321,12 +321,14 @@ var observeDOMChanges = function observeDOMChanges(callback) {
   var connect = function connect() {
     if (attrsToObserv.length > 0) {
       observer.observe(document.documentElement, {
+        childList: true,
         subtree: true,
         attributes: observeAttrs,
         attributeFilter: attrsToObserv
       });
     } else {
       observer.observe(document.documentElement, {
+        childList: true,
         subtree: true,
         attributes: observeAttrs
       });
@@ -2308,8 +2310,8 @@ debugCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyI
  * @scriptlet remove-attr
  *
  * @description
- * Removes the specified attributes from DOM nodes. This scriptlet runs NOT only once after the page load (DOMContentLoaded)
- * but periodically after detecting DOM tree changes.
+ * Removes the specified attributes from DOM nodes. This scriptlet runs once when the page loads
+ * and after that periodically in order to DOM tree changes.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
@@ -2382,11 +2384,9 @@ function removeAttr(source, attrs, selector) {
     }
   };
 
-  if (document.readyState === 'complete') {
-    rmattr(); // 'true' for observing attributes
+  rmattr(); // 'true' for observing attributes
 
-    observeDOMChanges(rmattr, true);
-  }
+  observeDOMChanges(rmattr, true);
 }
 removeAttr.names = ['remove-attr', 'remove-attr.js', 'ubo-remove-attr.js', 'ra.js', 'ubo-ra.js'];
 removeAttr.injections = [hit, observeDOMChanges];
@@ -2397,8 +2397,8 @@ removeAttr.injections = [hit, observeDOMChanges];
  * @scriptlet remove-class
  *
  * @description
- * Removes the specified classes from DOM nodes. This scriptlet runs NOT only once after the page load (DOMContentLoaded)
- * but periodically after detecting DOM tree changes.
+ * Removes the specified classes from DOM nodes. This scriptlet runs once after the page loads
+ * and after that periodically in order to DOM tree changes.
  *
  * **Syntax**
  * ```
@@ -2495,13 +2495,11 @@ function removeClass(source, classNames, selector) {
     }
   };
 
-  if (document.readyState === 'complete') {
-    removeClassHandler();
-    var CLASS_ATTR_NAME = ['class']; // 'true' for observing attributes
-    // 'class' for observing only classes
+  removeClassHandler();
+  var CLASS_ATTR_NAME = ['class']; // 'true' for observing attributes
+  // 'class' for observing only classes
 
-    observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
-  }
+  observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
 }
 removeClass.names = ['remove-class'];
 removeClass.injections = [hit, observeDOMChanges];

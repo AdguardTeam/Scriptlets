@@ -5,8 +5,8 @@ import { hit, observeDOMChanges } from '../helpers';
  * @scriptlet remove-class
  *
  * @description
- * Removes the specified classes from DOM nodes. This scriptlet runs NOT only once after the page load (DOMContentLoaded)
- * but periodically after detecting DOM tree changes.
+ * Removes the specified classes from DOM nodes. This scriptlet runs once after the page loads
+ * and after that periodically in order to DOM tree changes.
  *
  * **Syntax**
  * ```
@@ -95,14 +95,12 @@ export function removeClass(source, classNames, selector) {
         }
     };
 
-    if (document.readyState === 'complete') {
-        removeClassHandler();
+    removeClassHandler();
 
-        const CLASS_ATTR_NAME = ['class'];
-        // 'true' for observing attributes
-        // 'class' for observing only classes
-        observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
-    }
+    const CLASS_ATTR_NAME = ['class'];
+    // 'true' for observing attributes
+    // 'class' for observing only classes
+    observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
 }
 
 removeClass.names = [

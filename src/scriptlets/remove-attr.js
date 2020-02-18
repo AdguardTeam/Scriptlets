@@ -5,8 +5,8 @@ import { hit, observeDOMChanges } from '../helpers';
  * @scriptlet remove-attr
  *
  * @description
- * Removes the specified attributes from DOM nodes. This scriptlet runs NOT only once after the page load (DOMContentLoaded)
- * but periodically after detecting DOM tree changes.
+ * Removes the specified attributes from DOM nodes. This scriptlet runs once when the page loads
+ * and after that periodically in order to DOM tree changes.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
@@ -72,12 +72,10 @@ export function removeAttr(source, attrs, selector) {
         }
     };
 
-    if (document.readyState === 'complete') {
-        rmattr();
+    rmattr();
 
-        // 'true' for observing attributes
-        observeDOMChanges(rmattr, true);
-    }
+    // 'true' for observing attributes
+    observeDOMChanges(rmattr, true);
 }
 
 removeAttr.names = [
