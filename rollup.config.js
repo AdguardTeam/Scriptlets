@@ -69,6 +69,7 @@ const cjsConfig = {
         dir: 'dist/cjs',
         chunkFileNames: '[name].js',
         format: 'cjs',
+        exports: 'named',
         strict: false,
         sourcemap: true,
         banner,

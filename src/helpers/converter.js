@@ -74,7 +74,8 @@ const replacePlaceholders = (str, data) => {
 
 /**
  * Converts string of UBO scriptlet rule to AdGuard scritlet rule
- * @param {String} rule - UBO scriptlet rule
+ * @param {string} rule - UBO scriptlet rule
+ * @returns {Array} - array with one AdGuard scriptlet rule
  */
 export const convertUboScriptletToAdg = (rule) => {
     const domains = getBeforeRegExp(rule, UBO_SCRIPTLET_MASK_REG);
@@ -87,7 +88,15 @@ export const convertUboScriptletToAdg = (rule) => {
     }
     const args = getStringInBraces(rule)
         .split(/, /g)
-        .map((arg, index) => (index === 0 ? `ubo-${arg}` : arg))
+        .map((arg, index) => {
+            let outputArg;
+            if (index === 0) {
+                outputArg = (arg.indexOf('.js') > -1) ? `ubo-${arg}` : `ubo-${arg}.js`;
+            } else {
+                outputArg = arg;
+            }
+            return outputArg;
+        })
         .map((arg) => (wrapInDoubleQuotes(arg)))
         .join(', ');
     const adgRule = replacePlaceholders(
@@ -99,7 +108,9 @@ export const convertUboScriptletToAdg = (rule) => {
 
 /**
  * Convert string of ABP snippet rule to AdGuard scritlet rule
- * @param {String} rule - ABP scriptlet rule
+ * @param {string} rule - ABP snippet rule
+ * @returns {Array} - array of AdGuard scriptlet rules -
+ * one or few items depends on Abp-rule
  */
 export const convertAbpSnippetToAdg = (rule) => {
     const SEMICOLON_DIVIDER = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
@@ -123,7 +134,9 @@ export const convertAbpSnippetToAdg = (rule) => {
 
 /**
  * Converts scriptlet rule to AdGuard one
- * @param {*} rule
+ * @param {string} rule
+ * @returns {Array} - array of AdGuard scriptlet rules -
+ * one item for Adg and Ubo or few items for Abp
  */
 export const convertScriptletToAdg = (rule) => {
     let result;
@@ -132,7 +145,7 @@ export const convertScriptletToAdg = (rule) => {
     } else if (isAbpSnippetRule(rule)) {
         result = convertAbpSnippetToAdg(rule);
     } else if (isAdgScriptletRule(rule) || (isComment(rule))) {
-        result = rule;
+        result = [rule];
     }
 
     return result;
@@ -140,8 +153,8 @@ export const convertScriptletToAdg = (rule) => {
 
 /**
  * Converts UBO scriptlet rule to AdGuard one
- * @param {String} rule - AdGuard scriptlet rule
- * @returns {String} - UBO scriptlet rule
+ * @param {string} rule - AdGuard scriptlet rule
+ * @returns {string} - UBO scriptlet rule
  */
 export const convertAdgScriptletToUbo = (rule) => {
     let res;

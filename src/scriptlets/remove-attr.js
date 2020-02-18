@@ -86,6 +86,8 @@ removeAttr.names = [
     'remove-attr',
     'remove-attr.js',
     'ubo-remove-attr.js',
+    'ra.js',
+    'ubo-ra.js',
 ];
 
 removeAttr.injections = [hit];
