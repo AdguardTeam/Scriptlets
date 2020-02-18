@@ -7,6 +7,8 @@ import {
     convertAdgRedirectToUbo,
 } from '../../src/helpers/converter';
 
+import { isValidRedirectRule } from '../../src/helpers/validator';
+
 import { isValidScriptletRule } from '../../src/scriptlets/scriptlets';
 
 const { test, module } = QUnit;
@@ -130,37 +132,55 @@ test('Test Adguard redirect resource rule', (assert) => {
     const rule = '||example.com/banner$image,redirect=32x32-transparent.png';
     const exp = '||example.com/banner$image,redirect=32x32-transparent.png';
     const res = convertRedirectToAdg(rule);
-    assert.equal(res, exp);
+    assert.strictEqual(res, exp);
 });
 
 test('Test REDIRECT converting - UBO -> ADG', (assert) => {
     let uboRule = '||example.com/banner$image,redirect=32x32.png';
     let expectedAdgRule = '||example.com/banner$image,redirect=32x32-transparent.png';
-    assert.equal(convertRedirectToAdg(uboRule), expectedAdgRule);
+    assert.strictEqual(convertRedirectToAdg(uboRule), expectedAdgRule);
 
     uboRule = '||example.orf^$media,redirect=noop-1s.mp4,third-party';
     expectedAdgRule = '||example.orf^$media,redirect=noopmp4-1s,third-party';
-    assert.equal(convertRedirectToAdg(uboRule), expectedAdgRule);
+    assert.strictEqual(convertRedirectToAdg(uboRule), expectedAdgRule);
 });
 
 test('Test REDIRECT converting - ABP -> ADG', (assert) => {
     let abpRule = '||example.com^$script,rewrite=abp-resource:blank-js';
     let expectedAdgRule = '||example.com^$script,redirect=noopjs';
-    assert.equal(convertRedirectToAdg(abpRule), expectedAdgRule);
+    assert.strictEqual(convertRedirectToAdg(abpRule), expectedAdgRule);
 
     abpRule = '||*/ad/$rewrite=abp-resource:blank-mp3,domain=example.org';
     expectedAdgRule = '||*/ad/$redirect=noopmp3.0.1s,domain=example.org';
-    assert.equal(convertRedirectToAdg(abpRule), expectedAdgRule);
+    assert.strictEqual(convertRedirectToAdg(abpRule), expectedAdgRule);
 });
 
+test('Test redirect rule validation for ADG -> UBO converting', (assert) => {
+    let adgRule = '||example.com^$xmlhttprequest,redirect=nooptext';
+    assert.strictEqual(isValidRedirectRule(adgRule), true);
+
+    adgRule = '||example.orf^$media,redirect=noopmp4-1s,third-party';
+    assert.strictEqual(isValidRedirectRule(adgRule), true);
+
+    adgRule = '||example.com/images/*.png$image,important,redirect=1x1-transparent.gif,domain=example.com|example.org';
+    assert.strictEqual(isValidRedirectRule(adgRule), true);
+
+    // abp rule ->> false
+    adgRule = '||example.com^$script,rewrite=abp-resource:blank-js';
+    assert.strictEqual(isValidRedirectRule(adgRule), false);
+
+    // no source type
+    adgRule = '||example.com^$important,redirect=nooptext';
+    assert.strictEqual(isValidRedirectRule(adgRule), false);
+});
 
 test('Test REDIRECT converting - ADG -> UBO', (assert) => {
     let adgRule = '||example.com^$xmlhttprequest,redirect=nooptext';
     let expectedUboRule = '||example.com^$xmlhttprequest,redirect=noop.txt';
-    assert.equal(convertAdgRedirectToUbo(adgRule), expectedUboRule);
+    assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
 
     adgRule = '||example.com/images/*.png$image,important,redirect=1x1-transparent.gif,domain=example.com|example.org';
     expectedUboRule = '||example.com/images/*.png$image,important,redirect=1x1.gif,domain=example.com|example.org';
-    assert.equal(convertAdgRedirectToUbo(adgRule), expectedUboRule);
+    assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
 });
 /* eslint-enable max-len */

@@ -232,7 +232,7 @@ export const isAbpRewriteResourceRule = (rule) => {
  * @returns {boolean}
  */
 export const isValidRedirectRule = (rule) => {
-    if (isAdgRedirectResourceRule) {
+    if (isAdgRedirectResourceRule(rule)) {
         const ruleModifiers = parseModifiers(rule);
         const sourceType = ruleModifiers
             .find((el) => (VALID_SOURCE_TYPES.indexOf(el) > -1));
