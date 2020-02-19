@@ -56,7 +56,7 @@ test('ubo alias', (assert) => {
 
     const done = assert.async();
 
-    setTimeout(() => { addAttr(elem, 'test2'); }, 34);
+    setTimeout(() => { addAttr(elem, 'test2'); }, 10);
 
     setTimeout(() => {
         attrs.forEach((a) => {
@@ -90,8 +90,8 @@ test('Adg rule: no selector', (assert) => {
 
     const done = assert.async();
 
-    setTimeout(() => { addAttr(elem, 'test1'); }, 62);
-    setTimeout(() => { addAttr(elem, 'test2'); }, 75);
+    setTimeout(() => { addAttr(elem, 'test1'); }, 20);
+    setTimeout(() => { addAttr(elem, 'test2'); }, 30);
 
     setTimeout(() => {
         attrs.forEach((a) => {
@@ -126,7 +126,7 @@ test('Adg rule', (assert) => {
 
     const done = assert.async();
 
-    setTimeout(() => { addAttr(elem, 'test1'); }, 87);
+    setTimeout(() => { addAttr(elem, 'test1'); }, 60);
 
     setTimeout(() => {
         attrs.forEach((a) => {

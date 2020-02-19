@@ -53,7 +53,7 @@ test('Adg rule: no selector', (assert) => {
 
     const done = assert.async();
 
-    setTimeout(() => { first.classList.add('example'); }, 34);
+    setTimeout(() => { first.classList.add('example'); }, 15);
 
     setTimeout(() => {
         classNames.forEach((a) => {
@@ -92,8 +92,8 @@ test('Adg rule', (assert) => {
 
     const done = assert.async();
 
-    setTimeout(() => { childElement.classList.add('test11'); }, 52);
-    setTimeout(() => { childElement.classList.add('test22'); }, 143);
+    setTimeout(() => { childElement.classList.add('test11'); }, 50);
+    setTimeout(() => { childElement.classList.add('test22'); }, 80);
 
     setTimeout(() => {
         classNames.forEach((a) => {
