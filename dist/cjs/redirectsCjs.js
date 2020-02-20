@@ -4369,39 +4369,44 @@ var validAdgRedirects = redirects.filter(function (el) {
   return el.adg;
 });
 /**
+ * Converts array of pairs to object.
+ * Sort of Object.fromEntries() polyfill.
+ * @param {Array} pairs - array of pairs
+ * @returns {Object}
+ */
+
+var arrayOfPairsToObject = function arrayOfPairsToObject(pairs) {
+  var output = pairs.reduce(function (acc, el) {
+    var _el = slicedToArray(el, 2),
+        key = _el[0],
+        value = _el[1];
+
+    acc[key] = value;
+    return acc;
+  }, {});
+  return output;
+};
+/**
  * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
  * It's used for UBO -> ADG  converting
  */
 
-var uboToAdgCompatibility = validAdgRedirects.filter(function (el) {
+
+var uboToAdgCompatibility = arrayOfPairsToObject(validAdgRedirects.filter(function (el) {
   return el.ubo;
 }).map(function (el) {
   return [el.ubo, el.adg];
-}).reduce(function (acc, el) {
-  var _el = slicedToArray(el, 2),
-      key = _el[0],
-      value = _el[1];
-
-  acc[key] = value;
-  return acc;
-}, {});
+}));
 /**
  * Compatibility object where KEYS = ABP redirect names and VALUES = ADG redirect names
  * It's used for ABP -> ADG  converting
  */
 
-var abpToAdgCompatibility = validAdgRedirects.filter(function (el) {
+var abpToAdgCompatibility = arrayOfPairsToObject(validAdgRedirects.filter(function (el) {
   return el.abp;
 }).map(function (el) {
   return [el.abp, el.adg];
-}).reduce(function (acc, el) {
-  var _el2 = slicedToArray(el, 2),
-      key = _el2[0],
-      value = _el2[1];
-
-  acc[key] = value;
-  return acc;
-}, {});
+}));
 /**
  * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
  * It's used for ADG -> UBO  converting
@@ -4412,9 +4417,9 @@ var adgToUboCompatibility = validAdgRedirects.filter(function (el) {
 }).map(function (el) {
   return [el.adg, el.ubo];
 }).reduce(function (acc, el) {
-  var _el3 = slicedToArray(el, 2),
-      key = _el3[0],
-      value = _el3[1];
+  var _el2 = slicedToArray(el, 2),
+      key = _el2[0],
+      value = _el2[1];
 
   acc[key] = value;
   return acc;
