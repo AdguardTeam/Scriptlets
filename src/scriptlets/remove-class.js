@@ -1,11 +1,12 @@
-import { hit } from '../helpers';
+import { hit, observeDOMChanges } from '../helpers';
 
 /* eslint-disable max-len */
 /**
  * @scriptlet remove-class
  *
  * @description
- * Removes the specified classes from DOM notes. This scriptlet runs only once after the page load (DOMContentLoaded).
+ * Removes the specified classes from DOM nodes. This scriptlet runs once after the page loads
+ * and after that periodically in order to DOM tree changes.
  *
  * **Syntax**
  * ```
@@ -63,11 +64,7 @@ export function removeClass(source, classNames, selector) {
         });
     }
 
-    const removeClassHandler = (ev) => {
-        if (ev) {
-            window.removeEventListener(ev.type, removeClassHandler, true);
-        }
-
+    const removeClassHandler = () => {
         const nodes = new Set();
         if (selector) {
             const foundedNodes = [].slice.call(document.querySelectorAll(selector));
@@ -98,15 +95,16 @@ export function removeClass(source, classNames, selector) {
         }
     };
 
-    if (document.readyState === 'loading') {
-        window.addEventListener('DOMContentLoaded', removeClassHandler, true);
-    } else {
-        removeClassHandler();
-    }
+    removeClassHandler();
+
+    const CLASS_ATTR_NAME = ['class'];
+    // 'true' for observing attributes
+    // 'class' for observing only classes
+    observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
 }
 
 removeClass.names = [
     'remove-class',
 ];
 
-removeClass.injections = [hit];
+removeClass.injections = [hit, observeDOMChanges];

@@ -28,6 +28,11 @@ const createElem = (className, attrs) => {
     return elem;
 };
 
+function addAttr(elem, attr) {
+    elem.setAttribute(attr, true);
+}
+
+
 test('ubo alias', (assert) => {
     createHit();
     const attrs = ['test1', 'test2'];
@@ -47,7 +52,21 @@ test('ubo alias', (assert) => {
         assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
     });
     assert.strictEqual(window.hit, 'FIRED');
+
+
+    const done = assert.async();
+
+    setTimeout(() => { addAttr(elem, 'test2'); }, 10);
+
+    setTimeout(() => {
+        attrs.forEach((a) => {
+            assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
+        });
+        assert.strictEqual(window.hit, 'FIRED');
+        done();
+    }, 50);
 });
+
 
 test('Adg rule: no selector', (assert) => {
     createHit();
@@ -59,6 +78,7 @@ test('Adg rule: no selector', (assert) => {
     };
 
     const elem = createElem(null, attrs);
+
     const resString = window.scriptlets.invoke(params);
     evalWrapper(resString);
 
@@ -66,7 +86,22 @@ test('Adg rule: no selector', (assert) => {
         assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
     });
     assert.strictEqual(window.hit, 'FIRED');
+
+
+    const done = assert.async();
+
+    setTimeout(() => { addAttr(elem, 'test1'); }, 20);
+    setTimeout(() => { addAttr(elem, 'test2'); }, 30);
+
+    setTimeout(() => {
+        attrs.forEach((a) => {
+            assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
+        });
+        assert.strictEqual(window.hit, 'FIRED');
+        done();
+    }, 100);
 });
+
 
 test('Adg rule', (assert) => {
     createHit();
@@ -87,4 +122,17 @@ test('Adg rule', (assert) => {
         assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
     });
     assert.strictEqual(window.hit, 'FIRED');
+
+
+    const done = assert.async();
+
+    setTimeout(() => { addAttr(elem, 'test1'); }, 60);
+
+    setTimeout(() => {
+        attrs.forEach((a) => {
+            assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
+        });
+        assert.strictEqual(window.hit, 'FIRED');
+        done();
+    }, 100);
 });

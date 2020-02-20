@@ -262,6 +262,92 @@
     };
 
     /**
+     * DOM tree changes observer. Used for 'remove-attr' and 'remove-class' scriptlets
+     * @param {Function} callback
+     * @param {Boolean} observeAttrs - optional parameter - should observer check attibutes changes
+     */
+    var observeDOMChanges = function observeDOMChanges(callback) {
+      var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      var attrsToObserv = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+
+      /**
+       * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
+       * Those calls that fall into the "cooldown" period, are ignored
+       * @param {Function} method
+       * @param {Number} delay - milliseconds
+       */
+      var throttle = function throttle(method, delay) {
+        var wait = false;
+        var savedArgs;
+
+        var wrapper = function wrapper() {
+          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+
+          if (wait) {
+            savedArgs = args;
+            return;
+          }
+
+          method.apply(void 0, args);
+          wait = true;
+          setTimeout(function () {
+            wait = false;
+
+            if (savedArgs) {
+              wrapper(savedArgs);
+              savedArgs = null;
+            }
+          }, delay);
+        };
+
+        return wrapper;
+      };
+      /**
+       * 'delay' in milliseconds for 'throttle' method
+       */
+
+
+      var THROTTLE_DELAY_MS = 20;
+      /**
+       * Used for remove-class
+       */
+      // eslint-disable-next-line no-use-before-define
+
+      var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+
+      var connect = function connect() {
+        if (attrsToObserv.length > 0) {
+          observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            attributes: observeAttrs,
+            attributeFilter: attrsToObserv
+          });
+        } else {
+          observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            attributes: observeAttrs
+          });
+        }
+      };
+
+      var disconnect = function disconnect() {
+        observer.disconnect();
+      };
+
+      function callbackWrapper() {
+        disconnect();
+        callback();
+        connect();
+      }
+
+      connect();
+    };
+
+    /**
      * This file must export all used dependencies
      */
 
@@ -284,7 +370,8 @@
         noopThis: noopThis,
         noopArray: noopArray,
         noopStr: noopStr,
-        hit: hit
+        hit: hit,
+        observeDOMChanges: observeDOMChanges
     });
 
     /**
@@ -2222,7 +2309,8 @@
      * @scriptlet remove-attr
      *
      * @description
-     * Removes the specified attributes from DOM notes. This scriptlet runs only once after the page load (DOMContentLoaded).
+     * Removes the specified attributes from DOM nodes. This scriptlet runs once when the page loads
+     * and after that periodically in order to DOM tree changes.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
@@ -2280,11 +2368,7 @@
         selector = "[".concat(attrs.join('],['), "]");
       }
 
-      var rmattr = function rmattr(ev) {
-        if (ev) {
-          window.removeEventListener(ev.type, rmattr, true);
-        }
-
+      var rmattr = function rmattr() {
         var nodes = [].slice.call(document.querySelectorAll(selector));
         var removed = false;
         nodes.forEach(function (node) {
@@ -2299,14 +2383,12 @@
         }
       };
 
-      if (document.readyState === 'loading') {
-        window.addEventListener('DOMContentLoaded', rmattr, true);
-      } else {
-        rmattr();
-      }
+      rmattr(); // 'true' for observing attributes
+
+      observeDOMChanges(rmattr, true);
     }
     removeAttr.names = ['remove-attr', 'remove-attr.js', 'ubo-remove-attr.js', 'ra.js', 'ubo-ra.js'];
-    removeAttr.injections = [hit];
+    removeAttr.injections = [hit, observeDOMChanges];
 
     /* eslint-disable max-len */
 
@@ -2314,7 +2396,8 @@
      * @scriptlet remove-class
      *
      * @description
-     * Removes the specified classes from DOM notes. This scriptlet runs only once after the page load (DOMContentLoaded).
+     * Removes the specified classes from DOM nodes. This scriptlet runs once after the page loads
+     * and after that periodically in order to DOM tree changes.
      *
      * **Syntax**
      * ```
@@ -2377,11 +2460,7 @@
         });
       }
 
-      var removeClassHandler = function removeClassHandler(ev) {
-        if (ev) {
-          window.removeEventListener(ev.type, removeClassHandler, true);
-        }
-
+      var removeClassHandler = function removeClassHandler() {
         var nodes = new Set();
 
         if (selector) {
@@ -2415,14 +2494,14 @@
         }
       };
 
-      if (document.readyState === 'loading') {
-        window.addEventListener('DOMContentLoaded', removeClassHandler, true);
-      } else {
-        removeClassHandler();
-      }
+      removeClassHandler();
+      var CLASS_ATTR_NAME = ['class']; // 'true' for observing attributes
+      // 'class' for observing only classes
+
+      observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
     }
     removeClass.names = ['remove-class'];
-    removeClass.injections = [hit];
+    removeClass.injections = [hit, observeDOMChanges];
 
     /**
      * @scriptlet disable-newtab-links
