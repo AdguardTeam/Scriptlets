@@ -437,6 +437,56 @@
       return "function(source, args){\n".concat(code, "\n}");
     }
 
+    function _arrayWithHoles(arr) {
+      if (Array.isArray(arr)) return arr;
+    }
+
+    var arrayWithHoles = _arrayWithHoles;
+
+    function _iterableToArrayLimit(arr, i) {
+      if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) {
+        return;
+      }
+
+      var _arr = [];
+      var _n = true;
+      var _d = false;
+      var _e = undefined;
+
+      try {
+        for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+          _arr.push(_s.value);
+
+          if (i && _arr.length === i) break;
+        }
+      } catch (err) {
+        _d = true;
+        _e = err;
+      } finally {
+        try {
+          if (!_n && _i["return"] != null) _i["return"]();
+        } finally {
+          if (_d) throw _e;
+        }
+      }
+
+      return _arr;
+    }
+
+    var iterableToArrayLimit = _iterableToArrayLimit;
+
+    function _nonIterableRest() {
+      throw new TypeError("Invalid attempt to destructure non-iterable instance");
+    }
+
+    var nonIterableRest = _nonIterableRest;
+
+    function _slicedToArray(arr, i) {
+      return arrayWithHoles(arr) || iterableToArrayLimit(arr, i) || nonIterableRest();
+    }
+
+    var slicedToArray = _slicedToArray;
+
     function _defineProperty(obj, key, value) {
       if (key in obj) {
         Object.defineProperty(obj, key, {
@@ -706,49 +756,58 @@
      * It's used for UBO -> ADG  converting
      */
 
-    var uboToAdgCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
+    var uboToAdgCompatibility = validAdgRedirects.filter(function (el) {
       return el.ubo;
     }).map(function (el) {
       return [el.ubo, el.adg];
-    }));
+    }).reduce(function (acc, el) {
+      var _el = slicedToArray(el, 2),
+          key = _el[0],
+          value = _el[1];
+
+      acc[key] = value;
+      return acc;
+    }, {});
     /**
      * Compatibility object where KEYS = ABP redirect names and VALUES = ADG redirect names
      * It's used for ABP -> ADG  converting
      */
 
-    var abpToAdgCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
+    var abpToAdgCompatibility = validAdgRedirects.filter(function (el) {
       return el.abp;
     }).map(function (el) {
       return [el.abp, el.adg];
-    }));
+    }).reduce(function (acc, el) {
+      var _el2 = slicedToArray(el, 2),
+          key = _el2[0],
+          value = _el2[1];
+
+      acc[key] = value;
+      return acc;
+    }, {});
     /**
      * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
      * It's used for ADG -> UBO  converting
      */
 
-    var adgToUboCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
+    var adgToUboCompatibility = validAdgRedirects.filter(function (el) {
       return el.ubo;
     }).map(function (el) {
       return [el.adg, el.ubo];
-    }));
+    }).reduce(function (acc, el) {
+      var _el3 = slicedToArray(el, 2),
+          key = _el3[0],
+          value = _el3[1];
 
-    function _arrayWithHoles(arr) {
-      if (Array.isArray(arr)) return arr;
-    }
-
-    var arrayWithHoles = _arrayWithHoles;
+      acc[key] = value;
+      return acc;
+    }, {});
 
     function _iterableToArray(iter) {
       if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
     }
 
     var iterableToArray = _iterableToArray;
-
-    function _nonIterableRest() {
-      throw new TypeError("Invalid attempt to destructure non-iterable instance");
-    }
-
-    var nonIterableRest = _nonIterableRest;
 
     function _toArray(arr) {
       return arrayWithHoles(arr) || iterableToArray(arr) || nonIterableRest();

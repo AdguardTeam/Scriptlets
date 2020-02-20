@@ -4108,6 +4108,92 @@ var hit = function hit(source, message) {
 };
 
 /**
+ * DOM tree changes observer. Used for 'remove-attr' and 'remove-class' scriptlets
+ * @param {Function} callback
+ * @param {Boolean} observeAttrs - optional parameter - should observer check attibutes changes
+ */
+var observeDOMChanges = function observeDOMChanges(callback) {
+  var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+  var attrsToObserv = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+
+  /**
+   * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
+   * Those calls that fall into the "cooldown" period, are ignored
+   * @param {Function} method
+   * @param {Number} delay - milliseconds
+   */
+  var throttle = function throttle(method, delay) {
+    var wait = false;
+    var savedArgs;
+
+    var wrapper = function wrapper() {
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      if (wait) {
+        savedArgs = args;
+        return;
+      }
+
+      method.apply(void 0, args);
+      wait = true;
+      setTimeout(function () {
+        wait = false;
+
+        if (savedArgs) {
+          wrapper(savedArgs);
+          savedArgs = null;
+        }
+      }, delay);
+    };
+
+    return wrapper;
+  };
+  /**
+   * 'delay' in milliseconds for 'throttle' method
+   */
+
+
+  var THROTTLE_DELAY_MS = 20;
+  /**
+   * Used for remove-class
+   */
+  // eslint-disable-next-line no-use-before-define
+
+  var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+
+  var connect = function connect() {
+    if (attrsToObserv.length > 0) {
+      observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: observeAttrs,
+        attributeFilter: attrsToObserv
+      });
+    } else {
+      observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: observeAttrs
+      });
+    }
+  };
+
+  var disconnect = function disconnect() {
+    observer.disconnect();
+  };
+
+  function callbackWrapper() {
+    disconnect();
+    callback();
+    connect();
+  }
+
+  connect();
+};
+
+/**
  * This file must export all used dependencies
  */
 
@@ -4130,7 +4216,8 @@ var dependencies = /*#__PURE__*/Object.freeze({
   noopThis: noopThis,
   noopArray: noopArray,
   noopStr: noopStr,
-  hit: hit
+  hit: hit,
+  observeDOMChanges: observeDOMChanges
 });
 
 /**
@@ -4188,6 +4275,56 @@ function passSourceAndProps(source, code) {
   return "(function(source, args){\n".concat(code, "\n})(").concat(params, ");");
 }
 
+function _arrayWithHoles(arr) {
+  if (Array.isArray(arr)) return arr;
+}
+
+var arrayWithHoles = _arrayWithHoles;
+
+function _iterableToArrayLimit(arr, i) {
+  if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) {
+    return;
+  }
+
+  var _arr = [];
+  var _n = true;
+  var _d = false;
+  var _e = undefined;
+
+  try {
+    for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+      _arr.push(_s.value);
+
+      if (i && _arr.length === i) break;
+    }
+  } catch (err) {
+    _d = true;
+    _e = err;
+  } finally {
+    try {
+      if (!_n && _i["return"] != null) _i["return"]();
+    } finally {
+      if (_d) throw _e;
+    }
+  }
+
+  return _arr;
+}
+
+var iterableToArrayLimit = _iterableToArrayLimit;
+
+function _nonIterableRest() {
+  throw new TypeError("Invalid attempt to destructure non-iterable instance");
+}
+
+var nonIterableRest = _nonIterableRest;
+
+function _slicedToArray(arr, i) {
+  return arrayWithHoles(arr) || iterableToArrayLimit(arr, i) || nonIterableRest();
+}
+
+var slicedToArray = _slicedToArray;
+
 /**
  * AdGuard scriptlet rule mask
  */
@@ -4236,31 +4373,52 @@ var validAdgRedirects = redirects.filter(function (el) {
  * It's used for UBO -> ADG  converting
  */
 
-var uboToAdgCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
+var uboToAdgCompatibility = validAdgRedirects.filter(function (el) {
   return el.ubo;
 }).map(function (el) {
   return [el.ubo, el.adg];
-}));
+}).reduce(function (acc, el) {
+  var _el = slicedToArray(el, 2),
+      key = _el[0],
+      value = _el[1];
+
+  acc[key] = value;
+  return acc;
+}, {});
 /**
  * Compatibility object where KEYS = ABP redirect names and VALUES = ADG redirect names
  * It's used for ABP -> ADG  converting
  */
 
-var abpToAdgCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
+var abpToAdgCompatibility = validAdgRedirects.filter(function (el) {
   return el.abp;
 }).map(function (el) {
   return [el.abp, el.adg];
-}));
+}).reduce(function (acc, el) {
+  var _el2 = slicedToArray(el, 2),
+      key = _el2[0],
+      value = _el2[1];
+
+  acc[key] = value;
+  return acc;
+}, {});
 /**
  * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
  * It's used for ADG -> UBO  converting
  */
 
-var adgToUboCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
+var adgToUboCompatibility = validAdgRedirects.filter(function (el) {
   return el.ubo;
 }).map(function (el) {
   return [el.adg, el.ubo];
-}));
+}).reduce(function (acc, el) {
+  var _el3 = slicedToArray(el, 2),
+      key = _el3[0],
+      value = _el3[1];
+
+  acc[key] = value;
+  return acc;
+}, {});
 /**
  * Parse redirect rule modifiers
  * @param {String} rule

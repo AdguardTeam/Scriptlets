@@ -112,37 +112,46 @@ const validAdgRedirects = compatibilityTable.redirects.filter((el) => (el.adg));
  * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
  * It's used for UBO -> ADG  converting
  */
-export const uboToAdgCompatibility = Object.fromEntries(
-    validAdgRedirects
-        .filter(((el) => (el.ubo)))
-        .map((el) => {
-            return [el.ubo, el.adg];
-        }),
-);
+export const uboToAdgCompatibility = validAdgRedirects
+    .filter(((el) => (el.ubo)))
+    .map((el) => {
+        return [el.ubo, el.adg];
+    })
+    .reduce((acc, el) => {
+        const [key, value] = el;
+        acc[key] = value;
+        return acc;
+    }, {});
 
 /**
  * Compatibility object where KEYS = ABP redirect names and VALUES = ADG redirect names
  * It's used for ABP -> ADG  converting
  */
-export const abpToAdgCompatibility = Object.fromEntries(
-    validAdgRedirects
-        .filter(((el) => (el.abp)))
-        .map((el) => {
-            return [el.abp, el.adg];
-        }),
-);
+export const abpToAdgCompatibility = validAdgRedirects
+    .filter((el) => (el.abp))
+    .map((el) => {
+        return [el.abp, el.adg];
+    })
+    .reduce((acc, el) => {
+        const [key, value] = el;
+        acc[key] = value;
+        return acc;
+    }, {});
 
 /**
  * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
  * It's used for ADG -> UBO  converting
  */
-export const adgToUboCompatibility = Object.fromEntries(
-    validAdgRedirects
-        .filter(((el) => (el.ubo)))
-        .map((el) => {
-            return [el.adg, el.ubo];
-        }),
-);
+export const adgToUboCompatibility = validAdgRedirects
+    .filter((el) => (el.ubo))
+    .map((el) => {
+        return [el.adg, el.ubo];
+    })
+    .reduce((acc, el) => {
+        const [key, value] = el;
+        acc[key] = value;
+        return acc;
+    }, {});
 
 /**
  * Parse redirect rule modifiers
