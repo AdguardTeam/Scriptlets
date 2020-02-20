@@ -1,11 +1,12 @@
-import { hit } from '../helpers';
+import { hit, observeDOMChanges } from '../helpers';
 
 /* eslint-disable max-len */
 /**
  * @scriptlet remove-attr
  *
  * @description
- * Removes the specified attributes from DOM notes. This scriptlet runs only once after the page load (DOMContentLoaded).
+ * Removes the specified attributes from DOM nodes. This scriptlet runs once when the page loads
+ * and after that periodically in order to DOM tree changes.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
@@ -57,11 +58,7 @@ export function removeAttr(source, attrs, selector) {
         selector = `[${attrs.join('],[')}]`;
     }
 
-    const rmattr = (ev) => {
-        if (ev) {
-            window.removeEventListener(ev.type, rmattr, true);
-        }
-
+    const rmattr = () => {
         const nodes = [].slice.call(document.querySelectorAll(selector));
         let removed = false;
         nodes.forEach((node) => {
@@ -75,11 +72,10 @@ export function removeAttr(source, attrs, selector) {
         }
     };
 
-    if (document.readyState === 'loading') {
-        window.addEventListener('DOMContentLoaded', rmattr, true);
-    } else {
-        rmattr();
-    }
+    rmattr();
+
+    // 'true' for observing attributes
+    observeDOMChanges(rmattr, true);
 }
 
 removeAttr.names = [
@@ -90,4 +86,4 @@ removeAttr.names = [
     'ubo-ra.js',
 ];
 
-removeAttr.injections = [hit];
+removeAttr.injections = [hit, observeDOMChanges];
