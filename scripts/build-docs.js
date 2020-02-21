@@ -56,7 +56,8 @@ const getComments = (srcPath) => {
         });
 
     if (describingComment.length === 0) {
-        throw new Error(`No description in ${srcPath}`);
+        throw new Error(`No description in ${srcPath}.
+Please add one OR edit the list of NON_SCRIPTLETS_FILES / NON_REDIRECTS_FILES.`);
     }
 
     return describingComment;
