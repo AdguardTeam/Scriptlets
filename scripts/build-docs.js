@@ -17,12 +17,10 @@ const NON_SCRIPTLETS_FILES = [
     'scriptlets.js',
     'scriptletsList.js',
 ];
-
 const NON_REDIRECTS_FILES = [
     'index.js',
     'redirects.js',
     'redirectsList.js',
-    'redirectsModule.js',
 ];
 
 /**
