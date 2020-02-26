@@ -12,6 +12,7 @@ const name = 'prevent-setTimeout';
 const evalWrap = eval;
 
 const nativeSetTimeout = window.setTimeout;
+const nativeConsole = console.log; // eslint-disable-line no-console
 
 const beforeEach = () => {
     window.__debugScriptlets = () => {
@@ -22,79 +23,91 @@ const beforeEach = () => {
 const afterEach = () => {
     window.setTimeout = nativeSetTimeout;
     clearGlobalProps('hit', 'aaa', '__debugScriptlets');
+    console.log = nativeConsole; // eslint-disable-line no-console
 };
 
+
 module(name, { beforeEach, afterEach });
-test('prevent-setTimeout: adg no args', (assert) => {
+
+
+test('prevent-setTimeout: adg no args -- logging', (assert) => {
     const params = {
         name,
         args: [],
         verbose: true,
     };
     const scriptlet = window.scriptlets.invoke(params);
+    evalWrap(scriptlet);
     const done = assert.async();
 
-    window.aaa = 'value';
+    const agLogSetTimeout = 'agLogSetTimeout';
+    function callback() {
+        window[agLogSetTimeout] = 'changed';
+    }
+    const timeout = 10;
+
+    setTimeout(callback, timeout);
+
     // We need to run our assertion after all timeouts
     setTimeout(() => {
-        assert.equal(window.aaa, 'value', 'Target property not changed');
         assert.equal(window.hit, 'value', 'Hit function was executed');
+        assert.strictEqual(window[agLogSetTimeout], 'changed', 'property changed');
+        clearGlobalProps('hit', agLogSetTimeout);
         done();
-    }, 20);
-    // run scriptlet code
-    evalWrap(scriptlet);
-    // check if scriptlet works
-    setTimeout(() => { window.aaa = 'new value'; });
+    }, 50);
 });
 
-test('prevent-setTimeout: ubo alias no args', (assert) => {
-    const params = {
-        name: 'ubo-setTimeout-defuser.js',
-        args: [],
-        verbose: true,
-    };
-    const scriptlet = window.scriptlets.invoke(params);
-    const done = assert.async();
 
-    window.aaa = 'value';
-    // We need to run our assertion after all timeouts
-    setTimeout(() => {
-        assert.equal(window.aaa, 'value', 'Target property not changed');
-        assert.equal(window.hit, 'value', 'Hit function was executed');
-        done();
-    }, 20);
-    // run scriptlet code
-    evalWrap(scriptlet);
-    // check if scriptlet works
-    setTimeout(() => { window.aaa = 'new value'; });
-});
+// test('prevent-setTimeout: ubo alias no args', (assert) => {
+//     const params = {
+//         name: 'ubo-setTimeout-defuser.js',
+//         args: [],
+//         verbose: true,
+//     };
+//     const scriptlet = window.scriptlets.invoke(params);
+//     const done = assert.async();
 
-test('prevent-setTimeout: adg by timeout name', (assert) => {
-    const params = {
-        name,
-        args: ['test', '500'],
-        verbose: true,
-    };
-    const scriptlet = window.scriptlets.invoke(params);
-    const done = assert.async();
+//     window.aaa = 'value';
+//     // We need to run our assertion after all timeouts
+//     setTimeout(() => {
+//         assert.equal(window.aaa, 'value', 'Target property not changed');
+//         assert.equal(window.hit, 'value', 'Hit function was executed');
+//         done();
+//     }, 20);
+//     // run scriptlet code
+//     evalWrap(scriptlet);
+//     // check if scriptlet works
+//     setTimeout(() => { window.aaa = 'new value'; });
+// });
 
-    window.bbb = 'value';
-    window.ddd = 'value';
-    // We need to run our assertion after all timeouts
-    setTimeout(() => {
-        assert.equal(window.bbb, 'value', 'Target Target property not changed');
-        assert.equal(window.ddd, 'new value', 'Another property should successfully changed by another timeout');
-        assert.equal(window.hit, 'value', 'Hit function was executed');
-        done();
-    }, 100);
 
-    // run scriptlet code
-    evalWrap(scriptlet);
-    // check if scriptlet works
-    const test = () => { window.bbb = 'new value'; };
-    setTimeout(test, 500);
+// test('prevent-setTimeout: adg by timeout name', (assert) => {
+//     const params = {
+//         name,
+//         args: ['test', '500'],
+//         verbose: true,
+//     };
+//     const scriptlet = window.scriptlets.invoke(params);
+//     const done = assert.async();
 
-    // check if scriptlet doesn't affect on others timeouts
-    const anotherTimeout = () => { window.ddd = 'new value'; };
-    setTimeout(anotherTimeout);
-});
+//     window.bbb = 'value';
+//     window.ddd = 'value';
+//     // We need to run our assertion after all timeouts
+//     setTimeout(() => {
+//         assert.equal(window.bbb, 'value', 'Target Target property not changed');
+// eslint-disable-next-line max-len
+//         assert.equal(window.ddd, 'new value', 'Another property should successfully changed by another timeout');
+//         assert.equal(window.hit, 'value', 'Hit function was executed');
+//         done();
+//     }, 100);
+
+//     // run scriptlet code
+//     evalWrap(scriptlet);
+//     // check if scriptlet works
+//     const test = () => { window.bbb = 'new value'; };
+//     setTimeout(test, 500);
+
+//     // check if scriptlet doesn't affect on others timeouts
+//     const anotherTimeout = () => { window.ddd = 'new value'; };
+//     setTimeout(anotherTimeout);
+// });

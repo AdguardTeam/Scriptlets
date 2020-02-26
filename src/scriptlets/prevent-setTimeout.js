@@ -1,4 +1,4 @@
-import { toRegExp } from '../helpers/string-utils';
+import { toRegExp, startsWith } from '../helpers/string-utils';
 import { hit } from '../helpers';
 
 /* eslint-disable max-len */
@@ -50,16 +50,48 @@ import { hit } from '../helpers';
 export function preventSetTimeout(source, match, delay) {
     const nativeTimeout = window.setTimeout;
     const nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
+    const log = console.log.bind(console); // eslint-disable-line no-console
+
+    // logs setTimeouts to console if no arguments have been specified
+    const shouldLog = ((typeof match === 'undefined') && (typeof delay === 'undefined'));
+
+    const INVERT_MARKER = '!';
+
+    const isNotMatch = startsWith(match, INVERT_MARKER);
+    if (isNotMatch) {
+        match = match.slice(1);
+    }
+    const isNotDelay = startsWith(delay, INVERT_MARKER);
+    if (isNotDelay) {
+        delay = delay.slice(1);
+    }
+
     delay = parseInt(delay, 10);
     delay = nativeIsNaN(delay) ? null : delay;
 
     match = match ? toRegExp(match) : toRegExp('/.?/');
-    const timeoutWrapper = (cb, d, ...args) => {
-        if ((!delay || d === delay) && match.test(cb.toString())) {
+
+    let shouldPrevent = false;
+    const timeoutWrapper = (callback, timeout, ...args) => {
+        if (shouldLog) {
             hit(source);
-            return nativeTimeout(() => { }, d);
+            log(`setTimeout("${callback.toString()}", ${timeout})`);
+            // return nativeTimeout.apply(window, [callback, timeout, ...args]);
+        } else if (!delay) {
+            shouldPrevent = match.test(callback.toString()) !== isNotMatch;
+        } else if (match === '/.?/') {
+            shouldPrevent = (timeout === delay) !== isNotDelay;
+        } else {
+            shouldPrevent = match.test(callback.toString()) !== isNotMatch
+                && (timeout === delay) !== isNotDelay;
         }
-        return nativeTimeout.apply(window, [cb, d, ...args]);
+
+        if (shouldPrevent) {
+            hit(source);
+            return nativeTimeout(() => { }, timeout);
+        }
+
+        return nativeTimeout.apply(window, [callback, timeout, ...args]);
     };
     window.setTimeout = timeoutWrapper;
 }
@@ -72,4 +104,4 @@ preventSetTimeout.names = [
     'ubo-std.js',
 ];
 
-preventSetTimeout.injections = [toRegExp, hit];
+preventSetTimeout.injections = [toRegExp, startsWith, hit];

@@ -874,27 +874,57 @@
       var nativeTimeout = window.setTimeout;
       var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
 
+      var log = console.log.bind(console); // eslint-disable-line no-console
+      // logs setTimeouts to console if no arguments have been specified
+
+      var shouldLog = match === undefined && delay == undefined;
+      console.log(typeof match, typeof delay, shouldLog);
+      var INVERT_MARKER = '!';
+      var isNotMatch = startsWith(match, INVERT_MARKER);
+
+      if (isNotMatch) {
+        match = match.slice(1);
+      }
+
+      var isNotDelay = startsWith(delay, INVERT_MARKER);
+
+      if (isNotDelay) {
+        delay = delay.slice(1);
+      }
+
       delay = parseInt(delay, 10);
       delay = nativeIsNaN(delay) ? null : delay;
       match = match ? toRegExp(match) : toRegExp('/.?/');
+      var shouldPrevent = false;
 
-      var timeoutWrapper = function timeoutWrapper(cb, d) {
-        if ((!delay || d === delay) && match.test(cb.toString())) {
+      var timeoutWrapper = function timeoutWrapper(callback, timeout) {
+        if (shouldLog) {
           hit(source);
-          return nativeTimeout(function () {}, d);
+          log("setTimeout(\"".concat(callback.toString(), "\", ").concat(timeout, ")")); // return nativeTimeout.apply(window, [callback, timeout, ...args]);
+        } else if (!delay) {
+          shouldPrevent = match.test(callback.toString()) !== isNotMatch;
+        } else if (match === '/.?/') {
+          shouldPrevent = timeout === delay !== isNotDelay;
+        } else {
+          shouldPrevent = match.test(callback.toString()) !== isNotMatch && timeout === delay !== isNotDelay;
+        }
+
+        if (shouldPrevent) {
+          hit(source);
+          return nativeTimeout(function () {}, timeout);
         }
 
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
 
-        return nativeTimeout.apply(window, [cb, d].concat(args));
+        return nativeTimeout.apply(window, [callback, timeout].concat(args));
       };
 
       window.setTimeout = timeoutWrapper;
     }
     preventSetTimeout.names = ['prevent-setTimeout', 'setTimeout-defuser.js', 'ubo-setTimeout-defuser.js', 'std.js', 'ubo-std.js'];
-    preventSetTimeout.injections = [toRegExp, hit];
+    preventSetTimeout.injections = [toRegExp, startsWith, hit];
 
     /* eslint-disable max-len */
 
