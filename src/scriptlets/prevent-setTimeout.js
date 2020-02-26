@@ -98,9 +98,13 @@ export function preventSetTimeout(source, match, delay) {
 
 preventSetTimeout.names = [
     'prevent-setTimeout',
-    'setTimeout-defuser.js',
+    'no-setTimeout-if.js', // new implementation of setTimeout-defuser.js
+    'ubo-no-setTimeout-if.js',
+    'setTimeout-defuser.js', // old name should be supported as well
     'ubo-setTimeout-defuser.js',
-    'std.js',
+    'nostif.js', // new short name of no-setTimeout-if
+    'ubo-nostif.js',
+    'std.js', // old short scriptlet name
     'ubo-std.js',
 ];
 

@@ -877,8 +877,7 @@
       var log = console.log.bind(console); // eslint-disable-line no-console
       // logs setTimeouts to console if no arguments have been specified
 
-      var shouldLog = match === undefined && delay == undefined;
-      console.log(typeof match, typeof delay, shouldLog);
+      var shouldLog = typeof match === 'undefined' && typeof delay === 'undefined';
       var INVERT_MARKER = '!';
       var isNotMatch = startsWith(match, INVERT_MARKER);
 
@@ -923,7 +922,11 @@
 
       window.setTimeout = timeoutWrapper;
     }
-    preventSetTimeout.names = ['prevent-setTimeout', 'setTimeout-defuser.js', 'ubo-setTimeout-defuser.js', 'std.js', 'ubo-std.js'];
+    preventSetTimeout.names = ['prevent-setTimeout', 'no-setTimeout-if.js', // new implementation of setTimeout-defuser.js
+    'ubo-no-setTimeout-if.js', 'setTimeout-defuser.js', // old name should be supported as well
+    'ubo-setTimeout-defuser.js', 'nostif.js', // new short name of no-setTimeout-if
+    'ubo-nostif.js', 'std.js', // old short scriptlet name
+    'ubo-std.js'];
     preventSetTimeout.injections = [toRegExp, startsWith, hit];
 
     /* eslint-disable max-len */
