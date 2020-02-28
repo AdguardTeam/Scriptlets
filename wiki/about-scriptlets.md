@@ -12,8 +12,6 @@
 * [json-prune](#json-prune)
 * [log-addEventListener](#log-addEventListener)
 * [log-eval](#log-eval)
-* [log-setInterval](#log-setInterval)
-* [log-setTimeout](#log-setTimeout)
 * [log](#log)
 * [noeval](#noeval)
 * [nowebrtc](#nowebrtc)
@@ -377,34 +375,6 @@ example.org#%#//scriptlet("log-eval")
 [Scriptlet source](../src/scriptlets/log-eval.js)
 * * *
 
-### <a id="log-setInterval"></a> ⚡️ log-setInterval
-
-Logs all setInterval calls to the console.
-
-Related UBO scriptlet:
-https://github.com/gorhill/uBlock/wiki/Resources-Library#setinterval-loggerjs-
-
-**Syntax**
-```
-example.org#%#//scriptlet("log-setInterval")
-```
-[Scriptlet source](../src/scriptlets/log-setInterval.js)
-* * *
-
-### <a id="log-setTimeout"></a> ⚡️ log-setTimeout
-
-Logs all setTimeout call to the console.
-
-Related UBO scriptlet:
-https://github.com/gorhill/uBlock/wiki/Resources-Library#settimeout-loggerjs-
-
-**Syntax**
-```
-example.org#%#//scriptlet("log-setTimeout")
-```
-[Scriptlet source](../src/scriptlets/log-setTimeout.js)
-* * *
-
 ### <a id="log"></a> ⚡️ log
 
 A simple scriptlet which only purpose is to print arguments to console.
@@ -571,7 +541,7 @@ example.org#%#//scriptlet("prevent-setInterval"[, <search>[, <delay>]])
 
 **Parameters**
 
-Call with no arguments will log calls to setInterval while debugging,
+Call with no arguments will log calls to setInterval while debugging (`log-setInterval` superseding),
 so production filter lists' rules definitely require at least one of the parameters:
 - `search` (optional) string or regular expression.
 If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
@@ -671,7 +641,7 @@ example.org#%#//scriptlet("prevent-setTimeout"[, <search>[, <delay>]])
 
 **Parameters**
 
-Call with no arguments will log calls to setTimeout while debugging,
+Call with no arguments will log calls to setTimeout while debugging (`log-setTimeout` superseding),
 so production filter lists' rules definitely require at least one of the parameters:
 - `search` (optional) string or regular expression.
 If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.

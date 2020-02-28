@@ -21,7 +21,7 @@ import { hit } from '../helpers';
  *
  * **Parameters**
  *
- * Call with no arguments will log calls to setTimeout while debugging,
+ * Call with no arguments will log calls to setTimeout while debugging (`log-setTimeout` superseding),
  * so production filter lists' rules definitely require at least one of the parameters:
  * - `search` (optional) string or regular expression.
  * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.

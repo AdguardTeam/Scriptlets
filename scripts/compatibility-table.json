@@ -52,12 +52,6 @@
             "adg": "log-eval"
         },
         {
-            "adg": "log-setInterval"
-        },
-        {
-            "adg": "log-setTimeout"
-        },
-        {
             "adg": "log",
             "abp": "log"
         },
@@ -91,11 +85,11 @@
         },
         {
             "adg": "prevent-setInterval",
-            "ubo": "setInterval-defuser.js (sid.js)"
+            "ubo": "no-setInterval-if.js (nosiif.js)"
         },
         {
             "adg": "prevent-setTimeout",
-            "ubo": "setTimeout-defuser.js (std.js)"
+            "ubo": "no-setTimeout-if.js (nostif.js)"
         },
         {
             "adg": "prevent-window-open"
@@ -153,12 +147,6 @@
         },
         {
             "ubo": "requestAnimationFrame-if.js (raf-if.js)"
-        },
-        {
-            "ubo": "no-setInterval-if.js (nosiif.js)"
-        },
-        {
-            "ubo": "no-setTimeout-if.js (nostif.js)"
         },
         {
             "abp": "trace"

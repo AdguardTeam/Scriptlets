@@ -71,7 +71,7 @@ test('prevent-setInterval: adg no args -- logging', (assert) => {
 
 test('prevent-setInterval: ubo alias no args -- logging', (assert) => {
     const params = {
-        name: 'ubo-setInterval-defuser.js',
+        name: 'ubo-no-setInterval-if.js',
         args: [],
         verbose: true,
     };

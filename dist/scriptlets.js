@@ -842,7 +842,7 @@
      *
      * **Parameters**
      *
-     * Call with no arguments will log calls to setTimeout while debugging,
+     * Call with no arguments will log calls to setTimeout while debugging (`log-setTimeout` superseding),
      * so production filter lists' rules definitely require at least one of the parameters:
      * - `search` (optional) string or regular expression.
      * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
@@ -1007,7 +1007,7 @@
      *
      * **Parameters**
      *
-     * Call with no arguments will log calls to setInterval while debugging,
+     * Call with no arguments will log calls to setInterval while debugging (`log-setInterval` superseding),
      * so production filter lists' rules definitely require at least one of the parameters:
      * - `search` (optional) string or regular expression.
      * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
@@ -1832,78 +1832,6 @@
     }
     logAddEventListener.names = ['log-addEventListener', 'addEventListener-logger.js', 'ubo-addEventListener-logger.js', 'aell.js', 'ubo-aell.js'];
     logAddEventListener.injections = [hit];
-
-    /* eslint-disable no-console */
-    /**
-     * @scriptlet log-setInterval
-     *
-     * @description
-     * Logs all setInterval calls to the console.
-     *
-     * Related UBO scriptlet:
-     * https://github.com/gorhill/uBlock/wiki/Resources-Library#setinterval-loggerjs-
-     *
-     * **Syntax**
-     * ```
-     * example.org#%#//scriptlet("log-setInterval")
-     * ```
-     */
-
-    function logSetInterval(source) {
-      var log = console.log.bind(console);
-      var nativeSetInterval = window.setInterval;
-
-      function setIntervalWrapper(callback, timeout) {
-        hit(source);
-        log("setInterval(\"".concat(callback.toString(), "\", ").concat(timeout, ")"));
-
-        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-          args[_key - 2] = arguments[_key];
-        }
-
-        return nativeSetInterval.apply(window, [callback, timeout].concat(args));
-      }
-
-      window.setInterval = setIntervalWrapper;
-    }
-    logSetInterval.names = ['log-setInterval', 'setInterval-logger.js', 'ubo-setInterval-logger.js'];
-    logSetInterval.injections = [hit];
-
-    /* eslint-disable no-console */
-    /**
-     * @scriptlet log-setTimeout
-     *
-     * @description
-     * Logs all setTimeout call to the console.
-     *
-     * Related UBO scriptlet:
-     * https://github.com/gorhill/uBlock/wiki/Resources-Library#settimeout-loggerjs-
-     *
-     * **Syntax**
-     * ```
-     * example.org#%#//scriptlet("log-setTimeout")
-     * ```
-     */
-
-    function logSetTimeout(source) {
-      var log = console.log.bind(console);
-      var nativeSetTimeout = window.setTimeout;
-
-      function setTimeoutWrapper(callback, timeout) {
-        hit(source);
-        log("setTimeout(\"".concat(callback.toString(), "\", ").concat(timeout, ")"));
-
-        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-          args[_key - 2] = arguments[_key];
-        }
-
-        return nativeSetTimeout.apply(window, [callback, timeout].concat(args));
-      }
-
-      window.setTimeout = setTimeoutWrapper;
-    }
-    logSetTimeout.names = ['log-setTimeout', 'setTimeout-logger.js', 'ubo-setTimeout-logger.js'];
-    logSetTimeout.injections = [hit];
 
     /* eslint-disable no-console, no-eval */
     /**
@@ -3067,8 +2995,6 @@
         preventBab: preventBab,
         nowebrtc: nowebrtc,
         logAddEventListener: logAddEventListener,
-        logSetInterval: logSetInterval,
-        logSetTimeout: logSetTimeout,
         logEval: logEval,
         log: log,
         noeval: noeval,

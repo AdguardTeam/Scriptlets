@@ -72,7 +72,7 @@ test('prevent-setTimeout: adg no args -- logging', (assert) => {
 
 test('prevent-setTimeout: ubo alias no args -- logging', (assert) => {
     const params = {
-        name: 'ubo-setTimeout-defuser.js',
+        name: 'ubo-no-setTimeout-if.js',
         args: [],
         verbose: true,
     };

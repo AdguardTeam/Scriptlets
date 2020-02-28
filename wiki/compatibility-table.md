@@ -15,8 +15,6 @@
 | json-prune | json-prune.js |  |
 | log-addEventListener | addEventListener-logger.js (aell.js) |  |
 | log-eval |  |  |
-| log-setInterval |  |  |
-| log-setTimeout |  |  |
 | log |  | log |
 | noeval |  |  |
 | nowebrtc | nowebrtc.js |  |
