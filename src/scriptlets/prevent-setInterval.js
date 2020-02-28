@@ -38,7 +38,7 @@ import { hit } from '../helpers';
  *     example.org#%#//scriptlet("prevent-setInterval", "/\.test/")
  *     ```
  *
- *     For instance, the followiing call will be prevented:
+ *     For instance, the following call will be prevented:
  *     ```javascript
  *     setInterval(function () {
  *         window.test = "value";
@@ -127,11 +127,11 @@ export function preventSetInterval(source, match, delay) {
 
     match = match ? toRegExp(match) : toRegExp('/.?/');
 
-    let shouldPrevent = false;
     const intervalWrapper = (callback, interval, ...args) => {
+        let shouldPrevent = false;
         if (shouldLog) {
             hit(source);
-            log(`setInverval("${callback.toString()}", ${interval})`);
+            log(`setInterval("${callback.toString()}", ${interval})`);
         } else if (!delay) {
             shouldPrevent = match.test(callback.toString()) !== isNotMatch;
         } else if (match === '/.?/') {

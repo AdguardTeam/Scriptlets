@@ -588,7 +588,7 @@ If do not start with `!`, the delay passed to the `setInterval` call will be mat
     example.org#%#//scriptlet("prevent-setInterval", "/\.test/")
     ```
 
-    For instance, the followiing call will be prevented:
+    For instance, the following call will be prevented:
     ```javascript
     setInterval(function () {
         window.test = "value";
@@ -688,7 +688,7 @@ If do not start with `!`, the delay passed to the `setTimeout` call will be matc
     example.org#%#//scriptlet("prevent-setTimeout", "/\.test/")
     ```
 
-    For instance, the followiing call will be prevented:
+    For instance, the following call will be prevented:
     ```javascript
     setTimeout(function () {
         window.test = "value";

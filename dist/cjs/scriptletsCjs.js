@@ -860,7 +860,7 @@ abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInCha
  *     example.org#%#//scriptlet("prevent-setTimeout", "/\.test/")
  *     ```
  *
- *     For instance, the followiing call will be prevented:
+ *     For instance, the following call will be prevented:
  *     ```javascript
  *     setTimeout(function () {
  *         window.test = "value";
@@ -1025,7 +1025,7 @@ preventSetTimeout.injections = [toRegExp, startsWith, hit];
  *     example.org#%#//scriptlet("prevent-setInterval", "/\.test/")
  *     ```
  *
- *     For instance, the followiing call will be prevented:
+ *     For instance, the following call will be prevented:
  *     ```javascript
  *     setInterval(function () {
  *         window.test = "value";
@@ -1116,12 +1116,13 @@ function preventSetInterval(source, match, delay) {
   delay = parseInt(delay, 10);
   delay = nativeIsNaN(delay) ? null : delay;
   match = match ? toRegExp(match) : toRegExp('/.?/');
-  var shouldPrevent = false;
 
   var intervalWrapper = function intervalWrapper(callback, interval) {
+    var shouldPrevent = false;
+
     if (shouldLog) {
       hit(source);
-      log("setInverval(\"".concat(callback.toString(), "\", ").concat(interval, ")"));
+      log("setInterval(\"".concat(callback.toString(), "\", ").concat(interval, ")"));
     } else if (!delay) {
       shouldPrevent = match.test(callback.toString()) !== isNotMatch;
     } else if (match === '/.?/') {

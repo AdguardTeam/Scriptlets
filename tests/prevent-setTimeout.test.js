@@ -31,6 +31,8 @@ module(name, { beforeEach, afterEach });
 
 
 test('prevent-setTimeout: adg no args -- logging', (assert) => {
+    const testTimeouts = [];
+
     const params = {
         name,
         args: [],
@@ -46,7 +48,8 @@ test('prevent-setTimeout: adg no args -- logging', (assert) => {
     }
     const timeout = 10;
 
-    setTimeout(callback, timeout);
+    const timeoutId = setTimeout(callback, timeout);
+    testTimeouts.push(timeoutId);
 
     // eslint-disable-next-line no-console
     console.log = function log(input) {
@@ -61,12 +64,15 @@ test('prevent-setTimeout: adg no args -- logging', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         assert.strictEqual(window[agLogSetTimeout], 'changed', 'property changed');
         clearGlobalProps('hit', agLogSetTimeout);
+        testTimeouts.forEach((t) => (clearTimeout(t)));
         done();
     }, 50);
 });
 
 
 test('prevent-setTimeout: ubo alias no args -- logging', (assert) => {
+    const testTimeouts = [];
+
     const params = {
         name: 'ubo-setTimeout-defuser.js',
         args: [],
@@ -82,7 +88,8 @@ test('prevent-setTimeout: ubo alias no args -- logging', (assert) => {
     }
     const timeout = 10;
 
-    setTimeout(callback, timeout);
+    const timeoutId = setTimeout(callback, timeout);
+    testTimeouts.push(timeoutId);
 
     // eslint-disable-next-line no-console
     console.log = function log(input) {
@@ -97,12 +104,15 @@ test('prevent-setTimeout: ubo alias no args -- logging', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         assert.strictEqual(window[uboLogSetTimeout], 'changed', 'property changed');
         clearGlobalProps('hit', uboLogSetTimeout);
+        testTimeouts.forEach((t) => (clearTimeout(t)));
         done();
     }, 50);
 });
 
 
 test('prevent-setTimeout: adg by setTimeout callback name', (assert) => {
+    const testTimeouts = [];
+
     const params = {
         name,
         args: ['test', '50'],
@@ -119,6 +129,7 @@ test('prevent-setTimeout: adg by setTimeout callback name', (assert) => {
         // eslint-disable-next-line max-len
         assert.equal(window.ddd, 'new value', 'Another property should successfully changed by another timeout');
         assert.equal(window.hit, 'value', 'Hit function was executed');
+        testTimeouts.forEach((t) => (clearTimeout(t)));
         done();
     }, 100);
 
@@ -126,15 +137,19 @@ test('prevent-setTimeout: adg by setTimeout callback name', (assert) => {
     evalWrap(scriptlet);
     // check if scriptlet works
     const test = () => { window.bbb = 'new value'; };
-    setTimeout(test, 50);
+    const timeoutTest = setTimeout(test, 50);
+    testTimeouts.push(timeoutTest);
 
     // check if scriptlet doesn't affect on others timeouts
     const anotherTimeout = () => { window.ddd = 'new value'; };
-    setTimeout(anotherTimeout);
+    const timeoutAnother = setTimeout(anotherTimeout);
+    testTimeouts.push(timeoutAnother);
 });
 
 
 test('prevent-setTimeout: adg by code matching', (assert) => {
+    const testTimeouts = [];
+
     const params = {
         name,
         args: ['match', '50'],
@@ -151,6 +166,7 @@ test('prevent-setTimeout: adg by code matching', (assert) => {
         // eslint-disable-next-line max-len
         assert.equal(window.ddd, 'new value', 'Another property should  be successfully changed by another timeout');
         assert.equal(window.hit, 'value', 'Hit function was executed');
+        testTimeouts.forEach((t) => (clearTimeout(t)));
         done();
     }, 100);
 
@@ -158,15 +174,19 @@ test('prevent-setTimeout: adg by code matching', (assert) => {
     evalWrap(scriptlet);
     // check if scriptlet works
     const testCallback = () => { window.match = 'new value'; };
-    setTimeout(testCallback, 50);
+    const timeoutTest = setTimeout(testCallback, 50);
+    testTimeouts.push(timeoutTest);
 
     // check if scriptlet doesn't affect on others timeouts
     const anotherTimeout = () => { window.ddd = 'new value'; };
-    setTimeout(anotherTimeout);
+    const timeoutAnother = setTimeout(anotherTimeout);
+    testTimeouts.push(timeoutAnother);
 });
 
 
 test('prevent-setTimeout: adg -- !match', (assert) => {
+    const testTimeouts = [];
+
     const params = {
         name,
         args: ['!one'],
@@ -185,6 +205,7 @@ test('prevent-setTimeout: adg -- !match', (assert) => {
         assert.equal(window.second, 'two', 'Second property should be successfully changed');
         assert.equal(window.third, 'three', 'Third property should be successfully changed');
         assert.equal(window.hit, 'value', 'Hit function was executed');
+        testTimeouts.forEach((t) => (clearTimeout(t)));
         done();
     }, 100);
 
@@ -193,17 +214,22 @@ test('prevent-setTimeout: adg -- !match', (assert) => {
 
     // only this one should not be prevented because of match = !one
     const one = () => { window.first = 'NEW ONE'; };
-    setTimeout(one, 30);
+    const timeoutTest1 = setTimeout(one, 30);
+    testTimeouts.push(timeoutTest1);
 
     const second = () => { window.second = 'second'; };
-    setTimeout(second, 40);
+    const timeoutTest2 = setTimeout(second, 40);
+    testTimeouts.push(timeoutTest2);
 
     const third = () => { window.third = 'third'; };
-    setTimeout(third, 50);
+    const timeoutTest3 = setTimeout(third, 50);
+    testTimeouts.push(timeoutTest3);
 });
 
 
 test('prevent-setTimeout: adg -- match + !delay', (assert) => {
+    const testTimeouts = [];
+
     const params = {
         name,
         args: ['test', '!50'],
@@ -221,26 +247,31 @@ test('prevent-setTimeout: adg -- match + !delay', (assert) => {
         assert.equal(window.second, 'second', 'Second property should be successfully changed');
         assert.equal(window.third, 'three', 'Target property not changed');
         assert.equal(window.hit, 'value', 'Hit function was executed');
+        testTimeouts.forEach((t) => (clearTimeout(t)));
         done();
     }, 100);
 
     // run scriptlet code
     evalWrap(scriptlet);
 
-
     const test1 = () => { window.first = 'first'; };
-    setTimeout(test1, 40);
+    const timeoutTest1 = setTimeout(test1, 40);
+    testTimeouts.push(timeoutTest1);
 
     const test2 = () => { window.second = 'second'; };
     // only this one should not be prevented because of delay = !50
-    setTimeout(test2, 50);
+    const timeoutTest2 = setTimeout(test2, 50);
+    testTimeouts.push(timeoutTest2);
 
     const test3 = () => { window.third = 'third'; };
-    setTimeout(test3, 60);
+    const timeoutTest3 = setTimeout(test3, 60);
+    testTimeouts.push(timeoutTest3);
 });
 
 
 test('prevent-setTimeout: adg -- !match + !delay', (assert) => {
+    const testTimeouts = [];
+
     const params = {
         name,
         args: ['!one', '!50'],
@@ -260,23 +291,27 @@ test('prevent-setTimeout: adg -- !match + !delay', (assert) => {
         assert.equal(window.second20, 'two', 'Target property not changed');
         assert.equal(window.second50, 'second50', 'property should be successfully changed');
         assert.equal(window.hit, 'value', 'Hit function was executed');
+        testTimeouts.forEach((t) => (clearTimeout(t)));
         done();
     }, 100);
 
     // run scriptlet code
     evalWrap(scriptlet);
 
-
     const one20 = () => { window.first20 = 'first20'; };
-    setTimeout(one20, 20);
+    const timeoutTest120 = setTimeout(one20, 20);
+    testTimeouts.push(timeoutTest120);
 
     const one50 = () => { window.first50 = 'first50'; };
-    setTimeout(one50, 50);
+    const timeoutTest150 = setTimeout(one50, 50);
+    testTimeouts.push(timeoutTest150);
 
     const second20 = () => { window.second20 = 'second20'; };
     // only this one should not be prevented because of match = !one && delay = !50
-    setTimeout(second20, 20);
+    const timeoutTest220 = setTimeout(second20, 20);
+    testTimeouts.push(timeoutTest220);
 
     const second50 = () => { window.second50 = 'second50'; };
-    setTimeout(second50, 50);
+    const timeoutTest250 = setTimeout(second50, 50);
+    testTimeouts.push(timeoutTest250);
 });

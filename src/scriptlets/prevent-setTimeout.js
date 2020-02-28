@@ -38,7 +38,7 @@ import { hit } from '../helpers';
  *     example.org#%#//scriptlet("prevent-setTimeout", "/\.test/")
  *     ```
  *
- *     For instance, the followiing call will be prevented:
+ *     For instance, the following call will be prevented:
  *     ```javascript
  *     setTimeout(function () {
  *         window.test = "value";

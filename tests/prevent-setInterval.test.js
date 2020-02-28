@@ -30,6 +30,8 @@ module(name, { beforeEach, afterEach });
 
 
 test('prevent-setInterval: adg no args -- logging', (assert) => {
+    const testIntervals = [];
+
     const params = {
         name,
         args: [],
@@ -45,7 +47,8 @@ test('prevent-setInterval: adg no args -- logging', (assert) => {
     }
     const timeout = 10;
 
-    setInterval(callback, timeout);
+    const intervalId = setInterval(callback, timeout);
+    testIntervals.push(intervalId);
 
     // eslint-disable-next-line no-console
     console.log = function log(input) {
@@ -60,12 +63,15 @@ test('prevent-setInterval: adg no args -- logging', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         assert.strictEqual(window[agLogSetInterval], 'changed', 'property changed');
         clearGlobalProps('hit', agLogSetInterval);
+        testIntervals.forEach((i) => (clearInterval(i)));
         done();
     }, 50);
 });
 
 
 test('prevent-setInterval: ubo alias no args -- logging', (assert) => {
+    const testIntervals = [];
+
     const params = {
         name: 'ubo-setInterval-defuser.js',
         args: [],
@@ -81,7 +87,8 @@ test('prevent-setInterval: ubo alias no args -- logging', (assert) => {
     }
     const timeout = 10;
 
-    setInterval(callback, timeout);
+    const intervalId = setInterval(callback, timeout);
+    testIntervals.push(intervalId);
 
     // eslint-disable-next-line no-console
     console.log = function log(input) {
@@ -96,12 +103,15 @@ test('prevent-setInterval: ubo alias no args -- logging', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         assert.strictEqual(window[uboLogSetInterval], 'changed', 'property changed');
         clearGlobalProps('hit', uboLogSetInterval);
+        testIntervals.forEach((i) => (clearInterval(i)));
         done();
     }, 50);
 });
 
 
 test('prevent-setInterval: adg by setInterval callback name', (assert) => {
+    const testIntervals = [];
+
     const params = {
         name,
         args: ['test', '50'],
@@ -118,6 +128,7 @@ test('prevent-setInterval: adg by setInterval callback name', (assert) => {
         // eslint-disable-next-line max-len
         assert.equal(window.ddd, 'new value', 'Another property should successfully changed by another timeout');
         assert.equal(window.hit, 'value', 'Hit function was executed');
+        testIntervals.forEach((i) => (clearInterval(i)));
         done();
     }, 100);
 
@@ -125,15 +136,19 @@ test('prevent-setInterval: adg by setInterval callback name', (assert) => {
     evalWrap(scriptlet);
     // check if scriptlet works
     const test = () => { window.bbb = 'new value'; };
-    setInterval(test, 50);
+    const intervalId = setInterval(test, 50);
+    testIntervals.push(intervalId);
 
     // check if scriptlet doesn't affect on others timeouts
     const anotherTimeout = () => { window.ddd = 'new value'; };
-    setInterval(anotherTimeout);
+    const intervalAnother = setInterval(anotherTimeout);
+    testIntervals.push(intervalAnother);
 });
 
 
 test('prevent-setInterval: adg by code matching', (assert) => {
+    const testIntervals = [];
+
     const params = {
         name,
         args: ['match', '50'],
@@ -150,6 +165,7 @@ test('prevent-setInterval: adg by code matching', (assert) => {
         // eslint-disable-next-line max-len
         assert.equal(window.ddd, 'new value', 'Another property should  be successfully changed by another timeout');
         assert.equal(window.hit, 'value', 'Hit function was executed');
+        testIntervals.forEach((i) => (clearInterval(i)));
         done();
     }, 100);
 
@@ -157,15 +173,19 @@ test('prevent-setInterval: adg by code matching', (assert) => {
     evalWrap(scriptlet);
     // check if scriptlet works
     const testCallback = () => { window.match = 'new value'; };
-    setInterval(testCallback, 50);
+    const intervalId = setInterval(testCallback, 50);
+    testIntervals.push(intervalId);
 
     // check if scriptlet doesn't affect on others timeouts
     const anotherTimeout = () => { window.ddd = 'new value'; };
-    setInterval(anotherTimeout);
+    const intervalAnother = setInterval(anotherTimeout);
+    testIntervals.push(intervalAnother);
 });
 
 
 test('prevent-setInterval: adg -- !match', (assert) => {
+    const testIntervals = [];
+
     const params = {
         name,
         args: ['!one'],
@@ -184,6 +204,7 @@ test('prevent-setInterval: adg -- !match', (assert) => {
         assert.equal(window.second, 'two', 'Second property should be successfully changed');
         assert.equal(window.third, 'three', 'Third property should be successfully changed');
         assert.equal(window.hit, 'value', 'Hit function was executed');
+        testIntervals.forEach((i) => (clearInterval(i)));
         done();
     }, 100);
 
@@ -192,17 +213,22 @@ test('prevent-setInterval: adg -- !match', (assert) => {
 
     // only this one should not be prevented because of match = !one
     const one = () => { window.first = 'NEW ONE'; };
-    setInterval(one, 25);
+    const intervalTest1 = setInterval(one, 25);
+    testIntervals.push(intervalTest1);
 
     const second = () => { window.second = 'second'; };
-    setInterval(second, 40);
+    const intervalTest2 = setInterval(second, 40);
+    testIntervals.push(intervalTest2);
 
     const third = () => { window.third = 'third'; };
-    setInterval(third, 50);
+    const intervalTest3 = setInterval(third, 50);
+    testIntervals.push(intervalTest3);
 });
 
 
 test('prevent-setInterval: adg -- match + !delay', (assert) => {
+    const testIntervals = [];
+
     const params = {
         name,
         args: ['test', '!50'],
@@ -220,26 +246,31 @@ test('prevent-setInterval: adg -- match + !delay', (assert) => {
         assert.equal(window.second, 'second', 'Second property should be successfully changed');
         assert.equal(window.third, 'three', 'Target property not changed');
         assert.equal(window.hit, 'value', 'Hit function was executed');
+        testIntervals.forEach((i) => (clearInterval(i)));
         done();
     }, 200);
 
     // run scriptlet code
     evalWrap(scriptlet);
 
-
     const test1 = () => { window.one = 'first'; };
-    setInterval(test1, 20);
+    const intervalTest1 = setInterval(test1, 20);
+    testIntervals.push(intervalTest1);
 
     const test2 = () => { window.second = 'second'; };
     // only this one should not be prevented because of delay = !50
-    setInterval(test2, 50);
+    const intervalTest2 = setInterval(test2, 50);
+    testIntervals.push(intervalTest2);
 
     const test3 = () => { window.third = 'third'; };
-    setInterval(test3, 60);
+    const intervalTest3 = setInterval(test3, 60);
+    testIntervals.push(intervalTest3);
 });
 
 
 test('prevent-setInterval: adg -- !match + !delay', (assert) => {
+    const testIntervals = [];
+
     const params = {
         name,
         args: ['!one', '!50'],
@@ -259,23 +290,27 @@ test('prevent-setInterval: adg -- !match + !delay', (assert) => {
         assert.equal(window.second20, 'two', 'Target property not changed');
         assert.equal(window.second50, 'second50', 'property should be successfully changed');
         assert.equal(window.hit, 'value', 'Hit function was executed');
+        testIntervals.forEach((i) => (clearInterval(i)));
         done();
     }, 100);
 
     // run scriptlet code
     evalWrap(scriptlet);
 
-
     const one20 = () => { window.first20 = 'first20'; };
-    setInterval(one20, 20);
+    const intervalTest120 = setInterval(one20, 20);
+    testIntervals.push(intervalTest120);
 
     const one50 = () => { window.first50 = 'first50'; };
-    setInterval(one50, 50);
+    const intervalTest150 = setInterval(one50, 50);
+    testIntervals.push(intervalTest150);
 
     const second20 = () => { window.second20 = 'second20'; };
     // only this one should not be prevented because of match = !one && delay = !50
-    setInterval(second20, 20);
+    const intervalTest220 = setInterval(second20, 20);
+    testIntervals.push(intervalTest220);
 
     const second50 = () => { window.second50 = 'second50'; };
-    setInterval(second50, 50);
+    const intervalTest250 = setInterval(second50, 50);
+    testIntervals.push(intervalTest250);
 });
