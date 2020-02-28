@@ -5,6 +5,8 @@ import {
 
 import { ADG_SCRIPTLET_MASK } from './parse-rule';
 
+import * as scriptletsList from '../scriptlets/scriptletsList';
+
 import * as compatibilityTable from '../../scripts/compatibility-table.json';
 
 
@@ -83,6 +85,31 @@ export const isAbpSnippetRule = (rule) => {
     )
     && rule.search(ADG_CSS_MASK_REG) === -1
     && !isComment(rule);
+};
+
+/**
+ * Find scriptlet by it's name
+ * @param {string} name
+ */
+export const getScriptletByName = (name) => {
+    const scriptlets = Object.keys(scriptletsList).map((key) => scriptletsList[key]);
+    return scriptlets
+        .find((s) => s.names && s.names.indexOf(name) > -1);
+};
+
+/**
+ * Checks if the scriptlet name is valid
+ * @param {string} name - Scriptlet name
+ */
+export const isValidScriptletName = (name) => {
+    if (!name) {
+        return false;
+    }
+    const scriptlet = getScriptletByName(name);
+    if (!scriptlet) {
+        return false;
+    }
+    return true;
 };
 
 /* ************************************************************************

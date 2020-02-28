@@ -14,6 +14,7 @@ import {
     isAdgScriptletRule,
     isUboScriptletRule,
     isAbpSnippetRule,
+    isValidScriptletName,
     ADG_UBO_REDIRECT_RESOURCE_MARKER,
     ABP_REDIRECT_RESOURCE_MARKER,
     uboToAdgCompatibility,
@@ -215,6 +216,29 @@ export const convertAdgScriptletToUbo = (rule) => {
 
     return res;
 };
+
+// not in validator.js because 'convertScriptletToAdg()' usage causes dependency cycle
+/**
+ * Validates any scriptlet rule
+ * @param {string} input - can be Adguard or Ubo or Abp scriptlet rule
+ */
+export const isValidScriptletRule = (input) => {
+    if (!input) {
+        return false;
+    }
+    // ABP 'input' rule may contain more than one snippet
+    const rulesArray = convertScriptletToAdg(input);
+
+    // checking if each of parsed scriptlets is valid
+    // if at least one of them is not valid - whole 'input' rule is not valid too
+    const isValid = rulesArray.reduce((acc, rule) => {
+        const parsedRule = parseRule(rule);
+        return isValidScriptletName(parsedRule.name) && acc;
+    }, true);
+
+    return isValid;
+};
+
 
 /**
  * Converts Ubo redirect rule to Adg one

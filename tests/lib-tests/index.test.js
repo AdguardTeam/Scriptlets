@@ -5,11 +5,10 @@ import {
     convertAdgScriptletToUbo,
     convertRedirectToAdg,
     convertAdgRedirectToUbo,
+    isValidScriptletRule,
 } from '../../src/helpers/converter';
 
 import { isValidRedirectRule } from '../../src/helpers/validator';
-
-import { isValidScriptletRule } from '../../src/scriptlets/scriptlets';
 
 const { test, module } = QUnit;
 const name = 'debug-current-inline-script';
