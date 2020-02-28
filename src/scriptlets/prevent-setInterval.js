@@ -53,10 +53,10 @@ import { hit } from '../helpers';
  *     For instance, only the first of the following calls will be prevented:
  *     ```javascript
  *     setInterval(function () {
- *         window.test = "test  -- prevented";
+ *         window.test = "test -- prevented";
  *     }, 300);
  *     setInterval(function () {
- *         window.test = "value  -- executed";
+ *         window.test = "value -- executed";
  *     }, 400);
  *     setInterval(function () {
  *         window.value = "test -- executed";
@@ -89,13 +89,13 @@ import { hit } from '../helpers';
  *     For instance, only the second of the following calls will be prevented:
  *     ```javascript
  *     setInterval(function () {
- *         window.test = "test  -- executed";
+ *         window.test = "test -- executed";
  *     }, 300);
  *     setInterval(function () {
- *         window.test = "test  -- prevented";
+ *         window.test = "test -- prevented";
  *     }, 400);
  *     setInterval(function () {
- *         window.test = "value  -- executed";
+ *         window.test = "value -- executed";
  *     }, 400);
  *     setInterval(function () {
  *         window.value = "test -- executed";

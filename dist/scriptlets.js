@@ -874,10 +874,10 @@
      *     For instance, only the first of the following calls will be prevented:
      *     ```javascript
      *     setTimeout(function () {
-     *         window.test = "test  -- prevented";
+     *         window.test = "test -- prevented";
      *     }, 300);
      *     setTimeout(function () {
-     *         window.test = "value  -- executed";
+     *         window.test = "value -- executed";
      *     }, 400);
      *     setTimeout(function () {
      *         window.value = "test -- executed";
@@ -910,13 +910,13 @@
      *     For instance, only the second of the following calls will be prevented:
      *     ```javascript
      *     setTimeout(function () {
-     *         window.test = "test  -- executed";
+     *         window.test = "test -- executed";
      *     }, 300);
      *     setTimeout(function () {
-     *         window.test = "test  -- prevented";
+     *         window.test = "test -- prevented";
      *     }, 400);
      *     setTimeout(function () {
-     *         window.test = "value  -- executed";
+     *         window.test = "value -- executed";
      *     }, 400);
      *     setTimeout(function () {
      *         window.value = "test -- executed";
@@ -1039,10 +1039,10 @@
      *     For instance, only the first of the following calls will be prevented:
      *     ```javascript
      *     setInterval(function () {
-     *         window.test = "test  -- prevented";
+     *         window.test = "test -- prevented";
      *     }, 300);
      *     setInterval(function () {
-     *         window.test = "value  -- executed";
+     *         window.test = "value -- executed";
      *     }, 400);
      *     setInterval(function () {
      *         window.value = "test -- executed";
@@ -1075,13 +1075,13 @@
      *     For instance, only the second of the following calls will be prevented:
      *     ```javascript
      *     setInterval(function () {
-     *         window.test = "test  -- executed";
+     *         window.test = "test -- executed";
      *     }, 300);
      *     setInterval(function () {
-     *         window.test = "test  -- prevented";
+     *         window.test = "test -- prevented";
      *     }, 400);
      *     setInterval(function () {
-     *         window.test = "value  -- executed";
+     *         window.test = "value -- executed";
      *     }, 400);
      *     setInterval(function () {
      *         window.value = "test -- executed";
