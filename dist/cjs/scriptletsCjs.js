@@ -828,10 +828,13 @@ abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInCha
  * @scriptlet prevent-setTimeout
  *
  * @description
- * Prevents a `setTimeout` call if the text of the callback is matching the specified search string/regexp and (optionally) have the specified delay.
+ * Prevents a `setTimeout` call if:
+ * 1) the text of the callback is matching the specified search string/regexp which does not start with `!`;
+ * otherwise mismatched calls should be defused;
+ * 2) the timeout is matching the specified delay; otherwise mismatched calls should be defused.
  *
  * Related UBO scriptlet:
- * https://github.com/gorhill/uBlock/wiki/Resources-Library#settimeout-defuserjs-
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-settimeout-ifjs-
  *
  * **Syntax**
  * ```
@@ -839,33 +842,86 @@ abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInCha
  * ```
  *
  * **Parameters**
- * - `search` (optional) string or regular expression that must match the stringified callback . If not set, prevents all `setTimeout` calls.
- * - `delay` (optional) must be an integer. If set, it matches the delay passed to the `setTimeout` call.
+ *
+ * Call with no arguments will log calls to setTimeout while debugging (`log-setTimeout` superseding),
+ * so production filter lists' rules definitely require at least one of the parameters:
+ * - `search` (optional) string or regular expression.
+ * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
+ * If do not start with `!`, the stringified callback will be matched.
+ * If not set, prevents all `setTimeout` calls due to specified `delay`.
+ * - `delay` (optional) must be an integer.
+ * If starts with `!`, scriptlet will not match the delay but all other will be defused.
+ * If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
  *
  * **Examples**
  *
- * 1. Prevents `setTimeout` calls if the callback contains `value` and the delay is set to `300`.
- *     ```
- *     example.org#%#//scriptlet("prevent-setTimeout", "value", "300")
- *     ```
- *
- *     For instance, the followiing call will be prevented:
- *     ```javascript
- *     setTimeout(function () {
- *         window.test = "value";
- *     }, 300);
- *     ```
- *
- * 2. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.
+ * 1. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.
  *     ```bash
  *     example.org#%#//scriptlet("prevent-setTimeout", "/\.test/")
  *     ```
  *
- *     For instance, the followiing call will be prevented:
+ *     For instance, the following call will be prevented:
  *     ```javascript
  *     setTimeout(function () {
  *         window.test = "value";
  *     }, 100);
+ *     ```
+ *
+ * 2. Prevents `setTimeout` calls if the callback does not contain `value`.
+ *     ```
+ *     example.org#%#//scriptlet("prevent-setTimeout", "!value")
+ *     ```
+ *
+ *     For instance, only the first of the following calls will be prevented:
+ *     ```javascript
+ *     setTimeout(function () {
+ *         window.test = "test -- prevented";
+ *     }, 300);
+ *     setTimeout(function () {
+ *         window.test = "value -- executed";
+ *     }, 400);
+ *     setTimeout(function () {
+ *         window.value = "test -- executed";
+ *     }, 500);
+ *     ```
+ *
+ * 3. Prevents `setTimeout` calls if the callback contains `value` and the delay is not set to `300`.
+ *     ```
+ *     example.org#%#//scriptlet("prevent-setTimeout", "value", "!300")
+ *     ```
+ *
+ *     For instance, only the first of the following calls will not be prevented:
+ *     ```javascript
+ *     setTimeout(function () {
+ *         window.test = "value 1 -- executed";
+ *     }, 300);
+ *     setTimeout(function () {
+ *         window.test = "value 2 -- prevented";
+ *     }, 400);
+ *     setTimeout(function () {
+ *         window.test = "value 3 -- prevented";
+ *     }, 500);
+ *     ```
+ *
+ * 4. Prevents `setTimeout` calls if the callback does not contain `value` and the delay is not set to `300`.
+ *     ```
+ *     example.org#%#//scriptlet("prevent-setTimeout", "!value", "!300")
+ *     ```
+ *
+ *     For instance, only the second of the following calls will be prevented:
+ *     ```javascript
+ *     setTimeout(function () {
+ *         window.test = "test -- executed";
+ *     }, 300);
+ *     setTimeout(function () {
+ *         window.test = "test -- prevented";
+ *     }, 400);
+ *     setTimeout(function () {
+ *         window.test = "value -- executed";
+ *     }, 400);
+ *     setTimeout(function () {
+ *         window.value = "test -- executed";
+ *     }, 500);
  *     ```
  */
 
@@ -875,27 +931,61 @@ function preventSetTimeout(source, match, delay) {
   var nativeTimeout = window.setTimeout;
   var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
 
+  var log = console.log.bind(console); // eslint-disable-line no-console
+  // logs setTimeouts to console if no arguments have been specified
+
+  var shouldLog = typeof match === 'undefined' && typeof delay === 'undefined';
+  var INVERT_MARKER = '!';
+  var isNotMatch = startsWith(match, INVERT_MARKER);
+
+  if (isNotMatch) {
+    match = match.slice(1);
+  }
+
+  var isNotDelay = startsWith(delay, INVERT_MARKER);
+
+  if (isNotDelay) {
+    delay = delay.slice(1);
+  }
+
   delay = parseInt(delay, 10);
   delay = nativeIsNaN(delay) ? null : delay;
   match = match ? toRegExp(match) : toRegExp('/.?/');
 
-  var timeoutWrapper = function timeoutWrapper(cb, d) {
-    if ((!delay || d === delay) && match.test(cb.toString())) {
+  var timeoutWrapper = function timeoutWrapper(callback, timeout) {
+    var shouldPrevent = false;
+
+    if (shouldLog) {
       hit(source);
-      return nativeTimeout(function () {}, d);
+      log("setTimeout(\"".concat(callback.toString(), "\", ").concat(timeout, ")"));
+    } else if (!delay) {
+      shouldPrevent = match.test(callback.toString()) !== isNotMatch;
+    } else if (match === '/.?/') {
+      shouldPrevent = timeout === delay !== isNotDelay;
+    } else {
+      shouldPrevent = match.test(callback.toString()) !== isNotMatch && timeout === delay !== isNotDelay;
+    }
+
+    if (shouldPrevent) {
+      hit(source);
+      return nativeTimeout(function () {}, timeout);
     }
 
     for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
       args[_key - 2] = arguments[_key];
     }
 
-    return nativeTimeout.apply(window, [cb, d].concat(args));
+    return nativeTimeout.apply(window, [callback, timeout].concat(args));
   };
 
   window.setTimeout = timeoutWrapper;
 }
-preventSetTimeout.names = ['prevent-setTimeout', 'setTimeout-defuser.js', 'ubo-setTimeout-defuser.js', 'std.js', 'ubo-std.js'];
-preventSetTimeout.injections = [toRegExp, hit];
+preventSetTimeout.names = ['prevent-setTimeout', 'no-setTimeout-if.js', // new implementation of setTimeout-defuser.js
+'ubo-no-setTimeout-if.js', 'setTimeout-defuser.js', // old name should be supported as well
+'ubo-setTimeout-defuser.js', 'nostif.js', // new short name of no-setTimeout-if
+'ubo-nostif.js', 'std.js', // old short scriptlet name
+'ubo-std.js'];
+preventSetTimeout.injections = [toRegExp, startsWith, hit];
 
 /* eslint-disable max-len */
 
@@ -903,74 +993,164 @@ preventSetTimeout.injections = [toRegExp, hit];
  * @scriptlet prevent-setInterval
  *
  * @description
- * Prevents a `setInterval` call if the text of the callback is matching the specified search string/regexp and (optionally) have the specified interval.
+ * Prevents a `setInterval` call if:
+ * 1) the text of the callback is matching the specified `search` string/regexp which does not start with `!`;
+ * otherwise mismatched calls should be defused;
+ * 2) the interval is matching the specified `delay`; otherwise mismatched calls should be defused.
  *
  * Related UBO scriptlet:
- * https://github.com/gorhill/uBlock/wiki/Resources-Library#setinterval-defuserjs-
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-setinterval-ifjs-
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-setInterval"[, <search>[, <interval>]])
+ * example.org#%#//scriptlet("prevent-setInterval"[, <search>[, <delay>]])
  * ```
  *
  * **Parameters**
- * - `search` (optional) string or regular expression that must match the stringified callback . If not set, prevents all `setInterval` calls.
- * - `interval` (optional) must be an integer. If set, it matches the interval passed to the `setInterval` call.
  *
- * **Example**
+ * Call with no arguments will log calls to setInterval while debugging (`log-setInterval` superseding),
+ * so production filter lists' rules definitely require at least one of the parameters:
+ * - `search` (optional) string or regular expression.
+ * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
+ * If do not start with `!`, the stringified callback will be matched.
+ * If not set, prevents all `setInterval` calls due to specified `delay`.
+ * - `delay` (optional) must be an integer.
+ * If starts with `!`, scriptlet will not match the delay but all other will be defused.
+ * If do not start with `!`, the delay passed to the `setInterval` call will be matched.
  *
- * 1. Prevents `setInterval` calls if the callback contains `value` and the interval is set to `300`.
- *     ```
- *     example.org#%#//scriptlet("prevent-setInterval", "value", "300")
- *     ```
+ *  **Examples**
  *
- *     For instance, the followiing call will be prevented:
- *     ```javascript
- *     setInterval(function () {
- *         window.test = "value";
- *     }, 300);
- *     ```
- *
- * 2. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the interval.
- *     ```
+ * 1. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the delay.
+ *     ```bash
  *     example.org#%#//scriptlet("prevent-setInterval", "/\.test/")
  *     ```
  *
- *     For instance, the followiing call will be prevented:
+ *     For instance, the following call will be prevented:
  *     ```javascript
  *     setInterval(function () {
  *         window.test = "value";
  *     }, 100);
  *     ```
+ *
+ * 2. Prevents `setInterval` calls if the callback does not contain `value`.
+ *     ```
+ *     example.org#%#//scriptlet("prevent-setInterval", "!value")
+ *     ```
+ *
+ *     For instance, only the first of the following calls will be prevented:
+ *     ```javascript
+ *     setInterval(function () {
+ *         window.test = "test -- prevented";
+ *     }, 300);
+ *     setInterval(function () {
+ *         window.test = "value -- executed";
+ *     }, 400);
+ *     setInterval(function () {
+ *         window.value = "test -- executed";
+ *     }, 500);
+ *     ```
+ *
+ * 3. Prevents `setInterval` calls if the callback contains `value` and the delay is not set to `300`.
+ *     ```
+ *     example.org#%#//scriptlet("prevent-setInterval", "value", "!300")
+ *     ```
+ *
+ *     For instance, only the first of the following calls will not be prevented:
+ *     ```javascript
+ *     setInterval(function () {
+ *         window.test = "value 1 -- executed";
+ *     }, 300);
+ *     setInterval(function () {
+ *         window.test = "value 2 -- prevented";
+ *     }, 400);
+ *     setInterval(function () {
+ *         window.test = "value 3 -- prevented";
+ *     }, 500);
+ *     ```
+ *
+ * 4. Prevents `setInterval` calls if the callback does not contain `value` and the delay is not set to `300`.
+ *     ```
+ *     example.org#%#//scriptlet("prevent-setInterval", "!value", "!300")
+ *     ```
+ *
+ *     For instance, only the second of the following calls will be prevented:
+ *     ```javascript
+ *     setInterval(function () {
+ *         window.test = "test -- executed";
+ *     }, 300);
+ *     setInterval(function () {
+ *         window.test = "test -- prevented";
+ *     }, 400);
+ *     setInterval(function () {
+ *         window.test = "value -- executed";
+ *     }, 400);
+ *     setInterval(function () {
+ *         window.value = "test -- executed";
+ *     }, 500);
+ *     ```
  */
 
 /* eslint-enable max-len */
 
-function preventSetInterval(source, match, interval) {
+function preventSetInterval(source, match, delay) {
   var nativeInterval = window.setInterval;
   var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
 
-  interval = parseInt(interval, 10);
-  interval = nativeIsNaN(interval) ? null : interval;
+  var log = console.log.bind(console); // eslint-disable-line no-console
+  // logs setIntervals to console if no arguments have been specified
+
+  var shouldLog = typeof match === 'undefined' && typeof delay === 'undefined';
+  var INVERT_MARKER = '!';
+  var isNotMatch = startsWith(match, INVERT_MARKER);
+
+  if (isNotMatch) {
+    match = match.slice(1);
+  }
+
+  var isNotDelay = startsWith(delay, INVERT_MARKER);
+
+  if (isNotDelay) {
+    delay = delay.slice(1);
+  }
+
+  delay = parseInt(delay, 10);
+  delay = nativeIsNaN(delay) ? null : delay;
   match = match ? toRegExp(match) : toRegExp('/.?/');
 
-  var intervalWrapper = function intervalWrapper(cb, d) {
-    if ((!interval || d === interval) && match.test(cb.toString())) {
+  var intervalWrapper = function intervalWrapper(callback, interval) {
+    var shouldPrevent = false;
+
+    if (shouldLog) {
       hit(source);
-      return nativeInterval(function () {}, d);
+      log("setInterval(\"".concat(callback.toString(), "\", ").concat(interval, ")"));
+    } else if (!delay) {
+      shouldPrevent = match.test(callback.toString()) !== isNotMatch;
+    } else if (match === '/.?/') {
+      shouldPrevent = interval === delay !== isNotDelay;
+    } else {
+      shouldPrevent = match.test(callback.toString()) !== isNotMatch && interval === delay !== isNotDelay;
+    }
+
+    if (shouldPrevent) {
+      hit(source);
+      return nativeInterval(function () {}, interval);
     }
 
     for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
       args[_key - 2] = arguments[_key];
     }
 
-    return nativeInterval.apply(window, [cb, d].concat(args));
+    return nativeInterval.apply(window, [callback, interval].concat(args));
   };
 
   window.setInterval = intervalWrapper;
 }
-preventSetInterval.names = ['prevent-setInterval', 'setInterval-defuser.js', 'ubo-setInterval-defuser.js', 'sid.js', 'ubo-sid.js'];
-preventSetInterval.injections = [toRegExp, hit];
+preventSetInterval.names = ['prevent-setInterval', 'no-setInterval-if.js', // new implementation of setInterval-defuser.js
+'ubo-no-setInterval-if.js', 'setInterval-defuser.js', // old name should be supported as well
+'ubo-setInterval-defuser.js', 'nosiif.js', // new short name of no-setInterval-if
+'ubo-nosiif.js', 'sid.js', // old short scriptlet name
+'ubo-sid.js'];
+preventSetInterval.injections = [toRegExp, startsWith, hit];
 
 /* eslint-disable max-len */
 
@@ -1653,78 +1833,6 @@ function logAddEventListener(source) {
 }
 logAddEventListener.names = ['log-addEventListener', 'addEventListener-logger.js', 'ubo-addEventListener-logger.js', 'aell.js', 'ubo-aell.js'];
 logAddEventListener.injections = [hit];
-
-/* eslint-disable no-console */
-/**
- * @scriptlet log-setInterval
- *
- * @description
- * Logs all setInterval calls to the console.
- *
- * Related UBO scriptlet:
- * https://github.com/gorhill/uBlock/wiki/Resources-Library#setinterval-loggerjs-
- *
- * **Syntax**
- * ```
- * example.org#%#//scriptlet("log-setInterval")
- * ```
- */
-
-function logSetInterval(source) {
-  var log = console.log.bind(console);
-  var nativeSetInterval = window.setInterval;
-
-  function setIntervalWrapper(callback, timeout) {
-    hit(source);
-    log("setInterval(\"".concat(callback.toString(), "\", ").concat(timeout, ")"));
-
-    for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-      args[_key - 2] = arguments[_key];
-    }
-
-    return nativeSetInterval.apply(window, [callback, timeout].concat(args));
-  }
-
-  window.setInterval = setIntervalWrapper;
-}
-logSetInterval.names = ['log-setInterval', 'setInterval-logger.js', 'ubo-setInterval-logger.js'];
-logSetInterval.injections = [hit];
-
-/* eslint-disable no-console */
-/**
- * @scriptlet log-setTimeout
- *
- * @description
- * Logs all setTimeout call to the console.
- *
- * Related UBO scriptlet:
- * https://github.com/gorhill/uBlock/wiki/Resources-Library#settimeout-loggerjs-
- *
- * **Syntax**
- * ```
- * example.org#%#//scriptlet("log-setTimeout")
- * ```
- */
-
-function logSetTimeout(source) {
-  var log = console.log.bind(console);
-  var nativeSetTimeout = window.setTimeout;
-
-  function setTimeoutWrapper(callback, timeout) {
-    hit(source);
-    log("setTimeout(\"".concat(callback.toString(), "\", ").concat(timeout, ")"));
-
-    for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-      args[_key - 2] = arguments[_key];
-    }
-
-    return nativeSetTimeout.apply(window, [callback, timeout].concat(args));
-  }
-
-  window.setTimeout = setTimeoutWrapper;
-}
-logSetTimeout.names = ['log-setTimeout', 'setTimeout-logger.js', 'ubo-setTimeout-logger.js'];
-logSetTimeout.injections = [hit];
 
 /* eslint-disable no-console, no-eval */
 /**
@@ -2888,8 +2996,6 @@ var scriptletsList = /*#__PURE__*/Object.freeze({
     preventBab: preventBab,
     nowebrtc: nowebrtc,
     logAddEventListener: logAddEventListener,
-    logSetInterval: logSetInterval,
-    logSetTimeout: logSetTimeout,
     logEval: logEval,
     log: log,
     noeval: noeval,

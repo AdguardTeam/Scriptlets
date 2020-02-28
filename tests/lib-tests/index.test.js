@@ -97,7 +97,7 @@ test('Test converter multiple Abp scriptlet rule', (assert) => {
 test('Test converter AdGuard scriptlet rule to Ubo one', (assert) => {
     // blocking rule
     const rule = 'example.org#%#//scriptlet("prevent-setTimeout", "[native code]", "8000")';
-    const exp = 'example.org##+js(setTimeout-defuser.js, [native code], 8000)';
+    const exp = 'example.org##+js(no-setTimeout-if.js, [native code], 8000)';
     assert.strictEqual(convertAdgToUbo(rule), exp);
     // scriptlet with no parameters
     const inputAdgRule = 'example.com#%#//scriptlet("prevent-adfly")';
@@ -105,7 +105,7 @@ test('Test converter AdGuard scriptlet rule to Ubo one', (assert) => {
     assert.strictEqual(convertAdgToUbo(inputAdgRule), expectedUboResult);
     // whitelist rule
     const whitelistRule = 'example.org#@%#//scriptlet("prevent-setTimeout", "[native code]", "8000")';
-    const expectedResult = 'example.org#@#+js(setTimeout-defuser.js, [native code], 8000)';
+    const expectedResult = 'example.org#@#+js(no-setTimeout-if.js, [native code], 8000)';
     assert.strictEqual(convertAdgToUbo(whitelistRule), expectedResult);
 
     let actual = convertAdgToUbo('example.org#%#//scriptlet("ubo-abort-on-property-read.js", "alert")');
