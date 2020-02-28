@@ -6,10 +6,13 @@ import { hit } from '../helpers';
  * @scriptlet prevent-setTimeout
  *
  * @description
- * Prevents a `setTimeout` call if the text of the callback is matching the specified search string/regexp and (optionally) have the specified delay.
+ * Prevents a `setTimeout` call if:
+ * 1) the text of the callback is matching the specified search string/regexp which does not start with `!`;
+ * otherwise mismatched calls should be defused;
+ * 2) the timeout is matching the specified delay; otherwise mismatched calls should be defused.
  *
  * Related UBO scriptlet:
- * https://github.com/gorhill/uBlock/wiki/Resources-Library#settimeout-defuserjs-
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-settimeout-ifjs-
  *
  * **Syntax**
  * ```
@@ -17,24 +20,20 @@ import { hit } from '../helpers';
  * ```
  *
  * **Parameters**
- * - `search` (optional) string or regular expression that must match the stringified callback . If not set, prevents all `setTimeout` calls.
- * - `delay` (optional) must be an integer. If set, it matches the delay passed to the `setTimeout` call.
+ *
+ * Call with no arguments will log calls to setTimeout while debugging,
+ * so production filter lists' rules definitely require at least one of the parameters:
+ * - `search` (optional) string or regular expression.
+ * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
+ * If do not start with `!`, the stringified callback will be matched.
+ * If not set, prevents all `setTimeout` calls due to specified `delay`.
+ * - `delay` (optional) must be an integer.
+ * If starts with `!`, scriptlet will not match the delay but all other will be defused.
+ * If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
  *
  * **Examples**
  *
- * 1. Prevents `setTimeout` calls if the callback contains `value` and the delay is set to `300`.
- *     ```
- *     example.org#%#//scriptlet("prevent-setTimeout", "value", "300")
- *     ```
- *
- *     For instance, the followiing call will be prevented:
- *     ```javascript
- *     setTimeout(function () {
- *         window.test = "value";
- *     }, 300);
- *     ```
- *
- * 2. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.
+ * 1. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.
  *     ```bash
  *     example.org#%#//scriptlet("prevent-setTimeout", "/\.test/")
  *     ```
@@ -44,6 +43,63 @@ import { hit } from '../helpers';
  *     setTimeout(function () {
  *         window.test = "value";
  *     }, 100);
+ *     ```
+ *
+ * 2. Prevents `setTimeout` calls if the callback does not contain `value`.
+ *     ```
+ *     example.org#%#//scriptlet("prevent-setTimeout", "!value")
+ *     ```
+ *
+ *     For instance, only the first of the following calls will be prevented:
+ *     ```javascript
+ *     setTimeout(function () {
+ *         window.test = "test  -- prevented";
+ *     }, 300);
+ *     setTimeout(function () {
+ *         window.test = "value  -- executed";
+ *     }, 400);
+ *     setTimeout(function () {
+ *         window.value = "test -- executed";
+ *     }, 500);
+ *     ```
+ *
+ * 3. Prevents `setTimeout` calls if the callback contains `value` and the delay is not set to `300`.
+ *     ```
+ *     example.org#%#//scriptlet("prevent-setTimeout", "value", "!300")
+ *     ```
+ *
+ *     For instance, only the first of the following calls will not be prevented:
+ *     ```javascript
+ *     setTimeout(function () {
+ *         window.test = "value 1 -- executed";
+ *     }, 300);
+ *     setTimeout(function () {
+ *         window.test = "value 2 -- prevented";
+ *     }, 400);
+ *     setTimeout(function () {
+ *         window.test = "value 3 -- prevented";
+ *     }, 500);
+ *     ```
+ *
+ * 4. Prevents `setTimeout` calls if the callback does not contain `value` and the delay is not set to `300`.
+ *     ```
+ *     example.org#%#//scriptlet("prevent-setTimeout", "!value", "!300")
+ *     ```
+ *
+ *     For instance, only the second of the following calls will be prevented:
+ *     ```javascript
+ *     setTimeout(function () {
+ *         window.test = "test  -- executed";
+ *     }, 300);
+ *     setTimeout(function () {
+ *         window.test = "test  -- prevented";
+ *     }, 400);
+ *     setTimeout(function () {
+ *         window.test = "value  -- executed";
+ *     }, 400);
+ *     setTimeout(function () {
+ *         window.value = "test -- executed";
+ *     }, 500);
  *     ```
  */
 /* eslint-enable max-len */
@@ -71,12 +127,11 @@ export function preventSetTimeout(source, match, delay) {
 
     match = match ? toRegExp(match) : toRegExp('/.?/');
 
-    let shouldPrevent = false;
     const timeoutWrapper = (callback, timeout, ...args) => {
+        let shouldPrevent = false;
         if (shouldLog) {
             hit(source);
             log(`setTimeout("${callback.toString()}", ${timeout})`);
-            // return nativeTimeout.apply(window, [callback, timeout, ...args]);
         } else if (!delay) {
             shouldPrevent = match.test(callback.toString()) !== isNotMatch;
         } else if (match === '/.?/') {

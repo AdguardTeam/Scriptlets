@@ -48,6 +48,14 @@ test('prevent-setTimeout: adg no args -- logging', (assert) => {
 
     setTimeout(callback, timeout);
 
+    // eslint-disable-next-line no-console
+    console.log = function log(input) {
+        if (input.indexOf('trace') > -1) {
+            return;
+        }
+        assert.strictEqual(input, `setTimeout("${callback.toString()}", ${timeout})`, 'console.hit input');
+    };
+
     // We need to run our assertion after all timeouts
     setTimeout(() => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
@@ -76,6 +84,14 @@ test('prevent-setTimeout: ubo alias no args -- logging', (assert) => {
 
     setTimeout(callback, timeout);
 
+    // eslint-disable-next-line no-console
+    console.log = function log(input) {
+        if (input.indexOf('trace') > -1) {
+            return;
+        }
+        assert.strictEqual(input, `setTimeout("${callback.toString()}", ${timeout})`, 'console.hit input should be equal');
+    };
+
     // We need to run our assertion after all timeouts
     setTimeout(() => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
@@ -89,7 +105,7 @@ test('prevent-setTimeout: ubo alias no args -- logging', (assert) => {
 test('prevent-setTimeout: adg by setTimeout callback name', (assert) => {
     const params = {
         name,
-        args: ['test', '500'],
+        args: ['test', '50'],
         verbose: true,
     };
     const scriptlet = window.scriptlets.invoke(params);
@@ -110,7 +126,7 @@ test('prevent-setTimeout: adg by setTimeout callback name', (assert) => {
     evalWrap(scriptlet);
     // check if scriptlet works
     const test = () => { window.bbb = 'new value'; };
-    setTimeout(test, 500);
+    setTimeout(test, 50);
 
     // check if scriptlet doesn't affect on others timeouts
     const anotherTimeout = () => { window.ddd = 'new value'; };
@@ -121,7 +137,7 @@ test('prevent-setTimeout: adg by setTimeout callback name', (assert) => {
 test('prevent-setTimeout: adg by code matching', (assert) => {
     const params = {
         name,
-        args: ['match', '500'],
+        args: ['match', '50'],
         verbose: true,
     };
     const scriptlet = window.scriptlets.invoke(params);
@@ -142,7 +158,7 @@ test('prevent-setTimeout: adg by code matching', (assert) => {
     evalWrap(scriptlet);
     // check if scriptlet works
     const testCallback = () => { window.match = 'new value'; };
-    setTimeout(testCallback, 500);
+    setTimeout(testCallback, 50);
 
     // check if scriptlet doesn't affect on others timeouts
     const anotherTimeout = () => { window.ddd = 'new value'; };
