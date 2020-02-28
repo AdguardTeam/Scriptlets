@@ -14,6 +14,8 @@ const evalWrap = eval;
 const nativeSetInterval = window.setInterval;
 const nativeConsole = console.log; // eslint-disable-line no-console
 
+const testIntervals = [];
+
 const beforeEach = () => {
     window.__debugScriptlets = () => {
         window.hit = 'value';
@@ -23,6 +25,7 @@ const beforeEach = () => {
 const afterEach = () => {
     window.setInterval = nativeSetInterval;
     clearGlobalProps('hit', 'aaa', '__debugScriptlets');
+    testIntervals.forEach((i) => (clearInterval(i)));
     console.log = nativeConsole; // eslint-disable-line no-console
 };
 
@@ -30,8 +33,6 @@ module(name, { beforeEach, afterEach });
 
 
 test('prevent-setInterval: adg no args -- logging', (assert) => {
-    const testIntervals = [];
-
     const params = {
         name,
         args: [],
@@ -63,15 +64,12 @@ test('prevent-setInterval: adg no args -- logging', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         assert.strictEqual(window[agLogSetInterval], 'changed', 'property changed');
         clearGlobalProps('hit', agLogSetInterval);
-        testIntervals.forEach((i) => (clearInterval(i)));
         done();
     }, 50);
 });
 
 
 test('prevent-setInterval: ubo alias no args -- logging', (assert) => {
-    const testIntervals = [];
-
     const params = {
         name: 'ubo-setInterval-defuser.js',
         args: [],
@@ -103,15 +101,12 @@ test('prevent-setInterval: ubo alias no args -- logging', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         assert.strictEqual(window[uboLogSetInterval], 'changed', 'property changed');
         clearGlobalProps('hit', uboLogSetInterval);
-        testIntervals.forEach((i) => (clearInterval(i)));
         done();
     }, 50);
 });
 
 
 test('prevent-setInterval: adg by setInterval callback name', (assert) => {
-    const testIntervals = [];
-
     const params = {
         name,
         args: ['test', '50'],
@@ -128,7 +123,6 @@ test('prevent-setInterval: adg by setInterval callback name', (assert) => {
         // eslint-disable-next-line max-len
         assert.equal(window.ddd, 'new value', 'Another property should successfully changed by another timeout');
         assert.equal(window.hit, 'value', 'Hit function was executed');
-        testIntervals.forEach((i) => (clearInterval(i)));
         done();
     }, 100);
 
@@ -147,8 +141,6 @@ test('prevent-setInterval: adg by setInterval callback name', (assert) => {
 
 
 test('prevent-setInterval: adg by code matching', (assert) => {
-    const testIntervals = [];
-
     const params = {
         name,
         args: ['match', '50'],
@@ -165,7 +157,6 @@ test('prevent-setInterval: adg by code matching', (assert) => {
         // eslint-disable-next-line max-len
         assert.equal(window.ddd, 'new value', 'Another property should  be successfully changed by another timeout');
         assert.equal(window.hit, 'value', 'Hit function was executed');
-        testIntervals.forEach((i) => (clearInterval(i)));
         done();
     }, 100);
 
@@ -184,8 +175,6 @@ test('prevent-setInterval: adg by code matching', (assert) => {
 
 
 test('prevent-setInterval: adg -- !match', (assert) => {
-    const testIntervals = [];
-
     const params = {
         name,
         args: ['!one'],
@@ -204,7 +193,6 @@ test('prevent-setInterval: adg -- !match', (assert) => {
         assert.equal(window.second, 'two', 'Second property should be successfully changed');
         assert.equal(window.third, 'three', 'Third property should be successfully changed');
         assert.equal(window.hit, 'value', 'Hit function was executed');
-        testIntervals.forEach((i) => (clearInterval(i)));
         done();
     }, 100);
 
@@ -227,8 +215,6 @@ test('prevent-setInterval: adg -- !match', (assert) => {
 
 
 test('prevent-setInterval: adg -- match + !delay', (assert) => {
-    const testIntervals = [];
-
     const params = {
         name,
         args: ['test', '!50'],
@@ -246,7 +232,6 @@ test('prevent-setInterval: adg -- match + !delay', (assert) => {
         assert.equal(window.second, 'second', 'Second property should be successfully changed');
         assert.equal(window.third, 'three', 'Target property not changed');
         assert.equal(window.hit, 'value', 'Hit function was executed');
-        testIntervals.forEach((i) => (clearInterval(i)));
         done();
     }, 200);
 
@@ -269,8 +254,6 @@ test('prevent-setInterval: adg -- match + !delay', (assert) => {
 
 
 test('prevent-setInterval: adg -- !match + !delay', (assert) => {
-    const testIntervals = [];
-
     const params = {
         name,
         args: ['!one', '!50'],
@@ -290,7 +273,6 @@ test('prevent-setInterval: adg -- !match + !delay', (assert) => {
         assert.equal(window.second20, 'two', 'Target property not changed');
         assert.equal(window.second50, 'second50', 'property should be successfully changed');
         assert.equal(window.hit, 'value', 'Hit function was executed');
-        testIntervals.forEach((i) => (clearInterval(i)));
         done();
     }, 100);
 

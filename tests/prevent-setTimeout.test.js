@@ -14,6 +14,8 @@ const evalWrap = eval;
 const nativeSetTimeout = window.setTimeout;
 const nativeConsole = console.log; // eslint-disable-line no-console
 
+const testTimeouts = [];
+
 const beforeEach = () => {
     window.__debugScriptlets = () => {
         window.hit = 'value';
@@ -23,6 +25,7 @@ const beforeEach = () => {
 const afterEach = () => {
     window.setTimeout = nativeSetTimeout;
     clearGlobalProps('hit', 'aaa', '__debugScriptlets');
+    testTimeouts.forEach((t) => (clearTimeout(t)));
     console.log = nativeConsole; // eslint-disable-line no-console
 };
 
@@ -31,8 +34,6 @@ module(name, { beforeEach, afterEach });
 
 
 test('prevent-setTimeout: adg no args -- logging', (assert) => {
-    const testTimeouts = [];
-
     const params = {
         name,
         args: [],
@@ -64,15 +65,12 @@ test('prevent-setTimeout: adg no args -- logging', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         assert.strictEqual(window[agLogSetTimeout], 'changed', 'property changed');
         clearGlobalProps('hit', agLogSetTimeout);
-        testTimeouts.forEach((t) => (clearTimeout(t)));
         done();
     }, 50);
 });
 
 
 test('prevent-setTimeout: ubo alias no args -- logging', (assert) => {
-    const testTimeouts = [];
-
     const params = {
         name: 'ubo-setTimeout-defuser.js',
         args: [],
@@ -104,15 +102,12 @@ test('prevent-setTimeout: ubo alias no args -- logging', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         assert.strictEqual(window[uboLogSetTimeout], 'changed', 'property changed');
         clearGlobalProps('hit', uboLogSetTimeout);
-        testTimeouts.forEach((t) => (clearTimeout(t)));
         done();
     }, 50);
 });
 
 
 test('prevent-setTimeout: adg by setTimeout callback name', (assert) => {
-    const testTimeouts = [];
-
     const params = {
         name,
         args: ['test', '50'],
@@ -129,7 +124,6 @@ test('prevent-setTimeout: adg by setTimeout callback name', (assert) => {
         // eslint-disable-next-line max-len
         assert.equal(window.ddd, 'new value', 'Another property should successfully changed by another timeout');
         assert.equal(window.hit, 'value', 'Hit function was executed');
-        testTimeouts.forEach((t) => (clearTimeout(t)));
         done();
     }, 100);
 
@@ -148,8 +142,6 @@ test('prevent-setTimeout: adg by setTimeout callback name', (assert) => {
 
 
 test('prevent-setTimeout: adg by code matching', (assert) => {
-    const testTimeouts = [];
-
     const params = {
         name,
         args: ['match', '50'],
@@ -166,7 +158,6 @@ test('prevent-setTimeout: adg by code matching', (assert) => {
         // eslint-disable-next-line max-len
         assert.equal(window.ddd, 'new value', 'Another property should  be successfully changed by another timeout');
         assert.equal(window.hit, 'value', 'Hit function was executed');
-        testTimeouts.forEach((t) => (clearTimeout(t)));
         done();
     }, 100);
 
@@ -185,8 +176,6 @@ test('prevent-setTimeout: adg by code matching', (assert) => {
 
 
 test('prevent-setTimeout: adg -- !match', (assert) => {
-    const testTimeouts = [];
-
     const params = {
         name,
         args: ['!one'],
@@ -205,7 +194,6 @@ test('prevent-setTimeout: adg -- !match', (assert) => {
         assert.equal(window.second, 'two', 'Second property should be successfully changed');
         assert.equal(window.third, 'three', 'Third property should be successfully changed');
         assert.equal(window.hit, 'value', 'Hit function was executed');
-        testTimeouts.forEach((t) => (clearTimeout(t)));
         done();
     }, 100);
 
@@ -228,8 +216,6 @@ test('prevent-setTimeout: adg -- !match', (assert) => {
 
 
 test('prevent-setTimeout: adg -- match + !delay', (assert) => {
-    const testTimeouts = [];
-
     const params = {
         name,
         args: ['test', '!50'],
@@ -247,7 +233,6 @@ test('prevent-setTimeout: adg -- match + !delay', (assert) => {
         assert.equal(window.second, 'second', 'Second property should be successfully changed');
         assert.equal(window.third, 'three', 'Target property not changed');
         assert.equal(window.hit, 'value', 'Hit function was executed');
-        testTimeouts.forEach((t) => (clearTimeout(t)));
         done();
     }, 100);
 
@@ -270,8 +255,6 @@ test('prevent-setTimeout: adg -- match + !delay', (assert) => {
 
 
 test('prevent-setTimeout: adg -- !match + !delay', (assert) => {
-    const testTimeouts = [];
-
     const params = {
         name,
         args: ['!one', '!50'],
@@ -291,7 +274,6 @@ test('prevent-setTimeout: adg -- !match + !delay', (assert) => {
         assert.equal(window.second20, 'two', 'Target property not changed');
         assert.equal(window.second50, 'second50', 'property should be successfully changed');
         assert.equal(window.hit, 'value', 'Hit function was executed');
-        testTimeouts.forEach((t) => (clearTimeout(t)));
         done();
     }, 100);
 
