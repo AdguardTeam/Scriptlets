@@ -32,12 +32,14 @@ const TMP_DIR = 'tmp';
 
 const mainConfig = {
     input: {
-        scriptlets: 'src/scriptlets/index.js',
+        scriptlets: 'src/scriptlets/scriptletsWrapper.js',
     },
+    // input: 'src/scriptlets/scriptletsWrapper.js',
     output: {
         dir: 'dist',
         entryFileNames: '[name].js',
         format: 'iife',
+        // name: 'scriptlets.js',
         strict: false,
         sourcemap: true,
         banner,
@@ -185,7 +187,7 @@ const testLibConfig = {
 
 const tmpRedirectsConfig = {
     input: {
-        tmpRedirects: 'src/redirects/index.js',
+        tmpRedirects: 'src/redirects/redirectsWrapper.js',
     },
     output: {
         name: 'tmpRedirects',

@@ -5612,8 +5612,6 @@
   }();
    // eslint-disable-line no-undef
 
-  return scriptlets;
-
 }());
 
 /**
