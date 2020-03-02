@@ -10,8 +10,6 @@ import './prevent-addEventListener.test';
 import './prevent-bab.test';
 import './nowebrtc.test';
 import './log-addEventListener.test';
-import './log-setInterval.test';
-import './log-setTimeout.test';
 import './log-eval.test';
 import './log.test';
 import './noeval.test';

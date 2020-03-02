@@ -217,7 +217,6 @@ export const convertAdgScriptletToUbo = (rule) => {
     return res;
 };
 
-// not in validator.js because 'convertScriptletToAdg()' usage causes dependency cycle
 /**
  * Validates any scriptlet rule
  * @param {string} input - can be Adguard or Ubo or Abp scriptlet rule
