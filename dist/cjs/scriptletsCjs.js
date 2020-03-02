@@ -4446,7 +4446,7 @@ var adgToUboCompatibility = validAdgRedirects.filter(function (el) {
 }, {});
 /**
  * Parse redirect rule modifiers
- * @param {String} rule
+ * @param {string} rule
  * @returns {Array}
  */
 
@@ -4744,8 +4744,7 @@ var convertAdgScriptletToUbo = function convertAdgScriptletToUbo(rule) {
   }
 
   return res;
-}; // not in validator.js because 'convertScriptletToAdg()' usage causes dependency cycle
-
+};
 /**
  * Validates any scriptlet rule
  * @param {string} input - can be Adguard or Ubo or Abp scriptlet rule
@@ -4768,8 +4767,8 @@ var isValidScriptletRule = function isValidScriptletRule(input) {
 };
 /**
  * Converts Ubo redirect rule to Adg one
- * @param {String} rule
- * @returns {String}
+ * @param {string} rule
+ * @returns {string}
  */
 
 var convertUboRedirectToAdg = function convertUboRedirectToAdg(rule) {
@@ -4793,8 +4792,8 @@ var convertUboRedirectToAdg = function convertUboRedirectToAdg(rule) {
 };
 /**
  * Converts Abp redirect rule to Adg one
- * @param {String} rule
- * @returns {String}
+ * @param {string} rule
+ * @returns {string}
  */
 
 var convertAbpRedirectToAdg = function convertAbpRedirectToAdg(rule) {
@@ -4814,7 +4813,8 @@ var convertAbpRedirectToAdg = function convertAbpRedirectToAdg(rule) {
 };
 /**
  * Converts redirect rule to AdGuard one
- * @param {*} rule
+ * @param {string} rule
+ * @returns {string}
  */
 
 var convertRedirectToAdg = function convertRedirectToAdg(rule) {
@@ -4832,8 +4832,8 @@ var convertRedirectToAdg = function convertRedirectToAdg(rule) {
 };
 /**
  * Converts Adg redirect rule to Ubo one
- * @param {String} rule
- * @returns {String}
+ * @param {string} rule
+ * @returns {string}
  */
 
 var convertAdgRedirectToUbo = function convertAdgRedirectToUbo(rule) {
@@ -5548,12 +5548,13 @@ var getRedirectCode = function getRedirectCode(name) {
 
 var redirectsCjs = {
   getCode: getRedirectCode,
-  isAdgScriptletRule: isAdgScriptletRule,
-  isAbpRewriteResourceRule: isAbpRewriteResourceRule,
+  isAdgRedirectResourceRule: isAdgRedirectResourceRule,
   isUboRedirectResourceRule: isUboRedirectResourceRule,
+  isAbpRewriteResourceRule: isAbpRewriteResourceRule,
   convertUboRedirectToAdg: convertUboRedirectToAdg,
   convertAbpRedirectToAdg: convertAbpRedirectToAdg,
   convertRedirectToAdg: convertRedirectToAdg,
+  isValidRedirectRule: isValidRedirectRule,
   convertAdgRedirectToUbo: convertAdgRedirectToUbo
 };
 

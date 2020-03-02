@@ -192,7 +192,7 @@ export const adgToUboCompatibility = validAdgRedirects
 
 /**
  * Parse redirect rule modifiers
- * @param {String} rule
+ * @param {string} rule
  * @returns {Array}
  */
 export const parseModifiers = (rule) => (substringAfter(rule, '$').split(','));

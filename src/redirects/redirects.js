@@ -7,7 +7,8 @@ import {
 } from '../helpers/injector';
 
 import {
-    isAdgScriptletRule,
+    isValidRedirectRule,
+    isAdgRedirectResourceRule,
     isAbpRewriteResourceRule,
     isUboRedirectResourceRule,
 } from '../helpers/validator';
@@ -38,12 +39,13 @@ const getRedirectCode = (name) => {
 
 export const redirectsCjs = {
     getCode: getRedirectCode,
-    isAdgScriptletRule,
-    isAbpRewriteResourceRule,
+    isAdgRedirectResourceRule,
     isUboRedirectResourceRule,
+    isAbpRewriteResourceRule,
     convertUboRedirectToAdg,
     convertAbpRedirectToAdg,
     convertRedirectToAdg,
+    isValidRedirectRule,
     convertAdgRedirectToUbo,
 };
 

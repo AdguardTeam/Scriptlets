@@ -241,8 +241,8 @@ export const isValidScriptletRule = (input) => {
 
 /**
  * Converts Ubo redirect rule to Adg one
- * @param {String} rule
- * @returns {String}
+ * @param {string} rule
+ * @returns {string}
  */
 export const convertUboRedirectToAdg = (rule) => {
     const firstPartOfRule = substringBefore(rule, '$');
@@ -266,8 +266,8 @@ export const convertUboRedirectToAdg = (rule) => {
 
 /**
  * Converts Abp redirect rule to Adg one
- * @param {String} rule
- * @returns {String}
+ * @param {string} rule
+ * @returns {string}
  */
 export const convertAbpRedirectToAdg = (rule) => {
     const firstPartOfRule = substringBefore(rule, '$');
@@ -288,7 +288,8 @@ export const convertAbpRedirectToAdg = (rule) => {
 
 /**
  * Converts redirect rule to AdGuard one
- * @param {*} rule
+ * @param {string} rule
+ * @returns {string}
  */
 export const convertRedirectToAdg = (rule) => {
     let result;
@@ -305,8 +306,8 @@ export const convertRedirectToAdg = (rule) => {
 
 /**
  * Converts Adg redirect rule to Ubo one
- * @param {String} rule
- * @returns {String}
+ * @param {string} rule
+ * @returns {string}
  */
 export const convertAdgRedirectToUbo = (rule) => {
     if (!isValidRedirectRule(rule)) {
