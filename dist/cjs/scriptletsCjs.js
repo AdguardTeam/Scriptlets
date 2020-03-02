@@ -5558,8 +5558,6 @@ var redirectsCjs = {
   convertAdgRedirectToUbo: convertAdgRedirectToUbo
 };
 
-// import * as scriptletsList from './scriptletsList';
-
 /**
  * @typedef {Object} Source - scriptlet properties
  * @property {string} name Scriptlet name

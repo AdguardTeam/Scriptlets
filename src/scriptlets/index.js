@@ -23,9 +23,6 @@ import {
     convertAdgScriptletToUbo,
 } from '../helpers/converter';
 
-// import { parseRule } from '../helpers/parse-rule';
-
-// import * as scriptletsList from './scriptletsList';
 
 /**
  * @typedef {Object} Source - scriptlet properties
