@@ -1,4 +1,4 @@
-import { redirectsCjs } from '../redirects/redirects';
+import { redirectsCjs } from '../redirects';
 
 import {
     attachDependencies,
@@ -7,13 +7,7 @@ import {
     wrapInNonameFunc,
 } from '../helpers/injector';
 
-import {
-    isAdgScriptletRule,
-    isUboScriptletRule,
-    isAbpSnippetRule,
-    getScriptletByName,
-    isValidScriptletName,
-} from '../helpers/validator';
+import validator from '../helpers/validator';
 
 import {
     isValidScriptletRule,
@@ -39,11 +33,11 @@ import {
 * @param {Source} source
 */
 function getScriptletCode(source) {
-    if (!isValidScriptletName(source.name)) {
+    if (!validator.isValidScriptletName(source.name)) {
         return null;
     }
 
-    const scriptlet = getScriptletByName(source.name);
+    const scriptlet = validator.getScriptletByName(source.name);
     let result = attachDependencies(scriptlet);
     result = addCall(scriptlet, result);
     result = source.engine === 'corelibs'
@@ -62,11 +56,11 @@ function getScriptletCode(source) {
 // eslint-disable-next-line no-undef
 scriptlets = (() => ({
     invoke: getScriptletCode,
-    validateName: isValidScriptletName,
+    validateName: validator.isValidScriptletName,
     validateRule: isValidScriptletRule,
-    isAdgScriptletRule,
-    isUboScriptletRule,
-    isAbpSnippetRule,
+    isAdgScriptletRule: validator.isAdgScriptletRule,
+    isUboScriptletRule: validator.isUboScriptletRule,
+    isAbpSnippetRule: validator.isAbpSnippetRule,
     convertUboToAdg: convertUboScriptletToAdg,
     convertAbpToAdg: convertAbpSnippetToAdg,
     convertScriptletToAdg,

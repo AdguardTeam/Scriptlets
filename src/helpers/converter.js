@@ -6,27 +6,7 @@ import {
     getStringInBraces,
 } from './string-utils';
 
-import {
-    UBO_SCRIPTLET_MASK_REG,
-    ABP_SCRIPTLET_MASK,
-    ABP_SCRIPTLET_EXCEPTION_MASK,
-    isComment,
-    isAdgScriptletRule,
-    isUboScriptletRule,
-    isAbpSnippetRule,
-    isValidScriptletName,
-    ADG_UBO_REDIRECT_RESOURCE_MARKER,
-    ABP_REDIRECT_RESOURCE_MARKER,
-    uboToAdgCompatibility,
-    abpToAdgCompatibility,
-    adgToUboCompatibility,
-    parseModifiers,
-    getRedirectName,
-    isAdgRedirectResourceRule,
-    isUboRedirectResourceRule,
-    isAbpRewriteResourceRule,
-    isValidRedirectRule,
-} from './validator';
+import validator from './validator';
 
 import { parseRule } from './parse-rule';
 
@@ -85,8 +65,8 @@ const replacePlaceholders = (str, data) => {
  * @returns {Array} - array with one AdGuard scriptlet rule
  */
 export const convertUboScriptletToAdg = (rule) => {
-    const domains = getBeforeRegExp(rule, UBO_SCRIPTLET_MASK_REG);
-    const mask = rule.match(UBO_SCRIPTLET_MASK_REG)[0];
+    const domains = getBeforeRegExp(rule, validator.UBO_SCRIPTLET_MASK_REG);
+    const mask = rule.match(validator.UBO_SCRIPTLET_MASK_REG)[0];
     let template;
     if (mask.indexOf('@') > -1) {
         template = ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
@@ -104,7 +84,7 @@ export const convertUboScriptletToAdg = (rule) => {
             }
             return outputArg;
         })
-        .map((arg) => (wrapInDoubleQuotes(arg)))
+        .map((arg) => wrapInDoubleQuotes(arg))
         .join(', ');
     const adgRule = replacePlaceholders(
         template,
@@ -121,10 +101,10 @@ export const convertUboScriptletToAdg = (rule) => {
  */
 export const convertAbpSnippetToAdg = (rule) => {
     const SEMICOLON_DIVIDER = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
-    const mask = rule.indexOf(ABP_SCRIPTLET_MASK) > -1
-        ? ABP_SCRIPTLET_MASK
-        : ABP_SCRIPTLET_EXCEPTION_MASK;
-    const template = mask === ABP_SCRIPTLET_MASK
+    const mask = rule.indexOf(validator.ABP_SCRIPTLET_MASK) > -1
+        ? validator.ABP_SCRIPTLET_MASK
+        : validator.ABP_SCRIPTLET_EXCEPTION_MASK;
+    const template = mask === validator.ABP_SCRIPTLET_MASK
         ? ADGUARD_SCRIPTLET_TEMPLATE
         : ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
     const domains = substringBefore(rule, mask);
@@ -147,11 +127,11 @@ export const convertAbpSnippetToAdg = (rule) => {
  */
 export const convertScriptletToAdg = (rule) => {
     let result;
-    if (isUboScriptletRule(rule)) {
+    if (validator.isUboScriptletRule(rule)) {
         result = convertUboScriptletToAdg(rule);
-    } else if (isAbpSnippetRule(rule)) {
+    } else if (validator.isAbpSnippetRule(rule)) {
         result = convertAbpSnippetToAdg(rule);
-    } else if (isAdgScriptletRule(rule) || (isComment(rule))) {
+    } else if (validator.isAdgScriptletRule(rule) || (validator.isComment(rule))) {
         result = [rule];
     }
 
@@ -166,7 +146,7 @@ export const convertScriptletToAdg = (rule) => {
 export const convertAdgScriptletToUbo = (rule) => {
     let res;
 
-    if (isAdgScriptletRule(rule)) {
+    if (validator.isAdgScriptletRule(rule)) {
         const { name: parsedName, args: parsedParams } = parseRule(rule);
 
         // object of name and aliases for the Adg-scriptlet
@@ -185,7 +165,7 @@ export const convertAdgScriptletToUbo = (rule) => {
         if (aliases.length > 0) {
             const uboAlias = adgScriptletObject.aliases
                 // eslint-disable-next-line no-restricted-properties
-                .find((alias) => (alias.includes(UBO_ALIAS_NAME_MARKER)));
+                .find((alias) => alias.includes(UBO_ALIAS_NAME_MARKER));
 
             if (uboAlias) {
                 const mask = rule.match(ADGUARD_SCRIPTLET_MASK_REG)[0];
@@ -232,7 +212,7 @@ export const isValidScriptletRule = (input) => {
     // if at least one of them is not valid - whole 'input' rule is not valid too
     const isValid = rulesArray.reduce((acc, rule) => {
         const parsedRule = parseRule(rule);
-        return isValidScriptletName(parsedRule.name) && acc;
+        return validator.isValidScriptletName(parsedRule.name) && acc;
     }, true);
 
     return isValid;
@@ -246,13 +226,13 @@ export const isValidScriptletRule = (input) => {
  */
 export const convertUboRedirectToAdg = (rule) => {
     const firstPartOfRule = substringBefore(rule, '$');
-    const uboModifiers = parseModifiers(rule);
+    const uboModifiers = validator.parseModifiers(rule);
     const adgModifiers = uboModifiers
         .map((el) => {
-            if (el.indexOf(ADG_UBO_REDIRECT_RESOURCE_MARKER) > -1) {
-                const uboName = getRedirectName(rule, ADG_UBO_REDIRECT_RESOURCE_MARKER);
-                const adgName = uboToAdgCompatibility[`${uboName}`]; // redirect names may contain '-'
-                return `${ADG_UBO_REDIRECT_RESOURCE_MARKER}${adgName}`;
+            if (el.indexOf(validator.REDIRECT_RULE_TYPES.UBO.marker) > -1) {
+                const uboName = substringAfter(el, validator.REDIRECT_RULE_TYPES.UBO.marker);
+                const adgName = validator.REDIRECT_RULE_TYPES.UBO.compatibility[uboName];
+                return `${validator.REDIRECT_RULE_TYPES.ADG.marker}${adgName}`;
             }
             if (el === UBO_XHR_TYPE) {
                 return ADG_XHR_TYPE;
@@ -271,13 +251,13 @@ export const convertUboRedirectToAdg = (rule) => {
  */
 export const convertAbpRedirectToAdg = (rule) => {
     const firstPartOfRule = substringBefore(rule, '$');
-    const abpModifiers = parseModifiers(rule);
+    const abpModifiers = validator.parseModifiers(rule);
     const adgModifiers = abpModifiers
         .map((el) => {
-            if (el.indexOf(ABP_REDIRECT_RESOURCE_MARKER) > -1) {
-                const abpName = getRedirectName(rule, ABP_REDIRECT_RESOURCE_MARKER);
-                const adgName = abpToAdgCompatibility[`${abpName}`]; // redirect names may contain '-'
-                return `${ADG_UBO_REDIRECT_RESOURCE_MARKER}${adgName}`;
+            if (el.indexOf(validator.REDIRECT_RULE_TYPES.ABP.marker) > -1) {
+                const abpName = substringAfter(el, validator.REDIRECT_RULE_TYPES.ABP.marker);
+                const adgName = validator.REDIRECT_RULE_TYPES.ABP.compatibility[abpName];
+                return `${validator.REDIRECT_RULE_TYPES.ADG.marker}${adgName}`;
             }
             return el;
         })
@@ -293,11 +273,11 @@ export const convertAbpRedirectToAdg = (rule) => {
  */
 export const convertRedirectToAdg = (rule) => {
     let result;
-    if (isUboRedirectResourceRule(rule)) {
+    if (validator.isRedirectRule(rule, 'UBO')) {
         result = convertUboRedirectToAdg(rule);
-    } else if (isAbpRewriteResourceRule(rule)) {
+    } else if (validator.isRedirectRule(rule, 'ABP')) {
         result = convertAbpRedirectToAdg(rule);
-    } else if (isAdgRedirectResourceRule(rule) || (isComment(rule))) {
+    } else if (validator.isRedirectRule(rule, 'ADG') || (validator.isComment(rule))) {
         result = rule;
     }
 
@@ -310,18 +290,17 @@ export const convertRedirectToAdg = (rule) => {
  * @returns {string}
  */
 export const convertAdgRedirectToUbo = (rule) => {
-    if (!isValidRedirectRule(rule)) {
-        throw new Error(`Rule is not valid for converting to Ubo.
-Source type is not specified in the rule: ${rule}`);
+    if (!validator.isValidRedirectRule(rule)) {
+        throw new Error(`Rule is not valid for converting to Ubo. Source type is not specified in the rule: ${rule}`);
     } else {
         const firstPartOfRule = substringBefore(rule, '$');
-        const uboModifiers = parseModifiers(rule);
+        const uboModifiers = validator.parseModifiers(rule);
         const adgModifiers = uboModifiers
             .map((el) => {
-                if (el.indexOf(ADG_UBO_REDIRECT_RESOURCE_MARKER) > -1) {
-                    const adgName = getRedirectName(rule, ADG_UBO_REDIRECT_RESOURCE_MARKER);
-                    const uboName = adgToUboCompatibility[`${adgName}`]; // redirect names may contain '-'
-                    return `${ADG_UBO_REDIRECT_RESOURCE_MARKER}${uboName}`;
+                if (el.indexOf(validator.REDIRECT_RULE_TYPES.ADG.marker) > -1) {
+                    const adgName = substringAfter(el, validator.REDIRECT_RULE_TYPES.ADG.marker);
+                    const uboName = validator.REDIRECT_RULE_TYPES.ADG.compatibility[adgName];
+                    return `${validator.REDIRECT_RULE_TYPES.UBO.marker}${uboName}`;
                 }
                 return el;
             })

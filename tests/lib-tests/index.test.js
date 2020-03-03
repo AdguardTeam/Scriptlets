@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /* global QUnit */
 
 import {
@@ -8,15 +9,12 @@ import {
     isValidScriptletRule,
 } from '../../src/helpers/converter';
 
-import { isValidRedirectRule } from '../../src/helpers/validator';
+import validator from '../../src/helpers/validator';
 
 const { test, module } = QUnit;
-const name = 'debug-current-inline-script';
+const name = 'scriptlets-redirects lib';
 
 module(name);
-
-
-/* eslint-disable max-len */
 
 test('Test scriptlet rule validation', (assert) => {
     let inputRule = "example.org#%#//scriptlet('abort-on-property-read', 'I10C')";
@@ -156,21 +154,21 @@ test('Test REDIRECT converting - ABP -> ADG', (assert) => {
 
 test('Test redirect rule validation for ADG -> UBO converting', (assert) => {
     let adgRule = '||example.com^$xmlhttprequest,redirect=nooptext';
-    assert.strictEqual(isValidRedirectRule(adgRule), true);
+    assert.strictEqual(validator.isValidRedirectRule(adgRule), true);
 
-    adgRule = '||example.orf^$media,redirect=noopmp4-1s,third-party';
-    assert.strictEqual(isValidRedirectRule(adgRule), true);
+    adgRule = ' ||example.orf^$media,redirect=noopmp4-1s,third-party';
+    assert.strictEqual(validator.isValidRedirectRule(adgRule), true);
 
     adgRule = '||example.com/images/*.png$image,important,redirect=1x1-transparent.gif,domain=example.com|example.org';
-    assert.strictEqual(isValidRedirectRule(adgRule), true);
+    assert.strictEqual(validator.isValidRedirectRule(adgRule), true);
 
     // abp rule ->> false
     adgRule = '||example.com^$script,rewrite=abp-resource:blank-js';
-    assert.strictEqual(isValidRedirectRule(adgRule), false);
+    assert.strictEqual(validator.isValidRedirectRule(adgRule), false);
 
     // no source type
     adgRule = '||example.com^$important,redirect=nooptext';
-    assert.strictEqual(isValidRedirectRule(adgRule), false);
+    assert.strictEqual(validator.isValidRedirectRule(adgRule), false);
 });
 
 test('Test REDIRECT converting - ADG -> UBO', (assert) => {
@@ -182,4 +180,3 @@ test('Test REDIRECT converting - ADG -> UBO', (assert) => {
     expectedUboRule = '||example.com/images/*.png$image,important,redirect=1x1.gif,domain=example.com|example.org';
     assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
 });
-/* eslint-enable max-len */

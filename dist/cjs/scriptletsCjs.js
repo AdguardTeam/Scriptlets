@@ -4,1262 +4,6 @@
  * Version 1.1.3
  */
 
-function _defineProperty(obj, key, value) {
-  if (key in obj) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-  } else {
-    obj[key] = value;
-  }
-
-  return obj;
-}
-
-var defineProperty = _defineProperty;
-
-function isNothing(subject) {
-  return (typeof subject === 'undefined') || (subject === null);
-}
-
-
-function isObject(subject) {
-  return (typeof subject === 'object') && (subject !== null);
-}
-
-
-function toArray(sequence) {
-  if (Array.isArray(sequence)) return sequence;
-  else if (isNothing(sequence)) return [];
-
-  return [ sequence ];
-}
-
-
-function extend(target, source) {
-  var index, length, key, sourceKeys;
-
-  if (source) {
-    sourceKeys = Object.keys(source);
-
-    for (index = 0, length = sourceKeys.length; index < length; index += 1) {
-      key = sourceKeys[index];
-      target[key] = source[key];
-    }
-  }
-
-  return target;
-}
-
-
-function repeat(string, count) {
-  var result = '', cycle;
-
-  for (cycle = 0; cycle < count; cycle += 1) {
-    result += string;
-  }
-
-  return result;
-}
-
-
-function isNegativeZero(number) {
-  return (number === 0) && (Number.NEGATIVE_INFINITY === 1 / number);
-}
-
-
-var isNothing_1      = isNothing;
-var isObject_1       = isObject;
-var toArray_1        = toArray;
-var repeat_1         = repeat;
-var isNegativeZero_1 = isNegativeZero;
-var extend_1         = extend;
-
-var common = {
-	isNothing: isNothing_1,
-	isObject: isObject_1,
-	toArray: toArray_1,
-	repeat: repeat_1,
-	isNegativeZero: isNegativeZero_1,
-	extend: extend_1
-};
-
-// YAML error class. http://stackoverflow.com/questions/8458984
-
-function YAMLException(reason, mark) {
-  // Super constructor
-  Error.call(this);
-
-  this.name = 'YAMLException';
-  this.reason = reason;
-  this.mark = mark;
-  this.message = (this.reason || '(unknown reason)') + (this.mark ? ' ' + this.mark.toString() : '');
-
-  // Include stack trace in error object
-  if (Error.captureStackTrace) {
-    // Chrome and NodeJS
-    Error.captureStackTrace(this, this.constructor);
-  } else {
-    // FF, IE 10+ and Safari 6+. Fallback for others
-    this.stack = (new Error()).stack || '';
-  }
-}
-
-
-// Inherit from Error
-YAMLException.prototype = Object.create(Error.prototype);
-YAMLException.prototype.constructor = YAMLException;
-
-
-YAMLException.prototype.toString = function toString(compact) {
-  var result = this.name + ': ';
-
-  result += this.reason || '(unknown reason)';
-
-  if (!compact && this.mark) {
-    result += ' ' + this.mark.toString();
-  }
-
-  return result;
-};
-
-
-var exception = YAMLException;
-
-var TYPE_CONSTRUCTOR_OPTIONS = [
-  'kind',
-  'resolve',
-  'construct',
-  'instanceOf',
-  'predicate',
-  'represent',
-  'defaultStyle',
-  'styleAliases'
-];
-
-var YAML_NODE_KINDS = [
-  'scalar',
-  'sequence',
-  'mapping'
-];
-
-function compileStyleAliases(map) {
-  var result = {};
-
-  if (map !== null) {
-    Object.keys(map).forEach(function (style) {
-      map[style].forEach(function (alias) {
-        result[String(alias)] = style;
-      });
-    });
-  }
-
-  return result;
-}
-
-function Type(tag, options) {
-  options = options || {};
-
-  Object.keys(options).forEach(function (name) {
-    if (TYPE_CONSTRUCTOR_OPTIONS.indexOf(name) === -1) {
-      throw new exception('Unknown option "' + name + '" is met in definition of "' + tag + '" YAML type.');
-    }
-  });
-
-  // TODO: Add tag format check.
-  this.tag          = tag;
-  this.kind         = options['kind']         || null;
-  this.resolve      = options['resolve']      || function () { return true; };
-  this.construct    = options['construct']    || function (data) { return data; };
-  this.instanceOf   = options['instanceOf']   || null;
-  this.predicate    = options['predicate']    || null;
-  this.represent    = options['represent']    || null;
-  this.defaultStyle = options['defaultStyle'] || null;
-  this.styleAliases = compileStyleAliases(options['styleAliases'] || null);
-
-  if (YAML_NODE_KINDS.indexOf(this.kind) === -1) {
-    throw new exception('Unknown kind "' + this.kind + '" is specified for "' + tag + '" YAML type.');
-  }
-}
-
-var type = Type;
-
-/*eslint-disable max-len*/
-
-
-
-
-
-
-function compileList(schema, name, result) {
-  var exclude = [];
-
-  schema.include.forEach(function (includedSchema) {
-    result = compileList(includedSchema, name, result);
-  });
-
-  schema[name].forEach(function (currentType) {
-    result.forEach(function (previousType, previousIndex) {
-      if (previousType.tag === currentType.tag && previousType.kind === currentType.kind) {
-        exclude.push(previousIndex);
-      }
-    });
-
-    result.push(currentType);
-  });
-
-  return result.filter(function (type, index) {
-    return exclude.indexOf(index) === -1;
-  });
-}
-
-
-function compileMap(/* lists... */) {
-  var result = {
-        scalar: {},
-        sequence: {},
-        mapping: {},
-        fallback: {}
-      }, index, length;
-
-  function collectType(type) {
-    result[type.kind][type.tag] = result['fallback'][type.tag] = type;
-  }
-
-  for (index = 0, length = arguments.length; index < length; index += 1) {
-    arguments[index].forEach(collectType);
-  }
-  return result;
-}
-
-
-function Schema(definition) {
-  this.include  = definition.include  || [];
-  this.implicit = definition.implicit || [];
-  this.explicit = definition.explicit || [];
-
-  this.implicit.forEach(function (type) {
-    if (type.loadKind && type.loadKind !== 'scalar') {
-      throw new exception('There is a non-scalar type in the implicit list of a schema. Implicit resolving of such types is not supported.');
-    }
-  });
-
-  this.compiledImplicit = compileList(this, 'implicit', []);
-  this.compiledExplicit = compileList(this, 'explicit', []);
-  this.compiledTypeMap  = compileMap(this.compiledImplicit, this.compiledExplicit);
-}
-
-
-Schema.DEFAULT = null;
-
-
-Schema.create = function createSchema() {
-  var schemas, types;
-
-  switch (arguments.length) {
-    case 1:
-      schemas = Schema.DEFAULT;
-      types = arguments[0];
-      break;
-
-    case 2:
-      schemas = arguments[0];
-      types = arguments[1];
-      break;
-
-    default:
-      throw new exception('Wrong number of arguments for Schema.create function');
-  }
-
-  schemas = common.toArray(schemas);
-  types = common.toArray(types);
-
-  if (!schemas.every(function (schema) { return schema instanceof Schema; })) {
-    throw new exception('Specified list of super schemas (or a single Schema object) contains a non-Schema object.');
-  }
-
-  if (!types.every(function (type$1) { return type$1 instanceof type; })) {
-    throw new exception('Specified list of YAML types (or a single Type object) contains a non-Type object.');
-  }
-
-  return new Schema({
-    include: schemas,
-    explicit: types
-  });
-};
-
-
-var schema = Schema;
-
-var str = new type('tag:yaml.org,2002:str', {
-  kind: 'scalar',
-  construct: function (data) { return data !== null ? data : ''; }
-});
-
-var seq = new type('tag:yaml.org,2002:seq', {
-  kind: 'sequence',
-  construct: function (data) { return data !== null ? data : []; }
-});
-
-var map = new type('tag:yaml.org,2002:map', {
-  kind: 'mapping',
-  construct: function (data) { return data !== null ? data : {}; }
-});
-
-var failsafe = new schema({
-  explicit: [
-    str,
-    seq,
-    map
-  ]
-});
-
-function resolveYamlNull(data) {
-  if (data === null) return true;
-
-  var max = data.length;
-
-  return (max === 1 && data === '~') ||
-         (max === 4 && (data === 'null' || data === 'Null' || data === 'NULL'));
-}
-
-function constructYamlNull() {
-  return null;
-}
-
-function isNull(object) {
-  return object === null;
-}
-
-var _null = new type('tag:yaml.org,2002:null', {
-  kind: 'scalar',
-  resolve: resolveYamlNull,
-  construct: constructYamlNull,
-  predicate: isNull,
-  represent: {
-    canonical: function () { return '~';    },
-    lowercase: function () { return 'null'; },
-    uppercase: function () { return 'NULL'; },
-    camelcase: function () { return 'Null'; }
-  },
-  defaultStyle: 'lowercase'
-});
-
-function resolveYamlBoolean(data) {
-  if (data === null) return false;
-
-  var max = data.length;
-
-  return (max === 4 && (data === 'true' || data === 'True' || data === 'TRUE')) ||
-         (max === 5 && (data === 'false' || data === 'False' || data === 'FALSE'));
-}
-
-function constructYamlBoolean(data) {
-  return data === 'true' ||
-         data === 'True' ||
-         data === 'TRUE';
-}
-
-function isBoolean(object) {
-  return Object.prototype.toString.call(object) === '[object Boolean]';
-}
-
-var bool = new type('tag:yaml.org,2002:bool', {
-  kind: 'scalar',
-  resolve: resolveYamlBoolean,
-  construct: constructYamlBoolean,
-  predicate: isBoolean,
-  represent: {
-    lowercase: function (object) { return object ? 'true' : 'false'; },
-    uppercase: function (object) { return object ? 'TRUE' : 'FALSE'; },
-    camelcase: function (object) { return object ? 'True' : 'False'; }
-  },
-  defaultStyle: 'lowercase'
-});
-
-function isHexCode(c) {
-  return ((0x30/* 0 */ <= c) && (c <= 0x39/* 9 */)) ||
-         ((0x41/* A */ <= c) && (c <= 0x46/* F */)) ||
-         ((0x61/* a */ <= c) && (c <= 0x66/* f */));
-}
-
-function isOctCode(c) {
-  return ((0x30/* 0 */ <= c) && (c <= 0x37/* 7 */));
-}
-
-function isDecCode(c) {
-  return ((0x30/* 0 */ <= c) && (c <= 0x39/* 9 */));
-}
-
-function resolveYamlInteger(data) {
-  if (data === null) return false;
-
-  var max = data.length,
-      index = 0,
-      hasDigits = false,
-      ch;
-
-  if (!max) return false;
-
-  ch = data[index];
-
-  // sign
-  if (ch === '-' || ch === '+') {
-    ch = data[++index];
-  }
-
-  if (ch === '0') {
-    // 0
-    if (index + 1 === max) return true;
-    ch = data[++index];
-
-    // base 2, base 8, base 16
-
-    if (ch === 'b') {
-      // base 2
-      index++;
-
-      for (; index < max; index++) {
-        ch = data[index];
-        if (ch === '_') continue;
-        if (ch !== '0' && ch !== '1') return false;
-        hasDigits = true;
-      }
-      return hasDigits && ch !== '_';
-    }
-
-
-    if (ch === 'x') {
-      // base 16
-      index++;
-
-      for (; index < max; index++) {
-        ch = data[index];
-        if (ch === '_') continue;
-        if (!isHexCode(data.charCodeAt(index))) return false;
-        hasDigits = true;
-      }
-      return hasDigits && ch !== '_';
-    }
-
-    // base 8
-    for (; index < max; index++) {
-      ch = data[index];
-      if (ch === '_') continue;
-      if (!isOctCode(data.charCodeAt(index))) return false;
-      hasDigits = true;
-    }
-    return hasDigits && ch !== '_';
-  }
-
-  // base 10 (except 0) or base 60
-
-  // value should not start with `_`;
-  if (ch === '_') return false;
-
-  for (; index < max; index++) {
-    ch = data[index];
-    if (ch === '_') continue;
-    if (ch === ':') break;
-    if (!isDecCode(data.charCodeAt(index))) {
-      return false;
-    }
-    hasDigits = true;
-  }
-
-  // Should have digits and should not end with `_`
-  if (!hasDigits || ch === '_') return false;
-
-  // if !base60 - done;
-  if (ch !== ':') return true;
-
-  // base60 almost not used, no needs to optimize
-  return /^(:[0-5]?[0-9])+$/.test(data.slice(index));
-}
-
-function constructYamlInteger(data) {
-  var value = data, sign = 1, ch, base, digits = [];
-
-  if (value.indexOf('_') !== -1) {
-    value = value.replace(/_/g, '');
-  }
-
-  ch = value[0];
-
-  if (ch === '-' || ch === '+') {
-    if (ch === '-') sign = -1;
-    value = value.slice(1);
-    ch = value[0];
-  }
-
-  if (value === '0') return 0;
-
-  if (ch === '0') {
-    if (value[1] === 'b') return sign * parseInt(value.slice(2), 2);
-    if (value[1] === 'x') return sign * parseInt(value, 16);
-    return sign * parseInt(value, 8);
-  }
-
-  if (value.indexOf(':') !== -1) {
-    value.split(':').forEach(function (v) {
-      digits.unshift(parseInt(v, 10));
-    });
-
-    value = 0;
-    base = 1;
-
-    digits.forEach(function (d) {
-      value += (d * base);
-      base *= 60;
-    });
-
-    return sign * value;
-
-  }
-
-  return sign * parseInt(value, 10);
-}
-
-function isInteger(object) {
-  return (Object.prototype.toString.call(object)) === '[object Number]' &&
-         (object % 1 === 0 && !common.isNegativeZero(object));
-}
-
-var int_1 = new type('tag:yaml.org,2002:int', {
-  kind: 'scalar',
-  resolve: resolveYamlInteger,
-  construct: constructYamlInteger,
-  predicate: isInteger,
-  represent: {
-    binary:      function (obj) { return obj >= 0 ? '0b' + obj.toString(2) : '-0b' + obj.toString(2).slice(1); },
-    octal:       function (obj) { return obj >= 0 ? '0'  + obj.toString(8) : '-0'  + obj.toString(8).slice(1); },
-    decimal:     function (obj) { return obj.toString(10); },
-    /* eslint-disable max-len */
-    hexadecimal: function (obj) { return obj >= 0 ? '0x' + obj.toString(16).toUpperCase() :  '-0x' + obj.toString(16).toUpperCase().slice(1); }
-  },
-  defaultStyle: 'decimal',
-  styleAliases: {
-    binary:      [ 2,  'bin' ],
-    octal:       [ 8,  'oct' ],
-    decimal:     [ 10, 'dec' ],
-    hexadecimal: [ 16, 'hex' ]
-  }
-});
-
-var YAML_FLOAT_PATTERN = new RegExp(
-  // 2.5e4, 2.5 and integers
-  '^(?:[-+]?(?:0|[1-9][0-9_]*)(?:\\.[0-9_]*)?(?:[eE][-+]?[0-9]+)?' +
-  // .2e4, .2
-  // special case, seems not from spec
-  '|\\.[0-9_]+(?:[eE][-+]?[0-9]+)?' +
-  // 20:59
-  '|[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*' +
-  // .inf
-  '|[-+]?\\.(?:inf|Inf|INF)' +
-  // .nan
-  '|\\.(?:nan|NaN|NAN))$');
-
-function resolveYamlFloat(data) {
-  if (data === null) return false;
-
-  if (!YAML_FLOAT_PATTERN.test(data) ||
-      // Quick hack to not allow integers end with `_`
-      // Probably should update regexp & check speed
-      data[data.length - 1] === '_') {
-    return false;
-  }
-
-  return true;
-}
-
-function constructYamlFloat(data) {
-  var value, sign, base, digits;
-
-  value  = data.replace(/_/g, '').toLowerCase();
-  sign   = value[0] === '-' ? -1 : 1;
-  digits = [];
-
-  if ('+-'.indexOf(value[0]) >= 0) {
-    value = value.slice(1);
-  }
-
-  if (value === '.inf') {
-    return (sign === 1) ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
-
-  } else if (value === '.nan') {
-    return NaN;
-
-  } else if (value.indexOf(':') >= 0) {
-    value.split(':').forEach(function (v) {
-      digits.unshift(parseFloat(v, 10));
-    });
-
-    value = 0.0;
-    base = 1;
-
-    digits.forEach(function (d) {
-      value += d * base;
-      base *= 60;
-    });
-
-    return sign * value;
-
-  }
-  return sign * parseFloat(value, 10);
-}
-
-
-var SCIENTIFIC_WITHOUT_DOT = /^[-+]?[0-9]+e/;
-
-function representYamlFloat(object, style) {
-  var res;
-
-  if (isNaN(object)) {
-    switch (style) {
-      case 'lowercase': return '.nan';
-      case 'uppercase': return '.NAN';
-      case 'camelcase': return '.NaN';
-    }
-  } else if (Number.POSITIVE_INFINITY === object) {
-    switch (style) {
-      case 'lowercase': return '.inf';
-      case 'uppercase': return '.INF';
-      case 'camelcase': return '.Inf';
-    }
-  } else if (Number.NEGATIVE_INFINITY === object) {
-    switch (style) {
-      case 'lowercase': return '-.inf';
-      case 'uppercase': return '-.INF';
-      case 'camelcase': return '-.Inf';
-    }
-  } else if (common.isNegativeZero(object)) {
-    return '-0.0';
-  }
-
-  res = object.toString(10);
-
-  // JS stringifier can build scientific format without dots: 5e-100,
-  // while YAML requres dot: 5.e-100. Fix it with simple hack
-
-  return SCIENTIFIC_WITHOUT_DOT.test(res) ? res.replace('e', '.e') : res;
-}
-
-function isFloat(object) {
-  return (Object.prototype.toString.call(object) === '[object Number]') &&
-         (object % 1 !== 0 || common.isNegativeZero(object));
-}
-
-var float_1 = new type('tag:yaml.org,2002:float', {
-  kind: 'scalar',
-  resolve: resolveYamlFloat,
-  construct: constructYamlFloat,
-  predicate: isFloat,
-  represent: representYamlFloat,
-  defaultStyle: 'lowercase'
-});
-
-var json = new schema({
-  include: [
-    failsafe
-  ],
-  implicit: [
-    _null,
-    bool,
-    int_1,
-    float_1
-  ]
-});
-
-var core = new schema({
-  include: [
-    json
-  ]
-});
-
-var YAML_DATE_REGEXP = new RegExp(
-  '^([0-9][0-9][0-9][0-9])'          + // [1] year
-  '-([0-9][0-9])'                    + // [2] month
-  '-([0-9][0-9])$');                   // [3] day
-
-var YAML_TIMESTAMP_REGEXP = new RegExp(
-  '^([0-9][0-9][0-9][0-9])'          + // [1] year
-  '-([0-9][0-9]?)'                   + // [2] month
-  '-([0-9][0-9]?)'                   + // [3] day
-  '(?:[Tt]|[ \\t]+)'                 + // ...
-  '([0-9][0-9]?)'                    + // [4] hour
-  ':([0-9][0-9])'                    + // [5] minute
-  ':([0-9][0-9])'                    + // [6] second
-  '(?:\\.([0-9]*))?'                 + // [7] fraction
-  '(?:[ \\t]*(Z|([-+])([0-9][0-9]?)' + // [8] tz [9] tz_sign [10] tz_hour
-  '(?::([0-9][0-9]))?))?$');           // [11] tz_minute
-
-function resolveYamlTimestamp(data) {
-  if (data === null) return false;
-  if (YAML_DATE_REGEXP.exec(data) !== null) return true;
-  if (YAML_TIMESTAMP_REGEXP.exec(data) !== null) return true;
-  return false;
-}
-
-function constructYamlTimestamp(data) {
-  var match, year, month, day, hour, minute, second, fraction = 0,
-      delta = null, tz_hour, tz_minute, date;
-
-  match = YAML_DATE_REGEXP.exec(data);
-  if (match === null) match = YAML_TIMESTAMP_REGEXP.exec(data);
-
-  if (match === null) throw new Error('Date resolve error');
-
-  // match: [1] year [2] month [3] day
-
-  year = +(match[1]);
-  month = +(match[2]) - 1; // JS month starts with 0
-  day = +(match[3]);
-
-  if (!match[4]) { // no hour
-    return new Date(Date.UTC(year, month, day));
-  }
-
-  // match: [4] hour [5] minute [6] second [7] fraction
-
-  hour = +(match[4]);
-  minute = +(match[5]);
-  second = +(match[6]);
-
-  if (match[7]) {
-    fraction = match[7].slice(0, 3);
-    while (fraction.length < 3) { // milli-seconds
-      fraction += '0';
-    }
-    fraction = +fraction;
-  }
-
-  // match: [8] tz [9] tz_sign [10] tz_hour [11] tz_minute
-
-  if (match[9]) {
-    tz_hour = +(match[10]);
-    tz_minute = +(match[11] || 0);
-    delta = (tz_hour * 60 + tz_minute) * 60000; // delta in mili-seconds
-    if (match[9] === '-') delta = -delta;
-  }
-
-  date = new Date(Date.UTC(year, month, day, hour, minute, second, fraction));
-
-  if (delta) date.setTime(date.getTime() - delta);
-
-  return date;
-}
-
-function representYamlTimestamp(object /*, style*/) {
-  return object.toISOString();
-}
-
-var timestamp = new type('tag:yaml.org,2002:timestamp', {
-  kind: 'scalar',
-  resolve: resolveYamlTimestamp,
-  construct: constructYamlTimestamp,
-  instanceOf: Date,
-  represent: representYamlTimestamp
-});
-
-function resolveYamlMerge(data) {
-  return data === '<<' || data === null;
-}
-
-var merge = new type('tag:yaml.org,2002:merge', {
-  kind: 'scalar',
-  resolve: resolveYamlMerge
-});
-
-function commonjsRequire () {
-	throw new Error('Dynamic requires are not currently supported by rollup-plugin-commonjs');
-}
-
-/*eslint-disable no-bitwise*/
-
-var NodeBuffer;
-
-try {
-  // A trick for browserified version, to not include `Buffer` shim
-  var _require = commonjsRequire;
-  NodeBuffer = _require('buffer').Buffer;
-} catch (__) {}
-
-
-
-
-// [ 64, 65, 66 ] -> [ padding, CR, LF ]
-var BASE64_MAP = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=\n\r';
-
-
-function resolveYamlBinary(data) {
-  if (data === null) return false;
-
-  var code, idx, bitlen = 0, max = data.length, map = BASE64_MAP;
-
-  // Convert one by one.
-  for (idx = 0; idx < max; idx++) {
-    code = map.indexOf(data.charAt(idx));
-
-    // Skip CR/LF
-    if (code > 64) continue;
-
-    // Fail on illegal characters
-    if (code < 0) return false;
-
-    bitlen += 6;
-  }
-
-  // If there are any bits left, source was corrupted
-  return (bitlen % 8) === 0;
-}
-
-function constructYamlBinary(data) {
-  var idx, tailbits,
-      input = data.replace(/[\r\n=]/g, ''), // remove CR/LF & padding to simplify scan
-      max = input.length,
-      map = BASE64_MAP,
-      bits = 0,
-      result = [];
-
-  // Collect by 6*4 bits (3 bytes)
-
-  for (idx = 0; idx < max; idx++) {
-    if ((idx % 4 === 0) && idx) {
-      result.push((bits >> 16) & 0xFF);
-      result.push((bits >> 8) & 0xFF);
-      result.push(bits & 0xFF);
-    }
-
-    bits = (bits << 6) | map.indexOf(input.charAt(idx));
-  }
-
-  // Dump tail
-
-  tailbits = (max % 4) * 6;
-
-  if (tailbits === 0) {
-    result.push((bits >> 16) & 0xFF);
-    result.push((bits >> 8) & 0xFF);
-    result.push(bits & 0xFF);
-  } else if (tailbits === 18) {
-    result.push((bits >> 10) & 0xFF);
-    result.push((bits >> 2) & 0xFF);
-  } else if (tailbits === 12) {
-    result.push((bits >> 4) & 0xFF);
-  }
-
-  // Wrap into Buffer for NodeJS and leave Array for browser
-  if (NodeBuffer) {
-    // Support node 6.+ Buffer API when available
-    return NodeBuffer.from ? NodeBuffer.from(result) : new NodeBuffer(result);
-  }
-
-  return result;
-}
-
-function representYamlBinary(object /*, style*/) {
-  var result = '', bits = 0, idx, tail,
-      max = object.length,
-      map = BASE64_MAP;
-
-  // Convert every three bytes to 4 ASCII characters.
-
-  for (idx = 0; idx < max; idx++) {
-    if ((idx % 3 === 0) && idx) {
-      result += map[(bits >> 18) & 0x3F];
-      result += map[(bits >> 12) & 0x3F];
-      result += map[(bits >> 6) & 0x3F];
-      result += map[bits & 0x3F];
-    }
-
-    bits = (bits << 8) + object[idx];
-  }
-
-  // Dump tail
-
-  tail = max % 3;
-
-  if (tail === 0) {
-    result += map[(bits >> 18) & 0x3F];
-    result += map[(bits >> 12) & 0x3F];
-    result += map[(bits >> 6) & 0x3F];
-    result += map[bits & 0x3F];
-  } else if (tail === 2) {
-    result += map[(bits >> 10) & 0x3F];
-    result += map[(bits >> 4) & 0x3F];
-    result += map[(bits << 2) & 0x3F];
-    result += map[64];
-  } else if (tail === 1) {
-    result += map[(bits >> 2) & 0x3F];
-    result += map[(bits << 4) & 0x3F];
-    result += map[64];
-    result += map[64];
-  }
-
-  return result;
-}
-
-function isBinary(object) {
-  return NodeBuffer && NodeBuffer.isBuffer(object);
-}
-
-var binary = new type('tag:yaml.org,2002:binary', {
-  kind: 'scalar',
-  resolve: resolveYamlBinary,
-  construct: constructYamlBinary,
-  predicate: isBinary,
-  represent: representYamlBinary
-});
-
-var _hasOwnProperty = Object.prototype.hasOwnProperty;
-var _toString       = Object.prototype.toString;
-
-function resolveYamlOmap(data) {
-  if (data === null) return true;
-
-  var objectKeys = [], index, length, pair, pairKey, pairHasKey,
-      object = data;
-
-  for (index = 0, length = object.length; index < length; index += 1) {
-    pair = object[index];
-    pairHasKey = false;
-
-    if (_toString.call(pair) !== '[object Object]') return false;
-
-    for (pairKey in pair) {
-      if (_hasOwnProperty.call(pair, pairKey)) {
-        if (!pairHasKey) pairHasKey = true;
-        else return false;
-      }
-    }
-
-    if (!pairHasKey) return false;
-
-    if (objectKeys.indexOf(pairKey) === -1) objectKeys.push(pairKey);
-    else return false;
-  }
-
-  return true;
-}
-
-function constructYamlOmap(data) {
-  return data !== null ? data : [];
-}
-
-var omap = new type('tag:yaml.org,2002:omap', {
-  kind: 'sequence',
-  resolve: resolveYamlOmap,
-  construct: constructYamlOmap
-});
-
-var _toString$1 = Object.prototype.toString;
-
-function resolveYamlPairs(data) {
-  if (data === null) return true;
-
-  var index, length, pair, keys, result,
-      object = data;
-
-  result = new Array(object.length);
-
-  for (index = 0, length = object.length; index < length; index += 1) {
-    pair = object[index];
-
-    if (_toString$1.call(pair) !== '[object Object]') return false;
-
-    keys = Object.keys(pair);
-
-    if (keys.length !== 1) return false;
-
-    result[index] = [ keys[0], pair[keys[0]] ];
-  }
-
-  return true;
-}
-
-function constructYamlPairs(data) {
-  if (data === null) return [];
-
-  var index, length, pair, keys, result,
-      object = data;
-
-  result = new Array(object.length);
-
-  for (index = 0, length = object.length; index < length; index += 1) {
-    pair = object[index];
-
-    keys = Object.keys(pair);
-
-    result[index] = [ keys[0], pair[keys[0]] ];
-  }
-
-  return result;
-}
-
-var pairs = new type('tag:yaml.org,2002:pairs', {
-  kind: 'sequence',
-  resolve: resolveYamlPairs,
-  construct: constructYamlPairs
-});
-
-var _hasOwnProperty$1 = Object.prototype.hasOwnProperty;
-
-function resolveYamlSet(data) {
-  if (data === null) return true;
-
-  var key, object = data;
-
-  for (key in object) {
-    if (_hasOwnProperty$1.call(object, key)) {
-      if (object[key] !== null) return false;
-    }
-  }
-
-  return true;
-}
-
-function constructYamlSet(data) {
-  return data !== null ? data : {};
-}
-
-var set = new type('tag:yaml.org,2002:set', {
-  kind: 'mapping',
-  resolve: resolveYamlSet,
-  construct: constructYamlSet
-});
-
-var default_safe = new schema({
-  include: [
-    core
-  ],
-  implicit: [
-    timestamp,
-    merge
-  ],
-  explicit: [
-    binary,
-    omap,
-    pairs,
-    set
-  ]
-});
-
-function resolveJavascriptUndefined() {
-  return true;
-}
-
-function constructJavascriptUndefined() {
-  /*eslint-disable no-undefined*/
-  return undefined;
-}
-
-function representJavascriptUndefined() {
-  return '';
-}
-
-function isUndefined(object) {
-  return typeof object === 'undefined';
-}
-
-var _undefined = new type('tag:yaml.org,2002:js/undefined', {
-  kind: 'scalar',
-  resolve: resolveJavascriptUndefined,
-  construct: constructJavascriptUndefined,
-  predicate: isUndefined,
-  represent: representJavascriptUndefined
-});
-
-function resolveJavascriptRegExp(data) {
-  if (data === null) return false;
-  if (data.length === 0) return false;
-
-  var regexp = data,
-      tail   = /\/([gim]*)$/.exec(data),
-      modifiers = '';
-
-  // if regexp starts with '/' it can have modifiers and must be properly closed
-  // `/foo/gim` - modifiers tail can be maximum 3 chars
-  if (regexp[0] === '/') {
-    if (tail) modifiers = tail[1];
-
-    if (modifiers.length > 3) return false;
-    // if expression starts with /, is should be properly terminated
-    if (regexp[regexp.length - modifiers.length - 1] !== '/') return false;
-  }
-
-  return true;
-}
-
-function constructJavascriptRegExp(data) {
-  var regexp = data,
-      tail   = /\/([gim]*)$/.exec(data),
-      modifiers = '';
-
-  // `/foo/gim` - tail can be maximum 4 chars
-  if (regexp[0] === '/') {
-    if (tail) modifiers = tail[1];
-    regexp = regexp.slice(1, regexp.length - modifiers.length - 1);
-  }
-
-  return new RegExp(regexp, modifiers);
-}
-
-function representJavascriptRegExp(object /*, style*/) {
-  var result = '/' + object.source + '/';
-
-  if (object.global) result += 'g';
-  if (object.multiline) result += 'm';
-  if (object.ignoreCase) result += 'i';
-
-  return result;
-}
-
-function isRegExp(object) {
-  return Object.prototype.toString.call(object) === '[object RegExp]';
-}
-
-var regexp = new type('tag:yaml.org,2002:js/regexp', {
-  kind: 'scalar',
-  resolve: resolveJavascriptRegExp,
-  construct: constructJavascriptRegExp,
-  predicate: isRegExp,
-  represent: representJavascriptRegExp
-});
-
-var esprima;
-
-// Browserified version does not have esprima
-//
-// 1. For node.js just require module as deps
-// 2. For browser try to require mudule via external AMD system.
-//    If not found - try to fallback to window.esprima. If not
-//    found too - then fail to parse.
-//
-try {
-  // workaround to exclude package from browserify list.
-  var _require$1 = commonjsRequire;
-  esprima = _require$1('esprima');
-} catch (_) {
-  /*global window */
-  if (typeof window !== 'undefined') esprima = window.esprima;
-}
-
-
-
-function resolveJavascriptFunction(data) {
-  if (data === null) return false;
-
-  try {
-    var source = '(' + data + ')',
-        ast    = esprima.parse(source, { range: true });
-
-    if (ast.type                    !== 'Program'             ||
-        ast.body.length             !== 1                     ||
-        ast.body[0].type            !== 'ExpressionStatement' ||
-        (ast.body[0].expression.type !== 'ArrowFunctionExpression' &&
-          ast.body[0].expression.type !== 'FunctionExpression')) {
-      return false;
-    }
-
-    return true;
-  } catch (err) {
-    return false;
-  }
-}
-
-function constructJavascriptFunction(data) {
-  /*jslint evil:true*/
-
-  var source = '(' + data + ')',
-      ast    = esprima.parse(source, { range: true }),
-      params = [],
-      body;
-
-  if (ast.type                    !== 'Program'             ||
-      ast.body.length             !== 1                     ||
-      ast.body[0].type            !== 'ExpressionStatement' ||
-      (ast.body[0].expression.type !== 'ArrowFunctionExpression' &&
-        ast.body[0].expression.type !== 'FunctionExpression')) {
-    throw new Error('Failed to resolve function');
-  }
-
-  ast.body[0].expression.params.forEach(function (param) {
-    params.push(param.name);
-  });
-
-  body = ast.body[0].expression.body.range;
-
-  // Esprima's ranges include the first '{' and the last '}' characters on
-  // function expressions. So cut them out.
-  if (ast.body[0].expression.body.type === 'BlockStatement') {
-    /*eslint-disable no-new-func*/
-    return new Function(params, source.slice(body[0] + 1, body[1] - 1));
-  }
-  // ES6 arrow functions can omit the BlockStatement. In that case, just return
-  // the body.
-  /*eslint-disable no-new-func*/
-  return new Function(params, 'return ' + source.slice(body[0], body[1]));
-}
-
-function representJavascriptFunction(object /*, style*/) {
-  return object.toString();
-}
-
-function isFunction(object) {
-  return Object.prototype.toString.call(object) === '[object Function]';
-}
-
-var _function = new type('tag:yaml.org,2002:js/function', {
-  kind: 'scalar',
-  resolve: resolveJavascriptFunction,
-  construct: constructJavascriptFunction,
-  predicate: isFunction,
-  represent: representJavascriptFunction
-});
-
-var default_full = schema.DEFAULT = new schema({
-  include: [
-    default_safe
-  ],
-  explicit: [
-    _undefined,
-    regexp,
-    _function
-  ]
-});
-
-function simpleEscapeSequence(c) {
-  /* eslint-disable indent */
-  return (c === 0x30/* 0 */) ? '\x00' :
-        (c === 0x61/* a */) ? '\x07' :
-        (c === 0x62/* b */) ? '\x08' :
-        (c === 0x74/* t */) ? '\x09' :
-        (c === 0x09/* Tab */) ? '\x09' :
-        (c === 0x6E/* n */) ? '\x0A' :
-        (c === 0x76/* v */) ? '\x0B' :
-        (c === 0x66/* f */) ? '\x0C' :
-        (c === 0x72/* r */) ? '\x0D' :
-        (c === 0x65/* e */) ? '\x1B' :
-        (c === 0x20/* Space */) ? ' ' :
-        (c === 0x22/* " */) ? '\x22' :
-        (c === 0x2F/* / */) ? '/' :
-        (c === 0x5C/* \ */) ? '\x5C' :
-        (c === 0x4E/* N */) ? '\x85' :
-        (c === 0x5F/* _ */) ? '\xA0' :
-        (c === 0x4C/* L */) ? '\u2028' :
-        (c === 0x50/* P */) ? '\u2029' : '';
-}
-
-var simpleEscapeCheck = new Array(256); // integer, for fast access
-var simpleEscapeMap = new Array(256);
-for (var i = 0; i < 256; i++) {
-  simpleEscapeCheck[i] = simpleEscapeSequence(i) ? 1 : 0;
-  simpleEscapeMap[i] = simpleEscapeSequence(i);
-}
-
 /**
  * Generate random six symbols id
  */
@@ -1607,26 +351,26 @@ var observeDOMChanges = function observeDOMChanges(callback) {
  */
 
 var dependencies = /*#__PURE__*/Object.freeze({
-  __proto__: null,
-  randomId: randomId,
-  setPropertyAccess: setPropertyAccess,
-  getPropertyInChain: getPropertyInChain,
-  escapeRegExp: escapeRegExp,
-  toRegExp: toRegExp,
-  getBeforeRegExp: getBeforeRegExp,
-  startsWith: startsWith,
-  substringAfter: substringAfter,
-  substringBefore: substringBefore,
-  wrapInDoubleQuotes: wrapInDoubleQuotes,
-  getStringInBraces: getStringInBraces,
-  createOnErrorHandler: createOnErrorHandler,
-  noop: noop,
-  noopNull: noopNull,
-  noopThis: noopThis,
-  noopArray: noopArray,
-  noopStr: noopStr,
-  hit: hit,
-  observeDOMChanges: observeDOMChanges
+    __proto__: null,
+    randomId: randomId,
+    setPropertyAccess: setPropertyAccess,
+    getPropertyInChain: getPropertyInChain,
+    escapeRegExp: escapeRegExp,
+    toRegExp: toRegExp,
+    getBeforeRegExp: getBeforeRegExp,
+    startsWith: startsWith,
+    substringAfter: substringAfter,
+    substringBefore: substringBefore,
+    wrapInDoubleQuotes: wrapInDoubleQuotes,
+    getStringInBraces: getStringInBraces,
+    createOnErrorHandler: createOnErrorHandler,
+    noop: noop,
+    noopNull: noopNull,
+    noopThis: noopThis,
+    noopArray: noopArray,
+    noopStr: noopStr,
+    hit: hit,
+    observeDOMChanges: observeDOMChanges
 });
 
 /**
@@ -1741,6 +485,23 @@ function _slicedToArray(arr, i) {
 }
 
 var slicedToArray = _slicedToArray;
+
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
+var defineProperty = _defineProperty;
 
 /**
  * Iterate over iterable argument and evaluate current state with transitions
@@ -4246,37 +3007,37 @@ jsonPrune.injections = [hit, getPropertyInChain];
  */
 
 var scriptletList = /*#__PURE__*/Object.freeze({
-  __proto__: null,
-  abortOnPropertyRead: abortOnPropertyRead,
-  abortOnPropertyWrite: abortOnPropertyWrite,
-  preventSetTimeout: preventSetTimeout,
-  preventSetInterval: preventSetInterval,
-  preventWindowOpen: preventWindowOpen,
-  abortCurrentInlineScript: abortCurrentInlineScript,
-  setConstant: setConstant,
-  removeCookie: removeCookie,
-  preventAddEventListener: preventAddEventListener,
-  preventBab: preventBab,
-  nowebrtc: nowebrtc,
-  logAddEventListener: logAddEventListener,
-  logEval: logEval,
-  log: log,
-  noeval: noeval,
-  preventEvalIf: preventEvalIf,
-  preventFab: preventFab,
-  setPopadsDummy: setPopadsDummy,
-  preventPopadsNet: preventPopadsNet,
-  preventAdfly: preventAdfly,
-  debugOnPropertyRead: debugOnPropertyRead,
-  debugOnPropertyWrite: debugOnPropertyWrite,
-  debugCurrentInlineScript: debugCurrentInlineScript,
-  removeAttr: removeAttr,
-  removeClass: removeClass,
-  disableNewtabLinks: disableNewtabLinks,
-  adjustSetInterval: adjustSetInterval,
-  adjustSetTimeout: adjustSetTimeout,
-  dirString: dirString,
-  jsonPrune: jsonPrune
+    __proto__: null,
+    abortOnPropertyRead: abortOnPropertyRead,
+    abortOnPropertyWrite: abortOnPropertyWrite,
+    preventSetTimeout: preventSetTimeout,
+    preventSetInterval: preventSetInterval,
+    preventWindowOpen: preventWindowOpen,
+    abortCurrentInlineScript: abortCurrentInlineScript,
+    setConstant: setConstant,
+    removeCookie: removeCookie,
+    preventAddEventListener: preventAddEventListener,
+    preventBab: preventBab,
+    nowebrtc: nowebrtc,
+    logAddEventListener: logAddEventListener,
+    logEval: logEval,
+    log: log,
+    noeval: noeval,
+    preventEvalIf: preventEvalIf,
+    preventFab: preventFab,
+    setPopadsDummy: setPopadsDummy,
+    preventPopadsNet: preventPopadsNet,
+    preventAdfly: preventAdfly,
+    debugOnPropertyRead: debugOnPropertyRead,
+    debugOnPropertyWrite: debugOnPropertyWrite,
+    debugCurrentInlineScript: debugCurrentInlineScript,
+    removeAttr: removeAttr,
+    removeClass: removeClass,
+    disableNewtabLinks: disableNewtabLinks,
+    adjustSetInterval: adjustSetInterval,
+    adjustSetTimeout: adjustSetTimeout,
+    dirString: dirString,
+    jsonPrune: jsonPrune
 });
 
 const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm",ubo:"googletagmanager_gtm.js"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3.0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"disqus_embed.js"},{ubo:"disqus_forums_embed.js"},{ubo:"doubleclick_instream_ad_status.js"},{ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"}];
@@ -4301,6 +3062,7 @@ var isComment = function isComment(rule) {
  * uBlock scriptlet rule mask
  */
 
+
 var UBO_SCRIPTLET_MASK_REG = /#@?#script:inject|#@?#\s*\+js/;
 var UBO_SCRIPTLET_MASK_1 = '##+js';
 var UBO_SCRIPTLET_MASK_2 = '##script:inject';
@@ -4318,33 +3080,36 @@ var ABP_SCRIPTLET_EXCEPTION_MASK = '#@$#';
 
 var ADG_CSS_MASK_REG = /#@?\$#.+?\s*\{.*\}\s*$/g;
 /**
- * Checks is AdGuard scriptlet rule
- * @param {string} rule rule text
+ * Checks if the `rule` is AdGuard scriptlet rule
+ * @param {string} rule - rule text
  */
 
 var isAdgScriptletRule = function isAdgScriptletRule(rule) {
   return !isComment(rule) && rule.indexOf(ADG_SCRIPTLET_MASK) > -1;
 };
 /**
- * Checks is uBO scriptlet rule
+ * Checks if the `rule` is uBO scriptlet rule
  * @param {string} rule rule text
  */
+
 
 var isUboScriptletRule = function isUboScriptletRule(rule) {
   return (rule.indexOf(UBO_SCRIPTLET_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_MASK_2) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_2) > -1) && UBO_SCRIPTLET_MASK_REG.test(rule) && !isComment(rule);
 };
 /**
- * Checks is AdBlock Plus snippet
+ * Checks if the `rule` is AdBlock Plus snippet
  * @param {string} rule rule text
  */
+
 
 var isAbpSnippetRule = function isAbpSnippetRule(rule) {
   return (rule.indexOf(ABP_SCRIPTLET_MASK) > -1 || rule.indexOf(ABP_SCRIPTLET_EXCEPTION_MASK) > -1) && rule.search(ADG_CSS_MASK_REG) === -1 && !isComment(rule);
 };
 /**
- * Find scriptlet by it's name
- * @param {string} name
+ * Finds scriptlet by it's name
+ * @param {string} name - scriptlet name
  */
+
 
 var getScriptletByName = function getScriptletByName(name) {
   var scriptlets = Object.keys(scriptletList).map(function (key) {
@@ -4358,6 +3123,7 @@ var getScriptletByName = function getScriptletByName(name) {
  * Checks if the scriptlet name is valid
  * @param {string} name - Scriptlet name
  */
+
 
 var isValidScriptletName = function isValidScriptletName(name) {
   if (!name) {
@@ -4382,8 +3148,9 @@ var isValidScriptletName = function isValidScriptletName(name) {
  * Redirect resources markers
  */
 
-var ADG_UBO_REDIRECT_RESOURCE_MARKER = 'redirect=';
-var ABP_REDIRECT_RESOURCE_MARKER = 'rewrite=abp-resource:';
+
+var ADG_UBO_REDIRECT_MARKER = 'redirect=';
+var ABP_REDIRECT_MARKER = 'rewrite=abp-resource:';
 var VALID_SOURCE_TYPES = ['image', 'subdocument', 'stylesheet', 'script', 'xmlhttprequest', 'media'];
 var validAdgRedirects = redirects.filter(function (el) {
   return el.adg;
@@ -4395,7 +3162,7 @@ var validAdgRedirects = redirects.filter(function (el) {
  * @returns {Object}
  */
 
-var arrayOfPairsToObject = function arrayOfPairsToObject(pairs) {
+var objFromEntries = function objFromEntries(pairs) {
   var output = pairs.reduce(function (acc, el) {
     var _el = slicedToArray(el, 2),
         key = _el[0],
@@ -4412,7 +3179,7 @@ var arrayOfPairsToObject = function arrayOfPairsToObject(pairs) {
  */
 
 
-var uboToAdgCompatibility = arrayOfPairsToObject(validAdgRedirects.filter(function (el) {
+var uboToAdgCompatibility = objFromEntries(validAdgRedirects.filter(function (el) {
   return el.ubo;
 }).map(function (el) {
   return [el.ubo, el.adg];
@@ -4422,7 +3189,7 @@ var uboToAdgCompatibility = arrayOfPairsToObject(validAdgRedirects.filter(functi
  * It's used for ABP -> ADG  converting
  */
 
-var abpToAdgCompatibility = arrayOfPairsToObject(validAdgRedirects.filter(function (el) {
+var abpToAdgCompatibility = objFromEntries(validAdgRedirects.filter(function (el) {
   return el.abp;
 }).map(function (el) {
   return [el.abp, el.adg];
@@ -4432,20 +3199,27 @@ var abpToAdgCompatibility = arrayOfPairsToObject(validAdgRedirects.filter(functi
  * It's used for ADG -> UBO  converting
  */
 
-var adgToUboCompatibility = validAdgRedirects.filter(function (el) {
+var adgToUboCompatibility = objFromEntries(validAdgRedirects.filter(function (el) {
   return el.ubo;
 }).map(function (el) {
   return [el.adg, el.ubo];
-}).reduce(function (acc, el) {
-  var _el2 = slicedToArray(el, 2),
-      key = _el2[0],
-      value = _el2[1];
-
-  acc[key] = value;
-  return acc;
-}, {});
+}));
+var REDIRECT_RULE_TYPES = {
+  ADG: {
+    marker: ADG_UBO_REDIRECT_MARKER,
+    compatibility: adgToUboCompatibility
+  },
+  UBO: {
+    marker: ADG_UBO_REDIRECT_MARKER,
+    compatibility: uboToAdgCompatibility
+  },
+  ABP: {
+    marker: ABP_REDIRECT_MARKER,
+    compatibility: abpToAdgCompatibility
+  }
+};
 /**
- * Parse redirect rule modifiers
+ * Parses redirect rule modifiers
  * @param {string} rule
  * @returns {Array}
  */
@@ -4460,6 +3234,7 @@ var parseModifiers = function parseModifiers(rule) {
  * @returns {string} - redirect resource name
  */
 
+
 var getRedirectName = function getRedirectName(rule, marker) {
   var ruleModifiers = parseModifiers(rule);
   var redirectNamePart = ruleModifiers.find(function (el) {
@@ -4468,14 +3243,20 @@ var getRedirectName = function getRedirectName(rule, marker) {
   return substringAfter(redirectNamePart, marker);
 };
 /**
- * Checks is ADG redirect resource rule
- * @param {string} rule rule text
+ * Checks if the `rule` satisfies the `type`
+ * @param {string} rule - rule text
+ * @param {'ADG'|'UBO'|'ABP'} type - type of a redirect rule
  */
 
-var isAdgRedirectResourceRule = function isAdgRedirectResourceRule(rule) {
-  if (!isComment(rule) && rule.indexOf('||') > -1 && rule.indexOf(ADG_UBO_REDIRECT_RESOURCE_MARKER) > -1) {
-    var redirectName = getRedirectName(rule, ADG_UBO_REDIRECT_RESOURCE_MARKER);
-    return redirectName === Object.keys(adgToUboCompatibility).find(function (el) {
+
+var isRedirectRule = function isRedirectRule(rule, type) {
+  var _REDIRECT_RULE_TYPES$ = REDIRECT_RULE_TYPES[type],
+      marker = _REDIRECT_RULE_TYPES$.marker,
+      compatibility = _REDIRECT_RULE_TYPES$.compatibility;
+
+  if (!isComment(rule) && rule.indexOf(marker) > -1) {
+    var redirectName = getRedirectName(rule, marker);
+    return redirectName === Object.keys(compatibility).find(function (el) {
       return el === redirectName;
     });
   }
@@ -4483,39 +3264,9 @@ var isAdgRedirectResourceRule = function isAdgRedirectResourceRule(rule) {
   return false;
 };
 /**
- * Checks is UBO redirect resource rule
- * @param {string} rule rule text
- */
-
-var isUboRedirectResourceRule = function isUboRedirectResourceRule(rule) {
-  if (!isComment(rule) && rule.indexOf('||') > -1 && rule.indexOf(ADG_UBO_REDIRECT_RESOURCE_MARKER) > -1) {
-    var redirectName = getRedirectName(rule, ADG_UBO_REDIRECT_RESOURCE_MARKER);
-    return redirectName === Object.keys(uboToAdgCompatibility).find(function (el) {
-      return el === redirectName;
-    });
-  }
-
-  return false;
-};
-/**
- * Checks is ABP rewrite resource rule
- * @param {string} rule rule text
- */
-
-var isAbpRewriteResourceRule = function isAbpRewriteResourceRule(rule) {
-  if (!isComment(rule) && rule.indexOf('||') > -1 && rule.indexOf(ABP_REDIRECT_RESOURCE_MARKER) > -1) {
-    var redirectName = getRedirectName(rule, ABP_REDIRECT_RESOURCE_MARKER);
-    return redirectName === Object.keys(abpToAdgCompatibility).find(function (el) {
-      return el === redirectName;
-    });
-  }
-
-  return false;
-};
-/**
- * Validates rule for Adg -> Ubo convertation
+ * Validates rule for Adg -> Ubo conversion
  *
- * Used ONLY for Adg -> Ubo convertation
+ * Used ONLY for Adg -> Ubo conversion
  * because Ubo redirect rules must contain source type, but Adg and Abp must not.
  *
  * Also source type can not be added automatically because of such valid rules
@@ -4529,8 +3280,9 @@ var isAbpRewriteResourceRule = function isAbpRewriteResourceRule(rule) {
  * @returns {boolean}
  */
 
+
 var isValidRedirectRule = function isValidRedirectRule(rule) {
-  if (isAdgRedirectResourceRule(rule)) {
+  if (isRedirectRule(rule, 'ADG')) {
     var ruleModifiers = parseModifiers(rule);
     var sourceType = ruleModifiers.find(function (el) {
       return VALID_SOURCE_TYPES.indexOf(el) > -1;
@@ -4539,6 +3291,23 @@ var isValidRedirectRule = function isValidRedirectRule(rule) {
   }
 
   return false;
+};
+
+var validator = {
+  UBO_SCRIPTLET_MASK_REG: UBO_SCRIPTLET_MASK_REG,
+  ABP_SCRIPTLET_MASK: ABP_SCRIPTLET_MASK,
+  ABP_SCRIPTLET_EXCEPTION_MASK: ABP_SCRIPTLET_EXCEPTION_MASK,
+  isComment: isComment,
+  isAdgScriptletRule: isAdgScriptletRule,
+  isUboScriptletRule: isUboScriptletRule,
+  isAbpSnippetRule: isAbpSnippetRule,
+  getScriptletByName: getScriptletByName,
+  isValidScriptletName: isValidScriptletName,
+  REDIRECT_RULE_TYPES: REDIRECT_RULE_TYPES,
+  isRedirectRule: isRedirectRule,
+  parseModifiers: parseModifiers,
+  getRedirectName: getRedirectName,
+  isValidRedirectRule: isValidRedirectRule
 };
 
 function _iterableToArray(iter) {
@@ -4551,7 +3320,7 @@ function _toArray(arr) {
   return arrayWithHoles(arr) || iterableToArray(arr) || nonIterableRest();
 }
 
-var toArray$1 = _toArray;
+var toArray = _toArray;
 
 /**
  * AdGuard scriptlet rule
@@ -4605,8 +3374,8 @@ var replacePlaceholders = function replacePlaceholders(str, data) {
 
 
 var convertUboScriptletToAdg = function convertUboScriptletToAdg(rule) {
-  var domains = getBeforeRegExp(rule, UBO_SCRIPTLET_MASK_REG);
-  var mask = rule.match(UBO_SCRIPTLET_MASK_REG)[0];
+  var domains = getBeforeRegExp(rule, validator.UBO_SCRIPTLET_MASK_REG);
+  var mask = rule.match(validator.UBO_SCRIPTLET_MASK_REG)[0];
   var template;
 
   if (mask.indexOf('@') > -1) {
@@ -4643,8 +3412,8 @@ var convertUboScriptletToAdg = function convertUboScriptletToAdg(rule) {
 
 var convertAbpSnippetToAdg = function convertAbpSnippetToAdg(rule) {
   var SEMICOLON_DIVIDER = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
-  var mask = rule.indexOf(ABP_SCRIPTLET_MASK) > -1 ? ABP_SCRIPTLET_MASK : ABP_SCRIPTLET_EXCEPTION_MASK;
-  var template = mask === ABP_SCRIPTLET_MASK ? ADGUARD_SCRIPTLET_TEMPLATE : ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
+  var mask = rule.indexOf(validator.ABP_SCRIPTLET_MASK) > -1 ? validator.ABP_SCRIPTLET_MASK : validator.ABP_SCRIPTLET_EXCEPTION_MASK;
+  var template = mask === validator.ABP_SCRIPTLET_MASK ? ADGUARD_SCRIPTLET_TEMPLATE : ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
   var domains = substringBefore(rule, mask);
   var args = substringAfter(rule, mask);
   return args.split(SEMICOLON_DIVIDER).map(function (args) {
@@ -4672,11 +3441,11 @@ var convertAbpSnippetToAdg = function convertAbpSnippetToAdg(rule) {
 var convertScriptletToAdg = function convertScriptletToAdg(rule) {
   var result;
 
-  if (isUboScriptletRule(rule)) {
+  if (validator.isUboScriptletRule(rule)) {
     result = convertUboScriptletToAdg(rule);
-  } else if (isAbpSnippetRule(rule)) {
+  } else if (validator.isAbpSnippetRule(rule)) {
     result = convertAbpSnippetToAdg(rule);
-  } else if (isAdgScriptletRule(rule) || isComment(rule)) {
+  } else if (validator.isAdgScriptletRule(rule) || validator.isComment(rule)) {
     result = [rule];
   }
 
@@ -4691,7 +3460,7 @@ var convertScriptletToAdg = function convertScriptletToAdg(rule) {
 var convertAdgScriptletToUbo = function convertAdgScriptletToUbo(rule) {
   var res;
 
-  if (isAdgScriptletRule(rule)) {
+  if (validator.isAdgScriptletRule(rule)) {
     var _parseRule = parseRule(rule),
         parsedName = _parseRule.name,
         parsedParams = _parseRule.args; // object of name and aliases for the Adg-scriptlet
@@ -4700,7 +3469,7 @@ var convertAdgScriptletToUbo = function convertAdgScriptletToUbo(rule) {
     var adgScriptletObject = Object.keys(scriptletList).map(function (el) {
       return scriptletList[el];
     }).map(function (s) {
-      var _s$names = toArray$1(s.names),
+      var _s$names = toArray(s.names),
           name = _s$names[0],
           aliases = _s$names.slice(1);
 
@@ -4761,7 +3530,7 @@ var isValidScriptletRule = function isValidScriptletRule(input) {
 
   var isValid = rulesArray.reduce(function (acc, rule) {
     var parsedRule = parseRule(rule);
-    return isValidScriptletName(parsedRule.name) && acc;
+    return validator.isValidScriptletName(parsedRule.name) && acc;
   }, true);
   return isValid;
 };
@@ -4773,13 +3542,12 @@ var isValidScriptletRule = function isValidScriptletRule(input) {
 
 var convertUboRedirectToAdg = function convertUboRedirectToAdg(rule) {
   var firstPartOfRule = substringBefore(rule, '$');
-  var uboModifiers = parseModifiers(rule);
+  var uboModifiers = validator.parseModifiers(rule);
   var adgModifiers = uboModifiers.map(function (el) {
-    if (el.indexOf(ADG_UBO_REDIRECT_RESOURCE_MARKER) > -1) {
-      var uboName = getRedirectName(rule, ADG_UBO_REDIRECT_RESOURCE_MARKER);
-      var adgName = uboToAdgCompatibility["".concat(uboName)]; // redirect names may contain '-'
-
-      return "".concat(ADG_UBO_REDIRECT_RESOURCE_MARKER).concat(adgName);
+    if (el.indexOf(validator.REDIRECT_RULE_TYPES.UBO.marker) > -1) {
+      var uboName = substringAfter(el, validator.REDIRECT_RULE_TYPES.UBO.marker);
+      var adgName = validator.REDIRECT_RULE_TYPES.UBO.compatibility[uboName];
+      return "".concat(validator.REDIRECT_RULE_TYPES.ADG.marker).concat(adgName);
     }
 
     if (el === UBO_XHR_TYPE) {
@@ -4798,13 +3566,12 @@ var convertUboRedirectToAdg = function convertUboRedirectToAdg(rule) {
 
 var convertAbpRedirectToAdg = function convertAbpRedirectToAdg(rule) {
   var firstPartOfRule = substringBefore(rule, '$');
-  var abpModifiers = parseModifiers(rule);
+  var abpModifiers = validator.parseModifiers(rule);
   var adgModifiers = abpModifiers.map(function (el) {
-    if (el.indexOf(ABP_REDIRECT_RESOURCE_MARKER) > -1) {
-      var abpName = getRedirectName(rule, ABP_REDIRECT_RESOURCE_MARKER);
-      var adgName = abpToAdgCompatibility["".concat(abpName)]; // redirect names may contain '-'
-
-      return "".concat(ADG_UBO_REDIRECT_RESOURCE_MARKER).concat(adgName);
+    if (el.indexOf(validator.REDIRECT_RULE_TYPES.ABP.marker) > -1) {
+      var abpName = substringAfter(el, validator.REDIRECT_RULE_TYPES.ABP.marker);
+      var adgName = validator.REDIRECT_RULE_TYPES.ABP.compatibility[abpName];
+      return "".concat(validator.REDIRECT_RULE_TYPES.ADG.marker).concat(adgName);
     }
 
     return el;
@@ -4820,11 +3587,11 @@ var convertAbpRedirectToAdg = function convertAbpRedirectToAdg(rule) {
 var convertRedirectToAdg = function convertRedirectToAdg(rule) {
   var result;
 
-  if (isUboRedirectResourceRule(rule)) {
+  if (validator.isRedirectRule(rule, 'UBO')) {
     result = convertUboRedirectToAdg(rule);
-  } else if (isAbpRewriteResourceRule(rule)) {
+  } else if (validator.isRedirectRule(rule, 'ABP')) {
     result = convertAbpRedirectToAdg(rule);
-  } else if (isAdgRedirectResourceRule(rule) || isComment(rule)) {
+  } else if (validator.isRedirectRule(rule, 'ADG') || validator.isComment(rule)) {
     result = rule;
   }
 
@@ -4837,17 +3604,16 @@ var convertRedirectToAdg = function convertRedirectToAdg(rule) {
  */
 
 var convertAdgRedirectToUbo = function convertAdgRedirectToUbo(rule) {
-  if (!isValidRedirectRule(rule)) {
-    throw new Error("Rule is not valid for converting to Ubo.\nSource type is not specified in the rule: ".concat(rule));
+  if (!validator.isValidRedirectRule(rule)) {
+    throw new Error("Rule is not valid for converting to Ubo. Source type is not specified in the rule: ".concat(rule));
   } else {
     var firstPartOfRule = substringBefore(rule, '$');
-    var uboModifiers = parseModifiers(rule);
+    var uboModifiers = validator.parseModifiers(rule);
     var adgModifiers = uboModifiers.map(function (el) {
-      if (el.indexOf(ADG_UBO_REDIRECT_RESOURCE_MARKER) > -1) {
-        var adgName = getRedirectName(rule, ADG_UBO_REDIRECT_RESOURCE_MARKER);
-        var uboName = adgToUboCompatibility["".concat(adgName)]; // redirect names may contain '-'
-
-        return "".concat(ADG_UBO_REDIRECT_RESOURCE_MARKER).concat(uboName);
+      if (el.indexOf(validator.REDIRECT_RULE_TYPES.ADG.marker) > -1) {
+        var adgName = substringAfter(el, validator.REDIRECT_RULE_TYPES.ADG.marker);
+        var uboName = validator.REDIRECT_RULE_TYPES.ADG.compatibility[adgName];
+        return "".concat(validator.REDIRECT_RULE_TYPES.UBO.marker).concat(uboName);
       }
 
       return el;
@@ -5514,31 +4280,38 @@ metrikaYandexWatch.injections = [hit, noop];
 
 
 var redirectsList = /*#__PURE__*/Object.freeze({
-  __proto__: null,
-  preventFab: preventFab,
-  setPopadsDummy: setPopadsDummy,
-  preventPopadsNet: preventPopadsNet,
-  noeval: noeval,
-  GoogleAnalytics: GoogleAnalytics,
-  GoogleAnalyticsGa: GoogleAnalyticsGa,
-  GoogleSyndicationAdsByGoogle: GoogleSyndicationAdsByGoogle,
-  GoogleTagManagerGtm: GoogleTagManagerGtm,
-  GoogleTagServicesGpt: GoogleTagServicesGpt,
-  ScoreCardResearchBeacon: ScoreCardResearchBeacon,
-  metrikaYandexTag: metrikaYandexTag,
-  metrikaYandexWatch: metrikaYandexWatch
+    __proto__: null,
+    preventFab: preventFab,
+    setPopadsDummy: setPopadsDummy,
+    preventPopadsNet: preventPopadsNet,
+    noeval: noeval,
+    GoogleAnalytics: GoogleAnalytics,
+    GoogleAnalyticsGa: GoogleAnalyticsGa,
+    GoogleSyndicationAdsByGoogle: GoogleSyndicationAdsByGoogle,
+    GoogleTagManagerGtm: GoogleTagManagerGtm,
+    GoogleTagServicesGpt: GoogleTagServicesGpt,
+    ScoreCardResearchBeacon: ScoreCardResearchBeacon,
+    metrikaYandexTag: metrikaYandexTag,
+    metrikaYandexWatch: metrikaYandexWatch
 });
 
-var getRedirectByName = function getRedirectByName(redirectsList, name) {
-  // eslint-disable-next-line compat/compat
-  var redirects = Object.values(redirectsList);
+// import { redirectsCjs } from './redirects';
+/**
+ * Finds redirect resource by it's name
+ * @param {string} name - redirect name
+ */
+
+var getRedirectByName = function getRedirectByName(name) {
+  var redirects = Object.keys(redirectsList).map(function (key) {
+    return redirectsList[key];
+  });
   return redirects.find(function (r) {
     return r.names && r.names.indexOf(name) > -1;
   });
 };
 
 var getRedirectCode = function getRedirectCode(name) {
-  var redirect = getRedirectByName(redirectsList, name);
+  var redirect = getRedirectByName(name);
   var result = attachDependencies(redirect);
   result = addCall(redirect, result);
   return passSourceAndProps({
@@ -5548,13 +4321,11 @@ var getRedirectCode = function getRedirectCode(name) {
 
 var redirectsCjs = {
   getCode: getRedirectCode,
-  isAdgRedirectResourceRule: isAdgRedirectResourceRule,
-  isUboRedirectResourceRule: isUboRedirectResourceRule,
-  isAbpRewriteResourceRule: isAbpRewriteResourceRule,
+  isResourceRule: validator.isRedirectRule,
   convertUboRedirectToAdg: convertUboRedirectToAdg,
   convertAbpRedirectToAdg: convertAbpRedirectToAdg,
   convertRedirectToAdg: convertRedirectToAdg,
-  isValidRedirectRule: isValidRedirectRule,
+  isValidRedirectRule: validator.isValidRedirectRule,
   convertAdgRedirectToUbo: convertAdgRedirectToUbo
 };
 
@@ -5574,11 +4345,11 @@ var redirectsCjs = {
 */
 
 function getScriptletCode(source) {
-  if (!isValidScriptletName(source.name)) {
+  if (!validator.isValidScriptletName(source.name)) {
     return null;
   }
 
-  var scriptlet = getScriptletByName(source.name);
+  var scriptlet = validator.getScriptletByName(source.name);
   var result = attachDependencies(scriptlet);
   result = addCall(scriptlet, result);
   result = source.engine === 'corelibs' ? wrapInNonameFunc(result) : passSourceAndProps(source, result);
@@ -5597,11 +4368,11 @@ function getScriptletCode(source) {
 scriptlets = function () {
   return {
     invoke: getScriptletCode,
-    validateName: isValidScriptletName,
+    validateName: validator.isValidScriptletName,
     validateRule: isValidScriptletRule,
-    isAdgScriptletRule: isAdgScriptletRule,
-    isUboScriptletRule: isUboScriptletRule,
-    isAbpSnippetRule: isAbpSnippetRule,
+    isAdgScriptletRule: validator.isAdgScriptletRule,
+    isUboScriptletRule: validator.isUboScriptletRule,
+    isAbpSnippetRule: validator.isAbpSnippetRule,
     convertUboToAdg: convertUboScriptletToAdg,
     convertAbpToAdg: convertAbpSnippetToAdg,
     convertScriptletToAdg: convertScriptletToAdg,

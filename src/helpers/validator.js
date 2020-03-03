@@ -7,7 +7,7 @@ import { ADG_SCRIPTLET_MASK } from './parse-rule';
 
 import * as scriptletsList from '../scriptlets/scriptletsList';
 
-import * as compatibilityTable from '../../scripts/compatibility-table.json';
+import { redirects } from '../../scripts/compatibility-table.json';
 
 
 const COMMENT_MARKER = '!';
@@ -17,7 +17,7 @@ const COMMENT_MARKER = '!';
  * @param {string} rule
  * @return {boolean}
  */
-export const isComment = (rule) => startsWith(rule, COMMENT_MARKER);
+const isComment = (rule) => startsWith(rule, COMMENT_MARKER);
 
 
 /* ************************************************************************
@@ -30,7 +30,7 @@ export const isComment = (rule) => startsWith(rule, COMMENT_MARKER);
 /**
  * uBlock scriptlet rule mask
  */
-export const UBO_SCRIPTLET_MASK_REG = /#@?#script:inject|#@?#\s*\+js/;
+const UBO_SCRIPTLET_MASK_REG = /#@?#script:inject|#@?#\s*\+js/;
 const UBO_SCRIPTLET_MASK_1 = '##+js';
 const UBO_SCRIPTLET_MASK_2 = '##script:inject';
 const UBO_SCRIPTLET_EXCEPTION_MASK_1 = '#@#+js';
@@ -39,8 +39,8 @@ const UBO_SCRIPTLET_EXCEPTION_MASK_2 = '#@#script:inject';
 /**
  * AdBlock Plus snippet rule mask
  */
-export const ABP_SCRIPTLET_MASK = '#$#';
-export const ABP_SCRIPTLET_EXCEPTION_MASK = '#@$#';
+const ABP_SCRIPTLET_MASK = '#$#';
+const ABP_SCRIPTLET_EXCEPTION_MASK = '#@$#';
 
 /**
  * AdGuard CSS rule mask
@@ -49,10 +49,10 @@ const ADG_CSS_MASK_REG = /#@?\$#.+?\s*\{.*\}\s*$/g;
 
 
 /**
- * Checks is AdGuard scriptlet rule
- * @param {string} rule rule text
+ * Checks if the `rule` is AdGuard scriptlet rule
+ * @param {string} rule - rule text
  */
-export const isAdgScriptletRule = (rule) => {
+const isAdgScriptletRule = (rule) => {
     return (
         !isComment(rule)
         && rule.indexOf(ADG_SCRIPTLET_MASK) > -1
@@ -60,10 +60,10 @@ export const isAdgScriptletRule = (rule) => {
 };
 
 /**
- * Checks is uBO scriptlet rule
+ * Checks if the `rule` is uBO scriptlet rule
  * @param {string} rule rule text
  */
-export const isUboScriptletRule = (rule) => {
+const isUboScriptletRule = (rule) => {
     return (
         rule.indexOf(UBO_SCRIPTLET_MASK_1) > -1
         || rule.indexOf(UBO_SCRIPTLET_MASK_2) > -1
@@ -75,10 +75,10 @@ export const isUboScriptletRule = (rule) => {
 };
 
 /**
- * Checks is AdBlock Plus snippet
+ * Checks if the `rule` is AdBlock Plus snippet
  * @param {string} rule rule text
  */
-export const isAbpSnippetRule = (rule) => {
+const isAbpSnippetRule = (rule) => {
     return (
         rule.indexOf(ABP_SCRIPTLET_MASK) > -1
         || rule.indexOf(ABP_SCRIPTLET_EXCEPTION_MASK) > -1
@@ -88,10 +88,10 @@ export const isAbpSnippetRule = (rule) => {
 };
 
 /**
- * Find scriptlet by it's name
- * @param {string} name
+ * Finds scriptlet by it's name
+ * @param {string} name - scriptlet name
  */
-export const getScriptletByName = (name) => {
+const getScriptletByName = (name) => {
     const scriptlets = Object.keys(scriptletsList).map((key) => scriptletsList[key]);
     return scriptlets
         .find((s) => s.names && s.names.indexOf(name) > -1);
@@ -101,7 +101,7 @@ export const getScriptletByName = (name) => {
  * Checks if the scriptlet name is valid
  * @param {string} name - Scriptlet name
  */
-export const isValidScriptletName = (name) => {
+const isValidScriptletName = (name) => {
     if (!name) {
         return false;
     }
@@ -121,8 +121,8 @@ export const isValidScriptletName = (name) => {
 /**
  * Redirect resources markers
  */
-export const ADG_UBO_REDIRECT_RESOURCE_MARKER = 'redirect=';
-export const ABP_REDIRECT_RESOURCE_MARKER = 'rewrite=abp-resource:';
+const ADG_UBO_REDIRECT_MARKER = 'redirect=';
+const ABP_REDIRECT_MARKER = 'rewrite=abp-resource:';
 
 const VALID_SOURCE_TYPES = [
     'image',
@@ -133,7 +133,7 @@ const VALID_SOURCE_TYPES = [
     'media',
 ];
 
-const validAdgRedirects = compatibilityTable.redirects.filter((el) => (el.adg));
+const validAdgRedirects = redirects.filter((el) => el.adg);
 
 /**
  * Converts array of pairs to object.
@@ -141,7 +141,7 @@ const validAdgRedirects = compatibilityTable.redirects.filter((el) => (el.adg));
  * @param {Array} pairs - array of pairs
  * @returns {Object}
  */
-const arrayOfPairsToObject = (pairs) => {
+const objFromEntries = (pairs) => {
     const output = pairs
         .reduce((acc, el) => {
             const [key, value] = el;
@@ -155,9 +155,9 @@ const arrayOfPairsToObject = (pairs) => {
  * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
  * It's used for UBO -> ADG  converting
  */
-export const uboToAdgCompatibility = arrayOfPairsToObject(
+const uboToAdgCompatibility = objFromEntries(
     validAdgRedirects
-        .filter(((el) => (el.ubo)))
+        .filter((el) => el.ubo)
         .map((el) => {
             return [el.ubo, el.adg];
         }),
@@ -167,9 +167,9 @@ export const uboToAdgCompatibility = arrayOfPairsToObject(
  * Compatibility object where KEYS = ABP redirect names and VALUES = ADG redirect names
  * It's used for ABP -> ADG  converting
  */
-export const abpToAdgCompatibility = arrayOfPairsToObject(
+const abpToAdgCompatibility = objFromEntries(
     validAdgRedirects
-        .filter((el) => (el.abp))
+        .filter((el) => el.abp)
         .map((el) => {
             return [el.abp, el.adg];
         }),
@@ -179,23 +179,36 @@ export const abpToAdgCompatibility = arrayOfPairsToObject(
  * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
  * It's used for ADG -> UBO  converting
  */
-export const adgToUboCompatibility = validAdgRedirects
-    .filter((el) => (el.ubo))
-    .map((el) => {
-        return [el.adg, el.ubo];
-    })
-    .reduce((acc, el) => {
-        const [key, value] = el;
-        acc[key] = value;
-        return acc;
-    }, {});
+const adgToUboCompatibility = objFromEntries(
+    validAdgRedirects
+        .filter((el) => el.ubo)
+        .map((el) => {
+            return [el.adg, el.ubo];
+        }),
+);
+
+
+const REDIRECT_RULE_TYPES = {
+    ADG: {
+        marker: ADG_UBO_REDIRECT_MARKER,
+        compatibility: adgToUboCompatibility,
+    },
+    UBO: {
+        marker: ADG_UBO_REDIRECT_MARKER,
+        compatibility: uboToAdgCompatibility,
+    },
+    ABP: {
+        marker: ABP_REDIRECT_MARKER,
+        compatibility: abpToAdgCompatibility,
+    },
+};
 
 /**
- * Parse redirect rule modifiers
+ * Parses redirect rule modifiers
  * @param {string} rule
  * @returns {Array}
  */
-export const parseModifiers = (rule) => (substringAfter(rule, '$').split(','));
+const parseModifiers = (rule) => substringAfter(rule, '$').split(',');
 
 /**
  * Gets redirect resource name
@@ -203,68 +216,38 @@ export const parseModifiers = (rule) => (substringAfter(rule, '$').split(','));
  * @param {string} marker - specific Adg/Ubo or Abp redirect resources marker
  * @returns {string} - redirect resource name
  */
-export const getRedirectName = (rule, marker) => {
+const getRedirectName = (rule, marker) => {
     const ruleModifiers = parseModifiers(rule);
     const redirectNamePart = ruleModifiers
-        .find((el) => (el.indexOf(marker) > -1));
+        .find((el) => el.indexOf(marker) > -1);
     return substringAfter(redirectNamePart, marker);
 };
 
+
 /**
- * Checks is ADG redirect resource rule
- * @param {string} rule rule text
+ * Checks if the `rule` satisfies the `type`
+ * @param {string} rule - rule text
+ * @param {'ADG'|'UBO'|'ABP'} type - type of a redirect rule
  */
-export const isAdgRedirectResourceRule = (rule) => {
+const isRedirectRule = (rule, type) => {
+    const { marker, compatibility } = REDIRECT_RULE_TYPES[type];
+
     if ((!isComment(rule))
-        && (rule.indexOf('||') > -1)
-        && (rule.indexOf(ADG_UBO_REDIRECT_RESOURCE_MARKER) > -1)) {
-        const redirectName = getRedirectName(rule, ADG_UBO_REDIRECT_RESOURCE_MARKER);
+        && (rule.indexOf(marker) > -1)) {
+        const redirectName = getRedirectName(rule, marker);
 
         return redirectName === Object
-            .keys(adgToUboCompatibility)
-            .find((el) => (el === redirectName));
+            .keys(compatibility)
+            .find((el) => el === redirectName);
     }
     return false;
 };
 
-/**
- * Checks is UBO redirect resource rule
- * @param {string} rule rule text
- */
-export const isUboRedirectResourceRule = (rule) => {
-    if ((!isComment(rule))
-        && (rule.indexOf('||') > -1)
-        && (rule.indexOf(ADG_UBO_REDIRECT_RESOURCE_MARKER) > -1)) {
-        const redirectName = getRedirectName(rule, ADG_UBO_REDIRECT_RESOURCE_MARKER);
-
-        return redirectName === Object
-            .keys(uboToAdgCompatibility)
-            .find((el) => (el === redirectName));
-    }
-    return false;
-};
 
 /**
- * Checks is ABP rewrite resource rule
- * @param {string} rule rule text
- */
-export const isAbpRewriteResourceRule = (rule) => {
-    if ((!isComment(rule))
-        && (rule.indexOf('||') > -1)
-        && (rule.indexOf(ABP_REDIRECT_RESOURCE_MARKER) > -1)) {
-        const redirectName = getRedirectName(rule, ABP_REDIRECT_RESOURCE_MARKER);
-
-        return redirectName === Object
-            .keys(abpToAdgCompatibility)
-            .find((el) => (el === redirectName));
-    }
-    return false;
-};
-
-/**
- * Validates rule for Adg -> Ubo convertation
+ * Validates rule for Adg -> Ubo conversion
  *
- * Used ONLY for Adg -> Ubo convertation
+ * Used ONLY for Adg -> Ubo conversion
  * because Ubo redirect rules must contain source type, but Adg and Abp must not.
  *
  * Also source type can not be added automatically because of such valid rules
@@ -277,13 +260,32 @@ export const isAbpRewriteResourceRule = (rule) => {
  * @param {string} rule
  * @returns {boolean}
  */
-export const isValidRedirectRule = (rule) => {
-    if (isAdgRedirectResourceRule(rule)) {
+const isValidRedirectRule = (rule) => {
+    if (isRedirectRule(rule, 'ADG')) {
         const ruleModifiers = parseModifiers(rule);
         const sourceType = ruleModifiers
-            .find((el) => (VALID_SOURCE_TYPES.indexOf(el) > -1));
+            .find((el) => VALID_SOURCE_TYPES.indexOf(el) > -1);
 
         return sourceType !== undefined;
     }
     return false;
 };
+
+const validator = {
+    UBO_SCRIPTLET_MASK_REG,
+    ABP_SCRIPTLET_MASK,
+    ABP_SCRIPTLET_EXCEPTION_MASK,
+    isComment,
+    isAdgScriptletRule,
+    isUboScriptletRule,
+    isAbpSnippetRule,
+    getScriptletByName,
+    isValidScriptletName,
+    REDIRECT_RULE_TYPES,
+    isRedirectRule,
+    parseModifiers,
+    getRedirectName,
+    isValidRedirectRule,
+};
+
+export default validator;

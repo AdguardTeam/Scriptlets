@@ -34,12 +34,10 @@ const mainConfig = {
     input: {
         scriptlets: 'src/scriptlets/scriptletsWrapper.js',
     },
-    // input: 'src/scriptlets/scriptletsWrapper.js',
     output: {
         dir: 'dist',
         entryFileNames: '[name].js',
         format: 'iife',
-        // name: 'scriptlets.js',
         strict: false,
         sourcemap: true,
         banner,
@@ -150,7 +148,6 @@ const testLibConfig = {
     },
     watch: {
         include: ['tests/lib-tests/**'],
-        chokidar: false,
     },
     plugins: [
         clear({
