@@ -443,11 +443,37 @@
 
     var arrayWithHoles = _arrayWithHoles;
 
-    function _iterableToArray(iter) {
-      if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+    function _iterableToArrayLimit(arr, i) {
+      if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) {
+        return;
+      }
+
+      var _arr = [];
+      var _n = true;
+      var _d = false;
+      var _e = undefined;
+
+      try {
+        for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+          _arr.push(_s.value);
+
+          if (i && _arr.length === i) break;
+        }
+      } catch (err) {
+        _d = true;
+        _e = err;
+      } finally {
+        try {
+          if (!_n && _i["return"] != null) _i["return"]();
+        } finally {
+          if (_d) throw _e;
+        }
+      }
+
+      return _arr;
     }
 
-    var iterableToArray = _iterableToArray;
+    var iterableToArrayLimit = _iterableToArrayLimit;
 
     function _nonIterableRest() {
       throw new TypeError("Invalid attempt to destructure non-iterable instance");
@@ -455,11 +481,11 @@
 
     var nonIterableRest = _nonIterableRest;
 
-    function _toArray(arr) {
-      return arrayWithHoles(arr) || iterableToArray(arr) || nonIterableRest();
+    function _slicedToArray(arr, i) {
+      return arrayWithHoles(arr) || iterableToArrayLimit(arr, i) || nonIterableRest();
     }
 
-    var toArray = _toArray;
+    var slicedToArray = _slicedToArray;
 
     function _defineProperty(obj, key, value) {
       if (key in obj) {
@@ -2981,7 +3007,7 @@
      * This file must export all scriptlets which should be accessible
      */
 
-    var scriptletsList = /*#__PURE__*/Object.freeze({
+    var scriptletList = /*#__PURE__*/Object.freeze({
         __proto__: null,
         abortOnPropertyRead: abortOnPropertyRead,
         abortOnPropertyWrite: abortOnPropertyWrite,
@@ -3015,7 +3041,288 @@
         jsonPrune: jsonPrune
     });
 
+    const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm",ubo:"googletagmanager_gtm.js"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3.0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"disqus_embed.js"},{ubo:"disqus_forums_embed.js"},{ubo:"doubleclick_instream_ad_status.js"},{ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"}];
+
     var COMMENT_MARKER = '!';
+    /**
+     * Checks if rule text is comment e.g. !!example.org##+js(set-constant.js, test, false)
+     * @param {string} rule
+     * @return {boolean}
+     */
+
+    var isComment = function isComment(rule) {
+      return startsWith(rule, COMMENT_MARKER);
+    };
+    /* ************************************************************************
+     *
+     * Scriptlets
+     *
+     ************************************************************************** */
+
+    /**
+     * uBlock scriptlet rule mask
+     */
+
+
+    var UBO_SCRIPTLET_MASK_REG = /#@?#script:inject|#@?#\s*\+js/;
+    var UBO_SCRIPTLET_MASK_1 = '##+js';
+    var UBO_SCRIPTLET_MASK_2 = '##script:inject';
+    var UBO_SCRIPTLET_EXCEPTION_MASK_1 = '#@#+js';
+    var UBO_SCRIPTLET_EXCEPTION_MASK_2 = '#@#script:inject';
+    /**
+     * AdBlock Plus snippet rule mask
+     */
+
+    var ABP_SCRIPTLET_MASK = '#$#';
+    var ABP_SCRIPTLET_EXCEPTION_MASK = '#@$#';
+    /**
+     * AdGuard CSS rule mask
+     */
+
+    var ADG_CSS_MASK_REG = /#@?\$#.+?\s*\{.*\}\s*$/g;
+    /**
+     * Checks if the `rule` is AdGuard scriptlet rule
+     * @param {string} rule - rule text
+     */
+
+    var isAdgScriptletRule = function isAdgScriptletRule(rule) {
+      return !isComment(rule) && rule.indexOf(ADG_SCRIPTLET_MASK) > -1;
+    };
+    /**
+     * Checks if the `rule` is uBO scriptlet rule
+     * @param {string} rule rule text
+     */
+
+
+    var isUboScriptletRule = function isUboScriptletRule(rule) {
+      return (rule.indexOf(UBO_SCRIPTLET_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_MASK_2) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_2) > -1) && UBO_SCRIPTLET_MASK_REG.test(rule) && !isComment(rule);
+    };
+    /**
+     * Checks if the `rule` is AdBlock Plus snippet
+     * @param {string} rule rule text
+     */
+
+
+    var isAbpSnippetRule = function isAbpSnippetRule(rule) {
+      return (rule.indexOf(ABP_SCRIPTLET_MASK) > -1 || rule.indexOf(ABP_SCRIPTLET_EXCEPTION_MASK) > -1) && rule.search(ADG_CSS_MASK_REG) === -1 && !isComment(rule);
+    };
+    /**
+     * Finds scriptlet by it's name
+     * @param {string} name - scriptlet name
+     */
+
+
+    var getScriptletByName = function getScriptletByName(name) {
+      var scriptlets = Object.keys(scriptletList).map(function (key) {
+        return scriptletList[key];
+      });
+      return scriptlets.find(function (s) {
+        return s.names && s.names.indexOf(name) > -1;
+      });
+    };
+    /**
+     * Checks if the scriptlet name is valid
+     * @param {string} name - Scriptlet name
+     */
+
+
+    var isValidScriptletName = function isValidScriptletName(name) {
+      if (!name) {
+        return false;
+      }
+
+      var scriptlet = getScriptletByName(name);
+
+      if (!scriptlet) {
+        return false;
+      }
+
+      return true;
+    };
+    /* ************************************************************************
+     *
+     * Redirects
+     *
+     ************************************************************************** */
+
+    /**
+     * Redirect resources markers
+     */
+
+
+    var ADG_UBO_REDIRECT_MARKER = 'redirect=';
+    var ABP_REDIRECT_MARKER = 'rewrite=abp-resource:';
+    var VALID_SOURCE_TYPES = ['image', 'subdocument', 'stylesheet', 'script', 'xmlhttprequest', 'media'];
+    var validAdgRedirects = redirects.filter(function (el) {
+      return el.adg;
+    });
+    /**
+     * Converts array of pairs to object.
+     * Sort of Object.fromEntries() polyfill.
+     * @param {Array} pairs - array of pairs
+     * @returns {Object}
+     */
+
+    var objFromEntries = function objFromEntries(pairs) {
+      var output = pairs.reduce(function (acc, el) {
+        var _el = slicedToArray(el, 2),
+            key = _el[0],
+            value = _el[1];
+
+        acc[key] = value;
+        return acc;
+      }, {});
+      return output;
+    };
+    /**
+     * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
+     * It's used for UBO -> ADG  converting
+     */
+
+
+    var uboToAdgCompatibility = objFromEntries(validAdgRedirects.filter(function (el) {
+      return el.ubo;
+    }).map(function (el) {
+      return [el.ubo, el.adg];
+    }));
+    /**
+     * Compatibility object where KEYS = ABP redirect names and VALUES = ADG redirect names
+     * It's used for ABP -> ADG  converting
+     */
+
+    var abpToAdgCompatibility = objFromEntries(validAdgRedirects.filter(function (el) {
+      return el.abp;
+    }).map(function (el) {
+      return [el.abp, el.adg];
+    }));
+    /**
+     * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
+     * It's used for ADG -> UBO  converting
+     */
+
+    var adgToUboCompatibility = objFromEntries(validAdgRedirects.filter(function (el) {
+      return el.ubo;
+    }).map(function (el) {
+      return [el.adg, el.ubo];
+    }));
+    var REDIRECT_RULE_TYPES = {
+      ADG: {
+        marker: ADG_UBO_REDIRECT_MARKER,
+        compatibility: adgToUboCompatibility
+      },
+      UBO: {
+        marker: ADG_UBO_REDIRECT_MARKER,
+        compatibility: uboToAdgCompatibility
+      },
+      ABP: {
+        marker: ABP_REDIRECT_MARKER,
+        compatibility: abpToAdgCompatibility
+      }
+    };
+    /**
+     * Parses redirect rule modifiers
+     * @param {string} rule
+     * @returns {Array}
+     */
+
+    var parseModifiers = function parseModifiers(rule) {
+      return substringAfter(rule, '$').split(',');
+    };
+    /**
+     * Gets redirect resource name
+     * @param {string} rule
+     * @param {string} marker - specific Adg/Ubo or Abp redirect resources marker
+     * @returns {string} - redirect resource name
+     */
+
+
+    var getRedirectName = function getRedirectName(rule, marker) {
+      var ruleModifiers = parseModifiers(rule);
+      var redirectNamePart = ruleModifiers.find(function (el) {
+        return el.indexOf(marker) > -1;
+      });
+      return substringAfter(redirectNamePart, marker);
+    };
+    /**
+     * Checks if the `rule` satisfies the `type`
+     * @param {string} rule - rule text
+     * @param {'ADG'|'UBO'|'ABP'} type - type of a redirect rule
+     */
+
+
+    var isRedirectRule = function isRedirectRule(rule, type) {
+      var _REDIRECT_RULE_TYPES$ = REDIRECT_RULE_TYPES[type],
+          marker = _REDIRECT_RULE_TYPES$.marker,
+          compatibility = _REDIRECT_RULE_TYPES$.compatibility;
+
+      if (!isComment(rule) && rule.indexOf(marker) > -1) {
+        var redirectName = getRedirectName(rule, marker);
+        return redirectName === Object.keys(compatibility).find(function (el) {
+          return el === redirectName;
+        });
+      }
+
+      return false;
+    };
+    /**
+     * Validates rule for Adg -> Ubo conversion
+     *
+     * Used ONLY for Adg -> Ubo conversion
+     * because Ubo redirect rules must contain source type, but Adg and Abp must not.
+     *
+     * Also source type can not be added automatically because of such valid rules
+     * ! Abp:
+     * $rewrite=abp-resource:blank-js,xmlhttprequest
+     * ! Adg:
+     * $script,redirect=noopvast-2.0
+     * $xmlhttprequest,redirect=noopvast-2.0
+     *
+     * @param {string} rule
+     * @returns {boolean}
+     */
+
+
+    var isValidRedirectRule = function isValidRedirectRule(rule) {
+      if (isRedirectRule(rule, 'ADG')) {
+        var ruleModifiers = parseModifiers(rule);
+        var sourceType = ruleModifiers.find(function (el) {
+          return VALID_SOURCE_TYPES.indexOf(el) > -1;
+        });
+        return sourceType !== undefined;
+      }
+
+      return false;
+    };
+
+    var validator = {
+      UBO_SCRIPTLET_MASK_REG: UBO_SCRIPTLET_MASK_REG,
+      ABP_SCRIPTLET_MASK: ABP_SCRIPTLET_MASK,
+      ABP_SCRIPTLET_EXCEPTION_MASK: ABP_SCRIPTLET_EXCEPTION_MASK,
+      isComment: isComment,
+      isAdgScriptletRule: isAdgScriptletRule,
+      isUboScriptletRule: isUboScriptletRule,
+      isAbpSnippetRule: isAbpSnippetRule,
+      getScriptletByName: getScriptletByName,
+      isValidScriptletName: isValidScriptletName,
+      REDIRECT_RULE_TYPES: REDIRECT_RULE_TYPES,
+      isRedirectRule: isRedirectRule,
+      parseModifiers: parseModifiers,
+      getRedirectName: getRedirectName,
+      isValidRedirectRule: isValidRedirectRule
+    };
+
+    function _iterableToArray(iter) {
+      if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+    }
+
+    var iterableToArray = _iterableToArray;
+
+    function _toArray(arr) {
+      return arrayWithHoles(arr) || iterableToArray(arr) || nonIterableRest();
+    }
+
+    var toArray = _toArray;
+
     /**
      * AdGuard scriptlet rule
      */
@@ -3028,28 +3335,15 @@
     /**
      * uBlock scriptlet rule mask
      */
-
-    var UBO_SCRIPTLET_MASK_REG = /#@?#script:inject|#@?#\s*\+js/;
-    var UBO_SCRIPTLET_MASK_1 = '##+js';
-    var UBO_SCRIPTLET_MASK_2 = '##script:inject';
-    var UBO_SCRIPTLET_EXCEPTION_MASK_1 = '#@#+js';
-    var UBO_SCRIPTLET_EXCEPTION_MASK_2 = '#@#script:inject'; // eslint-disable-next-line no-template-curly-in-string
+    // eslint-disable-next-line no-template-curly-in-string
 
     var UBO_SCRIPTLET_TEMPLATE = '${domains}##+js(${args})'; // eslint-disable-next-line no-template-curly-in-string
 
     var UBO_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@#+js(${args})';
-    var UBO_ALIAS_NAME_MARKER = 'ubo-';
-    /**
-     * AdBlock Plus snippet rule mask
-     */
+    var UBO_ALIAS_NAME_MARKER = 'ubo-'; // https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#xhr
 
-    var ABP_SCRIPTLET_MASK = '#$#';
-    var ABP_SCRIPTLET_EXCEPTION_MASK = '#@$#';
-    /**
-     * AdGuard CSS rule mask
-     */
-
-    var ADG_CSS_MASK_REG = /#@?\$#.+?\s*\{.*\}\s*$/g;
+    var UBO_XHR_TYPE = 'xhr';
+    var ADG_XHR_TYPE = 'xmlhttprequest';
     /**
      * Returns array of strings separated by space which not in quotes
      * @param {string} str
@@ -3074,49 +3368,15 @@
       }, str);
     };
     /**
-     * Checks if rule text is comment e.g. !!example.org##+js(set-constant.js, test, false)
-     * @param {string} rule
-     * @return {boolean}
-     */
-
-
-    var isComment = function isComment(rule) {
-      return startsWith(rule, COMMENT_MARKER);
-    };
-    /**
-     * Checks is AdGuard scriptlet rule
-     * @param {string} rule rule text
-     */
-
-
-    var isAdgScriptletRule = function isAdgScriptletRule(rule) {
-      return !isComment(rule) && rule.indexOf(ADG_SCRIPTLET_MASK) > -1;
-    };
-    /**
-     * Checks is uBO scriptlet rule
-     * @param {string} rule rule text
-     */
-
-    var isUboScriptletRule = function isUboScriptletRule(rule) {
-      return (rule.indexOf(UBO_SCRIPTLET_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_MASK_2) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_2) > -1) && UBO_SCRIPTLET_MASK_REG.test(rule) && !isComment(rule);
-    };
-    /**
-     * Checks is AdBlock Plus snippet
-     * @param {string} rule rule text
-     */
-
-    var isAbpSnippetRule = function isAbpSnippetRule(rule) {
-      return (rule.indexOf(ABP_SCRIPTLET_MASK) > -1 || rule.indexOf(ABP_SCRIPTLET_EXCEPTION_MASK) > -1) && rule.search(ADG_CSS_MASK_REG) === -1 && !isComment(rule);
-    };
-    /**
      * Converts string of UBO scriptlet rule to AdGuard scritlet rule
      * @param {string} rule - UBO scriptlet rule
      * @returns {Array} - array with one AdGuard scriptlet rule
      */
 
-    var convertUboToAdg = function convertUboToAdg(rule) {
-      var domains = getBeforeRegExp(rule, UBO_SCRIPTLET_MASK_REG);
-      var mask = rule.match(UBO_SCRIPTLET_MASK_REG)[0];
+
+    var convertUboScriptletToAdg = function convertUboScriptletToAdg(rule) {
+      var domains = getBeforeRegExp(rule, validator.UBO_SCRIPTLET_MASK_REG);
+      var mask = rule.match(validator.UBO_SCRIPTLET_MASK_REG)[0];
       var template;
 
       if (mask.indexOf('@') > -1) {
@@ -3145,16 +3405,16 @@
       return [adgRule];
     };
     /**
-     * Convert string of ABP scriptlet rule to AdGuard scritlet rule
-     * @param {string} rule - ABP scriptlet rule
+     * Convert string of ABP snippet rule to AdGuard scritlet rule
+     * @param {string} rule - ABP snippet rule
      * @returns {Array} - array of AdGuard scriptlet rules -
      * one or few items depends on Abp-rule
      */
 
-    var convertAbpToAdg = function convertAbpToAdg(rule) {
+    var convertAbpSnippetToAdg = function convertAbpSnippetToAdg(rule) {
       var SEMICOLON_DIVIDER = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
-      var mask = rule.indexOf(ABP_SCRIPTLET_MASK) > -1 ? ABP_SCRIPTLET_MASK : ABP_SCRIPTLET_EXCEPTION_MASK;
-      var template = mask === ABP_SCRIPTLET_MASK ? ADGUARD_SCRIPTLET_TEMPLATE : ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
+      var mask = rule.indexOf(validator.ABP_SCRIPTLET_MASK) > -1 ? validator.ABP_SCRIPTLET_MASK : validator.ABP_SCRIPTLET_EXCEPTION_MASK;
+      var template = mask === validator.ABP_SCRIPTLET_MASK ? ADGUARD_SCRIPTLET_TEMPLATE : ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
       var domains = substringBefore(rule, mask);
       var args = substringAfter(rule, mask);
       return args.split(SEMICOLON_DIVIDER).map(function (args) {
@@ -3182,11 +3442,11 @@
     var convertScriptletToAdg = function convertScriptletToAdg(rule) {
       var result;
 
-      if (isUboScriptletRule(rule)) {
-        result = convertUboToAdg(rule);
-      } else if (isAbpSnippetRule(rule)) {
-        result = convertAbpToAdg(rule);
-      } else if (isAdgScriptletRule(rule) || isComment(rule)) {
+      if (validator.isUboScriptletRule(rule)) {
+        result = convertUboScriptletToAdg(rule);
+      } else if (validator.isAbpSnippetRule(rule)) {
+        result = convertAbpSnippetToAdg(rule);
+      } else if (validator.isAdgScriptletRule(rule) || validator.isComment(rule)) {
         result = [rule];
       }
 
@@ -3198,17 +3458,17 @@
      * @returns {string} - UBO scriptlet rule
      */
 
-    var convertAdgToUbo = function convertAdgToUbo(rule) {
+    var convertAdgScriptletToUbo = function convertAdgScriptletToUbo(rule) {
       var res;
 
-      if (isAdgScriptletRule(rule)) {
+      if (validator.isAdgScriptletRule(rule)) {
         var _parseRule = parseRule(rule),
             parsedName = _parseRule.name,
             parsedParams = _parseRule.args; // object of name and aliases for the Adg-scriptlet
 
 
-        var adgScriptletObject = Object.keys(scriptletsList).map(function (el) {
-          return scriptletsList[el];
+        var adgScriptletObject = Object.keys(scriptletList).map(function (el) {
+          return scriptletList[el];
         }).map(function (s) {
           var _s$names = toArray(s.names),
               name = _s$names[0],
@@ -3240,7 +3500,9 @@
             }
 
             var domains = getBeforeRegExp(rule, ADGUARD_SCRIPTLET_MASK_REG);
-            var uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '');
+            var uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '') // '.js' in the Ubo scriptlet name can be omitted
+            // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
+            .replace('.js', '');
             var args = parsedParams.length > 0 ? "".concat(uboName, ", ").concat(parsedParams.join(', ')) : uboName;
             var uboRule = replacePlaceholders(template, {
               domains: domains,
@@ -3252,6 +3514,819 @@
       }
 
       return res;
+    };
+    /**
+     * Validates any scriptlet rule
+     * @param {string} input - can be Adguard or Ubo or Abp scriptlet rule
+     */
+
+    var isValidScriptletRule = function isValidScriptletRule(input) {
+      if (!input) {
+        return false;
+      } // ABP 'input' rule may contain more than one snippet
+
+
+      var rulesArray = convertScriptletToAdg(input); // checking if each of parsed scriptlets is valid
+      // if at least one of them is not valid - whole 'input' rule is not valid too
+
+      var isValid = rulesArray.reduce(function (acc, rule) {
+        var parsedRule = parseRule(rule);
+        return validator.isValidScriptletName(parsedRule.name) && acc;
+      }, true);
+      return isValid;
+    };
+    /**
+     * Converts Ubo redirect rule to Adg one
+     * @param {string} rule
+     * @returns {string}
+     */
+
+    var convertUboRedirectToAdg = function convertUboRedirectToAdg(rule) {
+      var firstPartOfRule = substringBefore(rule, '$');
+      var uboModifiers = validator.parseModifiers(rule);
+      var adgModifiers = uboModifiers.map(function (el) {
+        if (el.indexOf(validator.REDIRECT_RULE_TYPES.UBO.marker) > -1) {
+          var uboName = substringAfter(el, validator.REDIRECT_RULE_TYPES.UBO.marker);
+          var adgName = validator.REDIRECT_RULE_TYPES.UBO.compatibility[uboName];
+          return "".concat(validator.REDIRECT_RULE_TYPES.ADG.marker).concat(adgName);
+        }
+
+        if (el === UBO_XHR_TYPE) {
+          return ADG_XHR_TYPE;
+        }
+
+        return el;
+      }).join(',');
+      return "".concat(firstPartOfRule, "$").concat(adgModifiers);
+    };
+    /**
+     * Converts Abp redirect rule to Adg one
+     * @param {string} rule
+     * @returns {string}
+     */
+
+    var convertAbpRedirectToAdg = function convertAbpRedirectToAdg(rule) {
+      var firstPartOfRule = substringBefore(rule, '$');
+      var abpModifiers = validator.parseModifiers(rule);
+      var adgModifiers = abpModifiers.map(function (el) {
+        if (el.indexOf(validator.REDIRECT_RULE_TYPES.ABP.marker) > -1) {
+          var abpName = substringAfter(el, validator.REDIRECT_RULE_TYPES.ABP.marker);
+          var adgName = validator.REDIRECT_RULE_TYPES.ABP.compatibility[abpName];
+          return "".concat(validator.REDIRECT_RULE_TYPES.ADG.marker).concat(adgName);
+        }
+
+        return el;
+      }).join(',');
+      return "".concat(firstPartOfRule, "$").concat(adgModifiers);
+    };
+    /**
+     * Converts redirect rule to AdGuard one
+     * @param {string} rule
+     * @returns {string}
+     */
+
+    var convertRedirectToAdg = function convertRedirectToAdg(rule) {
+      var result;
+
+      if (validator.isRedirectRule(rule, 'UBO')) {
+        result = convertUboRedirectToAdg(rule);
+      } else if (validator.isRedirectRule(rule, 'ABP')) {
+        result = convertAbpRedirectToAdg(rule);
+      } else if (validator.isRedirectRule(rule, 'ADG') || validator.isComment(rule)) {
+        result = rule;
+      }
+
+      return result;
+    };
+    /**
+     * Converts Adg redirect rule to Ubo one
+     * @param {string} rule
+     * @returns {string}
+     */
+
+    var convertAdgRedirectToUbo = function convertAdgRedirectToUbo(rule) {
+      if (!validator.isValidRedirectRule(rule)) {
+        throw new Error("Rule is not valid for converting to Ubo. Source type is not specified in the rule: ".concat(rule));
+      } else {
+        var firstPartOfRule = substringBefore(rule, '$');
+        var uboModifiers = validator.parseModifiers(rule);
+        var adgModifiers = uboModifiers.map(function (el) {
+          if (el.indexOf(validator.REDIRECT_RULE_TYPES.ADG.marker) > -1) {
+            var adgName = substringAfter(el, validator.REDIRECT_RULE_TYPES.ADG.marker);
+            var uboName = validator.REDIRECT_RULE_TYPES.ADG.compatibility[adgName];
+            return "".concat(validator.REDIRECT_RULE_TYPES.UBO.marker).concat(uboName);
+          }
+
+          return el;
+        }).join(',');
+        return "".concat(firstPartOfRule, "$").concat(adgModifiers);
+      }
+    };
+
+    /**
+     * @redirect google-analytics
+     *
+     * @description
+     * Mocks Google Analytics API.
+     *
+     * Related UBO redirect resource:
+     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_analytics.js
+     *
+     * **Example**
+     * ```
+     * ||example.org/index.js$script,redirect=google-analytics
+     * ```
+     */
+
+    function GoogleAnalytics(source) {
+      // eslint-disable-next-line func-names
+      var Tracker = function Tracker() {}; // constructor
+
+
+      var proto = Tracker.prototype;
+      proto.get = noop;
+      proto.set = noop;
+      proto.send = noop;
+      var googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';
+
+      function ga() {
+        var len = arguments.length;
+
+        if (len === 0) {
+          return;
+        } // eslint-disable-next-line prefer-rest-params
+
+
+        var lastArg = arguments[len - 1];
+
+        if (typeof lastArg !== 'object' || lastArg === null || typeof lastArg.hitCallback !== 'function') {
+          return;
+        }
+
+        try {
+          lastArg.hitCallback(); // eslint-disable-next-line no-empty
+        } catch (ex) {}
+      }
+
+      ga.create = function () {
+        return new Tracker();
+      };
+
+      ga.getByName = noopNull;
+
+      ga.getAll = function () {
+        return [];
+      };
+
+      ga.remove = noop;
+      ga.loaded = true;
+      window[googleAnalyticsName] = ga;
+      var _window = window,
+          dataLayer = _window.dataLayer;
+
+      if (dataLayer instanceof Object && dataLayer.hide instanceof Object && typeof dataLayer.hide.end === 'function') {
+        dataLayer.hide.end();
+      }
+
+      hit(source);
+    }
+    GoogleAnalytics.names = ['google-analytics', 'ubo-google-analytics_analytics.js', 'google-analytics_analytics.js'];
+    GoogleAnalytics.injections = [hit, noop, noopNull];
+
+    /* eslint-disable no-underscore-dangle */
+    /**
+     * @redirect google-analytics-ga
+     *
+     * @description
+     * Mocks old Google Analytics API.
+     *
+     * Related UBO redirect resource:
+     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_ga.js
+     *
+     * **Example**
+     * ```
+     * ||example.org/index.js$script,redirect=google-analytics-ga
+     * ```
+     */
+
+    function GoogleAnalyticsGa(source) {
+      // Gaq constructor
+      function Gaq() {}
+
+      Gaq.prototype.Na = noop;
+      Gaq.prototype.O = noop;
+      Gaq.prototype.Sa = noop;
+      Gaq.prototype.Ta = noop;
+      Gaq.prototype.Va = noop;
+      Gaq.prototype._createAsyncTracker = noop;
+      Gaq.prototype._getAsyncTracker = noop;
+      Gaq.prototype._getPlugin = noop;
+
+      Gaq.prototype.push = function (data) {
+        if (typeof data === 'function') {
+          data();
+          return;
+        }
+
+        if (Array.isArray(data) === false) {
+          return;
+        } // https://developers.google.com/analytics/devguides/collection/gajs/methods/gaJSApiDomainDirectory#_gat.GA_Tracker_._link
+
+
+        if (data[0] === '_link' && typeof data[1] === 'string') {
+          window.location.assign(data[1]);
+        } // https://github.com/gorhill/uBlock/issues/2162
+
+
+        if (data[0] === '_set' && data[1] === 'hitCallback' && typeof data[2] === 'function') {
+          data[2]();
+        }
+      };
+
+      var gaq = new Gaq();
+      var asyncTrackers = window._gaq || [];
+
+      if (Array.isArray(asyncTrackers)) {
+        while (asyncTrackers[0]) {
+          gaq.push(asyncTrackers.shift());
+        }
+      } // eslint-disable-next-line no-multi-assign
+
+
+      window._gaq = gaq.qf = gaq; // Gat constructor
+
+      function Gat() {} // Mock tracker api
+
+
+      var api = ['_addIgnoredOrganic', '_addIgnoredRef', '_addItem', '_addOrganic', '_addTrans', '_clearIgnoredOrganic', '_clearIgnoredRef', '_clearOrganic', '_cookiePathCopy', '_deleteCustomVar', '_getName', '_setAccount', '_getAccount', '_getClientInfo', '_getDetectFlash', '_getDetectTitle', '_getLinkerUrl', '_getLocalGifPath', '_getServiceMode', '_getVersion', '_getVisitorCustomVar', '_initData', '_link', '_linkByPost', '_setAllowAnchor', '_setAllowHash', '_setAllowLinker', '_setCampContentKey', '_setCampMediumKey', '_setCampNameKey', '_setCampNOKey', '_setCampSourceKey', '_setCampTermKey', '_setCampaignCookieTimeout', '_setCampaignTrack', '_setClientInfo', '_setCookiePath', '_setCookiePersistence', '_setCookieTimeout', '_setCustomVar', '_setDetectFlash', '_setDetectTitle', '_setDomainName', '_setLocalGifPath', '_setLocalRemoteServerMode', '_setLocalServerMode', '_setReferrerOverride', '_setRemoteServerMode', '_setSampleRate', '_setSessionTimeout', '_setSiteSpeedSampleRate', '_setSessionCookieTimeout', '_setVar', '_setVisitorCookieTimeout', '_trackEvent', '_trackPageLoadTime', '_trackPageview', '_trackSocial', '_trackTiming', '_trackTrans', '_visitCode'];
+      var tracker = api.reduce(function (res, funcName) {
+        res[funcName] = noop;
+        return res;
+      }, {});
+
+      tracker._getLinkerUrl = function (a) {
+        return a;
+      };
+
+      Gat.prototype._anonymizeIP = noop;
+      Gat.prototype._createTracker = noop;
+      Gat.prototype._forceSSL = noop;
+      Gat.prototype._getPlugin = noop;
+
+      Gat.prototype._getTracker = function () {
+        return tracker;
+      };
+
+      Gat.prototype._getTrackerByName = function () {
+        return tracker;
+      };
+
+      Gat.prototype._getTrackers = noop;
+      Gat.prototype.aa = noop;
+      Gat.prototype.ab = noop;
+      Gat.prototype.hb = noop;
+      Gat.prototype.la = noop;
+      Gat.prototype.oa = noop;
+      Gat.prototype.pa = noop;
+      Gat.prototype.u = noop;
+      var gat = new Gat();
+      window._gat = gat;
+      hit(source);
+    }
+    GoogleAnalyticsGa.names = ['google-analytics-ga', 'ubo-google-analytics_ga.js', 'google-analytics_ga.js'];
+    GoogleAnalyticsGa.injections = [hit, noop];
+
+    /**
+     * @redirect googlesyndication-adsbygoogle
+     *
+     * @description
+     * Mocks Google AdSense API.
+     *
+     * Related UBO redirect resource:
+     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googlesyndication_adsbygoogle.js
+     *
+     * **Example**
+     * ```
+     * ||example.org/index.js$script,redirect=googlesyndication-adsbygoogle
+     * ```
+     */
+
+    function GoogleSyndicationAdsByGoogle(source) {
+      window.adsbygoogle = window.adsbygoogle || {
+        length: 0,
+        loaded: true,
+        push: function push() {
+          this.length += 1;
+        }
+      };
+      var adElems = document.querySelectorAll('.adsbygoogle');
+      var css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
+      var executed = false;
+
+      for (var i = 0; i < adElems.length; i += 1) {
+        var frame = document.createElement('iframe');
+        frame.id = "aswift_".concat(i + 1);
+        frame.style = css;
+        var childFrame = document.createElement('iframe');
+        childFrame.id = "google_ads_frame".concat(i);
+        frame.appendChild(childFrame);
+        document.body.appendChild(frame);
+        executed = true;
+      }
+
+      if (executed) {
+        hit(source);
+      }
+    }
+    GoogleSyndicationAdsByGoogle.names = ['googlesyndication-adsbygoogle', 'ubo-googlesyndication_adsbygoogle.js', 'googlesyndication_adsbygoogle.js'];
+    GoogleSyndicationAdsByGoogle.injections = [hit];
+
+    /**
+     * @redirect googletagmanager-gtm
+     *
+     * @description
+     * Mocks Google Tag Manager API.
+     *
+     * Related UBO redirect resource:
+     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagmanager_gtm.js
+     *
+     * **Example**
+     * ```
+     * ||example.org/index.js$script,redirect=googletagmanager-gtm
+     * ```
+     */
+
+    function GoogleTagManagerGtm(source) {
+      window.ga = window.ga || noop;
+      var _window = window,
+          dataLayer = _window.dataLayer;
+
+      if (dataLayer instanceof Object === false) {
+        return;
+      }
+
+      if (dataLayer.hide instanceof Object && typeof dataLayer.hide.end === 'function') {
+        dataLayer.hide.end();
+      }
+
+      if (typeof dataLayer.push === 'function') {
+        dataLayer.push = function (data) {
+          if (data instanceof Object && typeof data.eventCallback === 'function') {
+            setTimeout(data.eventCallback, 1);
+          }
+        };
+      }
+
+      hit(source);
+    }
+    GoogleTagManagerGtm.names = ['googletagmanager-gtm', 'ubo-googletagmanager_gtm.js', 'googletagmanager_gtm.js'];
+    GoogleTagManagerGtm.injections = [hit, noop];
+
+    /**
+     * @redirect googletagservices-gpt
+     *
+     * @description
+     * Mocks Google Publisher Tag API.
+     *
+     * Related UBO redirect resource:
+     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagservices_gpt.js
+     *
+     * **Example**
+     * ```
+     * ||example.org/index.js$script,redirect=googletagservices-gpt
+     * ```
+     */
+
+    function GoogleTagServicesGpt(source) {
+      var companionAdsService = {
+        addEventListener: noopThis,
+        enableSyncLoading: noop,
+        setRefreshUnfilledSlots: noop
+      };
+      var contentService = {
+        addEventListener: noopThis,
+        setContent: noop
+      };
+
+      function PassbackSlot() {} // constructor
+
+
+      PassbackSlot.prototype.display = noop;
+      PassbackSlot.prototype.get = noopNull;
+      PassbackSlot.prototype.set = noopThis;
+      PassbackSlot.prototype.setClickUrl = noopThis;
+      PassbackSlot.prototype.setTagForChildDirectedTreatment = noopThis;
+      PassbackSlot.prototype.setTargeting = noopThis;
+      PassbackSlot.prototype.updateTargetingFromMap = noopThis;
+
+      function SizeMappingBuilder() {} // constructor
+
+
+      SizeMappingBuilder.prototype.addSize = noopThis;
+      SizeMappingBuilder.prototype.build = noopNull;
+
+      function Slot() {} // constructor
+
+
+      Slot.prototype.addService = noopThis;
+      Slot.prototype.clearCategoryExclusions = noopThis;
+      Slot.prototype.clearTargeting = noopThis;
+      Slot.prototype.defineSizeMapping = noopThis;
+      Slot.prototype.get = noopNull;
+      Slot.prototype.getAdUnitPath = noopArray;
+      Slot.prototype.getAttributeKeys = noopArray;
+      Slot.prototype.getCategoryExclusions = noopArray;
+      Slot.prototype.getDomId = noopStr;
+      Slot.prototype.getSlotElementId = noopStr;
+      Slot.prototype.getSlotId = noopThis;
+      Slot.prototype.getTargeting = noopArray;
+      Slot.prototype.getTargetingKeys = noopArray;
+      Slot.prototype.set = noopThis;
+      Slot.prototype.setCategoryExclusion = noopThis;
+      Slot.prototype.setClickUrl = noopThis;
+      Slot.prototype.setCollapseEmptyDiv = noopThis;
+      Slot.prototype.setTargeting = noopThis;
+      var pubAdsService = {
+        addEventListener: noopThis,
+        clear: noop,
+        clearCategoryExclusions: noopThis,
+        clearTagForChildDirectedTreatment: noopThis,
+        clearTargeting: noopThis,
+        collapseEmptyDivs: noop,
+        defineOutOfPagePassback: function defineOutOfPagePassback() {
+          return new PassbackSlot();
+        },
+        definePassback: function definePassback() {
+          return new PassbackSlot();
+        },
+        disableInitialLoad: noop,
+        display: noop,
+        enableAsyncRendering: noop,
+        enableSingleRequest: noop,
+        enableSyncRendering: noop,
+        enableVideoAds: noop,
+        get: noopNull,
+        getAttributeKeys: noopArray,
+        getTargeting: noop,
+        getTargetingKeys: noopArray,
+        getSlots: noopArray,
+        refresh: noop,
+        set: noopThis,
+        setCategoryExclusion: noopThis,
+        setCentering: noop,
+        setCookieOptions: noopThis,
+        setForceSafeFrame: noopThis,
+        setLocation: noopThis,
+        setPublisherProvidedId: noopThis,
+        setRequestNonPersonalizedAds: noopThis,
+        setSafeFrameConfig: noopThis,
+        setTagForChildDirectedTreatment: noopThis,
+        setTargeting: noopThis,
+        setVideoContent: noopThis,
+        updateCorrelator: noop
+      };
+      var _window = window,
+          _window$googletag = _window.googletag,
+          googletag = _window$googletag === void 0 ? {} : _window$googletag;
+      var _googletag$cmd = googletag.cmd,
+          cmd = _googletag$cmd === void 0 ? [] : _googletag$cmd;
+      googletag.apiReady = true;
+      googletag.cmd = [];
+
+      googletag.cmd.push = function (a) {
+        try {
+          a(); // eslint-disable-next-line no-empty
+        } catch (ex) {}
+
+        return 1;
+      };
+
+      googletag.companionAds = function () {
+        return companionAdsService;
+      };
+
+      googletag.content = function () {
+        return contentService;
+      };
+
+      googletag.defineOutOfPageSlot = function () {
+        return new Slot();
+      };
+
+      googletag.defineSlot = function () {
+        return new Slot();
+      };
+
+      googletag.destroySlots = noop;
+      googletag.disablePublisherConsole = noop;
+      googletag.display = noop;
+      googletag.enableServices = noop;
+      googletag.getVersion = noopStr;
+
+      googletag.pubads = function () {
+        return pubAdsService;
+      };
+
+      googletag.pubadsReady = true;
+      googletag.setAdIframeTitle = noop;
+
+      googletag.sizeMapping = function () {
+        return new SizeMappingBuilder();
+      };
+
+      window.googletag = googletag;
+
+      while (cmd.length !== 0) {
+        googletag.cmd.push(cmd.shift());
+      }
+
+      hit(source);
+    }
+    GoogleTagServicesGpt.names = ['googletagservices-gpt', 'ubo-googletagservices_gpt.js', 'googletagservices_gpt.js'];
+    GoogleTagServicesGpt.injections = [hit, noop, noopThis, noopNull, noopArray, noopStr];
+
+    /**
+     * @redirect scorecardresearch-beacon
+     *
+     * @description
+     * Mocks Scorecard Research API.
+     *
+     * Related UBO redirect resource:
+     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/scorecardresearch_beacon.js
+     *
+     * **Example**
+     * ```
+     * ||example.org/index.js$script,redirect=scorecardresearch-beacon
+     * ```
+     */
+
+    function ScoreCardResearchBeacon(source) {
+      window.COMSCORE = {
+        purge: function purge() {
+          // eslint-disable-next-line no-underscore-dangle
+          window._comscore = [];
+        },
+        beacon: function beacon() {}
+      };
+      hit(source);
+    }
+    ScoreCardResearchBeacon.names = ['scorecardresearch-beacon', 'ubo-scorecardresearch_beacon.js', 'scorecardresearch_beacon.js'];
+    ScoreCardResearchBeacon.injections = [hit];
+
+    /**
+     * @redirect metrika-yandex-tag
+     *
+     * @description
+     * Mocks Yandex Metrika API.
+     * https://yandex.ru/support/metrica/objects/method-reference.html
+     *
+     * **Example**
+     * ```
+     * ||example.org/index.js$script,redirect=metrika-yandex-tag
+     * ```
+     */
+
+    function metrikaYandexTag(source) {
+      var asyncCallbackFromOptions = function asyncCallbackFromOptions(param) {
+        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        var callback = options.callback;
+        var ctx = options.ctx;
+
+        if (typeof callback === 'function') {
+          callback = ctx !== undefined ? callback.bind(ctx) : callback;
+          setTimeout(function () {
+            return callback();
+          });
+        }
+      };
+
+      var init = noop;
+      /**
+       * https://yandex.ru/support/metrica/objects/addfileextension.html
+       */
+
+      var addFileExtension = noop;
+      /**
+       * https://yandex.ru/support/metrica/objects/extlink.html
+       */
+
+      var extLink = asyncCallbackFromOptions;
+      /**
+       * https://yandex.ru/support/metrica/objects/file.html
+       */
+
+      var file = asyncCallbackFromOptions;
+      /**
+       * https://yandex.ru/support/metrica/objects/get-client-id.html
+       * @param {Function} cb
+       */
+
+      var getClientID = function getClientID(cb) {
+        setTimeout(cb(null));
+      };
+      /**
+       * https://yandex.ru/support/metrica/objects/hit.html
+       */
+
+
+      var hitFunc = asyncCallbackFromOptions;
+      /**
+       * https://yandex.ru/support/metrica/objects/notbounce.html
+       */
+
+      var notBounce = asyncCallbackFromOptions;
+      /**
+       * https://yandex.ru/support/metrica/objects/params-method.html
+       */
+
+      var params = noop;
+      /**
+       * https://yandex.ru/support/metrica/objects/reachgoal.html
+       * @param {string} target
+       * @param {Object} params
+       * @param {Function} callback
+       * @param {any} ctx
+       */
+
+      var reachGoal = function reachGoal(target, params, callback, ctx) {
+        asyncCallbackFromOptions(null, {
+          callback: callback,
+          ctx: ctx
+        });
+      };
+      /**
+       * https://yandex.ru/support/metrica/objects/set-user-id.html
+       */
+
+
+      var setUserID = noop;
+      /**
+       * https://yandex.ru/support/metrica/objects/user-params.html
+       */
+
+      var userParams = noop;
+      var api = {
+        init: init,
+        addFileExtension: addFileExtension,
+        extLink: extLink,
+        file: file,
+        getClientID: getClientID,
+        hit: hitFunc,
+        notBounce: notBounce,
+        params: params,
+        reachGoal: reachGoal,
+        setUserID: setUserID,
+        userParams: userParams
+      };
+
+      function ym(id, funcName) {
+        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+          args[_key - 2] = arguments[_key];
+        }
+
+        return api[funcName] && api[funcName].apply(api, args);
+      }
+
+      window.ym = ym;
+      hit(source);
+    }
+    metrikaYandexTag.names = ['metrika-yandex-tag'];
+    metrikaYandexTag.injections = [hit, noop];
+
+    /**
+     * @redirect metrika-yandex-watch
+     *
+     * @description
+     * Mocks the old Yandex Metrika API.
+     * https://yandex.ru/support/metrica/objects/_method-reference.html
+     *
+     * **Example**
+     * ```
+     * ||example.org/index.js$script,redirect=metrika-yandex-watch
+     * ```
+     */
+
+    function metrikaYandexWatch(source) {
+      var cbName = 'yandex_metrika_callbacks';
+      /**
+       * Gets callback and its context from options and call it in async way
+       * @param {Object} options Yandex Metrika API options
+       */
+
+      var asyncCallbackFromOptions = function asyncCallbackFromOptions() {
+        var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+        var callback = options.callback;
+        var ctx = options.ctx;
+
+        if (typeof callback === 'function') {
+          callback = ctx !== undefined ? callback.bind(ctx) : callback;
+          setTimeout(function () {
+            return callback();
+          });
+        }
+      };
+
+      function Metrika() {} // constructor
+      // Methods without options
+
+
+      Metrika.prototype.addFileExtension = noop;
+      Metrika.prototype.getClientID = noop;
+      Metrika.prototype.setUserID = noop;
+      Metrika.prototype.userParams = noop; // Methods with options
+      // The order of arguments should be kept in according to API
+
+      Metrika.prototype.extLink = function (url, options) {
+        asyncCallbackFromOptions(options);
+      };
+
+      Metrika.prototype.file = function (url, options) {
+        asyncCallbackFromOptions(options);
+      };
+
+      Metrika.prototype.hit = function (url, options) {
+        asyncCallbackFromOptions(options);
+      };
+
+      Metrika.prototype.reachGoal = function (target, params, cb, ctx) {
+        asyncCallbackFromOptions({
+          callback: cb,
+          ctx: ctx
+        });
+      };
+
+      Metrika.prototype.notBounce = asyncCallbackFromOptions;
+
+      if (window.Ya) {
+        window.Ya.Metrika = Metrika;
+      } else {
+        window.Ya = {
+          Metrika: Metrika
+        };
+      }
+
+      if (window[cbName] && Array.isArray(window[cbName])) {
+        window[cbName].forEach(function (func) {
+          if (typeof func === 'function') {
+            func();
+          }
+        });
+      }
+
+      hit(source);
+    }
+    metrikaYandexWatch.names = ['metrika-yandex-watch'];
+    metrikaYandexWatch.injections = [hit, noop];
+
+
+
+    var redirectsList = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        preventFab: preventFab,
+        setPopadsDummy: setPopadsDummy,
+        preventPopadsNet: preventPopadsNet,
+        noeval: noeval,
+        GoogleAnalytics: GoogleAnalytics,
+        GoogleAnalyticsGa: GoogleAnalyticsGa,
+        GoogleSyndicationAdsByGoogle: GoogleSyndicationAdsByGoogle,
+        GoogleTagManagerGtm: GoogleTagManagerGtm,
+        GoogleTagServicesGpt: GoogleTagServicesGpt,
+        ScoreCardResearchBeacon: ScoreCardResearchBeacon,
+        metrikaYandexTag: metrikaYandexTag,
+        metrikaYandexWatch: metrikaYandexWatch
+    });
+
+    /**
+     * Finds redirect resource by it's name
+     * @param {string} name - redirect name
+     */
+
+    var getRedirectByName = function getRedirectByName(name) {
+      var redirects = Object.keys(redirectsList).map(function (key) {
+        return redirectsList[key];
+      });
+      return redirects.find(function (r) {
+        return r.names && r.names.indexOf(name) > -1;
+      });
+    };
+
+    var getRedirectCode = function getRedirectCode(name) {
+      var redirect = getRedirectByName(name);
+      var result = attachDependencies(redirect);
+      result = addCall(redirect, result);
+      return passSourceAndProps({
+        name: name
+      }, result);
+    };
+
+    var redirectsCjs = {
+      getCode: getRedirectCode,
+      isRedirectRule: validator.isRedirectRule,
+      convertUboRedirectToAdg: convertUboRedirectToAdg,
+      convertAbpRedirectToAdg: convertAbpRedirectToAdg,
+      convertRedirectToAdg: convertRedirectToAdg,
+      isValidRedirectRule: validator.isValidRedirectRule,
+      convertAdgRedirectToUbo: convertAdgRedirectToUbo
     };
 
     /**
@@ -3265,74 +4340,20 @@
      */
 
     /**
-     * Find scriptlet by it's name
-     * @param {string} name
-     */
-
-    function getScriptletByName(name) {
-      var scriptlets = Object.keys(scriptletsList).map(function (key) {
-        return scriptletsList[key];
-      });
-      return scriptlets.find(function (s) {
-        return s.names && s.names.indexOf(name) > -1;
-      });
-    }
-    /**
-     * Checks if the scriptlet name is valid
-     * @param {string} name - Scriptlet name
-     */
-
-
-    function isValidScriptletName(name) {
-      if (!name) {
-        return false;
-      }
-
-      var scriptlet = getScriptletByName(name);
-
-      if (!scriptlet) {
-        return false;
-      }
-
-      return true;
-    }
-    /**
     * Returns scriptlet code by param
     * @param {Source} source
     */
 
-
     function getScriptletCode(source) {
-      if (!isValidScriptletName(source.name)) {
+      if (!validator.isValidScriptletName(source.name)) {
         return null;
       }
 
-      var scriptlet = getScriptletByName(source.name);
+      var scriptlet = validator.getScriptletByName(source.name);
       var result = attachDependencies(scriptlet);
       result = addCall(scriptlet, result);
       result = source.engine === 'corelibs' ? wrapInNonameFunc(result) : passSourceAndProps(source, result);
       return result;
-    }
-    /**
-     * Validates any scriptlet rule
-     * @param {string} input - can be Adguard or Ubo or Abp scriptlet rule
-     */
-
-
-    function isValidScriptletRule(input) {
-      if (!input) {
-        return false;
-      } // ABP 'input' rule may contain more than one snippet
-
-
-      var rulesArray = convertScriptletToAdg(input); // checking if each of parsed scriptlets is valid
-      // if at least one of them is not valid - whole 'input' rule is not valid too
-
-      var isValid = rulesArray.reduce(function (acc, rule) {
-        var parsedRule = parseRule(rule);
-        return isValidScriptletName(parsedRule.name) && acc;
-      }, true);
-      return isValid;
     }
     /**
      * Global scriptlet variable
@@ -3341,21 +4362,25 @@
      * `invoke` method receives one argument with `Source` type
      * `validate` method receives one argument with `String` type
      */
+    // eslint-disable-next-line no-undef
 
-    var scriptlets$1 = {
-      invoke: getScriptletCode,
-      validateName: isValidScriptletName,
-      validateRule: isValidScriptletRule,
-      isAdgScriptletRule: isAdgScriptletRule,
-      isUboScriptletRule: isUboScriptletRule,
-      isAbpSnippetRule: isAbpSnippetRule,
-      convertUboToAdg: convertUboToAdg,
-      convertAbpToAdg: convertAbpToAdg,
-      convertScriptletToAdg: convertScriptletToAdg,
-      convertAdgToUbo: convertAdgToUbo
-    };
 
-    scriptlets = scriptlets$1;
+    scriptlets = function () {
+      return {
+        invoke: getScriptletCode,
+        validateName: validator.isValidScriptletName,
+        validateRule: isValidScriptletRule,
+        isAdgScriptletRule: validator.isAdgScriptletRule,
+        isUboScriptletRule: validator.isUboScriptletRule,
+        isAbpSnippetRule: validator.isAbpSnippetRule,
+        convertUboToAdg: convertUboScriptletToAdg,
+        convertAbpToAdg: convertAbpSnippetToAdg,
+        convertScriptletToAdg: convertScriptletToAdg,
+        convertAdgToUbo: convertAdgScriptletToUbo,
+        redirects: redirectsCjs
+      };
+    }();
+     // eslint-disable-line no-undef
 
 }());
 
