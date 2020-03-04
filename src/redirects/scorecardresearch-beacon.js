@@ -11,7 +11,7 @@ import { hit } from '../helpers/hit';
  *
  * **Example**
  * ```
- * ||example.org/index.js$script,redirect=scorecardresearch-beacon
+ * ||sb.scorecardresearch.com/beacon.js$script,redirect=scorecardresearch-beacon
  * ```
  */
 export function ScoreCardResearchBeacon(source) {

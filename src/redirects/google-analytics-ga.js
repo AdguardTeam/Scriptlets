@@ -13,7 +13,7 @@ import { noop } from '../helpers/noop';
  *
  * **Example**
  * ```
- * ||example.org/index.js$script,redirect=google-analytics-ga
+ * ||google-analytics.com/ga.js$script,redirect=google-analytics-ga
  * ```
  */
 export function GoogleAnalyticsGa(source) {

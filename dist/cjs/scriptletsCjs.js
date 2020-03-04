@@ -3633,7 +3633,7 @@ var convertAdgRedirectToUbo = function convertAdgRedirectToUbo(rule) {
  *
  * **Example**
  * ```
- * ||example.org/index.js$script,redirect=google-analytics
+ * ||google-analytics.com/analytics.js$script,redirect=google-analytics
  * ```
  */
 
@@ -3704,7 +3704,7 @@ GoogleAnalytics.injections = [hit, noop, noopNull];
  *
  * **Example**
  * ```
- * ||example.org/index.js$script,redirect=google-analytics-ga
+ * ||google-analytics.com/ga.js$script,redirect=google-analytics-ga
  * ```
  */
 
@@ -3806,7 +3806,7 @@ GoogleAnalyticsGa.injections = [hit, noop];
  *
  * **Example**
  * ```
- * ||example.org/index.js$script,redirect=googlesyndication-adsbygoogle
+ * ||pagead2.googlesyndication.com/pagead/js/adsbygoogle.js$script,redirect=googlesyndication-adsbygoogle
  * ```
  */
 
@@ -3851,7 +3851,7 @@ GoogleSyndicationAdsByGoogle.injections = [hit];
  *
  * **Example**
  * ```
- * ||example.org/index.js$script,redirect=googletagmanager-gtm
+ * ||googletagmanager.com/gtm.js$script,redirect=googletagmanager-gtm
  * ```
  */
 
@@ -3892,7 +3892,7 @@ GoogleTagManagerGtm.injections = [hit, noop];
  *
  * **Example**
  * ```
- * ||example.org/index.js$script,redirect=googletagservices-gpt
+ * ||googletagservices.com/tag/js/gpt.js$script,redirect=googletagservices-gpt
  * ```
  */
 
@@ -4055,7 +4055,7 @@ GoogleTagServicesGpt.injections = [hit, noop, noopThis, noopNull, noopArray, noo
  *
  * **Example**
  * ```
- * ||example.org/index.js$script,redirect=scorecardresearch-beacon
+ * ||sb.scorecardresearch.com/beacon.js$script,redirect=scorecardresearch-beacon
  * ```
  */
 
@@ -4081,7 +4081,7 @@ ScoreCardResearchBeacon.injections = [hit];
  *
  * **Example**
  * ```
- * ||example.org/index.js$script,redirect=metrika-yandex-tag
+ * ||mc.yandex.ru/metrika/tag.js$script,redirect=metrika-yandex-tag
  * ```
  */
 
@@ -4201,7 +4201,7 @@ metrikaYandexTag.injections = [hit, noop];
  *
  * **Example**
  * ```
- * ||example.org/index.js$script,redirect=metrika-yandex-watch
+ * ||mc.yandex.ru/metrika/watch.js$script,redirect=metrika-yandex-watch
  * ```
  */
 

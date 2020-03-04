@@ -78,7 +78,7 @@
   description: |-
     **Example**
     ```
-    ||example.org^$stylesheet,redirect=noopcss
+    ||example.org/style.css$stylesheet,redirect=noopcss
     ```
   aliases:
     - blank-css
@@ -89,7 +89,7 @@
   description: |-
     **Example**
     ```
-    ||example.org^$script,redirect=noopjs
+    ||example.org/advert.js$script,redirect=noopjs
     ```
   aliases:
     - noop.js
@@ -101,7 +101,7 @@
   description: |-
     **Example**
     ```
-    ||example.org^$xmlhttprequest,redirect=nooptext
+    ||example.org/advert.js$xmlhttprequest,redirect=nooptext
     ```
   aliases:
     - noop.txt
@@ -115,7 +115,7 @@
 
     **Example**
     ```
-    ||example.org^$xmlhttprequest,redirect=noopvast-2.0
+    ||example.org/vast02.xml^$xmlhttprequest,redirect=noopvast-2.0
     ```
   contentType: text/xml
   content: <VAST version="2.0"></VAST>
@@ -126,7 +126,7 @@
 
     **Example**
     ```
-    ||example.org^$xmlhttprequest,redirect=noopvast-3.0
+    ||example.org/vast03.xml^$xmlhttprequest,redirect=noopvast-3.0
     ```
   contentType: text/xml
   content: <VAST version="3.0"></VAST>
@@ -135,7 +135,7 @@
   description: |-
     **Example**
     ```
-    ||example.org^$media,redirect=noopmp3-0.1s
+    ||example.org/advert.mp3$media,redirect=noopmp3-0.1s
     ```
   aliases:
     - noopmp3-0.1s
@@ -165,7 +165,7 @@
   description: |-
     **Example**
     ```
-    ||example.org^$media,redirect=noopmp4-1s
+    ||example.org/advert.mp4$media,redirect=noopmp4-1s
     ```
   aliases:
     - noop-1s.mp4

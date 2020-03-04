@@ -12,7 +12,7 @@ import { noop } from '../helpers/noop';
  *
  * **Example**
  * ```
- * ||example.org/index.js$script,redirect=googletagmanager-gtm
+ * ||googletagmanager.com/gtm.js$script,redirect=googletagmanager-gtm
  * ```
  */
 export function GoogleTagManagerGtm(source) {

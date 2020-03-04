@@ -12,7 +12,7 @@ import { noop, noopNull } from '../helpers/noop';
  *
  * **Example**
  * ```
- * ||example.org/index.js$script,redirect=google-analytics
+ * ||google-analytics.com/analytics.js$script,redirect=google-analytics
  * ```
  */
 export function GoogleAnalytics(source) {

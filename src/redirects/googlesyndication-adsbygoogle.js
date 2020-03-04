@@ -1,5 +1,6 @@
 import { hit } from '../helpers/hit';
 
+/* eslint-disable max-len */
 /**
  * @redirect googlesyndication-adsbygoogle
  *
@@ -11,9 +12,10 @@ import { hit } from '../helpers/hit';
  *
  * **Example**
  * ```
- * ||example.org/index.js$script,redirect=googlesyndication-adsbygoogle
+ * ||pagead2.googlesyndication.com/pagead/js/adsbygoogle.js$script,redirect=googlesyndication-adsbygoogle
  * ```
  */
+/* eslint-enable max-len */
 export function GoogleSyndicationAdsByGoogle(source) {
     window.adsbygoogle = window.adsbygoogle || {
         length: 0,
