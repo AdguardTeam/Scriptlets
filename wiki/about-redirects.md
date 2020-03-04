@@ -7,6 +7,7 @@
 * [noopcss](#noopcss)
 * [noopjs](#noopjs)
 * [nooptext](#nooptext)
+* [noopvmap-1.0](#noopvmap-1.0)
 * [noopvast-2.0](#noopvast-2.0)
 * [noopvast-3.0](#noopvast-3.0)
 * [noopmp3-0.1s](#noopmp3-0.1s)
@@ -84,6 +85,16 @@
 **Example**
 ```
 ||example.org^$xmlhttprequest,redirect=nooptext
+```
+[Redirect source](../src/redirects/static-redirects.yml)
+* * *
+
+### <a id="noopvmap-1.0"></a> ⚡️ noopvmap-1.0
+Redirects request to an empty VMAP response.
+
+**Example**
+```
+||example.org^$xmlhttprequest,redirect=noopvmap-1.0
 ```
 [Redirect source](../src/redirects/static-redirects.yml)
 * * *

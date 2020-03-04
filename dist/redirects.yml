@@ -109,6 +109,19 @@
   contentType: text/plain
   content: ''
 
+- title: noopvmap-1.0
+  description: |-
+    Redirects request to an empty VMAP response.
+
+    **Example**
+    ```
+    ||example.org^$xmlhttprequest,redirect=noopvmap-1.0
+    ```
+  contentType: text/xml
+  content: >-
+    <vmap:VMAP xmlns:vmap="http://www.iab.net/videosuite/vmap"
+    version="1.0"></vmap:VMAP>
+
 - title: noopvast-2.0
   description: |-
     Redirects request to an empty VAST response.
