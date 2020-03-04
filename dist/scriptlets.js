@@ -3796,6 +3796,8 @@
     GoogleAnalyticsGa.names = ['google-analytics-ga', 'ubo-google-analytics_ga.js', 'google-analytics_ga.js'];
     GoogleAnalyticsGa.injections = [hit, noop];
 
+    /* eslint-disable max-len */
+
     /**
      * @redirect googlesyndication-adsbygoogle
      *
@@ -3810,6 +3812,8 @@
      * ||pagead2.googlesyndication.com/pagead/js/adsbygoogle.js$script,redirect=googlesyndication-adsbygoogle
      * ```
      */
+
+    /* eslint-enable max-len */
 
     function GoogleSyndicationAdsByGoogle(source) {
       window.adsbygoogle = window.adsbygoogle || {

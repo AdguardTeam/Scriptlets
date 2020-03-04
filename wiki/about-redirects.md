@@ -94,7 +94,7 @@ Redirects request to an empty VMAP response.
 
 **Example**
 ```
-||example.org^$xmlhttprequest,redirect=noopvmap-1.0
+||example.org/vmap01.xml$xmlhttprequest,redirect=noopvmap-1.0
 ```
 [Redirect source](../src/redirects/static-redirects.yml)
 * * *
