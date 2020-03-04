@@ -71,6 +71,11 @@
         "content": ""
     },
     {
+        "title": "noopvmap-1.0",
+        "contentType": "text/xml;base64",
+        "content": "PHZtYXA6Vk1BUCB4bWxuczp2bWFwPSJodHRwOi8vd3d3LmlhYi5uZXQvdmlkZW9zdWl0ZS92bWFwIiB2ZXJzaW9uPSIxLjAiPjwvdm1hcDpWTUFQPg=="
+    },
+    {
         "title": "noopvast-2.0",
         "contentType": "text/xml;base64",
         "content": "PFZBU1QgdmVyc2lvbj0iMi4wIj48L1ZBU1Q+"
