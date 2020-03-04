@@ -4296,7 +4296,6 @@
         metrikaYandexWatch: metrikaYandexWatch
     });
 
-    // import { redirectsCjs } from './redirects';
     /**
      * Finds redirect resource by it's name
      * @param {string} name - redirect name
@@ -4322,7 +4321,7 @@
 
     var redirectsCjs = {
       getCode: getRedirectCode,
-      isResourceRule: validator.isRedirectRule,
+      isRedirectRule: validator.isRedirectRule,
       convertUboRedirectToAdg: convertUboRedirectToAdg,
       convertAbpRedirectToAdg: convertAbpRedirectToAdg,
       convertRedirectToAdg: convertRedirectToAdg,

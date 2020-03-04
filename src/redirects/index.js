@@ -34,7 +34,7 @@ const getRedirectCode = (name) => {
 
 export const redirectsCjs = {
     getCode: getRedirectCode,
-    isResourceRule: validator.isRedirectRule,
+    isRedirectRule: validator.isRedirectRule,
     convertUboRedirectToAdg,
     convertAbpRedirectToAdg,
     convertRedirectToAdg,

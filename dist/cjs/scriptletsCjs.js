@@ -4295,7 +4295,6 @@ var redirectsList = /*#__PURE__*/Object.freeze({
     metrikaYandexWatch: metrikaYandexWatch
 });
 
-// import { redirectsCjs } from './redirects';
 /**
  * Finds redirect resource by it's name
  * @param {string} name - redirect name
@@ -4321,7 +4320,7 @@ var getRedirectCode = function getRedirectCode(name) {
 
 var redirectsCjs = {
   getCode: getRedirectCode,
-  isResourceRule: validator.isRedirectRule,
+  isRedirectRule: validator.isRedirectRule,
   convertUboRedirectToAdg: convertUboRedirectToAdg,
   convertAbpRedirectToAdg: convertAbpRedirectToAdg,
   convertRedirectToAdg: convertRedirectToAdg,
