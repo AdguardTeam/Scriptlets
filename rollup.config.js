@@ -4,6 +4,7 @@ import babel from 'rollup-plugin-babel';
 import cleanup from 'rollup-plugin-cleanup';
 import copy from 'rollup-plugin-copy';
 import clear from 'rollup-plugin-clear';
+import json from 'rollup-plugin-json';
 
 import project from './package.json';
 
@@ -31,7 +32,7 @@ const TMP_DIR = 'tmp';
 
 const mainConfig = {
     input: {
-        scriptlets: 'src/scriptlets/index.js',
+        scriptlets: 'src/scriptlets/scriptletsWrapper.js',
     },
     output: {
         dir: 'dist',
@@ -47,6 +48,12 @@ const mainConfig = {
         commonjs({
             include: 'node_modules/**',
         }),
+        json({
+            preferConst: true,
+            indent: '  ',
+            compact: true,
+            namedExports: true,
+        }),
         babel({
             exclude: 'node_modules/**',
             runtimeHelpers: true,
@@ -60,7 +67,7 @@ const cjsConfig = {
     },
     output: {
         dir: 'dist/cjs',
-        chunkFileNames: '[name].js',
+        entryFileNames: '[name].js',
         format: 'cjs',
         exports: 'named',
         strict: false,
@@ -72,6 +79,12 @@ const cjsConfig = {
         resolve(),
         commonjs({
             include: 'node_modules/**',
+        }),
+        json({
+            preferConst: true,
+            indent: '  ',
+            compact: true,
+            namedExports: true,
         }),
         babel({
             exclude: 'node_modules/**',
@@ -98,6 +111,12 @@ const testConfig = {
         resolve(),
         commonjs({
             include: 'node_modules/**',
+        }),
+        json({
+            preferConst: true,
+            indent: '  ',
+            compact: true,
+            namedExports: true,
         }),
         babel({
             exclude: 'node_modules/**',
@@ -129,7 +148,6 @@ const testLibConfig = {
     },
     watch: {
         include: ['tests/lib-tests/**'],
-        chokidar: false,
     },
     plugins: [
         clear({
@@ -138,6 +156,12 @@ const testLibConfig = {
         resolve(),
         commonjs({
             include: 'node_modules/**',
+        }),
+        json({
+            preferConst: true,
+            indent: '  ',
+            compact: true,
+            namedExports: true,
         }),
         babel({
             exclude: 'node_modules/**',
@@ -160,7 +184,7 @@ const testLibConfig = {
 
 const tmpRedirectsConfig = {
     input: {
-        tmpRedirects: 'src/redirects/index.js',
+        tmpRedirects: 'src/redirects/redirectsWrapper.js',
     },
     output: {
         name: 'tmpRedirects',
@@ -174,6 +198,12 @@ const tmpRedirectsConfig = {
         resolve(),
         commonjs({
             include: 'node_modules/**',
+        }),
+        json({
+            preferConst: true,
+            indent: '  ',
+            compact: true,
+            namedExports: true,
         }),
         babel({
             exclude: 'node_modules/**',

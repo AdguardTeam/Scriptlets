@@ -1126,10 +1126,10 @@ browserslist@^4.6.0, browserslist@^4.6.3, browserslist@^4.7.3:
     electron-to-chromium "^1.3.306"
     node-releases "^1.1.40"
 
-browserstack-runner@^0.9.0:
-  version "0.9.0"
-  resolved "https://registry.yarnpkg.com/browserstack-runner/-/browserstack-runner-0.9.0.tgz#503da874a40196921c65e046729beb0f7736c922"
-  integrity sha512-rAqZmuFwcaOGUpL9Rw2vkGrtVBOxYCnQ5gj6dG3IQBx0ooiWw6a3ALkBnjsEaaE64w+qtIB999tj+gCrKlGVFQ==
+browserstack-runner@^0.9.1:
+  version "0.9.1"
+  resolved "https://registry.yarnpkg.com/browserstack-runner/-/browserstack-runner-0.9.1.tgz#2b76622eb1394467f86c3fb364e7f1cb7d596841"
+  integrity sha512-nvUoJqHGVAdm2cRDO80u+ydXN5MOax54TNREuV18PfZSr3zLxRRSkNgsjK+vTZMRm61ve3vA0+G+wLYVBxOppQ==
   dependencies:
     browserstack "1.3.0"
     chalk "0.4.0"
@@ -3879,6 +3879,13 @@ rollup-plugin-copy@^3.1.0:
     globby "10.0.1"
     is-plain-object "^3.0.0"
 
+rollup-plugin-json@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/rollup-plugin-json/-/rollup-plugin-json-4.0.0.tgz#a18da0a4b30bf5ca1ee76ddb1422afbb84ae2b9e"
+  integrity sha512-hgb8N7Cgfw5SZAkb3jf0QXii6QX/FOkiIq2M7BAQIEydjHvTyxXHQiIzZaTFgx1GK0cRCHOCBHIyEkkLdWKxow==
+  dependencies:
+    rollup-pluginutils "^2.5.0"
+
 rollup-plugin-node-resolve@^5.2.0:
   version "5.2.0"
   resolved "https://registry.yarnpkg.com/rollup-plugin-node-resolve/-/rollup-plugin-node-resolve-5.2.0.tgz#730f93d10ed202473b1fb54a5997a7db8c6d8523"
@@ -3890,7 +3897,7 @@ rollup-plugin-node-resolve@^5.2.0:
     resolve "^1.11.1"
     rollup-pluginutils "^2.8.1"
 
-rollup-pluginutils@^2.3.3, rollup-pluginutils@^2.8.1:
+rollup-pluginutils@^2.3.3, rollup-pluginutils@^2.5.0, rollup-pluginutils@^2.8.1:
   version "2.8.2"
   resolved "https://registry.yarnpkg.com/rollup-pluginutils/-/rollup-pluginutils-2.8.2.tgz#72f2af0748b592364dbd3389e600e5a9444a351e"
   integrity sha512-EEp9NhnUkwY8aif6bxgovPHMoMoNr2FulJziTndpt5H9RdwC47GSGuII9XxpSdzVGM0GWrNPHV6ie1LTNJPaLQ==

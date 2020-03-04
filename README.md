@@ -118,7 +118,13 @@ yarn browserstack
 
 #### Scriptlets library
 
-You are welcome to use Scriptlets as a CJS module. It can be imported from `dist/cjs/scriptletsCjs.js`.
+You are welcome to use scriptlets and redirect resources as a CJS module. They can be imported from `dist/cjs/scriptletsCjs.js`:
+
+```javascript
+const scriptlets = require('scriptlets');
+const { redirects } = require('scriptlets');
+
+```
 
 And also there is a module at `dist/scriptlets.js` which has been exported to a global variable `scriptlets` with such methods:
 
@@ -154,7 +160,7 @@ scriptlets.validateRule(input);
 
 ```javascript
 /**
-* Checks is AdGuard / Ubo / Abp scriptlet rule
+* Checks if the `rule` is AdGuard / Ubo / Abp scriptlet rule
 * @param {string} rule - rule text
 * @returns {boolean}
 */
@@ -183,7 +189,7 @@ scriptlets.convertAbpToAdg(rule);
 
 ```javascript
 /**
-* Checks is any scriptlet rule and converts to AdGuard
+* Checks if the `rule` is any scriptlet rule and converts it to AdGuard
 * @param {string} rule - rule text
 * @returns {Array} - array of AdGuard scriptlet rules - one item for Adg and Ubo or few items for Abp
 */
@@ -192,12 +198,83 @@ scriptlets.convertScriptletToAdg(rule);
 
 ```javascript
 /**
- * Converts UBO scriptlet rule to AdGuard one
+ * Converts AdGuard scriptlet rule to UBO one
  * @param {string} rule - AdGuard scriptlet rule
  * @returns {string} - UBO scriptlet rule
  */
 scriptlets.convertAdgToUbo(rule);
 ```
+
+
+Imported `redirects` has such methods:
+
+```javascript
+/**
+* Returns scriptlet code
+* @param {Source} source
+* @returns {string}
+*/
+redirects.getCode(source);
+```
+
+
+```javascript
+/**
+ * Checks if the `rule` satisfies the `type`
+ * @param {string} rule - rule text
+ * @param {'ADG'|'UBO'|'ABP'} type - type of a redirect rule
+ */
+redirects.isRedirectRule(rule, type);
+```
+
+```javascript
+/**
+* Converts Ubo redirect rule to AdGuard
+* @param {string} rule - rule text
+* @returns {string}
+*/
+scriptlets.convertUboRedirectToAdg(rule);
+```
+
+```javascript
+/**
+* Converts Abp redirect rule to AdGuard
+* @param {string} rule - rule text
+* @returns {string}
+*/
+scriptlets.convertAbpRedirectToAdg(rule);
+```
+
+```javascript
+/**
+* Checks if the `rule` is any redirect rule and converts it to AdGuard
+* @param {string} rule - rule text
+* @returns {string} - converted to Adguard redirect rule OR `rule` if it is a comment
+*/
+scriptlets.convertRedirectToAdg(rule);
+```
+
+```javascript
+/**
+* Validates rule for Adg -> Ubo conversion.
+*
+* Used ONLY for Adg -> Ubo conversion
+* because Ubo redirect rules must contain source type, but Adg and Abp must not.
+* @param {string} rule
+* @returns {boolean}
+*/
+scriptlets.isValidRedirectRule(rule);
+```
+
+```javascript
+/**
+ * Converts Adg redirect rule to Ubo one
+ * @param {string} rule
+ * @returns {string}
+ */
+scriptlets.convertAdgRedirectToUbo(rule);
+```
+
 
 #### Corelibs library
 

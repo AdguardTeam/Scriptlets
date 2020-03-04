@@ -1,18 +1,16 @@
 import {
     getBeforeRegExp,
-    startsWith,
     substringAfter,
     substringBefore,
     wrapInDoubleQuotes,
     getStringInBraces,
 } from './string-utils';
 
-import { parseRule, ADG_SCRIPTLET_MASK } from './parse-rule';
+import validator from './validator';
+
+import { parseRule } from './parse-rule';
 
 import * as scriptletList from '../scriptlets/scriptletsList';
-
-
-const COMMENT_MARKER = '!';
 
 /**
  * AdGuard scriptlet rule
@@ -26,11 +24,6 @@ const ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@%#//scriptlet(${args})
 /**
  * uBlock scriptlet rule mask
  */
-const UBO_SCRIPTLET_MASK_REG = /#@?#script:inject|#@?#\s*\+js/;
-const UBO_SCRIPTLET_MASK_1 = '##+js';
-const UBO_SCRIPTLET_MASK_2 = '##script:inject';
-const UBO_SCRIPTLET_EXCEPTION_MASK_1 = '#@#+js';
-const UBO_SCRIPTLET_EXCEPTION_MASK_2 = '#@#script:inject';
 // eslint-disable-next-line no-template-curly-in-string
 const UBO_SCRIPTLET_TEMPLATE = '${domains}##+js(${args})';
 // eslint-disable-next-line no-template-curly-in-string
@@ -38,16 +31,11 @@ const UBO_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@#+js(${args})';
 
 const UBO_ALIAS_NAME_MARKER = 'ubo-';
 
-/**
- * AdBlock Plus snippet rule mask
- */
-const ABP_SCRIPTLET_MASK = '#$#';
-const ABP_SCRIPTLET_EXCEPTION_MASK = '#@$#';
+// https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#xhr
+const UBO_XHR_TYPE = 'xhr';
 
-/**
- * AdGuard CSS rule mask
- */
-const ADG_CSS_MASK_REG = /#@?\$#.+?\s*\{.*\}\s*$/g;
+const ADG_XHR_TYPE = 'xmlhttprequest';
+
 
 /**
  * Returns array of strings separated by space which not in quotes
@@ -71,61 +59,14 @@ const replacePlaceholders = (str, data) => {
     }, str);
 };
 
-
-/**
- * Checks if rule text is comment e.g. !!example.org##+js(set-constant.js, test, false)
- * @param {string} rule
- * @return {boolean}
- */
-const isComment = (rule) => startsWith(rule, COMMENT_MARKER);
-
-/**
- * Checks is AdGuard scriptlet rule
- * @param {string} rule rule text
- */
-export const isAdgScriptletRule = (rule) => {
-    return (
-        !isComment(rule)
-        && rule.indexOf(ADG_SCRIPTLET_MASK) > -1
-    );
-};
-
-/**
- * Checks is uBO scriptlet rule
- * @param {string} rule rule text
- */
-export const isUboScriptletRule = (rule) => {
-    return (
-        rule.indexOf(UBO_SCRIPTLET_MASK_1) > -1
-        || rule.indexOf(UBO_SCRIPTLET_MASK_2) > -1
-        || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_1) > -1
-        || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_2) > -1
-    )
-        && UBO_SCRIPTLET_MASK_REG.test(rule)
-        && !isComment(rule);
-};
-
-/**
- * Checks is AdBlock Plus snippet
- * @param {string} rule rule text
- */
-export const isAbpSnippetRule = (rule) => {
-    return (
-        rule.indexOf(ABP_SCRIPTLET_MASK) > -1
-        || rule.indexOf(ABP_SCRIPTLET_EXCEPTION_MASK) > -1
-    )
-    && rule.search(ADG_CSS_MASK_REG) === -1
-    && !isComment(rule);
-};
-
 /**
  * Converts string of UBO scriptlet rule to AdGuard scritlet rule
  * @param {string} rule - UBO scriptlet rule
  * @returns {Array} - array with one AdGuard scriptlet rule
  */
-export const convertUboToAdg = (rule) => {
-    const domains = getBeforeRegExp(rule, UBO_SCRIPTLET_MASK_REG);
-    const mask = rule.match(UBO_SCRIPTLET_MASK_REG)[0];
+export const convertUboScriptletToAdg = (rule) => {
+    const domains = getBeforeRegExp(rule, validator.UBO_SCRIPTLET_MASK_REG);
+    const mask = rule.match(validator.UBO_SCRIPTLET_MASK_REG)[0];
     let template;
     if (mask.indexOf('@') > -1) {
         template = ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
@@ -143,7 +84,7 @@ export const convertUboToAdg = (rule) => {
             }
             return outputArg;
         })
-        .map((arg) => (wrapInDoubleQuotes(arg)))
+        .map((arg) => wrapInDoubleQuotes(arg))
         .join(', ');
     const adgRule = replacePlaceholders(
         template,
@@ -153,17 +94,17 @@ export const convertUboToAdg = (rule) => {
 };
 
 /**
- * Convert string of ABP scriptlet rule to AdGuard scritlet rule
- * @param {string} rule - ABP scriptlet rule
+ * Convert string of ABP snippet rule to AdGuard scritlet rule
+ * @param {string} rule - ABP snippet rule
  * @returns {Array} - array of AdGuard scriptlet rules -
  * one or few items depends on Abp-rule
  */
-export const convertAbpToAdg = (rule) => {
+export const convertAbpSnippetToAdg = (rule) => {
     const SEMICOLON_DIVIDER = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
-    const mask = rule.indexOf(ABP_SCRIPTLET_MASK) > -1
-        ? ABP_SCRIPTLET_MASK
-        : ABP_SCRIPTLET_EXCEPTION_MASK;
-    const template = mask === ABP_SCRIPTLET_MASK
+    const mask = rule.indexOf(validator.ABP_SCRIPTLET_MASK) > -1
+        ? validator.ABP_SCRIPTLET_MASK
+        : validator.ABP_SCRIPTLET_EXCEPTION_MASK;
+    const template = mask === validator.ABP_SCRIPTLET_MASK
         ? ADGUARD_SCRIPTLET_TEMPLATE
         : ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
     const domains = substringBefore(rule, mask);
@@ -186,11 +127,11 @@ export const convertAbpToAdg = (rule) => {
  */
 export const convertScriptletToAdg = (rule) => {
     let result;
-    if (isUboScriptletRule(rule)) {
-        result = convertUboToAdg(rule);
-    } else if (isAbpSnippetRule(rule)) {
-        result = convertAbpToAdg(rule);
-    } else if (isAdgScriptletRule(rule) || (isComment(rule))) {
+    if (validator.isUboScriptletRule(rule)) {
+        result = convertUboScriptletToAdg(rule);
+    } else if (validator.isAbpSnippetRule(rule)) {
+        result = convertAbpSnippetToAdg(rule);
+    } else if (validator.isAdgScriptletRule(rule) || (validator.isComment(rule))) {
         result = [rule];
     }
 
@@ -202,10 +143,10 @@ export const convertScriptletToAdg = (rule) => {
  * @param {string} rule - AdGuard scriptlet rule
  * @returns {string} - UBO scriptlet rule
  */
-export const convertAdgToUbo = (rule) => {
+export const convertAdgScriptletToUbo = (rule) => {
     let res;
 
-    if (isAdgScriptletRule(rule)) {
+    if (validator.isAdgScriptletRule(rule)) {
         const { name: parsedName, args: parsedParams } = parseRule(rule);
 
         // object of name and aliases for the Adg-scriptlet
@@ -224,7 +165,7 @@ export const convertAdgToUbo = (rule) => {
         if (aliases.length > 0) {
             const uboAlias = adgScriptletObject.aliases
                 // eslint-disable-next-line no-restricted-properties
-                .find((alias) => (alias.includes(UBO_ALIAS_NAME_MARKER)));
+                .find((alias) => alias.includes(UBO_ALIAS_NAME_MARKER));
 
             if (uboAlias) {
                 const mask = rule.match(ADGUARD_SCRIPTLET_MASK_REG)[0];
@@ -235,7 +176,11 @@ export const convertAdgToUbo = (rule) => {
                     template = UBO_SCRIPTLET_TEMPLATE;
                 }
                 const domains = getBeforeRegExp(rule, ADGUARD_SCRIPTLET_MASK_REG);
-                const uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '');
+                const uboName = uboAlias
+                    .replace(UBO_ALIAS_NAME_MARKER, '')
+                    // '.js' in the Ubo scriptlet name can be omitted
+                    // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
+                    .replace('.js', '');
 
                 const args = (parsedParams.length > 0) ? `${uboName}, ${parsedParams.join(', ')}` : uboName;
 
@@ -250,4 +195,117 @@ export const convertAdgToUbo = (rule) => {
     }
 
     return res;
+};
+
+/**
+ * Validates any scriptlet rule
+ * @param {string} input - can be Adguard or Ubo or Abp scriptlet rule
+ */
+export const isValidScriptletRule = (input) => {
+    if (!input) {
+        return false;
+    }
+    // ABP 'input' rule may contain more than one snippet
+    const rulesArray = convertScriptletToAdg(input);
+
+    // checking if each of parsed scriptlets is valid
+    // if at least one of them is not valid - whole 'input' rule is not valid too
+    const isValid = rulesArray.reduce((acc, rule) => {
+        const parsedRule = parseRule(rule);
+        return validator.isValidScriptletName(parsedRule.name) && acc;
+    }, true);
+
+    return isValid;
+};
+
+
+/**
+ * Converts Ubo redirect rule to Adg one
+ * @param {string} rule
+ * @returns {string}
+ */
+export const convertUboRedirectToAdg = (rule) => {
+    const firstPartOfRule = substringBefore(rule, '$');
+    const uboModifiers = validator.parseModifiers(rule);
+    const adgModifiers = uboModifiers
+        .map((el) => {
+            if (el.indexOf(validator.REDIRECT_RULE_TYPES.UBO.marker) > -1) {
+                const uboName = substringAfter(el, validator.REDIRECT_RULE_TYPES.UBO.marker);
+                const adgName = validator.REDIRECT_RULE_TYPES.UBO.compatibility[uboName];
+                return `${validator.REDIRECT_RULE_TYPES.ADG.marker}${adgName}`;
+            }
+            if (el === UBO_XHR_TYPE) {
+                return ADG_XHR_TYPE;
+            }
+            return el;
+        })
+        .join(',');
+
+    return `${firstPartOfRule}$${adgModifiers}`;
+};
+
+/**
+ * Converts Abp redirect rule to Adg one
+ * @param {string} rule
+ * @returns {string}
+ */
+export const convertAbpRedirectToAdg = (rule) => {
+    const firstPartOfRule = substringBefore(rule, '$');
+    const abpModifiers = validator.parseModifiers(rule);
+    const adgModifiers = abpModifiers
+        .map((el) => {
+            if (el.indexOf(validator.REDIRECT_RULE_TYPES.ABP.marker) > -1) {
+                const abpName = substringAfter(el, validator.REDIRECT_RULE_TYPES.ABP.marker);
+                const adgName = validator.REDIRECT_RULE_TYPES.ABP.compatibility[abpName];
+                return `${validator.REDIRECT_RULE_TYPES.ADG.marker}${adgName}`;
+            }
+            return el;
+        })
+        .join(',');
+
+    return `${firstPartOfRule}$${adgModifiers}`;
+};
+
+/**
+ * Converts redirect rule to AdGuard one
+ * @param {string} rule
+ * @returns {string}
+ */
+export const convertRedirectToAdg = (rule) => {
+    let result;
+    if (validator.isRedirectRule(rule, 'UBO')) {
+        result = convertUboRedirectToAdg(rule);
+    } else if (validator.isRedirectRule(rule, 'ABP')) {
+        result = convertAbpRedirectToAdg(rule);
+    } else if (validator.isRedirectRule(rule, 'ADG') || (validator.isComment(rule))) {
+        result = rule;
+    }
+
+    return result;
+};
+
+/**
+ * Converts Adg redirect rule to Ubo one
+ * @param {string} rule
+ * @returns {string}
+ */
+export const convertAdgRedirectToUbo = (rule) => {
+    if (!validator.isValidRedirectRule(rule)) {
+        throw new Error(`Rule is not valid for converting to Ubo. Source type is not specified in the rule: ${rule}`);
+    } else {
+        const firstPartOfRule = substringBefore(rule, '$');
+        const uboModifiers = validator.parseModifiers(rule);
+        const adgModifiers = uboModifiers
+            .map((el) => {
+                if (el.indexOf(validator.REDIRECT_RULE_TYPES.ADG.marker) > -1) {
+                    const adgName = substringAfter(el, validator.REDIRECT_RULE_TYPES.ADG.marker);
+                    const uboName = validator.REDIRECT_RULE_TYPES.ADG.compatibility[adgName];
+                    return `${validator.REDIRECT_RULE_TYPES.UBO.marker}${uboName}`;
+                }
+                return el;
+            })
+            .join(',');
+
+        return `${firstPartOfRule}$${adgModifiers}`;
+    }
 };

@@ -16,12 +16,13 @@ const NON_SCRIPTLETS_FILES = [
     'index.js',
     'scriptlets.js',
     'scriptletsList.js',
+    'scriptletsWrapper.js',
 ];
-
 const NON_REDIRECTS_FILES = [
     'index.js',
     'redirects.js',
     'redirectsList.js',
+    'redirectsWrapper.js',
 ];
 
 /**
@@ -57,7 +58,8 @@ const getComments = (srcPath) => {
         });
 
     if (describingComment.length === 0) {
-        throw new Error(`No description in ${srcPath}`);
+        throw new Error(`No description in ${srcPath}.
+Please add one OR edit the list of NON_SCRIPTLETS_FILES / NON_REDIRECTS_FILES.`);
     }
 
     return describingComment;
