@@ -4322,10 +4322,42 @@
         name: name
       }, result);
     };
+    /**
+    * Checks if the `rule` is AdGuard redirect resource rule
+    * @param {string} rule - rule text
+    * @returns {boolean}
+    */
+
+
+    var isAdgRedirectRule = function isAdgRedirectRule(rule) {
+      return validator.isRedirectRule(rule, 'ADG');
+    };
+    /**
+    * Checks if the `rule` is Ubo redirect resource rule
+    * @param {string} rule - rule text
+    * @returns {boolean}
+    */
+
+
+    var isUboRedirectRule = function isUboRedirectRule(rule) {
+      return validator.isRedirectRule(rule, 'UBO');
+    };
+    /**
+    * Checks if the `rule` is Abp redirect resource rule
+    * @param {string} rule - rule text
+    * @returns {boolean}
+    */
+
+
+    var isAbpRedirectRule = function isAbpRedirectRule(rule) {
+      return validator.isRedirectRule(rule, 'ABP');
+    };
 
     var redirectsCjs = {
       getCode: getRedirectCode,
-      isRedirectRule: validator.isRedirectRule,
+      isAdgRedirectRule: isAdgRedirectRule,
+      isUboRedirectRule: isUboRedirectRule,
+      isAbpRedirectRule: isAbpRedirectRule,
       convertUboRedirectToAdg: convertUboRedirectToAdg,
       convertAbpRedirectToAdg: convertAbpRedirectToAdg,
       convertRedirectToAdg: convertRedirectToAdg,
