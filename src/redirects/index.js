@@ -32,14 +32,29 @@ const getRedirectCode = (name) => {
     return passSourceAndProps({ name }, result);
 };
 
+/**
+* Checks if the `rule` is AdGuard redirect resource rule
+* @param {string} rule - rule text
+* @returns {boolean}
+*/
 const isAdgRedirectRule = (rule) => {
     return validator.isRedirectRule(rule, 'ADG');
 };
 
+/**
+* Checks if the `rule` is Ubo redirect resource rule
+* @param {string} rule - rule text
+* @returns {boolean}
+*/
 const isUboRedirectRule = (rule) => {
     return validator.isRedirectRule(rule, 'UBO');
 };
 
+/**
+* Checks if the `rule` is Abp redirect resource rule
+* @param {string} rule - rule text
+* @returns {boolean}
+*/
 const isAbpRedirectRule = (rule) => {
     return validator.isRedirectRule(rule, 'ABP');
 };
