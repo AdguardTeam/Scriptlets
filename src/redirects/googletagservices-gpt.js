@@ -18,7 +18,7 @@ import {
  *
  * **Example**
  * ```
- * ||example.org/index.js$script,redirect=googletagservices-gpt
+ * ||googletagservices.com/tag/js/gpt.js$script,redirect=googletagservices-gpt
  * ```
  */
 export function GoogleTagServicesGpt(source) {

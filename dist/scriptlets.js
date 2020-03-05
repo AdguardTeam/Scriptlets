@@ -3634,7 +3634,7 @@
      *
      * **Example**
      * ```
-     * ||example.org/index.js$script,redirect=google-analytics
+     * ||google-analytics.com/analytics.js$script,redirect=google-analytics
      * ```
      */
 
@@ -3705,7 +3705,7 @@
      *
      * **Example**
      * ```
-     * ||example.org/index.js$script,redirect=google-analytics-ga
+     * ||google-analytics.com/ga.js$script,redirect=google-analytics-ga
      * ```
      */
 
@@ -3796,6 +3796,8 @@
     GoogleAnalyticsGa.names = ['google-analytics-ga', 'ubo-google-analytics_ga.js', 'google-analytics_ga.js'];
     GoogleAnalyticsGa.injections = [hit, noop];
 
+    /* eslint-disable max-len */
+
     /**
      * @redirect googlesyndication-adsbygoogle
      *
@@ -3807,9 +3809,11 @@
      *
      * **Example**
      * ```
-     * ||example.org/index.js$script,redirect=googlesyndication-adsbygoogle
+     * ||pagead2.googlesyndication.com/pagead/js/adsbygoogle.js$script,redirect=googlesyndication-adsbygoogle
      * ```
      */
+
+    /* eslint-enable max-len */
 
     function GoogleSyndicationAdsByGoogle(source) {
       window.adsbygoogle = window.adsbygoogle || {
@@ -3852,7 +3856,7 @@
      *
      * **Example**
      * ```
-     * ||example.org/index.js$script,redirect=googletagmanager-gtm
+     * ||googletagmanager.com/gtm.js$script,redirect=googletagmanager-gtm
      * ```
      */
 
@@ -3893,7 +3897,7 @@
      *
      * **Example**
      * ```
-     * ||example.org/index.js$script,redirect=googletagservices-gpt
+     * ||googletagservices.com/tag/js/gpt.js$script,redirect=googletagservices-gpt
      * ```
      */
 
@@ -4056,7 +4060,7 @@
      *
      * **Example**
      * ```
-     * ||example.org/index.js$script,redirect=scorecardresearch-beacon
+     * ||sb.scorecardresearch.com/beacon.js$script,redirect=scorecardresearch-beacon
      * ```
      */
 
@@ -4082,7 +4086,7 @@
      *
      * **Example**
      * ```
-     * ||example.org/index.js$script,redirect=metrika-yandex-tag
+     * ||mc.yandex.ru/metrika/tag.js$script,redirect=metrika-yandex-tag
      * ```
      */
 
@@ -4202,7 +4206,7 @@
      *
      * **Example**
      * ```
-     * ||example.org/index.js$script,redirect=metrika-yandex-watch
+     * ||mc.yandex.ru/metrika/watch.js$script,redirect=metrika-yandex-watch
      * ```
      */
 

@@ -68,7 +68,7 @@
 ### <a id="noopcss"></a> ⚡️ noopcss
 **Example**
 ```
-||example.org^$stylesheet,redirect=noopcss
+||example.org/style.css$stylesheet,redirect=noopcss
 ```
 [Redirect source](../src/redirects/static-redirects.yml)
 * * *
@@ -76,7 +76,7 @@
 ### <a id="noopjs"></a> ⚡️ noopjs
 **Example**
 ```
-||example.org^$script,redirect=noopjs
+||example.org/advert.js$script,redirect=noopjs
 ```
 [Redirect source](../src/redirects/static-redirects.yml)
 * * *
@@ -84,7 +84,7 @@
 ### <a id="nooptext"></a> ⚡️ nooptext
 **Example**
 ```
-||example.org^$xmlhttprequest,redirect=nooptext
+||example.org/advert.js$xmlhttprequest,redirect=nooptext
 ```
 [Redirect source](../src/redirects/static-redirects.yml)
 * * *
@@ -94,7 +94,7 @@ Redirects request to an empty VMAP response.
 
 **Example**
 ```
-||example.org^$xmlhttprequest,redirect=noopvmap-1.0
+||example.org/vmap01.xml$xmlhttprequest,redirect=noopvmap-1.0
 ```
 [Redirect source](../src/redirects/static-redirects.yml)
 * * *
@@ -104,7 +104,7 @@ Redirects request to an empty VAST response.
 
 **Example**
 ```
-||example.org^$xmlhttprequest,redirect=noopvast-2.0
+||example.org/vast02.xml^$xmlhttprequest,redirect=noopvast-2.0
 ```
 [Redirect source](../src/redirects/static-redirects.yml)
 * * *
@@ -114,7 +114,7 @@ Redirects request to an empty VAST response.
 
 **Example**
 ```
-||example.org^$xmlhttprequest,redirect=noopvast-3.0
+||example.org/vast03.xml^$xmlhttprequest,redirect=noopvast-3.0
 ```
 [Redirect source](../src/redirects/static-redirects.yml)
 * * *
@@ -122,7 +122,7 @@ Redirects request to an empty VAST response.
 ### <a id="noopmp3-0.1s"></a> ⚡️ noopmp3-0.1s
 **Example**
 ```
-||example.org^$media,redirect=noopmp3-0.1s
+||example.org/advert.mp3$media,redirect=noopmp3-0.1s
 ```
 [Redirect source](../src/redirects/static-redirects.yml)
 * * *
@@ -130,7 +130,7 @@ Redirects request to an empty VAST response.
 ### <a id="noopmp4-1s"></a> ⚡️ noopmp4-1s
 **Example**
 ```
-||example.org^$media,redirect=noopmp4-1s
+||example.org/advert.mp4$media,redirect=noopmp4-1s
 ```
 [Redirect source](../src/redirects/static-redirects.yml)
 * * *
@@ -144,7 +144,7 @@ https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/
 
 **Example**
 ```
-||example.org/index.js$script,redirect=google-analytics-ga
+||google-analytics.com/ga.js$script,redirect=google-analytics-ga
 ```
 [Redirect source](../src/redirects/google-analytics-ga.js)
 * * *
@@ -158,7 +158,7 @@ https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/
 
 **Example**
 ```
-||example.org/index.js$script,redirect=google-analytics
+||google-analytics.com/analytics.js$script,redirect=google-analytics
 ```
 [Redirect source](../src/redirects/google-analytics.js)
 * * *
@@ -172,7 +172,7 @@ https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/
 
 **Example**
 ```
-||example.org/index.js$script,redirect=googlesyndication-adsbygoogle
+||pagead2.googlesyndication.com/pagead/js/adsbygoogle.js$script,redirect=googlesyndication-adsbygoogle
 ```
 [Redirect source](../src/redirects/googlesyndication-adsbygoogle.js)
 * * *
@@ -186,7 +186,7 @@ https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/
 
 **Example**
 ```
-||example.org/index.js$script,redirect=googletagmanager-gtm
+||googletagmanager.com/gtm.js$script,redirect=googletagmanager-gtm
 ```
 [Redirect source](../src/redirects/googletagmanager-gtm.js)
 * * *
@@ -200,7 +200,7 @@ https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/
 
 **Example**
 ```
-||example.org/index.js$script,redirect=googletagservices-gpt
+||googletagservices.com/tag/js/gpt.js$script,redirect=googletagservices-gpt
 ```
 [Redirect source](../src/redirects/googletagservices-gpt.js)
 * * *
@@ -212,7 +212,7 @@ https://yandex.ru/support/metrica/objects/method-reference.html
 
 **Example**
 ```
-||example.org/index.js$script,redirect=metrika-yandex-tag
+||mc.yandex.ru/metrika/tag.js$script,redirect=metrika-yandex-tag
 ```
 [Redirect source](../src/redirects/metrika-yandex-tag.js)
 * * *
@@ -224,7 +224,7 @@ https://yandex.ru/support/metrica/objects/_method-reference.html
 
 **Example**
 ```
-||example.org/index.js$script,redirect=metrika-yandex-watch
+||mc.yandex.ru/metrika/watch.js$script,redirect=metrika-yandex-watch
 ```
 [Redirect source](../src/redirects/metrika-yandex-watch.js)
 * * *
@@ -278,7 +278,7 @@ https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/
 
 **Example**
 ```
-||example.org/index.js$script,redirect=scorecardresearch-beacon
+||sb.scorecardresearch.com/beacon.js$script,redirect=scorecardresearch-beacon
 ```
 [Redirect source](../src/redirects/scorecardresearch-beacon.js)
 * * *
