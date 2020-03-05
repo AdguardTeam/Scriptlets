@@ -32,9 +32,23 @@ const getRedirectCode = (name) => {
     return passSourceAndProps({ name }, result);
 };
 
+const isAdgRedirectRule = (rule) => {
+    return validator.isRedirectRule(rule, 'ADG');
+};
+
+const isUboRedirectRule = (rule) => {
+    return validator.isRedirectRule(rule, 'UBO');
+};
+
+const isAbpRedirectRule = (rule) => {
+    return validator.isRedirectRule(rule, 'ABP');
+};
+
 export const redirectsCjs = {
     getCode: getRedirectCode,
-    isRedirectRule: validator.isRedirectRule,
+    isAdgRedirectRule,
+    isUboRedirectRule,
+    isAbpRedirectRule,
     convertUboRedirectToAdg,
     convertAbpRedirectToAdg,
     convertRedirectToAdg,

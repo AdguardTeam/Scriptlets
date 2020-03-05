@@ -4319,9 +4319,23 @@
       }, result);
     };
 
+    var isAdgRedirectRule = function isAdgRedirectRule(rule) {
+      return validator.isRedirectRule(rule, 'ADG');
+    };
+
+    var isUboRedirectRule = function isUboRedirectRule(rule) {
+      return validator.isRedirectRule(rule, 'UBO');
+    };
+
+    var isAbpRedirectRule = function isAbpRedirectRule(rule) {
+      return validator.isRedirectRule(rule, 'ABP');
+    };
+
     var redirectsCjs = {
       getCode: getRedirectCode,
-      isRedirectRule: validator.isRedirectRule,
+      isAdgRedirectRule: isAdgRedirectRule,
+      isUboRedirectRule: isUboRedirectRule,
+      isAbpRedirectRule: isAbpRedirectRule,
       convertUboRedirectToAdg: convertUboRedirectToAdg,
       convertAbpRedirectToAdg: convertAbpRedirectToAdg,
       convertRedirectToAdg: convertRedirectToAdg,

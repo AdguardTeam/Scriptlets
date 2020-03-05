@@ -220,11 +220,13 @@ redirects.getCode(source);
 
 ```javascript
 /**
- * Checks if the `rule` satisfies the `type`
- * @param {string} rule - rule text
- * @param {'ADG'|'UBO'|'ABP'} type - type of a redirect rule
- */
-redirects.isRedirectRule(rule, type);
+* Checks if the `rule` is AdGuard / Ubo / Abp redirect resource rule
+* @param {string} rule - rule text
+* @returns {boolean}
+*/
+redirects.isAdgRedirectRule(rule);
+redirects.isUboRedirectRule(rule);
+redirects.isAbpRedirectRule(rule);
 ```
 
 ```javascript
