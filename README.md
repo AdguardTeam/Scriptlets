@@ -210,13 +210,23 @@ Imported `redirects` has such methods:
 
 ```javascript
 /**
-* Returns scriptlet code
+* Returns redirects code
 * @param {Source} source
 * @returns {string}
 */
 redirects.getCode(source);
 ```
 
+
+```javascript
+/**
+* Validates any redirect rule
+*
+* @param {string} input - can be Adguard or Ubo or Abp redirect rule
+* @returns {boolean}
+*/
+redirects.validateRedirectRule(input);
+```
 
 ```javascript
 /**
@@ -235,7 +245,7 @@ redirects.isAbpRedirectRule(rule);
 * @param {string} rule - rule text
 * @returns {string}
 */
-scriptlets.convertUboRedirectToAdg(rule);
+redirects.convertUboRedirectToAdg(rule);
 ```
 
 ```javascript
@@ -244,7 +254,7 @@ scriptlets.convertUboRedirectToAdg(rule);
 * @param {string} rule - rule text
 * @returns {string}
 */
-scriptlets.convertAbpRedirectToAdg(rule);
+redirects.convertAbpRedirectToAdg(rule);
 ```
 
 ```javascript
@@ -253,19 +263,19 @@ scriptlets.convertAbpRedirectToAdg(rule);
 * @param {string} rule - rule text
 * @returns {string} - converted to Adguard redirect rule OR `rule` if it is a comment
 */
-scriptlets.convertRedirectToAdg(rule);
+redirects.convertRedirectToAdg(rule);
 ```
 
 ```javascript
 /**
-* Validates rule for Adg -> Ubo conversion.
+* Checks if the rule has specified content type before Adg -> Ubo conversion.
 *
 * Used ONLY for Adg -> Ubo conversion
-* because Ubo redirect rules must contain source type, but Adg and Abp must not.
+* because Ubo redirect rules must contain content type, but Adg and Abp must not.
 * @param {string} rule
 * @returns {boolean}
 */
-scriptlets.isValidRedirectRule(rule);
+redirects.isValidContentType(rule);
 ```
 
 ```javascript
@@ -274,7 +284,7 @@ scriptlets.isValidRedirectRule(rule);
  * @param {string} rule
  * @returns {string}
  */
-scriptlets.convertAdgRedirectToUbo(rule);
+redirects.convertAdgRedirectToUbo(rule);
 ```
 
 

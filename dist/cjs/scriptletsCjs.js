@@ -3264,12 +3264,52 @@ var isRedirectRule = function isRedirectRule(rule, type) {
   return false;
 };
 /**
- * Validates rule for Adg -> Ubo conversion
+* Checks if the `rule` is AdGuard redirect resource rule
+* @param {string} rule - rule text
+* @returns {boolean}
+*/
+
+
+var isAdgRedirectRule = function isAdgRedirectRule(rule) {
+  return isRedirectRule(rule, 'ADG');
+};
+/**
+* Checks if the `rule` is Ubo redirect resource rule
+* @param {string} rule - rule text
+* @returns {boolean}
+*/
+
+
+var isUboRedirectRule = function isUboRedirectRule(rule) {
+  return isRedirectRule(rule, 'UBO');
+};
+/**
+* Checks if the `rule` is Abp redirect resource rule
+* @param {string} rule - rule text
+* @returns {boolean}
+*/
+
+
+var isAbpRedirectRule = function isAbpRedirectRule(rule) {
+  return isRedirectRule(rule, 'ABP');
+};
+/**
+ * Validates any redirect rule
+ * @param {string} rule - can be Adguard or Ubo or Abp redirect rule
+ * @returns {boolean}
+ */
+
+
+var validateRedirectRule = function validateRedirectRule(rule) {
+  return isAdgRedirectRule(rule) || isUboRedirectRule(rule) || isAbpRedirectRule(rule);
+};
+/**
+ * Checks if the rule has specified content type before Adg -> Ubo conversion.
  *
  * Used ONLY for Adg -> Ubo conversion
- * because Ubo redirect rules must contain source type, but Adg and Abp must not.
+ * because Ubo redirect rules must contain content type, but Adg and Abp must not.
  *
- * Also source type can not be added automatically because of such valid rules
+ * Also source type can not be added automatically because of such valid rules:
  * ! Abp:
  * $rewrite=abp-resource:blank-js,xmlhttprequest
  * ! Adg:
@@ -3281,7 +3321,7 @@ var isRedirectRule = function isRedirectRule(rule, type) {
  */
 
 
-var isValidRedirectRule = function isValidRedirectRule(rule) {
+var isValidContentType = function isValidContentType(rule) {
   if (isRedirectRule(rule, 'ADG')) {
     var ruleModifiers = parseModifiers(rule);
     var sourceType = ruleModifiers.find(function (el) {
@@ -3304,10 +3344,13 @@ var validator = {
   getScriptletByName: getScriptletByName,
   isValidScriptletName: isValidScriptletName,
   REDIRECT_RULE_TYPES: REDIRECT_RULE_TYPES,
-  isRedirectRule: isRedirectRule,
+  validateRedirectRule: validateRedirectRule,
+  isAdgRedirectRule: isAdgRedirectRule,
+  isUboRedirectRule: isUboRedirectRule,
+  isAbpRedirectRule: isAbpRedirectRule,
   parseModifiers: parseModifiers,
   getRedirectName: getRedirectName,
-  isValidRedirectRule: isValidRedirectRule
+  isValidContentType: isValidContentType
 };
 
 function _iterableToArray(iter) {
@@ -3587,11 +3630,11 @@ var convertAbpRedirectToAdg = function convertAbpRedirectToAdg(rule) {
 var convertRedirectToAdg = function convertRedirectToAdg(rule) {
   var result;
 
-  if (validator.isRedirectRule(rule, 'UBO')) {
+  if (validator.isUboRedirectRule(rule)) {
     result = convertUboRedirectToAdg(rule);
-  } else if (validator.isRedirectRule(rule, 'ABP')) {
+  } else if (validator.isAbpRedirectRule(rule, 'ABP')) {
     result = convertAbpRedirectToAdg(rule);
-  } else if (validator.isRedirectRule(rule, 'ADG') || validator.isComment(rule)) {
+  } else if (validator.isAdgRedirectRule(rule, 'ADG') || validator.isComment(rule)) {
     result = rule;
   }
 
@@ -3604,7 +3647,7 @@ var convertRedirectToAdg = function convertRedirectToAdg(rule) {
  */
 
 var convertAdgRedirectToUbo = function convertAdgRedirectToUbo(rule) {
-  if (!validator.isValidRedirectRule(rule)) {
+  if (!validator.isValidContentType(rule)) {
     throw new Error("Rule is not valid for converting to Ubo. Source type is not specified in the rule: ".concat(rule));
   } else {
     var firstPartOfRule = substringBefore(rule, '$');
@@ -4321,46 +4364,17 @@ var getRedirectCode = function getRedirectCode(name) {
     name: name
   }, result);
 };
-/**
-* Checks if the `rule` is AdGuard redirect resource rule
-* @param {string} rule - rule text
-* @returns {boolean}
-*/
-
-
-var isAdgRedirectRule = function isAdgRedirectRule(rule) {
-  return validator.isRedirectRule(rule, 'ADG');
-};
-/**
-* Checks if the `rule` is Ubo redirect resource rule
-* @param {string} rule - rule text
-* @returns {boolean}
-*/
-
-
-var isUboRedirectRule = function isUboRedirectRule(rule) {
-  return validator.isRedirectRule(rule, 'UBO');
-};
-/**
-* Checks if the `rule` is Abp redirect resource rule
-* @param {string} rule - rule text
-* @returns {boolean}
-*/
-
-
-var isAbpRedirectRule = function isAbpRedirectRule(rule) {
-  return validator.isRedirectRule(rule, 'ABP');
-};
 
 var redirectsCjs = {
   getCode: getRedirectCode,
-  isAdgRedirectRule: isAdgRedirectRule,
-  isUboRedirectRule: isUboRedirectRule,
-  isAbpRedirectRule: isAbpRedirectRule,
+  validateRedirectRule: validator.validateRedirectRule,
+  isAdgRedirectRule: validator.isAdgRedirectRule,
+  isUboRedirectRule: validator.isUboRedirectRule,
+  isAbpRedirectRule: validator.isAbpRedirectRule,
   convertUboRedirectToAdg: convertUboRedirectToAdg,
   convertAbpRedirectToAdg: convertAbpRedirectToAdg,
   convertRedirectToAdg: convertRedirectToAdg,
-  isValidRedirectRule: validator.isValidRedirectRule,
+  isValidContentType: validator.isValidContentType,
   convertAdgRedirectToUbo: convertAdgRedirectToUbo
 };
 
