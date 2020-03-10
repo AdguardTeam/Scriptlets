@@ -206,7 +206,7 @@ scriptlets.convertAdgToUbo(rule);
 ```
 
 
-Imported `redirects` has such methods:
+##### <a id="redirects_api-methods"></a> Imported `redirects` has such methods:
 
 ```javascript
 /**
