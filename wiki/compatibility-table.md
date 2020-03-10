@@ -24,15 +24,15 @@
 | prevent-eval-if | noeval-if.js |  |
 | prevent-fab-3.2.0 |  |  |
 | prevent-popads-net |  |  |
-| prevent-setInterval | setInterval-defuser.js (sid.js) |  |
-| prevent-setTimeout | setTimeout-defuser.js (std.js) |  |
+| prevent-setInterval | no-setInterval-if.js (nosiif.js) |  |
+| prevent-setTimeout | no-setTimeout-if.js (nostif.js) |  |
 | prevent-window-open |  |  |
 | remove-attr | remove-attr.js (ra.js) |  |
 | remove-cookie | cookie-remover.js |  |
 | set-constant | set-constant.js (set.js) |  |
 | set-popads-dummy |  |  |
-|  | setInterval-if.js (removed) |  |
-|  | setTimeout-if.js (removed) |  |
+|  | setInterval-defuser.js (sid.js) |  |
+|  | setTimeout-defuser.js (std.js) |  |
 |  | webrtc-if.js |  |
 |  | overlay-buster.js |  |
 |  | alert-buster.js |  |
@@ -44,8 +44,6 @@
 |  | twitch-videoad.js |  |
 |  | fingerprint2.js |  |
 |  | requestAnimationFrame-if.js (raf-if.js) |  |
-|  | no-setInterval-if.js (nosiif.js) |  |
-|  | no-setTimeout-if.js (nostif.js) |  |
 |  |  | trace |
 |  |  | uabinject-defuser |
 |  |  | hide-if-shadow-contains |

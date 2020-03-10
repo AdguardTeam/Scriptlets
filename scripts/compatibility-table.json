@@ -110,10 +110,10 @@
             "adg": "set-popads-dummy"
         },
         {
-            "ubo": "setInterval-if.js (removed)"
+            "ubo": "setInterval-defuser.js (sid.js)"
         },
         {
-            "ubo": "setTimeout-if.js (removed)"
+            "ubo": "setTimeout-defuser.js (std.js)"
         },
         {
             "ubo": "webrtc-if.js"
