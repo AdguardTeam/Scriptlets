@@ -229,7 +229,7 @@ const getRedirectName = (rule, marker) => {
  * @param {string} rule - rule text
  * @param {'ADG'|'UBO'|'ABP'} type - type of a redirect rule
  */
-const isRedirectRule = (rule, type) => {
+const isRedirectRuleByType = (rule, type) => {
     const { marker, compatibility } = REDIRECT_RULE_TYPES[type];
 
     if ((!isComment(rule))
@@ -249,7 +249,7 @@ const isRedirectRule = (rule, type) => {
 * @returns {boolean}
 */
 const isAdgRedirectRule = (rule) => {
-    return isRedirectRule(rule, 'ADG');
+    return isRedirectRuleByType(rule, 'ADG');
 };
 
 /**
@@ -258,7 +258,7 @@ const isAdgRedirectRule = (rule) => {
 * @returns {boolean}
 */
 const isUboRedirectRule = (rule) => {
-    return isRedirectRule(rule, 'UBO');
+    return isRedirectRuleByType(rule, 'UBO');
 };
 
 /**
@@ -267,7 +267,7 @@ const isUboRedirectRule = (rule) => {
 * @returns {boolean}
 */
 const isAbpRedirectRule = (rule) => {
-    return isRedirectRule(rule, 'ABP');
+    return isRedirectRuleByType(rule, 'ABP');
 };
 
 /**
@@ -275,7 +275,7 @@ const isAbpRedirectRule = (rule) => {
  * @param {string} rule - can be Adguard or Ubo or Abp redirect rule
  * @returns {boolean}
  */
-const validateRedirectRule = (rule) => {
+const isValidRedirectRule = (rule) => {
     return (isAdgRedirectRule(rule)
         || isUboRedirectRule(rule)
         || isAbpRedirectRule(rule));
@@ -297,8 +297,8 @@ const validateRedirectRule = (rule) => {
  * @param {string} rule
  * @returns {boolean}
  */
-const isValidContentType = (rule) => {
-    if (isRedirectRule(rule, 'ADG')) {
+const hasValidContentType = (rule) => {
+    if (isRedirectRuleByType(rule, 'ADG')) {
         const ruleModifiers = parseModifiers(rule);
         const sourceType = ruleModifiers
             .find((el) => VALID_SOURCE_TYPES.indexOf(el) > -1);
@@ -319,13 +319,13 @@ const validator = {
     getScriptletByName,
     isValidScriptletName,
     REDIRECT_RULE_TYPES,
-    validateRedirectRule,
+    isValidRedirectRule,
     isAdgRedirectRule,
     isUboRedirectRule,
     isAbpRedirectRule,
     parseModifiers,
     getRedirectName,
-    isValidContentType,
+    hasValidContentType,
 };
 
 export default validator;

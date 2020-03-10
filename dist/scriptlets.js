@@ -3250,7 +3250,7 @@
      */
 
 
-    var isRedirectRule = function isRedirectRule(rule, type) {
+    var isRedirectRuleByType = function isRedirectRuleByType(rule, type) {
       var _REDIRECT_RULE_TYPES$ = REDIRECT_RULE_TYPES[type],
           marker = _REDIRECT_RULE_TYPES$.marker,
           compatibility = _REDIRECT_RULE_TYPES$.compatibility;
@@ -3272,7 +3272,7 @@
 
 
     var isAdgRedirectRule = function isAdgRedirectRule(rule) {
-      return isRedirectRule(rule, 'ADG');
+      return isRedirectRuleByType(rule, 'ADG');
     };
     /**
     * Checks if the `rule` is Ubo redirect resource rule
@@ -3282,7 +3282,7 @@
 
 
     var isUboRedirectRule = function isUboRedirectRule(rule) {
-      return isRedirectRule(rule, 'UBO');
+      return isRedirectRuleByType(rule, 'UBO');
     };
     /**
     * Checks if the `rule` is Abp redirect resource rule
@@ -3292,7 +3292,7 @@
 
 
     var isAbpRedirectRule = function isAbpRedirectRule(rule) {
-      return isRedirectRule(rule, 'ABP');
+      return isRedirectRuleByType(rule, 'ABP');
     };
     /**
      * Validates any redirect rule
@@ -3301,7 +3301,7 @@
      */
 
 
-    var validateRedirectRule = function validateRedirectRule(rule) {
+    var isValidRedirectRule = function isValidRedirectRule(rule) {
       return isAdgRedirectRule(rule) || isUboRedirectRule(rule) || isAbpRedirectRule(rule);
     };
     /**
@@ -3322,8 +3322,8 @@
      */
 
 
-    var isValidContentType = function isValidContentType(rule) {
-      if (isRedirectRule(rule, 'ADG')) {
+    var hasValidContentType = function hasValidContentType(rule) {
+      if (isRedirectRuleByType(rule, 'ADG')) {
         var ruleModifiers = parseModifiers(rule);
         var sourceType = ruleModifiers.find(function (el) {
           return VALID_SOURCE_TYPES.indexOf(el) > -1;
@@ -3345,13 +3345,13 @@
       getScriptletByName: getScriptletByName,
       isValidScriptletName: isValidScriptletName,
       REDIRECT_RULE_TYPES: REDIRECT_RULE_TYPES,
-      validateRedirectRule: validateRedirectRule,
+      isValidRedirectRule: isValidRedirectRule,
       isAdgRedirectRule: isAdgRedirectRule,
       isUboRedirectRule: isUboRedirectRule,
       isAbpRedirectRule: isAbpRedirectRule,
       parseModifiers: parseModifiers,
       getRedirectName: getRedirectName,
-      isValidContentType: isValidContentType
+      hasValidContentType: hasValidContentType
     };
 
     function _iterableToArray(iter) {
@@ -3633,9 +3633,9 @@
 
       if (validator.isUboRedirectRule(rule)) {
         result = convertUboRedirectToAdg(rule);
-      } else if (validator.isAbpRedirectRule(rule, 'ABP')) {
+      } else if (validator.isAbpRedirectRule(rule)) {
         result = convertAbpRedirectToAdg(rule);
-      } else if (validator.isAdgRedirectRule(rule, 'ADG') || validator.isComment(rule)) {
+      } else if (validator.isAdgRedirectRule(rule) || validator.isComment(rule)) {
         result = rule;
       }
 
@@ -3648,7 +3648,7 @@
      */
 
     var convertAdgRedirectToUbo = function convertAdgRedirectToUbo(rule) {
-      if (!validator.isValidContentType(rule)) {
+      if (!validator.hasValidContentType(rule)) {
         throw new Error("Rule is not valid for converting to Ubo. Source type is not specified in the rule: ".concat(rule));
       } else {
         var firstPartOfRule = substringBefore(rule, '$');
@@ -4368,14 +4368,13 @@
 
     var redirectsCjs = {
       getCode: getRedirectCode,
-      validateRedirectRule: validator.validateRedirectRule,
+      isValidRedirectRule: validator.isValidRedirectRule,
       isAdgRedirectRule: validator.isAdgRedirectRule,
       isUboRedirectRule: validator.isUboRedirectRule,
       isAbpRedirectRule: validator.isAbpRedirectRule,
       convertUboRedirectToAdg: convertUboRedirectToAdg,
       convertAbpRedirectToAdg: convertAbpRedirectToAdg,
       convertRedirectToAdg: convertRedirectToAdg,
-      isValidContentType: validator.isValidContentType,
       convertAdgRedirectToUbo: convertAdgRedirectToUbo
     };
 
@@ -4418,8 +4417,8 @@
     scriptlets = function () {
       return {
         invoke: getScriptletCode,
-        validateName: validator.isValidScriptletName,
-        validateRule: isValidScriptletRule,
+        isValidScriptletName: validator.isValidScriptletName,
+        isValidScriptletRule: isValidScriptletRule,
         isAdgScriptletRule: validator.isAdgScriptletRule,
         isUboScriptletRule: validator.isUboScriptletRule,
         isAbpSnippetRule: validator.isAbpSnippetRule,

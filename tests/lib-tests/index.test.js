@@ -127,21 +127,21 @@ test('Test SCRIPTLET converting - ADG -> UBO', (assert) => {
 
 test('Test redirect rule validation', (assert) => {
     let inputRule = '||example.com/banner$image,redirect=32x32.png';
-    assert.strictEqual(validator.validateRedirectRule(inputRule), true);
+    assert.strictEqual(validator.isValidRedirectRule(inputRule), true);
 
     inputRule = '||example.com^$script,rewrite=abp-resource:blank-js';
-    assert.strictEqual(validator.validateRedirectRule(inputRule), true);
+    assert.strictEqual(validator.isValidRedirectRule(inputRule), true);
 
     inputRule = '||example.orf^$media,redirect=noopmp4-1s,third-party';
-    assert.strictEqual(validator.validateRedirectRule(inputRule), true);
+    assert.strictEqual(validator.isValidRedirectRule(inputRule), true);
 
     // invalid redirect name
     inputRule = '||example.orf^$media,redirect=no-mp4';
-    assert.strictEqual(validator.validateRedirectRule(inputRule), false);
+    assert.strictEqual(validator.isValidRedirectRule(inputRule), false);
 
     // invalid redirect name
     inputRule = '||example.com^$script,rewrite=abp-resource:noop-js';
-    assert.strictEqual(validator.validateRedirectRule(inputRule), false);
+    assert.strictEqual(validator.isValidRedirectRule(inputRule), false);
 });
 
 test('Test Adguard redirect resource rule', (assert) => {
@@ -173,21 +173,21 @@ test('Test REDIRECT converting - ABP -> ADG', (assert) => {
 
 test('Test redirect rule validation for ADG -> UBO converting', (assert) => {
     let adgRule = '||example.com^$xmlhttprequest,redirect=nooptext';
-    assert.strictEqual(validator.isValidContentType(adgRule), true);
+    assert.strictEqual(validator.hasValidContentType(adgRule), true);
 
     adgRule = ' ||example.orf^$media,redirect=noopmp4-1s,third-party';
-    assert.strictEqual(validator.isValidContentType(adgRule), true);
+    assert.strictEqual(validator.hasValidContentType(adgRule), true);
 
     adgRule = '||example.com/images/*.png$image,important,redirect=1x1-transparent.gif,domain=example.com|example.org';
-    assert.strictEqual(validator.isValidContentType(adgRule), true);
+    assert.strictEqual(validator.hasValidContentType(adgRule), true);
 
     // abp rule ->> false
     adgRule = '||example.com^$script,rewrite=abp-resource:blank-js';
-    assert.strictEqual(validator.isValidContentType(adgRule), false);
+    assert.strictEqual(validator.hasValidContentType(adgRule), false);
 
     // no source type
     adgRule = '||example.com^$important,redirect=nooptext';
-    assert.strictEqual(validator.isValidContentType(adgRule), false);
+    assert.strictEqual(validator.hasValidContentType(adgRule), false);
 });
 
 test('Test REDIRECT converting - ADG -> UBO', (assert) => {

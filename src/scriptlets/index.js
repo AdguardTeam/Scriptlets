@@ -56,8 +56,8 @@ function getScriptletCode(source) {
 // eslint-disable-next-line no-undef
 scriptlets = (() => ({
     invoke: getScriptletCode,
-    validateName: validator.isValidScriptletName,
-    validateRule: isValidScriptletRule,
+    isValidScriptletName: validator.isValidScriptletName,
+    isValidScriptletRule,
     isAdgScriptletRule: validator.isAdgScriptletRule,
     isUboScriptletRule: validator.isUboScriptletRule,
     isAbpSnippetRule: validator.isAbpSnippetRule,

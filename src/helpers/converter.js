@@ -275,9 +275,9 @@ export const convertRedirectToAdg = (rule) => {
     let result;
     if (validator.isUboRedirectRule(rule)) {
         result = convertUboRedirectToAdg(rule);
-    } else if (validator.isAbpRedirectRule(rule, 'ABP')) {
+    } else if (validator.isAbpRedirectRule(rule)) {
         result = convertAbpRedirectToAdg(rule);
-    } else if (validator.isAdgRedirectRule(rule, 'ADG') || (validator.isComment(rule))) {
+    } else if (validator.isAdgRedirectRule(rule) || (validator.isComment(rule))) {
         result = rule;
     }
 
@@ -290,7 +290,7 @@ export const convertRedirectToAdg = (rule) => {
  * @returns {string}
  */
 export const convertAdgRedirectToUbo = (rule) => {
-    if (!validator.isValidContentType(rule)) {
+    if (!validator.hasValidContentType(rule)) {
         throw new Error(`Rule is not valid for converting to Ubo. Source type is not specified in the rule: ${rule}`);
     } else {
         const firstPartOfRule = substringBefore(rule, '$');

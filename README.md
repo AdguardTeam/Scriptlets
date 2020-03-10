@@ -143,7 +143,7 @@ scriptlets.invoke(source);
 * @param {string} name - scriptlet name
 * @returns {boolean}
 */
-scriptlets.validateName(name);
+scriptlets.isValidScriptletName(name);
 ```
 
 ```javascript
@@ -155,7 +155,7 @@ scriptlets.validateName(name);
 * @param {string} input - can be Adguard or Ubo or Abp scriptlet rule
 * @returns {boolean}
 */
-scriptlets.validateRule(input);
+scriptlets.isValidScriptletRule(input);
 ```
 
 ```javascript
@@ -225,7 +225,7 @@ redirects.getCode(source);
 * @param {string} input - can be Adguard or Ubo or Abp redirect rule
 * @returns {boolean}
 */
-redirects.validateRedirectRule(input);
+redirects.isValidRedirectRule(input);
 ```
 
 ```javascript
@@ -264,18 +264,6 @@ redirects.convertAbpRedirectToAdg(rule);
 * @returns {string} - converted to Adguard redirect rule OR `rule` if it is a comment
 */
 redirects.convertRedirectToAdg(rule);
-```
-
-```javascript
-/**
-* Checks if the rule has specified content type before Adg -> Ubo conversion.
-*
-* Used ONLY for Adg -> Ubo conversion
-* because Ubo redirect rules must contain content type, but Adg and Abp must not.
-* @param {string} rule
-* @returns {boolean}
-*/
-redirects.isValidContentType(rule);
 ```
 
 ```javascript

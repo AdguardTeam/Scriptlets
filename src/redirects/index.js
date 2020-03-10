@@ -35,13 +35,12 @@ const getRedirectCode = (name) => {
 
 export const redirectsCjs = {
     getCode: getRedirectCode,
-    validateRedirectRule: validator.validateRedirectRule,
+    isValidRedirectRule: validator.isValidRedirectRule,
     isAdgRedirectRule: validator.isAdgRedirectRule,
     isUboRedirectRule: validator.isUboRedirectRule,
     isAbpRedirectRule: validator.isAbpRedirectRule,
     convertUboRedirectToAdg,
     convertAbpRedirectToAdg,
     convertRedirectToAdg,
-    isValidContentType: validator.isValidContentType,
     convertAdgRedirectToUbo,
 };
