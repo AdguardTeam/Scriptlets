@@ -143,7 +143,7 @@ scriptlets.invoke(source);
 * @param {string} name - scriptlet name
 * @returns {boolean}
 */
-scriptlets.validateName(name);
+scriptlets.isValidScriptletName(name);
 ```
 
 ```javascript
@@ -155,7 +155,7 @@ scriptlets.validateName(name);
 * @param {string} input - can be Adguard or Ubo or Abp scriptlet rule
 * @returns {boolean}
 */
-scriptlets.validateRule(input);
+scriptlets.isValidScriptletRule(input);
 ```
 
 ```javascript
@@ -210,13 +210,23 @@ Imported `redirects` has such methods:
 
 ```javascript
 /**
-* Returns scriptlet code
+* Returns redirects code
 * @param {Source} source
 * @returns {string}
 */
 redirects.getCode(source);
 ```
 
+
+```javascript
+/**
+* Validates any redirect rule
+*
+* @param {string} input - can be Adguard or Ubo or Abp redirect rule
+* @returns {boolean}
+*/
+redirects.isValidRedirectRule(input);
+```
 
 ```javascript
 /**
@@ -235,7 +245,7 @@ redirects.isAbpRedirectRule(rule);
 * @param {string} rule - rule text
 * @returns {string}
 */
-scriptlets.convertUboRedirectToAdg(rule);
+redirects.convertUboRedirectToAdg(rule);
 ```
 
 ```javascript
@@ -244,7 +254,7 @@ scriptlets.convertUboRedirectToAdg(rule);
 * @param {string} rule - rule text
 * @returns {string}
 */
-scriptlets.convertAbpRedirectToAdg(rule);
+redirects.convertAbpRedirectToAdg(rule);
 ```
 
 ```javascript
@@ -253,19 +263,7 @@ scriptlets.convertAbpRedirectToAdg(rule);
 * @param {string} rule - rule text
 * @returns {string} - converted to Adguard redirect rule OR `rule` if it is a comment
 */
-scriptlets.convertRedirectToAdg(rule);
-```
-
-```javascript
-/**
-* Validates rule for Adg -> Ubo conversion.
-*
-* Used ONLY for Adg -> Ubo conversion
-* because Ubo redirect rules must contain source type, but Adg and Abp must not.
-* @param {string} rule
-* @returns {boolean}
-*/
-scriptlets.isValidRedirectRule(rule);
+redirects.convertRedirectToAdg(rule);
 ```
 
 ```javascript
@@ -274,7 +272,7 @@ scriptlets.isValidRedirectRule(rule);
  * @param {string} rule
  * @returns {string}
  */
-scriptlets.convertAdgRedirectToUbo(rule);
+redirects.convertAdgRedirectToUbo(rule);
 ```
 
 

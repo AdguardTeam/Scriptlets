@@ -229,7 +229,7 @@ const getRedirectName = (rule, marker) => {
  * @param {string} rule - rule text
  * @param {'ADG'|'UBO'|'ABP'} type - type of a redirect rule
  */
-const isRedirectRule = (rule, type) => {
+const isRedirectRuleByType = (rule, type) => {
     const { marker, compatibility } = REDIRECT_RULE_TYPES[type];
 
     if ((!isComment(rule))
@@ -243,14 +243,51 @@ const isRedirectRule = (rule, type) => {
     return false;
 };
 
+/**
+* Checks if the `rule` is AdGuard redirect resource rule
+* @param {string} rule - rule text
+* @returns {boolean}
+*/
+const isAdgRedirectRule = (rule) => {
+    return isRedirectRuleByType(rule, 'ADG');
+};
 
 /**
- * Validates rule for Adg -> Ubo conversion
+* Checks if the `rule` is Ubo redirect resource rule
+* @param {string} rule - rule text
+* @returns {boolean}
+*/
+const isUboRedirectRule = (rule) => {
+    return isRedirectRuleByType(rule, 'UBO');
+};
+
+/**
+* Checks if the `rule` is Abp redirect resource rule
+* @param {string} rule - rule text
+* @returns {boolean}
+*/
+const isAbpRedirectRule = (rule) => {
+    return isRedirectRuleByType(rule, 'ABP');
+};
+
+/**
+ * Validates any redirect rule
+ * @param {string} rule - can be Adguard or Ubo or Abp redirect rule
+ * @returns {boolean}
+ */
+const isValidRedirectRule = (rule) => {
+    return (isAdgRedirectRule(rule)
+        || isUboRedirectRule(rule)
+        || isAbpRedirectRule(rule));
+};
+
+/**
+ * Checks if the rule has specified content type before Adg -> Ubo conversion.
  *
  * Used ONLY for Adg -> Ubo conversion
- * because Ubo redirect rules must contain source type, but Adg and Abp must not.
+ * because Ubo redirect rules must contain content type, but Adg and Abp must not.
  *
- * Also source type can not be added automatically because of such valid rules
+ * Also source type can not be added automatically because of such valid rules:
  * ! Abp:
  * $rewrite=abp-resource:blank-js,xmlhttprequest
  * ! Adg:
@@ -260,8 +297,8 @@ const isRedirectRule = (rule, type) => {
  * @param {string} rule
  * @returns {boolean}
  */
-const isValidRedirectRule = (rule) => {
-    if (isRedirectRule(rule, 'ADG')) {
+const hasValidContentType = (rule) => {
+    if (isRedirectRuleByType(rule, 'ADG')) {
         const ruleModifiers = parseModifiers(rule);
         const sourceType = ruleModifiers
             .find((el) => VALID_SOURCE_TYPES.indexOf(el) > -1);
@@ -282,10 +319,13 @@ const validator = {
     getScriptletByName,
     isValidScriptletName,
     REDIRECT_RULE_TYPES,
-    isRedirectRule,
+    isValidRedirectRule,
+    isAdgRedirectRule,
+    isUboRedirectRule,
+    isAbpRedirectRule,
     parseModifiers,
     getRedirectName,
-    isValidRedirectRule,
+    hasValidContentType,
 };
 
 export default validator;
