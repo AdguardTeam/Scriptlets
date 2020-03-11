@@ -63,7 +63,11 @@ test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
     let expBlockRule = 'example.org#%#//scriptlet(\'ubo-setTimeout-defuser.js\', \'[native code]\', \'8000\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
     // double quotes in scriptlet parameter
-    blockingRule = 'example.com#@#+js(remove-attr.js, href, a[data-st-area="Header-back"])';
+    blockingRule = 'example.com#@#+js(remove-attr.js, href, a[data-st-area=\'Header-back\'])';
+    expBlockRule = 'example.com#@%#//scriptlet(\'ubo-remove-attr.js\', \'href\', \'a[data-st-area="Header-back"]\')';
+    assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
+    // the same but with single quotes
+    blockingRule = 'example.com#@#+js(remove-attr.js, href, a[data-st-area=\'Header-back\'])';
     expBlockRule = 'example.com#@%#//scriptlet(\'ubo-remove-attr.js\', \'href\', \'a[data-st-area="Header-back"]\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
     // name without '.js' at the end
@@ -97,8 +101,8 @@ test('Test SCRIPTLET converting - ABP -> ADG', (assert) => {
 
 test('Test SCRIPTLET converting - multiple ABP -> ADG', (assert) => {
     const rule = 'example.org#$#hide-if-has-and-matches-style \'d[id^="_"]\' \'div > s\' \'display: none\'; hide-if-contains /.*/ .p \'a[href^="/ad__c?"]\'';
-    const exp1 = 'example.org#%#//scriptlet(\'abp-hide-if-has-and-matches-style\', \'d[id^=\\"_\\"]\', \'div > s\', \'display: none\')';
-    const exp2 = 'example.org#%#//scriptlet(\'abp-hide-if-contains\', \'/.*/\', \'.p\', \'a[href^=\\"/ad__c?\\"]\')';
+    const exp1 = 'example.org#%#//scriptlet(\'abp-hide-if-has-and-matches-style\', \'d[id^="_"]\', \'div > s\', \'display: none\')';
+    const exp2 = 'example.org#%#//scriptlet(\'abp-hide-if-contains\', \'/.*/\', \'.p\', \'a[href^="/ad__c?"]\')';
     const res = convertScriptletToAdg(rule);
 
     assert.equal(res.length, 2);

@@ -153,21 +153,17 @@
       return "\"".concat(str, "\"");
     };
     /**
-     * Wrap str in single qoutes and replaces single quotes if need
+     * Wrap str in single qoutes and replaces single quotes to doudle one
      * @param {string} str
      */
 
     var wrapInSingleQuotes = function wrapInSingleQuotes(str) {
-      if (str[0] === '\'' && str[str.length - 1] === '\'') {
-        str = str.substring(1, str.length - 1); // eslint-disable-next-line no-useless-escape
+      if (str[0] === '\'' && str[str.length - 1] === '\'' || str[0] === '"' && str[str.length - 1] === '"') {
+        str = str.substring(1, str.length - 1);
+      } // eslint-disable-next-line no-useless-escape
 
-        str = str.replace(/\"/g, '\\"');
-      } else if (str[0] === '"' && str[str.length - 1] === '"') {
-        str = str.substring(1, str.length - 1); // eslint-disable-next-line no-useless-escape
 
-        str = str.replace(/\'/g, '\\\'');
-      }
-
+      str = str.replace(/\'/g, '"');
       return "'".concat(str, "'");
     };
     /**
