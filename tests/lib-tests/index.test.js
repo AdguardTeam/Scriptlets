@@ -63,7 +63,7 @@ test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
     let expBlockRule = 'example.org#%#//scriptlet(\'ubo-setTimeout-defuser.js\', \'[native code]\', \'8000\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
     // double quotes in scriptlet parameter
-    blockingRule = 'example.com#@#+js(remove-attr.js, href, a[data-st-area=\'Header-back\'])';
+    blockingRule = 'example.com#@#+js(remove-attr.js, href, a[data-st-area="Header-back"])';
     expBlockRule = 'example.com#@%#//scriptlet(\'ubo-remove-attr.js\', \'href\', \'a[data-st-area="Header-back"]\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
     // the same but with single quotes
