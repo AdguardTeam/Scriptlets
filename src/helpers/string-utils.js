@@ -50,20 +50,18 @@ export const substringBefore = (str, separator) => {
 };
 
 /**
- * Wrap str in double qoutes and replaces single quotes if need
+ * Wrap str in single qoutes and replaces single quotes to doudle one
  * @param {string} str
  */
-export const wrapInDoubleQuotes = (str) => {
-    if (str[0] === '\'' && str[str.length - 1] === '\'') {
+export const wrapInSingleQuotes = (str) => {
+    if ((str[0] === '\'' && str[str.length - 1] === '\'')
+        || (str[0] === '"' && str[str.length - 1] === '"')) {
         str = str.substring(1, str.length - 1);
-        // eslint-disable-next-line no-useless-escape
-        str = str.replace(/\"/g, '\\"');
-    } else if (str[0] === '"' && str[str.length - 1] === '"') {
-        str = str.substring(1, str.length - 1);
-        // eslint-disable-next-line no-useless-escape
-        str = str.replace(/\'/g, '\\\'');
     }
-    return `"${str}"`;
+    // eslint-disable-next-line no-useless-escape
+    str = str.replace(/\'/g, '"');
+
+    return `'${str}'`;
 };
 
 /**
