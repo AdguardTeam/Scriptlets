@@ -68,7 +68,6 @@ test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
     // the same but with single quotes
     blockingRule = 'example.com#@#+js(remove-attr.js, href, a[data-st-area=\'Header-back\'])';
-    expBlockRule = 'example.com#@%#//scriptlet(\'ubo-remove-attr.js\', \'href\', \'a[data-st-area="Header-back"]\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
     // name without '.js' at the end
     blockingRule = 'example.org##+js(addEventListener-defuser, load, 2000)';
