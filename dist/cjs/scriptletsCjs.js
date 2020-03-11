@@ -152,6 +152,24 @@ var wrapInDoubleQuotes = function wrapInDoubleQuotes(str) {
   return "\"".concat(str, "\"");
 };
 /**
+ * Wrap str in single qoutes and replaces single quotes if need
+ * @param {string} str
+ */
+
+var wrapInSingleQuotes = function wrapInSingleQuotes(str) {
+  if (str[0] === '\'' && str[str.length - 1] === '\'') {
+    str = str.substring(1, str.length - 1); // eslint-disable-next-line no-useless-escape
+
+    str = str.replace(/\"/g, '\\"');
+  } else if (str[0] === '"' && str[str.length - 1] === '"') {
+    str = str.substring(1, str.length - 1); // eslint-disable-next-line no-useless-escape
+
+    str = str.replace(/\'/g, '\\\'');
+  }
+
+  return "'".concat(str, "'");
+};
+/**
  * Returns substring enclosed in the widest braces
  * @param {string} str
  */
@@ -362,6 +380,7 @@ var dependencies = /*#__PURE__*/Object.freeze({
     substringAfter: substringAfter,
     substringBefore: substringBefore,
     wrapInDoubleQuotes: wrapInDoubleQuotes,
+    wrapInSingleQuotes: wrapInSingleQuotes,
     getStringInBraces: getStringInBraces,
     createOnErrorHandler: createOnErrorHandler,
     noop: noop,
@@ -3438,7 +3457,7 @@ var convertUboScriptletToAdg = function convertUboScriptletToAdg(rule) {
 
     return outputArg;
   }).map(function (arg) {
-    return wrapInDoubleQuotes(arg);
+    return wrapInSingleQuotes(arg);
   }).join(', ');
   var adgRule = replacePlaceholders(template, {
     domains: domains,
@@ -3465,7 +3484,7 @@ var convertAbpSnippetToAdg = function convertAbpSnippetToAdg(rule) {
     }).map(function (arg, index) {
       return index === 0 ? "abp-".concat(arg) : arg;
     }).map(function (arg) {
-      return wrapInDoubleQuotes(arg);
+      return wrapInSingleQuotes(arg);
     }).join(', ');
   }).map(function (args) {
     return replacePlaceholders(template, {

@@ -2,7 +2,7 @@ import {
     getBeforeRegExp,
     substringAfter,
     substringBefore,
-    wrapInDoubleQuotes,
+    wrapInSingleQuotes,
     getStringInBraces,
 } from './string-utils';
 
@@ -84,7 +84,7 @@ export const convertUboScriptletToAdg = (rule) => {
             }
             return outputArg;
         })
-        .map((arg) => wrapInDoubleQuotes(arg))
+        .map((arg) => wrapInSingleQuotes(arg))
         .join(', ');
     const adgRule = replacePlaceholders(
         template,
@@ -114,7 +114,7 @@ export const convertAbpSnippetToAdg = (rule) => {
         .map((args) => getSentences(args)
             .filter((arg) => arg)
             .map((arg, index) => (index === 0 ? `abp-${arg}` : arg))
-            .map((arg) => wrapInDoubleQuotes(arg))
+            .map((arg) => wrapInSingleQuotes(arg))
             .join(', '))
         .map((args) => replacePlaceholders(template, { domains, args }));
 };

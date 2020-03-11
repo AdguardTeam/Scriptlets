@@ -60,41 +60,45 @@ test('Test Adguard scriptlet rule exception', (assert) => {
 test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
     // blocking rule
     let blockingRule = 'example.org##+js(setTimeout-defuser.js, [native code], 8000)';
-    let expBlockRule = 'example.org#%#//scriptlet("ubo-setTimeout-defuser.js", "[native code]", "8000")';
+    let expBlockRule = 'example.org#%#//scriptlet(\'ubo-setTimeout-defuser.js\', \'[native code]\', \'8000\')';
+    assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
+    // double quotes in scriptlet parameter
+    blockingRule = 'example.com#@#+js(remove-attr.js, href, a[data-st-area="Header-back"])';
+    expBlockRule = 'example.com#@%#//scriptlet(\'ubo-remove-attr.js\', \'href\', \'a[data-st-area="Header-back"]\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
     // name without '.js' at the end
     blockingRule = 'example.org##+js(addEventListener-defuser, load, 2000)';
-    expBlockRule = 'example.org#%#//scriptlet("ubo-addEventListener-defuser.js", "load", "2000")';
+    expBlockRule = 'example.org#%#//scriptlet(\'ubo-addEventListener-defuser.js\', \'load\', \'2000\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
     // short form of name
     blockingRule = 'example.org##+js(nano-stb, timeDown)';
-    expBlockRule = 'example.org#%#//scriptlet("ubo-nano-stb.js", "timeDown")';
+    expBlockRule = 'example.org#%#//scriptlet(\'ubo-nano-stb.js\', \'timeDown\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
 
     // whitelist rule
     let whitelistRule = 'example.org#@#+js(setTimeout-defuser.js, [native code], 8000)';
-    let expectedResult = 'example.org#@%#//scriptlet("ubo-setTimeout-defuser.js", "[native code]", "8000")';
+    let expectedResult = 'example.org#@%#//scriptlet(\'ubo-setTimeout-defuser.js\', \'[native code]\', \'8000\')';
     assert.strictEqual(convertScriptletToAdg(whitelistRule)[0], expectedResult);
 
     whitelistRule = 'example.org#@#script:inject(abort-on-property-read.js, some.prop)';
-    expectedResult = 'example.org#@%#//scriptlet("ubo-abort-on-property-read.js", "some.prop")';
+    expectedResult = 'example.org#@%#//scriptlet(\'ubo-abort-on-property-read.js\', \'some.prop\')';
     assert.strictEqual(convertScriptletToAdg(whitelistRule)[0], expectedResult);
 
     whitelistRule = 'example.org#@#+js(aopw, notDetected)';
-    expectedResult = 'example.org#@%#//scriptlet("ubo-aopw.js", "notDetected")';
+    expectedResult = 'example.org#@%#//scriptlet(\'ubo-aopw.js\', \'notDetected\')';
     assert.strictEqual(convertScriptletToAdg(whitelistRule)[0], expectedResult);
 });
 
 test('Test SCRIPTLET converting - ABP -> ADG', (assert) => {
     const rule = "example.org#$#hide-if-contains li.serp-item 'li.serp-item div.label'";
-    const exp = 'example.org#%#//scriptlet("abp-hide-if-contains", "li.serp-item", "li.serp-item div.label")';
+    const exp = 'example.org#%#//scriptlet(\'abp-hide-if-contains\', \'li.serp-item\', \'li.serp-item div.label\')';
     assert.strictEqual(convertScriptletToAdg(rule)[0], exp);
 });
 
 test('Test SCRIPTLET converting - multiple ABP -> ADG', (assert) => {
     const rule = 'example.org#$#hide-if-has-and-matches-style \'d[id^="_"]\' \'div > s\' \'display: none\'; hide-if-contains /.*/ .p \'a[href^="/ad__c?"]\'';
-    const exp1 = 'example.org#%#//scriptlet("abp-hide-if-has-and-matches-style", "d[id^=\\"_\\"]", "div > s", "display: none")';
-    const exp2 = 'example.org#%#//scriptlet("abp-hide-if-contains", "/.*/", ".p", "a[href^=\\"/ad__c?\\"]")';
+    const exp1 = 'example.org#%#//scriptlet(\'abp-hide-if-has-and-matches-style\', \'d[id^=\\"_\\"]\', \'div > s\', \'display: none\')';
+    const exp2 = 'example.org#%#//scriptlet(\'abp-hide-if-contains\', \'/.*/\', \'.p\', \'a[href^=\\"/ad__c?\\"]\')';
     const res = convertScriptletToAdg(rule);
 
     assert.equal(res.length, 2);
@@ -104,7 +108,7 @@ test('Test SCRIPTLET converting - multiple ABP -> ADG', (assert) => {
 
 test('Test SCRIPTLET converting - ADG -> UBO', (assert) => {
     // blocking rule
-    const rule = 'example.org#%#//scriptlet("prevent-setTimeout", "[native code]", "8000")';
+    const rule = 'example.org#%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')';
     const exp = 'example.org##+js(no-setTimeout-if, [native code], 8000)';
     assert.strictEqual(convertAdgScriptletToUbo(rule), exp);
     // scriptlet with no parameters
@@ -112,7 +116,7 @@ test('Test SCRIPTLET converting - ADG -> UBO', (assert) => {
     const expectedUboResult = 'example.com##+js(adfly-defuser)';
     assert.strictEqual(convertAdgScriptletToUbo(inputAdgRule), expectedUboResult);
     // whitelist rule
-    const whitelistRule = 'example.org#@%#//scriptlet("prevent-setTimeout", "[native code]", "8000")';
+    const whitelistRule = 'example.org#@%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')';
     const expectedResult = 'example.org#@#+js(no-setTimeout-if, [native code], 8000)';
     assert.strictEqual(convertAdgScriptletToUbo(whitelistRule), expectedResult);
 
