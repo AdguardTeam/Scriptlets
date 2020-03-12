@@ -3240,6 +3240,16 @@
       return substringAfter(redirectNamePart, marker);
     };
     /**
+     * Checks if the `rule` is AdGuard redirect rule.
+     * Discards comments and checks if the `rule` has 'redirect' modifier.
+     * @param {string} rule - rule text
+     */
+
+
+    var isAdgRedirectRule = function isAdgRedirectRule(rule) {
+      return !isComment(rule) && rule.indexOf(REDIRECT_RULE_TYPES.ADG.marker) > -1;
+    };
+    /**
      * Checks if the `rule` satisfies the `type`
      * @param {string} rule - rule text
      * @param {'ADG'|'UBO'|'ABP'} type - type of a redirect rule
@@ -3267,7 +3277,7 @@
     */
 
 
-    var isAdgRedirectRule = function isAdgRedirectRule(rule) {
+    var isValidAdgRedirectRule = function isValidAdgRedirectRule(rule) {
       return isRedirectRuleByType(rule, 'ADG');
     };
     /**
@@ -3277,7 +3287,7 @@
     */
 
 
-    var isUboRedirectRule = function isUboRedirectRule(rule) {
+    var isValidUboRedirectRule = function isValidUboRedirectRule(rule) {
       return isRedirectRuleByType(rule, 'UBO');
     };
     /**
@@ -3287,7 +3297,7 @@
     */
 
 
-    var isAbpRedirectRule = function isAbpRedirectRule(rule) {
+    var isValidAbpRedirectRule = function isValidAbpRedirectRule(rule) {
       return isRedirectRuleByType(rule, 'ABP');
     };
     /**
@@ -3298,7 +3308,7 @@
 
 
     var isValidRedirectRule = function isValidRedirectRule(rule) {
-      return isAdgRedirectRule(rule) || isUboRedirectRule(rule) || isAbpRedirectRule(rule);
+      return isValidAdgRedirectRule(rule) || isValidUboRedirectRule(rule) || isValidAbpRedirectRule(rule);
     };
     /**
      * Checks if the rule has specified content type before Adg -> Ubo conversion.
@@ -3341,10 +3351,11 @@
       getScriptletByName: getScriptletByName,
       isValidScriptletName: isValidScriptletName,
       REDIRECT_RULE_TYPES: REDIRECT_RULE_TYPES,
-      isValidRedirectRule: isValidRedirectRule,
       isAdgRedirectRule: isAdgRedirectRule,
-      isUboRedirectRule: isUboRedirectRule,
-      isAbpRedirectRule: isAbpRedirectRule,
+      isValidRedirectRule: isValidRedirectRule,
+      isValidAdgRedirectRule: isValidAdgRedirectRule,
+      isValidUboRedirectRule: isValidUboRedirectRule,
+      isValidAbpRedirectRule: isValidAbpRedirectRule,
       parseModifiers: parseModifiers,
       getRedirectName: getRedirectName,
       hasValidContentType: hasValidContentType
@@ -3627,11 +3638,11 @@
     var convertRedirectToAdg = function convertRedirectToAdg(rule) {
       var result;
 
-      if (validator.isUboRedirectRule(rule)) {
+      if (validator.isValidUboRedirectRule(rule)) {
         result = convertUboRedirectToAdg(rule);
-      } else if (validator.isAbpRedirectRule(rule)) {
+      } else if (validator.isValidAbpRedirectRule(rule)) {
         result = convertAbpRedirectToAdg(rule);
-      } else if (validator.isAdgRedirectRule(rule) || validator.isComment(rule)) {
+      } else if (validator.isValidAdgRedirectRule(rule) || validator.isComment(rule)) {
         result = rule;
       }
 
@@ -4364,10 +4375,11 @@
 
     var redirectsCjs = {
       getCode: getRedirectCode,
-      isValidRedirectRule: validator.isValidRedirectRule,
       isAdgRedirectRule: validator.isAdgRedirectRule,
-      isUboRedirectRule: validator.isUboRedirectRule,
-      isAbpRedirectRule: validator.isAbpRedirectRule,
+      isValidRedirectRule: validator.isValidRedirectRule,
+      isValidAdgRedirectRule: validator.isValidAdgRedirectRule,
+      isValidUboRedirectRule: validator.isValidUboRedirectRule,
+      isValidAbpRedirectRule: validator.isValidAbpRedirectRule,
       convertUboRedirectToAdg: convertUboRedirectToAdg,
       convertAbpRedirectToAdg: convertAbpRedirectToAdg,
       convertRedirectToAdg: convertRedirectToAdg,

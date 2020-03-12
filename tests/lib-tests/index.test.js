@@ -133,8 +133,9 @@ test('Test SCRIPTLET converting - ADG -> UBO', (assert) => {
 });
 
 test('Test redirect rule validation', (assert) => {
-    let inputRule = '||example.com/banner$image,redirect=32x32.png';
-    assert.strictEqual(validator.isValidRedirectRule(inputRule), true);
+    // redirect name is wrong, but this one only for checking isAdgRedirectRule()
+    let inputRule = '||example.com/banner$image,redirect=redirect.png';
+    assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);
 
     inputRule = '||example.com^$script,rewrite=abp-resource:blank-js';
     assert.strictEqual(validator.isValidRedirectRule(inputRule), true);
