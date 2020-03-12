@@ -62,6 +62,10 @@ test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
     let blockingRule = 'example.org##+js(setTimeout-defuser.js, [native code], 8000)';
     let expBlockRule = 'example.org#%#//scriptlet(\'ubo-setTimeout-defuser.js\', \'[native code]\', \'8000\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
+    // '$' as parameter
+    blockingRule = 'example.org##+js(abort-current-inline-script, $, popup)';
+    expBlockRule = 'example.org#%#//scriptlet(\'ubo-abort-current-inline-script.js\', \'$\', \'popup\')';
+    assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
     // double quotes in scriptlet parameter
     blockingRule = 'example.com#@#+js(remove-attr.js, href, a[data-st-area="Header-back"])';
     expBlockRule = 'example.com#@%#//scriptlet(\'ubo-remove-attr.js\', \'href\', \'a[data-st-area="Header-back"]\')';

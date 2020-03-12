@@ -82,6 +82,10 @@ export const convertUboScriptletToAdg = (rule) => {
             } else {
                 outputArg = arg;
             }
+            // for example: dramaserial.xyz##+js(abort-current-inline-script, $, popup)
+            if (arg === '$') {
+                outputArg = '$$';
+            }
             return outputArg;
         })
         .map((arg) => wrapInSingleQuotes(arg))

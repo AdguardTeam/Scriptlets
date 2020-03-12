@@ -3441,6 +3441,11 @@ var convertUboScriptletToAdg = function convertUboScriptletToAdg(rule) {
       outputArg = arg.indexOf('.js') > -1 ? "ubo-".concat(arg) : "ubo-".concat(arg, ".js");
     } else {
       outputArg = arg;
+    } // for example: dramaserial.xyz##+js(abort-current-inline-script, $, popup)
+
+
+    if (arg === '$') {
+      outputArg = '$$';
     }
 
     return outputArg;
