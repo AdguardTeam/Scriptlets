@@ -225,6 +225,18 @@ const getRedirectName = (rule, marker) => {
 
 
 /**
+ * Checks if the `rule` is AdGuard redirect rule.
+ * Discards comments and checks if the `rule` has 'redirect' modifier.
+ * @param {string} rule - rule text
+ */
+const isAdgRedirectRule = (rule) => {
+    return (
+        !isComment(rule)
+        && rule.indexOf(REDIRECT_RULE_TYPES.ADG.marker) > -1
+    );
+};
+
+/**
  * Checks if the `rule` satisfies the `type`
  * @param {string} rule - rule text
  * @param {'ADG'|'UBO'|'ABP'} type - type of a redirect rule
@@ -248,7 +260,7 @@ const isRedirectRuleByType = (rule, type) => {
 * @param {string} rule - rule text
 * @returns {boolean}
 */
-const isAdgRedirectRule = (rule) => {
+const isValidAdgRedirectRule = (rule) => {
     return isRedirectRuleByType(rule, 'ADG');
 };
 
@@ -257,7 +269,7 @@ const isAdgRedirectRule = (rule) => {
 * @param {string} rule - rule text
 * @returns {boolean}
 */
-const isUboRedirectRule = (rule) => {
+const isValidUboRedirectRule = (rule) => {
     return isRedirectRuleByType(rule, 'UBO');
 };
 
@@ -266,7 +278,7 @@ const isUboRedirectRule = (rule) => {
 * @param {string} rule - rule text
 * @returns {boolean}
 */
-const isAbpRedirectRule = (rule) => {
+const isValidAbpRedirectRule = (rule) => {
     return isRedirectRuleByType(rule, 'ABP');
 };
 
@@ -276,9 +288,9 @@ const isAbpRedirectRule = (rule) => {
  * @returns {boolean}
  */
 const isValidRedirectRule = (rule) => {
-    return (isAdgRedirectRule(rule)
-        || isUboRedirectRule(rule)
-        || isAbpRedirectRule(rule));
+    return (isValidAdgRedirectRule(rule)
+        || isValidUboRedirectRule(rule)
+        || isValidAbpRedirectRule(rule));
 };
 
 /**
@@ -319,10 +331,11 @@ const validator = {
     getScriptletByName,
     isValidScriptletName,
     REDIRECT_RULE_TYPES,
-    isValidRedirectRule,
     isAdgRedirectRule,
-    isUboRedirectRule,
-    isAbpRedirectRule,
+    isValidRedirectRule,
+    isValidAdgRedirectRule,
+    isValidUboRedirectRule,
+    isValidAbpRedirectRule,
     parseModifiers,
     getRedirectName,
     hasValidContentType,

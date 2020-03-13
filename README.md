@@ -217,26 +217,34 @@ scriptlets.convertAdgToUbo(rule);
 redirects.getCode(source);
 ```
 
+```javascript
+/**
+ * Checks if the `rule` is AdGuard redirect rule.
+ * Discards comments and checks if the `rule` has 'redirect' modifier.
+ * @param {string} rule - rule text
+ */
+redirects.isAdgRedirectRule(rule)
+```
 
 ```javascript
 /**
 * Validates any redirect rule
 *
-* @param {string} input - can be Adguard or Ubo or Abp redirect rule
+* @param {string} rule - can be Adguard or Ubo or Abp redirect rule
 * @returns {boolean}
 */
-redirects.isValidRedirectRule(input);
+redirects.isValidRedirectRule(rule);
 ```
 
 ```javascript
 /**
-* Checks if the `rule` is AdGuard / Ubo / Abp redirect resource rule
+* Specific methods to validate the `rule` by type: AdGuard / Ubo / Abp
 * @param {string} rule - rule text
 * @returns {boolean}
 */
-redirects.isAdgRedirectRule(rule);
-redirects.isUboRedirectRule(rule);
-redirects.isAbpRedirectRule(rule);
+redirects.isValidAdgRedirectRule(rule);
+redirects.isValidUboRedirectRule(rule);
+redirects.isValidAbpRedirectRule(rule);
 ```
 
 ```javascript

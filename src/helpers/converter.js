@@ -82,6 +82,10 @@ export const convertUboScriptletToAdg = (rule) => {
             } else {
                 outputArg = arg;
             }
+            // for example: dramaserial.xyz##+js(abort-current-inline-script, $, popup)
+            if (arg === '$') {
+                outputArg = '$$';
+            }
             return outputArg;
         })
         .map((arg) => wrapInSingleQuotes(arg))
@@ -273,11 +277,11 @@ export const convertAbpRedirectToAdg = (rule) => {
  */
 export const convertRedirectToAdg = (rule) => {
     let result;
-    if (validator.isUboRedirectRule(rule)) {
+    if (validator.isValidUboRedirectRule(rule)) {
         result = convertUboRedirectToAdg(rule);
-    } else if (validator.isAbpRedirectRule(rule)) {
+    } else if (validator.isValidAbpRedirectRule(rule)) {
         result = convertAbpRedirectToAdg(rule);
-    } else if (validator.isAdgRedirectRule(rule) || (validator.isComment(rule))) {
+    } else if (validator.isValidAdgRedirectRule(rule) || (validator.isComment(rule))) {
         result = rule;
     }
 
