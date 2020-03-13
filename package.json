@@ -1,6 +1,6 @@
 {
     "name": "scriptlets",
-    "version": "1.1.5",
+    "version": "1.1.6",
     "scripts": {
         "watch": "rollup -c -w",
         "build": "rollup -c && babel-node redirects.build.js",
