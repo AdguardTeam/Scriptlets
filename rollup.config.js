@@ -93,6 +93,40 @@ const cjsConfig = {
     ],
 };
 
+const esmConfig = {
+    input: {
+        scriptlets: 'src/scriptlets/scriptletsWrapper.js',
+    },
+    output: {
+        dir: 'dist/esm',
+        entryFileNames: '[name].esm.js',
+        format: 'esm',
+        banner,
+        footer,
+    },
+    plugins: [
+        resolve(),
+        commonjs({
+            include: 'node_modules/**',
+        }),
+        json({
+            preferConst: true,
+            indent: '  ',
+            compact: true,
+            namedExports: true,
+        }),
+        babel({
+            exclude: 'node_modules/**',
+            runtimeHelpers: true,
+        }),
+        copy({
+            targets: [
+                { src: 'types/scriptlets.d.ts', dest: 'dist/esm/' },
+            ],
+        }),
+    ],
+};
+
 const testConfig = {
     input: {
         tests: 'tests/index.test.js',
@@ -228,7 +262,7 @@ if (isLibTest) {
 } else if (isTest) {
     resultConfig = [mainConfig, testConfig];
 } else {
-    resultConfig = [mainConfig, cjsConfig, tmpRedirectsConfig];
+    resultConfig = [mainConfig, cjsConfig, esmConfig, tmpRedirectsConfig];
 }
 
 module.exports = resultConfig;

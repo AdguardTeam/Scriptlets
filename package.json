@@ -1,6 +1,6 @@
 {
     "name": "scriptlets",
-    "version": "1.1.6",
+    "version": "1.1.7",
     "scripts": {
         "watch": "rollup -c -w",
         "build": "rollup -c && babel-node redirects.build.js",
@@ -16,14 +16,10 @@
         "wiki:check-updates": "node ./scripts/check-sources-updates.js",
         "wiki:update": "yarn wiki:check-updates && node ./scripts/build-compatibility-table.js"
     },
-    "husky": {
-        "hooks": {
-            "pre-commit": "yarn run lint"
-        }
-    },
     "author": "devteam@adguard.com",
     "license": "LGPL-3.0",
     "main": "dist/cjs/scriptletsCjs.js",
+    "types": "dist/esm/scriptlets.d.ts",
     "devDependencies": {
         "@babel/cli": "^7.7.0",
         "@babel/core": "^7.2.2",
