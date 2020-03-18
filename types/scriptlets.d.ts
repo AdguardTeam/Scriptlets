@@ -1,3 +1,5 @@
+import {IConfiguration} from "scriptlets";
+
 declare module 'scriptlets' {
 
     /**
@@ -35,22 +37,19 @@ declare module 'scriptlets' {
         ruleText: string;
     }
 
-    class Scriptlets {
+    /**
+     * Returns scriptlet code by param
+     *
+     * @param source
+     * @returns js code string
+     */
+    function invoke(source: IConfiguration): string | null;
 
-        /**
-         * Returns scriptlet code by param
-         *
-         * @param source
-         * @returns js code string
-         */
-        public static invoke(source: IConfiguration): string | null;
-
-        /**
-         * Converts scriptlet rule to AdGuard one
-         *
-         * @param ruleText
-         * @returns array of AdGuard scriptlet rules
-         */
-        public static convertScriptletToAdg(ruleText: string): [string];
-    }
+    /**
+     * Converts scriptlet rule to AdGuard one
+     *
+     * @param ruleText
+     * @returns array of AdGuard scriptlet rules
+     */
+    function convertScriptletToAdg(ruleText: string): string[];
 }
