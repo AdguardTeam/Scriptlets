@@ -1,5 +1,3 @@
-import {IConfiguration} from "scriptlets";
-
 declare module 'scriptlets' {
 
     /**
@@ -14,7 +12,7 @@ declare module 'scriptlets' {
         /**
          * Arguments for scriptlet function
          */
-        args: [string];
+        args: string[];
 
         /**
          * {'extension'|'corelibs'} engine Defines the final form of scriptlet string presentation
