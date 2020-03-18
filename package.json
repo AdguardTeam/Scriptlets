@@ -16,6 +16,11 @@
         "wiki:check-updates": "node ./scripts/check-sources-updates.js",
         "wiki:update": "yarn wiki:check-updates && node ./scripts/build-compatibility-table.js"
     },
+    "husky": {
+        "hooks": {
+            "pre-commit": "yarn run lint"
+        }
+    },
     "author": "devteam@adguard.com",
     "license": "LGPL-3.0",
     "main": "dist/cjs/scriptletsCjs.js",
