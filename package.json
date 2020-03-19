@@ -58,7 +58,7 @@
         "js-yaml": "^3.13.1"
     },
     "files": [
-        "./dist/"
+        "dist/"
     ],
     "browserslist": [
         "chrome 55",
