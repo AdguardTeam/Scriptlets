@@ -28,6 +28,7 @@
 | prevent-setTimeout | no-setTimeout-if.js (nostif.js) |  |
 | prevent-window-open |  |  |
 | remove-attr | remove-attr.js (ra.js) |  |
+| remove-class | remove-class.js (rc.js) |  |
 | remove-cookie | cookie-remover.js |  |
 | set-constant | set-constant.js (set.js) |  |
 | set-popads-dummy |  |  |

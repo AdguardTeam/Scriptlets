@@ -54,6 +54,8 @@ import { hit, observeDOMChanges } from '../helpers';
  */
 /* eslint-enable max-len */
 
+// TODO: add related UBO scriptlet link after they add description to their doc
+
 export function removeClass(source, classNames, selector) {
     if (!classNames) { return; }
     classNames = classNames.split(/\s*\|\s*/);
