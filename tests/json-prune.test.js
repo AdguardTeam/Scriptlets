@@ -79,8 +79,6 @@ test('removes propsToRemove if single requiredInitialProps is specified', (asser
     assert.deepEqual(JSON.parse('{"z":1, "y":2}'), { z: 1 }, 'should remove propsToRemove if equals to requiredInitialProps');
     runScriptlet('json-prune', 'y', 'z');
     assert.deepEqual(JSON.parse('{"z":1, "y":2}'), { z: 1 }, 'should remove propsToRemove if single requiredInitialProps is specified');
-    runScriptlet('json-prune', 'enabled', 'test');
-    assert.deepEqual(JSON.parse('{"enabled":true, "strict":false, "test":"adnet"}'), { strict: false, test: 'adnet' }, 'should remove propsToRemove if single requiredInitialProps is specified');
     runScriptlet('json-prune', 'y', 'z y');
     assert.deepEqual(JSON.parse('{"z":1, "y":2}'), { z: 1 }, 'should remove propsToRemove if multiple requiredInitialProps are specified');
     runScriptlet('json-prune', 'z y', 'z y');
@@ -88,8 +86,8 @@ test('removes propsToRemove if single requiredInitialProps is specified', (asser
 });
 
 test('removes nested propsToRemove if single requiredInitialProps is specified', (assert) => {
-    runScriptlet('json-prune', 'x1.abc', 'x1.abc');
-    assert.deepEqual(JSON.parse('{"x1": {"abc":1}}'), { x1: {} }, 'should remove propsToRemove if it equals to nested requiredInitialProps');
+    runScriptlet('json-prune', 'x.a', 'x.a');
+    assert.deepEqual(JSON.parse('{"x": {"a":1}}'), { x: {} }, 'should remove propsToRemove if it equals to nested requiredInitialProps');
     runScriptlet('json-prune', 'x.b', 'x.a');
     assert.deepEqual(JSON.parse('{"x": {"a":1, "b":2}}'), { x: { a: 1 } }, 'should remove propsToRemove if single nested requiredInitialProps is specified');
     runScriptlet('json-prune', 'x.b', 'x.a x.b');

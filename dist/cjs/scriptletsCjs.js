@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.1.9
+ * Version 1.1.8
  */
 
 /**
@@ -2954,7 +2954,7 @@ function jsonPrune(source, propsToRemove, requiredInitialProps) {
     for (var i = 0; i < needlePaths.length; i += 1) {
       var needlePath = needlePaths[i];
       var details = getPropertyInChain(root, needlePath, false);
-      var nestedPropName = needlePath.split('.').pop();
+      var nestedPropName = needlePath.split('').pop();
 
       if (details && details.base[nestedPropName] === undefined) {
         return false;

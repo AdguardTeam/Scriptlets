@@ -99,10 +99,6 @@
             "ubo": "remove-attr.js (ra.js)"
         },
         {
-            "adg": "remove-class",
-            "ubo": "remove-class.js (rc.js)"
-        },
-        {
             "adg": "remove-cookie",
             "ubo": "cookie-remover.js"
         },
