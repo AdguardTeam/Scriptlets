@@ -58,6 +58,11 @@ const mainConfig = {
             exclude: 'node_modules/**',
             runtimeHelpers: true,
         }),
+        copy({
+            targets: [
+                { src: 'types/scriptlets.d.ts', dest: 'dist/' },
+            ],
+        }),
     ],
 };
 

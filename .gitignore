@@ -3,7 +3,6 @@
 .idea/
 .vscode/
 *.iml
-dist/
 yarn-error.log
 node_modules
 private
