@@ -64,11 +64,10 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps) {
         if (!root) {
             return false;
         }
-
         for (let i = 0; i < needlePaths.length; i += 1) {
             const needlePath = needlePaths[i];
             const details = getPropertyInChain(root, needlePath, false);
-            const nestedPropName = needlePath.split('').pop();
+            const nestedPropName = needlePath.split('.').pop();
             if (details && details.base[nestedPropName] === undefined) {
                 return false;
             }
