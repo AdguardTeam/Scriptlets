@@ -98,6 +98,34 @@ const cjsConfig = {
     ],
 };
 
+const redirectsBuild = {
+    input: 'src/redirects/redirects.js',
+    output: {
+        dir: 'dist',
+        name: 'Redirects',
+        format: 'iife',
+        strict: false,
+        sourcemap: true,
+        banner,
+    },
+    plugins: [
+        resolve(),
+        commonjs({
+            include: 'node_modules/**',
+        }),
+        json({
+            preferConst: true,
+            indent: '  ',
+            compact: true,
+            namedExports: true,
+        }),
+        babel({
+            exclude: 'node_modules/**',
+            runtimeHelpers: true,
+        }),
+    ],
+};
+
 const testConfig = {
     input: {
         tests: 'tests/index.test.js',
@@ -233,7 +261,7 @@ if (isLibTest) {
 } else if (isTest) {
     resultConfig = [mainConfig, testConfig];
 } else {
-    resultConfig = [mainConfig, cjsConfig, tmpRedirectsConfig];
+    resultConfig = [mainConfig, redirectsBuild, cjsConfig, tmpRedirectsConfig];
 }
 
 module.exports = resultConfig;
