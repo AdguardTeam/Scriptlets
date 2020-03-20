@@ -1,8 +1,11 @@
 
+
 /**
  * AdGuard Scriptlets
  * Version 1.1.9
  */
+
+let scriptlets;
 
 /**
  * Generate random six symbols id
@@ -4444,13 +4447,3 @@ scriptlets = function () {
  // eslint-disable-line no-undef
 
 module.exports = scriptlets;
-
-/**
- * -------------------------------------------
- * |                                         |
- * |  If you want to add your own scriptlet  |
- * |  please put your code below             |
- * |                                         |
- * -------------------------------------------
- */
-//# sourceMappingURL=scriptletsCjs.js.map

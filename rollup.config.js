@@ -15,6 +15,11 @@ const banner = `
  */
 `;
 
+const bannerDefineScriptletsVar = `
+${banner}
+let scriptlets;
+`;
+
 const footer = `
 /**
  * -------------------------------------------
@@ -90,9 +95,40 @@ const cjsConfig = {
             exclude: 'node_modules/**',
             runtimeHelpers: true,
         }),
+    ],
+};
+
+const tsConfig = {
+    input: {
+        scriptletsCjs: 'src/scriptlets/scriptlets.js',
+    },
+    output: {
+        dir: 'dist/ts',
+        entryFileNames: '[name].js',
+        format: 'cjs',
+        exports: 'named',
+        strict: false,
+        sourcemap: false,
+        banner: bannerDefineScriptletsVar,
+    },
+    plugins: [
+        resolve(),
+        commonjs({
+            include: 'node_modules/**',
+        }),
+        json({
+            preferConst: true,
+            indent: '  ',
+            compact: true,
+            namedExports: true,
+        }),
+        babel({
+            exclude: 'node_modules/**',
+            runtimeHelpers: true,
+        }),
         copy({
             targets: [
-                { src: 'types/scriptlets.d.ts', dest: 'dist/cjs/' },
+                { src: 'types/scriptlets.d.ts', dest: 'dist/ts/' },
             ],
         }),
     ],
@@ -233,7 +269,7 @@ if (isLibTest) {
 } else if (isTest) {
     resultConfig = [mainConfig, testConfig];
 } else {
-    resultConfig = [mainConfig, cjsConfig, tmpRedirectsConfig];
+    resultConfig = [mainConfig, cjsConfig, tsConfig, tmpRedirectsConfig];
 }
 
 module.exports = resultConfig;
