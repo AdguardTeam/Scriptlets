@@ -2577,6 +2577,7 @@ removeAttr.injections = [hit, observeDOMChanges];
  */
 
 /* eslint-enable max-len */
+// TODO: add related UBO scriptlet link after they add description to their doc
 
 function removeClass(source, classNames, selector) {
   if (!classNames) {
@@ -2957,7 +2958,7 @@ function jsonPrune(source, propsToRemove, requiredInitialProps) {
     for (var i = 0; i < needlePaths.length; i += 1) {
       var needlePath = needlePaths[i];
       var details = getPropertyInChain(root, needlePath, false);
-      var nestedPropName = needlePath.split('').pop();
+      var nestedPropName = needlePath.split('.').pop();
 
       if (details && details.base[nestedPropName] === undefined) {
         return false;
