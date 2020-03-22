@@ -1,8 +1,11 @@
 
+
 /**
  * AdGuard Scriptlets
  * Version 1.1.10
  */
+
+let scriptlets;
 
 /**
  * Generate random six symbols id
