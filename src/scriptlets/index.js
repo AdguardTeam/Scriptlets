@@ -47,14 +47,13 @@ function getScriptletCode(source) {
 }
 
 /**
- * Global scriptlet variable
+ * Scriptlets variable
  *
  * @returns {Object} object with methods:
  * `invoke` method receives one argument with `Source` type
  * `validate` method receives one argument with `String` type
  */
-// eslint-disable-next-line no-undef
-scriptlets = (() => ({
+const scriptletsObject = (() => ({
     invoke: getScriptletCode,
     isValidScriptletName: validator.isValidScriptletName,
     isValidScriptletRule,
@@ -68,4 +67,4 @@ scriptlets = (() => ({
     redirects: redirectsCjs,
 }))();
 
-export default scriptlets; // eslint-disable-line no-undef
+export default scriptletsObject;

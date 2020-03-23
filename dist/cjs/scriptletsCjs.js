@@ -1,11 +1,8 @@
 
-
 /**
  * AdGuard Scriptlets
  * Version 1.1.10
  */
-
-let scriptlets;
 
 /**
  * Generate random six symbols id
@@ -4421,16 +4418,15 @@ function getScriptletCode(source) {
   return result;
 }
 /**
- * Global scriptlet variable
+ * Scriptlets variable
  *
  * @returns {Object} object with methods:
  * `invoke` method receives one argument with `Source` type
  * `validate` method receives one argument with `String` type
  */
-// eslint-disable-next-line no-undef
 
 
-scriptlets = function () {
+var scriptletsObject = function () {
   return {
     invoke: getScriptletCode,
     isValidScriptletName: validator.isValidScriptletName,
@@ -4445,9 +4441,12 @@ scriptlets = function () {
     redirects: redirectsCjs
   };
 }();
- // eslint-disable-line no-undef
 
-module.exports = scriptlets;
+/**
+ * Add module exports to be used as node package
+ */
+
+module.exports = scriptletsObject;
 
 /**
  * -------------------------------------------

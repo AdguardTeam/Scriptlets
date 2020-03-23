@@ -15,11 +15,6 @@ const banner = `
  */
 `;
 
-const bannerDefineScriptletsVar = `
-${banner}
-let scriptlets;
-`;
-
 const footer = `
 /**
  * -------------------------------------------
@@ -68,7 +63,7 @@ const mainConfig = {
 
 const cjsConfig = {
     input: {
-        scriptletsCjs: 'src/scriptlets/scriptlets.js',
+        scriptletsCjs: 'src/scriptlets/scriptletsCjsWrapper.js',
     },
     output: {
         dir: 'dist/cjs',
@@ -77,7 +72,7 @@ const cjsConfig = {
         exports: 'named',
         strict: false,
         sourcemap: true,
-        banner: bannerDefineScriptletsVar,
+        banner,
         footer,
     },
     plugins: [
