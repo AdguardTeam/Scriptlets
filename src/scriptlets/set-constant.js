@@ -16,7 +16,7 @@ import { hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("set-constant", <property>, <value>)
+ * example.org#%#//scriptlet('set-constant', <property>, <value>)
  * ```
  *
  * **Parameters**
@@ -37,10 +37,10 @@ import { hit } from '../helpers';
  * **Examples**
  * ```
  * ! window.firstConst === false // this comparision will return true
- * example.org#%#//scriptlet("set-constant", "firstConst", "false")
+ * example.org#%#//scriptlet('set-constant', 'firstConst', 'false')
  *
  * ! window.secondConst() === true // call to the secondConst will return true
- * example.org#%#//scriptlet("set-constant", "secondConst", "trueFunc")
+ * example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc')
  * ```
  */
 /* eslint-enable max-len */

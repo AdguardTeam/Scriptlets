@@ -12,7 +12,7 @@ import { noop, hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-fab-3.2.0")
+ * example.org#%#//scriptlet('prevent-fab-3.2.0')
  * ```
  */
 export function preventFab(source) {

@@ -35,7 +35,7 @@ import { hit } from '../helpers';
  *
  * 1. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.
  *     ```bash
- *     example.org#%#//scriptlet("prevent-setTimeout", "/\.test/")
+ *     example.org#%#//scriptlet('prevent-setTimeout', '/\.test/')
  *     ```
  *
  *     For instance, the following call will be prevented:
@@ -47,7 +47,7 @@ import { hit } from '../helpers';
  *
  * 2. Prevents `setTimeout` calls if the callback does not contain `value`.
  *     ```
- *     example.org#%#//scriptlet("prevent-setTimeout", "!value")
+ *     example.org#%#//scriptlet('prevent-setTimeout', '!value')
  *     ```
  *
  *     For instance, only the first of the following calls will be prevented:
@@ -65,7 +65,7 @@ import { hit } from '../helpers';
  *
  * 3. Prevents `setTimeout` calls if the callback contains `value` and the delay is not set to `300`.
  *     ```
- *     example.org#%#//scriptlet("prevent-setTimeout", "value", "!300")
+ *     example.org#%#//scriptlet('prevent-setTimeout', 'value', '!300')
  *     ```
  *
  *     For instance, only the first of the following calls will not be prevented:
@@ -83,7 +83,7 @@ import { hit } from '../helpers';
  *
  * 4. Prevents `setTimeout` calls if the callback does not contain `value` and the delay is not set to `300`.
  *     ```
- *     example.org#%#//scriptlet("prevent-setTimeout", "!value", "!300")
+ *     example.org#%#//scriptlet('prevent-setTimeout', '!value', '!300')
  *     ```
  *
  *     For instance, only the second of the following calls will be prevented:

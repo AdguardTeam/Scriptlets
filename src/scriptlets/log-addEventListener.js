@@ -12,7 +12,7 @@ import { hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("log-addEventListener")
+ * example.org#%#//scriptlet('log-addEventListener')
  * ```
  */
 export function logAddEventListener(source) {

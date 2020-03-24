@@ -18,7 +18,7 @@ import { createOnErrorHandler, hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("abort-on-property-write", <property>)
+ * example.org#%#//scriptlet('abort-on-property-write', <property>)
  * ```
  *
  * **Parameters**

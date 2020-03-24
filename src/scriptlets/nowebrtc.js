@@ -13,7 +13,7 @@ import { hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("nowebrtc")
+ * example.org#%#//scriptlet('nowebrtc')
  * ```
  */
 /* eslint-enable max-len */

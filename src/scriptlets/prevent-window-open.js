@@ -13,7 +13,7 @@ import { hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
+ * example.org#%#//scriptlet('prevent-window-open'[, <match>[, <search>]])
  * ```
  *
  * **Parameters**
@@ -24,22 +24,22 @@ import { hit } from '../helpers';
  *
  * 1. Prevent all `window.open` calls:
  * ```
- *     example.org#%#//scriptlet("prevent-window-open")
+ *     example.org#%#//scriptlet('prevent-window-open')
  * ```
  *
  * 2. Prevent `window.open` for all URLs containing `example`:
  * ```
- *     example.org#%#//scriptlet("prevent-window-open", "1", "example")
+ *     example.org#%#//scriptlet('prevent-window-open', '1', 'example')
  * ```
  *
  * 3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
  * ```
- *     example.org#%#//scriptlet("prevent-window-open", "1", "/example\./")
+ *     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
  * ```
  *
  * 4. Prevent `window.open` for all URLs **NOT** containing `example`:
  * ```
- *     example.org#%#//scriptlet("prevent-window-open", "0", "example")
+ *     example.org#%#//scriptlet('prevent-window-open', '0', 'example')
  * ```
  */
 /* eslint-enable max-len */

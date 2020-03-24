@@ -22,7 +22,7 @@ import { hit, createOnErrorHandler } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>])
+ * example.org#%#//scriptlet('abort-current-inline-script', <property> [, <search>])
  * ```
  *
  * **Parameters**
@@ -32,12 +32,12 @@ import { hit, createOnErrorHandler } from '../helpers';
  * **Examples**
  * 1. Aborts all inline scripts trying to access `window.alert`
  *     ```
- *     example.org#%#//scriptlet("abort-current-inline-script", "alert")
+ *     example.org#%#//scriptlet('abort-current-inline-script', 'alert')
  *     ```
  *
  * 2. Aborts inline scripts which are trying to access `window.alert` and contain `Hello, world`.
  *     ```
- *     example.org#%#//scriptlet("abort-current-inline-script", "alert", "Hello, world")
+ *     example.org#%#//scriptlet('abort-current-inline-script', 'alert', 'Hello, world')
  *     ```
  *
  *     For instance, the following script will be aborted
@@ -47,7 +47,7 @@ import { hit, createOnErrorHandler } from '../helpers';
  *
  * 3. Aborts inline scripts which are trying to access `window.alert` and match this regexp: `/Hello.+world/`.
  *     ```
- *     example.org#%#//scriptlet("abort-current-inline-script", "alert", "/Hello.+world/")
+ *     example.org#%#//scriptlet('abort-current-inline-script', 'alert', '/Hello.+world/')
  *     ```
  *
  *     For instance, the following scripts will be aborted:
@@ -101,32 +101,40 @@ export function abortCurrentInlineScript(source, property, search = null) {
     const setChainPropAccess = (owner, property) => {
         const chainInfo = getPropertyInChain(owner, property);
         let { base } = chainInfo;
-        const { prop, chain } = chainInfo;
-        if (chain) {
-            const setter = (a) => {
-                base = a;
-                if (a instanceof Object) {
-                    setChainPropAccess(a, chain);
-                }
-            };
-            Object.defineProperty(owner, prop, {
-                get: () => base,
-                set: setter,
-            });
-            return;
-        }
+        if (base !== null) {
+            const { prop, chain } = chainInfo;
+            if (chain) {
+                const setter = (a) => {
+                    base = a;
+                    if (a instanceof Object) {
+                        setChainPropAccess(a, chain);
+                    }
+                };
+                Object.defineProperty(owner, prop, {
+                    get: () => base,
+                    set: setter,
+                });
+                return;
+            }
 
-        let currentValue = base[prop];
-        setPropertyAccess(base, prop, {
-            set: (value) => {
-                abort();
-                currentValue = value;
-            },
-            get: () => {
-                abort();
-                return currentValue;
-            },
-        });
+            let currentValue;
+            const descriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
+            if (descriptor instanceof Object === false
+            || descriptor.get instanceof Function === false) {
+                currentValue = owner[prop];
+            }
+
+            setPropertyAccess(base, prop, {
+                set: (value) => {
+                    abort();
+                    currentValue = value;
+                },
+                get: () => {
+                    abort();
+                    return currentValue;
+                },
+            });
+        }
     };
 
     setChainPropAccess(window, property);

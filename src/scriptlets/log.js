@@ -6,7 +6,7 @@
  * This scriptlet can be helpful for debugging and troubleshooting other scriptlets.
  * **Example**
  * ```
- * example.org#%#//scriptlet("log", "arg1", "arg2")
+ * example.org#%#//scriptlet('log', 'arg1', 'arg2')
  * ```
  */
 export function log(...args) {

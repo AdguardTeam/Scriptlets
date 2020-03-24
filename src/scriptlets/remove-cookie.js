@@ -13,7 +13,7 @@ import { hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("remove-cookie"[, match])
+ * example.org#%#//scriptlet('remove-cookie'[, match])
  * ```
  *
  * **Parameters**
@@ -22,12 +22,12 @@ import { hit } from '../helpers';
  * **Examples**
  * 1. Removes all cookies:
  * ```
- *     example.org#%#//scriptlet("remove-cookie")
+ *     example.org#%#//scriptlet('remove-cookie')
  * ```
  *
  * 2. Removes cookies which name contains `example` string.
  * ```
- *     example.org#%#//scriptlet("remove-cookie", "example")
+ *     example.org#%#//scriptlet('remove-cookie', 'example')
  * ```
  *
  *     For instance this cookie will be removed

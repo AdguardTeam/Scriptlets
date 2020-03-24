@@ -13,7 +13,7 @@ import { hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("adjust-setInterval"[, match [, interval[, boost]]])
+ * example.org#%#//scriptlet('adjust-setInterval'[, match [, interval[, boost]]])
  * ```
  *
  * - `match` - optional, string/regular expression, matching in stringified callback function
@@ -23,22 +23,22 @@ import { hit } from '../helpers';
  * **Examples**
  * 1. Adjust all setInterval() x20 times where interval equal 1000ms:
  *     ```
- *     example.org#%#//scriptlet("adjust-setInterval")
+ *     example.org#%#//scriptlet('adjust-setInterval')
  *     ```
  *
  * 2. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 1000ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setInterval", "example")
+ *     example.org#%#//scriptlet('adjust-setInterval', 'example')
  *     ```
  *
  * 3. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 400ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setInterval", "example", "400")
+ *     example.org#%#//scriptlet('adjust-setInterval', 'example', '400')
  *     ```
  *
  * 4. Slow down setInterval() x2 times where callback matched with `example` and interval equal 400ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setInterval", "example", "400", "2")
+ *     example.org#%#//scriptlet('adjust-setInterval', 'example', '400', '2')
  *     ```
  */
 /* eslint-enable max-len */

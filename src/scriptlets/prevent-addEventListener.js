@@ -13,7 +13,7 @@ import { hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-addEventListener"[, eventSearch[, functionSearch]])
+ * example.org#%#//scriptlet('prevent-addEventListener'[, eventSearch[, functionSearch]])
  * ```
  *
  * **Parameters**
@@ -23,12 +23,12 @@ import { hit } from '../helpers';
  * **Examples**
  * 1. Prevent all `click` listeners:
  * ```
- *     example.org#%#//scriptlet("prevent-addEventListener", "click")
+ *     example.org#%#//scriptlet('prevent-addEventListener', 'click')
  * ```
 
 2. Prevent 'click' listeners with the callback body containing `searchString`.
  * ```
- *     example.org#%#//scriptlet("prevent-addEventListener", "click", "searchString")
+ *     example.org#%#//scriptlet('prevent-addEventListener', 'click', 'searchString')
  * ```
  *
  *     For instance, this listener will not be called:

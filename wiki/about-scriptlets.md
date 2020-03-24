@@ -44,7 +44,7 @@ https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f1
 
 **Syntax**
 ```
-example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>])
+example.org#%#//scriptlet('abort-current-inline-script', <property> [, <search>])
 ```
 
 **Parameters**
@@ -54,12 +54,12 @@ example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>]
 **Examples**
 1. Aborts all inline scripts trying to access `window.alert`
     ```
-    example.org#%#//scriptlet("abort-current-inline-script", "alert")
+    example.org#%#//scriptlet('abort-current-inline-script', 'alert')
     ```
 
 2. Aborts inline scripts which are trying to access `window.alert` and contain `Hello, world`.
     ```
-    example.org#%#//scriptlet("abort-current-inline-script", "alert", "Hello, world")
+    example.org#%#//scriptlet('abort-current-inline-script', 'alert', 'Hello, world')
     ```
 
     For instance, the following script will be aborted
@@ -69,7 +69,7 @@ example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>]
 
 3. Aborts inline scripts which are trying to access `window.alert` and match this regexp: `/Hello.+world/`.
     ```
-    example.org#%#//scriptlet("abort-current-inline-script", "alert", "/Hello.+world/")
+    example.org#%#//scriptlet('abort-current-inline-script', 'alert', '/Hello.+world/')
     ```
 
     For instance, the following scripts will be aborted:
@@ -99,7 +99,7 @@ https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f1
 
 **Syntax**
 ```
-example.org#%#//scriptlet("abort-on-property-read", <property>)
+example.org#%#//scriptlet('abort-on-property-read', <property>)
 ```
 
 **Parameters**
@@ -108,10 +108,10 @@ example.org#%#//scriptlet("abort-on-property-read", <property>)
 **Examples**
 ```
 ! Aborts script when it tries to access `window.alert`
-example.org#%#//scriptlet("abort-on-property-read", "alert")
+example.org#%#//scriptlet('abort-on-property-read', 'alert')
 
 ! Aborts script when it tries to access `navigator.language`
-example.org#%#//scriptlet("abort-on-property-read", "navigator.language")
+example.org#%#//scriptlet('abort-on-property-read', 'navigator.language')
 ```
 [Scriptlet source](../src/scriptlets/abort-on-property-read.js)
 * * *
@@ -128,7 +128,7 @@ https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f1
 
 **Syntax**
 ```
-example.org#%#//scriptlet("abort-on-property-write", <property>)
+example.org#%#//scriptlet('abort-on-property-write', <property>)
 ```
 
 **Parameters**
@@ -152,7 +152,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-setinterval-booste
 
 **Syntax**
 ```
-example.org#%#//scriptlet("adjust-setInterval"[, match [, interval[, boost]]])
+example.org#%#//scriptlet('adjust-setInterval'[, match [, interval[, boost]]])
 ```
 
 - `match` - optional, string/regular expression, matching in stringified callback function
@@ -162,22 +162,22 @@ example.org#%#//scriptlet("adjust-setInterval"[, match [, interval[, boost]]])
 **Examples**
 1. Adjust all setInterval() x20 times where interval equal 1000ms:
     ```
-    example.org#%#//scriptlet("adjust-setInterval")
+    example.org#%#//scriptlet('adjust-setInterval')
     ```
 
 2. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 1000ms
     ```
-    example.org#%#//scriptlet("adjust-setInterval", "example")
+    example.org#%#//scriptlet('adjust-setInterval', 'example')
     ```
 
 3. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 400ms
     ```
-    example.org#%#//scriptlet("adjust-setInterval", "example", "400")
+    example.org#%#//scriptlet('adjust-setInterval', 'example', '400')
     ```
 
 4. Slow down setInterval() x2 times where callback matched with `example` and interval equal 400ms
     ```
-    example.org#%#//scriptlet("adjust-setInterval", "example", "400", "2")
+    example.org#%#//scriptlet('adjust-setInterval', 'example', '400', '2')
     ```
 [Scriptlet source](../src/scriptlets/adjust-setInterval.js)
 * * *
@@ -191,7 +191,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-settimeout-booster
 
 **Syntax**
 ```
-example.org#%#//scriptlet("adjust-setTimeout"[, match [, timeout[, boost]]])
+example.org#%#//scriptlet('adjust-setTimeout'[, match [, timeout[, boost]]])
 ```
 
 - `match` - optional, string/regular expression, matching in stringified callback function
@@ -201,22 +201,22 @@ example.org#%#//scriptlet("adjust-setTimeout"[, match [, timeout[, boost]]])
 **Examples**
 1. Adjust all setTimeout() x20 times where interval equal 1000ms:
     ```
-    example.org#%#//scriptlet("adjust-setTimeout")
+    example.org#%#//scriptlet('adjust-setTimeout')
     ```
 
 2. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 1000ms
     ```
-    example.org#%#//scriptlet("adjust-setTimeout", "example")
+    example.org#%#//scriptlet('adjust-setTimeout', 'example')
     ```
 
 3. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 400ms
     ```
-    example.org#%#//scriptlet("adjust-setTimeout", "example", "400")
+    example.org#%#//scriptlet('adjust-setTimeout', 'example', '400')
     ```
 
 4. Slow down setTimeout() x2 times where callback matched with `example` and interval equal 400ms
     ```
-    example.org#%#//scriptlet("adjust-setTimeout", "example", "400", "2")
+    example.org#%#//scriptlet('adjust-setTimeout', 'example', '400', '2')
     ```
 [Scriptlet source](../src/scriptlets/adjust-setTimeout.js)
 * * *
@@ -230,7 +230,7 @@ This scriptlet is basically the same as [abort-current-inline-script](#abort-cur
 **Syntax**
 ```
 ! Aborts script when it tries to access `window.alert`
-example.org#%#//scriptlet("debug-current-inline-script", "alert")
+example.org#%#//scriptlet('debug-current-inline-script', 'alert')
 ```
 [Scriptlet source](../src/scriptlets/debug-current-inline-script.js)
 * * *
@@ -244,7 +244,7 @@ This scriptlet is basically the same as [abort-on-property-read](#abort-on-prope
 **Syntax**
 ```
 ! Aborts script when it tries to access `window.alert`
-example.org#%#//scriptlet("debug-on-property-read", "alert")
+example.org#%#//scriptlet('debug-on-property-read', 'alert')
 ```
 [Scriptlet source](../src/scriptlets/debug-on-property-read.js)
 * * *
@@ -258,7 +258,7 @@ This scriptlet is basically the same as [abort-on-property-write](#abort-on-prop
 **Syntax**
 ```
 ! Aborts script when it tries to write in property `window.test`
-example.org#%#//scriptlet("debug-on-property-write", "test")
+example.org#%#//scriptlet('debug-on-property-write', 'test')
 ```
 [Scriptlet source](../src/scriptlets/debug-on-property-write.js)
 * * *
@@ -276,14 +276,14 @@ https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f1
 
 **Syntax**
 ```
-example.org#%#//scriptlet("dir-string"[, times])
+example.org#%#//scriptlet('dir-string'[, times])
 ```
 - `times` - optional, the number of times to call the `toString` method of the argument to `console.dir`
 
 **Example**
 ```
 ! Run 2 times
-example.org#%#//scriptlet("dir-string", "2")
+example.org#%#//scriptlet('dir-string', '2')
 ```
 [Scriptlet source](../src/scriptlets/dir-string.js)
 * * *
@@ -297,7 +297,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#disable-newtab-linksjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet("disable-newtab-links")
+example.org#%#//scriptlet('disable-newtab-links')
 ```
 [Scriptlet source](../src/scriptlets/disable-newtab-links.js)
 * * *
@@ -308,7 +308,7 @@ Removes specified properties from the result of calling JSON.parse and returns t
 
 **Syntax**
 ```
-example.org#%#//scriptlet("json-prune"[, propsToRemove [, obligatoryProps]])
+example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps]])
 ```
 
 - `propsToRemove` - string of space-separated properties to remove
@@ -317,7 +317,7 @@ example.org#%#//scriptlet("json-prune"[, propsToRemove [, obligatoryProps]])
 **Examples**
 1. Removes property `example` from the results of JSON.parse call
     ```
-    example.org#%#//scriptlet("json-prune", "example")
+    example.org#%#//scriptlet('json-prune', 'example')
     ```
 
     For instance, the following call will return `{ one: 1}`
@@ -328,7 +328,7 @@ example.org#%#//scriptlet("json-prune"[, propsToRemove [, obligatoryProps]])
 
 2. If there are no specified properties in the result of JSON.parse call, pruning will NOT occur
     ```
-    example.org#%#//scriptlet("json-prune", "one", "obligatoryProp")
+    example.org#%#//scriptlet('json-prune', 'one', 'obligatoryProp')
     ```
 
     For instance, the following call will return `{ one: 1, two: 2}`
@@ -340,12 +340,12 @@ example.org#%#//scriptlet("json-prune"[, propsToRemove [, obligatoryProps]])
 3. A property in a list of properties can be a chain of properties
 
     ```
-    example.org#%#//scriptlet("json-prune", "a.b", "adpath.url.first")
+    example.org#%#//scriptlet('json-prune', 'a.b', 'adpath.url.first')
     ```
 
 4. Call with no arguments will log the current hostname and json payload at the console
     ```
-    example.org#%#//scriptlet("json-prune")
+    example.org#%#//scriptlet('json-prune')
     ```
 [Scriptlet source](../src/scriptlets/json-prune.js)
 * * *
@@ -359,7 +359,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-logger
 
 **Syntax**
 ```
-example.org#%#//scriptlet("log-addEventListener")
+example.org#%#//scriptlet('log-addEventListener')
 ```
 [Scriptlet source](../src/scriptlets/log-addEventListener.js)
 * * *
@@ -370,7 +370,7 @@ Logs all `eval()` or `new Function()` calls to the console.
 
 **Syntax**
 ```
-example.org#%#//scriptlet("log-eval")
+example.org#%#//scriptlet('log-eval')
 ```
 [Scriptlet source](../src/scriptlets/log-eval.js)
 * * *
@@ -381,7 +381,7 @@ A simple scriptlet which only purpose is to print arguments to console.
 This scriptlet can be helpful for debugging and troubleshooting other scriptlets.
 **Example**
 ```
-example.org#%#//scriptlet("log", "arg1", "arg2")
+example.org#%#//scriptlet('log', 'arg1', 'arg2')
 ```
 [Scriptlet source](../src/scriptlets/log.js)
 * * *
@@ -396,7 +396,7 @@ See [redirect description](../wiki/about-redirects.md#noeval).
 
 **Syntax**
 ```
-example.org#%#//scriptlet("noeval")
+example.org#%#//scriptlet('noeval')
 ```
 [Scriptlet source](../src/scriptlets/noeval.js)
 * * *
@@ -410,7 +410,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet("nowebrtc")
+example.org#%#//scriptlet('nowebrtc')
 ```
 [Scriptlet source](../src/scriptlets/nowebrtc.js)
 * * *
@@ -424,7 +424,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-defuse
 
 **Syntax**
 ```
-example.org#%#//scriptlet("prevent-addEventListener"[, eventSearch[, functionSearch]])
+example.org#%#//scriptlet('prevent-addEventListener'[, eventSearch[, functionSearch]])
 ```
 
 **Parameters**
@@ -434,12 +434,12 @@ example.org#%#//scriptlet("prevent-addEventListener"[, eventSearch[, functionSea
 **Examples**
 1. Prevent all `click` listeners:
 ```
-    example.org#%#//scriptlet("prevent-addEventListener", "click")
+    example.org#%#//scriptlet('prevent-addEventListener', 'click')
 ```
 
 2. Prevent 'click' listeners with the callback body containing `searchString`.
 ```
-    example.org#%#//scriptlet("prevent-addEventListener", "click", "searchString")
+    example.org#%#//scriptlet('prevent-addEventListener', 'click', 'searchString')
 ```
 
     For instance, this listener will not be called:
@@ -460,7 +460,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#adfly-defuserjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet("prevent-adfly")
+example.org#%#//scriptlet('prevent-adfly')
 ```
 [Scriptlet source](../src/scriptlets/prevent-adfly.js)
 * * *
@@ -474,7 +474,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#bab-defuserjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet("prevent-bab")
+example.org#%#//scriptlet('prevent-bab')
 ```
 [Scriptlet source](../src/scriptlets/prevent-bab.js)
 * * *
@@ -505,7 +505,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#fuckadblockjs-320-
 
 **Syntax**
 ```
-example.org#%#//scriptlet("prevent-fab-3.2.0")
+example.org#%#//scriptlet('prevent-fab-3.2.0')
 ```
 [Scriptlet source](../src/scriptlets/prevent-fab-3.2.0.js)
 * * *
@@ -519,7 +519,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#popadsnetjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet("prevent-popads-net")
+example.org#%#//scriptlet('prevent-popads-net')
 ```
 [Scriptlet source](../src/scriptlets/prevent-popads-net.js)
 * * *
@@ -555,7 +555,7 @@ If do not start with `!`, the delay passed to the `setInterval` call will be mat
 
 1. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the delay.
     ```bash
-    example.org#%#//scriptlet("prevent-setInterval", "/\.test/")
+    example.org#%#//scriptlet('prevent-setInterval', '/\.test/')
     ```
 
     For instance, the following call will be prevented:
@@ -567,7 +567,7 @@ If do not start with `!`, the delay passed to the `setInterval` call will be mat
 
 2. Prevents `setInterval` calls if the callback does not contain `value`.
     ```
-    example.org#%#//scriptlet("prevent-setInterval", "!value")
+    example.org#%#//scriptlet('prevent-setInterval', '!value')
     ```
 
     For instance, only the first of the following calls will be prevented:
@@ -585,7 +585,7 @@ If do not start with `!`, the delay passed to the `setInterval` call will be mat
 
 3. Prevents `setInterval` calls if the callback contains `value` and the delay is not set to `300`.
     ```
-    example.org#%#//scriptlet("prevent-setInterval", "value", "!300")
+    example.org#%#//scriptlet('prevent-setInterval', 'value', '!300')
     ```
 
     For instance, only the first of the following calls will not be prevented:
@@ -603,7 +603,7 @@ If do not start with `!`, the delay passed to the `setInterval` call will be mat
 
 4. Prevents `setInterval` calls if the callback does not contain `value` and the delay is not set to `300`.
     ```
-    example.org#%#//scriptlet("prevent-setInterval", "!value", "!300")
+    example.org#%#//scriptlet('prevent-setInterval', '!value', '!300')
     ```
 
     For instance, only the second of the following calls will be prevented:
@@ -655,7 +655,7 @@ If do not start with `!`, the delay passed to the `setTimeout` call will be matc
 
 1. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.
     ```bash
-    example.org#%#//scriptlet("prevent-setTimeout", "/\.test/")
+    example.org#%#//scriptlet('prevent-setTimeout', '/\.test/')
     ```
 
     For instance, the following call will be prevented:
@@ -667,7 +667,7 @@ If do not start with `!`, the delay passed to the `setTimeout` call will be matc
 
 2. Prevents `setTimeout` calls if the callback does not contain `value`.
     ```
-    example.org#%#//scriptlet("prevent-setTimeout", "!value")
+    example.org#%#//scriptlet('prevent-setTimeout', '!value')
     ```
 
     For instance, only the first of the following calls will be prevented:
@@ -685,7 +685,7 @@ If do not start with `!`, the delay passed to the `setTimeout` call will be matc
 
 3. Prevents `setTimeout` calls if the callback contains `value` and the delay is not set to `300`.
     ```
-    example.org#%#//scriptlet("prevent-setTimeout", "value", "!300")
+    example.org#%#//scriptlet('prevent-setTimeout', 'value', '!300')
     ```
 
     For instance, only the first of the following calls will not be prevented:
@@ -703,7 +703,7 @@ If do not start with `!`, the delay passed to the `setTimeout` call will be matc
 
 4. Prevents `setTimeout` calls if the callback does not contain `value` and the delay is not set to `300`.
     ```
-    example.org#%#//scriptlet("prevent-setTimeout", "!value", "!300")
+    example.org#%#//scriptlet('prevent-setTimeout', '!value', '!300')
     ```
 
     For instance, only the second of the following calls will be prevented:
@@ -733,7 +733,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#windowopen-defuserjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
+example.org#%#//scriptlet('prevent-window-open'[, <match>[, <search>]])
 ```
 
 **Parameters**
@@ -744,22 +744,22 @@ example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
 
 1. Prevent all `window.open` calls:
 ```
-    example.org#%#//scriptlet("prevent-window-open")
+    example.org#%#//scriptlet('prevent-window-open')
 ```
 
 2. Prevent `window.open` for all URLs containing `example`:
 ```
-    example.org#%#//scriptlet("prevent-window-open", "1", "example")
+    example.org#%#//scriptlet('prevent-window-open', '1', 'example')
 ```
 
 3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
 ```
-    example.org#%#//scriptlet("prevent-window-open", "1", "/example\./")
+    example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
 ```
 
 4. Prevent `window.open` for all URLs **NOT** containing `example`:
 ```
-    example.org#%#//scriptlet("prevent-window-open", "0", "example")
+    example.org#%#//scriptlet('prevent-window-open', '0', 'example')
 ```
 [Scriptlet source](../src/scriptlets/prevent-window-open.js)
 * * *
@@ -774,7 +774,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet("remove-attr", attrs[, selector])
+example.org#%#//scriptlet('remove-attr', attrs[, selector])
 ```
 
 - `attrs` — required, attribute or list of attributes joined by '|';
@@ -783,7 +783,7 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
 **Examples**
 1.  Removes by attribute
     ```
-    example.org#%#//scriptlet("remove-attr", "example|test")
+    example.org#%#//scriptlet('remove-attr', 'example|test')
     ```
 
     ```html
@@ -796,7 +796,7 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
 
 2. Removes with specified selector
     ```
-    example.org#%#//scriptlet("remove-attr", "example", ".inner")
+    example.org#%#//scriptlet('remove-attr', 'example', 'div[class="inner"]')
     ```
 
     ```html
@@ -818,9 +818,12 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
 Removes the specified classes from DOM nodes. This scriptlet runs once after the page loads
 and after that periodically in order to DOM tree changes.
 
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-classjs-
+
 **Syntax**
 ```
-example.org#%#//scriptlet("remove-class", classes[, selector])
+example.org#%#//scriptlet('remove-class', classes[, selector])
 ```
 
 - `classes` — required, class or list of classes separated by '|';
@@ -830,7 +833,7 @@ if there is no selector, every class independently will be removed from all node
 **Examples**
 1.  Removes by classes
     ```
-    example.org#%#//scriptlet("remove-class", "example|test")
+    example.org#%#//scriptlet('remove-class', 'example|test')
     ```
 
     ```html
@@ -847,7 +850,7 @@ if there is no selector, every class independently will be removed from all node
 
 2. Removes with specified selector
     ```
-    example.org#%#//scriptlet("remove-class", "branding", ".inner")
+    example.org#%#//scriptlet('remove-class', 'branding', 'div[class="inner"]')
     ```
 
     ```html
@@ -873,7 +876,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#cookie-removerjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet("remove-cookie"[, match])
+example.org#%#//scriptlet('remove-cookie'[, match])
 ```
 
 **Parameters**
@@ -882,12 +885,12 @@ example.org#%#//scriptlet("remove-cookie"[, match])
 **Examples**
 1. Removes all cookies:
 ```
-    example.org#%#//scriptlet("remove-cookie")
+    example.org#%#//scriptlet('remove-cookie')
 ```
 
 2. Removes cookies which name contains `example` string.
 ```
-    example.org#%#//scriptlet("remove-cookie", "example")
+    example.org#%#//scriptlet('remove-cookie', 'example')
 ```
 
     For instance this cookie will be removed
@@ -908,7 +911,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#set-constantjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet("set-constant", <property>, <value>)
+example.org#%#//scriptlet('set-constant', <property>, <value>)
 ```
 
 **Parameters**
@@ -929,10 +932,10 @@ example.org#%#//scriptlet("set-constant", <property>, <value>)
 **Examples**
 ```
 ! window.firstConst === false // this comparision will return true
-example.org#%#//scriptlet("set-constant", "firstConst", "false")
+example.org#%#//scriptlet('set-constant', 'firstConst', 'false')
 
 ! window.secondConst() === true // call to the secondConst will return true
-example.org#%#//scriptlet("set-constant", "secondConst", "trueFunc")
+example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc')
 ```
 [Scriptlet source](../src/scriptlets/set-constant.js)
 * * *
@@ -946,7 +949,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#popads-dummyjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet("set-popads-dummy")
+example.org#%#//scriptlet('set-popads-dummy')
 ```
 [Scriptlet source](../src/scriptlets/set-popads-dummy.js)
 * * *

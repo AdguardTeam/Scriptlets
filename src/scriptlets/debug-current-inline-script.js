@@ -17,7 +17,7 @@ import { hit, createOnErrorHandler } from '../helpers';
  * **Syntax**
  *```
  * ! Aborts script when it tries to access `window.alert`
- * example.org#%#//scriptlet("debug-current-inline-script", "alert")
+ * example.org#%#//scriptlet('debug-current-inline-script', 'alert')
  * ```
  */
 /* eslint-enable max-len */

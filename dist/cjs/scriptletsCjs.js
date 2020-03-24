@@ -697,7 +697,7 @@ var parseRule = function parseRule(ruleText) {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("abort-on-property-read", <property>)
+ * example.org#%#//scriptlet('abort-on-property-read', <property>)
  * ```
  *
  * **Parameters**
@@ -706,10 +706,10 @@ var parseRule = function parseRule(ruleText) {
  * **Examples**
  * ```
  * ! Aborts script when it tries to access `window.alert`
- * example.org#%#//scriptlet("abort-on-property-read", "alert")
+ * example.org#%#//scriptlet('abort-on-property-read', 'alert')
  *
  * ! Aborts script when it tries to access `navigator.language`
- * example.org#%#//scriptlet("abort-on-property-read", "navigator.language")
+ * example.org#%#//scriptlet('abort-on-property-read', 'navigator.language')
  * ```
  */
 
@@ -779,7 +779,7 @@ abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChai
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("abort-on-property-write", <property>)
+ * example.org#%#//scriptlet('abort-on-property-write', <property>)
  * ```
  *
  * **Parameters**
@@ -877,7 +877,7 @@ abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInCha
  *
  * 1. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.
  *     ```bash
- *     example.org#%#//scriptlet("prevent-setTimeout", "/\.test/")
+ *     example.org#%#//scriptlet('prevent-setTimeout', '/\.test/')
  *     ```
  *
  *     For instance, the following call will be prevented:
@@ -889,7 +889,7 @@ abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInCha
  *
  * 2. Prevents `setTimeout` calls if the callback does not contain `value`.
  *     ```
- *     example.org#%#//scriptlet("prevent-setTimeout", "!value")
+ *     example.org#%#//scriptlet('prevent-setTimeout', '!value')
  *     ```
  *
  *     For instance, only the first of the following calls will be prevented:
@@ -907,7 +907,7 @@ abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInCha
  *
  * 3. Prevents `setTimeout` calls if the callback contains `value` and the delay is not set to `300`.
  *     ```
- *     example.org#%#//scriptlet("prevent-setTimeout", "value", "!300")
+ *     example.org#%#//scriptlet('prevent-setTimeout', 'value', '!300')
  *     ```
  *
  *     For instance, only the first of the following calls will not be prevented:
@@ -925,7 +925,7 @@ abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInCha
  *
  * 4. Prevents `setTimeout` calls if the callback does not contain `value` and the delay is not set to `300`.
  *     ```
- *     example.org#%#//scriptlet("prevent-setTimeout", "!value", "!300")
+ *     example.org#%#//scriptlet('prevent-setTimeout', '!value', '!300')
  *     ```
  *
  *     For instance, only the second of the following calls will be prevented:
@@ -1042,7 +1042,7 @@ preventSetTimeout.injections = [toRegExp, startsWith, hit];
  *
  * 1. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the delay.
  *     ```bash
- *     example.org#%#//scriptlet("prevent-setInterval", "/\.test/")
+ *     example.org#%#//scriptlet('prevent-setInterval', '/\.test/')
  *     ```
  *
  *     For instance, the following call will be prevented:
@@ -1054,7 +1054,7 @@ preventSetTimeout.injections = [toRegExp, startsWith, hit];
  *
  * 2. Prevents `setInterval` calls if the callback does not contain `value`.
  *     ```
- *     example.org#%#//scriptlet("prevent-setInterval", "!value")
+ *     example.org#%#//scriptlet('prevent-setInterval', '!value')
  *     ```
  *
  *     For instance, only the first of the following calls will be prevented:
@@ -1072,7 +1072,7 @@ preventSetTimeout.injections = [toRegExp, startsWith, hit];
  *
  * 3. Prevents `setInterval` calls if the callback contains `value` and the delay is not set to `300`.
  *     ```
- *     example.org#%#//scriptlet("prevent-setInterval", "value", "!300")
+ *     example.org#%#//scriptlet('prevent-setInterval', 'value', '!300')
  *     ```
  *
  *     For instance, only the first of the following calls will not be prevented:
@@ -1090,7 +1090,7 @@ preventSetTimeout.injections = [toRegExp, startsWith, hit];
  *
  * 4. Prevents `setInterval` calls if the callback does not contain `value` and the delay is not set to `300`.
  *     ```
- *     example.org#%#//scriptlet("prevent-setInterval", "!value", "!300")
+ *     example.org#%#//scriptlet('prevent-setInterval', '!value', '!300')
  *     ```
  *
  *     For instance, only the second of the following calls will be prevented:
@@ -1185,7 +1185,7 @@ preventSetInterval.injections = [toRegExp, startsWith, hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
+ * example.org#%#//scriptlet('prevent-window-open'[, <match>[, <search>]])
  * ```
  *
  * **Parameters**
@@ -1196,22 +1196,22 @@ preventSetInterval.injections = [toRegExp, startsWith, hit];
  *
  * 1. Prevent all `window.open` calls:
  * ```
- *     example.org#%#//scriptlet("prevent-window-open")
+ *     example.org#%#//scriptlet('prevent-window-open')
  * ```
  *
  * 2. Prevent `window.open` for all URLs containing `example`:
  * ```
- *     example.org#%#//scriptlet("prevent-window-open", "1", "example")
+ *     example.org#%#//scriptlet('prevent-window-open', '1', 'example')
  * ```
  *
  * 3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
  * ```
- *     example.org#%#//scriptlet("prevent-window-open", "1", "/example\./")
+ *     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
  * ```
  *
  * 4. Prevent `window.open` for all URLs **NOT** containing `example`:
  * ```
- *     example.org#%#//scriptlet("prevent-window-open", "0", "example")
+ *     example.org#%#//scriptlet('prevent-window-open', '0', 'example')
  * ```
  */
 
@@ -1258,7 +1258,7 @@ preventWindowOpen.injections = [toRegExp, hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>])
+ * example.org#%#//scriptlet('abort-current-inline-script', <property> [, <search>])
  * ```
  *
  * **Parameters**
@@ -1268,12 +1268,12 @@ preventWindowOpen.injections = [toRegExp, hit];
  * **Examples**
  * 1. Aborts all inline scripts trying to access `window.alert`
  *     ```
- *     example.org#%#//scriptlet("abort-current-inline-script", "alert")
+ *     example.org#%#//scriptlet('abort-current-inline-script', 'alert')
  *     ```
  *
  * 2. Aborts inline scripts which are trying to access `window.alert` and contain `Hello, world`.
  *     ```
- *     example.org#%#//scriptlet("abort-current-inline-script", "alert", "Hello, world")
+ *     example.org#%#//scriptlet('abort-current-inline-script', 'alert', 'Hello, world')
  *     ```
  *
  *     For instance, the following script will be aborted
@@ -1283,7 +1283,7 @@ preventWindowOpen.injections = [toRegExp, hit];
  *
  * 3. Aborts inline scripts which are trying to access `window.alert` and match this regexp: `/Hello.+world/`.
  *     ```
- *     example.org#%#//scriptlet("abort-current-inline-script", "alert", "/Hello.+world/")
+ *     example.org#%#//scriptlet('abort-current-inline-script', 'alert', '/Hello.+world/')
  *     ```
  *
  *     For instance, the following scripts will be aborted:
@@ -1337,38 +1337,47 @@ function abortCurrentInlineScript(source, property) {
   var setChainPropAccess = function setChainPropAccess(owner, property) {
     var chainInfo = getPropertyInChain(owner, property);
     var base = chainInfo.base;
-    var prop = chainInfo.prop,
-        chain = chainInfo.chain;
 
-    if (chain) {
-      var setter = function setter(a) {
-        base = a;
+    if (base !== null) {
+      var prop = chainInfo.prop,
+          chain = chainInfo.chain;
 
-        if (a instanceof Object) {
-          setChainPropAccess(a, chain);
-        }
-      };
+      if (chain) {
+        var setter = function setter(a) {
+          base = a;
 
-      Object.defineProperty(owner, prop, {
-        get: function get() {
-          return base;
-        },
-        set: setter
-      });
-      return;
-    }
+          if (a instanceof Object) {
+            setChainPropAccess(a, chain);
+          }
+        };
 
-    var currentValue = base[prop];
-    setPropertyAccess(base, prop, {
-      set: function set(value) {
-        abort();
-        currentValue = value;
-      },
-      get: function get() {
-        abort();
-        return currentValue;
+        Object.defineProperty(owner, prop, {
+          get: function get() {
+            return base;
+          },
+          set: setter
+        });
+        return;
       }
-    });
+
+      var currentValue;
+      var descriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
+
+      if (descriptor instanceof Object === false || descriptor.get instanceof Function === false) {
+        currentValue = owner[prop];
+      }
+
+      setPropertyAccess(base, prop, {
+        set: function set(value) {
+          abort();
+          currentValue = value;
+        },
+        get: function get() {
+          abort();
+          return currentValue;
+        }
+      });
+    }
   };
 
   setChainPropAccess(window, property);
@@ -1392,7 +1401,7 @@ abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyI
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("set-constant", <property>, <value>)
+ * example.org#%#//scriptlet('set-constant', <property>, <value>)
  * ```
  *
  * **Parameters**
@@ -1413,10 +1422,10 @@ abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyI
  * **Examples**
  * ```
  * ! window.firstConst === false // this comparision will return true
- * example.org#%#//scriptlet("set-constant", "firstConst", "false")
+ * example.org#%#//scriptlet('set-constant', 'firstConst', 'false')
  *
  * ! window.secondConst() === true // call to the secondConst will return true
- * example.org#%#//scriptlet("set-constant", "secondConst", "trueFunc")
+ * example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc')
  * ```
  */
 
@@ -1537,7 +1546,7 @@ setConstant.injections = [getPropertyInChain, setPropertyAccess, hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("remove-cookie"[, match])
+ * example.org#%#//scriptlet('remove-cookie'[, match])
  * ```
  *
  * **Parameters**
@@ -1546,12 +1555,12 @@ setConstant.injections = [getPropertyInChain, setPropertyAccess, hit];
  * **Examples**
  * 1. Removes all cookies:
  * ```
- *     example.org#%#//scriptlet("remove-cookie")
+ *     example.org#%#//scriptlet('remove-cookie')
  * ```
  *
  * 2. Removes cookies which name contains `example` string.
  * ```
- *     example.org#%#//scriptlet("remove-cookie", "example")
+ *     example.org#%#//scriptlet('remove-cookie', 'example')
  * ```
  *
  *     For instance this cookie will be removed
@@ -1625,7 +1634,7 @@ removeCookie.injections = [toRegExp, hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-addEventListener"[, eventSearch[, functionSearch]])
+ * example.org#%#//scriptlet('prevent-addEventListener'[, eventSearch[, functionSearch]])
  * ```
  *
  * **Parameters**
@@ -1635,12 +1644,12 @@ removeCookie.injections = [toRegExp, hit];
  * **Examples**
  * 1. Prevent all `click` listeners:
  * ```
- *     example.org#%#//scriptlet("prevent-addEventListener", "click")
+ *     example.org#%#//scriptlet('prevent-addEventListener', 'click')
  * ```
 
 2. Prevent 'click' listeners with the callback body containing `searchString`.
  * ```
- *     example.org#%#//scriptlet("prevent-addEventListener", "click", "searchString")
+ *     example.org#%#//scriptlet('prevent-addEventListener', 'click', 'searchString')
  * ```
  *
  *     For instance, this listener will not be called:
@@ -1688,7 +1697,7 @@ preventAddEventListener.injections = [toRegExp, hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-bab")
+ * example.org#%#//scriptlet('prevent-bab')
  * ```
  */
 
@@ -1772,7 +1781,7 @@ preventBab.injections = [hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("nowebrtc")
+ * example.org#%#//scriptlet('nowebrtc')
  * ```
  */
 
@@ -1830,7 +1839,7 @@ nowebrtc.injections = [hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("log-addEventListener")
+ * example.org#%#//scriptlet('log-addEventListener')
  * ```
  */
 
@@ -1863,7 +1872,7 @@ logAddEventListener.injections = [hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("log-eval")
+ * example.org#%#//scriptlet('log-eval')
  * ```
  */
 
@@ -1908,7 +1917,7 @@ logEval.injections = [hit];
  * This scriptlet can be helpful for debugging and troubleshooting other scriptlets.
  * **Example**
  * ```
- * example.org#%#//scriptlet("log", "arg1", "arg2")
+ * example.org#%#//scriptlet('log', 'arg1', 'arg2')
  * ```
  */
 function log() {
@@ -1933,7 +1942,7 @@ log.names = ['log'];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("noeval")
+ * example.org#%#//scriptlet('noeval')
  * ```
  */
 
@@ -1994,7 +2003,7 @@ preventEvalIf.injections = [toRegExp, hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-fab-3.2.0")
+ * example.org#%#//scriptlet('prevent-fab-3.2.0')
  * ```
  */
 
@@ -2044,7 +2053,7 @@ preventFab.injections = [noop, hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("set-popads-dummy")
+ * example.org#%#//scriptlet('set-popads-dummy')
  * ```
  */
 
@@ -2080,7 +2089,7 @@ setPopadsDummy.injections = [hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-popads-net")
+ * example.org#%#//scriptlet('prevent-popads-net')
  * ```
  */
 
@@ -2119,7 +2128,7 @@ preventPopadsNet.injections = [createOnErrorHandler, randomId, hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-adfly")
+ * example.org#%#//scriptlet('prevent-adfly')
  * ```
  */
 
@@ -2220,7 +2229,7 @@ preventAdfly.injections = [setPropertyAccess, hit];
  * **Syntax**
  * ```
  * ! Aborts script when it tries to access `window.alert`
- * example.org#%#//scriptlet("debug-on-property-read", "alert")
+ * example.org#%#//scriptlet('debug-on-property-read', 'alert')
  * ```
  */
 
@@ -2288,7 +2297,7 @@ debugOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChai
  * **Syntax**
  * ```
  * ! Aborts script when it tries to write in property `window.test`
- * example.org#%#//scriptlet("debug-on-property-write", "test")
+ * example.org#%#//scriptlet('debug-on-property-write', 'test')
  * ```
  */
 
@@ -2356,7 +2365,7 @@ debugOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInCha
  * **Syntax**
  *```
  * ! Aborts script when it tries to access `window.alert`
- * example.org#%#//scriptlet("debug-current-inline-script", "alert")
+ * example.org#%#//scriptlet('debug-current-inline-script', 'alert')
  * ```
  */
 
@@ -2446,7 +2455,7 @@ debugCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyI
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("remove-attr", attrs[, selector])
+ * example.org#%#//scriptlet('remove-attr', attrs[, selector])
  * ```
  *
  * - `attrs` — required, attribute or list of attributes joined by '|';
@@ -2455,7 +2464,7 @@ debugCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyI
  * **Examples**
  * 1.  Removes by attribute
  *     ```
- *     example.org#%#//scriptlet("remove-attr", "example|test")
+ *     example.org#%#//scriptlet('remove-attr', 'example|test')
  *     ```
  *
  *     ```html
@@ -2468,7 +2477,7 @@ debugCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyI
  *
  * 2. Removes with specified selector
  *     ```
- *     example.org#%#//scriptlet("remove-attr", "example", ".inner")
+ *     example.org#%#//scriptlet('remove-attr', 'example', 'div[class="inner"]')
  *     ```
  *
  *     ```html
@@ -2528,9 +2537,12 @@ removeAttr.injections = [hit, observeDOMChanges];
  * Removes the specified classes from DOM nodes. This scriptlet runs once after the page loads
  * and after that periodically in order to DOM tree changes.
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-classjs-
+ *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("remove-class", classes[, selector])
+ * example.org#%#//scriptlet('remove-class', classes[, selector])
  * ```
  *
  * - `classes` — required, class or list of classes separated by '|';
@@ -2540,7 +2552,7 @@ removeAttr.injections = [hit, observeDOMChanges];
  * **Examples**
  * 1.  Removes by classes
  *     ```
- *     example.org#%#//scriptlet("remove-class", "example|test")
+ *     example.org#%#//scriptlet('remove-class', 'example|test')
  *     ```
  *
  *     ```html
@@ -2557,7 +2569,7 @@ removeAttr.injections = [hit, observeDOMChanges];
  *
  * 2. Removes with specified selector
  *     ```
- *     example.org#%#//scriptlet("remove-class", "branding", ".inner")
+ *     example.org#%#//scriptlet('remove-class', 'branding', 'div[class="inner"]')
  *     ```
  *
  *     ```html
@@ -2574,7 +2586,6 @@ removeAttr.injections = [hit, observeDOMChanges];
  */
 
 /* eslint-enable max-len */
-// TODO: add related UBO scriptlet link after they add description to their doc
 
 function removeClass(source, classNames, selector) {
   if (!classNames) {
@@ -2644,7 +2655,7 @@ removeClass.injections = [hit, observeDOMChanges];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("disable-newtab-links")
+ * example.org#%#//scriptlet('disable-newtab-links')
  * ```
  */
 
@@ -2680,7 +2691,7 @@ disableNewtabLinks.injections = [hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("adjust-setInterval"[, match [, interval[, boost]]])
+ * example.org#%#//scriptlet('adjust-setInterval'[, match [, interval[, boost]]])
  * ```
  *
  * - `match` - optional, string/regular expression, matching in stringified callback function
@@ -2690,22 +2701,22 @@ disableNewtabLinks.injections = [hit];
  * **Examples**
  * 1. Adjust all setInterval() x20 times where interval equal 1000ms:
  *     ```
- *     example.org#%#//scriptlet("adjust-setInterval")
+ *     example.org#%#//scriptlet('adjust-setInterval')
  *     ```
  *
  * 2. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 1000ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setInterval", "example")
+ *     example.org#%#//scriptlet('adjust-setInterval', 'example')
  *     ```
  *
  * 3. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 400ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setInterval", "example", "400")
+ *     example.org#%#//scriptlet('adjust-setInterval', 'example', '400')
  *     ```
  *
  * 4. Slow down setInterval() x2 times where callback matched with `example` and interval equal 400ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setInterval", "example", "400", "2")
+ *     example.org#%#//scriptlet('adjust-setInterval', 'example', '400', '2')
  *     ```
  */
 
@@ -2762,7 +2773,7 @@ adjustSetInterval.injections = [toRegExp, hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("adjust-setTimeout"[, match [, timeout[, boost]]])
+ * example.org#%#//scriptlet('adjust-setTimeout'[, match [, timeout[, boost]]])
  * ```
  *
  * - `match` - optional, string/regular expression, matching in stringified callback function
@@ -2772,22 +2783,22 @@ adjustSetInterval.injections = [toRegExp, hit];
  * **Examples**
  * 1. Adjust all setTimeout() x20 times where interval equal 1000ms:
  *     ```
- *     example.org#%#//scriptlet("adjust-setTimeout")
+ *     example.org#%#//scriptlet('adjust-setTimeout')
  *     ```
  *
  * 2. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 1000ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setTimeout", "example")
+ *     example.org#%#//scriptlet('adjust-setTimeout', 'example')
  *     ```
  *
  * 3. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 400ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setTimeout", "example", "400")
+ *     example.org#%#//scriptlet('adjust-setTimeout', 'example', '400')
  *     ```
  *
  * 4. Slow down setTimeout() x2 times where callback matched with `example` and interval equal 400ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setTimeout", "example", "400", "2")
+ *     example.org#%#//scriptlet('adjust-setTimeout', 'example', '400', '2')
  *     ```
  */
 
@@ -2848,14 +2859,14 @@ adjustSetTimeout.injections = [toRegExp, hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("dir-string"[, times])
+ * example.org#%#//scriptlet('dir-string'[, times])
  * ```
  * - `times` - optional, the number of times to call the `toString` method of the argument to `console.dir`
  *
  * **Example**
  * ```
  * ! Run 2 times
- * example.org#%#//scriptlet("dir-string", "2")
+ * example.org#%#//scriptlet('dir-string', '2')
  * ```
  */
 
@@ -2898,7 +2909,7 @@ dirString.injections = [hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("json-prune"[, propsToRemove [, obligatoryProps]])
+ * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps]])
  * ```
  *
  * - `propsToRemove` - string of space-separated properties to remove
@@ -2907,7 +2918,7 @@ dirString.injections = [hit];
  * **Examples**
  * 1. Removes property `example` from the results of JSON.parse call
  *     ```
- *     example.org#%#//scriptlet("json-prune", "example")
+ *     example.org#%#//scriptlet('json-prune', 'example')
  *     ```
  *
  *     For instance, the following call will return `{ one: 1}`
@@ -2918,7 +2929,7 @@ dirString.injections = [hit];
  *
  * 2. If there are no specified properties in the result of JSON.parse call, pruning will NOT occur
  *     ```
- *     example.org#%#//scriptlet("json-prune", "one", "obligatoryProp")
+ *     example.org#%#//scriptlet('json-prune', 'one', 'obligatoryProp')
  *     ```
  *
  *     For instance, the following call will return `{ one: 1, two: 2}`
@@ -2930,12 +2941,12 @@ dirString.injections = [hit];
  * 3. A property in a list of properties can be a chain of properties
  *
  *     ```
- *     example.org#%#//scriptlet("json-prune", "a.b", "adpath.url.first")
+ *     example.org#%#//scriptlet('json-prune', 'a.b', 'adpath.url.first')
  *     ```
  *
  * 4. Call with no arguments will log the current hostname and json payload at the console
  *     ```
- *     example.org#%#//scriptlet("json-prune")
+ *     example.org#%#//scriptlet('json-prune')
  *     ```
  */
 

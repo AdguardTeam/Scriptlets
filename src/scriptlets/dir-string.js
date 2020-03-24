@@ -16,14 +16,14 @@ import { hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("dir-string"[, times])
+ * example.org#%#//scriptlet('dir-string'[, times])
  * ```
  * - `times` - optional, the number of times to call the `toString` method of the argument to `console.dir`
  *
  * **Example**
  * ```
  * ! Run 2 times
- * example.org#%#//scriptlet("dir-string", "2")
+ * example.org#%#//scriptlet('dir-string', '2')
  * ```
  */
 /* eslint-enable max-len */
