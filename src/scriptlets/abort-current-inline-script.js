@@ -78,11 +78,11 @@ export function abortCurrentInlineScript(source, property, search = null) {
 
     const ourScript = getCurrentScript();
 
-    const validate = () => {
+    const abort = () => {
         const scriptEl = getCurrentScript();
         if (scriptEl instanceof HTMLScriptElement
-            && scriptEl !== ourScript
-            && (!regex || regex.test(scriptEl.textContent))) {
+        && scriptEl !== ourScript
+        && (!regex || regex.test(scriptEl.textContent))) {
             hit(source);
             throw new ReferenceError(rid);
         }
@@ -91,6 +91,7 @@ export function abortCurrentInlineScript(source, property, search = null) {
     const setChainPropAccess = (owner, property) => {
         const chainInfo = getPropertyInChain(owner, property);
         let { base } = chainInfo;
+        // 'base' checking in order to: https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
         if (base !== null) {
             const { prop, chain } = chainInfo;
             if (chain) {
@@ -107,6 +108,9 @@ export function abortCurrentInlineScript(source, property, search = null) {
                 return;
             }
 
+            // some websites redefines 'textContent' property of inline script
+            // so we should check descriptor earlier
+            // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
             try {
                 const descriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
 
@@ -115,13 +119,14 @@ export function abortCurrentInlineScript(source, property, search = null) {
                 || descriptor.get instanceof Function === false) {
                     currentValue = owner[prop];
                 }
+
                 setPropertyAccess(base, prop, {
                     set: (value) => {
-                        validate();
+                        abort();
                         currentValue = value;
                     },
                     get: () => {
-                        validate();
+                        abort();
                         return currentValue;
                     },
                 });

@@ -1319,7 +1319,7 @@ function abortCurrentInlineScript(source, property) {
 
   var ourScript = getCurrentScript();
 
-  var validate = function validate() {
+  var abort = function abort() {
     var scriptEl = getCurrentScript();
 
     if (scriptEl instanceof HTMLScriptElement && scriptEl !== ourScript && (!regex || regex.test(scriptEl.textContent))) {
@@ -1330,7 +1330,7 @@ function abortCurrentInlineScript(source, property) {
 
   var setChainPropAccess = function setChainPropAccess(owner, property) {
     var chainInfo = getPropertyInChain(owner, property);
-    var base = chainInfo.base;
+    var base = chainInfo.base; // 'base' checking in order to: https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
 
     if (base !== null) {
       var prop = chainInfo.prop,
@@ -1352,7 +1352,10 @@ function abortCurrentInlineScript(source, property) {
           set: setter
         });
         return;
-      }
+      } // some websites redefines 'textContent' property of inline script
+      // so we should check descriptor earlier
+      // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
+
 
       try {
         var descriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
@@ -1364,11 +1367,11 @@ function abortCurrentInlineScript(source, property) {
 
         setPropertyAccess(base, prop, {
           set: function set(value) {
-            validate();
+            abort();
             currentValue = value;
           },
           get: function get() {
-            validate();
+            abort();
             return currentValue;
           }
         });
