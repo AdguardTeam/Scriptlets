@@ -1319,16 +1319,10 @@ function abortCurrentInlineScript(source, property) {
 
   var ourScript = getCurrentScript();
 
-  var abort = function abort() {
+  var validate = function validate() {
     var scriptEl = getCurrentScript();
-    var content = scriptEl.textContent;
 
-    try {
-      var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
-      content = textContentGetter.call(scriptEl); // eslint-disable-next-line no-empty
-    } catch (e) {}
-
-    if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && (!regex || regex.test(scriptEl.textContent))) {
+    if (scriptEl instanceof HTMLScriptElement && scriptEl !== ourScript && (!regex || regex.test(scriptEl.textContent))) {
       hit(source);
       throw new ReferenceError(rid);
     }
@@ -1360,23 +1354,26 @@ function abortCurrentInlineScript(source, property) {
         return;
       }
 
-      var currentValue;
-      var descriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
+      try {
+        var descriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
+        var currentValue;
 
-      if (descriptor instanceof Object === false || descriptor.get instanceof Function === false) {
-        currentValue = owner[prop];
-      }
-
-      setPropertyAccess(base, prop, {
-        set: function set(value) {
-          abort();
-          currentValue = value;
-        },
-        get: function get() {
-          abort();
-          return currentValue;
+        if (descriptor instanceof Object === false || descriptor.get instanceof Function === false) {
+          currentValue = owner[prop];
         }
-      });
+
+        setPropertyAccess(base, prop, {
+          set: function set(value) {
+            validate();
+            currentValue = value;
+          },
+          get: function get() {
+            validate();
+            return currentValue;
+          }
+        });
+      } catch (e) {} // eslint-disable-line no-empty
+
     }
   };
 

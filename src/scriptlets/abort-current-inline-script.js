@@ -78,19 +78,9 @@ export function abortCurrentInlineScript(source, property, search = null) {
 
     const ourScript = getCurrentScript();
 
-    const abort = () => {
+    const validate = () => {
         const scriptEl = getCurrentScript();
-        let content = scriptEl.textContent;
-
-        try {
-            const textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
-            content = textContentGetter.call(scriptEl);
-            // eslint-disable-next-line no-empty
-        } catch (e) { }
-
-
         if (scriptEl instanceof HTMLScriptElement
-            && content.length > 0
             && scriptEl !== ourScript
             && (!regex || regex.test(scriptEl.textContent))) {
             hit(source);
@@ -117,23 +107,25 @@ export function abortCurrentInlineScript(source, property, search = null) {
                 return;
             }
 
-            let currentValue;
-            const descriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
-            if (descriptor instanceof Object === false
-            || descriptor.get instanceof Function === false) {
-                currentValue = owner[prop];
-            }
+            try {
+                const descriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
 
-            setPropertyAccess(base, prop, {
-                set: (value) => {
-                    abort();
-                    currentValue = value;
-                },
-                get: () => {
-                    abort();
-                    return currentValue;
-                },
-            });
+                let currentValue;
+                if (descriptor instanceof Object === false
+                || descriptor.get instanceof Function === false) {
+                    currentValue = owner[prop];
+                }
+                setPropertyAccess(base, prop, {
+                    set: (value) => {
+                        validate();
+                        currentValue = value;
+                    },
+                    get: () => {
+                        validate();
+                        return currentValue;
+                    },
+                });
+            } catch (e) { } // eslint-disable-line no-empty
         }
     };
 
