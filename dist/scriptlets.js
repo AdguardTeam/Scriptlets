@@ -1358,26 +1358,23 @@
           // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
 
 
-          try {
-            var descriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
-            var currentValue;
+          var descriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
+          var currentValue;
 
-            if (descriptor instanceof Object === false || descriptor.get instanceof Function === false) {
-              currentValue = owner[prop];
+          if (descriptor instanceof Object === false || descriptor.get instanceof Function === false) {
+            currentValue = base[prop];
+          }
+
+          setPropertyAccess(base, prop, {
+            set: function set(value) {
+              abort();
+              currentValue = value;
+            },
+            get: function get() {
+              abort();
+              return currentValue;
             }
-
-            setPropertyAccess(base, prop, {
-              set: function set(value) {
-                abort();
-                currentValue = value;
-              },
-              get: function get() {
-                abort();
-                return currentValue;
-              }
-            });
-          } catch (e) {} // eslint-disable-line no-empty
-
+          });
         }
       };
 

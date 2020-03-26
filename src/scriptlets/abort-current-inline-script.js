@@ -111,26 +111,24 @@ export function abortCurrentInlineScript(source, property, search = null) {
             // some websites redefines 'textContent' property of inline script
             // so we should check descriptor earlier
             // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
-            try {
-                const descriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
+            const descriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
 
-                let currentValue;
-                if (descriptor instanceof Object === false
-                || descriptor.get instanceof Function === false) {
-                    currentValue = owner[prop];
-                }
+            let currentValue;
+            if (descriptor instanceof Object === false
+            || descriptor.get instanceof Function === false) {
+                currentValue = base[prop];
+            }
 
-                setPropertyAccess(base, prop, {
-                    set: (value) => {
-                        abort();
-                        currentValue = value;
-                    },
-                    get: () => {
-                        abort();
-                        return currentValue;
-                    },
-                });
-            } catch (e) { } // eslint-disable-line no-empty
+            setPropertyAccess(base, prop, {
+                set: (value) => {
+                    abort();
+                    currentValue = value;
+                },
+                get: () => {
+                    abort();
+                    return currentValue;
+                },
+            });
         }
     };
 
