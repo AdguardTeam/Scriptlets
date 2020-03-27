@@ -1321,14 +1321,22 @@ function abortCurrentInlineScript(source, property) {
   var ourScript = getCurrentScript();
 
   var abort = function abort() {
-    var scriptEl = getCurrentScript();
+    var scriptEl = getCurrentScript(); // скриптах, где переопределяется textContent,
+    // content'ом будет результат вызова переопределенного геттера
+    // и по параметру search скриптлет не сработает
+
     var content = scriptEl.textContent;
     var isRedefined = false;
 
     try {
       var nodeDescrGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
-      content = nodeDescrGetter.call(scriptEl);
-      var scrDescrGetter = Object.getOwnPropertyDescriptor(scriptEl, 'textContent').get;
+      content = nodeDescrGetter.call(scriptEl); // в скриптах, где переопределяется textContent, геттер не undefined
+
+      var scrDescrGetter = Object.getOwnPropertyDescriptor(scriptEl, 'textContent').get; // поэтому тут проверяю что:
+      // - геттер существует
+      // - в переопределенном геттере упоминается property,
+      // допуская что оно как раз и переопределяется там
+
       isRedefined = scrDescrGetter && propRegex.test(content); // eslint-disable-next-line no-empty
     } catch (e) {}
 
@@ -1340,7 +1348,7 @@ function abortCurrentInlineScript(source, property) {
 
   var setChainPropAccess = function setChainPropAccess(owner, property) {
     var chainInfo = getPropertyInChain(owner, property);
-    var base = chainInfo.base;
+    var base = chainInfo.base; // это для example.org где body не успевает загрузиться в момент выполнения скриптлета
 
     if (base !== null) {
       var prop = chainInfo.prop,
