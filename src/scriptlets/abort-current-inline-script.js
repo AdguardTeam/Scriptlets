@@ -66,6 +66,7 @@ import { hit, createOnErrorHandler } from '../helpers';
 /* eslint-enable max-len */
 export function abortCurrentInlineScript(source, property, search = null) {
     const regex = search ? toRegExp(search) : null;
+    const propRegex = property ? toRegExp(property) : null;
     const rid = randomId();
 
     const getCurrentScript = () => {
@@ -81,10 +82,15 @@ export function abortCurrentInlineScript(source, property, search = null) {
     const abort = () => {
         const scriptEl = getCurrentScript();
         let content = scriptEl.textContent;
+        let isRedefined = false;
 
         try {
-            const textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
-            content = textContentGetter.call(scriptEl);
+            const nodeDescrGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
+            content = nodeDescrGetter.call(scriptEl);
+
+            const scrDescrGetter = Object.getOwnPropertyDescriptor(scriptEl, 'textContent').get;
+
+            isRedefined = scrDescrGetter && propRegex.test(content);
             // eslint-disable-next-line no-empty
         } catch (e) { }
 
@@ -92,7 +98,9 @@ export function abortCurrentInlineScript(source, property, search = null) {
         if (scriptEl instanceof HTMLScriptElement
             && content.length > 0
             && scriptEl !== ourScript
-            && (!regex || regex.test(scriptEl.textContent))) {
+            && (!regex
+                || regex.test(scriptEl.textContent)
+                || isRedefined)) {
             hit(source);
             throw new ReferenceError(rid);
         }
@@ -116,6 +124,8 @@ export function abortCurrentInlineScript(source, property, search = null) {
             return;
         }
 
+        // const scriptEl = getCurrentScript();
+        // console.log(scriptEl);
         let currentValue = base[prop];
         setPropertyAccess(base, prop, {
             set: (value) => {

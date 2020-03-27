@@ -208,3 +208,40 @@ test('Patched textContent', (assert) => {
     assert.strictEqual(window.hit, 'FIRED');
     clearGlobalProps(...changingGlobals);
 });
+
+test('Patched textContent', (assert) => {
+    const property = 'alert';
+    const search = 'test';
+    const params = {
+        name,
+        args: [property, search],
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
+    const resString = window.scriptlets.invoke(params);
+
+
+    window.onerror = onError(assert);
+
+    evalWrapper(resString);
+    addAndRemoveInlineScript(`
+    function generateContent() {
+        return void 0 === generateContent.val && (generateContent.val = " \nwindow.${property}('blablabla');");
+      }
+      
+      (function () {
+        try {
+          Object.defineProperty(document.currentScript, "textContent", {
+            get: generateContent
+          });
+        } catch (e) {}
+      
+        ${property}("test");
+      })();
+    `);
+
+    assert.strictEqual(window.hit, 'FIRED');
+    clearGlobalProps(...changingGlobals);
+});

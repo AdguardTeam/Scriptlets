@@ -1305,6 +1305,7 @@ preventWindowOpen.injections = [toRegExp, hit];
 function abortCurrentInlineScript(source, property) {
   var search = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
   var regex = search ? toRegExp(search) : null;
+  var propRegex = property ? toRegExp(property) : null;
   var rid = randomId();
 
   var getCurrentScript = function getCurrentScript() {
@@ -1322,13 +1323,16 @@ function abortCurrentInlineScript(source, property) {
   var abort = function abort() {
     var scriptEl = getCurrentScript();
     var content = scriptEl.textContent;
+    var isRedefined = false;
 
     try {
-      var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
-      content = textContentGetter.call(scriptEl); // eslint-disable-next-line no-empty
+      var nodeDescrGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
+      content = nodeDescrGetter.call(scriptEl);
+      var scrDescrGetter = Object.getOwnPropertyDescriptor(scriptEl, 'textContent').get;
+      isRedefined = scrDescrGetter && propRegex.test(content); // eslint-disable-next-line no-empty
     } catch (e) {}
 
-    if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && (!regex || regex.test(scriptEl.textContent))) {
+    if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && (!regex || regex.test(scriptEl.textContent) || isRedefined)) {
       hit(source);
       throw new ReferenceError(rid);
     }
@@ -1356,7 +1360,9 @@ function abortCurrentInlineScript(source, property) {
         set: setter
       });
       return;
-    }
+    } // const scriptEl = getCurrentScript();
+    // console.log(scriptEl);
+
 
     var currentValue = base[prop];
     setPropertyAccess(base, prop, {
