@@ -1342,40 +1342,41 @@
       var setChainPropAccess = function setChainPropAccess(owner, property) {
         var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
-        var prop = chainInfo.prop,
-            chain = chainInfo.chain;
 
-        if (chain) {
-          var setter = function setter(a) {
-            base = a;
+        if (base !== null) {
+          var prop = chainInfo.prop,
+              chain = chainInfo.chain;
 
-            if (a instanceof Object) {
-              setChainPropAccess(a, chain);
-            }
-          };
+          if (chain) {
+            var setter = function setter(a) {
+              base = a;
 
-          Object.defineProperty(owner, prop, {
-            get: function get() {
-              return base;
-            },
-            set: setter
-          });
-          return;
-        } // const scriptEl = getCurrentScript();
-        // console.log(scriptEl);
+              if (a instanceof Object) {
+                setChainPropAccess(a, chain);
+              }
+            };
 
-
-        var currentValue = base[prop];
-        setPropertyAccess(base, prop, {
-          set: function set(value) {
-            abort();
-            currentValue = value;
-          },
-          get: function get() {
-            abort();
-            return currentValue;
+            Object.defineProperty(owner, prop, {
+              get: function get() {
+                return base;
+              },
+              set: setter
+            });
+            return;
           }
-        });
+
+          var currentValue = base[prop];
+          setPropertyAccess(base, prop, {
+            set: function set(value) {
+              abort();
+              currentValue = value;
+            },
+            get: function get() {
+              abort();
+              return currentValue;
+            }
+          });
+        }
       };
 
       setChainPropAccess(window, property);

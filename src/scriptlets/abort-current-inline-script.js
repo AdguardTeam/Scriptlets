@@ -109,34 +109,34 @@ export function abortCurrentInlineScript(source, property, search = null) {
     const setChainPropAccess = (owner, property) => {
         const chainInfo = getPropertyInChain(owner, property);
         let { base } = chainInfo;
-        const { prop, chain } = chainInfo;
-        if (chain) {
-            const setter = (a) => {
-                base = a;
-                if (a instanceof Object) {
-                    setChainPropAccess(a, chain);
-                }
-            };
-            Object.defineProperty(owner, prop, {
-                get: () => base,
-                set: setter,
-            });
-            return;
-        }
+        if (base !== null) {
+            const { prop, chain } = chainInfo;
+            if (chain) {
+                const setter = (a) => {
+                    base = a;
+                    if (a instanceof Object) {
+                        setChainPropAccess(a, chain);
+                    }
+                };
+                Object.defineProperty(owner, prop, {
+                    get: () => base,
+                    set: setter,
+                });
+                return;
+            }
 
-        // const scriptEl = getCurrentScript();
-        // console.log(scriptEl);
-        let currentValue = base[prop];
-        setPropertyAccess(base, prop, {
-            set: (value) => {
-                abort();
-                currentValue = value;
-            },
-            get: () => {
-                abort();
-                return currentValue;
-            },
-        });
+            let currentValue = base[prop];
+            setPropertyAccess(base, prop, {
+                set: (value) => {
+                    abort();
+                    currentValue = value;
+                },
+                get: () => {
+                    abort();
+                    return currentValue;
+                },
+            });
+        }
     };
 
     setChainPropAccess(window, property);
