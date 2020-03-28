@@ -3182,7 +3182,7 @@
     };
     /**
      * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
-     * It's used for UBO -> ADG  converting
+     * It's used for UBO -> ADG converting
      */
 
 
@@ -3193,7 +3193,7 @@
     }));
     /**
      * Compatibility object where KEYS = ABP redirect names and VALUES = ADG redirect names
-     * It's used for ABP -> ADG  converting
+     * It's used for ABP -> ADG converting
      */
 
     var abpToAdgCompatibility = objFromEntries(validAdgRedirects.filter(function (el) {
@@ -3203,7 +3203,7 @@
     }));
     /**
      * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
-     * It's used for ADG -> UBO  converting
+     * It's used for ADG -> UBO converting
      */
 
     var adgToUboCompatibility = objFromEntries(validAdgRedirects.filter(function (el) {
@@ -3211,7 +3211,19 @@
     }).map(function (el) {
       return [el.adg, el.ubo];
     }));
+    /**
+     * Needed for AdGuard redirect names validation where KEYS = **valid** AdGuard redirect names
+     * 'adgToUboCompatibility' is still needed for ADG -> UBO converting
+     */
+
+    var validAdgCompatibility = objFromEntries(validAdgRedirects.map(function (el) {
+      return [el.adg, 'valid adg redirect'];
+    }));
     var REDIRECT_RULE_TYPES = {
+      VALID_ADG: {
+        marker: ADG_UBO_REDIRECT_MARKER,
+        compatibility: validAdgCompatibility
+      },
       ADG: {
         marker: ADG_UBO_REDIRECT_MARKER,
         compatibility: adgToUboCompatibility
@@ -3288,10 +3300,10 @@
 
 
     var isValidAdgRedirectRule = function isValidAdgRedirectRule(rule) {
-      return isRedirectRuleByType(rule, 'ADG');
+      return isRedirectRuleByType(rule, 'VALID_ADG');
     };
     /**
-    * Checks if the `rule` is Ubo redirect resource rule
+    * Checks if the `rule` is Ubo redirect resource rule and valid for conversion to Adg
     * @param {string} rule - rule text
     * @returns {boolean}
     */
