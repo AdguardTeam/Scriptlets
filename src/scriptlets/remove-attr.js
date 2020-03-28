@@ -13,7 +13,7 @@ import { hit, observeDOMChanges } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("remove-attr", attrs[, selector])
+ * example.org#%#//scriptlet('remove-attr', attrs[, selector])
  * ```
  *
  * - `attrs` — required, attribute or list of attributes joined by '|';
@@ -22,7 +22,7 @@ import { hit, observeDOMChanges } from '../helpers';
  * **Examples**
  * 1.  Removes by attribute
  *     ```
- *     example.org#%#//scriptlet("remove-attr", "example|test")
+ *     example.org#%#//scriptlet('remove-attr', 'example|test')
  *     ```
  *
  *     ```html
@@ -35,7 +35,7 @@ import { hit, observeDOMChanges } from '../helpers';
  *
  * 2. Removes with specified selector
  *     ```
- *     example.org#%#//scriptlet("remove-attr", "example", ".inner")
+ *     example.org#%#//scriptlet('remove-attr', 'example', 'div[class="inner"]')
  *     ```
  *
  *     ```html

@@ -27,48 +27,48 @@ const addAndRemoveInlineScript = (scriptText) => {
     scriptElement.parentNode.removeChild(scriptElement);
 };
 
-// test('ubo alias', (assert) => {
-//     const property = '___aaa';
-//     const params = {
-//         name: 'ubo-abort-current-inline-script.js',
-//         args: [property],
-//         verbose: true,
-//     };
-//     window.__debugScriptlets = () => {
-//         window.hit = 'FIRED';
-//     };
-//     const resString = window.scriptlets.invoke(params);
+test('ubo alias', (assert) => {
+    const property = '___aaa';
+    const params = {
+        name: 'ubo-abort-current-inline-script.js',
+        args: [property],
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
+    const resString = window.scriptlets.invoke(params);
 
-//     window.onerror = onError(assert);
+    window.onerror = onError(assert);
 
-//     evalWrapper(resString);
-//     addAndRemoveInlineScript('window.___aaa;');
+    evalWrapper(resString);
+    addAndRemoveInlineScript('window.___aaa;');
 
-//     assert.strictEqual(window.hit, 'FIRED');
+    assert.strictEqual(window.hit, 'FIRED');
 
-//     clearGlobalProps(...changingGlobals);
-// });
+    clearGlobalProps(...changingGlobals);
+});
 
-// test('abp alias', (assert) => {
-//     const property = '___aaa';
-//     const params = {
-//         name: 'abp-abort-current-inline-script',
-//         args: [property],
-//         verbose: true,
-//     };
-//     window.__debugScriptlets = () => {
-//         window.hit = 'FIRED';
-//     };
-//     const resString = window.scriptlets.invoke(params);
+test('abp alias', (assert) => {
+    const property = '___aaa';
+    const params = {
+        name: 'abp-abort-current-inline-script',
+        args: [property],
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
+    const resString = window.scriptlets.invoke(params);
 
-//     window.onerror = onError(assert);
+    window.onerror = onError(assert);
 
-//     evalWrapper(resString);
-//     addAndRemoveInlineScript('window.___aaa;');
+    evalWrapper(resString);
+    addAndRemoveInlineScript('window.___aaa;');
 
-//     assert.strictEqual(window.hit, 'FIRED');
-//     clearGlobalProps(...changingGlobals);
-// });
+    assert.strictEqual(window.hit, 'FIRED');
+    clearGlobalProps(...changingGlobals);
+});
 
 test('works', (assert) => {
     const property = '___aaa';

@@ -1259,7 +1259,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>])
+     * example.org#%#//scriptlet('abort-current-inline-script', <property> [, <search>])
      * ```
      *
      * **Parameters**
@@ -1269,12 +1269,12 @@
      * **Examples**
      * 1. Aborts all inline scripts trying to access `window.alert`
      *     ```
-     *     example.org#%#//scriptlet("abort-current-inline-script", "alert")
+     *     example.org#%#//scriptlet('abort-current-inline-script', 'alert')
      *     ```
      *
      * 2. Aborts inline scripts which are trying to access `window.alert` and contain `Hello, world`.
      *     ```
-     *     example.org#%#//scriptlet("abort-current-inline-script", "alert", "Hello, world")
+     *     example.org#%#//scriptlet('abort-current-inline-script', 'alert', 'Hello, world')
      *     ```
      *
      *     For instance, the following script will be aborted
@@ -1284,7 +1284,7 @@
      *
      * 3. Aborts inline scripts which are trying to access `window.alert` and match this regexp: `/Hello.+world/`.
      *     ```
-     *     example.org#%#//scriptlet("abort-current-inline-script", "alert", "/Hello.+world/")
+     *     example.org#%#//scriptlet('abort-current-inline-script', 'alert', '/Hello.+world/')
      *     ```
      *
      *     For instance, the following scripts will be aborted:
@@ -1306,7 +1306,6 @@
     function abortCurrentInlineScript(source, property) {
       var search = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
       var regex = search ? toRegExp(search) : null;
-      var propRegex = property ? toRegExp(property) : null;
       var rid = randomId();
 
       var getCurrentScript = function getCurrentScript() {
@@ -1322,26 +1321,16 @@
       var ourScript = getCurrentScript();
 
       var abort = function abort() {
-        var scriptEl = getCurrentScript(); // скриптах, где переопределяется textContent,
-        // content'ом будет результат вызова переопределенного геттера
-        // и по параметру search скриптлет не сработает
-
+        var scriptEl = getCurrentScript();
         var content = scriptEl.textContent;
-        var isRedefined = false;
 
         try {
           var nodeDescrGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
-          content = nodeDescrGetter.call(scriptEl); // в скриптах, где переопределяется textContent, геттер не undefined
+          content = nodeDescrGetter.call(scriptEl);
+        } catch (e) {} // eslint-disable-line no-empty
 
-          var scrDescrGetter = Object.getOwnPropertyDescriptor(scriptEl, 'textContent').get; // поэтому тут проверяю что:
-          // - геттер существует
-          // - в переопределенном геттере упоминается property,
-          // допуская что оно как раз и переопределяется там
 
-          isRedefined = scrDescrGetter && propRegex.test(content); // eslint-disable-next-line no-empty
-        } catch (e) {}
-
-        if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && (!regex || regex.test(scriptEl.textContent) || isRedefined)) {
+        if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && (!regex || regex.test(content))) {
           hit(source);
           throw new ReferenceError(rid);
         }
@@ -1349,42 +1338,45 @@
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
         var chainInfo = getPropertyInChain(owner, property);
-        var base = chainInfo.base; // это для example.org где body не успевает загрузиться в момент выполнения скриптлета
+        var base = chainInfo.base; // sometimes body is not loaded when scriptlet executes
+        // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
 
-        if (base !== null) {
-          var prop = chainInfo.prop,
-              chain = chainInfo.chain;
-
-          if (chain) {
-            var setter = function setter(a) {
-              base = a;
-
-              if (a instanceof Object) {
-                setChainPropAccess(a, chain);
-              }
-            };
-
-            Object.defineProperty(owner, prop, {
-              get: function get() {
-                return base;
-              },
-              set: setter
-            });
-            return;
-          }
-
-          var currentValue = base[prop];
-          setPropertyAccess(base, prop, {
-            set: function set(value) {
-              abort();
-              currentValue = value;
-            },
-            get: function get() {
-              abort();
-              return currentValue;
-            }
-          });
+        if (base === null) {
+          return;
         }
+
+        var prop = chainInfo.prop,
+            chain = chainInfo.chain;
+
+        if (chain) {
+          var setter = function setter(a) {
+            base = a;
+
+            if (a instanceof Object) {
+              setChainPropAccess(a, chain);
+            }
+          };
+
+          Object.defineProperty(owner, prop, {
+            get: function get() {
+              return base;
+            },
+            set: setter
+          });
+          return;
+        }
+
+        var currentValue = base[prop];
+        setPropertyAccess(base, prop, {
+          set: function set(value) {
+            abort();
+            currentValue = value;
+          },
+          get: function get() {
+            abort();
+            return currentValue;
+          }
+        });
       };
 
       setChainPropAccess(window, property);
@@ -2462,7 +2454,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("remove-attr", attrs[, selector])
+     * example.org#%#//scriptlet('remove-attr', attrs[, selector])
      * ```
      *
      * - `attrs` — required, attribute or list of attributes joined by '|';
@@ -2471,7 +2463,7 @@
      * **Examples**
      * 1.  Removes by attribute
      *     ```
-     *     example.org#%#//scriptlet("remove-attr", "example|test")
+     *     example.org#%#//scriptlet('remove-attr', 'example|test')
      *     ```
      *
      *     ```html
@@ -2484,7 +2476,7 @@
      *
      * 2. Removes with specified selector
      *     ```
-     *     example.org#%#//scriptlet("remove-attr", "example", ".inner")
+     *     example.org#%#//scriptlet('remove-attr', 'example', 'div[class="inner"]')
      *     ```
      *
      *     ```html
@@ -2544,9 +2536,12 @@
      * Removes the specified classes from DOM nodes. This scriptlet runs once after the page loads
      * and after that periodically in order to DOM tree changes.
      *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-classjs-
+     *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("remove-class", classes[, selector])
+     * example.org#%#//scriptlet('remove-class', classes[, selector])
      * ```
      *
      * - `classes` — required, class or list of classes separated by '|';
@@ -2556,7 +2551,7 @@
      * **Examples**
      * 1.  Removes by classes
      *     ```
-     *     example.org#%#//scriptlet("remove-class", "example|test")
+     *     example.org#%#//scriptlet('remove-class', 'example|test')
      *     ```
      *
      *     ```html
@@ -2573,7 +2568,7 @@
      *
      * 2. Removes with specified selector
      *     ```
-     *     example.org#%#//scriptlet("remove-class", "branding", ".inner")
+     *     example.org#%#//scriptlet('remove-class', 'branding', 'div[class="inner"]')
      *     ```
      *
      *     ```html
@@ -2590,7 +2585,6 @@
      */
 
     /* eslint-enable max-len */
-    // TODO: add related UBO scriptlet link after they add description to their doc
 
     function removeClass(source, classNames, selector) {
       if (!classNames) {

@@ -22,7 +22,7 @@ import { hit, createOnErrorHandler } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>])
+ * example.org#%#//scriptlet('abort-current-inline-script', <property> [, <search>])
  * ```
  *
  * **Parameters**
@@ -32,12 +32,12 @@ import { hit, createOnErrorHandler } from '../helpers';
  * **Examples**
  * 1. Aborts all inline scripts trying to access `window.alert`
  *     ```
- *     example.org#%#//scriptlet("abort-current-inline-script", "alert")
+ *     example.org#%#//scriptlet('abort-current-inline-script', 'alert')
  *     ```
  *
  * 2. Aborts inline scripts which are trying to access `window.alert` and contain `Hello, world`.
  *     ```
- *     example.org#%#//scriptlet("abort-current-inline-script", "alert", "Hello, world")
+ *     example.org#%#//scriptlet('abort-current-inline-script', 'alert', 'Hello, world')
  *     ```
  *
  *     For instance, the following script will be aborted
@@ -47,7 +47,7 @@ import { hit, createOnErrorHandler } from '../helpers';
  *
  * 3. Aborts inline scripts which are trying to access `window.alert` and match this regexp: `/Hello.+world/`.
  *     ```
- *     example.org#%#//scriptlet("abort-current-inline-script", "alert", "/Hello.+world/")
+ *     example.org#%#//scriptlet('abort-current-inline-script', 'alert', '/Hello.+world/')
  *     ```
  *
  *     For instance, the following scripts will be aborted:
@@ -66,7 +66,6 @@ import { hit, createOnErrorHandler } from '../helpers';
 /* eslint-enable max-len */
 export function abortCurrentInlineScript(source, property, search = null) {
     const regex = search ? toRegExp(search) : null;
-    const propRegex = property ? toRegExp(property) : null;
     const rid = randomId();
 
     const getCurrentScript = () => {
@@ -81,34 +80,16 @@ export function abortCurrentInlineScript(source, property, search = null) {
 
     const abort = () => {
         const scriptEl = getCurrentScript();
-        // скриптах, где переопределяется textContent,
-        // content'ом будет результат вызова переопределенного геттера
-        // и по параметру search скриптлет не сработает
         let content = scriptEl.textContent;
-        let isRedefined = false;
-
         try {
             const nodeDescrGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
             content = nodeDescrGetter.call(scriptEl);
-
-            // в скриптах, где переопределяется textContent, геттер не undefined
-            const scrDescrGetter = Object.getOwnPropertyDescriptor(scriptEl, 'textContent').get;
-
-            // поэтому тут проверяю что:
-            // - геттер существует
-            // - в переопределенном геттере упоминается property,
-            // допуская что оно как раз и переопределяется там
-            isRedefined = scrDescrGetter && propRegex.test(content);
-            // eslint-disable-next-line no-empty
-        } catch (e) { }
-
+        } catch (e) { } // eslint-disable-line no-empty
 
         if (scriptEl instanceof HTMLScriptElement
             && content.length > 0
             && scriptEl !== ourScript
-            && (!regex
-                || regex.test(scriptEl.textContent)
-                || isRedefined)) {
+            && (!regex || regex.test(content))) {
             hit(source);
             throw new ReferenceError(rid);
         }
@@ -117,35 +98,39 @@ export function abortCurrentInlineScript(source, property, search = null) {
     const setChainPropAccess = (owner, property) => {
         const chainInfo = getPropertyInChain(owner, property);
         let { base } = chainInfo;
-        // это для example.org где body не успевает загрузиться в момент выполнения скриптлета
-        if (base !== null) {
-            const { prop, chain } = chainInfo;
-            if (chain) {
-                const setter = (a) => {
-                    base = a;
-                    if (a instanceof Object) {
-                        setChainPropAccess(a, chain);
-                    }
-                };
-                Object.defineProperty(owner, prop, {
-                    get: () => base,
-                    set: setter,
-                });
-                return;
-            }
 
-            let currentValue = base[prop];
-            setPropertyAccess(base, prop, {
-                set: (value) => {
-                    abort();
-                    currentValue = value;
-                },
-                get: () => {
-                    abort();
-                    return currentValue;
-                },
-            });
+        // sometimes body is not loaded when scriptlet executes
+        // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
+        if (base === null) {
+            return;
         }
+
+        const { prop, chain } = chainInfo;
+        if (chain) {
+            const setter = (a) => {
+                base = a;
+                if (a instanceof Object) {
+                    setChainPropAccess(a, chain);
+                }
+            };
+            Object.defineProperty(owner, prop, {
+                get: () => base,
+                set: setter,
+            });
+            return;
+        }
+
+        let currentValue = base[prop];
+        setPropertyAccess(base, prop, {
+            set: (value) => {
+                abort();
+                currentValue = value;
+            },
+            get: () => {
+                abort();
+                return currentValue;
+            },
+        });
     };
 
     setChainPropAccess(window, property);
