@@ -1186,7 +1186,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
+     * example.org#%#//scriptlet('prevent-window-open'[, <match>[, <search>]])
      * ```
      *
      * **Parameters**
@@ -1197,42 +1197,44 @@
      *
      * 1. Prevent all `window.open` calls:
      * ```
-     *     example.org#%#//scriptlet("prevent-window-open")
+     *     example.org#%#//scriptlet('prevent-window-open')
      * ```
      *
      * 2. Prevent `window.open` for all URLs containing `example`:
      * ```
-     *     example.org#%#//scriptlet("prevent-window-open", "1", "example")
+     *     example.org#%#//scriptlet('prevent-window-open', '1', 'example')
      * ```
      *
      * 3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
      * ```
-     *     example.org#%#//scriptlet("prevent-window-open", "1", "/example\./")
+     *     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
      * ```
      *
      * 4. Prevent `window.open` for all URLs **NOT** containing `example`:
      * ```
-     *     example.org#%#//scriptlet("prevent-window-open", "0", "example")
+     *     example.org#%#//scriptlet('prevent-window-open', '0', 'example')
      * ```
      */
 
     /* eslint-enable max-len */
 
-    function preventWindowOpen(source, inverse, match) {
+    function preventWindowOpen(source) {
+      var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
+      var search = arguments.length > 2 ? arguments[2] : undefined;
       var nativeOpen = window.open;
-      inverse = inverse ? !+inverse : !!inverse;
-      match = match ? toRegExp(match) : toRegExp('/.?/'); // eslint-disable-next-line consistent-return
+      match = +match > 0;
+      search = search ? toRegExp(search) : toRegExp('/.?/'); // eslint-disable-next-line consistent-return
 
       var openWrapper = function openWrapper(str) {
-        if (inverse === match.test(str)) {
+        if (match === search.test(str)) {
+          hit(source);
+
           for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
             args[_key - 1] = arguments[_key];
           }
 
           return nativeOpen.apply(window, [str].concat(args));
         }
-
-        hit(source);
       };
 
       window.open = openWrapper;

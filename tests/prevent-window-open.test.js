@@ -25,6 +25,7 @@ const afterEach = () => {
 };
 
 module(name, { beforeEach, afterEach });
+
 test('prevent-window-open: adg no args', (assert) => {
     const params = {
         name,
@@ -50,7 +51,7 @@ test('prevent-window-open: ubo alias: not reverse, string', (assert) => {
     evalWrap(scriptlet);
     // check if scriptlet works
     window.open('test url', 'some target');
-    assert.equal(window.hit, 'value', 'Hit function was executed');
+    assert.equal(window.hit, undefined, 'Hit function was executed because of not matching');
 });
 
 test('prevent-window-open: adg: regexp ', (assert) => {
@@ -78,7 +79,7 @@ test('prevent-window-open: adg: regexp ', (assert) => {
     evalWrap(scriptlet);
     // check if scriptlet works
     window.open('test url', 'some target');
-    assert.equal(window.hit, 'value', 'Hit function was executed');
+    assert.equal(window.hit, undefined, 'Hit function was not executed because of not matching');
 });
 
 test('prevent-window-open: adg: reverse, regexp ', (assert) => {
@@ -92,5 +93,5 @@ test('prevent-window-open: adg: reverse, regexp ', (assert) => {
     evalWrap(scriptlet);
     // check if scriptlet works
     window.open('some url', 'some target');
-    assert.equal(window.hit, 'value', 'Hit function was executed');
+    assert.equal(window.hit, 'value', 'Hit function was executed because of reverse matching');
 });
