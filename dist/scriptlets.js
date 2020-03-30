@@ -1349,8 +1349,8 @@
         // and if not, we simply exit without overriding anything.
         // e.g. https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
 
-        if (base instanceof Object === false) {
-          var props = chain.split('.');
+        if (base instanceof Object === false && base === null) {
+          var props = property.split('.');
           var propIndex = props.indexOf(prop);
           var baseName = props[propIndex - 1];
           console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded.")); // eslint-disable-line no-console

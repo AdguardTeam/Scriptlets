@@ -110,8 +110,8 @@ export function abortCurrentInlineScript(source, property, search = null) {
         // In this case we're checking whether the base element exists or not
         // and if not, we simply exit without overriding anything.
         // e.g. https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
-        if (base instanceof Object === false) {
-            const props = chain.split('.');
+        if (base instanceof Object === false && base === null) {
+            const props = property.split('.');
             const propIndex = props.indexOf(prop);
             const baseName = props[propIndex - 1];
             console.log(`The scriptlet had been executed before the ${baseName} was loaded.`); // eslint-disable-line no-console
