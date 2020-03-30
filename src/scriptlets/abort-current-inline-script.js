@@ -81,6 +81,9 @@ export function abortCurrentInlineScript(source, property, search = null) {
     const abort = () => {
         const scriptEl = getCurrentScript();
         let content = scriptEl.textContent;
+
+        // sometimes textContent of current script can be redefined
+        // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
         try {
             const nodeDescrGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
             content = nodeDescrGetter.call(scriptEl);
@@ -99,7 +102,7 @@ export function abortCurrentInlineScript(source, property, search = null) {
         const chainInfo = getPropertyInChain(owner, property);
         let { base } = chainInfo;
 
-        // sometimes body is not loaded when scriptlet executes
+        // sometimes body is defined but not loaded yet when scriptlet executes
         // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
         if (base === null) {
             return;
