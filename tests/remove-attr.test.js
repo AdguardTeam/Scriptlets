@@ -99,7 +99,7 @@ test('Adg rule: no selector', (assert) => {
         });
         assert.strictEqual(window.hit, 'FIRED');
         done();
-    }, 100);
+    }, 200);
 });
 
 
