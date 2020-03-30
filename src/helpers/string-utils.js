@@ -73,15 +73,3 @@ export const getStringInBraces = (str) => {
     const lastIndex = str.lastIndexOf(')');
     return str.substring(firstIndex + 1, lastIndex);
 };
-
-/**
- * Returns the parental property name for the prop in chain
- * e.g. chain='a.bb.c1', prop='c1' ->> 'bb'
- * @param {string} chain
- * @param {string} prop
- */
-export const getParentalPropName = (chain, prop) => {
-    const props = chain.split('.');
-    const propIndex = props.indexOf(prop);
-    return props[propIndex - 1];
-};

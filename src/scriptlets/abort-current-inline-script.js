@@ -2,7 +2,7 @@
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
-import { toRegExp, getParentalPropName } from '../helpers/string-utils';
+import { toRegExp } from '../helpers/string-utils';
 import { hit, createOnErrorHandler } from '../helpers';
 
 /* eslint-disable max-len */
@@ -82,9 +82,9 @@ export function abortCurrentInlineScript(source, property, search = null) {
         const scriptEl = getCurrentScript();
         let content = scriptEl.textContent;
 
-        // textContent of current script can be redefined
-        // (developers do it to prevent script aborting usually)
-        // so we should check textContent of Node.prototype
+        // We are using Node.prototype.textContent property descriptor
+        // to get the real script content
+        // even when document.currentScript.textContent is replaced.
         // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
         try {
             const nodeDescrGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
@@ -105,14 +105,15 @@ export function abortCurrentInlineScript(source, property, search = null) {
         let { base } = chainInfo;
         const { prop, chain } = chainInfo;
 
-        const baseName = getParentalPropName(property, prop);
-
         // The scriptlet might be executed before the chain property has been created
         // (for instance, document.body before the HTML body was loaded).
         // In this case we're checking whether the base element exists or not
         // and if not, we simply exit without overriding anything.
         // e.g. https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
         if (base instanceof Object === false) {
+            const props = chain.split('.');
+            const propIndex = props.indexOf(prop);
+            const baseName = props[propIndex - 1];
             console.log(`The scriptlet had been executed before the ${baseName} was loaded.`); // eslint-disable-line no-console
             return;
         }
@@ -164,7 +165,6 @@ abortCurrentInlineScript.injections = [
     setPropertyAccess,
     getPropertyInChain,
     toRegExp,
-    getParentalPropName,
     createOnErrorHandler,
     hit,
 ];
