@@ -1220,6 +1220,8 @@ preventSetInterval.injections = [toRegExp, startsWith, hit];
 function preventWindowOpen(source) {
   var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
   var search = arguments.length > 2 ? arguments[2] : undefined;
+  // Default value of 'match' is needed to prevent all `window.open` calls
+  // if the scriptlet is used without parameters
   var nativeOpen = window.open;
   match = +match > 0;
   search = search ? toRegExp(search) : toRegExp('/.?/'); // eslint-disable-next-line consistent-return

@@ -51,7 +51,7 @@ test('prevent-window-open: ubo alias: not reverse, string', (assert) => {
     evalWrap(scriptlet);
     // check if scriptlet works
     window.open('test url', 'some target');
-    assert.equal(window.hit, undefined, 'Hit function was executed because of not matching');
+    assert.equal(window.hit, undefined, 'Hit function was not executed because of not matching');
 });
 
 test('prevent-window-open: adg: regexp ', (assert) => {

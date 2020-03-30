@@ -44,6 +44,8 @@ import { hit } from '../helpers';
  */
 /* eslint-enable max-len */
 export function preventWindowOpen(source, match = 1, search) {
+    // Default value of 'match' is needed to prevent all `window.open` calls
+    // if the scriptlet is used without parameters
     const nativeOpen = window.open;
 
     match = +match > 0;
