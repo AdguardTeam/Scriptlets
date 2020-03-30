@@ -92,7 +92,7 @@ test('Adg rule', (assert) => {
 
     const done = assert.async();
 
-    setTimeout(() => { childElement.classList.add('test11'); }, 50);
+    setTimeout(() => { childElement.classList.add('test11'); }, 20);
     setTimeout(() => { childElement.classList.add('test22'); }, 60);
 
     setTimeout(() => {

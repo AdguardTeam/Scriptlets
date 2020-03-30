@@ -64,7 +64,7 @@ test('prevent-setTimeout: adg no args -- logging', (assert) => {
     setTimeout(() => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         assert.strictEqual(window[agLogSetTimeout], 'changed', 'property changed');
-        clearGlobalProps('hit', agLogSetTimeout);
+        clearGlobalProps('hit', 'agLogSetTimeout');
         done();
     }, 50);
 });
@@ -101,7 +101,7 @@ test('prevent-setTimeout: ubo alias no args -- logging', (assert) => {
     setTimeout(() => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         assert.strictEqual(window[uboLogSetTimeout], 'changed', 'property changed');
-        clearGlobalProps('hit', uboLogSetTimeout);
+        clearGlobalProps('hit', 'uboLogSetTimeout');
         done();
     }, 50);
 });
