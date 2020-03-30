@@ -2,7 +2,7 @@
 import { randomId } from '../helpers/random-id';
 import { setPropertyAccess } from '../helpers/set-property-access';
 import { getPropertyInChain } from '../helpers/get-property-in-chain';
-import { toRegExp } from '../helpers/string-utils';
+import { toRegExp, getParentalPropName } from '../helpers/string-utils';
 import { hit, createOnErrorHandler } from '../helpers';
 
 /* eslint-disable max-len */
@@ -82,7 +82,9 @@ export function abortCurrentInlineScript(source, property, search = null) {
         const scriptEl = getCurrentScript();
         let content = scriptEl.textContent;
 
-        // sometimes textContent of current script can be redefined
+        // textContent of current script can be redefined
+        // (developers do it to prevent script aborting usually)
+        // so we should check textContent of Node.prototype
         // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
         try {
             const nodeDescrGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
@@ -101,16 +103,20 @@ export function abortCurrentInlineScript(source, property, search = null) {
     const setChainPropAccess = (owner, property) => {
         const chainInfo = getPropertyInChain(owner, property);
         let { base } = chainInfo;
+        const { prop, chain } = chainInfo;
 
-        // scriptlet won't abort script
-        // if scriptlet executes earlier and chain prop has not been loaded yet --
-        // prop is defined and instanceof Object but null
+        const baseName = getParentalPropName(property, prop);
+
+        // The scriptlet might be executed before the chain property has been created
+        // (for instance, document.body before the HTML body was loaded).
+        // In this case we're checking whether the base element exists or not
+        // and if not, we simply exit without overriding anything.
         // e.g. https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
-        if (base === null) {
+        if (base instanceof Object === false) {
+            console.log(`The scriptlet had been executed before the ${baseName} was loaded.`); // eslint-disable-line no-console
             return;
         }
 
-        const { prop, chain } = chainInfo;
         if (chain) {
             const setter = (a) => {
                 base = a;
@@ -158,6 +164,7 @@ abortCurrentInlineScript.injections = [
     setPropertyAccess,
     getPropertyInChain,
     toRegExp,
+    getParentalPropName,
     createOnErrorHandler,
     hit,
 ];
