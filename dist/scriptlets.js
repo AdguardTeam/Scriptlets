@@ -1339,8 +1339,10 @@
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
         var chainInfo = getPropertyInChain(owner, property);
-        var base = chainInfo.base; // sometimes body is defined but not loaded yet when scriptlet executes
-        // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
+        var base = chainInfo.base; // scriptlet won't abort script
+        // if scriptlet executes earlier and chain prop has not been loaded yet --
+        // prop is defined and instanceof Object but null
+        // e.g. https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
 
         if (base === null) {
           return;
