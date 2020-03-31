@@ -28,15 +28,21 @@ export function GoogleSyndicationAdsByGoogle(source) {
     const css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
     let executed = false;
     for (let i = 0; i < adElems.length; i += 1) {
-        const frame = document.createElement('iframe');
-        frame.id = `aswift_${i + 1}`;
-        frame.style = css;
-        const childFrame = document.createElement('iframe');
-        childFrame.id = `google_ads_frame${i}`;
-        frame.appendChild(childFrame);
-        document.body.appendChild(frame);
+        adElems[i].setAttribute('data-adsbygoogle-status', 'done');
+
+        const aswiftIframe = document.createElement('iframe');
+        aswiftIframe.id = `aswift_${i + 1}`;
+        aswiftIframe.style = css;
+        adElems[i].appendChild(aswiftIframe);
+
+        const googleadsIframe = document.createElement('iframe');
+        googleadsIframe.id = `google_ads_iframe_${i}`;
+        googleadsIframe.style = css;
+        adElems[i].appendChild(googleadsIframe);
+
         executed = true;
     }
+
     if (executed) {
         hit(source);
     }

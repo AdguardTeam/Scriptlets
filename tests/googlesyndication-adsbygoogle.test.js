@@ -34,11 +34,18 @@ test('UBO alias', (assert) => {
     const resString = window.scriptlets.invoke(params);
     evalWrapper(resString);
 
-    // check if iframe was created by sciptlet
-    const createdIframe = document.querySelector('#aswift_1');
+    // check if iframes was created by sciptlet
+    const adsbygoogleElems = document.getElementsByClassName('adsbygoogle');
+    const hasAdAttr = adsbygoogleElems[0].hasAttribute('data-adsbygoogle-status');
+    const createdIframes = adsbygoogleElems[0].getElementsByTagName('iframe');
+    const aswiftIframe = document.querySelector('#aswift_1');
+    const googleadsIframe = document.querySelector('#google_ads_iframe_0');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    assert.ok(createdIframe, 'iframe was created by scriptlet');
+    assert.strictEqual(hasAdAttr, true, '.adsbygoogle has \'data-adsbygoogle-status\' attribute');
+    assert.ok(aswiftIframe, 'aswift iframe was created by scriptlet');
+    assert.ok(googleadsIframe, 'google_ads iframe was created by scriptlet');
+    assert.strictEqual(createdIframes.length, 2, '2 iframes was created as a child of .adsbygoogle');
 
     // check if API was mocked
     window.adsbygoogle.push('somedata');
@@ -46,7 +53,6 @@ test('UBO alias', (assert) => {
 
     clearGlobalProps('__debugScriptlets', 'hit', 'adsbygoogle');
     removeBodyElement(ad);
-    removeBodyElement(createdIframe);
 });
 
 test('UBO Syntax', (assert) => {
@@ -62,11 +68,18 @@ test('UBO Syntax', (assert) => {
     const resString = window.scriptlets.invoke(params);
     evalWrapper(resString);
 
-    // check if iframe was created by sciptlet
-    const createdIframe = document.querySelector('#aswift_1');
+    // check if iframes was created by sciptlet
+    const adsbygoogleElems = document.getElementsByClassName('adsbygoogle');
+    const hasAdAttr = adsbygoogleElems[0].hasAttribute('data-adsbygoogle-status');
+    const createdIframes = adsbygoogleElems[0].getElementsByTagName('iframe');
+    const aswiftIframe = document.querySelector('#aswift_1');
+    const googleadsIframe = document.querySelector('#google_ads_iframe_0');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    assert.ok(createdIframe, 'iframe was created by scriptlet');
+    assert.strictEqual(hasAdAttr, true, '.adsbygoogle has \'data-adsbygoogle-status\' attribute');
+    assert.ok(aswiftIframe, 'aswift iframe was created by scriptlet');
+    assert.ok(googleadsIframe, 'google_ads iframe was created by scriptlet');
+    assert.strictEqual(createdIframes.length, 2, '2 iframes was created as a child of .adsbygoogle');
 
     // check if API was mocked
     window.adsbygoogle.push('somedata');
@@ -74,7 +87,6 @@ test('UBO Syntax', (assert) => {
 
     clearGlobalProps('__debugScriptlets', 'hit', 'adsbygoogle');
     removeBodyElement(ad);
-    removeBodyElement(createdIframe);
 });
 
 test('AdGuard Syntax', (assert) => {
@@ -90,11 +102,18 @@ test('AdGuard Syntax', (assert) => {
     const resString = window.scriptlets.invoke(params);
     evalWrapper(resString);
 
-    // check if iframe was created by sciptlet
-    const createdIframe = document.querySelector('#aswift_1');
+    // check if iframes was created by sciptlet
+    const adsbygoogleElems = document.getElementsByClassName('adsbygoogle');
+    const hasAdAttr = adsbygoogleElems[0].hasAttribute('data-adsbygoogle-status');
+    const createdIframes = adsbygoogleElems[0].getElementsByTagName('iframe');
+    const aswiftIframe = document.querySelector('#aswift_1');
+    const googleadsIframe = document.querySelector('#google_ads_iframe_0');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    assert.ok(createdIframe, 'iframe was created by scriptlet');
+    assert.strictEqual(hasAdAttr, true, '.adsbygoogle has \'data-adsbygoogle-status\' attribute');
+    assert.ok(aswiftIframe, 'aswift iframe was created by scriptlet');
+    assert.ok(googleadsIframe, 'google_ads iframe was created by scriptlet');
+    assert.strictEqual(createdIframes.length, 2, '2 iframes was created as a child of .adsbygoogle');
 
     // check if API was mocked
     window.adsbygoogle.push('somedata');
@@ -102,5 +121,4 @@ test('AdGuard Syntax', (assert) => {
 
     clearGlobalProps('__debugScriptlets', 'hit', 'adsbygoogle');
     removeBodyElement(ad);
-    removeBodyElement(createdIframe);
 });
