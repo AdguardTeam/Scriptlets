@@ -56,15 +56,22 @@ test('ubo alias', (assert) => {
 
     const done = assert.async();
 
-    setTimeout(() => { addAttr(elem, 'test2'); }, 10);
+    const test2Callback = () => { addAttr(elem, 'test2'); };
+    const test2Timeout = 10;
 
-    setTimeout(() => {
+    const test2SetTimeout = setTimeout(test2Callback, test2Timeout);
+
+    // setTimeout(() => { addAttr(elem, 'test2'); }, 10);
+
+    const checkingSetTimeout = setTimeout(() => {
         attrs.forEach((a) => {
             assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
         });
         assert.strictEqual(window.hit, 'FIRED');
+        clearTimeout(test2SetTimeout);
         done();
     }, 50);
+    clearTimeout(checkingSetTimeout);
 });
 
 
@@ -90,16 +97,27 @@ test('Adg rule: no selector', (assert) => {
 
     const done = assert.async();
 
-    setTimeout(() => { addAttr(elem, 'test1'); }, 30);
-    setTimeout(() => { addAttr(elem, 'test2'); }, 50);
+    const test1Callback = () => { addAttr(elem, 'test1'); };
+    const test1Timeout = 30;
+    const test2Callback = () => { addAttr(elem, 'test2'); };
+    const test2Timeout = 50;
 
-    setTimeout(() => {
+    const test1SetTimeout = setTimeout(test1Callback, test1Timeout);
+    const test2SetTimeout = setTimeout(test2Callback, test2Timeout);
+
+    // setTimeout(() => { addAttr(elem, 'test1'); }, 30);
+    // setTimeout(() => { addAttr(elem, 'test2'); }, 50);
+
+    const checkingSetTimeout = setTimeout(() => {
         attrs.forEach((a) => {
             assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
         });
         assert.strictEqual(window.hit, 'FIRED');
+        clearTimeout(test1SetTimeout);
+        clearTimeout(test2SetTimeout);
         done();
     }, 100);
+    clearTimeout(checkingSetTimeout);
 });
 
 
