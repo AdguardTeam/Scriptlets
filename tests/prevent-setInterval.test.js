@@ -24,7 +24,7 @@ const beforeEach = () => {
 
 const afterEach = () => {
     window.setInterval = nativeSetInterval;
-    clearGlobalProps('hit', 'aaa', '__debugScriptlets');
+    clearGlobalProps('hit', '__debugScriptlets');
     testIntervals.forEach((i) => (clearInterval(i)));
     console.log = nativeConsole; // eslint-disable-line no-console
 };
@@ -63,7 +63,7 @@ test('prevent-setInterval: adg no args -- logging', (assert) => {
     setTimeout(() => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         assert.strictEqual(window[agLogSetInterval], 'changed', 'property changed');
-        clearGlobalProps('hit', 'agLogSetInterval');
+        clearGlobalProps('hit', agLogSetInterval);
         done();
     }, 50);
 });
@@ -100,7 +100,7 @@ test('prevent-setInterval: ubo alias no args -- logging', (assert) => {
     setTimeout(() => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         assert.strictEqual(window[uboLogSetInterval], 'changed', 'property changed');
-        clearGlobalProps('hit', 'uboLogSetInterval');
+        clearGlobalProps('hit', uboLogSetInterval);
         done();
     }, 50);
 });

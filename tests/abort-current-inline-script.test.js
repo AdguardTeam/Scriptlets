@@ -46,7 +46,7 @@ test('ubo alias', (assert) => {
 
     assert.strictEqual(window.hit, 'FIRED');
 
-    clearGlobalProps(...changingGlobals);
+    clearGlobalProps(...changingGlobals, property);
 });
 
 test('abp alias', (assert) => {
@@ -67,7 +67,7 @@ test('abp alias', (assert) => {
     addAndRemoveInlineScript('window.___aaa;');
 
     assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps(...changingGlobals);
+    clearGlobalProps(...changingGlobals, property);
 });
 
 test('works', (assert) => {
@@ -88,7 +88,7 @@ test('works', (assert) => {
     addAndRemoveInlineScript('window.___aaa;');
 
     assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps(...changingGlobals);
+    clearGlobalProps(...changingGlobals, property);
 });
 
 test('works with chained properties', (assert) => {
@@ -113,7 +113,7 @@ test('works with chained properties', (assert) => {
     `);
 
     assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps(...changingGlobals);
+    clearGlobalProps(...changingGlobals, chainProperty);
 });
 
 test('aborts script by search', (assert) => {
@@ -135,7 +135,7 @@ test('aborts script by search', (assert) => {
     addAndRemoveInlineScript(`${search} = window.${property};`);
 
     assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps(...changingGlobals);
+    clearGlobalProps(...changingGlobals, property);
 });
 
 
@@ -156,7 +156,7 @@ test('doesnt aborts script which is not specified by search', (assert) => {
     addAndRemoveInlineScript(`window.${property};`);
 
     assert.notStrictEqual(window.hit, undefined);
-    clearGlobalProps(...changingGlobals);
+    clearGlobalProps(...changingGlobals, property);
 });
 
 test('searches script by regexp', (assert) => {
@@ -178,7 +178,7 @@ test('searches script by regexp', (assert) => {
     addAndRemoveInlineScript(`window.${property};`);
 
     assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps(...changingGlobals);
+    clearGlobalProps(...changingGlobals, property);
 });
 
 test('Patched textContent', (assert) => {
@@ -206,5 +206,5 @@ test('Patched textContent', (assert) => {
     `);
 
     assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps(...changingGlobals);
+    clearGlobalProps(...changingGlobals, property);
 });
