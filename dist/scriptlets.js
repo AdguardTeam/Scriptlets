@@ -1328,8 +1328,8 @@
         // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
 
         try {
-          var nodeDescrGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
-          content = nodeDescrGetter.call(scriptEl);
+          var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
+          content = textContentGetter.call(scriptEl);
         } catch (e) {} // eslint-disable-line no-empty
 
 

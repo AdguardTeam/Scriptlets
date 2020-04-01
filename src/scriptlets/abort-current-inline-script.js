@@ -87,8 +87,8 @@ export function abortCurrentInlineScript(source, property, search = null) {
         // even when document.currentScript.textContent is replaced.
         // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
         try {
-            const nodeDescrGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
-            content = nodeDescrGetter.call(scriptEl);
+            const textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
+            content = textContentGetter.call(scriptEl);
         } catch (e) { } // eslint-disable-line no-empty
 
         if (scriptEl instanceof HTMLScriptElement
