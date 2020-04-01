@@ -1235,7 +1235,9 @@ function preventWindowOpen(source) {
   var replacement = arguments.length > 3 ? arguments[3] : undefined;
   // Default value of 'match' is needed to prevent all `window.open` calls
   // if the scriptlet is used without parameters
-  var nativeOpen = window.open;
+  var nativeOpen = window.open; // unary plus converts 'match' to a number
+  // e.g.: +'1' -> 1; +false -> 0
+
   match = +match > 0;
   search = search ? toRegExp(search) : toRegExp('/.?/'); // eslint-disable-next-line consistent-return
 

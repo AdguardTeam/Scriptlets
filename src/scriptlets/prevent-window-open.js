@@ -63,6 +63,8 @@ export function preventWindowOpen(source, match = 1, search, replacement) {
     // if the scriptlet is used without parameters
     const nativeOpen = window.open;
 
+    // unary plus converts 'match' to a number
+    // e.g.: +'1' -> 1; +false -> 0
     match = +match > 0;
 
     search = search
