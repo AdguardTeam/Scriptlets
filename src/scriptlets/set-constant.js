@@ -107,8 +107,6 @@ export function setConstant(source, property, value) {
             Object.defineProperty(owner, prop, {
                 get: () => base,
                 set: setter,
-                configurable: true,
-                writable: true,
             });
             return;
         }

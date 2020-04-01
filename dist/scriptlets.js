@@ -1548,9 +1548,7 @@
             get: function get() {
               return base;
             },
-            set: setter,
-            configurable: true,
-            writable: true
+            set: setter
           });
           return;
         }
