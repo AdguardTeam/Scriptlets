@@ -34,7 +34,7 @@ test('UBO alias', (assert) => {
     const resString = window.scriptlets.invoke(params);
     evalWrapper(resString);
 
-    // check if iframes was created by sciptlet
+    // check if iframes were created by sciptlet
     const adsbygoogleElems = document.getElementsByClassName('adsbygoogle');
     const hasAdAttr = adsbygoogleElems[0].hasAttribute('data-adsbygoogle-status');
     const createdIframes = adsbygoogleElems[0].getElementsByTagName('iframe');
@@ -68,7 +68,7 @@ test('UBO Syntax', (assert) => {
     const resString = window.scriptlets.invoke(params);
     evalWrapper(resString);
 
-    // check if iframes was created by sciptlet
+    // check if iframes were created by sciptlet
     const adsbygoogleElems = document.getElementsByClassName('adsbygoogle');
     const hasAdAttr = adsbygoogleElems[0].hasAttribute('data-adsbygoogle-status');
     const createdIframes = adsbygoogleElems[0].getElementsByTagName('iframe');
@@ -102,7 +102,7 @@ test('AdGuard Syntax', (assert) => {
     const resString = window.scriptlets.invoke(params);
     evalWrapper(resString);
 
-    // check if iframes was created by sciptlet
+    // check if iframes were created by sciptlet
     const adsbygoogleElems = document.getElementsByClassName('adsbygoogle');
     const hasAdAttr = adsbygoogleElems[0].hasAttribute('data-adsbygoogle-status');
     const createdIframes = adsbygoogleElems[0].getElementsByTagName('iframe');
