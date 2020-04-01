@@ -43,7 +43,7 @@ test('prevent-window-open: adg no args', (assert) => {
 test('prevent-window-open: ubo alias: not reverse, string', (assert) => {
     const params = {
         name: 'ubo-window.open-defuser.js',
-        args: ['', 'test'],
+        args: ['1', 'test'],
         verbose: true,
     };
     const scriptlet = window.scriptlets.invoke(params);
@@ -51,7 +51,7 @@ test('prevent-window-open: ubo alias: not reverse, string', (assert) => {
     evalWrap(scriptlet);
     // check if scriptlet works
     window.open('test url', 'some target');
-    assert.equal(window.hit, undefined, 'Hit function was not executed because of not matching');
+    assert.equal(window.hit, 'value', 'Hit function was executed');
 });
 
 test('prevent-window-open: adg: regexp ', (assert) => {
@@ -71,7 +71,7 @@ test('prevent-window-open: adg: regexp ', (assert) => {
 test('prevent-window-open: adg: regexp ', (assert) => {
     const params = {
         name,
-        args: ['', '/test/'],
+        args: ['2', '/test/'],
         verbose: true,
     };
     const scriptlet = window.scriptlets.invoke(params);
@@ -79,7 +79,7 @@ test('prevent-window-open: adg: regexp ', (assert) => {
     evalWrap(scriptlet);
     // check if scriptlet works
     window.open('test url', 'some target');
-    assert.equal(window.hit, undefined, 'Hit function was not executed because of not matching');
+    assert.equal(window.hit, 'value', 'Hit function was executed');
 });
 
 test('prevent-window-open: adg: reverse, regexp ', (assert) => {

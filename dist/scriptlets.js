@@ -118,6 +118,9 @@
     var startsWith = function startsWith(str, prefix) {
       return str && str.indexOf(prefix) === 0;
     };
+    var endsWith = function endsWith(str, prefix) {
+      return str && str.indexOf(prefix) === str.length - 1;
+    };
     var substringAfter = function substringAfter(str, separator) {
       if (!str) {
         return str;
@@ -356,6 +359,7 @@
         toRegExp: toRegExp,
         getBeforeRegExp: getBeforeRegExp,
         startsWith: startsWith,
+        endsWith: endsWith,
         substringAfter: substringAfter,
         substringBefore: substringBefore,
         wrapInSingleQuotes: wrapInSingleQuotes,
@@ -1186,13 +1190,13 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('prevent-window-open'[, <match>[, <search>]])
+     * example.org#%#//scriptlet('prevent-window-open'[, <match>[, <search>[, <replacement>]]])
      * ```
      *
      * **Parameters**
      * - `match` (optional) defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching",
-     * - `search` (optional) string or regexp for matching the URL passed to `window.open` call.
-     *
+     * - `search` (optional) string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call.
+     * - `replacement` (optional) string to return prop value or property instead of window.open; defaults to return noopFunc
      * **Example**
      *
      * 1. Prevent all `window.open` calls:
@@ -1214,6 +1218,14 @@
      * ```
      *     example.org#%#//scriptlet('prevent-window-open', '0', 'example')
      * ```
+     * 5. Prevent all `window.open` calls and return 'trueFunc' instead of it if website checks it:
+     * ```
+     *     example.org#%#//scriptlet('prevent-window-open', , , 'trueFunc')
+     * ```
+     * 6. Prevent all `window.open` and add 'propName'=noopFunc as a property of window.open if website checks it:
+     * ```
+     *     example.org#%#//scriptlet('prevent-window-open', '1', , '[propName]=noopFunc')
+     * ```
      */
 
     /* eslint-enable max-len */
@@ -1221,6 +1233,7 @@
     function preventWindowOpen(source) {
       var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
       var search = arguments.length > 2 ? arguments[2] : undefined;
+      var replacement = arguments.length > 3 ? arguments[3] : undefined;
       // Default value of 'match' is needed to prevent all `window.open` calls
       // if the scriptlet is used without parameters
       var nativeOpen = window.open;
@@ -1228,21 +1241,52 @@
       search = search ? toRegExp(search) : toRegExp('/.?/'); // eslint-disable-next-line consistent-return
 
       var openWrapper = function openWrapper(str) {
-        if (match === search.test(str)) {
-          hit(source);
-
+        if (match !== search.test(str)) {
           for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
             args[_key - 1] = arguments[_key];
           }
 
           return nativeOpen.apply(window, [str].concat(args));
         }
+
+        hit(source);
+
+        var noopFunc = function noopFunc() {};
+
+        var trueFunc = function trueFunc() {
+          return true;
+        };
+
+        var result; // defaults to return noopFunc instead of window.open
+
+        if (!replacement) {
+          result = noopFunc;
+        } else if (replacement === 'trueFunc') {
+          result = trueFunc;
+        } else if (replacement.indexOf('=') > -1) {
+          // We should return noopFunc instead of window.open
+          // but with some property if website checks it (examples 5, 6)
+          // https://github.com/AdguardTeam/Scriptlets/issues/71
+          var propPart = substringBefore(replacement, '=');
+          var isProp = startsWith(propPart, '[') && endsWith(propPart, ']');
+
+          if (isProp) {
+            var prop = propPart.substring(1, propPart.lenght - 1);
+            var inputValue = substringAfter(replacement, '=');
+
+            if (inputValue === 'noopFunc') {
+              result = noopFunc[prop][noopFunc]; // result = noopFunc[prop];
+            }
+          }
+        }
+
+        return result;
       };
 
       window.open = openWrapper;
     }
     preventWindowOpen.names = ['prevent-window-open', 'window.open-defuser.js', 'ubo-window.open-defuser.js'];
-    preventWindowOpen.injections = [toRegExp, hit];
+    preventWindowOpen.injections = [toRegExp, hit, startsWith, endsWith, substringBefore, substringAfter];
 
     /* eslint-disable no-new-func */
     /* eslint-disable max-len */
@@ -1502,7 +1546,9 @@
             get: function get() {
               return base;
             },
-            set: setter
+            set: setter,
+            configurable: true,
+            writable: true
           });
           return;
         }

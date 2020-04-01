@@ -159,4 +159,5 @@ test('values with same types are not overwritten, values with different types ar
     window[property] = anotherTypeValue;
     assert.strictEqual(window[property], anotherTypeValue, 'values with different types are overwritten');
     clearGlobalProps(property);
+    // clearGlobalProps(`${property}`);
 });

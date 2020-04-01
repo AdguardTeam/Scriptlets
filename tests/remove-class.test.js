@@ -50,27 +50,19 @@ test('Adg rule: no selector', (assert) => {
     });
     assert.strictEqual(window.hit, 'FIRED');
 
-
     const done = assert.async();
 
-    // setTimeout(() => { first.classList.add('example'); }, 15);
+    setTimeout(() => { first.classList.add('example'); }, 25);
 
-    const exampleCallback = () => { first.classList.add('example'); };
-    const addingTimeout = 15;
-
-    const exampleSetTimeout = setTimeout(exampleCallback, addingTimeout);
-
-    const checkingSetTimeout = setTimeout(() => {
+    setTimeout(() => {
         classNames.forEach((a) => {
             assert.notOk(first.classList.contains(a), `Class '${a}' has been removed`);
             assert.notOk(second.classList.contains(a), `Class '${a}' has been removed`);
             assert.notOk(third.classList.contains(a), `Class '${a}' has been removed`);
         });
         assert.strictEqual(window.hit, 'FIRED');
-        clearTimeout(exampleSetTimeout);
         done();
     }, 50);
-    clearTimeout(checkingSetTimeout);
 });
 
 
@@ -96,28 +88,16 @@ test('Adg rule', (assert) => {
     });
     assert.strictEqual(window.hit, 'FIRED');
 
-
     const done = assert.async();
 
-    const test11Callback = () => { childElement.classList.add('test11'); };
-    const test11Timeout = 30;
-    const test22Callback = () => { childElement.classList.add('test11'); };
-    const test22Timeout = 60;
+    setTimeout(() => { childElement.classList.add('test11'); }, 40);
+    setTimeout(() => { childElement.classList.add('test22'); }, 70);
 
-    const test11SetTimeout = setTimeout(test11Callback, test11Timeout);
-    const test22SetTimeout = setTimeout(test22Callback, test22Timeout);
-
-    // setTimeout(() => { childElement.classList.add('test11'); }, 30);
-    // setTimeout(() => { childElement.classList.add('test22'); }, 60);
-
-    const checkingSetTimeout = setTimeout(() => {
+    setTimeout(() => {
         classNames.forEach((a) => {
             assert.notOk(childElement.classList.contains(a), `Class '${a}' has been removed`);
         });
         assert.strictEqual(window.hit, 'FIRED');
-        clearTimeout(test11SetTimeout);
-        clearTimeout(test22SetTimeout);
         done();
     }, 150);
-    clearTimeout(checkingSetTimeout);
 });
