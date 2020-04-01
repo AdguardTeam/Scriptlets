@@ -8,9 +8,12 @@ import { hit, observeDOMChanges } from '../helpers';
  * Removes the specified classes from DOM nodes. This scriptlet runs once after the page loads
  * and after that periodically in order to DOM tree changes.
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-classjs-
+ *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("remove-class", classes[, selector])
+ * example.org#%#//scriptlet('remove-class', classes[, selector])
  * ```
  *
  * - `classes` — required, class or list of classes separated by '|';
@@ -20,7 +23,7 @@ import { hit, observeDOMChanges } from '../helpers';
  * **Examples**
  * 1.  Removes by classes
  *     ```
- *     example.org#%#//scriptlet("remove-class", "example|test")
+ *     example.org#%#//scriptlet('remove-class', 'example|test')
  *     ```
  *
  *     ```html
@@ -37,7 +40,7 @@ import { hit, observeDOMChanges } from '../helpers';
  *
  * 2. Removes with specified selector
  *     ```
- *     example.org#%#//scriptlet("remove-class", "branding", ".inner")
+ *     example.org#%#//scriptlet('remove-class', 'branding', 'div[class="inner"]')
  *     ```
  *
  *     ```html
@@ -54,7 +57,6 @@ import { hit, observeDOMChanges } from '../helpers';
  */
 /* eslint-enable max-len */
 
-// TODO: add related UBO scriptlet link after they add description to their doc
 
 export function removeClass(source, classNames, selector) {
     if (!classNames) { return; }

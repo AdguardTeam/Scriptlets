@@ -116,6 +116,31 @@ test('works with chained properties', (assert) => {
     clearGlobalProps(...changingGlobals);
 });
 
+test('should not work if chained properties are undefined', (assert) => {
+    const chainProperty = 'a.b.c';
+    const params = {
+        name,
+        args: [chainProperty],
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
+    const resString = window.scriptlets.invoke(params);
+
+    window.onerror = onError(assert);
+
+    evalWrapper(resString);
+    addAndRemoveInlineScript(`
+        var aa = {};
+        aa.bb = {};
+        aa.bb.cc = 'test';
+    `);
+
+    assert.strictEqual(window.hit, undefined, 'should not hit');
+    clearGlobalProps(...changingGlobals);
+});
+
 test('aborts script by search', (assert) => {
     const property = '___aaa';
     const search = 'const someVar';
@@ -137,7 +162,6 @@ test('aborts script by search', (assert) => {
     assert.strictEqual(window.hit, 'FIRED');
     clearGlobalProps(...changingGlobals);
 });
-
 
 test('doesnt aborts script which is not specified by search', (assert) => {
     const property = '___aaa';
@@ -203,6 +227,43 @@ test('Patched textContent', (assert) => {
             get: () => '',
         });
         window.${property};
+    `);
+
+    assert.strictEqual(window.hit, 'FIRED');
+    clearGlobalProps(...changingGlobals);
+});
+
+test('Patched textContent', (assert) => {
+    const property = 'alert';
+    const search = 'test';
+    const params = {
+        name,
+        args: [property, search],
+        verbose: true,
+    };
+    window.__debugScriptlets = () => {
+        window.hit = 'FIRED';
+    };
+    const resString = window.scriptlets.invoke(params);
+
+
+    window.onerror = onError(assert);
+
+    evalWrapper(resString);
+    addAndRemoveInlineScript(`
+    function generateContent() {
+        return void 0 === generateContent.val && (generateContent.val = " \nwindow.${property}('blablabla');");
+      }
+      
+      (function () {
+        try {
+          Object.defineProperty(document.currentScript, "textContent", {
+            get: generateContent
+          });
+        } catch (e) {}
+      
+        ${property}("test");
+      })();
     `);
 
     assert.strictEqual(window.hit, 'FIRED');

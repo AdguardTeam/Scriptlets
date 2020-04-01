@@ -22,7 +22,7 @@ import { hit, createOnErrorHandler } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>])
+ * example.org#%#//scriptlet('abort-current-inline-script', <property> [, <search>])
  * ```
  *
  * **Parameters**
@@ -32,12 +32,12 @@ import { hit, createOnErrorHandler } from '../helpers';
  * **Examples**
  * 1. Aborts all inline scripts trying to access `window.alert`
  *     ```
- *     example.org#%#//scriptlet("abort-current-inline-script", "alert")
+ *     example.org#%#//scriptlet('abort-current-inline-script', 'alert')
  *     ```
  *
  * 2. Aborts inline scripts which are trying to access `window.alert` and contain `Hello, world`.
  *     ```
- *     example.org#%#//scriptlet("abort-current-inline-script", "alert", "Hello, world")
+ *     example.org#%#//scriptlet('abort-current-inline-script', 'alert', 'Hello, world')
  *     ```
  *
  *     For instance, the following script will be aborted
@@ -47,7 +47,7 @@ import { hit, createOnErrorHandler } from '../helpers';
  *
  * 3. Aborts inline scripts which are trying to access `window.alert` and match this regexp: `/Hello.+world/`.
  *     ```
- *     example.org#%#//scriptlet("abort-current-inline-script", "alert", "/Hello.+world/")
+ *     example.org#%#//scriptlet('abort-current-inline-script', 'alert', '/Hello.+world/')
  *     ```
  *
  *     For instance, the following scripts will be aborted:
@@ -82,17 +82,19 @@ export function abortCurrentInlineScript(source, property, search = null) {
         const scriptEl = getCurrentScript();
         let content = scriptEl.textContent;
 
+        // We are using Node.prototype.textContent property descriptor
+        // to get the real script content
+        // even when document.currentScript.textContent is replaced.
+        // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
         try {
             const textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
             content = textContentGetter.call(scriptEl);
-            // eslint-disable-next-line no-empty
-        } catch (e) { }
-
+        } catch (e) { } // eslint-disable-line no-empty
 
         if (scriptEl instanceof HTMLScriptElement
             && content.length > 0
             && scriptEl !== ourScript
-            && (!regex || regex.test(scriptEl.textContent))) {
+            && (!regex || regex.test(content))) {
             hit(source);
             throw new ReferenceError(rid);
         }
@@ -102,6 +104,20 @@ export function abortCurrentInlineScript(source, property, search = null) {
         const chainInfo = getPropertyInChain(owner, property);
         let { base } = chainInfo;
         const { prop, chain } = chainInfo;
+
+        // The scriptlet might be executed before the chain property has been created
+        // (for instance, document.body before the HTML body was loaded).
+        // In this case we're checking whether the base element exists or not
+        // and if not, we simply exit without overriding anything.
+        // e.g. https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
+        if (base instanceof Object === false && base === null) {
+            const props = property.split('.');
+            const propIndex = props.indexOf(prop);
+            const baseName = props[propIndex - 1];
+            console.log(`The scriptlet had been executed before the ${baseName} was loaded.`); // eslint-disable-line no-console
+            return;
+        }
+
         if (chain) {
             const setter = (a) => {
                 base = a;
