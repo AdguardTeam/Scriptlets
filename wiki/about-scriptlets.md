@@ -44,7 +44,7 @@ https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f1
 
 **Syntax**
 ```
-example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>])
+example.org#%#//scriptlet('abort-current-inline-script', <property> [, <search>])
 ```
 
 **Parameters**
@@ -54,12 +54,12 @@ example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>]
 **Examples**
 1. Aborts all inline scripts trying to access `window.alert`
     ```
-    example.org#%#//scriptlet("abort-current-inline-script", "alert")
+    example.org#%#//scriptlet('abort-current-inline-script', 'alert')
     ```
 
 2. Aborts inline scripts which are trying to access `window.alert` and contain `Hello, world`.
     ```
-    example.org#%#//scriptlet("abort-current-inline-script", "alert", "Hello, world")
+    example.org#%#//scriptlet('abort-current-inline-script', 'alert', 'Hello, world')
     ```
 
     For instance, the following script will be aborted
@@ -69,7 +69,7 @@ example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>]
 
 3. Aborts inline scripts which are trying to access `window.alert` and match this regexp: `/Hello.+world/`.
     ```
-    example.org#%#//scriptlet("abort-current-inline-script", "alert", "/Hello.+world/")
+    example.org#%#//scriptlet('abort-current-inline-script', 'alert', '/Hello.+world/')
     ```
 
     For instance, the following scripts will be aborted:
@@ -774,7 +774,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet("remove-attr", attrs[, selector])
+example.org#%#//scriptlet('remove-attr', attrs[, selector])
 ```
 
 - `attrs` — required, attribute or list of attributes joined by '|';
@@ -783,7 +783,7 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
 **Examples**
 1.  Removes by attribute
     ```
-    example.org#%#//scriptlet("remove-attr", "example|test")
+    example.org#%#//scriptlet('remove-attr', 'example|test')
     ```
 
     ```html
@@ -796,7 +796,7 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
 
 2. Removes with specified selector
     ```
-    example.org#%#//scriptlet("remove-attr", "example", ".inner")
+    example.org#%#//scriptlet('remove-attr', 'example', 'div[class="inner"]')
     ```
 
     ```html
@@ -818,9 +818,12 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
 Removes the specified classes from DOM nodes. This scriptlet runs once after the page loads
 and after that periodically in order to DOM tree changes.
 
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-classjs-
+
 **Syntax**
 ```
-example.org#%#//scriptlet("remove-class", classes[, selector])
+example.org#%#//scriptlet('remove-class', classes[, selector])
 ```
 
 - `classes` — required, class or list of classes separated by '|';
@@ -830,7 +833,7 @@ if there is no selector, every class independently will be removed from all node
 **Examples**
 1.  Removes by classes
     ```
-    example.org#%#//scriptlet("remove-class", "example|test")
+    example.org#%#//scriptlet('remove-class', 'example|test')
     ```
 
     ```html
@@ -847,7 +850,7 @@ if there is no selector, every class independently will be removed from all node
 
 2. Removes with specified selector
     ```
-    example.org#%#//scriptlet("remove-class", "branding", ".inner")
+    example.org#%#//scriptlet('remove-class', 'branding', 'div[class="inner"]')
     ```
 
     ```html

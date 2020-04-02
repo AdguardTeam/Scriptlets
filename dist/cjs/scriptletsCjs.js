@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.1.10
+ * Version 1.1.11
  */
 
 /**
@@ -1258,7 +1258,7 @@ preventWindowOpen.injections = [toRegExp, hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>])
+ * example.org#%#//scriptlet('abort-current-inline-script', <property> [, <search>])
  * ```
  *
  * **Parameters**
@@ -1268,12 +1268,12 @@ preventWindowOpen.injections = [toRegExp, hit];
  * **Examples**
  * 1. Aborts all inline scripts trying to access `window.alert`
  *     ```
- *     example.org#%#//scriptlet("abort-current-inline-script", "alert")
+ *     example.org#%#//scriptlet('abort-current-inline-script', 'alert')
  *     ```
  *
  * 2. Aborts inline scripts which are trying to access `window.alert` and contain `Hello, world`.
  *     ```
- *     example.org#%#//scriptlet("abort-current-inline-script", "alert", "Hello, world")
+ *     example.org#%#//scriptlet('abort-current-inline-script', 'alert', 'Hello, world')
  *     ```
  *
  *     For instance, the following script will be aborted
@@ -1283,7 +1283,7 @@ preventWindowOpen.injections = [toRegExp, hit];
  *
  * 3. Aborts inline scripts which are trying to access `window.alert` and match this regexp: `/Hello.+world/`.
  *     ```
- *     example.org#%#//scriptlet("abort-current-inline-script", "alert", "/Hello.+world/")
+ *     example.org#%#//scriptlet('abort-current-inline-script', 'alert', '/Hello.+world/')
  *     ```
  *
  *     For instance, the following scripts will be aborted:
@@ -1321,14 +1321,18 @@ function abortCurrentInlineScript(source, property) {
 
   var abort = function abort() {
     var scriptEl = getCurrentScript();
-    var content = scriptEl.textContent;
+    var content = scriptEl.textContent; // We are using Node.prototype.textContent property descriptor
+    // to get the real script content
+    // even when document.currentScript.textContent is replaced.
+    // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
 
     try {
       var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
-      content = textContentGetter.call(scriptEl); // eslint-disable-next-line no-empty
-    } catch (e) {}
+      content = textContentGetter.call(scriptEl);
+    } catch (e) {} // eslint-disable-line no-empty
 
-    if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && (!regex || regex.test(scriptEl.textContent))) {
+
+    if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && (!regex || regex.test(content))) {
       hit(source);
       throw new ReferenceError(rid);
     }
@@ -1338,7 +1342,20 @@ function abortCurrentInlineScript(source, property) {
     var chainInfo = getPropertyInChain(owner, property);
     var base = chainInfo.base;
     var prop = chainInfo.prop,
-        chain = chainInfo.chain;
+        chain = chainInfo.chain; // The scriptlet might be executed before the chain property has been created
+    // (for instance, document.body before the HTML body was loaded).
+    // In this case we're checking whether the base element exists or not
+    // and if not, we simply exit without overriding anything.
+    // e.g. https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
+
+    if (base instanceof Object === false && base === null) {
+      var props = property.split('.');
+      var propIndex = props.indexOf(prop);
+      var baseName = props[propIndex - 1];
+      console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded.")); // eslint-disable-line no-console
+
+      return;
+    }
 
     if (chain) {
       var setter = function setter(a) {
@@ -2446,7 +2463,7 @@ debugCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyI
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("remove-attr", attrs[, selector])
+ * example.org#%#//scriptlet('remove-attr', attrs[, selector])
  * ```
  *
  * - `attrs` — required, attribute or list of attributes joined by '|';
@@ -2455,7 +2472,7 @@ debugCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyI
  * **Examples**
  * 1.  Removes by attribute
  *     ```
- *     example.org#%#//scriptlet("remove-attr", "example|test")
+ *     example.org#%#//scriptlet('remove-attr', 'example|test')
  *     ```
  *
  *     ```html
@@ -2468,7 +2485,7 @@ debugCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyI
  *
  * 2. Removes with specified selector
  *     ```
- *     example.org#%#//scriptlet("remove-attr", "example", ".inner")
+ *     example.org#%#//scriptlet('remove-attr', 'example', 'div[class="inner"]')
  *     ```
  *
  *     ```html
@@ -2528,9 +2545,12 @@ removeAttr.injections = [hit, observeDOMChanges];
  * Removes the specified classes from DOM nodes. This scriptlet runs once after the page loads
  * and after that periodically in order to DOM tree changes.
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-classjs-
+ *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("remove-class", classes[, selector])
+ * example.org#%#//scriptlet('remove-class', classes[, selector])
  * ```
  *
  * - `classes` — required, class or list of classes separated by '|';
@@ -2540,7 +2560,7 @@ removeAttr.injections = [hit, observeDOMChanges];
  * **Examples**
  * 1.  Removes by classes
  *     ```
- *     example.org#%#//scriptlet("remove-class", "example|test")
+ *     example.org#%#//scriptlet('remove-class', 'example|test')
  *     ```
  *
  *     ```html
@@ -2557,7 +2577,7 @@ removeAttr.injections = [hit, observeDOMChanges];
  *
  * 2. Removes with specified selector
  *     ```
- *     example.org#%#//scriptlet("remove-class", "branding", ".inner")
+ *     example.org#%#//scriptlet('remove-class', 'branding', 'div[class="inner"]')
  *     ```
  *
  *     ```html
@@ -2574,7 +2594,6 @@ removeAttr.injections = [hit, observeDOMChanges];
  */
 
 /* eslint-enable max-len */
-// TODO: add related UBO scriptlet link after they add description to their doc
 
 function removeClass(source, classNames, selector) {
   if (!classNames) {
@@ -3841,7 +3860,7 @@ var objFromEntries = function objFromEntries(pairs) {
 };
 /**
  * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
- * It's used for UBO -> ADG  converting
+ * It's used for UBO -> ADG converting
  */
 
 
@@ -3852,7 +3871,7 @@ var uboToAdgCompatibility = objFromEntries(validAdgRedirects.filter(function (el
 }));
 /**
  * Compatibility object where KEYS = ABP redirect names and VALUES = ADG redirect names
- * It's used for ABP -> ADG  converting
+ * It's used for ABP -> ADG converting
  */
 
 var abpToAdgCompatibility = objFromEntries(validAdgRedirects.filter(function (el) {
@@ -3862,7 +3881,7 @@ var abpToAdgCompatibility = objFromEntries(validAdgRedirects.filter(function (el
 }));
 /**
  * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
- * It's used for ADG -> UBO  converting
+ * It's used for ADG -> UBO converting
  */
 
 var adgToUboCompatibility = objFromEntries(validAdgRedirects.filter(function (el) {
@@ -3870,7 +3889,19 @@ var adgToUboCompatibility = objFromEntries(validAdgRedirects.filter(function (el
 }).map(function (el) {
   return [el.adg, el.ubo];
 }));
+/**
+ * Needed for AdGuard redirect names validation where KEYS = **valid** AdGuard redirect names
+ * 'adgToUboCompatibility' is still needed for ADG -> UBO converting
+ */
+
+var validAdgCompatibility = objFromEntries(validAdgRedirects.map(function (el) {
+  return [el.adg, 'valid adg redirect'];
+}));
 var REDIRECT_RULE_TYPES = {
+  VALID_ADG: {
+    marker: ADG_UBO_REDIRECT_MARKER,
+    compatibility: validAdgCompatibility
+  },
   ADG: {
     marker: ADG_UBO_REDIRECT_MARKER,
     compatibility: adgToUboCompatibility
@@ -3947,10 +3978,10 @@ var isRedirectRuleByType = function isRedirectRuleByType(rule, type) {
 
 
 var isValidAdgRedirectRule = function isValidAdgRedirectRule(rule) {
-  return isRedirectRuleByType(rule, 'ADG');
+  return isRedirectRuleByType(rule, 'VALID_ADG');
 };
 /**
-* Checks if the `rule` is Ubo redirect resource rule
+* Checks if the `rule` is Ubo redirect resource rule and valid for conversion to Adg
 * @param {string} rule - rule text
 * @returns {boolean}
 */
