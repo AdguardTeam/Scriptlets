@@ -52,7 +52,7 @@ test('Adg rule: no selector', (assert) => {
 
     const done = assert.async();
 
-    setTimeout(() => { first.classList.add('example'); }, 25);
+    const exampleTimeout = setTimeout(() => { first.classList.add('example'); }, 15);
 
     setTimeout(() => {
         classNames.forEach((a) => {
@@ -61,6 +61,7 @@ test('Adg rule: no selector', (assert) => {
             assert.notOk(third.classList.contains(a), `Class '${a}' has been removed`);
         });
         assert.strictEqual(window.hit, 'FIRED');
+        clearTimeout(exampleTimeout);
         done();
     }, 50);
 });
@@ -90,14 +91,16 @@ test('Adg rule', (assert) => {
 
     const done = assert.async();
 
-    setTimeout(() => { childElement.classList.add('test11'); }, 40);
-    setTimeout(() => { childElement.classList.add('test22'); }, 70);
+    const test11Timeout = setTimeout(() => { childElement.classList.add('test11'); }, 50);
+    const test22Timeout = setTimeout(() => { childElement.classList.add('test22'); }, 80);
 
     setTimeout(() => {
         classNames.forEach((a) => {
             assert.notOk(childElement.classList.contains(a), `Class '${a}' has been removed`);
         });
         assert.strictEqual(window.hit, 'FIRED');
+        clearTimeout(test11Timeout);
+        clearTimeout(test22Timeout);
         done();
     }, 150);
 });
