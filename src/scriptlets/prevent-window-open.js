@@ -4,9 +4,10 @@ import {
     substringAfter,
     startsWith,
     endsWith,
-} from '../helpers/string-utils';
-
-import { hit } from '../helpers';
+    hit,
+    noopFunc,
+    trueFunc,
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -52,9 +53,11 @@ import { hit } from '../helpers';
  * ```
  *     example.org#%#//scriptlet('prevent-window-open', , , 'trueFunc')
  * ```
- * 6. Prevent all `window.open` and add 'propName'=noopFunc as a property of window.open if website checks it:
+ * 6. Prevent all `window.open` and returns callback
+ * which returns object with property 'propName'=noopFunc
+ * as a property of window.open if website checks it:
  * ```
- *     example.org#%#//scriptlet('prevent-window-open', '1', , '[propName]=noopFunc')
+ *     example.org#%#//scriptlet('prevent-window-open', '1', , '{propName=noopFunc}')
  * ```
  */
 /* eslint-enable max-len */
@@ -79,9 +82,6 @@ export function preventWindowOpen(source, match = 1, search, replacement) {
 
         hit(source);
 
-        const noopFunc = () => { };
-        const trueFunc = () => true;
-
         let result;
 
         // defaults to return noopFunc instead of window.open
@@ -93,14 +93,17 @@ export function preventWindowOpen(source, match = 1, search, replacement) {
             // We should return noopFunc instead of window.open
             // but with some property if website checks it (examples 5, 6)
             // https://github.com/AdguardTeam/Scriptlets/issues/71
-            const propPart = substringBefore(replacement, '=');
-            const isProp = startsWith(propPart, '[') && endsWith(propPart, ']');
+            const isProp = startsWith(replacement, '{') && endsWith(replacement, '}');
             if (isProp) {
-                const prop = propPart.substring(1, propPart.lenght - 1);
-                const inputValue = substringAfter(replacement, '=');
-                if (inputValue === 'noopFunc') {
-                    result = noopFunc[prop][noopFunc];
-                    // result = noopFunc[prop];
+                const propertyPart = replacement.slice(1, -1);
+                const propertyName = substringBefore(propertyPart, '=');
+                const propertyValue = substringAfter(propertyPart, '=');
+                if (propertyValue === 'noopFunc') {
+                    result = () => {
+                        const resObj = { };
+                        resObj[propertyName] = noopFunc;
+                        return resObj;
+                    };
                 }
             }
         }
@@ -119,9 +122,11 @@ preventWindowOpen.names = [
 
 preventWindowOpen.injections = [
     toRegExp,
-    hit,
     startsWith,
     endsWith,
     substringBefore,
     substringAfter,
+    hit,
+    noopFunc,
+    trueFunc,
 ];

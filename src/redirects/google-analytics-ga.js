@@ -1,6 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import { hit } from '../helpers/hit';
-import { noop } from '../helpers/noop';
+import { hit, noopFunc } from '../helpers';
 
 /**
  * @redirect google-analytics-ga
@@ -20,14 +19,14 @@ export function GoogleAnalyticsGa(source) {
     // Gaq constructor
     function Gaq() { }
 
-    Gaq.prototype.Na = noop;
-    Gaq.prototype.O = noop;
-    Gaq.prototype.Sa = noop;
-    Gaq.prototype.Ta = noop;
-    Gaq.prototype.Va = noop;
-    Gaq.prototype._createAsyncTracker = noop;
-    Gaq.prototype._getAsyncTracker = noop;
-    Gaq.prototype._getPlugin = noop;
+    Gaq.prototype.Na = noopFunc;
+    Gaq.prototype.O = noopFunc;
+    Gaq.prototype.Sa = noopFunc;
+    Gaq.prototype.Ta = noopFunc;
+    Gaq.prototype.Va = noopFunc;
+    Gaq.prototype._createAsyncTracker = noopFunc;
+    Gaq.prototype._getAsyncTracker = noopFunc;
+    Gaq.prototype._getPlugin = noopFunc;
     Gaq.prototype.push = (data) => {
         if (typeof data === 'function') {
             data();
@@ -80,25 +79,25 @@ export function GoogleAnalyticsGa(source) {
         '_visitCode',
     ];
     const tracker = api.reduce((res, funcName) => {
-        res[funcName] = noop;
+        res[funcName] = noopFunc;
         return res;
     }, {});
     tracker._getLinkerUrl = (a) => a;
 
-    Gat.prototype._anonymizeIP = noop;
-    Gat.prototype._createTracker = noop;
-    Gat.prototype._forceSSL = noop;
-    Gat.prototype._getPlugin = noop;
+    Gat.prototype._anonymizeIP = noopFunc;
+    Gat.prototype._createTracker = noopFunc;
+    Gat.prototype._forceSSL = noopFunc;
+    Gat.prototype._getPlugin = noopFunc;
     Gat.prototype._getTracker = () => tracker;
     Gat.prototype._getTrackerByName = () => tracker;
-    Gat.prototype._getTrackers = noop;
-    Gat.prototype.aa = noop;
-    Gat.prototype.ab = noop;
-    Gat.prototype.hb = noop;
-    Gat.prototype.la = noop;
-    Gat.prototype.oa = noop;
-    Gat.prototype.pa = noop;
-    Gat.prototype.u = noop;
+    Gat.prototype._getTrackers = noopFunc;
+    Gat.prototype.aa = noopFunc;
+    Gat.prototype.ab = noopFunc;
+    Gat.prototype.hb = noopFunc;
+    Gat.prototype.la = noopFunc;
+    Gat.prototype.oa = noopFunc;
+    Gat.prototype.pa = noopFunc;
+    Gat.prototype.u = noopFunc;
 
     const gat = new Gat();
     window._gat = gat;
@@ -112,7 +111,4 @@ GoogleAnalyticsGa.names = [
     'google-analytics_ga.js',
 ];
 
-GoogleAnalyticsGa.injections = [
-    hit,
-    noop,
-];
+GoogleAnalyticsGa.injections = [hit, noopFunc];

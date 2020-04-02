@@ -263,7 +263,7 @@
             "abp": "blank-text"
         },
         {
-            "adg": "noopmp3.0.1s",
+            "adg": "noopmp3-0.1s",
             "ubo": "noop-0.1s.mp3",
             "abp": "blank-mp3"
         },
@@ -271,6 +271,9 @@
             "adg": "noopmp4-1s",
             "ubo": "noop-1s.mp4",
             "abp": "blank-mp4"
+        },
+        {
+            "adg": "noopvmap-1.0"
         },
         {
             "adg": "noopvast-2.0"

@@ -1,5 +1,4 @@
-import { hit } from '../helpers/hit';
-import { noop } from '../helpers/noop';
+import { hit, noopFunc } from '../helpers';
 
 /**
  * @redirect metrika-yandex-watch
@@ -32,10 +31,10 @@ export function metrikaYandexWatch(source) {
     function Metrika() { } // constructor
 
     // Methods without options
-    Metrika.prototype.addFileExtension = noop;
-    Metrika.prototype.getClientID = noop;
-    Metrika.prototype.setUserID = noop;
-    Metrika.prototype.userParams = noop;
+    Metrika.prototype.addFileExtension = noopFunc;
+    Metrika.prototype.getClientID = noopFunc;
+    Metrika.prototype.setUserID = noopFunc;
+    Metrika.prototype.userParams = noopFunc;
 
     // Methods with options
     // The order of arguments should be kept in according to API
@@ -74,4 +73,4 @@ metrikaYandexWatch.names = [
     'metrika-yandex-watch',
 ];
 
-metrikaYandexWatch.injections = [hit, noop];
+metrikaYandexWatch.injections = [hit, noopFunc];

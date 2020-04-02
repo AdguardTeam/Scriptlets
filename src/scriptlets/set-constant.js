@@ -1,6 +1,11 @@
-import { getPropertyInChain } from '../helpers/get-property-in-chain';
-import { setPropertyAccess } from '../helpers/set-property-access';
-import { hit } from '../helpers';
+import {
+    hit,
+    noopFunc,
+    trueFunc,
+    falseFunc,
+    getPropertyInChain,
+    setPropertyAccess,
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -61,11 +66,11 @@ export function setConstant(source, property, value) {
     } else if (value === 'null') {
         constantValue = null;
     } else if (value === 'noopFunc') {
-        constantValue = () => {};
+        constantValue = noopFunc;
     } else if (value === 'trueFunc') {
-        constantValue = () => true;
+        constantValue = trueFunc;
     } else if (value === 'falseFunc') {
-        constantValue = () => false;
+        constantValue = falseFunc;
     } else if (/^\d+$/.test(value)) {
         constantValue = parseFloat(value);
         if (nativeIsNaN(constantValue)) {
@@ -134,4 +139,11 @@ setConstant.names = [
     'set.js',
     'ubo-set.js',
 ];
-setConstant.injections = [getPropertyInChain, setPropertyAccess, hit];
+setConstant.injections = [
+    getPropertyInChain,
+    setPropertyAccess,
+    hit,
+    noopFunc,
+    trueFunc,
+    falseFunc,
+];

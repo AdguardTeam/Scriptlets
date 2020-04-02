@@ -1,11 +1,6 @@
-import { hit } from '../helpers/hit';
 import {
-    noop,
-    noopThis,
-    noopNull,
-    noopArray,
-    noopStr,
-} from '../helpers/noop';
+    hit, noopFunc, noopThis, noopNull, noopArray, noopStr,
+} from '../helpers';
 
 /**
  * @redirect googletagservices-gpt
@@ -24,16 +19,16 @@ import {
 export function GoogleTagServicesGpt(source) {
     const companionAdsService = {
         addEventListener: noopThis,
-        enableSyncLoading: noop,
-        setRefreshUnfilledSlots: noop,
+        enableSyncLoading: noopFunc,
+        setRefreshUnfilledSlots: noopFunc,
     };
     const contentService = {
         addEventListener: noopThis,
-        setContent: noop,
+        setContent: noopFunc,
     };
     function PassbackSlot() { } // constructor
 
-    PassbackSlot.prototype.display = noop;
+    PassbackSlot.prototype.display = noopFunc;
     PassbackSlot.prototype.get = noopNull;
     PassbackSlot.prototype.set = noopThis;
     PassbackSlot.prototype.setClickUrl = noopThis;
@@ -67,28 +62,28 @@ export function GoogleTagServicesGpt(source) {
 
     const pubAdsService = {
         addEventListener: noopThis,
-        clear: noop,
+        clear: noopFunc,
         clearCategoryExclusions: noopThis,
         clearTagForChildDirectedTreatment: noopThis,
         clearTargeting: noopThis,
-        collapseEmptyDivs: noop,
+        collapseEmptyDivs: noopFunc,
         defineOutOfPagePassback() { return new PassbackSlot(); },
         definePassback() { return new PassbackSlot(); },
-        disableInitialLoad: noop,
-        display: noop,
-        enableAsyncRendering: noop,
-        enableSingleRequest: noop,
-        enableSyncRendering: noop,
-        enableVideoAds: noop,
+        disableInitialLoad: noopFunc,
+        display: noopFunc,
+        enableAsyncRendering: noopFunc,
+        enableSingleRequest: noopFunc,
+        enableSyncRendering: noopFunc,
+        enableVideoAds: noopFunc,
         get: noopNull,
         getAttributeKeys: noopArray,
-        getTargeting: noop,
+        getTargeting: noopFunc,
         getTargetingKeys: noopArray,
         getSlots: noopArray,
-        refresh: noop,
+        refresh: noopFunc,
         set: noopThis,
         setCategoryExclusion: noopThis,
-        setCentering: noop,
+        setCentering: noopFunc,
         setCookieOptions: noopThis,
         setForceSafeFrame: noopThis,
         setLocation: noopThis,
@@ -98,7 +93,7 @@ export function GoogleTagServicesGpt(source) {
         setTagForChildDirectedTreatment: noopThis,
         setTargeting: noopThis,
         setVideoContent: noopThis,
-        updateCorrelator: noop,
+        updateCorrelator: noopFunc,
     };
 
 
@@ -118,14 +113,14 @@ export function GoogleTagServicesGpt(source) {
     googletag.content = () => contentService;
     googletag.defineOutOfPageSlot = () => new Slot();
     googletag.defineSlot = () => new Slot();
-    googletag.destroySlots = noop;
-    googletag.disablePublisherConsole = noop;
-    googletag.display = noop;
-    googletag.enableServices = noop;
+    googletag.destroySlots = noopFunc;
+    googletag.disablePublisherConsole = noopFunc;
+    googletag.display = noopFunc;
+    googletag.enableServices = noopFunc;
     googletag.getVersion = noopStr;
     googletag.pubads = () => pubAdsService;
     googletag.pubadsReady = true;
-    googletag.setAdIframeTitle = noop;
+    googletag.setAdIframeTitle = noopFunc;
     googletag.sizeMapping = () => new SizeMappingBuilder();
 
     window.googletag = googletag;
@@ -144,7 +139,7 @@ GoogleTagServicesGpt.names = [
 
 GoogleTagServicesGpt.injections = [
     hit,
-    noop,
+    noopFunc,
     noopThis,
     noopNull,
     noopArray,

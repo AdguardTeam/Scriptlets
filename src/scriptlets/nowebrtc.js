@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars, no-extra-bind, func-names */
-import { hit } from '../helpers';
+import { hit, noopFunc } from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -32,20 +32,19 @@ export function nowebrtc(source) {
     const rtcReplacement = (config) => {
         hit(source, `Document tried to create an RTCPeerConnection: ${config}`);
     };
-    const noop = () => {};
     rtcReplacement.prototype = {
-        close: noop,
-        createDataChannel: noop,
-        createOffer: noop,
-        setRemoteDescription: noop,
+        close: noopFunc,
+        createDataChannel: noopFunc,
+        createOffer: noopFunc,
+        setRemoteDescription: noopFunc,
     };
     const rtc = window[propertyName];
     window[propertyName] = rtcReplacement;
     if (rtc.prototype) {
         rtc.prototype.createDataChannel = function (a, b) {
             return {
-                close: noop,
-                send: noop,
+                close: noopFunc,
+                send: noopFunc,
             };
         }.bind(null);
     }
@@ -57,4 +56,4 @@ nowebrtc.names = [
     'ubo-nowebrtc.js',
 ];
 
-nowebrtc.injections = [hit];
+nowebrtc.injections = [hit, noopFunc];
