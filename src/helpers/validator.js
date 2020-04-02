@@ -153,7 +153,7 @@ const objFromEntries = (pairs) => {
 
 /**
  * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
- * It's used for UBO -> ADG  converting
+ * It's used for UBO -> ADG converting
  */
 const uboToAdgCompatibility = objFromEntries(
     validAdgRedirects
@@ -165,7 +165,7 @@ const uboToAdgCompatibility = objFromEntries(
 
 /**
  * Compatibility object where KEYS = ABP redirect names and VALUES = ADG redirect names
- * It's used for ABP -> ADG  converting
+ * It's used for ABP -> ADG converting
  */
 const abpToAdgCompatibility = objFromEntries(
     validAdgRedirects
@@ -177,7 +177,7 @@ const abpToAdgCompatibility = objFromEntries(
 
 /**
  * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
- * It's used for ADG -> UBO  converting
+ * It's used for ADG -> UBO converting
  */
 const adgToUboCompatibility = objFromEntries(
     validAdgRedirects
@@ -187,8 +187,22 @@ const adgToUboCompatibility = objFromEntries(
         }),
 );
 
+/**
+ * Needed for AdGuard redirect names validation where KEYS = **valid** AdGuard redirect names
+ * 'adgToUboCompatibility' is still needed for ADG -> UBO converting
+ */
+const validAdgCompatibility = objFromEntries(
+    validAdgRedirects
+        .map((el) => {
+            return [el.adg, 'valid adg redirect'];
+        }),
+);
 
 const REDIRECT_RULE_TYPES = {
+    VALID_ADG: {
+        marker: ADG_UBO_REDIRECT_MARKER,
+        compatibility: validAdgCompatibility,
+    },
     ADG: {
         marker: ADG_UBO_REDIRECT_MARKER,
         compatibility: adgToUboCompatibility,
@@ -261,11 +275,11 @@ const isRedirectRuleByType = (rule, type) => {
 * @returns {boolean}
 */
 const isValidAdgRedirectRule = (rule) => {
-    return isRedirectRuleByType(rule, 'ADG');
+    return isRedirectRuleByType(rule, 'VALID_ADG');
 };
 
 /**
-* Checks if the `rule` is Ubo redirect resource rule
+* Checks if the `rule` is Ubo redirect resource rule and valid for conversion to Adg
 * @param {string} rule - rule text
 * @returns {boolean}
 */

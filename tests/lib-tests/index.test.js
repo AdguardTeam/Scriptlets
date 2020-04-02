@@ -137,8 +137,12 @@ test('Test SCRIPTLET converting - ADG -> UBO', (assert) => {
 });
 
 test('Test redirect rule validation', (assert) => {
+    // checks if the rule is valid AdGuard redirect by checking it's name
+    let inputRule = '||example.org$xmlhttprequest,redirect=noopvast-2.0';
+    assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), true);
+
     // redirect name is wrong, but this one only for checking isAdgRedirectRule()
-    let inputRule = '||example.com/banner$image,redirect=redirect.png';
+    inputRule = '||example.com/banner$image,redirect=redirect.png';
     assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);
 
     inputRule = '||example.com^$script,rewrite=abp-resource:blank-js';

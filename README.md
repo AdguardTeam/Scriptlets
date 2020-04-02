@@ -238,11 +238,19 @@ redirects.isValidRedirectRule(rule);
 
 ```javascript
 /**
-* Specific methods to validate the `rule` by type: AdGuard / Ubo / Abp
+* Checks if the `rule` is **valid** AdGuard redirect rule
 * @param {string} rule - rule text
 * @returns {boolean}
 */
 redirects.isValidAdgRedirectRule(rule);
+```
+
+```javascript
+/**
+* Validates the `rule` by type: Ubo / Abp (for conversion to Adg)
+* @param {string} rule - rule text
+* @returns {boolean}
+*/
 redirects.isValidUboRedirectRule(rule);
 redirects.isValidAbpRedirectRule(rule);
 ```

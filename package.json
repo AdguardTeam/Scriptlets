@@ -1,6 +1,6 @@
 {
     "name": "scriptlets",
-    "version": "1.1.10",
+    "version": "1.1.11",
     "scripts": {
         "watch": "rollup -c -w",
         "build": "rollup -c && babel-node redirects.build.js",
@@ -8,7 +8,6 @@
         "build-test": "rollup -c --environment UI_TEST",
         "test": "yarn build-test && node tests/index.js",
         "test-watch": "rollup -c --watch --environment UI_TEST",
-        "test-lib-watch": "rollup -c --watch --environment UI_LIB_TEST",
         "browserstack": "yarn build-test && node browserstack.js",
         "gui-test": "yarn build-test && open http://localhost:8585 && node ./tests/server.js",
         "lint": "eslint .",
@@ -26,12 +25,12 @@
     "main": "dist/cjs/scriptletsCjs.js",
     "types": "dist/cjs/scriptlets.d.ts",
     "devDependencies": {
-        "@babel/cli": "^7.7.0",
-        "@babel/core": "^7.2.2",
-        "@babel/node": "^7.7.0",
+        "@babel/cli": "^7.8.4",
+        "@babel/core": "^7.9.0",
+        "@babel/node": "^7.8.7",
         "@babel/plugin-transform-regenerator": "^7.7.0",
         "@babel/plugin-transform-runtime": "^7.6.2",
-        "@babel/preset-env": "^7.7.1",
+        "@babel/preset-env": "^7.9.0",
         "dox": "^0.9.0",
         "eslint": "^6.6.0",
         "eslint-config-airbnb-base": "^14.0.0",

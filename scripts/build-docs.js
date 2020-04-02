@@ -17,6 +17,7 @@ const NON_SCRIPTLETS_FILES = [
     'scriptlets.js',
     'scriptletsList.js',
     'scriptletsWrapper.js',
+    'scriptletsCjsWrapper.js',
 ];
 const NON_REDIRECTS_FILES = [
     'index.js',

@@ -44,7 +44,7 @@ https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f1
 
 **Syntax**
 ```
-example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>])
+example.org#%#//scriptlet('abort-current-inline-script', <property> [, <search>])
 ```
 
 **Parameters**
@@ -54,12 +54,12 @@ example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>]
 **Examples**
 1. Aborts all inline scripts trying to access `window.alert`
     ```
-    example.org#%#//scriptlet("abort-current-inline-script", "alert")
+    example.org#%#//scriptlet('abort-current-inline-script', 'alert')
     ```
 
 2. Aborts inline scripts which are trying to access `window.alert` and contain `Hello, world`.
     ```
-    example.org#%#//scriptlet("abort-current-inline-script", "alert", "Hello, world")
+    example.org#%#//scriptlet('abort-current-inline-script', 'alert', 'Hello, world')
     ```
 
     For instance, the following script will be aborted
@@ -69,7 +69,7 @@ example.org#%#//scriptlet("abort-current-inline-script", <property> [, <search>]
 
 3. Aborts inline scripts which are trying to access `window.alert` and match this regexp: `/Hello.+world/`.
     ```
-    example.org#%#//scriptlet("abort-current-inline-script", "alert", "/Hello.+world/")
+    example.org#%#//scriptlet('abort-current-inline-script', 'alert', '/Hello.+world/')
     ```
 
     For instance, the following scripts will be aborted:
@@ -733,33 +733,41 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#windowopen-defuserjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
+example.org#%#//scriptlet('prevent-window-open'[, <match>[, <search>[, <replacement>]]])
 ```
 
 **Parameters**
-- `match` (optional) defaults to "matching", any positive number for "matching", 0 or any string for "not matching",
-- `search` (optional) string or regexp for matching the URL passed to `window.open` call.
-
+- `match` (optional) defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching",
+- `search` (optional) string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call.
+- `replacement` (optional) string to return prop value or property instead of window.open; defaults to return noopFunc
 **Example**
 
 1. Prevent all `window.open` calls:
 ```
-    example.org#%#//scriptlet("prevent-window-open")
+    example.org#%#//scriptlet('prevent-window-open')
 ```
 
 2. Prevent `window.open` for all URLs containing `example`:
 ```
-    example.org#%#//scriptlet("prevent-window-open", "1", "example")
+    example.org#%#//scriptlet('prevent-window-open', '1', 'example')
 ```
 
 3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
 ```
-    example.org#%#//scriptlet("prevent-window-open", "1", "/example\./")
+    example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
 ```
 
 4. Prevent `window.open` for all URLs **NOT** containing `example`:
 ```
-    example.org#%#//scriptlet("prevent-window-open", "0", "example")
+    example.org#%#//scriptlet('prevent-window-open', '0', 'example')
+```
+5. Prevent all `window.open` calls and return 'trueFunc' instead of it if website checks it:
+```
+    example.org#%#//scriptlet('prevent-window-open', , , 'trueFunc')
+```
+6. Prevent all `window.open` and add 'propName'=noopFunc as a property of window.open if website checks it:
+```
+    example.org#%#//scriptlet('prevent-window-open', '1', , '[propName]=noopFunc')
 ```
 [Scriptlet source](../src/scriptlets/prevent-window-open.js)
 * * *
@@ -774,7 +782,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet("remove-attr", attrs[, selector])
+example.org#%#//scriptlet('remove-attr', attrs[, selector])
 ```
 
 - `attrs` — required, attribute or list of attributes joined by '|';
@@ -783,7 +791,7 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
 **Examples**
 1.  Removes by attribute
     ```
-    example.org#%#//scriptlet("remove-attr", "example|test")
+    example.org#%#//scriptlet('remove-attr', 'example|test')
     ```
 
     ```html
@@ -796,7 +804,7 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
 
 2. Removes with specified selector
     ```
-    example.org#%#//scriptlet("remove-attr", "example", ".inner")
+    example.org#%#//scriptlet('remove-attr', 'example', 'div[class="inner"]')
     ```
 
     ```html
@@ -818,9 +826,12 @@ example.org#%#//scriptlet("remove-attr", attrs[, selector])
 Removes the specified classes from DOM nodes. This scriptlet runs once after the page loads
 and after that periodically in order to DOM tree changes.
 
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-classjs-
+
 **Syntax**
 ```
-example.org#%#//scriptlet("remove-class", classes[, selector])
+example.org#%#//scriptlet('remove-class', classes[, selector])
 ```
 
 - `classes` — required, class or list of classes separated by '|';
@@ -830,7 +841,7 @@ if there is no selector, every class independently will be removed from all node
 **Examples**
 1.  Removes by classes
     ```
-    example.org#%#//scriptlet("remove-class", "example|test")
+    example.org#%#//scriptlet('remove-class', 'example|test')
     ```
 
     ```html
@@ -847,7 +858,7 @@ if there is no selector, every class independently will be removed from all node
 
 2. Removes with specified selector
     ```
-    example.org#%#//scriptlet("remove-class", "branding", ".inner")
+    example.org#%#//scriptlet('remove-class', 'branding', 'div[class="inner"]')
     ```
 
     ```html
