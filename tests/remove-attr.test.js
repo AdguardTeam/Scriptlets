@@ -52,18 +52,17 @@ test('ubo alias', (assert) => {
         assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
     });
     assert.strictEqual(window.hit, 'FIRED');
-
+    clearGlobalProps('hit');
 
     const done = assert.async();
 
-    const test2Timeout = setTimeout(() => { addAttr(elem, 'test2'); }, 10);
+    setTimeout(() => { addAttr(elem, 'test2'); }, 10);
 
     setTimeout(() => {
         attrs.forEach((a) => {
             assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
         });
         assert.strictEqual(window.hit, 'FIRED');
-        clearTimeout(test2Timeout);
         done();
     }, 50);
 });
@@ -87,20 +86,18 @@ test('Adg rule: no selector', (assert) => {
         assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
     });
     assert.strictEqual(window.hit, 'FIRED');
-
+    clearGlobalProps('hit');
 
     const done = assert.async();
 
-    const test1Timeout = setTimeout(() => { addAttr(elem, 'test1'); }, 20);
-    const test2Timeout = setTimeout(() => { addAttr(elem, 'test2'); }, 30);
+    setTimeout(() => { addAttr(elem, 'test1'); }, 20);
+    setTimeout(() => { addAttr(elem, 'test2'); }, 30);
 
     setTimeout(() => {
         attrs.forEach((a) => {
             assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
         });
         assert.strictEqual(window.hit, 'FIRED');
-        clearTimeout(test1Timeout);
-        clearTimeout(test2Timeout);
         done();
     }, 100);
 });
@@ -125,18 +122,17 @@ test('Adg rule', (assert) => {
         assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
     });
     assert.strictEqual(window.hit, 'FIRED');
-
+    clearGlobalProps('hit');
 
     const done = assert.async();
 
-    const test1Timeout = setTimeout(() => { addAttr(elem, 'test1'); }, 60);
+    setTimeout(() => { addAttr(elem, 'test1'); }, 60);
 
     setTimeout(() => {
         attrs.forEach((a) => {
             assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
         });
         assert.strictEqual(window.hit, 'FIRED');
-        clearTimeout(test1Timeout);
         done();
     }, 100);
 });

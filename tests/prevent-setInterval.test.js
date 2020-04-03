@@ -232,7 +232,6 @@ test('prevent-setInterval: adg -- match + !delay', (assert) => {
         assert.equal(window.two, 'CHANGED2', 'Second property should be successfully changed');
         assert.equal(window.three, 'old three', 'Target property not changed');
         assert.equal(window.hit, 'value', 'Hit function was executed');
-        // clearGlobalProps('one', 'second', 'third');
         done();
     }, 200);
 
