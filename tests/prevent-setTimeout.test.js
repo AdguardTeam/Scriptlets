@@ -24,8 +24,8 @@ const beforeEach = () => {
 
 const afterEach = () => {
     window.setTimeout = nativeSetTimeout;
-    clearGlobalProps('hit', '__debugScriptlets', 'one', 'two', 'three', 'four');
     testTimeouts.forEach((t) => (clearTimeout(t)));
+    clearGlobalProps('hit', '__debugScriptlets', 'one', 'two', 'three', 'four');
     console.log = nativeConsole; // eslint-disable-line no-console
 };
 

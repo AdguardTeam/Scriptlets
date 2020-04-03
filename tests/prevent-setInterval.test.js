@@ -24,8 +24,8 @@ const beforeEach = () => {
 
 const afterEach = () => {
     window.setInterval = nativeSetInterval;
-    clearGlobalProps('hit', '__debugScriptlets', 'one', 'two', 'three', 'four');
     testIntervals.forEach((i) => (clearInterval(i)));
+    clearGlobalProps('hit', '__debugScriptlets', 'one', 'two', 'three', 'four');
     console.log = nativeConsole; // eslint-disable-line no-console
 };
 
