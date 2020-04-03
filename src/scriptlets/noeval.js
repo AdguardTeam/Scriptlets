@@ -8,7 +8,10 @@ import { hit } from '../helpers';
  * Prevents page to use eval.
  * Notifies about attempts in the console
  *
- * It is mostly used for `$redirect` rules.
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#noevaljs-
+ *
+ * It also can be used as `$redirect` rules sometimes.
  * See [redirect description](../wiki/about-redirects.md#noeval).
  *
  * **Syntax**

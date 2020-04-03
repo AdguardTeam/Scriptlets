@@ -1773,7 +1773,7 @@
         }
       };
     }
-    preventBab.names = ['prevent-bab', 'bab-defuser.js', 'ubo-bab-defuser.js', 'nobab.js', 'ubo-nobab.js'];
+    preventBab.names = ['prevent-bab', 'nobab.js', 'ubo-nobab.js', 'bab-defuser.js', 'ubo-bab-defuser.js'];
     preventBab.injections = [hit];
 
     /* eslint-disable no-unused-vars, no-extra-bind, func-names */
@@ -1946,7 +1946,10 @@
      * Prevents page to use eval.
      * Notifies about attempts in the console
      *
-     * It is mostly used for `$redirect` rules.
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#noevaljs-
+     *
+     * It also can be used as `$redirect` rules sometimes.
      * See [redirect description](../wiki/about-redirects.md#noeval).
      *
      * **Syntax**
@@ -2047,7 +2050,7 @@
 
       window.fuckAdBlock = window.blockAdBlock = new Fab();
     }
-    preventFab.names = ['prevent-fab-3.2.0', 'fuckadblock.js-3.2.0', 'ubo-fuckadblock.js-3.2.0', 'nofab.js', 'ubo-nofab.js'];
+    preventFab.names = ['prevent-fab-3.2.0', 'nofab.js', 'ubo-nofab.js', 'fuckadblock.js-3.2.0', 'ubo-fuckadblock.js-3.2.0'];
     preventFab.injections = [noop, hit];
 
     /* eslint-disable no-console, func-names, no-multi-assign */
@@ -4383,9 +4386,6 @@
 
     var redirectsList = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        preventFab: preventFab,
-        setPopadsDummy: setPopadsDummy,
-        preventPopadsNet: preventPopadsNet,
         noeval: noeval,
         GoogleAnalytics: GoogleAnalytics,
         GoogleAnalyticsGa: GoogleAnalyticsGa,
