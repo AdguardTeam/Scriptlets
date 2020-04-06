@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import './googlesyndication-adsbygoogle.test';
 import './googletagmanager-gtm.test';
 import './google-analytics.test';

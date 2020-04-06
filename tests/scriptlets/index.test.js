@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import './abort-on-property-read.test';
 import './abort-on-property-write.test';
 import './prevent-setTimeout.test';
