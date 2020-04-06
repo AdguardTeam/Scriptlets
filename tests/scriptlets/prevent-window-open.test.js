@@ -14,14 +14,14 @@ const evalWrap = eval;
 const nativeOpen = window.open;
 
 const beforeEach = () => {
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'value';
     };
 };
 
 const afterEach = () => {
     window.open = nativeOpen;
-    clearGlobalProps('hit', '__debugScriptlets');
+    clearGlobalProps('hit', '__debug');
 };
 
 module(name, { beforeEach, afterEach });

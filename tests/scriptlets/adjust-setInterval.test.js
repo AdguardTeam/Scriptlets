@@ -8,13 +8,13 @@ const nativeSetInterval = window.setInterval;
 
 const afterEach = () => {
     window.setInterval = nativeSetInterval;
-    clearGlobalProps('hit', '__debugScriptlets', 'intervalValue', 'someKey');
+    clearGlobalProps('hit', '__debug', 'intervalValue', 'someKey');
 };
 
 module(name, { afterEach });
 
 const createHit = () => {
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
 };

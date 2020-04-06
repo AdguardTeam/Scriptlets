@@ -9,13 +9,13 @@ const nativeEval = window.eval;
 const nativeConsole = console.log;
 
 const beforeEach = () => {
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
 };
 
 const afterEach = () => {
-    clearGlobalProps('hit', '__debugScriptlets');
+    clearGlobalProps('hit', '__debug');
     window.eval = nativeEval;
     console.log = nativeConsole;
 };

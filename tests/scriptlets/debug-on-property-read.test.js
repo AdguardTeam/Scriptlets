@@ -10,10 +10,10 @@ const CHAIN_PROPERTY = 'aaa.bbb';
 // copy eval to prevent rollup warnings
 const evalWrap = eval;
 
-const changingProps = [PROPERTY, 'hit', '__debugScriptlets'];
+const changingProps = [PROPERTY, 'hit', '__debug'];
 
 const beforeEach = () => {
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'value';
     };
 };

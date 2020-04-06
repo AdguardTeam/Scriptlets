@@ -9,7 +9,7 @@ const nativeConsole = console.log;
 
 const afterEach = () => {
     console.log = nativeConsole;
-    clearGlobalProps('hit', '__debugScriptlets');
+    clearGlobalProps('hit', '__debug');
 };
 
 const beforeEach = () => { };

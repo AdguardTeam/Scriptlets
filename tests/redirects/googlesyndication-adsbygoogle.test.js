@@ -26,12 +26,12 @@ test('UBO alias', (assert) => {
         name: 'ubo-googlesyndication_adsbygoogle.js',
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     const ad = createAdElement();
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     // check if iframes were created by sciptlet
@@ -51,7 +51,7 @@ test('UBO alias', (assert) => {
     window.adsbygoogle.push('somedata');
     assert.strictEqual(window.adsbygoogle.length, 1, 'API was mocked');
 
-    clearGlobalProps('__debugScriptlets', 'hit', 'adsbygoogle');
+    clearGlobalProps('__debug', 'hit', 'adsbygoogle');
     removeBodyElement(ad);
 });
 
@@ -60,12 +60,12 @@ test('UBO Syntax', (assert) => {
         name: 'googlesyndication_adsbygoogle.js',
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     const ad = createAdElement();
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     // check if iframes were created by sciptlet
@@ -85,7 +85,7 @@ test('UBO Syntax', (assert) => {
     window.adsbygoogle.push('somedata');
     assert.strictEqual(window.adsbygoogle.length, 1, 'API was mocked');
 
-    clearGlobalProps('__debugScriptlets', 'hit', 'adsbygoogle');
+    clearGlobalProps('__debug', 'hit', 'adsbygoogle');
     removeBodyElement(ad);
 });
 
@@ -94,12 +94,12 @@ test('AdGuard Syntax', (assert) => {
         name,
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     const ad = createAdElement();
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     // check if iframes were created by sciptlet
@@ -119,6 +119,6 @@ test('AdGuard Syntax', (assert) => {
     window.adsbygoogle.push('somedata');
     assert.strictEqual(window.adsbygoogle.length, 1, 'API was mocked');
 
-    clearGlobalProps('__debugScriptlets', 'hit', 'adsbygoogle');
+    clearGlobalProps('__debug', 'hit', 'adsbygoogle');
     removeBodyElement(ad);
 });

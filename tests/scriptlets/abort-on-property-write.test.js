@@ -10,7 +10,7 @@ const CHAIN_PROPERTY = 'aaa.bbb';
 // copy eval to prevent rollup warnings
 const evalWrap = eval;
 
-const changingProps = [PROPERTY, 'hit', '__debugScriptlets'];
+const changingProps = [PROPERTY, 'hit', '__debug'];
 
 module(name);
 test('abort-on-property-write: ubo alias, set prop for existed prop', (assert) => {
@@ -19,7 +19,7 @@ test('abort-on-property-write: ubo alias, set prop for existed prop', (assert) =
         args: [PROPERTY],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'value';
     };
     window[PROPERTY] = 'value';
@@ -42,7 +42,7 @@ test('abort-on-property-write: abp alias, set prop for existed prop', (assert) =
         args: [PROPERTY],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'value';
     };
     window[PROPERTY] = 'value';
@@ -65,7 +65,7 @@ test('abort-on-property-write: adg alias, set prop for existed prop', (assert) =
         args: [PROPERTY],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'value';
     };
     window[PROPERTY] = 'value';
@@ -88,7 +88,7 @@ test('abort-on-property-write dot notation', (assert) => {
         args: [CHAIN_PROPERTY],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'value';
     };
     window.aaa = {
@@ -113,7 +113,7 @@ test('abort-on-property-write dot notation deferred defenition', (assert) => {
         args: [CHAIN_PROPERTY],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'value';
     };
     const resString = window.scriptlets.invoke(params);

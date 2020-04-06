@@ -15,7 +15,7 @@ test('AdGuard: yandex metrika watch.js', (assert) => {
         name,
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     assert.expect(7);
 
@@ -26,7 +26,7 @@ test('AdGuard: yandex metrika watch.js', (assert) => {
     ];
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     assert.ok(window.Ya.Metrika, 'Metrika function was created');
@@ -52,5 +52,5 @@ test('AdGuard: yandex metrika watch.js', (assert) => {
     ya.extLink('some url', { callback: extLinkCb, ctx: 123 });
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    clearGlobalProps('__debugScriptlets', 'hit');
+    clearGlobalProps('__debug', 'hit');
 });

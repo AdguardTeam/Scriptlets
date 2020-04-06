@@ -9,7 +9,7 @@ module(name);
 
 const evalWrapper = eval;
 
-const changingGlobals = ['hit', '__debugScriptlets'];
+const changingGlobals = ['hit', '__debug'];
 
 const onError = (assert) => (message) => {
     const browserErrorMessage = 'Script error.';
@@ -34,7 +34,7 @@ test('works', (assert) => {
         args: [property],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
@@ -55,7 +55,7 @@ test('works with chained properties', (assert) => {
         args: [chainProperty],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
@@ -81,7 +81,7 @@ test('doesnt aborts script which is not specified by search', (assert) => {
         args: [property, search],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
@@ -101,7 +101,7 @@ test('searches script by regexp', (assert) => {
         args: [property, search],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);

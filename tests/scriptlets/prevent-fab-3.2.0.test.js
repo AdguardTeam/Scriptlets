@@ -8,13 +8,13 @@ const name = 'prevent-fab-3.2.0';
 const evalWrapper = eval;
 
 const beforeEach = () => {
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
 };
 
 const afterEach = () => {
-    clearGlobalProps('hit', 'FuckAdBlock', 'BlockAdBlock', 'fuckAdBlock', 'blockAdBlock', '__debugScriptlets');
+    clearGlobalProps('hit', 'FuckAdBlock', 'BlockAdBlock', 'fuckAdBlock', 'blockAdBlock', '__debug');
 };
 
 module(name, { beforeEach, afterEach });

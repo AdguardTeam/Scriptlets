@@ -6,13 +6,13 @@ const { test, module } = QUnit;
 const name = 'remove-class';
 
 const afterEach = () => {
-    clearGlobalProps('hit', '__debugScriptlets');
+    clearGlobalProps('hit', '__debug');
 };
 
 module(name, { afterEach });
 
 const createHit = () => {
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
 };

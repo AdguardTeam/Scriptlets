@@ -24,12 +24,13 @@ const getRedirectByName = (name) => {
     return redirects.find((r) => r.names && r.names.indexOf(name) > -1);
 };
 
-const getRedirectCode = (name) => {
-    const redirect = getRedirectByName(name);
+const getRedirectCode = (source) => {
+    const redirect = getRedirectByName(source.name);
     let result = attachDependencies(redirect);
     result = addCall(redirect, result);
+    result = passSourceAndProps(source, result);
 
-    return passSourceAndProps({ name }, result);
+    return result;
 };
 
 

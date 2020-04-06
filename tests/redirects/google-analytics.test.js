@@ -26,7 +26,7 @@ test('UBO alias', (assert) => {
         name: 'ubo-google-analytics_analytics.js',
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     const endCallback = () => {
         assert.ok(true, 'hide.end() was executed');
@@ -35,7 +35,7 @@ test('UBO alias', (assert) => {
     mockGoogleDataLayer(endCallback);
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     // check ga api
@@ -47,7 +47,7 @@ test('UBO alias', (assert) => {
     assert.strictEqual(window.ga.loaded, true, 'loaded returns true');
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 
-    clearGlobalProps('__debugScriptlets', 'hit', 'dataLayer', 'ga');
+    clearGlobalProps('__debug', 'hit', 'dataLayer', 'ga');
 });
 
 test('UBO Syntax', (assert) => {
@@ -55,7 +55,7 @@ test('UBO Syntax', (assert) => {
         name: 'google-analytics_analytics.js',
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     const endCallback = () => {
         assert.ok(true, 'hide.end() was executed');
@@ -64,7 +64,7 @@ test('UBO Syntax', (assert) => {
     mockGoogleDataLayer(endCallback);
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     // check ga api
@@ -76,7 +76,7 @@ test('UBO Syntax', (assert) => {
     assert.strictEqual(window.ga.loaded, true, 'loaded returns true');
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 
-    clearGlobalProps('__debugScriptlets', 'hit', 'dataLayer', 'ga');
+    clearGlobalProps('__debug', 'hit', 'dataLayer', 'ga');
 });
 
 test('AdGuard Syntax', (assert) => {
@@ -84,7 +84,7 @@ test('AdGuard Syntax', (assert) => {
         name,
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     const endCallback = () => {
         assert.ok(true, 'hide.end() was executed');
@@ -93,7 +93,7 @@ test('AdGuard Syntax', (assert) => {
     mockGoogleDataLayer(endCallback);
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     // check ga api
@@ -105,5 +105,5 @@ test('AdGuard Syntax', (assert) => {
     assert.strictEqual(window.ga.loaded, true, 'loaded returns true');
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 
-    clearGlobalProps('__debugScriptlets', 'hit', 'dataLayer', 'ga');
+    clearGlobalProps('__debug', 'hit', 'dataLayer', 'ga');
 });

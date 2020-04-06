@@ -25,10 +25,10 @@ test('UBO alias', (assert) => {
         name: 'ubo-googletagservices_gpt.js',
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     assert.ok(window.googletag, 'window.googletag have been created');
@@ -37,7 +37,7 @@ test('UBO alias', (assert) => {
     assert.notDeepEqual(window.googletag.content(), contentService, 'content() returns the mocked data');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    clearGlobalProps('__debugScriptlets', 'hit');
+    clearGlobalProps('__debug', 'hit');
 });
 
 test('UBO Syntax', (assert) => {
@@ -45,10 +45,10 @@ test('UBO Syntax', (assert) => {
         name: 'googletagservices_gpt.js',
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     assert.ok(window.googletag, 'window.googletag have been created');
@@ -57,7 +57,7 @@ test('UBO Syntax', (assert) => {
     assert.notDeepEqual(window.googletag.content(), contentService, 'content() returns the mocked data');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    clearGlobalProps('__debugScriptlets', 'hit');
+    clearGlobalProps('__debug', 'hit');
 });
 
 test('AdGuard Syntax', (assert) => {
@@ -65,10 +65,10 @@ test('AdGuard Syntax', (assert) => {
         name,
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     assert.ok(window.googletag, 'window.googletag have been created');
@@ -77,5 +77,5 @@ test('AdGuard Syntax', (assert) => {
     assert.notDeepEqual(window.googletag.content(), contentService, 'content() returns the mocked data');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    clearGlobalProps('__debugScriptlets', 'hit');
+    clearGlobalProps('__debug', 'hit');
 });

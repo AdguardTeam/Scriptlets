@@ -17,14 +17,14 @@ const nativeConsole = console.log; // eslint-disable-line no-console
 const testTimeouts = [];
 
 const beforeEach = () => {
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'value';
     };
 };
 
 const afterEach = () => {
     window.setTimeout = nativeSetTimeout;
-    clearGlobalProps('hit', 'aaa', '__debugScriptlets');
+    clearGlobalProps('hit', 'aaa', '__debug');
     testTimeouts.forEach((t) => (clearTimeout(t)));
     console.log = nativeConsole; // eslint-disable-line no-console
 };

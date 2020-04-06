@@ -6,13 +6,13 @@ const { test, module } = QUnit;
 const name = 'prevent-adfly';
 
 const beforeEach = () => {
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
 };
 
 const afterEach = () => {
-    clearGlobalProps('__debugScriptlets', 'hit');
+    clearGlobalProps('__debug', 'hit');
 };
 
 module(name, { beforeEach, afterEach });

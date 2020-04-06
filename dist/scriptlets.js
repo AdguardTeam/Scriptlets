@@ -252,8 +252,8 @@
       // This is necessary for unit-tests only!
 
 
-      if (typeof window.__debugScriptlets === 'function') {
-        window.__debugScriptlets(source);
+      if (typeof window.__debug === 'function') {
+        window.__debug(source);
       }
     };
 
@@ -3022,667 +3022,6 @@
     jsonPrune.names = ['json-prune', 'json-prune.js', 'ubo-json-prune.js'];
     jsonPrune.injections = [hit, getPropertyInChain];
 
-    /* eslint-disable max-len */
-
-    /**
-     * @redirect googlesyndication-adsbygoogle
-     *
-     * @description
-     * Mocks Google AdSense API.
-     *
-     * Related UBO redirect resource:
-     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googlesyndication_adsbygoogle.js
-     *
-     * **Example**
-     * ```
-     * ||pagead2.googlesyndication.com/pagead/js/adsbygoogle.js$script,redirect=googlesyndication-adsbygoogle
-     * ```
-     */
-
-    /* eslint-enable max-len */
-
-    function GoogleSyndicationAdsByGoogle(source) {
-      window.adsbygoogle = window.adsbygoogle || {
-        length: 0,
-        loaded: true,
-        push: function push() {
-          this.length += 1;
-        }
-      };
-      var adElems = document.querySelectorAll('.adsbygoogle');
-      var css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
-      var executed = false;
-
-      for (var i = 0; i < adElems.length; i += 1) {
-        adElems[i].setAttribute('data-adsbygoogle-status', 'done');
-        var aswiftIframe = document.createElement('iframe');
-        aswiftIframe.id = "aswift_".concat(i + 1);
-        aswiftIframe.style = css;
-        adElems[i].appendChild(aswiftIframe);
-        var googleadsIframe = document.createElement('iframe');
-        googleadsIframe.id = "google_ads_iframe_".concat(i);
-        googleadsIframe.style = css;
-        adElems[i].appendChild(googleadsIframe);
-        executed = true;
-      }
-
-      if (executed) {
-        hit(source);
-      }
-    }
-    GoogleSyndicationAdsByGoogle.names = ['googlesyndication-adsbygoogle', 'ubo-googlesyndication_adsbygoogle.js', 'googlesyndication_adsbygoogle.js'];
-    GoogleSyndicationAdsByGoogle.injections = [hit];
-
-    /**
-     * @redirect googletagmanager-gtm
-     *
-     * @description
-     * Mocks Google Tag Manager API.
-     *
-     * Related UBO redirect resource:
-     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagmanager_gtm.js
-     *
-     * **Example**
-     * ```
-     * ||googletagmanager.com/gtm.js$script,redirect=googletagmanager-gtm
-     * ```
-     */
-
-    function GoogleTagManagerGtm(source) {
-      window.ga = window.ga || noop;
-      var _window = window,
-          dataLayer = _window.dataLayer;
-
-      if (dataLayer instanceof Object === false) {
-        return;
-      }
-
-      if (dataLayer.hide instanceof Object && typeof dataLayer.hide.end === 'function') {
-        dataLayer.hide.end();
-      }
-
-      if (typeof dataLayer.push === 'function') {
-        dataLayer.push = function (data) {
-          if (data instanceof Object && typeof data.eventCallback === 'function') {
-            setTimeout(data.eventCallback, 1);
-          }
-        };
-      }
-
-      hit(source);
-    }
-    GoogleTagManagerGtm.names = ['googletagmanager-gtm', 'ubo-googletagmanager_gtm.js', 'googletagmanager_gtm.js'];
-    GoogleTagManagerGtm.injections = [hit, noop];
-
-    /**
-     * @redirect google-analytics
-     *
-     * @description
-     * Mocks Google Analytics API.
-     *
-     * Related UBO redirect resource:
-     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_analytics.js
-     *
-     * **Example**
-     * ```
-     * ||google-analytics.com/analytics.js$script,redirect=google-analytics
-     * ```
-     */
-
-    function GoogleAnalytics(source) {
-      // eslint-disable-next-line func-names
-      var Tracker = function Tracker() {}; // constructor
-
-
-      var proto = Tracker.prototype;
-      proto.get = noop;
-      proto.set = noop;
-      proto.send = noop;
-      var googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';
-
-      function ga() {
-        var len = arguments.length;
-
-        if (len === 0) {
-          return;
-        } // eslint-disable-next-line prefer-rest-params
-
-
-        var lastArg = arguments[len - 1];
-
-        if (typeof lastArg !== 'object' || lastArg === null || typeof lastArg.hitCallback !== 'function') {
-          return;
-        }
-
-        try {
-          lastArg.hitCallback(); // eslint-disable-next-line no-empty
-        } catch (ex) {}
-      }
-
-      ga.create = function () {
-        return new Tracker();
-      };
-
-      ga.getByName = noopNull;
-
-      ga.getAll = function () {
-        return [];
-      };
-
-      ga.remove = noop;
-      ga.loaded = true;
-      window[googleAnalyticsName] = ga;
-      var _window = window,
-          dataLayer = _window.dataLayer;
-
-      if (dataLayer instanceof Object && dataLayer.hide instanceof Object && typeof dataLayer.hide.end === 'function') {
-        dataLayer.hide.end();
-      }
-
-      hit(source);
-    }
-    GoogleAnalytics.names = ['google-analytics', 'ubo-google-analytics_analytics.js', 'google-analytics_analytics.js'];
-    GoogleAnalytics.injections = [hit, noop, noopNull];
-
-    /* eslint-disable no-underscore-dangle */
-    /**
-     * @redirect google-analytics-ga
-     *
-     * @description
-     * Mocks old Google Analytics API.
-     *
-     * Related UBO redirect resource:
-     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_ga.js
-     *
-     * **Example**
-     * ```
-     * ||google-analytics.com/ga.js$script,redirect=google-analytics-ga
-     * ```
-     */
-
-    function GoogleAnalyticsGa(source) {
-      // Gaq constructor
-      function Gaq() {}
-
-      Gaq.prototype.Na = noop;
-      Gaq.prototype.O = noop;
-      Gaq.prototype.Sa = noop;
-      Gaq.prototype.Ta = noop;
-      Gaq.prototype.Va = noop;
-      Gaq.prototype._createAsyncTracker = noop;
-      Gaq.prototype._getAsyncTracker = noop;
-      Gaq.prototype._getPlugin = noop;
-
-      Gaq.prototype.push = function (data) {
-        if (typeof data === 'function') {
-          data();
-          return;
-        }
-
-        if (Array.isArray(data) === false) {
-          return;
-        } // https://developers.google.com/analytics/devguides/collection/gajs/methods/gaJSApiDomainDirectory#_gat.GA_Tracker_._link
-
-
-        if (data[0] === '_link' && typeof data[1] === 'string') {
-          window.location.assign(data[1]);
-        } // https://github.com/gorhill/uBlock/issues/2162
-
-
-        if (data[0] === '_set' && data[1] === 'hitCallback' && typeof data[2] === 'function') {
-          data[2]();
-        }
-      };
-
-      var gaq = new Gaq();
-      var asyncTrackers = window._gaq || [];
-
-      if (Array.isArray(asyncTrackers)) {
-        while (asyncTrackers[0]) {
-          gaq.push(asyncTrackers.shift());
-        }
-      } // eslint-disable-next-line no-multi-assign
-
-
-      window._gaq = gaq.qf = gaq; // Gat constructor
-
-      function Gat() {} // Mock tracker api
-
-
-      var api = ['_addIgnoredOrganic', '_addIgnoredRef', '_addItem', '_addOrganic', '_addTrans', '_clearIgnoredOrganic', '_clearIgnoredRef', '_clearOrganic', '_cookiePathCopy', '_deleteCustomVar', '_getName', '_setAccount', '_getAccount', '_getClientInfo', '_getDetectFlash', '_getDetectTitle', '_getLinkerUrl', '_getLocalGifPath', '_getServiceMode', '_getVersion', '_getVisitorCustomVar', '_initData', '_link', '_linkByPost', '_setAllowAnchor', '_setAllowHash', '_setAllowLinker', '_setCampContentKey', '_setCampMediumKey', '_setCampNameKey', '_setCampNOKey', '_setCampSourceKey', '_setCampTermKey', '_setCampaignCookieTimeout', '_setCampaignTrack', '_setClientInfo', '_setCookiePath', '_setCookiePersistence', '_setCookieTimeout', '_setCustomVar', '_setDetectFlash', '_setDetectTitle', '_setDomainName', '_setLocalGifPath', '_setLocalRemoteServerMode', '_setLocalServerMode', '_setReferrerOverride', '_setRemoteServerMode', '_setSampleRate', '_setSessionTimeout', '_setSiteSpeedSampleRate', '_setSessionCookieTimeout', '_setVar', '_setVisitorCookieTimeout', '_trackEvent', '_trackPageLoadTime', '_trackPageview', '_trackSocial', '_trackTiming', '_trackTrans', '_visitCode'];
-      var tracker = api.reduce(function (res, funcName) {
-        res[funcName] = noop;
-        return res;
-      }, {});
-
-      tracker._getLinkerUrl = function (a) {
-        return a;
-      };
-
-      Gat.prototype._anonymizeIP = noop;
-      Gat.prototype._createTracker = noop;
-      Gat.prototype._forceSSL = noop;
-      Gat.prototype._getPlugin = noop;
-
-      Gat.prototype._getTracker = function () {
-        return tracker;
-      };
-
-      Gat.prototype._getTrackerByName = function () {
-        return tracker;
-      };
-
-      Gat.prototype._getTrackers = noop;
-      Gat.prototype.aa = noop;
-      Gat.prototype.ab = noop;
-      Gat.prototype.hb = noop;
-      Gat.prototype.la = noop;
-      Gat.prototype.oa = noop;
-      Gat.prototype.pa = noop;
-      Gat.prototype.u = noop;
-      var gat = new Gat();
-      window._gat = gat;
-      hit(source);
-    }
-    GoogleAnalyticsGa.names = ['google-analytics-ga', 'ubo-google-analytics_ga.js', 'google-analytics_ga.js'];
-    GoogleAnalyticsGa.injections = [hit, noop];
-
-    /**
-     * @redirect googletagservices-gpt
-     *
-     * @description
-     * Mocks Google Publisher Tag API.
-     *
-     * Related UBO redirect resource:
-     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagservices_gpt.js
-     *
-     * **Example**
-     * ```
-     * ||googletagservices.com/tag/js/gpt.js$script,redirect=googletagservices-gpt
-     * ```
-     */
-
-    function GoogleTagServicesGpt(source) {
-      var companionAdsService = {
-        addEventListener: noopThis,
-        enableSyncLoading: noop,
-        setRefreshUnfilledSlots: noop
-      };
-      var contentService = {
-        addEventListener: noopThis,
-        setContent: noop
-      };
-
-      function PassbackSlot() {} // constructor
-
-
-      PassbackSlot.prototype.display = noop;
-      PassbackSlot.prototype.get = noopNull;
-      PassbackSlot.prototype.set = noopThis;
-      PassbackSlot.prototype.setClickUrl = noopThis;
-      PassbackSlot.prototype.setTagForChildDirectedTreatment = noopThis;
-      PassbackSlot.prototype.setTargeting = noopThis;
-      PassbackSlot.prototype.updateTargetingFromMap = noopThis;
-
-      function SizeMappingBuilder() {} // constructor
-
-
-      SizeMappingBuilder.prototype.addSize = noopThis;
-      SizeMappingBuilder.prototype.build = noopNull;
-
-      function Slot() {} // constructor
-
-
-      Slot.prototype.addService = noopThis;
-      Slot.prototype.clearCategoryExclusions = noopThis;
-      Slot.prototype.clearTargeting = noopThis;
-      Slot.prototype.defineSizeMapping = noopThis;
-      Slot.prototype.get = noopNull;
-      Slot.prototype.getAdUnitPath = noopArray;
-      Slot.prototype.getAttributeKeys = noopArray;
-      Slot.prototype.getCategoryExclusions = noopArray;
-      Slot.prototype.getDomId = noopStr;
-      Slot.prototype.getSlotElementId = noopStr;
-      Slot.prototype.getSlotId = noopThis;
-      Slot.prototype.getTargeting = noopArray;
-      Slot.prototype.getTargetingKeys = noopArray;
-      Slot.prototype.set = noopThis;
-      Slot.prototype.setCategoryExclusion = noopThis;
-      Slot.prototype.setClickUrl = noopThis;
-      Slot.prototype.setCollapseEmptyDiv = noopThis;
-      Slot.prototype.setTargeting = noopThis;
-      var pubAdsService = {
-        addEventListener: noopThis,
-        clear: noop,
-        clearCategoryExclusions: noopThis,
-        clearTagForChildDirectedTreatment: noopThis,
-        clearTargeting: noopThis,
-        collapseEmptyDivs: noop,
-        defineOutOfPagePassback: function defineOutOfPagePassback() {
-          return new PassbackSlot();
-        },
-        definePassback: function definePassback() {
-          return new PassbackSlot();
-        },
-        disableInitialLoad: noop,
-        display: noop,
-        enableAsyncRendering: noop,
-        enableSingleRequest: noop,
-        enableSyncRendering: noop,
-        enableVideoAds: noop,
-        get: noopNull,
-        getAttributeKeys: noopArray,
-        getTargeting: noop,
-        getTargetingKeys: noopArray,
-        getSlots: noopArray,
-        refresh: noop,
-        set: noopThis,
-        setCategoryExclusion: noopThis,
-        setCentering: noop,
-        setCookieOptions: noopThis,
-        setForceSafeFrame: noopThis,
-        setLocation: noopThis,
-        setPublisherProvidedId: noopThis,
-        setRequestNonPersonalizedAds: noopThis,
-        setSafeFrameConfig: noopThis,
-        setTagForChildDirectedTreatment: noopThis,
-        setTargeting: noopThis,
-        setVideoContent: noopThis,
-        updateCorrelator: noop
-      };
-      var _window = window,
-          _window$googletag = _window.googletag,
-          googletag = _window$googletag === void 0 ? {} : _window$googletag;
-      var _googletag$cmd = googletag.cmd,
-          cmd = _googletag$cmd === void 0 ? [] : _googletag$cmd;
-      googletag.apiReady = true;
-      googletag.cmd = [];
-
-      googletag.cmd.push = function (a) {
-        try {
-          a(); // eslint-disable-next-line no-empty
-        } catch (ex) {}
-
-        return 1;
-      };
-
-      googletag.companionAds = function () {
-        return companionAdsService;
-      };
-
-      googletag.content = function () {
-        return contentService;
-      };
-
-      googletag.defineOutOfPageSlot = function () {
-        return new Slot();
-      };
-
-      googletag.defineSlot = function () {
-        return new Slot();
-      };
-
-      googletag.destroySlots = noop;
-      googletag.disablePublisherConsole = noop;
-      googletag.display = noop;
-      googletag.enableServices = noop;
-      googletag.getVersion = noopStr;
-
-      googletag.pubads = function () {
-        return pubAdsService;
-      };
-
-      googletag.pubadsReady = true;
-      googletag.setAdIframeTitle = noop;
-
-      googletag.sizeMapping = function () {
-        return new SizeMappingBuilder();
-      };
-
-      window.googletag = googletag;
-
-      while (cmd.length !== 0) {
-        googletag.cmd.push(cmd.shift());
-      }
-
-      hit(source);
-    }
-    GoogleTagServicesGpt.names = ['googletagservices-gpt', 'ubo-googletagservices_gpt.js', 'googletagservices_gpt.js'];
-    GoogleTagServicesGpt.injections = [hit, noop, noopThis, noopNull, noopArray, noopStr];
-
-    /**
-     * @redirect metrika-yandex-watch
-     *
-     * @description
-     * Mocks the old Yandex Metrika API.
-     * https://yandex.ru/support/metrica/objects/_method-reference.html
-     *
-     * **Example**
-     * ```
-     * ||mc.yandex.ru/metrika/watch.js$script,redirect=metrika-yandex-watch
-     * ```
-     */
-
-    function metrikaYandexWatch(source) {
-      var cbName = 'yandex_metrika_callbacks';
-      /**
-       * Gets callback and its context from options and call it in async way
-       * @param {Object} options Yandex Metrika API options
-       */
-
-      var asyncCallbackFromOptions = function asyncCallbackFromOptions() {
-        var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-        var callback = options.callback;
-        var ctx = options.ctx;
-
-        if (typeof callback === 'function') {
-          callback = ctx !== undefined ? callback.bind(ctx) : callback;
-          setTimeout(function () {
-            return callback();
-          });
-        }
-      };
-
-      function Metrika() {} // constructor
-      // Methods without options
-
-
-      Metrika.prototype.addFileExtension = noop;
-      Metrika.prototype.getClientID = noop;
-      Metrika.prototype.setUserID = noop;
-      Metrika.prototype.userParams = noop; // Methods with options
-      // The order of arguments should be kept in according to API
-
-      Metrika.prototype.extLink = function (url, options) {
-        asyncCallbackFromOptions(options);
-      };
-
-      Metrika.prototype.file = function (url, options) {
-        asyncCallbackFromOptions(options);
-      };
-
-      Metrika.prototype.hit = function (url, options) {
-        asyncCallbackFromOptions(options);
-      };
-
-      Metrika.prototype.reachGoal = function (target, params, cb, ctx) {
-        asyncCallbackFromOptions({
-          callback: cb,
-          ctx: ctx
-        });
-      };
-
-      Metrika.prototype.notBounce = asyncCallbackFromOptions;
-
-      if (window.Ya) {
-        window.Ya.Metrika = Metrika;
-      } else {
-        window.Ya = {
-          Metrika: Metrika
-        };
-      }
-
-      if (window[cbName] && Array.isArray(window[cbName])) {
-        window[cbName].forEach(function (func) {
-          if (typeof func === 'function') {
-            func();
-          }
-        });
-      }
-
-      hit(source);
-    }
-    metrikaYandexWatch.names = ['metrika-yandex-watch'];
-    metrikaYandexWatch.injections = [hit, noop];
-
-    /**
-     * @redirect metrika-yandex-tag
-     *
-     * @description
-     * Mocks Yandex Metrika API.
-     * https://yandex.ru/support/metrica/objects/method-reference.html
-     *
-     * **Example**
-     * ```
-     * ||mc.yandex.ru/metrika/tag.js$script,redirect=metrika-yandex-tag
-     * ```
-     */
-
-    function metrikaYandexTag(source) {
-      var asyncCallbackFromOptions = function asyncCallbackFromOptions(param) {
-        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-        var callback = options.callback;
-        var ctx = options.ctx;
-
-        if (typeof callback === 'function') {
-          callback = ctx !== undefined ? callback.bind(ctx) : callback;
-          setTimeout(function () {
-            return callback();
-          });
-        }
-      };
-
-      var init = noop;
-      /**
-       * https://yandex.ru/support/metrica/objects/addfileextension.html
-       */
-
-      var addFileExtension = noop;
-      /**
-       * https://yandex.ru/support/metrica/objects/extlink.html
-       */
-
-      var extLink = asyncCallbackFromOptions;
-      /**
-       * https://yandex.ru/support/metrica/objects/file.html
-       */
-
-      var file = asyncCallbackFromOptions;
-      /**
-       * https://yandex.ru/support/metrica/objects/get-client-id.html
-       * @param {Function} cb
-       */
-
-      var getClientID = function getClientID(cb) {
-        setTimeout(cb(null));
-      };
-      /**
-       * https://yandex.ru/support/metrica/objects/hit.html
-       */
-
-
-      var hitFunc = asyncCallbackFromOptions;
-      /**
-       * https://yandex.ru/support/metrica/objects/notbounce.html
-       */
-
-      var notBounce = asyncCallbackFromOptions;
-      /**
-       * https://yandex.ru/support/metrica/objects/params-method.html
-       */
-
-      var params = noop;
-      /**
-       * https://yandex.ru/support/metrica/objects/reachgoal.html
-       * @param {string} target
-       * @param {Object} params
-       * @param {Function} callback
-       * @param {any} ctx
-       */
-
-      var reachGoal = function reachGoal(target, params, callback, ctx) {
-        asyncCallbackFromOptions(null, {
-          callback: callback,
-          ctx: ctx
-        });
-      };
-      /**
-       * https://yandex.ru/support/metrica/objects/set-user-id.html
-       */
-
-
-      var setUserID = noop;
-      /**
-       * https://yandex.ru/support/metrica/objects/user-params.html
-       */
-
-      var userParams = noop;
-      var api = {
-        init: init,
-        addFileExtension: addFileExtension,
-        extLink: extLink,
-        file: file,
-        getClientID: getClientID,
-        hit: hitFunc,
-        notBounce: notBounce,
-        params: params,
-        reachGoal: reachGoal,
-        setUserID: setUserID,
-        userParams: userParams
-      };
-
-      function ym(id, funcName) {
-        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-          args[_key - 2] = arguments[_key];
-        }
-
-        return api[funcName] && api[funcName].apply(api, args);
-      }
-
-      window.ym = ym;
-      hit(source);
-    }
-    metrikaYandexTag.names = ['metrika-yandex-tag'];
-    metrikaYandexTag.injections = [hit, noop];
-
-    /**
-     * @redirect scorecardresearch-beacon
-     *
-     * @description
-     * Mocks Scorecard Research API.
-     *
-     * Related UBO redirect resource:
-     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/scorecardresearch_beacon.js
-     *
-     * **Example**
-     * ```
-     * ||sb.scorecardresearch.com/beacon.js$script,redirect=scorecardresearch-beacon
-     * ```
-     */
-
-    function ScoreCardResearchBeacon(source) {
-      window.COMSCORE = {
-        purge: function purge() {
-          // eslint-disable-next-line no-underscore-dangle
-          window._comscore = [];
-        },
-        beacon: function beacon() {}
-      };
-      hit(source);
-    }
-    ScoreCardResearchBeacon.names = ['scorecardresearch-beacon', 'ubo-scorecardresearch_beacon.js', 'scorecardresearch_beacon.js'];
-    ScoreCardResearchBeacon.injections = [hit];
-
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -3718,15 +3057,7 @@
         adjustSetInterval: adjustSetInterval,
         adjustSetTimeout: adjustSetTimeout,
         dirString: dirString,
-        jsonPrune: jsonPrune,
-        GoogleSyndicationAdsByGoogle: GoogleSyndicationAdsByGoogle,
-        GoogleTagManagerGtm: GoogleTagManagerGtm,
-        GoogleAnalytics: GoogleAnalytics,
-        GoogleAnalyticsGa: GoogleAnalyticsGa,
-        GoogleTagServicesGpt: GoogleTagServicesGpt,
-        metrikaYandexWatch: metrikaYandexWatch,
-        metrikaYandexTag: metrikaYandexTag,
-        ScoreCardResearchBeacon: ScoreCardResearchBeacon
+        jsonPrune: jsonPrune
     });
 
     const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm",ubo:"googletagmanager_gtm.js"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3.0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"disqus_embed.js"},{ubo:"disqus_forums_embed.js"},{ubo:"doubleclick_instream_ad_status.js"},{ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"}];
@@ -4382,6 +3713,667 @@
       }
     };
 
+    /**
+     * @redirect google-analytics
+     *
+     * @description
+     * Mocks Google Analytics API.
+     *
+     * Related UBO redirect resource:
+     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_analytics.js
+     *
+     * **Example**
+     * ```
+     * ||google-analytics.com/analytics.js$script,redirect=google-analytics
+     * ```
+     */
+
+    function GoogleAnalytics(source) {
+      // eslint-disable-next-line func-names
+      var Tracker = function Tracker() {}; // constructor
+
+
+      var proto = Tracker.prototype;
+      proto.get = noop;
+      proto.set = noop;
+      proto.send = noop;
+      var googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';
+
+      function ga() {
+        var len = arguments.length;
+
+        if (len === 0) {
+          return;
+        } // eslint-disable-next-line prefer-rest-params
+
+
+        var lastArg = arguments[len - 1];
+
+        if (typeof lastArg !== 'object' || lastArg === null || typeof lastArg.hitCallback !== 'function') {
+          return;
+        }
+
+        try {
+          lastArg.hitCallback(); // eslint-disable-next-line no-empty
+        } catch (ex) {}
+      }
+
+      ga.create = function () {
+        return new Tracker();
+      };
+
+      ga.getByName = noopNull;
+
+      ga.getAll = function () {
+        return [];
+      };
+
+      ga.remove = noop;
+      ga.loaded = true;
+      window[googleAnalyticsName] = ga;
+      var _window = window,
+          dataLayer = _window.dataLayer;
+
+      if (dataLayer instanceof Object && dataLayer.hide instanceof Object && typeof dataLayer.hide.end === 'function') {
+        dataLayer.hide.end();
+      }
+
+      hit(source);
+    }
+    GoogleAnalytics.names = ['google-analytics', 'ubo-google-analytics_analytics.js', 'google-analytics_analytics.js'];
+    GoogleAnalytics.injections = [hit, noop, noopNull];
+
+    /* eslint-disable no-underscore-dangle */
+    /**
+     * @redirect google-analytics-ga
+     *
+     * @description
+     * Mocks old Google Analytics API.
+     *
+     * Related UBO redirect resource:
+     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_ga.js
+     *
+     * **Example**
+     * ```
+     * ||google-analytics.com/ga.js$script,redirect=google-analytics-ga
+     * ```
+     */
+
+    function GoogleAnalyticsGa(source) {
+      // Gaq constructor
+      function Gaq() {}
+
+      Gaq.prototype.Na = noop;
+      Gaq.prototype.O = noop;
+      Gaq.prototype.Sa = noop;
+      Gaq.prototype.Ta = noop;
+      Gaq.prototype.Va = noop;
+      Gaq.prototype._createAsyncTracker = noop;
+      Gaq.prototype._getAsyncTracker = noop;
+      Gaq.prototype._getPlugin = noop;
+
+      Gaq.prototype.push = function (data) {
+        if (typeof data === 'function') {
+          data();
+          return;
+        }
+
+        if (Array.isArray(data) === false) {
+          return;
+        } // https://developers.google.com/analytics/devguides/collection/gajs/methods/gaJSApiDomainDirectory#_gat.GA_Tracker_._link
+
+
+        if (data[0] === '_link' && typeof data[1] === 'string') {
+          window.location.assign(data[1]);
+        } // https://github.com/gorhill/uBlock/issues/2162
+
+
+        if (data[0] === '_set' && data[1] === 'hitCallback' && typeof data[2] === 'function') {
+          data[2]();
+        }
+      };
+
+      var gaq = new Gaq();
+      var asyncTrackers = window._gaq || [];
+
+      if (Array.isArray(asyncTrackers)) {
+        while (asyncTrackers[0]) {
+          gaq.push(asyncTrackers.shift());
+        }
+      } // eslint-disable-next-line no-multi-assign
+
+
+      window._gaq = gaq.qf = gaq; // Gat constructor
+
+      function Gat() {} // Mock tracker api
+
+
+      var api = ['_addIgnoredOrganic', '_addIgnoredRef', '_addItem', '_addOrganic', '_addTrans', '_clearIgnoredOrganic', '_clearIgnoredRef', '_clearOrganic', '_cookiePathCopy', '_deleteCustomVar', '_getName', '_setAccount', '_getAccount', '_getClientInfo', '_getDetectFlash', '_getDetectTitle', '_getLinkerUrl', '_getLocalGifPath', '_getServiceMode', '_getVersion', '_getVisitorCustomVar', '_initData', '_link', '_linkByPost', '_setAllowAnchor', '_setAllowHash', '_setAllowLinker', '_setCampContentKey', '_setCampMediumKey', '_setCampNameKey', '_setCampNOKey', '_setCampSourceKey', '_setCampTermKey', '_setCampaignCookieTimeout', '_setCampaignTrack', '_setClientInfo', '_setCookiePath', '_setCookiePersistence', '_setCookieTimeout', '_setCustomVar', '_setDetectFlash', '_setDetectTitle', '_setDomainName', '_setLocalGifPath', '_setLocalRemoteServerMode', '_setLocalServerMode', '_setReferrerOverride', '_setRemoteServerMode', '_setSampleRate', '_setSessionTimeout', '_setSiteSpeedSampleRate', '_setSessionCookieTimeout', '_setVar', '_setVisitorCookieTimeout', '_trackEvent', '_trackPageLoadTime', '_trackPageview', '_trackSocial', '_trackTiming', '_trackTrans', '_visitCode'];
+      var tracker = api.reduce(function (res, funcName) {
+        res[funcName] = noop;
+        return res;
+      }, {});
+
+      tracker._getLinkerUrl = function (a) {
+        return a;
+      };
+
+      Gat.prototype._anonymizeIP = noop;
+      Gat.prototype._createTracker = noop;
+      Gat.prototype._forceSSL = noop;
+      Gat.prototype._getPlugin = noop;
+
+      Gat.prototype._getTracker = function () {
+        return tracker;
+      };
+
+      Gat.prototype._getTrackerByName = function () {
+        return tracker;
+      };
+
+      Gat.prototype._getTrackers = noop;
+      Gat.prototype.aa = noop;
+      Gat.prototype.ab = noop;
+      Gat.prototype.hb = noop;
+      Gat.prototype.la = noop;
+      Gat.prototype.oa = noop;
+      Gat.prototype.pa = noop;
+      Gat.prototype.u = noop;
+      var gat = new Gat();
+      window._gat = gat;
+      hit(source);
+    }
+    GoogleAnalyticsGa.names = ['google-analytics-ga', 'ubo-google-analytics_ga.js', 'google-analytics_ga.js'];
+    GoogleAnalyticsGa.injections = [hit, noop];
+
+    /* eslint-disable max-len */
+
+    /**
+     * @redirect googlesyndication-adsbygoogle
+     *
+     * @description
+     * Mocks Google AdSense API.
+     *
+     * Related UBO redirect resource:
+     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googlesyndication_adsbygoogle.js
+     *
+     * **Example**
+     * ```
+     * ||pagead2.googlesyndication.com/pagead/js/adsbygoogle.js$script,redirect=googlesyndication-adsbygoogle
+     * ```
+     */
+
+    /* eslint-enable max-len */
+
+    function GoogleSyndicationAdsByGoogle(source) {
+      window.adsbygoogle = window.adsbygoogle || {
+        length: 0,
+        loaded: true,
+        push: function push() {
+          this.length += 1;
+        }
+      };
+      var adElems = document.querySelectorAll('.adsbygoogle');
+      var css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
+      var executed = false;
+
+      for (var i = 0; i < adElems.length; i += 1) {
+        adElems[i].setAttribute('data-adsbygoogle-status', 'done');
+        var aswiftIframe = document.createElement('iframe');
+        aswiftIframe.id = "aswift_".concat(i + 1);
+        aswiftIframe.style = css;
+        adElems[i].appendChild(aswiftIframe);
+        var googleadsIframe = document.createElement('iframe');
+        googleadsIframe.id = "google_ads_iframe_".concat(i);
+        googleadsIframe.style = css;
+        adElems[i].appendChild(googleadsIframe);
+        executed = true;
+      }
+
+      if (executed) {
+        hit(source);
+      }
+    }
+    GoogleSyndicationAdsByGoogle.names = ['googlesyndication-adsbygoogle', 'ubo-googlesyndication_adsbygoogle.js', 'googlesyndication_adsbygoogle.js'];
+    GoogleSyndicationAdsByGoogle.injections = [hit];
+
+    /**
+     * @redirect googletagmanager-gtm
+     *
+     * @description
+     * Mocks Google Tag Manager API.
+     *
+     * Related UBO redirect resource:
+     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagmanager_gtm.js
+     *
+     * **Example**
+     * ```
+     * ||googletagmanager.com/gtm.js$script,redirect=googletagmanager-gtm
+     * ```
+     */
+
+    function GoogleTagManagerGtm(source) {
+      window.ga = window.ga || noop;
+      var _window = window,
+          dataLayer = _window.dataLayer;
+
+      if (dataLayer instanceof Object === false) {
+        return;
+      }
+
+      if (dataLayer.hide instanceof Object && typeof dataLayer.hide.end === 'function') {
+        dataLayer.hide.end();
+      }
+
+      if (typeof dataLayer.push === 'function') {
+        dataLayer.push = function (data) {
+          if (data instanceof Object && typeof data.eventCallback === 'function') {
+            setTimeout(data.eventCallback, 1);
+          }
+        };
+      }
+
+      hit(source);
+    }
+    GoogleTagManagerGtm.names = ['googletagmanager-gtm', 'ubo-googletagmanager_gtm.js', 'googletagmanager_gtm.js'];
+    GoogleTagManagerGtm.injections = [hit, noop];
+
+    /**
+     * @redirect googletagservices-gpt
+     *
+     * @description
+     * Mocks Google Publisher Tag API.
+     *
+     * Related UBO redirect resource:
+     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagservices_gpt.js
+     *
+     * **Example**
+     * ```
+     * ||googletagservices.com/tag/js/gpt.js$script,redirect=googletagservices-gpt
+     * ```
+     */
+
+    function GoogleTagServicesGpt(source) {
+      var companionAdsService = {
+        addEventListener: noopThis,
+        enableSyncLoading: noop,
+        setRefreshUnfilledSlots: noop
+      };
+      var contentService = {
+        addEventListener: noopThis,
+        setContent: noop
+      };
+
+      function PassbackSlot() {} // constructor
+
+
+      PassbackSlot.prototype.display = noop;
+      PassbackSlot.prototype.get = noopNull;
+      PassbackSlot.prototype.set = noopThis;
+      PassbackSlot.prototype.setClickUrl = noopThis;
+      PassbackSlot.prototype.setTagForChildDirectedTreatment = noopThis;
+      PassbackSlot.prototype.setTargeting = noopThis;
+      PassbackSlot.prototype.updateTargetingFromMap = noopThis;
+
+      function SizeMappingBuilder() {} // constructor
+
+
+      SizeMappingBuilder.prototype.addSize = noopThis;
+      SizeMappingBuilder.prototype.build = noopNull;
+
+      function Slot() {} // constructor
+
+
+      Slot.prototype.addService = noopThis;
+      Slot.prototype.clearCategoryExclusions = noopThis;
+      Slot.prototype.clearTargeting = noopThis;
+      Slot.prototype.defineSizeMapping = noopThis;
+      Slot.prototype.get = noopNull;
+      Slot.prototype.getAdUnitPath = noopArray;
+      Slot.prototype.getAttributeKeys = noopArray;
+      Slot.prototype.getCategoryExclusions = noopArray;
+      Slot.prototype.getDomId = noopStr;
+      Slot.prototype.getSlotElementId = noopStr;
+      Slot.prototype.getSlotId = noopThis;
+      Slot.prototype.getTargeting = noopArray;
+      Slot.prototype.getTargetingKeys = noopArray;
+      Slot.prototype.set = noopThis;
+      Slot.prototype.setCategoryExclusion = noopThis;
+      Slot.prototype.setClickUrl = noopThis;
+      Slot.prototype.setCollapseEmptyDiv = noopThis;
+      Slot.prototype.setTargeting = noopThis;
+      var pubAdsService = {
+        addEventListener: noopThis,
+        clear: noop,
+        clearCategoryExclusions: noopThis,
+        clearTagForChildDirectedTreatment: noopThis,
+        clearTargeting: noopThis,
+        collapseEmptyDivs: noop,
+        defineOutOfPagePassback: function defineOutOfPagePassback() {
+          return new PassbackSlot();
+        },
+        definePassback: function definePassback() {
+          return new PassbackSlot();
+        },
+        disableInitialLoad: noop,
+        display: noop,
+        enableAsyncRendering: noop,
+        enableSingleRequest: noop,
+        enableSyncRendering: noop,
+        enableVideoAds: noop,
+        get: noopNull,
+        getAttributeKeys: noopArray,
+        getTargeting: noop,
+        getTargetingKeys: noopArray,
+        getSlots: noopArray,
+        refresh: noop,
+        set: noopThis,
+        setCategoryExclusion: noopThis,
+        setCentering: noop,
+        setCookieOptions: noopThis,
+        setForceSafeFrame: noopThis,
+        setLocation: noopThis,
+        setPublisherProvidedId: noopThis,
+        setRequestNonPersonalizedAds: noopThis,
+        setSafeFrameConfig: noopThis,
+        setTagForChildDirectedTreatment: noopThis,
+        setTargeting: noopThis,
+        setVideoContent: noopThis,
+        updateCorrelator: noop
+      };
+      var _window = window,
+          _window$googletag = _window.googletag,
+          googletag = _window$googletag === void 0 ? {} : _window$googletag;
+      var _googletag$cmd = googletag.cmd,
+          cmd = _googletag$cmd === void 0 ? [] : _googletag$cmd;
+      googletag.apiReady = true;
+      googletag.cmd = [];
+
+      googletag.cmd.push = function (a) {
+        try {
+          a(); // eslint-disable-next-line no-empty
+        } catch (ex) {}
+
+        return 1;
+      };
+
+      googletag.companionAds = function () {
+        return companionAdsService;
+      };
+
+      googletag.content = function () {
+        return contentService;
+      };
+
+      googletag.defineOutOfPageSlot = function () {
+        return new Slot();
+      };
+
+      googletag.defineSlot = function () {
+        return new Slot();
+      };
+
+      googletag.destroySlots = noop;
+      googletag.disablePublisherConsole = noop;
+      googletag.display = noop;
+      googletag.enableServices = noop;
+      googletag.getVersion = noopStr;
+
+      googletag.pubads = function () {
+        return pubAdsService;
+      };
+
+      googletag.pubadsReady = true;
+      googletag.setAdIframeTitle = noop;
+
+      googletag.sizeMapping = function () {
+        return new SizeMappingBuilder();
+      };
+
+      window.googletag = googletag;
+
+      while (cmd.length !== 0) {
+        googletag.cmd.push(cmd.shift());
+      }
+
+      hit(source);
+    }
+    GoogleTagServicesGpt.names = ['googletagservices-gpt', 'ubo-googletagservices_gpt.js', 'googletagservices_gpt.js'];
+    GoogleTagServicesGpt.injections = [hit, noop, noopThis, noopNull, noopArray, noopStr];
+
+    /**
+     * @redirect scorecardresearch-beacon
+     *
+     * @description
+     * Mocks Scorecard Research API.
+     *
+     * Related UBO redirect resource:
+     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/scorecardresearch_beacon.js
+     *
+     * **Example**
+     * ```
+     * ||sb.scorecardresearch.com/beacon.js$script,redirect=scorecardresearch-beacon
+     * ```
+     */
+
+    function ScoreCardResearchBeacon(source) {
+      window.COMSCORE = {
+        purge: function purge() {
+          // eslint-disable-next-line no-underscore-dangle
+          window._comscore = [];
+        },
+        beacon: function beacon() {}
+      };
+      hit(source);
+    }
+    ScoreCardResearchBeacon.names = ['scorecardresearch-beacon', 'ubo-scorecardresearch_beacon.js', 'scorecardresearch_beacon.js'];
+    ScoreCardResearchBeacon.injections = [hit];
+
+    /**
+     * @redirect metrika-yandex-tag
+     *
+     * @description
+     * Mocks Yandex Metrika API.
+     * https://yandex.ru/support/metrica/objects/method-reference.html
+     *
+     * **Example**
+     * ```
+     * ||mc.yandex.ru/metrika/tag.js$script,redirect=metrika-yandex-tag
+     * ```
+     */
+
+    function metrikaYandexTag(source) {
+      var asyncCallbackFromOptions = function asyncCallbackFromOptions(param) {
+        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        var callback = options.callback;
+        var ctx = options.ctx;
+
+        if (typeof callback === 'function') {
+          callback = ctx !== undefined ? callback.bind(ctx) : callback;
+          setTimeout(function () {
+            return callback();
+          });
+        }
+      };
+
+      var init = noop;
+      /**
+       * https://yandex.ru/support/metrica/objects/addfileextension.html
+       */
+
+      var addFileExtension = noop;
+      /**
+       * https://yandex.ru/support/metrica/objects/extlink.html
+       */
+
+      var extLink = asyncCallbackFromOptions;
+      /**
+       * https://yandex.ru/support/metrica/objects/file.html
+       */
+
+      var file = asyncCallbackFromOptions;
+      /**
+       * https://yandex.ru/support/metrica/objects/get-client-id.html
+       * @param {Function} cb
+       */
+
+      var getClientID = function getClientID(cb) {
+        setTimeout(cb(null));
+      };
+      /**
+       * https://yandex.ru/support/metrica/objects/hit.html
+       */
+
+
+      var hitFunc = asyncCallbackFromOptions;
+      /**
+       * https://yandex.ru/support/metrica/objects/notbounce.html
+       */
+
+      var notBounce = asyncCallbackFromOptions;
+      /**
+       * https://yandex.ru/support/metrica/objects/params-method.html
+       */
+
+      var params = noop;
+      /**
+       * https://yandex.ru/support/metrica/objects/reachgoal.html
+       * @param {string} target
+       * @param {Object} params
+       * @param {Function} callback
+       * @param {any} ctx
+       */
+
+      var reachGoal = function reachGoal(target, params, callback, ctx) {
+        asyncCallbackFromOptions(null, {
+          callback: callback,
+          ctx: ctx
+        });
+      };
+      /**
+       * https://yandex.ru/support/metrica/objects/set-user-id.html
+       */
+
+
+      var setUserID = noop;
+      /**
+       * https://yandex.ru/support/metrica/objects/user-params.html
+       */
+
+      var userParams = noop;
+      var api = {
+        init: init,
+        addFileExtension: addFileExtension,
+        extLink: extLink,
+        file: file,
+        getClientID: getClientID,
+        hit: hitFunc,
+        notBounce: notBounce,
+        params: params,
+        reachGoal: reachGoal,
+        setUserID: setUserID,
+        userParams: userParams
+      };
+
+      function ym(id, funcName) {
+        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+          args[_key - 2] = arguments[_key];
+        }
+
+        return api[funcName] && api[funcName].apply(api, args);
+      }
+
+      window.ym = ym;
+      hit(source);
+    }
+    metrikaYandexTag.names = ['metrika-yandex-tag'];
+    metrikaYandexTag.injections = [hit, noop];
+
+    /**
+     * @redirect metrika-yandex-watch
+     *
+     * @description
+     * Mocks the old Yandex Metrika API.
+     * https://yandex.ru/support/metrica/objects/_method-reference.html
+     *
+     * **Example**
+     * ```
+     * ||mc.yandex.ru/metrika/watch.js$script,redirect=metrika-yandex-watch
+     * ```
+     */
+
+    function metrikaYandexWatch(source) {
+      var cbName = 'yandex_metrika_callbacks';
+      /**
+       * Gets callback and its context from options and call it in async way
+       * @param {Object} options Yandex Metrika API options
+       */
+
+      var asyncCallbackFromOptions = function asyncCallbackFromOptions() {
+        var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+        var callback = options.callback;
+        var ctx = options.ctx;
+
+        if (typeof callback === 'function') {
+          callback = ctx !== undefined ? callback.bind(ctx) : callback;
+          setTimeout(function () {
+            return callback();
+          });
+        }
+      };
+
+      function Metrika() {} // constructor
+      // Methods without options
+
+
+      Metrika.prototype.addFileExtension = noop;
+      Metrika.prototype.getClientID = noop;
+      Metrika.prototype.setUserID = noop;
+      Metrika.prototype.userParams = noop; // Methods with options
+      // The order of arguments should be kept in according to API
+
+      Metrika.prototype.extLink = function (url, options) {
+        asyncCallbackFromOptions(options);
+      };
+
+      Metrika.prototype.file = function (url, options) {
+        asyncCallbackFromOptions(options);
+      };
+
+      Metrika.prototype.hit = function (url, options) {
+        asyncCallbackFromOptions(options);
+      };
+
+      Metrika.prototype.reachGoal = function (target, params, cb, ctx) {
+        asyncCallbackFromOptions({
+          callback: cb,
+          ctx: ctx
+        });
+      };
+
+      Metrika.prototype.notBounce = asyncCallbackFromOptions;
+
+      if (window.Ya) {
+        window.Ya.Metrika = Metrika;
+      } else {
+        window.Ya = {
+          Metrika: Metrika
+        };
+      }
+
+      if (window[cbName] && Array.isArray(window[cbName])) {
+        window[cbName].forEach(function (func) {
+          if (typeof func === 'function') {
+            func();
+          }
+        });
+      }
+
+      hit(source);
+    }
+    metrikaYandexWatch.names = ['metrika-yandex-watch'];
+    metrikaYandexWatch.injections = [hit, noop];
+
 
 
     var redirectsList = /*#__PURE__*/Object.freeze({
@@ -4411,13 +4403,12 @@
       });
     };
 
-    var getRedirectCode = function getRedirectCode(name) {
-      var redirect = getRedirectByName(name);
+    var getRedirectCode = function getRedirectCode(source) {
+      var redirect = getRedirectByName(source.name);
       var result = attachDependencies(redirect);
       result = addCall(redirect, result);
-      return passSourceAndProps({
-        name: name
-      }, result);
+      result = passSourceAndProps(source, result);
+      return result;
     };
 
     var redirectsCjs = {

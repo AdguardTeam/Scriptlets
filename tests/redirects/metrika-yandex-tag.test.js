@@ -16,12 +16,12 @@ test('AdGuard: yandex metrika tag.js', (assert) => {
         name,
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     assert.expect(6);
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     assert.ok(window.ym, 'Metrika function was created');
@@ -58,5 +58,5 @@ test('AdGuard: yandex metrika tag.js', (assert) => {
     window.ym(1, 'reachGoal', 'target', 'params', reachGoalCb, 123);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    clearGlobalProps('__debugScriptlets', 'hit', 'ym');
+    clearGlobalProps('__debug', 'hit', 'ym');
 });

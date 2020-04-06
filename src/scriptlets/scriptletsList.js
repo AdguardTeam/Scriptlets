@@ -31,12 +31,3 @@ export * from './adjust-setInterval';
 export * from './adjust-setTimeout';
 export * from './dir-string';
 export * from './json-prune';
-// redirects:
-export * from '../redirects/googlesyndication-adsbygoogle';
-export * from '../redirects/googletagmanager-gtm';
-export * from '../redirects/google-analytics';
-export * from '../redirects/google-analytics-ga';
-export * from '../redirects/googletagservices-gpt';
-export * from '../redirects/metrika-yandex-watch';
-export * from '../redirects/metrika-yandex-tag';
-export * from '../redirects/scorecardresearch-beacon';

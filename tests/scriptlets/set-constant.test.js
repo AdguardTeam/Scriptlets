@@ -6,7 +6,7 @@ const { test, module } = QUnit;
 const name = 'set-constant';
 
 const afterEach = () => {
-    clearGlobalProps('hit', '__debugScriptlets', 'counter');
+    clearGlobalProps('hit', '__debug', 'counter');
 };
 
 module(name, { afterEach });
@@ -26,7 +26,7 @@ const createScriptletRunner = (counter) => (property, value) => {
 };
 
 test('ubo alias works', (assert) => {
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
 
@@ -48,7 +48,7 @@ test('ubo alias works', (assert) => {
 });
 
 test('sets values correctly', (assert) => {
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.counter = window.counter ? window.counter + 1 : 1;
     };
     const runSetConstantScriptlet = createScriptletRunner(0);
@@ -131,7 +131,7 @@ test('sets values correctly', (assert) => {
 });
 
 test('sets values to the chained properties', (assert) => {
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.counter = window.counter ? window.counter + 1 : 1;
     };
     const runSetConstantScriptlet = createScriptletRunner(0);
@@ -143,7 +143,7 @@ test('sets values to the chained properties', (assert) => {
 });
 
 test('values with same types are not overwritten, values with different types are overwritten', (assert) => {
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.counter = window.counter ? window.counter + 1 : 1;
     };
     const runSetConstantScriptlet = createScriptletRunner(0);

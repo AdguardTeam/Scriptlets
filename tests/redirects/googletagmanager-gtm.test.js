@@ -27,7 +27,7 @@ test('UBO alias', (assert) => {
         name: 'ubo-googletagmanager_gtm.js',
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     assert.expect(3);
 
@@ -38,7 +38,7 @@ test('UBO alias', (assert) => {
     const dataLayer = mockGoogleTagManagerApi(endCallback);
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     const done = assert.async();
@@ -51,7 +51,7 @@ test('UBO alias', (assert) => {
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 
-    clearGlobalProps('__debugScriptlets', 'hit');
+    clearGlobalProps('__debug', 'hit');
 });
 
 test('UBO Syntax', (assert) => {
@@ -59,7 +59,7 @@ test('UBO Syntax', (assert) => {
         name: 'googletagmanager_gtm.js',
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     assert.expect(3);
 
@@ -70,7 +70,7 @@ test('UBO Syntax', (assert) => {
     const dataLayer = mockGoogleTagManagerApi(endCallback);
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     const done = assert.async();
@@ -83,7 +83,7 @@ test('UBO Syntax', (assert) => {
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 
-    clearGlobalProps('__debugScriptlets', 'hit');
+    clearGlobalProps('__debug', 'hit');
 });
 
 test('AdGuard Syntax', (assert) => {
@@ -91,7 +91,7 @@ test('AdGuard Syntax', (assert) => {
         name,
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     assert.expect(3);
 
@@ -102,7 +102,7 @@ test('AdGuard Syntax', (assert) => {
     const dataLayer = mockGoogleTagManagerApi(endCallback);
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     const done = assert.async();
@@ -115,5 +115,5 @@ test('AdGuard Syntax', (assert) => {
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 
-    clearGlobalProps('__debugScriptlets', 'hit');
+    clearGlobalProps('__debug', 'hit');
 });

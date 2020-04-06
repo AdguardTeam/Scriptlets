@@ -14,10 +14,10 @@ test('UBO alias _gat', (assert) => {
         name: 'ubo-google-analytics_ga.js',
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     assert.ok(window._gat, '_gat object was created');
@@ -31,7 +31,7 @@ test('UBO alias _gat', (assert) => {
     // hit checking
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 
-    clearGlobalProps('__debugScriptlets', 'hit', '_gat');
+    clearGlobalProps('__debug', 'hit', '_gat');
 });
 
 test('UBO alias _gaq', (assert) => {
@@ -39,10 +39,10 @@ test('UBO alias _gaq', (assert) => {
         name: 'ubo-google-analytics_ga.js',
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     assert.expect(6);
@@ -59,7 +59,7 @@ test('UBO alias _gaq', (assert) => {
     // hit checking
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 
-    clearGlobalProps('__debugScriptlets', 'hit', '_gaq');
+    clearGlobalProps('__debug', 'hit', '_gaq');
 });
 
 test('UBO Syntax _gat', (assert) => {
@@ -67,10 +67,10 @@ test('UBO Syntax _gat', (assert) => {
         name: 'google-analytics_ga.js',
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     assert.ok(window._gat, '_gat object was created');
@@ -84,7 +84,7 @@ test('UBO Syntax _gat', (assert) => {
     // hit checking
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 
-    clearGlobalProps('__debugScriptlets', 'hit', '_gat');
+    clearGlobalProps('__debug', 'hit', '_gat');
 });
 
 test('UBO Syntax _gaq', (assert) => {
@@ -92,10 +92,10 @@ test('UBO Syntax _gaq', (assert) => {
         name: 'google-analytics_ga.js',
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     assert.expect(6);
@@ -112,7 +112,7 @@ test('UBO Syntax _gaq', (assert) => {
     // hit checking
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 
-    clearGlobalProps('__debugScriptlets', 'hit', '_gaq');
+    clearGlobalProps('__debug', 'hit', '_gaq');
 });
 
 test('AdGuard Syntax _gat', (assert) => {
@@ -120,10 +120,10 @@ test('AdGuard Syntax _gat', (assert) => {
         name,
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     assert.ok(window._gat, '_gat object was created');
@@ -137,7 +137,7 @@ test('AdGuard Syntax _gat', (assert) => {
     // hit checking
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 
-    clearGlobalProps('__debugScriptlets', 'hit', '_gat');
+    clearGlobalProps('__debug', 'hit', '_gat');
 });
 
 test('AdGuard Syntax _gaq', (assert) => {
@@ -145,10 +145,10 @@ test('AdGuard Syntax _gaq', (assert) => {
         name,
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     assert.expect(6);
@@ -165,5 +165,5 @@ test('AdGuard Syntax _gaq', (assert) => {
     // hit checking
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 
-    clearGlobalProps('__debugScriptlets', 'hit', '_gaq');
+    clearGlobalProps('__debug', 'hit', '_gaq');
 });

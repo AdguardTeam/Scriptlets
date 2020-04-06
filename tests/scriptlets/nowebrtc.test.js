@@ -7,13 +7,13 @@ const { test, module } = QUnit;
 const name = 'nowebrtc';
 
 const beforeEach = () => {
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
 };
 
 const afterEach = () => {
-    clearGlobalProps('hit', '__debugScriptlets');
+    clearGlobalProps('hit', '__debug');
 };
 
 module(name, { beforeEach, afterEach });

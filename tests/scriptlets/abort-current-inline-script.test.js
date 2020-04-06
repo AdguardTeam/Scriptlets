@@ -9,7 +9,7 @@ module(name);
 
 const evalWrapper = eval;
 
-const changingGlobals = ['hit', '__debugScriptlets'];
+const changingGlobals = ['hit', '__debug'];
 
 const onError = (assert) => (message) => {
     const browserErrorMessage = 'Script error.';
@@ -34,7 +34,7 @@ test('ubo alias', (assert) => {
         args: [property],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
@@ -56,7 +56,7 @@ test('abp alias', (assert) => {
         args: [property],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
@@ -77,7 +77,7 @@ test('works', (assert) => {
         args: [property],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
@@ -98,7 +98,7 @@ test('works with chained properties', (assert) => {
         args: [chainProperty],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
@@ -123,7 +123,7 @@ test('should not work if chained properties are undefined', (assert) => {
         args: [chainProperty],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
@@ -149,7 +149,7 @@ test('aborts script by search', (assert) => {
         args: [property, 'const someVar'],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
@@ -171,7 +171,7 @@ test('doesnt aborts script which is not specified by search', (assert) => {
         args: [property, search],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
@@ -191,7 +191,7 @@ test('searches script by regexp', (assert) => {
         args: [property, search],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
@@ -213,7 +213,7 @@ test('Patched textContent', (assert) => {
         args: [property, search],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
@@ -241,7 +241,7 @@ test('Patched textContent', (assert) => {
         args: [property, search],
         verbose: true,
     };
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);

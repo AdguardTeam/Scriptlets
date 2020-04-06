@@ -14,18 +14,19 @@ test('UBO alias', (assert) => {
         name: 'ubo-scorecardresearch_beacon.js',
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
+    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
     assert.ok(window.COMSCORE, 'COMSCORE object was created');
     window.COMSCORE.purge();
     assert.strictEqual(window._comscore.length, 0, 'purge function reset _compscore var to []');
     assert.notOk(window.COMSCORE.beacon(), 'becacon function was mocked');
 
-    clearGlobalProps('__debugScriptlets', 'hit', 'COMSCORE', '_comscore');
+    clearGlobalProps('__debug', 'hit', 'COMSCORE', '_comscore');
 });
 
 test('UBO Syntax', (assert) => {
@@ -33,18 +34,19 @@ test('UBO Syntax', (assert) => {
         name: 'scorecardresearch_beacon.js',
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
+    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
     assert.ok(window.COMSCORE, 'COMSCORE object was created');
     window.COMSCORE.purge();
     assert.strictEqual(window._comscore.length, 0, 'purge function reset _compscore var to []');
     assert.notOk(window.COMSCORE.beacon(), 'becacon function was mocked');
 
-    clearGlobalProps('__debugScriptlets', 'hit', 'COMSCORE', '_comscore');
+    clearGlobalProps('__debug', 'hit', 'COMSCORE', '_comscore');
 });
 
 test('AdGuard Syntax', (assert) => {
@@ -52,16 +54,17 @@ test('AdGuard Syntax', (assert) => {
         name,
         verbose: true,
     };
-    window.__debugScriptlets = () => { window.hit = 'FIRED'; };
+    window.__debug = () => { window.hit = 'FIRED'; };
 
     // run scriptlet
-    const resString = window.scriptlets.invoke(params);
+    const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
+    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
     assert.ok(window.COMSCORE, 'COMSCORE object was created');
     window.COMSCORE.purge();
     assert.strictEqual(window._comscore.length, 0, 'purge function reset _compscore var to []');
     assert.notOk(window.COMSCORE.beacon(), 'becacon function was mocked');
 
-    clearGlobalProps('__debugScriptlets', 'hit', 'COMSCORE', '_comscore');
+    clearGlobalProps('__debug', 'hit', 'COMSCORE', '_comscore');
 });

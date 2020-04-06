@@ -8,13 +8,13 @@ const name = 'prevent-addEventListener';
 const originalEventLister = window.EventTarget.prototype.addEventListener;
 
 const beforeEach = () => {
-    window.__debugScriptlets = () => {
+    window.__debug = () => {
         window.hit = 'FIRED';
     };
 };
 
 const afterEach = () => {
-    clearGlobalProps('__debugScriptlets', 'hit');
+    clearGlobalProps('__debug', 'hit');
     window.EventTarget.prototype.addEventListener = originalEventLister;
 };
 

@@ -9,10 +9,10 @@ const hit = () => {
     window.hit = 'FIRED';
 };
 
-const changingProps = ['hit', '__debugScriptlets'];
+const changingProps = ['hit', '__debug'];
 
 const beforeEach = () => {
-    window.__debugScriptlets = hit;
+    window.__debug = hit;
 };
 
 const afterEach = () => {
