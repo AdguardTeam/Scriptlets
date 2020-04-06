@@ -1,7 +1,11 @@
-import { randomId } from '../helpers/random-id';
-import { setPropertyAccess } from '../helpers/set-property-access';
-import { getPropertyInChain } from '../helpers/get-property-in-chain';
-import { createOnErrorHandler, hit } from '../helpers';
+import {
+    randomId,
+    setPropertyAccess,
+    getPropertyInChain,
+    createOnErrorHandler,
+    hit,
+    noopFunc,
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -49,7 +53,7 @@ export function debugOnPropertyRead(source, property) {
 
         setPropertyAccess(base, prop, {
             get: abort,
-            set: () => { },
+            set: noopFunc,
         });
     };
 
@@ -68,4 +72,5 @@ debugOnPropertyRead.injections = [
     getPropertyInChain,
     createOnErrorHandler,
     hit,
+    noopFunc,
 ];

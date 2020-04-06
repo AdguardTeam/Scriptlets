@@ -183,7 +183,7 @@ test('Test REDIRECT converting - ABP -> ADG', (assert) => {
     assert.strictEqual(convertRedirectToAdg(abpRule), expectedAdgRule);
 
     abpRule = '||*/ad/$rewrite=abp-resource:blank-mp3,domain=example.org';
-    expectedAdgRule = '||*/ad/$redirect=noopmp3.0.1s,domain=example.org';
+    expectedAdgRule = '||*/ad/$redirect=noopmp3-0.1s,domain=example.org';
     assert.strictEqual(convertRedirectToAdg(abpRule), expectedAdgRule);
 });
 

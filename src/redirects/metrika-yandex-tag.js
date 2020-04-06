@@ -1,5 +1,4 @@
-import { hit } from '../helpers/hit';
-import { noop } from '../helpers/noop';
+import { hit, noopFunc } from '../helpers';
 
 /**
  * @redirect metrika-yandex-tag
@@ -23,12 +22,12 @@ export function metrikaYandexTag(source) {
         }
     };
 
-    const init = noop;
+    const init = noopFunc;
 
     /**
      * https://yandex.ru/support/metrica/objects/addfileextension.html
      */
-    const addFileExtension = noop;
+    const addFileExtension = noopFunc;
 
     /**
      * https://yandex.ru/support/metrica/objects/extlink.html
@@ -61,7 +60,7 @@ export function metrikaYandexTag(source) {
     /**
      * https://yandex.ru/support/metrica/objects/params-method.html
      */
-    const params = noop;
+    const params = noopFunc;
 
     /**
      * https://yandex.ru/support/metrica/objects/reachgoal.html
@@ -77,12 +76,12 @@ export function metrikaYandexTag(source) {
     /**
      * https://yandex.ru/support/metrica/objects/set-user-id.html
      */
-    const setUserID = noop;
+    const setUserID = noopFunc;
 
     /**
      * https://yandex.ru/support/metrica/objects/user-params.html
      */
-    const userParams = noop;
+    const userParams = noopFunc;
 
     const api = {
         init,
@@ -111,4 +110,4 @@ metrikaYandexTag.names = [
     'metrika-yandex-tag',
 ];
 
-metrikaYandexTag.injections = [hit, noop];
+metrikaYandexTag.injections = [hit, noopFunc];

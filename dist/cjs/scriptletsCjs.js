@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.1.11
+ * Version 1.1.12
  */
 
 /**
@@ -117,6 +117,9 @@ var getBeforeRegExp = function getBeforeRegExp(str, rx) {
 var startsWith = function startsWith(str, prefix) {
   return str && str.indexOf(prefix) === 0;
 };
+var endsWith = function endsWith(str, prefix) {
+  return str && str.indexOf(prefix) === str.length - 1;
+};
 var substringAfter = function substringAfter(str, separator) {
   if (!str) {
     return str;
@@ -187,13 +190,27 @@ function createOnErrorHandler(rid) {
 /**
  * Noop function
  */
-var noop = function noop() {};
+var noopFunc = function noopFunc() {};
 /**
  * Function returns null
  */
 
 var noopNull = function noopNull() {
   return null;
+};
+/**
+ * Function returns true
+ */
+
+var trueFunc = function trueFunc() {
+  return true;
+};
+/**
+ * Function returns false
+ */
+
+var falseFunc = function falseFunc() {
+  return false;
 };
 /**
  * Function returns this
@@ -355,13 +372,16 @@ var dependencies = /*#__PURE__*/Object.freeze({
     toRegExp: toRegExp,
     getBeforeRegExp: getBeforeRegExp,
     startsWith: startsWith,
+    endsWith: endsWith,
     substringAfter: substringAfter,
     substringBefore: substringBefore,
     wrapInSingleQuotes: wrapInSingleQuotes,
     getStringInBraces: getStringInBraces,
     createOnErrorHandler: createOnErrorHandler,
-    noop: noop,
+    noopFunc: noopFunc,
     noopNull: noopNull,
+    trueFunc: trueFunc,
+    falseFunc: falseFunc,
     noopThis: noopThis,
     noopArray: noopArray,
     noopStr: noopStr,
@@ -988,7 +1008,7 @@ function preventSetTimeout(source, match, delay) {
 
     if (shouldPrevent) {
       hit(source);
-      return nativeTimeout(function () {}, timeout);
+      return nativeTimeout(noopFunc, timeout);
     }
 
     for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
@@ -1005,7 +1025,7 @@ preventSetTimeout.names = ['prevent-setTimeout', 'no-setTimeout-if.js', // new i
 'ubo-setTimeout-defuser.js', 'nostif.js', // new short name of no-setTimeout-if
 'ubo-nostif.js', 'std.js', // old short scriptlet name
 'ubo-std.js'];
-preventSetTimeout.injections = [toRegExp, startsWith, hit];
+preventSetTimeout.injections = [toRegExp, startsWith, hit, noopFunc];
 
 /* eslint-disable max-len */
 
@@ -1153,7 +1173,7 @@ function preventSetInterval(source, match, delay) {
 
     if (shouldPrevent) {
       hit(source);
-      return nativeInterval(function () {}, interval);
+      return nativeInterval(noopFunc, interval);
     }
 
     for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
@@ -1170,7 +1190,7 @@ preventSetInterval.names = ['prevent-setInterval', 'no-setInterval-if.js', // ne
 'ubo-setInterval-defuser.js', 'nosiif.js', // new short name of no-setInterval-if
 'ubo-nosiif.js', 'sid.js', // old short scriptlet name
 'ubo-sid.js'];
-preventSetInterval.injections = [toRegExp, startsWith, hit];
+preventSetInterval.injections = [toRegExp, startsWith, hit, noopFunc];
 
 /* eslint-disable max-len */
 
@@ -1185,45 +1205,62 @@ preventSetInterval.injections = [toRegExp, startsWith, hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-window-open"[, <match>[, <search>]])
+ * example.org#%#//scriptlet('prevent-window-open'[, <match>[, <search>[, <replacement>]]])
  * ```
  *
  * **Parameters**
- * - `match` (optional) defaults to "matching", any positive number for "matching", 0 or any string for "not matching",
- * - `search` (optional) string or regexp for matching the URL passed to `window.open` call.
- *
+ * - `match` (optional) defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching",
+ * - `search` (optional) string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call.
+ * - `replacement` (optional) string to return prop value or property instead of window.open; defaults to return noopFunc
  * **Example**
  *
  * 1. Prevent all `window.open` calls:
  * ```
- *     example.org#%#//scriptlet("prevent-window-open")
+ *     example.org#%#//scriptlet('prevent-window-open')
  * ```
  *
  * 2. Prevent `window.open` for all URLs containing `example`:
  * ```
- *     example.org#%#//scriptlet("prevent-window-open", "1", "example")
+ *     example.org#%#//scriptlet('prevent-window-open', '1', 'example')
  * ```
  *
  * 3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
  * ```
- *     example.org#%#//scriptlet("prevent-window-open", "1", "/example\./")
+ *     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
  * ```
  *
  * 4. Prevent `window.open` for all URLs **NOT** containing `example`:
  * ```
- *     example.org#%#//scriptlet("prevent-window-open", "0", "example")
+ *     example.org#%#//scriptlet('prevent-window-open', '0', 'example')
+ * ```
+ * 5. Prevent all `window.open` calls and return 'trueFunc' instead of it if website checks it:
+ * ```
+ *     example.org#%#//scriptlet('prevent-window-open', , , 'trueFunc')
+ * ```
+ * 6. Prevent all `window.open` and returns callback
+ * which returns object with property 'propName'=noopFunc
+ * as a property of window.open if website checks it:
+ * ```
+ *     example.org#%#//scriptlet('prevent-window-open', '1', , '{propName=noopFunc}')
  * ```
  */
 
 /* eslint-enable max-len */
 
-function preventWindowOpen(source, inverse, match) {
-  var nativeOpen = window.open;
-  inverse = inverse ? !+inverse : !!inverse;
-  match = match ? toRegExp(match) : toRegExp('/.?/'); // eslint-disable-next-line consistent-return
+function preventWindowOpen(source) {
+  var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
+  var search = arguments.length > 2 ? arguments[2] : undefined;
+  var replacement = arguments.length > 3 ? arguments[3] : undefined;
+  // Default value of 'match' is needed to prevent all `window.open` calls
+  // if the scriptlet is used without parameters
+  var nativeOpen = window.open; // unary plus converts 'match' to a number
+  // e.g.: +'1' -> 1; +false -> 0
+
+  match = +match > 0;
+  search = search ? toRegExp(search) : toRegExp('/.?/'); // eslint-disable-next-line consistent-return
 
   var openWrapper = function openWrapper(str) {
-    if (inverse === match.test(str)) {
+    if (match !== search.test(str)) {
       for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
         args[_key - 1] = arguments[_key];
       }
@@ -1232,14 +1269,41 @@ function preventWindowOpen(source, inverse, match) {
     }
 
     hit(source);
+    var result; // defaults to return noopFunc instead of window.open
+
+    if (!replacement) {
+      result = noopFunc;
+    } else if (replacement === 'trueFunc') {
+      result = trueFunc;
+    } else if (replacement.indexOf('=') > -1) {
+      // We should return noopFunc instead of window.open
+      // but with some property if website checks it (examples 5, 6)
+      // https://github.com/AdguardTeam/Scriptlets/issues/71
+      var isProp = startsWith(replacement, '{') && endsWith(replacement, '}');
+
+      if (isProp) {
+        var propertyPart = replacement.slice(1, -1);
+        var propertyName = substringBefore(propertyPart, '=');
+        var propertyValue = substringAfter(propertyPart, '=');
+
+        if (propertyValue === 'noopFunc') {
+          result = function result() {
+            var resObj = {};
+            resObj[propertyName] = noopFunc;
+            return resObj;
+          };
+        }
+      }
+    }
+
+    return result;
   };
 
   window.open = openWrapper;
 }
 preventWindowOpen.names = ['prevent-window-open', 'window.open-defuser.js', 'ubo-window.open-defuser.js'];
-preventWindowOpen.injections = [toRegExp, hit];
+preventWindowOpen.injections = [toRegExp, startsWith, endsWith, substringBefore, substringAfter, hit, noopFunc, trueFunc];
 
-/* eslint-disable no-new-func */
 /* eslint-disable max-len */
 
 /**
@@ -1457,15 +1521,11 @@ function setConstant(source, property, value) {
   } else if (value === 'null') {
     constantValue = null;
   } else if (value === 'noopFunc') {
-    constantValue = function constantValue() {};
+    constantValue = noopFunc;
   } else if (value === 'trueFunc') {
-    constantValue = function constantValue() {
-      return true;
-    };
+    constantValue = trueFunc;
   } else if (value === 'falseFunc') {
-    constantValue = function constantValue() {
-      return false;
-    };
+    constantValue = falseFunc;
   } else if (/^\d+$/.test(value)) {
     constantValue = parseFloat(value);
 
@@ -1539,7 +1599,7 @@ function setConstant(source, property, value) {
   setChainPropAccess(window, property);
 }
 setConstant.names = ['set-constant', 'set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js'];
-setConstant.injections = [getPropertyInChain, setPropertyAccess, hit];
+setConstant.injections = [getPropertyInChain, setPropertyAccess, hit, noopFunc, trueFunc, falseFunc];
 
 /* eslint-disable max-len */
 
@@ -1812,13 +1872,11 @@ function nowebrtc(source) {
     hit(source, "Document tried to create an RTCPeerConnection: ".concat(config));
   };
 
-  var noop = function noop() {};
-
   rtcReplacement.prototype = {
-    close: noop,
-    createDataChannel: noop,
-    createOffer: noop,
-    setRemoteDescription: noop
+    close: noopFunc,
+    createDataChannel: noopFunc,
+    createOffer: noopFunc,
+    setRemoteDescription: noopFunc
   };
   var rtc = window[propertyName];
   window[propertyName] = rtcReplacement;
@@ -1826,14 +1884,14 @@ function nowebrtc(source) {
   if (rtc.prototype) {
     rtc.prototype.createDataChannel = function (a, b) {
       return {
-        close: noop,
-        send: noop
+        close: noopFunc,
+        send: noopFunc
       };
     }.bind(null);
   }
 }
 nowebrtc.names = ['nowebrtc', 'nowebrtc.js', 'ubo-nowebrtc.js'];
-nowebrtc.injections = [hit];
+nowebrtc.injections = [hit, noopFunc];
 
 /* eslint-disable no-console */
 /**
@@ -2020,9 +2078,9 @@ function preventFab(source) {
 
   var Fab = function Fab() {};
 
-  Fab.prototype.check = noop;
-  Fab.prototype.clearEvent = noop;
-  Fab.prototype.emitEvent = noop;
+  Fab.prototype.check = noopFunc;
+  Fab.prototype.clearEvent = noopFunc;
+  Fab.prototype.emitEvent = noopFunc;
 
   Fab.prototype.on = function (a, b) {
     if (!a) {
@@ -2032,22 +2090,20 @@ function preventFab(source) {
     return this;
   };
 
-  Fab.prototype.onDetected = function () {
-    return this;
-  };
+  Fab.prototype.onDetected = noopThis;
 
   Fab.prototype.onNotDetected = function (a) {
     a();
     return this;
   };
 
-  Fab.prototype.setOption = noop;
+  Fab.prototype.setOption = noopFunc;
   window.FuckAdBlock = window.BlockAdBlock = Fab; //
 
   window.fuckAdBlock = window.blockAdBlock = new Fab();
 }
 preventFab.names = ['prevent-fab-3.2.0', 'fuckadblock.js-3.2.0', 'ubo-fuckadblock.js-3.2.0', 'nofab.js', 'ubo-nofab.js'];
-preventFab.injections = [noop, hit];
+preventFab.injections = [hit, noopFunc, noopThis];
 
 /* eslint-disable no-console, func-names, no-multi-assign */
 /**
@@ -2282,7 +2338,7 @@ function debugOnPropertyRead(source, property) {
 
     setPropertyAccess(base, prop, {
       get: abort,
-      set: function set() {}
+      set: noopFunc
     });
   };
 
@@ -2290,7 +2346,7 @@ function debugOnPropertyRead(source, property) {
   window.onerror = createOnErrorHandler(rid).bind();
 }
 debugOnPropertyRead.names = ['debug-on-property-read'];
-debugOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
+debugOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, noopFunc];
 
 /* eslint-disable max-len */
 
@@ -2359,7 +2415,6 @@ function debugOnPropertyWrite(source, property) {
 debugOnPropertyWrite.names = ['debug-on-property-write'];
 debugOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
-/* eslint-disable no-new-func */
 /* eslint-disable max-len */
 
 /**
@@ -3056,7 +3111,7 @@ var scriptletList = /*#__PURE__*/Object.freeze({
     jsonPrune: jsonPrune
 });
 
-const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm",ubo:"googletagmanager_gtm.js"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3.0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"disqus_embed.js"},{ubo:"disqus_forums_embed.js"},{ubo:"doubleclick_instream_ad_status.js"},{ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"}];
+const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm",ubo:"googletagmanager_gtm.js"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3-0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvmap-1.0"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"disqus_embed.js"},{ubo:"disqus_forums_embed.js"},{ubo:"doubleclick_instream_ad_status.js"},{ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"}];
 
 var COMMENT_MARKER = '!';
 /**
@@ -3730,9 +3785,9 @@ function GoogleAnalytics(source) {
 
 
   var proto = Tracker.prototype;
-  proto.get = noop;
-  proto.set = noop;
-  proto.send = noop;
+  proto.get = noopFunc;
+  proto.set = noopFunc;
+  proto.send = noopFunc;
   var googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';
 
   function ga() {
@@ -3759,12 +3814,8 @@ function GoogleAnalytics(source) {
   };
 
   ga.getByName = noopNull;
-
-  ga.getAll = function () {
-    return [];
-  };
-
-  ga.remove = noop;
+  ga.getAll = noopArray;
+  ga.remove = noopFunc;
   ga.loaded = true;
   window[googleAnalyticsName] = ga;
   var _window = window,
@@ -3777,7 +3828,7 @@ function GoogleAnalytics(source) {
   hit(source);
 }
 GoogleAnalytics.names = ['google-analytics', 'ubo-google-analytics_analytics.js', 'google-analytics_analytics.js'];
-GoogleAnalytics.injections = [hit, noop, noopNull];
+GoogleAnalytics.injections = [hit, noopFunc, noopNull, noopArray];
 
 /* eslint-disable no-underscore-dangle */
 /**
@@ -3799,14 +3850,14 @@ function GoogleAnalyticsGa(source) {
   // Gaq constructor
   function Gaq() {}
 
-  Gaq.prototype.Na = noop;
-  Gaq.prototype.O = noop;
-  Gaq.prototype.Sa = noop;
-  Gaq.prototype.Ta = noop;
-  Gaq.prototype.Va = noop;
-  Gaq.prototype._createAsyncTracker = noop;
-  Gaq.prototype._getAsyncTracker = noop;
-  Gaq.prototype._getPlugin = noop;
+  Gaq.prototype.Na = noopFunc;
+  Gaq.prototype.O = noopFunc;
+  Gaq.prototype.Sa = noopFunc;
+  Gaq.prototype.Ta = noopFunc;
+  Gaq.prototype.Va = noopFunc;
+  Gaq.prototype._createAsyncTracker = noopFunc;
+  Gaq.prototype._getAsyncTracker = noopFunc;
+  Gaq.prototype._getPlugin = noopFunc;
 
   Gaq.prototype.push = function (data) {
     if (typeof data === 'function') {
@@ -3846,7 +3897,7 @@ function GoogleAnalyticsGa(source) {
 
   var api = ['_addIgnoredOrganic', '_addIgnoredRef', '_addItem', '_addOrganic', '_addTrans', '_clearIgnoredOrganic', '_clearIgnoredRef', '_clearOrganic', '_cookiePathCopy', '_deleteCustomVar', '_getName', '_setAccount', '_getAccount', '_getClientInfo', '_getDetectFlash', '_getDetectTitle', '_getLinkerUrl', '_getLocalGifPath', '_getServiceMode', '_getVersion', '_getVisitorCustomVar', '_initData', '_link', '_linkByPost', '_setAllowAnchor', '_setAllowHash', '_setAllowLinker', '_setCampContentKey', '_setCampMediumKey', '_setCampNameKey', '_setCampNOKey', '_setCampSourceKey', '_setCampTermKey', '_setCampaignCookieTimeout', '_setCampaignTrack', '_setClientInfo', '_setCookiePath', '_setCookiePersistence', '_setCookieTimeout', '_setCustomVar', '_setDetectFlash', '_setDetectTitle', '_setDomainName', '_setLocalGifPath', '_setLocalRemoteServerMode', '_setLocalServerMode', '_setReferrerOverride', '_setRemoteServerMode', '_setSampleRate', '_setSessionTimeout', '_setSiteSpeedSampleRate', '_setSessionCookieTimeout', '_setVar', '_setVisitorCookieTimeout', '_trackEvent', '_trackPageLoadTime', '_trackPageview', '_trackSocial', '_trackTiming', '_trackTrans', '_visitCode'];
   var tracker = api.reduce(function (res, funcName) {
-    res[funcName] = noop;
+    res[funcName] = noopFunc;
     return res;
   }, {});
 
@@ -3854,10 +3905,10 @@ function GoogleAnalyticsGa(source) {
     return a;
   };
 
-  Gat.prototype._anonymizeIP = noop;
-  Gat.prototype._createTracker = noop;
-  Gat.prototype._forceSSL = noop;
-  Gat.prototype._getPlugin = noop;
+  Gat.prototype._anonymizeIP = noopFunc;
+  Gat.prototype._createTracker = noopFunc;
+  Gat.prototype._forceSSL = noopFunc;
+  Gat.prototype._getPlugin = noopFunc;
 
   Gat.prototype._getTracker = function () {
     return tracker;
@@ -3867,20 +3918,20 @@ function GoogleAnalyticsGa(source) {
     return tracker;
   };
 
-  Gat.prototype._getTrackers = noop;
-  Gat.prototype.aa = noop;
-  Gat.prototype.ab = noop;
-  Gat.prototype.hb = noop;
-  Gat.prototype.la = noop;
-  Gat.prototype.oa = noop;
-  Gat.prototype.pa = noop;
-  Gat.prototype.u = noop;
+  Gat.prototype._getTrackers = noopFunc;
+  Gat.prototype.aa = noopFunc;
+  Gat.prototype.ab = noopFunc;
+  Gat.prototype.hb = noopFunc;
+  Gat.prototype.la = noopFunc;
+  Gat.prototype.oa = noopFunc;
+  Gat.prototype.pa = noopFunc;
+  Gat.prototype.u = noopFunc;
   var gat = new Gat();
   window._gat = gat;
   hit(source);
 }
 GoogleAnalyticsGa.names = ['google-analytics-ga', 'ubo-google-analytics_ga.js', 'google-analytics_ga.js'];
-GoogleAnalyticsGa.injections = [hit, noop];
+GoogleAnalyticsGa.injections = [hit, noopFunc];
 
 /* eslint-disable max-len */
 
@@ -3947,7 +3998,7 @@ GoogleSyndicationAdsByGoogle.injections = [hit];
  */
 
 function GoogleTagManagerGtm(source) {
-  window.ga = window.ga || noop;
+  window.ga = window.ga || noopFunc;
   var _window = window,
       dataLayer = _window.dataLayer;
 
@@ -3970,7 +4021,7 @@ function GoogleTagManagerGtm(source) {
   hit(source);
 }
 GoogleTagManagerGtm.names = ['googletagmanager-gtm', 'ubo-googletagmanager_gtm.js', 'googletagmanager_gtm.js'];
-GoogleTagManagerGtm.injections = [hit, noop];
+GoogleTagManagerGtm.injections = [hit, noopFunc];
 
 /**
  * @redirect googletagservices-gpt
@@ -3990,18 +4041,18 @@ GoogleTagManagerGtm.injections = [hit, noop];
 function GoogleTagServicesGpt(source) {
   var companionAdsService = {
     addEventListener: noopThis,
-    enableSyncLoading: noop,
-    setRefreshUnfilledSlots: noop
+    enableSyncLoading: noopFunc,
+    setRefreshUnfilledSlots: noopFunc
   };
   var contentService = {
     addEventListener: noopThis,
-    setContent: noop
+    setContent: noopFunc
   };
 
   function PassbackSlot() {} // constructor
 
 
-  PassbackSlot.prototype.display = noop;
+  PassbackSlot.prototype.display = noopFunc;
   PassbackSlot.prototype.get = noopNull;
   PassbackSlot.prototype.set = noopThis;
   PassbackSlot.prototype.setClickUrl = noopThis;
@@ -4038,32 +4089,32 @@ function GoogleTagServicesGpt(source) {
   Slot.prototype.setTargeting = noopThis;
   var pubAdsService = {
     addEventListener: noopThis,
-    clear: noop,
+    clear: noopFunc,
     clearCategoryExclusions: noopThis,
     clearTagForChildDirectedTreatment: noopThis,
     clearTargeting: noopThis,
-    collapseEmptyDivs: noop,
+    collapseEmptyDivs: noopFunc,
     defineOutOfPagePassback: function defineOutOfPagePassback() {
       return new PassbackSlot();
     },
     definePassback: function definePassback() {
       return new PassbackSlot();
     },
-    disableInitialLoad: noop,
-    display: noop,
-    enableAsyncRendering: noop,
-    enableSingleRequest: noop,
-    enableSyncRendering: noop,
-    enableVideoAds: noop,
+    disableInitialLoad: noopFunc,
+    display: noopFunc,
+    enableAsyncRendering: noopFunc,
+    enableSingleRequest: noopFunc,
+    enableSyncRendering: noopFunc,
+    enableVideoAds: noopFunc,
     get: noopNull,
     getAttributeKeys: noopArray,
-    getTargeting: noop,
+    getTargeting: noopFunc,
     getTargetingKeys: noopArray,
     getSlots: noopArray,
-    refresh: noop,
+    refresh: noopFunc,
     set: noopThis,
     setCategoryExclusion: noopThis,
-    setCentering: noop,
+    setCentering: noopFunc,
     setCookieOptions: noopThis,
     setForceSafeFrame: noopThis,
     setLocation: noopThis,
@@ -4073,7 +4124,7 @@ function GoogleTagServicesGpt(source) {
     setTagForChildDirectedTreatment: noopThis,
     setTargeting: noopThis,
     setVideoContent: noopThis,
-    updateCorrelator: noop
+    updateCorrelator: noopFunc
   };
   var _window = window,
       _window$googletag = _window.googletag,
@@ -4107,10 +4158,10 @@ function GoogleTagServicesGpt(source) {
     return new Slot();
   };
 
-  googletag.destroySlots = noop;
-  googletag.disablePublisherConsole = noop;
-  googletag.display = noop;
-  googletag.enableServices = noop;
+  googletag.destroySlots = noopFunc;
+  googletag.disablePublisherConsole = noopFunc;
+  googletag.display = noopFunc;
+  googletag.enableServices = noopFunc;
   googletag.getVersion = noopStr;
 
   googletag.pubads = function () {
@@ -4118,7 +4169,7 @@ function GoogleTagServicesGpt(source) {
   };
 
   googletag.pubadsReady = true;
-  googletag.setAdIframeTitle = noop;
+  googletag.setAdIframeTitle = noopFunc;
 
   googletag.sizeMapping = function () {
     return new SizeMappingBuilder();
@@ -4133,7 +4184,7 @@ function GoogleTagServicesGpt(source) {
   hit(source);
 }
 GoogleTagServicesGpt.names = ['googletagservices-gpt', 'ubo-googletagservices_gpt.js', 'googletagservices_gpt.js'];
-GoogleTagServicesGpt.injections = [hit, noop, noopThis, noopNull, noopArray, noopStr];
+GoogleTagServicesGpt.injections = [hit, noopFunc, noopThis, noopNull, noopArray, noopStr];
 
 /**
  * @redirect scorecardresearch-beacon
@@ -4190,12 +4241,12 @@ function metrikaYandexTag(source) {
     }
   };
 
-  var init = noop;
+  var init = noopFunc;
   /**
    * https://yandex.ru/support/metrica/objects/addfileextension.html
    */
 
-  var addFileExtension = noop;
+  var addFileExtension = noopFunc;
   /**
    * https://yandex.ru/support/metrica/objects/extlink.html
    */
@@ -4229,7 +4280,7 @@ function metrikaYandexTag(source) {
    * https://yandex.ru/support/metrica/objects/params-method.html
    */
 
-  var params = noop;
+  var params = noopFunc;
   /**
    * https://yandex.ru/support/metrica/objects/reachgoal.html
    * @param {string} target
@@ -4249,12 +4300,12 @@ function metrikaYandexTag(source) {
    */
 
 
-  var setUserID = noop;
+  var setUserID = noopFunc;
   /**
    * https://yandex.ru/support/metrica/objects/user-params.html
    */
 
-  var userParams = noop;
+  var userParams = noopFunc;
   var api = {
     init: init,
     addFileExtension: addFileExtension,
@@ -4281,7 +4332,7 @@ function metrikaYandexTag(source) {
   hit(source);
 }
 metrikaYandexTag.names = ['metrika-yandex-tag'];
-metrikaYandexTag.injections = [hit, noop];
+metrikaYandexTag.injections = [hit, noopFunc];
 
 /**
  * @redirect metrika-yandex-watch
@@ -4320,10 +4371,10 @@ function metrikaYandexWatch(source) {
   // Methods without options
 
 
-  Metrika.prototype.addFileExtension = noop;
-  Metrika.prototype.getClientID = noop;
-  Metrika.prototype.setUserID = noop;
-  Metrika.prototype.userParams = noop; // Methods with options
+  Metrika.prototype.addFileExtension = noopFunc;
+  Metrika.prototype.getClientID = noopFunc;
+  Metrika.prototype.setUserID = noopFunc;
+  Metrika.prototype.userParams = noopFunc; // Methods with options
   // The order of arguments should be kept in according to API
 
   Metrika.prototype.extLink = function (url, options) {
@@ -4366,7 +4417,7 @@ function metrikaYandexWatch(source) {
   hit(source);
 }
 metrikaYandexWatch.names = ['metrika-yandex-watch'];
-metrikaYandexWatch.injections = [hit, noop];
+metrikaYandexWatch.injections = [hit, noopFunc];
 
 
 

@@ -1,5 +1,6 @@
-import { hit } from '../helpers/hit';
-import { noop, noopNull } from '../helpers/noop';
+import {
+    hit, noopFunc, noopNull, noopArray,
+} from '../helpers';
 
 /**
  * @redirect google-analytics
@@ -19,9 +20,9 @@ export function GoogleAnalytics(source) {
     // eslint-disable-next-line func-names
     const Tracker = function () { }; // constructor
     const proto = Tracker.prototype;
-    proto.get = noop;
-    proto.set = noop;
-    proto.send = noop;
+    proto.get = noopFunc;
+    proto.set = noopFunc;
+    proto.send = noopFunc;
 
     const googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';
     function ga() {
@@ -46,8 +47,8 @@ export function GoogleAnalytics(source) {
 
     ga.create = () => new Tracker();
     ga.getByName = noopNull;
-    ga.getAll = () => [];
-    ga.remove = noop;
+    ga.getAll = noopArray;
+    ga.remove = noopFunc;
     ga.loaded = true;
     window[googleAnalyticsName] = ga;
 
@@ -70,6 +71,7 @@ GoogleAnalytics.names = [
 
 GoogleAnalytics.injections = [
     hit,
-    noop,
+    noopFunc,
     noopNull,
+    noopArray,
 ];

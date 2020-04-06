@@ -236,8 +236,6 @@ redirects.isAdgRedirectRule(rule)
 redirects.isValidRedirectRule(rule);
 ```
 
-and valid for conversion to Adg
-
 ```javascript
 /**
 * Checks if the `rule` is **valid** AdGuard redirect rule

@@ -1,5 +1,4 @@
-import { toRegExp } from '../helpers/string-utils';
-import { hit } from '../helpers';
+import { hit, toRegExp } from '../helpers';
 
 /* eslint-disable max-len */
 /**

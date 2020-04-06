@@ -33,6 +33,10 @@ export const startsWith = (str, prefix) => {
     return str && str.indexOf(prefix) === 0;
 };
 
+export const endsWith = (str, prefix) => {
+    return str && str.indexOf(prefix) === str.length - 1;
+};
+
 export const substringAfter = (str, separator) => {
     if (!str) {
         return str;

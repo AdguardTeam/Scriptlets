@@ -1,6 +1,6 @@
 #
 #    AdGuard Scriptlets (Redirects Source)
-#    Version 1.1.11
+#    Version 1.1.12
 #
 - title: 1x1-transparent.gif
   description: |-
@@ -264,14 +264,14 @@
         // Gaq constructor
         function Gaq() {}
 
-        Gaq.prototype.Na = noop;
-        Gaq.prototype.O = noop;
-        Gaq.prototype.Sa = noop;
-        Gaq.prototype.Ta = noop;
-        Gaq.prototype.Va = noop;
-        Gaq.prototype._createAsyncTracker = noop;
-        Gaq.prototype._getAsyncTracker = noop;
-        Gaq.prototype._getPlugin = noop;
+        Gaq.prototype.Na = noopFunc;
+        Gaq.prototype.O = noopFunc;
+        Gaq.prototype.Sa = noopFunc;
+        Gaq.prototype.Ta = noopFunc;
+        Gaq.prototype.Va = noopFunc;
+        Gaq.prototype._createAsyncTracker = noopFunc;
+        Gaq.prototype._getAsyncTracker = noopFunc;
+        Gaq.prototype._getPlugin = noopFunc;
 
         Gaq.prototype.push = function (data) {
           if (typeof data === 'function') {
@@ -311,7 +311,7 @@
 
         var api = ['_addIgnoredOrganic', '_addIgnoredRef', '_addItem', '_addOrganic', '_addTrans', '_clearIgnoredOrganic', '_clearIgnoredRef', '_clearOrganic', '_cookiePathCopy', '_deleteCustomVar', '_getName', '_setAccount', '_getAccount', '_getClientInfo', '_getDetectFlash', '_getDetectTitle', '_getLinkerUrl', '_getLocalGifPath', '_getServiceMode', '_getVersion', '_getVisitorCustomVar', '_initData', '_link', '_linkByPost', '_setAllowAnchor', '_setAllowHash', '_setAllowLinker', '_setCampContentKey', '_setCampMediumKey', '_setCampNameKey', '_setCampNOKey', '_setCampSourceKey', '_setCampTermKey', '_setCampaignCookieTimeout', '_setCampaignTrack', '_setClientInfo', '_setCookiePath', '_setCookiePersistence', '_setCookieTimeout', '_setCustomVar', '_setDetectFlash', '_setDetectTitle', '_setDomainName', '_setLocalGifPath', '_setLocalRemoteServerMode', '_setLocalServerMode', '_setReferrerOverride', '_setRemoteServerMode', '_setSampleRate', '_setSessionTimeout', '_setSiteSpeedSampleRate', '_setSessionCookieTimeout', '_setVar', '_setVisitorCookieTimeout', '_trackEvent', '_trackPageLoadTime', '_trackPageview', '_trackSocial', '_trackTiming', '_trackTrans', '_visitCode'];
         var tracker = api.reduce(function (res, funcName) {
-          res[funcName] = noop;
+          res[funcName] = noopFunc;
           return res;
         }, {});
 
@@ -319,10 +319,10 @@
           return a;
         };
 
-        Gat.prototype._anonymizeIP = noop;
-        Gat.prototype._createTracker = noop;
-        Gat.prototype._forceSSL = noop;
-        Gat.prototype._getPlugin = noop;
+        Gat.prototype._anonymizeIP = noopFunc;
+        Gat.prototype._createTracker = noopFunc;
+        Gat.prototype._forceSSL = noopFunc;
+        Gat.prototype._getPlugin = noopFunc;
 
         Gat.prototype._getTracker = function () {
           return tracker;
@@ -332,14 +332,14 @@
           return tracker;
         };
 
-        Gat.prototype._getTrackers = noop;
-        Gat.prototype.aa = noop;
-        Gat.prototype.ab = noop;
-        Gat.prototype.hb = noop;
-        Gat.prototype.la = noop;
-        Gat.prototype.oa = noop;
-        Gat.prototype.pa = noop;
-        Gat.prototype.u = noop;
+        Gat.prototype._getTrackers = noopFunc;
+        Gat.prototype.aa = noopFunc;
+        Gat.prototype.ab = noopFunc;
+        Gat.prototype.hb = noopFunc;
+        Gat.prototype.la = noopFunc;
+        Gat.prototype.oa = noopFunc;
+        Gat.prototype.pa = noopFunc;
+        Gat.prototype.u = noopFunc;
         var gat = new Gat();
         window._gat = gat;
         hit(source);
@@ -375,7 +375,7 @@
           window.__debugScriptlets(source);
         }
       }
-    function noop() {};
+    function noopFunc() {};
             const updatedArgs = args ? [].concat(source).concat(args) : [source];
             GoogleAnalyticsGa.apply(this, updatedArgs);
         
@@ -395,9 +395,9 @@
 
 
         var proto = Tracker.prototype;
-        proto.get = noop;
-        proto.set = noop;
-        proto.send = noop;
+        proto.get = noopFunc;
+        proto.set = noopFunc;
+        proto.send = noopFunc;
         var googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';
 
         function ga() {
@@ -424,12 +424,8 @@
         };
 
         ga.getByName = noopNull;
-
-        ga.getAll = function () {
-          return [];
-        };
-
-        ga.remove = noop;
+        ga.getAll = noopArray;
+        ga.remove = noopFunc;
         ga.loaded = true;
         window[googleAnalyticsName] = ga;
         var _window = window,
@@ -472,9 +468,12 @@
           window.__debugScriptlets(source);
         }
       }
-    function noop() {}
+    function noopFunc() {}
     function noopNull() {
         return null;
+      }
+    function noopArray() {
+        return [];
       };
             const updatedArgs = args ? [].concat(source).concat(args) : [source];
             GoogleAnalytics.apply(this, updatedArgs);
@@ -561,7 +560,7 @@
   content: |-
     (function(source, args){
     function GoogleTagManagerGtm(source) {
-        window.ga = window.ga || noop;
+        window.ga = window.ga || noopFunc;
         var _window = window,
             dataLayer = _window.dataLayer;
 
@@ -614,7 +613,7 @@
           window.__debugScriptlets(source);
         }
       }
-    function noop() {};
+    function noopFunc() {};
             const updatedArgs = args ? [].concat(source).concat(args) : [source];
             GoogleTagManagerGtm.apply(this, updatedArgs);
         
@@ -631,18 +630,18 @@
     function GoogleTagServicesGpt(source) {
         var companionAdsService = {
           addEventListener: noopThis,
-          enableSyncLoading: noop,
-          setRefreshUnfilledSlots: noop
+          enableSyncLoading: noopFunc,
+          setRefreshUnfilledSlots: noopFunc
         };
         var contentService = {
           addEventListener: noopThis,
-          setContent: noop
+          setContent: noopFunc
         };
 
         function PassbackSlot() {} // constructor
 
 
-        PassbackSlot.prototype.display = noop;
+        PassbackSlot.prototype.display = noopFunc;
         PassbackSlot.prototype.get = noopNull;
         PassbackSlot.prototype.set = noopThis;
         PassbackSlot.prototype.setClickUrl = noopThis;
@@ -679,32 +678,32 @@
         Slot.prototype.setTargeting = noopThis;
         var pubAdsService = {
           addEventListener: noopThis,
-          clear: noop,
+          clear: noopFunc,
           clearCategoryExclusions: noopThis,
           clearTagForChildDirectedTreatment: noopThis,
           clearTargeting: noopThis,
-          collapseEmptyDivs: noop,
+          collapseEmptyDivs: noopFunc,
           defineOutOfPagePassback: function defineOutOfPagePassback() {
             return new PassbackSlot();
           },
           definePassback: function definePassback() {
             return new PassbackSlot();
           },
-          disableInitialLoad: noop,
-          display: noop,
-          enableAsyncRendering: noop,
-          enableSingleRequest: noop,
-          enableSyncRendering: noop,
-          enableVideoAds: noop,
+          disableInitialLoad: noopFunc,
+          display: noopFunc,
+          enableAsyncRendering: noopFunc,
+          enableSingleRequest: noopFunc,
+          enableSyncRendering: noopFunc,
+          enableVideoAds: noopFunc,
           get: noopNull,
           getAttributeKeys: noopArray,
-          getTargeting: noop,
+          getTargeting: noopFunc,
           getTargetingKeys: noopArray,
           getSlots: noopArray,
-          refresh: noop,
+          refresh: noopFunc,
           set: noopThis,
           setCategoryExclusion: noopThis,
-          setCentering: noop,
+          setCentering: noopFunc,
           setCookieOptions: noopThis,
           setForceSafeFrame: noopThis,
           setLocation: noopThis,
@@ -714,7 +713,7 @@
           setTagForChildDirectedTreatment: noopThis,
           setTargeting: noopThis,
           setVideoContent: noopThis,
-          updateCorrelator: noop
+          updateCorrelator: noopFunc
         };
         var _window = window,
             _window$googletag = _window.googletag,
@@ -748,10 +747,10 @@
           return new Slot();
         };
 
-        googletag.destroySlots = noop;
-        googletag.disablePublisherConsole = noop;
-        googletag.display = noop;
-        googletag.enableServices = noop;
+        googletag.destroySlots = noopFunc;
+        googletag.disablePublisherConsole = noopFunc;
+        googletag.display = noopFunc;
+        googletag.enableServices = noopFunc;
         googletag.getVersion = noopStr;
 
         googletag.pubads = function () {
@@ -759,7 +758,7 @@
         };
 
         googletag.pubadsReady = true;
-        googletag.setAdIframeTitle = noop;
+        googletag.setAdIframeTitle = noopFunc;
 
         googletag.sizeMapping = function () {
           return new SizeMappingBuilder();
@@ -804,7 +803,7 @@
           window.__debugScriptlets(source);
         }
       }
-    function noop() {}
+    function noopFunc() {}
     function noopThis() {
         return this;
       }
@@ -842,12 +841,12 @@
           }
         };
 
-        var init = noop;
+        var init = noopFunc;
         /**
          * https://yandex.ru/support/metrica/objects/addfileextension.html
          */
 
-        var addFileExtension = noop;
+        var addFileExtension = noopFunc;
         /**
          * https://yandex.ru/support/metrica/objects/extlink.html
          */
@@ -881,7 +880,7 @@
          * https://yandex.ru/support/metrica/objects/params-method.html
          */
 
-        var params = noop;
+        var params = noopFunc;
         /**
          * https://yandex.ru/support/metrica/objects/reachgoal.html
          * @param {string} target
@@ -901,12 +900,12 @@
          */
 
 
-        var setUserID = noop;
+        var setUserID = noopFunc;
         /**
          * https://yandex.ru/support/metrica/objects/user-params.html
          */
 
-        var userParams = noop;
+        var userParams = noopFunc;
         var api = {
           init: init,
           addFileExtension: addFileExtension,
@@ -963,7 +962,7 @@
           window.__debugScriptlets(source);
         }
       }
-    function noop() {};
+    function noopFunc() {};
             const updatedArgs = args ? [].concat(source).concat(args) : [source];
             metrikaYandexTag.apply(this, updatedArgs);
         
@@ -999,10 +998,10 @@
         // Methods without options
 
 
-        Metrika.prototype.addFileExtension = noop;
-        Metrika.prototype.getClientID = noop;
-        Metrika.prototype.setUserID = noop;
-        Metrika.prototype.userParams = noop; // Methods with options
+        Metrika.prototype.addFileExtension = noopFunc;
+        Metrika.prototype.getClientID = noopFunc;
+        Metrika.prototype.setUserID = noopFunc;
+        Metrika.prototype.userParams = noopFunc; // Methods with options
         // The order of arguments should be kept in according to API
 
         Metrika.prototype.extLink = function (url, options) {
@@ -1075,7 +1074,7 @@
           window.__debugScriptlets(source);
         }
       }
-    function noop() {};
+    function noopFunc() {};
             const updatedArgs = args ? [].concat(source).concat(args) : [source];
             metrikaYandexWatch.apply(this, updatedArgs);
         
@@ -1149,9 +1148,9 @@
 
         var Fab = function Fab() {};
 
-        Fab.prototype.check = noop;
-        Fab.prototype.clearEvent = noop;
-        Fab.prototype.emitEvent = noop;
+        Fab.prototype.check = noopFunc;
+        Fab.prototype.clearEvent = noopFunc;
+        Fab.prototype.emitEvent = noopFunc;
 
         Fab.prototype.on = function (a, b) {
           if (!a) {
@@ -1161,21 +1160,18 @@
           return this;
         };
 
-        Fab.prototype.onDetected = function () {
-          return this;
-        };
+        Fab.prototype.onDetected = noopThis;
 
         Fab.prototype.onNotDetected = function (a) {
           a();
           return this;
         };
 
-        Fab.prototype.setOption = noop;
+        Fab.prototype.setOption = noopFunc;
         window.FuckAdBlock = window.BlockAdBlock = Fab; //
 
         window.fuckAdBlock = window.blockAdBlock = new Fab();
       }
-    function noop() {}
     function hit(source, message) {
         if (source.verbose !== true) {
           return;
@@ -1206,6 +1202,10 @@
         if (typeof window.__debugScriptlets === 'function') {
           window.__debugScriptlets(source);
         }
+      }
+    function noopFunc() {}
+    function noopThis() {
+        return this;
       };
             const updatedArgs = args ? [].concat(source).concat(args) : [source];
             preventFab.apply(this, updatedArgs);

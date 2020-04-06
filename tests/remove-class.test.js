@@ -49,7 +49,7 @@ test('Adg rule: no selector', (assert) => {
         assert.notOk(first.classList.contains(a), `Class '${a}' has been removed`);
     });
     assert.strictEqual(window.hit, 'FIRED');
-
+    clearGlobalProps('hit');
 
     const done = assert.async();
 
@@ -88,7 +88,7 @@ test('Adg rule', (assert) => {
         assert.notOk(childElement.classList.contains(a), `Class '${a}' has been removed`);
     });
     assert.strictEqual(window.hit, 'FIRED');
-
+    clearGlobalProps('hit');
 
     const done = assert.async();
 
