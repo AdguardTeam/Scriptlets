@@ -1,5 +1,5 @@
 /* eslint-disable no-console, func-names, no-multi-assign */
-import { noop, hit } from '../helpers';
+import { hit, noopFunc, noopThis } from '../helpers';
 
 /**
  * @scriptlet prevent-fab-3.2.0
@@ -18,23 +18,21 @@ import { noop, hit } from '../helpers';
 export function preventFab(source) {
     hit(source);
     const Fab = function () {};
-    Fab.prototype.check = noop;
-    Fab.prototype.clearEvent = noop;
-    Fab.prototype.emitEvent = noop;
+    Fab.prototype.check = noopFunc;
+    Fab.prototype.clearEvent = noopFunc;
+    Fab.prototype.emitEvent = noopFunc;
     Fab.prototype.on = function (a, b) {
         if (!a) {
             b();
         }
         return this;
     };
-    Fab.prototype.onDetected = function () {
-        return this;
-    };
+    Fab.prototype.onDetected = noopThis;
     Fab.prototype.onNotDetected = function (a) {
         a();
         return this;
     };
-    Fab.prototype.setOption = noop;
+    Fab.prototype.setOption = noopFunc;
     window.FuckAdBlock = window.BlockAdBlock = Fab;
     //
     window.fuckAdBlock = window.blockAdBlock = new Fab();
@@ -48,4 +46,4 @@ preventFab.names = [
     'ubo-fuckadblock.js-3.2.0',
 ];
 
-preventFab.injections = [noop, hit];
+preventFab.injections = [hit, noopFunc, noopThis];

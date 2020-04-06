@@ -1,5 +1,6 @@
-import { toRegExp, startsWith } from '../helpers/string-utils';
-import { hit } from '../helpers';
+import {
+    hit, noopFunc, toRegExp, startsWith,
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -143,7 +144,7 @@ export function preventSetInterval(source, match, delay) {
 
         if (shouldPrevent) {
             hit(source);
-            return nativeInterval(() => { }, interval);
+            return nativeInterval(noopFunc, interval);
         }
 
         return nativeInterval.apply(window, [callback, interval, ...args]);
@@ -163,4 +164,4 @@ preventSetInterval.names = [
     'ubo-sid.js',
 ];
 
-preventSetInterval.injections = [toRegExp, startsWith, hit];
+preventSetInterval.injections = [toRegExp, startsWith, hit, noopFunc];

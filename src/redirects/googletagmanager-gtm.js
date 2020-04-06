@@ -1,5 +1,4 @@
-import { hit } from '../helpers/hit';
-import { noop } from '../helpers/noop';
+import { hit, noopFunc } from '../helpers';
 
 /**
  * @redirect googletagmanager-gtm
@@ -16,7 +15,7 @@ import { noop } from '../helpers/noop';
  * ```
  */
 export function GoogleTagManagerGtm(source) {
-    window.ga = window.ga || noop;
+    window.ga = window.ga || noopFunc;
     const { dataLayer } = window;
     if (dataLayer instanceof Object === false) {
         return;
@@ -43,7 +42,4 @@ GoogleTagManagerGtm.names = [
     'googletagmanager_gtm.js',
 ];
 
-GoogleTagManagerGtm.injections = [
-    hit,
-    noop,
-];
+GoogleTagManagerGtm.injections = [hit, noopFunc];

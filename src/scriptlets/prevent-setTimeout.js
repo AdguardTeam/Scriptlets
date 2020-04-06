@@ -1,5 +1,6 @@
-import { toRegExp, startsWith } from '../helpers/string-utils';
-import { hit } from '../helpers';
+import {
+    hit, noopFunc, toRegExp, startsWith,
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -143,7 +144,7 @@ export function preventSetTimeout(source, match, delay) {
 
         if (shouldPrevent) {
             hit(source);
-            return nativeTimeout(() => { }, timeout);
+            return nativeTimeout(noopFunc, timeout);
         }
 
         return nativeTimeout.apply(window, [callback, timeout, ...args]);
@@ -163,4 +164,4 @@ preventSetTimeout.names = [
     'ubo-std.js',
 ];
 
-preventSetTimeout.injections = [toRegExp, startsWith, hit];
+preventSetTimeout.injections = [toRegExp, startsWith, hit, noopFunc];

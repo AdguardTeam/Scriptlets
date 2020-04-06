@@ -52,7 +52,7 @@ test('ubo alias', (assert) => {
         assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
     });
     assert.strictEqual(window.hit, 'FIRED');
-
+    clearGlobalProps('hit');
 
     const done = assert.async();
 
@@ -86,7 +86,7 @@ test('Adg rule: no selector', (assert) => {
         assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
     });
     assert.strictEqual(window.hit, 'FIRED');
-
+    clearGlobalProps('hit');
 
     const done = assert.async();
 
@@ -122,7 +122,7 @@ test('Adg rule', (assert) => {
         assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
     });
     assert.strictEqual(window.hit, 'FIRED');
-
+    clearGlobalProps('hit');
 
     const done = assert.async();
 

@@ -1,4 +1,4 @@
-import { hit } from '../helpers/hit';
+import { hit } from '../helpers';
 
 /**
  * @redirect scorecardresearch-beacon
