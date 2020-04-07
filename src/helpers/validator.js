@@ -253,12 +253,13 @@ const isAdgRedirectRule = (rule) => {
 /**
  * Checks if the `rule` satisfies the `type`
  * @param {string} rule - rule text
- * @param {'ADG'|'UBO'|'ABP'} type - type of a redirect rule
+ * @param {'VALID_ADG'|'ADG'|'UBO'|'ABP'} type - type of a redirect rule
  */
 const isRedirectRuleByType = (rule, type) => {
     const { marker, compatibility } = REDIRECT_RULE_TYPES[type];
 
-    if ((!isComment(rule))
+    if (rule
+        && (!isComment(rule))
         && (rule.indexOf(marker) > -1)) {
         const redirectName = getRedirectName(rule, marker);
 
