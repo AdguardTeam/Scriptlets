@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.1.12
+ * Version 1.1.13
  */
 
 /**
@@ -3341,7 +3341,7 @@ var isAdgRedirectRule = function isAdgRedirectRule(rule) {
 /**
  * Checks if the `rule` satisfies the `type`
  * @param {string} rule - rule text
- * @param {'ADG'|'UBO'|'ABP'} type - type of a redirect rule
+ * @param {'VALID_ADG'|'ADG'|'UBO'|'ABP'} type - type of a redirect rule
  */
 
 
@@ -3350,7 +3350,7 @@ var isRedirectRuleByType = function isRedirectRuleByType(rule, type) {
       marker = _REDIRECT_RULE_TYPES$.marker,
       compatibility = _REDIRECT_RULE_TYPES$.compatibility;
 
-  if (!isComment(rule) && rule.indexOf(marker) > -1) {
+  if (rule && !isComment(rule) && rule.indexOf(marker) > -1) {
     var redirectName = getRedirectName(rule, marker);
     return redirectName === Object.keys(compatibility).find(function (el) {
       return el === redirectName;
