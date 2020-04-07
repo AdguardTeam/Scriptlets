@@ -3348,7 +3348,7 @@
           marker = _REDIRECT_RULE_TYPES$.marker,
           compatibility = _REDIRECT_RULE_TYPES$.compatibility;
 
-      if (!isComment(rule) && rule.indexOf(marker) > -1) {
+      if (rule && !isComment(rule) && rule.indexOf(marker) > -1) {
         var redirectName = getRedirectName(rule, marker);
         return redirectName === Object.keys(compatibility).find(function (el) {
           return el === redirectName;

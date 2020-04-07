@@ -258,7 +258,8 @@ const isAdgRedirectRule = (rule) => {
 const isRedirectRuleByType = (rule, type) => {
     const { marker, compatibility } = REDIRECT_RULE_TYPES[type];
 
-    if ((!isComment(rule))
+    if (rule
+        && (!isComment(rule))
         && (rule.indexOf(marker) > -1)) {
         const redirectName = getRedirectName(rule, marker);
 
