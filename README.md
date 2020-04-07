@@ -220,7 +220,7 @@ redirects.getCode(source);
 ```javascript
 /**
  * Checks if the `rule` is AdGuard redirect rule.
- * Discards comments and checks if the `rule` has 'redirect' modifier.
+ * Discards comments and JS rules and checks if the `rule` has 'redirect' modifier.
  * @param {string} rule - rule text
  */
 redirects.isAdgRedirectRule(rule)
@@ -228,18 +228,8 @@ redirects.isAdgRedirectRule(rule)
 
 ```javascript
 /**
-* Validates any redirect rule
-*
-* @param {string} rule - can be Adguard or Ubo or Abp redirect rule
-* @returns {boolean}
-*/
-redirects.isValidRedirectRule(rule);
-```
-
-```javascript
-/**
 * Checks if the `rule` is **valid** AdGuard redirect rule
-* @param {string} rule - rule text
+* @param {string} rule - redirect rule text
 * @returns {boolean}
 */
 redirects.isValidAdgRedirectRule(rule);
@@ -247,12 +237,29 @@ redirects.isValidAdgRedirectRule(rule);
 
 ```javascript
 /**
-* Validates the `rule` by type: Ubo / Abp (for conversion to Adg)
-* @param {string} rule - rule text
-* @returns {boolean}
+* Checks if the AdGuard redirect `rule` has Ubo analog. Used for conversion
+* @param {string} rule - AdGuard rule text
+* @returns {boolean} - true if the rule can be converted to Ubo
 */
-redirects.isValidUboRedirectRule(rule);
-redirects.isValidAbpRedirectRule(rule);
+redirects.isAdgRedirectCompatibleWithUbo(rule);
+```
+
+```javascript
+/**
+* Checks if the Ubo redirect `rule` has AdGuard analog. Used for conversion
+* @param {string} rule - Ubo rule text
+* @returns {boolean} - true if the rule can be converted to AdGuard
+*/
+redirects.isUboRedirectCompatibleWithAdg(rule);
+```
+
+```javascript
+/**
+* Checks if the Abp redirect `rule` has AdGuard analog. Used for conversion
+* @param {string} rule - Abp rule text
+* @returns {boolean} - true if the rule can be converted to AdGuard
+*/
+redirects.isAbpRedirectCompatibleWithAdg(rule);
 ```
 
 ```javascript

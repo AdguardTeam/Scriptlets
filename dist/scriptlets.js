@@ -3114,6 +3114,7 @@
 
     const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm",ubo:"googletagmanager_gtm.js"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3-0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvmap-1.0"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"disqus_embed.js"},{ubo:"disqus_forums_embed.js"},{ubo:"doubleclick_instream_ad_status.js"},{ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"}];
 
+    var JS_RULE_MASK = '#%#';
     var COMMENT_MARKER = '!';
     /**
      * Checks if rule text is comment e.g. !!example.org##+js(set-constant.js, test, false)
@@ -3328,13 +3329,13 @@
     };
     /**
      * Checks if the `rule` is AdGuard redirect rule.
-     * Discards comments and checks if the `rule` has 'redirect' modifier.
+     * Discards comments and JS rules and checks if the `rule` has 'redirect' modifier.
      * @param {string} rule - rule text
      */
 
 
     var isAdgRedirectRule = function isAdgRedirectRule(rule) {
-      return !isComment(rule) && rule.indexOf(REDIRECT_RULE_TYPES.ADG.marker) > -1;
+      return !isComment(rule) && !rule.indexOf(JS_RULE_MASK) > -1 && rule.indexOf(REDIRECT_RULE_TYPES.ADG.marker) > -1;
     };
     /**
      * Checks if the `rule` satisfies the `type`
@@ -3358,7 +3359,7 @@
       return false;
     };
     /**
-    * Checks if the `rule` is AdGuard redirect resource rule
+    * Checks if the `rule` is **valid** AdGuard redirect resource rule
     * @param {string} rule - rule text
     * @returns {boolean}
     */
@@ -3368,34 +3369,34 @@
       return isRedirectRuleByType(rule, 'VALID_ADG');
     };
     /**
-    * Checks if the `rule` is Ubo redirect resource rule and valid for conversion to Adg
-    * @param {string} rule - rule text
-    * @returns {boolean}
+    * Checks if the AdGuard redirect `rule` has Ubo analog. Used for conversion
+    * @param {string} rule - AdGuard rule text
+    * @returns {boolean} - true if the rule can be converted to Ubo
     */
 
 
-    var isValidUboRedirectRule = function isValidUboRedirectRule(rule) {
+    var isAdgRedirectCompatibleWithUbo = function isAdgRedirectCompatibleWithUbo(rule) {
+      return isRedirectRuleByType(rule, 'ADG');
+    };
+    /**
+    * Checks if the Ubo redirect `rule` has AdGuard analog. Used for conversion
+    * @param {string} rule - Ubo rule text
+    * @returns {boolean} - true if the rule can be converted to AdGuard
+    */
+
+
+    var isUboRedirectCompatibleWithAdg = function isUboRedirectCompatibleWithAdg(rule) {
       return isRedirectRuleByType(rule, 'UBO');
     };
     /**
-    * Checks if the `rule` is Abp redirect resource rule
-    * @param {string} rule - rule text
-    * @returns {boolean}
+    * Checks if the Abp redirect `rule` has AdGuard analog. Used for conversion
+    * @param {string} rule - Abp rule text
+    * @returns {boolean} - true if the rule can be converted to AdGuard
     */
 
 
-    var isValidAbpRedirectRule = function isValidAbpRedirectRule(rule) {
+    var isAbpRedirectCompatibleWithAdg = function isAbpRedirectCompatibleWithAdg(rule) {
       return isRedirectRuleByType(rule, 'ABP');
-    };
-    /**
-     * Validates any redirect rule
-     * @param {string} rule - can be Adguard or Ubo or Abp redirect rule
-     * @returns {boolean}
-     */
-
-
-    var isValidRedirectRule = function isValidRedirectRule(rule) {
-      return isValidAdgRedirectRule(rule) || isValidUboRedirectRule(rule) || isValidAbpRedirectRule(rule);
     };
     /**
      * Checks if the rule has specified content type before Adg -> Ubo conversion.
@@ -3439,10 +3440,10 @@
       isValidScriptletName: isValidScriptletName,
       REDIRECT_RULE_TYPES: REDIRECT_RULE_TYPES,
       isAdgRedirectRule: isAdgRedirectRule,
-      isValidRedirectRule: isValidRedirectRule,
       isValidAdgRedirectRule: isValidAdgRedirectRule,
-      isValidUboRedirectRule: isValidUboRedirectRule,
-      isValidAbpRedirectRule: isValidAbpRedirectRule,
+      isAdgRedirectCompatibleWithUbo: isAdgRedirectCompatibleWithUbo,
+      isUboRedirectCompatibleWithAdg: isUboRedirectCompatibleWithAdg,
+      isAbpRedirectCompatibleWithAdg: isAbpRedirectCompatibleWithAdg,
       parseModifiers: parseModifiers,
       getRedirectName: getRedirectName,
       hasValidContentType: hasValidContentType
@@ -3730,11 +3731,11 @@
     var convertRedirectToAdg = function convertRedirectToAdg(rule) {
       var result;
 
-      if (validator.isValidUboRedirectRule(rule)) {
+      if (validator.isUboRedirectCompatibleWithAdg(rule)) {
         result = convertUboRedirectToAdg(rule);
-      } else if (validator.isValidAbpRedirectRule(rule)) {
+      } else if (validator.isAbpRedirectCompatibleWithAdg(rule)) {
         result = convertAbpRedirectToAdg(rule);
-      } else if (validator.isValidAdgRedirectRule(rule) || validator.isComment(rule)) {
+      } else if (validator.isValidAdgRedirectRule(rule)) {
         result = rule;
       }
 
@@ -4464,10 +4465,10 @@
     var redirectsCjs = {
       getCode: getRedirectCode,
       isAdgRedirectRule: validator.isAdgRedirectRule,
-      isValidRedirectRule: validator.isValidRedirectRule,
       isValidAdgRedirectRule: validator.isValidAdgRedirectRule,
-      isValidUboRedirectRule: validator.isValidUboRedirectRule,
-      isValidAbpRedirectRule: validator.isValidAbpRedirectRule,
+      isAdgRedirectCompatibleWithUbo: validator.isAdgRedirectCompatibleWithUbo,
+      isUboRedirectCompatibleWithAdg: validator.isUboRedirectCompatibleWithAdg,
+      isAbpRedirectCompatibleWithAdg: validator.isAbpRedirectCompatibleWithAdg,
       convertUboRedirectToAdg: convertUboRedirectToAdg,
       convertAbpRedirectToAdg: convertAbpRedirectToAdg,
       convertRedirectToAdg: convertRedirectToAdg,
