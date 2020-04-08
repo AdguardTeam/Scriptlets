@@ -3335,7 +3335,8 @@
 
 
     var isAdgRedirectRule = function isAdgRedirectRule(rule) {
-      return !isComment(rule) && !rule.indexOf(JS_RULE_MASK) > -1 && rule.indexOf(REDIRECT_RULE_TYPES.ADG.marker) > -1;
+      return !isComment(rule) // some js rules may have 'redirect=' in it, so we should get rid of them
+      && !rule.indexOf(JS_RULE_MASK) > -1 && rule.indexOf(REDIRECT_RULE_TYPES.ADG.marker) > -1;
     };
     /**
      * Checks if the `rule` satisfies the `type`
@@ -3369,7 +3370,7 @@
       return isRedirectRuleByType(rule, 'VALID_ADG');
     };
     /**
-    * Checks if the AdGuard redirect `rule` has Ubo analog. Used for conversion
+    * Checks if the AdGuard redirect `rule` has Ubo analog. Needed for Adg->Ubo conversion
     * @param {string} rule - AdGuard rule text
     * @returns {boolean} - true if the rule can be converted to Ubo
     */
@@ -3379,7 +3380,7 @@
       return isRedirectRuleByType(rule, 'ADG');
     };
     /**
-    * Checks if the Ubo redirect `rule` has AdGuard analog. Used for conversion
+    * Checks if the Ubo redirect `rule` has AdGuard analog. Needed for Ubo->Adg conversion
     * @param {string} rule - Ubo rule text
     * @returns {boolean} - true if the rule can be converted to AdGuard
     */
@@ -3389,7 +3390,7 @@
       return isRedirectRuleByType(rule, 'UBO');
     };
     /**
-    * Checks if the Abp redirect `rule` has AdGuard analog. Used for conversion
+    * Checks if the Abp redirect `rule` has AdGuard analog. Needed for Abp->Adg conversion
     * @param {string} rule - Abp rule text
     * @returns {boolean} - true if the rule can be converted to AdGuard
     */
