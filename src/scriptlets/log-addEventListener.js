@@ -20,7 +20,7 @@ export function logAddEventListener(source) {
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
     function addEventListenerWrapper(eventName, callback, ...args) {
         hit(source);
-        log(`addEventListener("${eventName}", ${callback.toString()})`);
+        log(`addEventListener("${eventName}", ${callback})`);
         return nativeAddEventListener.apply(this, [eventName, callback, ...args]);
     }
     window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
