@@ -1730,13 +1730,22 @@ removeCookie.injections = [toRegExp, hit];
 
 /* eslint-enable max-len */
 
-function preventAddEventListener(source, event, funcStr) {
-  event = event ? toRegExp(event) : toRegExp('/.?/');
-  funcStr = funcStr ? toRegExp(funcStr) : toRegExp('/.?/');
+function preventAddEventListener(source, eventSearch, funcSearch) {
+  eventSearch = eventSearch ? toRegExp(eventSearch) : toRegExp('/.?/');
+  funcSearch = funcSearch ? toRegExp(funcSearch) : toRegExp('/.?/');
   var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
   function addEventListenerWrapper(eventName, callback) {
-    if (event.test(eventName.toString()) && funcStr.test(callback.toString())) {
+    // The scriptlet might cause a website broke
+    // if the website uses test addEventListener with callback = null
+    // https://github.com/AdguardTeam/Scriptlets/issues/76
+    var funcToCheck = callback;
+
+    if (callback && typeof callback === 'function') {
+      funcToCheck = callback.toString();
+    }
+
+    if (eventSearch.test(eventName.toString()) && funcSearch.test(funcToCheck)) {
       hit(source);
       return undefined;
     }
@@ -1914,8 +1923,17 @@ function logAddEventListener(source) {
   var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
   function addEventListenerWrapper(eventName, callback) {
-    hit(source);
-    log("addEventListener(\"".concat(eventName, "\", ").concat(callback.toString(), ")"));
+    hit(source); // The scriptlet might cause a website broke
+    // if the website uses test addEventListener with callback = null
+    // https://github.com/AdguardTeam/Scriptlets/issues/76
+
+    var callbackToLog = callback;
+
+    if (callback && typeof callback === 'function') {
+      callbackToLog = callback.toString();
+    }
+
+    log("addEventListener(\"".concat(eventName, "\", ").concat(callbackToLog, ")"));
 
     for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
       args[_key - 2] = arguments[_key];
@@ -4477,7 +4495,8 @@ var redirectsCjs = {
  * @typedef {Object} Source - scriptlet properties
  * @property {string} name Scriptlet name
  * @property {Array<string>} args Arguments for scriptlet function
- * @property {'extension'|'corelibs'} engine Defines the final form of scriptlet string presentation
+ * @property {'extension'|'corelibs'|'test'} engine -
+ * Defines the final form of scriptlet string presentation
  * @property {string} [version]
  * @property {boolean} [verbose] flag to enable printing to console debug information
  * @property {string} [ruleText] Source rule text is used for debugging purposes
@@ -4496,7 +4515,7 @@ function getScriptletCode(source) {
   var scriptlet = validator.getScriptletByName(source.name);
   var result = attachDependencies(scriptlet);
   result = addCall(scriptlet, result);
-  result = source.engine === 'corelibs' ? wrapInNonameFunc(result) : passSourceAndProps(source, result);
+  result = source.engine === 'corelibs' || source.engine === 'test' ? wrapInNonameFunc(result) : passSourceAndProps(source, result);
   return result;
 }
 /**

@@ -20,7 +20,14 @@ export function logAddEventListener(source) {
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
     function addEventListenerWrapper(eventName, callback, ...args) {
         hit(source);
-        log(`addEventListener("${eventName}", ${callback})`);
+        // The scriptlet might cause a website broke
+        // if the website uses test addEventListener with callback = null
+        // https://github.com/AdguardTeam/Scriptlets/issues/76
+        let callbackToLog = callback;
+        if (callback && typeof callback === 'function') {
+            callbackToLog = callback.toString();
+        }
+        log(`addEventListener("${eventName}", ${callbackToLog})`);
         return nativeAddEventListener.apply(this, [eventName, callback, ...args]);
     }
     window.EventTarget.prototype.addEventListener = addEventListenerWrapper;

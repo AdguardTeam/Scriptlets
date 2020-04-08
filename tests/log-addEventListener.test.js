@@ -11,50 +11,40 @@ const hit = () => {
 
 const changingProps = ['hit', '__debugScriptlets'];
 
-const beforeEach = () => {
-    window.__debugScriptlets = hit;
-};
-
-const afterEach = () => {
-    clearGlobalProps(...changingProps);
-};
-
-module(name, { beforeEach, afterEach });
-
 const evalWrapper = eval;
 
 const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 const nativeConsole = console.log;
 
-test('ubo alias addEventListener-logger.js works', (assert) => {
-    const uboAddEventListenerLog = 'uboAddEventListenerLog';
-    const eventName = 'click';
-    const callback = function callback() {
-        window[uboAddEventListenerLog] = 'clicked';
-    };
-    console.log = function log(input) {
-        if (input.indexOf('trace') > -1) {
-            return;
-        }
-        assert.strictEqual(input, `addEventListener("${eventName}", ${callback.toString()})`, 'console.hit input should be equal');
-    };
-    const params = {
-        name: 'ubo-addEventListener-logger.js',
+
+const beforeEach = () => {
+    window.__debugScriptlets = hit;
+};
+
+const afterEach = () => {
+    console.log = nativeConsole;
+    window.EventTarget.prototype.addEventListener = nativeAddEventListener;
+    clearGlobalProps(...changingProps);
+};
+
+module(name, { beforeEach, afterEach });
+
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
         verbose: true,
     };
-    const resString = window.scriptlets.invoke(params);
+    const aliasParams = {
+        name: 'aell.js',
+        engine: 'test',
+        verbose: true,
+    };
 
-    evalWrapper(resString);
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByAliasParams = window.scriptlets.invoke(aliasParams);
 
-    const element = document.createElement('div');
-    element.addEventListener(eventName, callback);
-    element.click();
-    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
-    assert.strictEqual(window[uboAddEventListenerLog], 'clicked', 'property should be applied correctly');
-    // revert native functions
-    window.EventTarget.prototype.addEventListener = nativeAddEventListener;
-    console.log = nativeConsole;
-    clearGlobalProps(uboAddEventListenerLog);
+    assert.strictEqual(codeByAdgParams.toString(), codeByAliasParams.toString());
 });
 
 test('logs events to console', (assert) => {
@@ -84,8 +74,31 @@ test('logs events to console', (assert) => {
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
     assert.strictEqual(window[agLogAddEventListenerProp], 'clicked', 'property should change');
-    // revert native functions
-    console.log = nativeConsole;
-    window.EventTarget.prototype.addEventListener = nativeAddEventListener;
     clearGlobalProps(agLogAddEventListenerProp);
+});
+
+test('logs events to console -- callback = null', (assert) => {
+    const eventName = 'click';
+    const callback = null;
+
+    console.log = function log(input) {
+        // Ignore hit messages with "trace"
+        if (input.indexOf('trace') > -1) {
+            return;
+        }
+        assert.strictEqual(input, `addEventListener("${eventName}", ${null})`, 'console.hit input should be equal');
+    };
+
+    const params = {
+        name,
+        verbose: true,
+    };
+    const resString = window.scriptlets.invoke(params);
+    evalWrapper(resString);
+
+    const element = document.createElement('div');
+    element.addEventListener(eventName, callback);
+    element.click();
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });
