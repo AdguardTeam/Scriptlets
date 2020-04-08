@@ -42,6 +42,9 @@ const getRedirectCode = (source) => {
     const redirect = getRedirectByName(source.name);
     let result = attachDependencies(redirect);
     result = addCall(redirect, result);
+
+    // redirect code for different sources is checked in tests
+    // so it should be just a code without any source and props passed
     result = source.engine === 'test'
         ? wrapInNonameFunc(result)
         : passSourceAndProps(source, result);

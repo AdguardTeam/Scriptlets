@@ -4471,7 +4471,9 @@
     var getRedirectCode = function getRedirectCode(source) {
       var redirect = getRedirectByName(source.name);
       var result = attachDependencies(redirect);
-      result = addCall(redirect, result);
+      result = addCall(redirect, result); // redirect code for different sources is checked in tests
+      // so it should be just a code without any source and props passed
+
       result = source.engine === 'test' ? wrapInNonameFunc(result) : passSourceAndProps(source, result);
       return result;
     };
