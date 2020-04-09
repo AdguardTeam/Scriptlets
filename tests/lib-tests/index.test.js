@@ -145,19 +145,19 @@ test('Test redirect rule validation', (assert) => {
     inputRule = '||example.com/banner$image,redirect=redirect.png';
     assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);
 
-    inputRule = '||example.com^$script,rewrite=abp-resource:blank-js';
-    assert.strictEqual(validator.isValidRedirectRule(inputRule), true);
-
-    inputRule = '||example.orf^$media,redirect=noopmp4-1s,third-party';
-    assert.strictEqual(validator.isValidRedirectRule(inputRule), true);
-
+    // check is ubo redirect valid for conversion
+    inputRule = '||example.orf^$media,redirect=noop-1s.mp4,third-party';
+    assert.strictEqual(validator.isUboRedirectCompatibleWithAdg(inputRule), true);
     // invalid redirect name
     inputRule = '||example.orf^$media,redirect=no-mp4';
-    assert.strictEqual(validator.isValidRedirectRule(inputRule), false);
+    assert.strictEqual(validator.isUboRedirectCompatibleWithAdg(inputRule), false);
 
+    // check is abp redirect valid for conversion
+    inputRule = '||example.com^$script,rewrite=abp-resource:blank-js';
+    assert.strictEqual(validator.isAbpRedirectCompatibleWithAdg(inputRule), true);
     // invalid redirect name
     inputRule = '||example.com^$script,rewrite=abp-resource:noop-js';
-    assert.strictEqual(validator.isValidRedirectRule(inputRule), false);
+    assert.strictEqual(validator.isAbpRedirectCompatibleWithAdg(inputRule), false);
 });
 
 test('Test Adguard redirect resource rule', (assert) => {
