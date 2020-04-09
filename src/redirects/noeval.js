@@ -9,8 +9,10 @@ import { noeval } from '../scriptlets/noeval';
  * Prevents page to use eval.
  * Notifies about attempts in the console
  *
+ * Mostly it is used as `scriptlet`.
+ * See [scriptlet description](../wiki/about-scriptlets.md#noeval).
+ *
  * Related UBO redirect resource:
- * https://github.com/gorhill/uBlock/wiki/Resources-Library#noevaljs-
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-silentjs-
  *
  * **Example**

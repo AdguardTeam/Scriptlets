@@ -1,6 +1,6 @@
 #
 #    AdGuard Scriptlets (Redirects Source)
-#    Version 1.1.12
+#    Version 1.1.13
 #
 - title: 1x1-transparent.gif
   description: |-
@@ -371,15 +371,15 @@
         // This is necessary for unit-tests only!
 
 
-        if (typeof window.__debugScriptlets === 'function') {
-          window.__debugScriptlets(source);
+        if (typeof window.__debug === 'function') {
+          window.__debug(source);
         }
       }
     function noopFunc() {};
             const updatedArgs = args ? [].concat(source).concat(args) : [source];
             GoogleAnalyticsGa.apply(this, updatedArgs);
         
-    })({"name":"google-analytics-ga"});
+    })({"name":"google-analytics-ga","args":[]}, []);
 
 - title: google-analytics
   comment: Mocks Google Analytics API.
@@ -464,8 +464,8 @@
         // This is necessary for unit-tests only!
 
 
-        if (typeof window.__debugScriptlets === 'function') {
-          window.__debugScriptlets(source);
+        if (typeof window.__debug === 'function') {
+          window.__debug(source);
         }
       }
     function noopFunc() {}
@@ -478,7 +478,7 @@
             const updatedArgs = args ? [].concat(source).concat(args) : [source];
             GoogleAnalytics.apply(this, updatedArgs);
         
-    })({"name":"google-analytics"});
+    })({"name":"google-analytics","args":[]}, []);
 
 - title: googlesyndication-adsbygoogle
   comment: Mocks Google AdSense API.
@@ -501,13 +501,15 @@
         var executed = false;
 
         for (var i = 0; i < adElems.length; i += 1) {
-          var frame = document.createElement('iframe');
-          frame.id = "aswift_".concat(i + 1);
-          frame.style = css;
-          var childFrame = document.createElement('iframe');
-          childFrame.id = "google_ads_frame".concat(i);
-          frame.appendChild(childFrame);
-          document.body.appendChild(frame);
+          adElems[i].setAttribute('data-adsbygoogle-status', 'done');
+          var aswiftIframe = document.createElement('iframe');
+          aswiftIframe.id = "aswift_".concat(i + 1);
+          aswiftIframe.style = css;
+          adElems[i].appendChild(aswiftIframe);
+          var googleadsIframe = document.createElement('iframe');
+          googleadsIframe.id = "google_ads_iframe_".concat(i);
+          googleadsIframe.style = css;
+          adElems[i].appendChild(googleadsIframe);
           executed = true;
         }
 
@@ -542,14 +544,14 @@
         // This is necessary for unit-tests only!
 
 
-        if (typeof window.__debugScriptlets === 'function') {
-          window.__debugScriptlets(source);
+        if (typeof window.__debug === 'function') {
+          window.__debug(source);
         }
       };
             const updatedArgs = args ? [].concat(source).concat(args) : [source];
             GoogleSyndicationAdsByGoogle.apply(this, updatedArgs);
         
-    })({"name":"googlesyndication-adsbygoogle"});
+    })({"name":"googlesyndication-adsbygoogle","args":[]}, []);
 
 - title: googletagmanager-gtm
   comment: Mocks Google Tag Manager API.
@@ -609,15 +611,15 @@
         // This is necessary for unit-tests only!
 
 
-        if (typeof window.__debugScriptlets === 'function') {
-          window.__debugScriptlets(source);
+        if (typeof window.__debug === 'function') {
+          window.__debug(source);
         }
       }
     function noopFunc() {};
             const updatedArgs = args ? [].concat(source).concat(args) : [source];
             GoogleTagManagerGtm.apply(this, updatedArgs);
         
-    })({"name":"googletagmanager-gtm"});
+    })({"name":"googletagmanager-gtm","args":[]}, []);
 
 - title: googletagservices-gpt
   comment: Mocks Google Publisher Tag API.
@@ -799,8 +801,8 @@
         // This is necessary for unit-tests only!
 
 
-        if (typeof window.__debugScriptlets === 'function') {
-          window.__debugScriptlets(source);
+        if (typeof window.__debug === 'function') {
+          window.__debug(source);
         }
       }
     function noopFunc() {}
@@ -819,7 +821,7 @@
             const updatedArgs = args ? [].concat(source).concat(args) : [source];
             GoogleTagServicesGpt.apply(this, updatedArgs);
         
-    })({"name":"googletagservices-gpt"});
+    })({"name":"googletagservices-gpt","args":[]}, []);
 
 - title: metrika-yandex-tag
   comment: Mocks Yandex Metrika API.
@@ -958,15 +960,15 @@
         // This is necessary for unit-tests only!
 
 
-        if (typeof window.__debugScriptlets === 'function') {
-          window.__debugScriptlets(source);
+        if (typeof window.__debug === 'function') {
+          window.__debug(source);
         }
       }
     function noopFunc() {};
             const updatedArgs = args ? [].concat(source).concat(args) : [source];
             metrikaYandexTag.apply(this, updatedArgs);
         
-    })({"name":"metrika-yandex-tag"});
+    })({"name":"metrika-yandex-tag","args":[]}, []);
 
 - title: metrika-yandex-watch
   comment: Mocks the old Yandex Metrika API.
@@ -1070,15 +1072,15 @@
         // This is necessary for unit-tests only!
 
 
-        if (typeof window.__debugScriptlets === 'function') {
-          window.__debugScriptlets(source);
+        if (typeof window.__debug === 'function') {
+          window.__debug(source);
         }
       }
     function noopFunc() {};
             const updatedArgs = args ? [].concat(source).concat(args) : [source];
             metrikaYandexWatch.apply(this, updatedArgs);
         
-    })({"name":"metrika-yandex-watch"});
+    })({"name":"metrika-yandex-watch","args":[]}, []);
 
 - title: noeval
   comment: >-
@@ -1124,181 +1126,14 @@
         // This is necessary for unit-tests only!
 
 
-        if (typeof window.__debugScriptlets === 'function') {
-          window.__debugScriptlets(source);
+        if (typeof window.__debug === 'function') {
+          window.__debug(source);
         }
       };
             const updatedArgs = args ? [].concat(source).concat(args) : [source];
             noeval.apply(this, updatedArgs);
         
-    })({"name":"noeval"});
-
-- title: prevent-fab-3.2.0
-  comment: Redirects fuckadblock script to the source js file.
-  aliases:
-    - fuckadblock.js-3.2.0
-    - ubo-fuckadblock.js-3.2.0
-    - nofab.js
-    - ubo-nofab.js
-  contentType: application/javascript
-  content: |-
-    (function(source, args){
-    function preventFab(source) {
-        hit(source);
-
-        var Fab = function Fab() {};
-
-        Fab.prototype.check = noopFunc;
-        Fab.prototype.clearEvent = noopFunc;
-        Fab.prototype.emitEvent = noopFunc;
-
-        Fab.prototype.on = function (a, b) {
-          if (!a) {
-            b();
-          }
-
-          return this;
-        };
-
-        Fab.prototype.onDetected = noopThis;
-
-        Fab.prototype.onNotDetected = function (a) {
-          a();
-          return this;
-        };
-
-        Fab.prototype.setOption = noopFunc;
-        window.FuckAdBlock = window.BlockAdBlock = Fab; //
-
-        window.fuckAdBlock = window.blockAdBlock = new Fab();
-      }
-    function hit(source, message) {
-        if (source.verbose !== true) {
-          return;
-        }
-
-        try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || '';
-
-          if (message) {
-            log("".concat(prefix, " message:\n").concat(message));
-          }
-
-          log("".concat(prefix, " trace start"));
-
-          if (trace) {
-            trace();
-          }
-
-          log("".concat(prefix, " trace end"));
-        } catch (e) {} // try catch for Edge 15
-        // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-        // console.log throws an error
-        // This is necessary for unit-tests only!
-
-
-        if (typeof window.__debugScriptlets === 'function') {
-          window.__debugScriptlets(source);
-        }
-      }
-    function noopFunc() {}
-    function noopThis() {
-        return this;
-      };
-            const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            preventFab.apply(this, updatedArgs);
-        
-    })({"name":"prevent-fab-3.2.0"});
-
-- title: prevent-popads-net
-  comment: >-
-    Redirects request to the source which sets static properties to PopAds and
-    popns objects.
-  aliases:
-    - popads.net.js
-    - ubo-popads.net.js
-  contentType: application/javascript
-  content: |-
-    (function(source, args){
-    function preventPopadsNet(source) {
-        var rid = randomId();
-
-        var throwError = function throwError() {
-          throw new ReferenceError(rid);
-        };
-
-        delete window.PopAds;
-        delete window.popns;
-        Object.defineProperties(window, {
-          PopAds: {
-            set: throwError
-          },
-          popns: {
-            set: throwError
-          }
-        });
-        window.onerror = createOnErrorHandler(rid).bind();
-        hit(source);
-      }
-    function createOnErrorHandler(rid) {
-        // eslint-disable-next-line consistent-return
-        var nativeOnError = window.onerror;
-        return function onError(error) {
-          if (typeof error === 'string' && error.indexOf(rid) !== -1) {
-            return true;
-          }
-
-          if (nativeOnError instanceof Function) {
-            for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-              args[_key - 1] = arguments[_key];
-            }
-
-            return nativeOnError.apply(this, [error].concat(args));
-          }
-
-          return false;
-        };
-      }
-    function randomId() {
-        return Math.random().toString(36).substr(2, 9);
-      }
-    function hit(source, message) {
-        if (source.verbose !== true) {
-          return;
-        }
-
-        try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || '';
-
-          if (message) {
-            log("".concat(prefix, " message:\n").concat(message));
-          }
-
-          log("".concat(prefix, " trace start"));
-
-          if (trace) {
-            trace();
-          }
-
-          log("".concat(prefix, " trace end"));
-        } catch (e) {} // try catch for Edge 15
-        // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-        // console.log throws an error
-        // This is necessary for unit-tests only!
-
-
-        if (typeof window.__debugScriptlets === 'function') {
-          window.__debugScriptlets(source);
-        }
-      };
-            const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            preventPopadsNet.apply(this, updatedArgs);
-        
-    })({"name":"prevent-popads-net"});
+    })({"name":"noeval","args":[]}, []);
 
 - title: scorecardresearch-beacon
   comment: Mocks Scorecard Research API.
@@ -1345,75 +1180,11 @@
         // This is necessary for unit-tests only!
 
 
-        if (typeof window.__debugScriptlets === 'function') {
-          window.__debugScriptlets(source);
+        if (typeof window.__debug === 'function') {
+          window.__debug(source);
         }
       };
             const updatedArgs = args ? [].concat(source).concat(args) : [source];
             ScoreCardResearchBeacon.apply(this, updatedArgs);
         
-    })({"name":"scorecardresearch-beacon"});
-
-- title: set-popads-dummy
-  comment: >-
-    Redirects request to the source which sets static properties to PopAds and
-    popns objects.
-  aliases:
-    - popads-dummy.js
-    - ubo-popads-dummy.js
-  contentType: application/javascript
-  content: |-
-    (function(source, args){
-    function setPopadsDummy(source) {
-        delete window.PopAds;
-        delete window.popns;
-        Object.defineProperties(window, {
-          PopAds: {
-            get: function get() {
-              hit(source);
-              return {};
-            }
-          },
-          popns: {
-            get: function get() {
-              hit(source);
-              return {};
-            }
-          }
-        });
-      }
-    function hit(source, message) {
-        if (source.verbose !== true) {
-          return;
-        }
-
-        try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || '';
-
-          if (message) {
-            log("".concat(prefix, " message:\n").concat(message));
-          }
-
-          log("".concat(prefix, " trace start"));
-
-          if (trace) {
-            trace();
-          }
-
-          log("".concat(prefix, " trace end"));
-        } catch (e) {} // try catch for Edge 15
-        // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-        // console.log throws an error
-        // This is necessary for unit-tests only!
-
-
-        if (typeof window.__debugScriptlets === 'function') {
-          window.__debugScriptlets(source);
-        }
-      };
-            const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            setPopadsDummy.apply(this, updatedArgs);
-        
-    })({"name":"set-popads-dummy"});
+    })({"name":"scorecardresearch-beacon","args":[]}, []);

@@ -20,10 +20,7 @@
 * [metrika-yandex-tag](#metrika-yandex-tag)
 * [metrika-yandex-watch](#metrika-yandex-watch)
 * [noeval](#noeval)
-* [prevent-fab-3.2.0](#prevent-fab-3.2.0)
-* [prevent-popads-net](#prevent-popads-net)
 * [scorecardresearch-beacon](#scorecardresearch-beacon)
-* [set-popads-dummy](#set-popads-dummy)
 * * *
 ### <a id="1x1-transparent.gif"></a> ⚡️ 1x1-transparent.gif
 **Example**
@@ -236,8 +233,10 @@ Redirects request to the source which sets static properties to PopAds and popns
 Prevents page to use eval.
 Notifies about attempts in the console
 
+Mostly it is used as `scriptlet`.
+See [scriptlet description](../wiki/about-scriptlets.md#noeval).
+
 Related UBO redirect resource:
-https://github.com/gorhill/uBlock/wiki/Resources-Library#noevaljs-
 https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-silentjs-
 
 **Example**
@@ -245,28 +244,6 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-silentjs-
 ||example.org/index.js$script,redirect=noeval
 ```
 [Redirect source](../src/redirects/noeval.js)
-* * *
-
-### <a id="prevent-fab-3.2.0"></a> ⚡️ prevent-fab-3.2.0
-
-Redirects fuckadblock script to the source js file.
-
-**Example**
-```
-\*\/fuckadblock-$script,redirect=prevent-fab-3.2.0
-```
-[Redirect source](../src/redirects/prevent-fab-3.2.0.js)
-* * *
-
-### <a id="prevent-popads-net"></a> ⚡️ prevent-popads-net
-
-Redirects request to the source which sets static properties to PopAds and popns objects.
-
-**Example**
-```
-||popads.net/pop.js$script,redirect=prevent-popads-net
-```
-[Redirect source](../src/redirects/prevent-popads-net.js)
 * * *
 
 ### <a id="scorecardresearch-beacon"></a> ⚡️ scorecardresearch-beacon
@@ -281,16 +258,5 @@ https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/
 ||sb.scorecardresearch.com/beacon.js$script,redirect=scorecardresearch-beacon
 ```
 [Redirect source](../src/redirects/scorecardresearch-beacon.js)
-* * *
-
-### <a id="set-popads-dummy"></a> ⚡️ set-popads-dummy
-
-Redirects request to the source which sets static properties to PopAds and popns objects.
-
-**Example**
-```
-||popads.net^$script,redirect=set-popads-dummy,domain=example.org
-```
-[Redirect source](../src/redirects/set-popads-dummy.js)
 * * *
 

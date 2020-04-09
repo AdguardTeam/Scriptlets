@@ -1,5 +1,4 @@
 /* eslint-disable consistent-return, no-eval */
-
 import { hit } from '../helpers';
 
 /**
@@ -70,10 +69,10 @@ export function preventBab(source) {
 
 preventBab.names = [
     'prevent-bab',
-    'bab-defuser.js',
-    'ubo-bab-defuser.js',
     'nobab.js',
     'ubo-nobab.js',
+    'bab-defuser.js',
+    'ubo-bab-defuser.js',
 ];
 
 preventBab.injections = [hit];
