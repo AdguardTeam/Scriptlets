@@ -22,13 +22,32 @@ const beforeEach = () => {
 
 const afterEach = () => {
     window.requestAnimationFrame = nativeRequestAnimationFrame;
-    clearGlobalProps('hit', '__debug');
     console.log = nativeConsole; // eslint-disable-line no-console
+    clearGlobalProps('hit', '__debug');
 };
 
 module(name, { beforeEach, afterEach });
 
-test('prevent-requestAnimationFrame: adg no args -- logging', (assert) => {
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const aliasParams = {
+        name: 'requestAnimationFrame-if.js',
+        engine: 'test',
+        verbose: true,
+    };
+
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByAliasParams = window.scriptlets.invoke(aliasParams);
+
+    assert.strictEqual(codeByAdgParams.toString(), codeByAliasParams.toString());
+});
+
+
+test('prevent-requestAnimationFrame: no args -- logging', (assert) => {
     const params = {
         name,
         args: [],
@@ -36,130 +55,150 @@ test('prevent-requestAnimationFrame: adg no args -- logging', (assert) => {
     };
     const scriptlet = window.scriptlets.invoke(params);
     evalWrap(scriptlet);
+    const done = assert.async();
 
-    const agLogRequestAnimationFrame = 'agLogRequestAnimationFrame';
+    const logProperty = 'agLogRequestAnimationFrame';
 
-    function callback() {
-        window[agLogRequestAnimationFrame] = 'changed';
-        requestAnimationFrame(callback);
-    }
-    window.requestAnimationFrame(callback);
-
+    const testWrapper = () => {
+        let times = 0;
+        function change() {
+            window[logProperty] = 'changed';
+            if (times < 2) {
+                times += 1;
+                requestAnimationFrame(change);
+            }
+        }
+        requestAnimationFrame(change);
+    };
+    testWrapper();
 
     // eslint-disable-next-line no-console
     console.log = function log(input) {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(input, `requestAnimationFrame("${callback.toString()}")`, 'console.hit input');
+        // eslint-disable-next-line no-undef
+        assert.strictEqual(input, `requestAnimationFrame("${change.toString()}")`, 'console.hit input');
     };
 
-    assert.equal(window.hit, 'value', 'Hit function was executed');
-    assert.strictEqual(window[agLogRequestAnimationFrame], 'changed', 'property changed');
-    clearGlobalProps(agLogRequestAnimationFrame);
+    setTimeout(() => {
+        assert.equal(window.hit, 'value', 'Hit function was executed');
+        assert.strictEqual(window[logProperty], 'changed', 'property changed');
+        clearGlobalProps(logProperty);
+        done();
+    }, 50);
 });
 
 
-// test('prevent-setTimeout: adg by setTimeout callback name', (assert) => {
-//     const params = {
-//         name,
-//         args: ['test', '50'],
-//         verbose: true,
-//     };
-//     const scriptlet = window.scriptlets.invoke(params);
-//     const done = assert.async();
+test('prevent-requestAnimationFrame: by callback name', (assert) => {
+    const params = {
+        name,
+        args: ['change'],
+        verbose: true,
+    };
+    const scriptlet = window.scriptlets.invoke(params);
+    evalWrap(scriptlet);
+    const done = assert.async();
 
-//     window.one = 'value';
-//     window.two = 'value';
-//     // We need to run our assertion after all timeouts
-//     setTimeout(() => {
-//         assert.equal(window.one, 'value', 'Target property not changed');
-// eslint-disable-next-line max-len
-//         assert.equal(window.two, 'new value', 'Another property should successfully changed by another timeout');
-//         assert.equal(window.hit, 'value', 'Hit function was executed');
-//         done();
-//     }, 100);
+    window.one = 'value';
 
-//     // run scriptlet code
-//     evalWrap(scriptlet);
-//     // check if scriptlet works
-//     const test = () => { window.one = 'new value'; };
-//     setTimeout(test, 50);
+    const testWrapper = () => {
+        let times = 0;
+        const change = () => {
+            window.one = 'NEW VALUE';
+            if (times < 2) {
+                times += 1;
+                requestAnimationFrame(change);
+            }
+        };
+        requestAnimationFrame(change);
+    };
+    testWrapper();
 
-
-//     // check if scriptlet doesn't affect on others timeouts
-//     const anotherTimeout = () => { window.two = 'new value'; };
-//     const timeoutAnother = setTimeout(anotherTimeout);
-// });
-
-
-// test('prevent-setTimeout: adg by code matching', (assert) => {
-//     const params = {
-//         name,
-//         args: ['one', '50'],
-//         verbose: true,
-//     };
-//     const scriptlet = window.scriptlets.invoke(params);
-//     const done = assert.async();
-
-//     window.one = 'value';
-//     window.two = 'value';
-//     // We need to run our assertion after all timeouts
-//     setTimeout(() => {
-//         assert.equal(window.one, 'value', 'Target property not changed');
-// eslint-disable-next-line max-len
-//         assert.equal(window.two, 'new value', 'Another property should  be successfully changed by another timeout');
-//         assert.equal(window.hit, 'value', 'Hit function was executed');
-//         done();
-//     }, 100);
-
-//     // run scriptlet code
-//     evalWrap(scriptlet);
-//     // check if scriptlet works
-//     const testCallback = () => { window.one = 'new value'; };
-//     const timeoutTest = setTimeout(testCallback, 50);
-//     testTimeouts.push(timeoutTest);
-
-//     // check if scriptlet doesn't affect on others timeouts
-//     const anotherTimeout = () => { window.two = 'new value'; };
-//     const timeoutAnother = setTimeout(anotherTimeout);
-//     testTimeouts.push(timeoutAnother);
-// });
+    setTimeout(() => {
+        assert.equal(window.one, 'value', 'Target property not changed');
+        assert.equal(window.hit, 'value', 'Hit function was executed');
+        clearGlobalProps('one');
+        done();
+    }, 50);
+});
 
 
-// test('prevent-setTimeout: adg -- !match', (assert) => {
-//     const params = {
-//         name,
-//         args: ['!first'],
-//         verbose: true,
-//     };
-//     const scriptlet = window.scriptlets.invoke(params);
-//     const done = assert.async();
+test('prevent-requestAnimationFrame: by regex match', (assert) => {
+    const params = {
+        name,
+        args: ['/a{2,4}/'],
+        verbose: true,
+    };
+    const scriptlet = window.scriptlets.invoke(params);
+    evalWrap(scriptlet);
+    const done = assert.async();
 
-//     window.one = 'one';
-//     window.two = 'two';
-//     window.three = 'three';
-//     // We need to run our assertion after all timeouts
-//     setTimeout(() => {
-//         assert.equal(window.one, 'NEW ONE', '!match-property not changed');
-//         // eslint-disable-next-line max-len
-//         assert.equal(window.two, 'two', 'Second property should be successfully changed');
-//         assert.equal(window.three, 'three', 'Third property should be successfully changed');
-//         assert.equal(window.hit, 'value', 'Hit function was executed');
-//         done();
-//     }, 100);
+    window.aaa = 'one';
 
-//     // run scriptlet code
-//     evalWrap(scriptlet);
+    const testWrapper = () => {
+        let times = 0;
+        const change = () => {
+            window.aaa = 'NEW ONE';
+            if (times < 2) {
+                times += 1;
+                requestAnimationFrame(change);
+            }
+        };
+        requestAnimationFrame(change);
+    };
+    testWrapper();
 
-//     // only this one should not be prevented because of match = !one
-//     const first = () => { window.one = 'NEW ONE'; };
-//     setTimeout(first, 30);
+    setTimeout(() => {
+        assert.equal(window.aaa, 'one', 'Target property not changed');
+        assert.equal(window.hit, 'value', 'Hit function was executed');
+        clearGlobalProps('aaa');
+        done();
+    }, 50);
+});
 
-//     const second = () => { window.two = 'NEW TWO'; };
-//     setTimeout(second, 40);
 
+test('prevent-requestAnimationFrame: !match', (assert) => {
+    const params = {
+        name,
+        args: ['!one'],
+        verbose: true,
+    };
+    const scriptlet = window.scriptlets.invoke(params);
+    evalWrap(scriptlet);
+    const done = assert.async();
 
-//     const third = () => { window.three = 'NEW THREE'; };
-//     setTimeout(third, 50);
-// });
+    window.one = 'one';
+    window.two = 'two';
+
+    const testWrapper = () => {
+        let timesOne = 0;
+        const changeOne = () => {
+            window.one = 'NEW ONE';
+            if (timesOne < 2) {
+                timesOne += 1;
+                requestAnimationFrame(changeOne);
+            }
+        };
+        requestAnimationFrame(changeOne);
+
+        let timesTwo = 0;
+        const changeTwo = () => {
+            window.two = 'NEW TWO';
+            if (timesTwo < 2) {
+                timesTwo += 1;
+                requestAnimationFrame(changeTwo);
+            }
+        };
+        requestAnimationFrame(changeTwo);
+    };
+    testWrapper();
+
+    setTimeout(() => {
+        assert.equal(window.one, 'NEW ONE', 'not \'one\' property should be changed');
+        assert.equal(window.two, 'two', 'Target property not changed');
+        assert.equal(window.hit, 'value', 'Hit function was executed');
+        clearGlobalProps('one', 'two');
+        done();
+    }, 100);
+});

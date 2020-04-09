@@ -3094,6 +3094,124 @@ function jsonPrune(source, propsToRemove, requiredInitialProps) {
 jsonPrune.names = ['json-prune', 'json-prune.js', 'ubo-json-prune.js'];
 jsonPrune.injections = [hit, getPropertyInChain];
 
+/* eslint-disable max-len */
+
+/**
+ * @scriptlet prevent-requestAnimationFrame
+ *
+ * @description
+ * Prevents a `requestAnimationFrame` call
+ * if the text of the callback is matching the specified search string which does not start with `!`;
+ * otherwise mismatched calls should be defused.
+ *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#requestanimationframe-ifjs-
+ *
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet('prevent-requestAnimationFrame'[, <search>])
+ * ```
+ *
+ * **Parameters**
+ *
+ * - `search` (optional) string or regular expression.
+ * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
+ * If do not start with `!`, the stringified callback will be matched.
+ *
+ * Call with no argument will log all requestAnimationFrame calls while debugging.
+ * So do not use the scriptlet without any parameter in production filter lists.
+ *
+ * **Examples**
+ *
+ * 1. Prevents `requestAnimationFrame` calls if the callback matches `/\.test/`.
+ *     ```bash
+ *     example.org#%#//scriptlet('prevent-requestAnimationFrame', '/\.test/')
+ *     ```
+ *
+ *     For instance, the following call will be prevented:
+ *     ```javascript
+ *     var times = 0;
+ *     requestAnimationFrame(function change() {
+ *         window.test = 'new value';
+ *         if (times < 2) {
+ *             times += 1;
+ *             requestAnimationFrame(change);
+ *         }
+ *     });
+ *     ```
+ * 2. Prevents `requestAnimationFrame` calls if **does not match** 'check'.
+ *     ```bash
+ *     example.org#%#//scriptlet('prevent-requestAnimationFrame', '!check')
+ *     ```
+ *
+ *     For instance, only the first call will be prevented:
+ *
+ *     ```javascript
+ *     var timesFirst = 0;
+ *     requestAnimationFrame(function changeFirst() {
+ *         window.check = 'should not be prevented';
+ *         if (timesFirst < 2) {
+ *             timesFirst += 1;
+ *             requestAnimationFrame(changeFirst);
+ *         }
+ *     });
+ *
+ *     var timesSecond = 0;
+ *     requestAnimationFrame(function changeSecond() {
+ *         window.second = 'should be prevented';
+ *         if (timesSecond < 2) {
+ *             timesSecond += 1;
+ *             requestAnimationFrame(changeSecond);
+ *         }
+ *     });
+ *     ```
+ */
+
+/* eslint-enable max-len */
+// eslint-disable-next-line no-unused-vars
+
+function preventRequestAnimationFrame(source, match) {
+  var nativeRequestAnimationFrame = window.requestAnimationFrame;
+  var log = console.log.bind(console); // eslint-disable-line no-console
+  // logs requestAnimationFrame to console if no arguments have been specified
+
+  var shouldLog = typeof match === 'undefined';
+  var INVERT_MARKER = '!';
+  var doNotMatch = startsWith(match, INVERT_MARKER);
+
+  if (doNotMatch) {
+    match = match.slice(1);
+  }
+
+  match = match ? toRegExp(match) : toRegExp('/.?/');
+
+  var rafWrapper = function rafWrapper(callback) {
+    var shouldPrevent = false;
+
+    if (shouldLog) {
+      hit(source);
+      log("requestAnimationFrame(\"".concat(callback.toString(), "\")"));
+    } else {
+      shouldPrevent = match.test(callback.toString()) !== doNotMatch;
+    }
+
+    if (shouldPrevent) {
+      hit(source);
+      return nativeRequestAnimationFrame(noopFunc);
+    }
+
+    for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+      args[_key - 1] = arguments[_key];
+    }
+
+    return nativeRequestAnimationFrame.apply(window, [callback].concat(args));
+  };
+
+  window.requestAnimationFrame = rafWrapper;
+}
+preventRequestAnimationFrame.names = ['prevent-requestAnimationFrame', 'requestAnimationFrame-if.js', 'ubo-requestAnimationFrame-if.js', 'raf-if.js', 'ubo-raf-if.js'];
+preventRequestAnimationFrame.injections = [hit, startsWith, toRegExp, noopFunc];
+
 /**
  * This file must export all scriptlets which should be accessible
  */
@@ -3129,7 +3247,8 @@ var scriptletList = /*#__PURE__*/Object.freeze({
     adjustSetInterval: adjustSetInterval,
     adjustSetTimeout: adjustSetTimeout,
     dirString: dirString,
-    jsonPrune: jsonPrune
+    jsonPrune: jsonPrune,
+    preventRequestAnimationFrame: preventRequestAnimationFrame
 });
 
 const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm",ubo:"googletagmanager_gtm.js"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3-0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvmap-1.0"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"disqus_embed.js"},{ubo:"disqus_forums_embed.js"},{ubo:"doubleclick_instream_ad_status.js"},{ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"}];

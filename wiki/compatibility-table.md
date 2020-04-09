@@ -24,6 +24,7 @@
 | prevent-eval-if | noeval-if.js |  |
 | prevent-fab-3.2.0 |  |  |
 | prevent-popads-net |  |  |
+| prevent-requestAnimationFrame | requestAnimationFrame-if.js (raf-if.js) |  |
 | prevent-setInterval | no-setInterval-if.js (nosiif.js) |  |
 | prevent-setTimeout | no-setTimeout-if.js (nostif.js) |  |
 | prevent-window-open |  |  |
@@ -44,7 +45,6 @@
 |  | damoh-defuser.js |  |
 |  | twitch-videoad.js |  |
 |  | fingerprint2.js |  |
-|  | requestAnimationFrame-if.js (raf-if.js) |  |
 |  |  | trace |
 |  |  | uabinject-defuser |
 |  |  | hide-if-shadow-contains |
@@ -80,8 +80,9 @@
 | noopframe | noop.html | blank-html |
 | noopjs | noop.js | blank-js |
 | nooptext | noop.txt | blank-text |
-| noopmp3.0.1s | noop-0.1s.mp3 | blank-mp3 |
+| noopmp3-0.1s | noop-0.1s.mp3 | blank-mp3 |
 | noopmp4-1s | noop-1s.mp4 | blank-mp4 |
+| noopvmap-1.0 |  |  |
 | noopvast-2.0 |  |  |
 | noopvast-3.0 |  |  |
 | prevent-fab-3.2.0 | nofab.js |  |
