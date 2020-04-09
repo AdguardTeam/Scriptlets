@@ -32,25 +32,32 @@ const runScriptlet = (event, func) => {
     evalWrapper(resultString);
 };
 
-test('ubo alias works', (assert) => {
-    const params = {
-        name: 'ubo-addEventListener-defuser.js',
-        args: ['click', 'clicked'],
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
         verbose: true,
     };
-    const resString = window.scriptlets.invoke(params);
+    const aliasParams = {
+        name: 'ubo-addEventListener-defuser.js',
+        engine: 'test',
+        verbose: true,
+    };
 
-    evalWrapper(resString);
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByAliasParams = window.scriptlets.invoke(aliasParams);
 
-    const testProp = 'testProp';
+    assert.strictEqual(codeByAdgParams.toString(), codeByAliasParams.toString());
+});
+
+test('should not prevent addEventListener if callback = null', (assert) => {
+    runScriptlet('testPassive', 'clicked');
+
     const element = document.createElement('div');
-    element.addEventListener('click', () => {
-        window[testProp] = 'clicked';
-    });
+    element.addEventListener('testPassive', null);
     element.click();
-    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
-    assert.strictEqual(window[testProp], undefined, 'property should be undefined');
-    clearGlobalProps(testProp);
+
+    assert.strictEqual(window.hit, undefined, 'hit function is not fired');
 });
 
 test('does not allow to add event listener', (assert) => {
