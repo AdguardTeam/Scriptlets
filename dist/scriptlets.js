@@ -269,8 +269,8 @@
       // This is necessary for unit-tests only!
 
 
-      if (typeof window.__debugScriptlets === 'function') {
-        window.__debugScriptlets(source);
+      if (typeof window.__debug === 'function') {
+        window.__debug(source);
       }
     };
 
@@ -1842,7 +1842,7 @@
         }
       };
     }
-    preventBab.names = ['prevent-bab', 'bab-defuser.js', 'ubo-bab-defuser.js', 'nobab.js', 'ubo-nobab.js'];
+    preventBab.names = ['prevent-bab', 'nobab.js', 'ubo-nobab.js', 'bab-defuser.js', 'ubo-bab-defuser.js'];
     preventBab.injections = [hit];
 
     /* eslint-disable no-unused-vars, no-extra-bind, func-names */
@@ -2022,7 +2022,10 @@
      * Prevents page to use eval.
      * Notifies about attempts in the console
      *
-     * It is mostly used for `$redirect` rules.
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#noevaljs-
+     *
+     * It also can be used as `$redirect` rules sometimes.
      * See [redirect description](../wiki/about-redirects.md#noeval).
      *
      * **Syntax**
@@ -2121,7 +2124,7 @@
 
       window.fuckAdBlock = window.blockAdBlock = new Fab();
     }
-    preventFab.names = ['prevent-fab-3.2.0', 'fuckadblock.js-3.2.0', 'ubo-fuckadblock.js-3.2.0', 'nofab.js', 'ubo-nofab.js'];
+    preventFab.names = ['prevent-fab-3.2.0', 'nofab.js', 'ubo-nofab.js', 'fuckadblock.js-3.2.0', 'ubo-fuckadblock.js-3.2.0'];
     preventFab.injections = [hit, noopFunc, noopThis];
 
     /* eslint-disable no-console, func-names, no-multi-assign */
@@ -3984,13 +3987,15 @@
       var executed = false;
 
       for (var i = 0; i < adElems.length; i += 1) {
-        var frame = document.createElement('iframe');
-        frame.id = "aswift_".concat(i + 1);
-        frame.style = css;
-        var childFrame = document.createElement('iframe');
-        childFrame.id = "google_ads_frame".concat(i);
-        frame.appendChild(childFrame);
-        document.body.appendChild(frame);
+        adElems[i].setAttribute('data-adsbygoogle-status', 'done');
+        var aswiftIframe = document.createElement('iframe');
+        aswiftIframe.id = "aswift_".concat(i + 1);
+        aswiftIframe.style = css;
+        adElems[i].appendChild(aswiftIframe);
+        var googleadsIframe = document.createElement('iframe');
+        googleadsIframe.id = "google_ads_iframe_".concat(i);
+        googleadsIframe.style = css;
+        adElems[i].appendChild(googleadsIframe);
         executed = true;
       }
 
@@ -4442,9 +4447,6 @@
 
     var redirectsList = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        preventFab: preventFab,
-        setPopadsDummy: setPopadsDummy,
-        preventPopadsNet: preventPopadsNet,
         noeval: noeval,
         GoogleAnalytics: GoogleAnalytics,
         GoogleAnalyticsGa: GoogleAnalyticsGa,
@@ -4469,14 +4471,29 @@
         return r.names && r.names.indexOf(name) > -1;
       });
     };
+    /**
+     * @typedef {Object} Source - redirect properties
+     * @property {string} name redirect name
+     * @property {Array<string>} args Arguments for redirect function
+     * @property {'extension'|'test'} [engine] -
+     * Defines the final form of redirect string presentation
+     * @property {boolean} [verbose] flag to enable printing to console debug information
+     */
 
-    var getRedirectCode = function getRedirectCode(name) {
-      var redirect = getRedirectByName(name);
+    /**
+     * Returns redirect code by param
+     * @param {Source} source
+     */
+
+
+    var getRedirectCode = function getRedirectCode(source) {
+      var redirect = getRedirectByName(source.name);
       var result = attachDependencies(redirect);
-      result = addCall(redirect, result);
-      return passSourceAndProps({
-        name: name
-      }, result);
+      result = addCall(redirect, result); // redirect code for different sources is checked in tests
+      // so it should be just a code without any source and props passed
+
+      result = source.engine === 'test' ? wrapInNonameFunc(result) : passSourceAndProps(source, result);
+      return result;
     };
 
     var redirectsCjs = {

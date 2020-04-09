@@ -1,6 +1,7 @@
 import {
     attachDependencies,
     addCall,
+    wrapInNonameFunc,
     passSourceAndProps,
 } from '../helpers/injector';
 
@@ -24,12 +25,31 @@ const getRedirectByName = (name) => {
     return redirects.find((r) => r.names && r.names.indexOf(name) > -1);
 };
 
-const getRedirectCode = (name) => {
-    const redirect = getRedirectByName(name);
+/**
+ * @typedef {Object} Source - redirect properties
+ * @property {string} name redirect name
+ * @property {Array<string>} args Arguments for redirect function
+ * @property {'extension'|'test'} [engine] -
+ * Defines the final form of redirect string presentation
+ * @property {boolean} [verbose] flag to enable printing to console debug information
+ */
+
+/**
+ * Returns redirect code by param
+ * @param {Source} source
+ */
+const getRedirectCode = (source) => {
+    const redirect = getRedirectByName(source.name);
     let result = attachDependencies(redirect);
     result = addCall(redirect, result);
 
-    return passSourceAndProps({ name }, result);
+    // redirect code for different sources is checked in tests
+    // so it should be just a code without any source and props passed
+    result = source.engine === 'test'
+        ? wrapInNonameFunc(result)
+        : passSourceAndProps(source, result);
+
+    return result;
 };
 
 
