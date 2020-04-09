@@ -277,11 +277,11 @@ export const convertAbpRedirectToAdg = (rule) => {
  */
 export const convertRedirectToAdg = (rule) => {
     let result;
-    if (validator.isValidUboRedirectRule(rule)) {
+    if (validator.isUboRedirectCompatibleWithAdg(rule)) {
         result = convertUboRedirectToAdg(rule);
-    } else if (validator.isValidAbpRedirectRule(rule)) {
+    } else if (validator.isAbpRedirectCompatibleWithAdg(rule)) {
         result = convertAbpRedirectToAdg(rule);
-    } else if (validator.isValidAdgRedirectRule(rule) || (validator.isComment(rule))) {
+    } else if (validator.isValidAdgRedirectRule(rule)) {
         result = rule;
     }
 
