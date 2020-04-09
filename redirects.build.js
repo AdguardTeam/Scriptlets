@@ -41,7 +41,8 @@ const redirectsObject = Object
     .values(redirectsList)
     .map((rr) => {
         const [name, ...aliases] = rr.names;
-        const redirect = global.redirects.getCode(name);
+        const source = { name, args: [] };
+        const redirect = global.redirects.getCode(source);
 
         return { name, redirect, aliases };
     });

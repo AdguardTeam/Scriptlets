@@ -38,13 +38,21 @@ import { hit, toRegExp } from '../helpers';
  * ```
  */
 /* eslint-enable max-len */
-export function preventAddEventListener(source, event, funcStr) {
-    event = event ? toRegExp(event) : toRegExp('/.?/');
-    funcStr = funcStr ? toRegExp(funcStr) : toRegExp('/.?/');
+export function preventAddEventListener(source, eventSearch, funcSearch) {
+    eventSearch = eventSearch ? toRegExp(eventSearch) : toRegExp('/.?/');
+    funcSearch = funcSearch ? toRegExp(funcSearch) : toRegExp('/.?/');
 
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
     function addEventListenerWrapper(eventName, callback, ...args) {
-        if (event.test(eventName.toString()) && funcStr.test(callback.toString())) {
+        // The scriptlet might cause a website broke
+        // if the website uses test addEventListener with callback = null
+        // https://github.com/AdguardTeam/Scriptlets/issues/76
+        let funcToCheck = callback;
+        if (callback && typeof callback === 'function') {
+            funcToCheck = callback.toString();
+        }
+
+        if (eventSearch.test(eventName.toString()) && funcSearch.test(funcToCheck)) {
             hit(source);
             return undefined;
         }

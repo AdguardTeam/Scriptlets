@@ -268,8 +268,8 @@ var hit = function hit(source, message) {
   // This is necessary for unit-tests only!
 
 
-  if (typeof window.__debugScriptlets === 'function') {
-    window.__debugScriptlets(source);
+  if (typeof window.__debug === 'function') {
+    window.__debug(source);
   }
 };
 
@@ -1730,13 +1730,22 @@ removeCookie.injections = [toRegExp, hit];
 
 /* eslint-enable max-len */
 
-function preventAddEventListener(source, event, funcStr) {
-  event = event ? toRegExp(event) : toRegExp('/.?/');
-  funcStr = funcStr ? toRegExp(funcStr) : toRegExp('/.?/');
+function preventAddEventListener(source, eventSearch, funcSearch) {
+  eventSearch = eventSearch ? toRegExp(eventSearch) : toRegExp('/.?/');
+  funcSearch = funcSearch ? toRegExp(funcSearch) : toRegExp('/.?/');
   var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
   function addEventListenerWrapper(eventName, callback) {
-    if (event.test(eventName.toString()) && funcStr.test(callback.toString())) {
+    // The scriptlet might cause a website broke
+    // if the website uses test addEventListener with callback = null
+    // https://github.com/AdguardTeam/Scriptlets/issues/76
+    var funcToCheck = callback;
+
+    if (callback && typeof callback === 'function') {
+      funcToCheck = callback.toString();
+    }
+
+    if (eventSearch.test(eventName.toString()) && funcSearch.test(funcToCheck)) {
       hit(source);
       return undefined;
     }
@@ -1832,7 +1841,7 @@ function preventBab(source) {
     }
   };
 }
-preventBab.names = ['prevent-bab', 'bab-defuser.js', 'ubo-bab-defuser.js', 'nobab.js', 'ubo-nobab.js'];
+preventBab.names = ['prevent-bab', 'nobab.js', 'ubo-nobab.js', 'bab-defuser.js', 'ubo-bab-defuser.js'];
 preventBab.injections = [hit];
 
 /* eslint-disable no-unused-vars, no-extra-bind, func-names */
@@ -1914,8 +1923,17 @@ function logAddEventListener(source) {
   var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
   function addEventListenerWrapper(eventName, callback) {
-    hit(source);
-    log("addEventListener(\"".concat(eventName, "\", ").concat(callback.toString(), ")"));
+    hit(source); // The scriptlet might cause a website broke
+    // if the website uses test addEventListener with callback = null
+    // https://github.com/AdguardTeam/Scriptlets/issues/76
+
+    var callbackToLog = callback;
+
+    if (callback && typeof callback === 'function') {
+      callbackToLog = callback.toString();
+    }
+
+    log("addEventListener(\"".concat(eventName, "\", ").concat(callbackToLog, ")"));
 
     for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
       args[_key - 2] = arguments[_key];
@@ -2003,7 +2021,10 @@ log.names = ['log'];
  * Prevents page to use eval.
  * Notifies about attempts in the console
  *
- * It is mostly used for `$redirect` rules.
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#noevaljs-
+ *
+ * It also can be used as `$redirect` rules sometimes.
  * See [redirect description](../wiki/about-redirects.md#noeval).
  *
  * **Syntax**
@@ -2102,7 +2123,7 @@ function preventFab(source) {
 
   window.fuckAdBlock = window.blockAdBlock = new Fab();
 }
-preventFab.names = ['prevent-fab-3.2.0', 'fuckadblock.js-3.2.0', 'ubo-fuckadblock.js-3.2.0', 'nofab.js', 'ubo-nofab.js'];
+preventFab.names = ['prevent-fab-3.2.0', 'nofab.js', 'ubo-nofab.js', 'fuckadblock.js-3.2.0', 'ubo-fuckadblock.js-3.2.0'];
 preventFab.injections = [hit, noopFunc, noopThis];
 
 /* eslint-disable no-console, func-names, no-multi-assign */
@@ -3967,13 +3988,15 @@ function GoogleSyndicationAdsByGoogle(source) {
   var executed = false;
 
   for (var i = 0; i < adElems.length; i += 1) {
-    var frame = document.createElement('iframe');
-    frame.id = "aswift_".concat(i + 1);
-    frame.style = css;
-    var childFrame = document.createElement('iframe');
-    childFrame.id = "google_ads_frame".concat(i);
-    frame.appendChild(childFrame);
-    document.body.appendChild(frame);
+    adElems[i].setAttribute('data-adsbygoogle-status', 'done');
+    var aswiftIframe = document.createElement('iframe');
+    aswiftIframe.id = "aswift_".concat(i + 1);
+    aswiftIframe.style = css;
+    adElems[i].appendChild(aswiftIframe);
+    var googleadsIframe = document.createElement('iframe');
+    googleadsIframe.id = "google_ads_iframe_".concat(i);
+    googleadsIframe.style = css;
+    adElems[i].appendChild(googleadsIframe);
     executed = true;
   }
 
@@ -4425,9 +4448,6 @@ metrikaYandexWatch.injections = [hit, noopFunc];
 
 var redirectsList = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    preventFab: preventFab,
-    setPopadsDummy: setPopadsDummy,
-    preventPopadsNet: preventPopadsNet,
     noeval: noeval,
     GoogleAnalytics: GoogleAnalytics,
     GoogleAnalyticsGa: GoogleAnalyticsGa,
@@ -4452,14 +4472,29 @@ var getRedirectByName = function getRedirectByName(name) {
     return r.names && r.names.indexOf(name) > -1;
   });
 };
+/**
+ * @typedef {Object} Source - redirect properties
+ * @property {string} name redirect name
+ * @property {Array<string>} args Arguments for redirect function
+ * @property {'extension'|'test'} [engine] -
+ * Defines the final form of redirect string presentation
+ * @property {boolean} [verbose] flag to enable printing to console debug information
+ */
 
-var getRedirectCode = function getRedirectCode(name) {
-  var redirect = getRedirectByName(name);
+/**
+ * Returns redirect code by param
+ * @param {Source} source
+ */
+
+
+var getRedirectCode = function getRedirectCode(source) {
+  var redirect = getRedirectByName(source.name);
   var result = attachDependencies(redirect);
-  result = addCall(redirect, result);
-  return passSourceAndProps({
-    name: name
-  }, result);
+  result = addCall(redirect, result); // redirect code for different sources is checked in tests
+  // so it should be just a code without any source and props passed
+
+  result = source.engine === 'test' ? wrapInNonameFunc(result) : passSourceAndProps(source, result);
+  return result;
 };
 
 var redirectsCjs = {
@@ -4479,7 +4514,8 @@ var redirectsCjs = {
  * @typedef {Object} Source - scriptlet properties
  * @property {string} name Scriptlet name
  * @property {Array<string>} args Arguments for scriptlet function
- * @property {'extension'|'corelibs'} engine Defines the final form of scriptlet string presentation
+ * @property {'extension'|'corelibs'|'test'} engine -
+ * Defines the final form of scriptlet string presentation
  * @property {string} [version]
  * @property {boolean} [verbose] flag to enable printing to console debug information
  * @property {string} [ruleText] Source rule text is used for debugging purposes
@@ -4498,7 +4534,7 @@ function getScriptletCode(source) {
   var scriptlet = validator.getScriptletByName(source.name);
   var result = attachDependencies(scriptlet);
   result = addCall(scriptlet, result);
-  result = source.engine === 'corelibs' ? wrapInNonameFunc(result) : passSourceAndProps(source, result);
+  result = source.engine === 'corelibs' || source.engine === 'test' ? wrapInNonameFunc(result) : passSourceAndProps(source, result);
   return result;
 }
 /**

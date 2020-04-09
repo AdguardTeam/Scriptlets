@@ -40,10 +40,10 @@ export function preventFab(source) {
 
 preventFab.names = [
     'prevent-fab-3.2.0',
-    'fuckadblock.js-3.2.0',
-    'ubo-fuckadblock.js-3.2.0',
     'nofab.js',
     'ubo-nofab.js',
+    'fuckadblock.js-3.2.0',
+    'ubo-fuckadblock.js-3.2.0',
 ];
 
 preventFab.injections = [hit, noopFunc, noopThis];
