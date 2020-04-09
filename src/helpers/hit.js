@@ -31,7 +31,7 @@ export const hit = (source, message) => {
     }
 
     // This is necessary for unit-tests only!
-    if (typeof window.__debugScriptlets === 'function') {
-        window.__debugScriptlets(source);
+    if (typeof window.__debug === 'function') {
+        window.__debug(source);
     }
 };
