@@ -1,8 +1,5 @@
 /* eslint-disable eqeqeq, no-underscore-dangle, no-eval */
-
-/* global QUnit */
 import { clearGlobalProps } from '../helpers';
-
 
 const { test, module } = QUnit;
 const name = 'metrika-yandex-tag';

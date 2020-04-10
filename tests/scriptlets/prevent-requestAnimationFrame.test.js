@@ -1,4 +1,3 @@
-/* global QUnit */
 /* eslint-disable no-eval, no-underscore-dangle */
 import { clearGlobalProps } from '../helpers';
 
@@ -65,10 +64,10 @@ test('prevent-requestAnimationFrame: no args -- logging', (assert) => {
             window[logProperty] = 'changed';
             if (times < 2) {
                 times += 1;
-                requestAnimationFrame(change);
+                window.requestAnimationFrame(change);
             }
         }
-        requestAnimationFrame(change);
+        window.requestAnimationFrame(change);
     };
     testWrapper();
 
@@ -86,7 +85,7 @@ test('prevent-requestAnimationFrame: no args -- logging', (assert) => {
         assert.strictEqual(window[logProperty], 'changed', 'property changed');
         clearGlobalProps(logProperty);
         done();
-    }, 50);
+    }, 20);
 });
 
 
@@ -108,10 +107,10 @@ test('prevent-requestAnimationFrame: by callback name', (assert) => {
             window.one = 'NEW VALUE';
             if (times < 2) {
                 times += 1;
-                requestAnimationFrame(change);
+                window.requestAnimationFrame(change);
             }
         };
-        requestAnimationFrame(change);
+        window.requestAnimationFrame(change);
     };
     testWrapper();
 
@@ -120,7 +119,7 @@ test('prevent-requestAnimationFrame: by callback name', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         clearGlobalProps('one');
         done();
-    }, 50);
+    }, 20);
 });
 
 
@@ -142,10 +141,10 @@ test('prevent-requestAnimationFrame: by regex match', (assert) => {
             window.aaa = 'NEW ONE';
             if (times < 2) {
                 times += 1;
-                requestAnimationFrame(change);
+                window.requestAnimationFrame(change);
             }
         };
-        requestAnimationFrame(change);
+        window.requestAnimationFrame(change);
     };
     testWrapper();
 
@@ -154,7 +153,7 @@ test('prevent-requestAnimationFrame: by regex match', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         clearGlobalProps('aaa');
         done();
-    }, 50);
+    }, 20);
 });
 
 
@@ -177,20 +176,20 @@ test('prevent-requestAnimationFrame: !match', (assert) => {
             window.one = 'NEW ONE';
             if (timesOne < 2) {
                 timesOne += 1;
-                requestAnimationFrame(changeOne);
+                window.requestAnimationFrame(changeOne);
             }
         };
-        requestAnimationFrame(changeOne);
+        window.requestAnimationFrame(changeOne);
 
         let timesTwo = 0;
         const changeTwo = () => {
             window.two = 'NEW TWO';
             if (timesTwo < 2) {
                 timesTwo += 1;
-                requestAnimationFrame(changeTwo);
+                window.requestAnimationFrame(changeTwo);
             }
         };
-        requestAnimationFrame(changeTwo);
+        window.requestAnimationFrame(changeTwo);
     };
     testWrapper();
 
@@ -200,5 +199,5 @@ test('prevent-requestAnimationFrame: !match', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         clearGlobalProps('one', 'two');
         done();
-    }, 100);
+    }, 50);
 });

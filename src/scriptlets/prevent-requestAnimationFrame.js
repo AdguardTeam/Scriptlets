@@ -75,7 +75,6 @@ import {
  */
 /* eslint-enable max-len */
 
-// eslint-disable-next-line no-unused-vars
 export function preventRequestAnimationFrame(source, match) {
     const nativeRequestAnimationFrame = window.requestAnimationFrame;
 

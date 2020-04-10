@@ -1,4 +1,4 @@
-/* global QUnit, sinon */
+/* global sinon */
 /* eslint-disable no-eval, no-underscore-dangle */
 
 import { clearGlobalProps } from '../helpers';
