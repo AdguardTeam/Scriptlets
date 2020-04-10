@@ -78,8 +78,6 @@ import {
 export function preventRequestAnimationFrame(source, match) {
     const nativeRequestAnimationFrame = window.requestAnimationFrame;
 
-    const log = console.log.bind(console); // eslint-disable-line no-console
-
     // logs requestAnimationFrame to console if no arguments have been specified
     const shouldLog = typeof match === 'undefined';
 
@@ -95,8 +93,8 @@ export function preventRequestAnimationFrame(source, match) {
     const rafWrapper = (callback, ...args) => {
         let shouldPrevent = false;
         if (shouldLog) {
-            hit(source);
-            log(`requestAnimationFrame("${callback.toString()}")`);
+            const logMessage = `log: requestAnimationFrame("${callback.toString()}")`;
+            hit(source, logMessage);
         } else {
             shouldPrevent = match.test(callback.toString()) !== doNotMatch;
         }

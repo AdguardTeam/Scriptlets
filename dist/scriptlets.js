@@ -240,7 +240,9 @@
     /**
      * Hit used only for debug purposes now
      * @param {Source} source
-     * @param {string} message optional message
+     * @param {string} message - optional message;
+     * use LOG_MARKER = 'log: ' at the start of a message
+     * for logging scriptlets
      */
     var hit = function hit(source, message) {
       if (source.verbose !== true) {
@@ -250,10 +252,16 @@
       try {
         var log = console.log.bind(console);
         var trace = console.trace.bind(console);
-        var prefix = source.ruleText || '';
+        var prefix = source.ruleText || ''; // Used to check if scriptlet uses 'hit' function for logging
+
+        var LOG_MARKER = 'log: ';
 
         if (message) {
-          log("".concat(prefix, " message:\n").concat(message));
+          if (message.indexOf(LOG_MARKER) === -1) {
+            log("".concat(prefix, " message:\n").concat(message));
+          } else {
+            log(message.slice(LOG_MARKER.length));
+          }
         }
 
         log("".concat(prefix, " trace start"));
@@ -3169,12 +3177,9 @@
      */
 
     /* eslint-enable max-len */
-    // eslint-disable-next-line no-unused-vars
 
     function preventRequestAnimationFrame(source, match) {
-      var nativeRequestAnimationFrame = window.requestAnimationFrame;
-      var log = console.log.bind(console); // eslint-disable-line no-console
-      // logs requestAnimationFrame to console if no arguments have been specified
+      var nativeRequestAnimationFrame = window.requestAnimationFrame; // logs requestAnimationFrame to console if no arguments have been specified
 
       var shouldLog = typeof match === 'undefined';
       var INVERT_MARKER = '!';
@@ -3190,8 +3195,8 @@
         var shouldPrevent = false;
 
         if (shouldLog) {
-          hit(source);
-          log("requestAnimationFrame(\"".concat(callback.toString(), "\")"));
+          var logMessage = "log: requestAnimationFrame(\"".concat(callback.toString(), "\")");
+          hit(source, logMessage);
         } else {
           shouldPrevent = match.test(callback.toString()) !== doNotMatch;
         }

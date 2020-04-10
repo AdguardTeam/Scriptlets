@@ -56,17 +56,17 @@ test('prevent-requestAnimationFrame: no args -- logging', (assert) => {
     evalWrap(scriptlet);
     const done = assert.async();
 
-    const logProperty = 'agLogRequestAnimationFrame';
+    const logProperty = 'logRequestAnimationFrame';
 
-    const testWrapper = () => {
-        let times = 0;
-        function change() {
-            window[logProperty] = 'changed';
-            if (times < 2) {
-                times += 1;
-                window.requestAnimationFrame(change);
-            }
+    let times = 0;
+    function change() {
+        window[logProperty] = 'changed';
+        if (times < 1) {
+            times += 1;
+            window.requestAnimationFrame(change);
         }
+    }
+    const testWrapper = () => {
         window.requestAnimationFrame(change);
     };
     testWrapper();
@@ -76,16 +76,16 @@ test('prevent-requestAnimationFrame: no args -- logging', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        // eslint-disable-next-line no-undef
         assert.strictEqual(input, `requestAnimationFrame("${change.toString()}")`, 'console.hit input');
     };
 
+    // do test checking after scriptlet's execution end
     setTimeout(() => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         assert.strictEqual(window[logProperty], 'changed', 'property changed');
         clearGlobalProps(logProperty);
         done();
-    }, 20);
+    });
 });
 
 
@@ -105,7 +105,7 @@ test('prevent-requestAnimationFrame: by callback name', (assert) => {
         let times = 0;
         const change = () => {
             window.one = 'NEW VALUE';
-            if (times < 2) {
+            if (times < 1) {
                 times += 1;
                 window.requestAnimationFrame(change);
             }
@@ -114,12 +114,13 @@ test('prevent-requestAnimationFrame: by callback name', (assert) => {
     };
     testWrapper();
 
+    // do test checking after scriptlet's execution end
     setTimeout(() => {
         assert.equal(window.one, 'value', 'Target property not changed');
         assert.equal(window.hit, 'value', 'Hit function was executed');
         clearGlobalProps('one');
         done();
-    }, 20);
+    });
 });
 
 
@@ -139,7 +140,7 @@ test('prevent-requestAnimationFrame: by regex match', (assert) => {
         let times = 0;
         const change = () => {
             window.aaa = 'NEW ONE';
-            if (times < 2) {
+            if (times < 1) {
                 times += 1;
                 window.requestAnimationFrame(change);
             }
@@ -148,12 +149,13 @@ test('prevent-requestAnimationFrame: by regex match', (assert) => {
     };
     testWrapper();
 
+    // do test checking after scriptlet's execution end
     setTimeout(() => {
         assert.equal(window.aaa, 'one', 'Target property not changed');
         assert.equal(window.hit, 'value', 'Hit function was executed');
         clearGlobalProps('aaa');
         done();
-    }, 20);
+    });
 });
 
 
@@ -174,7 +176,7 @@ test('prevent-requestAnimationFrame: !match', (assert) => {
         let timesOne = 0;
         const changeOne = () => {
             window.one = 'NEW ONE';
-            if (timesOne < 2) {
+            if (timesOne < 1) {
                 timesOne += 1;
                 window.requestAnimationFrame(changeOne);
             }
@@ -184,7 +186,7 @@ test('prevent-requestAnimationFrame: !match', (assert) => {
         let timesTwo = 0;
         const changeTwo = () => {
             window.two = 'NEW TWO';
-            if (timesTwo < 2) {
+            if (timesTwo < 1) {
                 timesTwo += 1;
                 window.requestAnimationFrame(changeTwo);
             }
@@ -193,11 +195,12 @@ test('prevent-requestAnimationFrame: !match', (assert) => {
     };
     testWrapper();
 
+    // do test checking after scriptlet's execution end
     setTimeout(() => {
         assert.equal(window.one, 'NEW ONE', 'not \'one\' property should be changed');
         assert.equal(window.two, 'two', 'Target property not changed');
         assert.equal(window.hit, 'value', 'Hit function was executed');
         clearGlobalProps('one', 'two');
         done();
-    }, 50);
+    });
 });

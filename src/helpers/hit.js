@@ -2,7 +2,9 @@
 /**
  * Hit used only for debug purposes now
  * @param {Source} source
- * @param {string} message optional message
+ * @param {string} message - optional message;
+ * use LOG_MARKER = 'log: ' at the start of a message
+ * for logging scriptlets
  */
 export const hit = (source, message) => {
     if (source.verbose !== true) {
@@ -15,8 +17,15 @@ export const hit = (source, message) => {
 
         const prefix = source.ruleText || '';
 
+        // Used to check if scriptlet uses 'hit' function for logging
+        const LOG_MARKER = 'log: ';
+
         if (message) {
-            log(`${prefix} message:\n${message}`);
+            if (message.indexOf(LOG_MARKER) === -1) {
+                log(`${prefix} message:\n${message}`);
+            } else {
+                log(message.slice(LOG_MARKER.length));
+            }
         }
 
         log(`${prefix} trace start`);
