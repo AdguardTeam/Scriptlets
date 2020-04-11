@@ -85,7 +85,7 @@ test('prevent-requestAnimationFrame: no args -- logging', (assert) => {
         assert.strictEqual(window[logProperty], 'changed', 'property changed');
         clearGlobalProps(logProperty);
         done();
-    });
+    }, 20);
 });
 
 
@@ -120,7 +120,7 @@ test('prevent-requestAnimationFrame: by callback name', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         clearGlobalProps('one');
         done();
-    });
+    }, 10);
 });
 
 
@@ -155,7 +155,7 @@ test('prevent-requestAnimationFrame: by regex match', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         clearGlobalProps('aaa');
         done();
-    });
+    }, 10);
 });
 
 
@@ -202,5 +202,5 @@ test('prevent-requestAnimationFrame: !match', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         clearGlobalProps('one', 'two');
         done();
-    });
+    }, 30);
 });
