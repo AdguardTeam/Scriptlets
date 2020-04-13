@@ -17,7 +17,7 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("abort-on-property-write", <property>)
+ * example.org#%#//scriptlet('abort-on-property-write', <property>)
  * ```
  *
  * **Parameters**
@@ -25,9 +25,8 @@ import {
  *
  * **Examples**
  * ```
- * ! Aborts all inline scripts trying to access `window.alert`
- * utils.escape('<script></script>')
- * // => '&lt;script&gt;&lt;/script&gt;'
+ * ! Aborts script when it tries to set `window.adblock` value
+ * example.org#%#//scriptlet('abort-on-property-write', 'adblock')
  * ```
  */
 /* eslint-enable max-len */
