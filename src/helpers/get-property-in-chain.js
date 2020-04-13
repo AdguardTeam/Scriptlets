@@ -14,7 +14,8 @@
  *
  * @param {Object} base
  * @param {string} chain
- * @param {Booleam} addProp - defines is nonexistent base property should be assigned as 'undefined'
+ * @param {boolean} [addProp=true]
+ * defines is nonexistent base property should be assigned as 'undefined'
  * @returns {Chain}
  */
 export function getPropertyInChain(base, chain, addProp = true) {

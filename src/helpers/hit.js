@@ -2,7 +2,7 @@
 /**
  * Hit used only for debug purposes now
  * @param {Source} source
- * @param {string} message - optional message;
+ * @param {string} [message] - optional message;
  * use LOG_MARKER = 'log: ' at the start of a message
  * for logging scriptlets
  */

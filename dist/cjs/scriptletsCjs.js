@@ -45,7 +45,8 @@ function setPropertyAccess(object, property, descriptor) {
  *
  * @param {Object} base
  * @param {string} chain
- * @param {Booleam} addProp - defines is nonexistent base property should be assigned as 'undefined'
+ * @param {boolean} [addProp=true]
+ * defines is nonexistent base property should be assigned as 'undefined'
  * @returns {Chain}
  */
 function getPropertyInChain(base, chain) {
@@ -239,7 +240,7 @@ var noopStr = function noopStr() {
 /**
  * Hit used only for debug purposes now
  * @param {Source} source
- * @param {string} message - optional message;
+ * @param {string} [message] - optional message;
  * use LOG_MARKER = 'log: ' at the start of a message
  * for logging scriptlets
  */
