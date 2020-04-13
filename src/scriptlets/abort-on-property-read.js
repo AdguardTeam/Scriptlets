@@ -17,7 +17,7 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("abort-on-property-read", <property>)
+ * example.org#%#//scriptlet('abort-on-property-read', <property>)
  * ```
  *
  * **Parameters**
@@ -26,10 +26,10 @@ import {
  * **Examples**
  * ```
  * ! Aborts script when it tries to access `window.alert`
- * example.org#%#//scriptlet("abort-on-property-read", "alert")
+ * example.org#%#//scriptlet('abort-on-property-read', 'alert')
  *
  * ! Aborts script when it tries to access `navigator.language`
- * example.org#%#//scriptlet("abort-on-property-read", "navigator.language")
+ * example.org#%#//scriptlet('abort-on-property-read', 'navigator.language')
  * ```
  */
 /* eslint-enable max-len */

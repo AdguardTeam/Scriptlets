@@ -11,12 +11,19 @@ import { toRegExp, hit } from '../helpers';
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
  *
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet('prevent-eval-if'[, <search>])
+ * ```
+ *
  * **Parameters**
- * - `search` string or regexp matching stringified eval payload
+ * - `search` - optional string or regexp for matching stringified eval payload.
+ * If 'search is not specified — all stringified eval payload will be matched.
  *
  * **Examples**
  * ```
- * !
+ * ! Prevents eval if it matches 'test'
+ * example.org#%#//scriptlet('prevent-eval-if', 'test')
  * ```
  *
  * @param {string|RegExp} [search] string or regexp matching stringified eval payload

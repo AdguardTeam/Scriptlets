@@ -16,7 +16,7 @@ import { hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("noeval")
+ * example.org#%#//scriptlet('noeval')
  * ```
  */
 export function noeval(source) {

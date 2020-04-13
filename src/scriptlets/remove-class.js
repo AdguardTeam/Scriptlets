@@ -40,7 +40,7 @@ import { hit, observeDOMChanges } from '../helpers';
  *
  * 2. Removes with specified selector
  *     ```
- *     example.org#%#//scriptlet('remove-class', 'branding', 'div[class="inner"]')
+ *     example.org#%#//scriptlet('remove-class', 'branding', 'div[class^="inner"]')
  *     ```
  *
  *     ```html
