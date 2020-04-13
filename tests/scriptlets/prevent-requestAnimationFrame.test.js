@@ -58,18 +58,10 @@ test('prevent-requestAnimationFrame: no args -- logging', (assert) => {
 
     const logProperty = 'logRequestAnimationFrame';
 
-    let times = 0;
     function change() {
         window[logProperty] = 'changed';
-        if (times < 1) {
-            times += 1;
-            window.requestAnimationFrame(change);
-        }
     }
-    const testWrapper = () => {
-        window.requestAnimationFrame(change);
-    };
-    testWrapper();
+    window.requestAnimationFrame(change);
 
     // eslint-disable-next-line no-console
     console.log = function log(input) {
@@ -101,18 +93,10 @@ test('prevent-requestAnimationFrame: by callback name', (assert) => {
 
     window.one = 'value';
 
-    const testWrapper = () => {
-        let times = 0;
-        const change = () => {
-            window.one = 'NEW VALUE';
-            if (times < 1) {
-                times += 1;
-                window.requestAnimationFrame(change);
-            }
-        };
-        window.requestAnimationFrame(change);
+    const change = () => {
+        window.one = 'NEW VALUE';
     };
-    testWrapper();
+    window.requestAnimationFrame(change);
 
     // do test checking after scriptlet's execution end
     setTimeout(() => {
@@ -136,18 +120,10 @@ test('prevent-requestAnimationFrame: by regex match', (assert) => {
 
     window.aaa = 'one';
 
-    const testWrapper = () => {
-        let times = 0;
-        const change = () => {
-            window.aaa = 'NEW ONE';
-            if (times < 1) {
-                times += 1;
-                window.requestAnimationFrame(change);
-            }
-        };
-        window.requestAnimationFrame(change);
+    const change = () => {
+        window.aaa = 'NEW ONE';
     };
-    testWrapper();
+    window.requestAnimationFrame(change);
 
     // do test checking after scriptlet's execution end
     setTimeout(() => {
@@ -172,28 +148,15 @@ test('prevent-requestAnimationFrame: !match', (assert) => {
     window.one = 'one';
     window.two = 'two';
 
-    const testWrapper = () => {
-        let timesOne = 0;
-        const changeOne = () => {
-            window.one = 'NEW ONE';
-            if (timesOne < 1) {
-                timesOne += 1;
-                window.requestAnimationFrame(changeOne);
-            }
-        };
-        window.requestAnimationFrame(changeOne);
-
-        let timesTwo = 0;
-        const changeTwo = () => {
-            window.two = 'NEW TWO';
-            if (timesTwo < 1) {
-                timesTwo += 1;
-                window.requestAnimationFrame(changeTwo);
-            }
-        };
-        window.requestAnimationFrame(changeTwo);
+    const changeOne = () => {
+        window.one = 'NEW ONE';
     };
-    testWrapper();
+    window.requestAnimationFrame(changeOne);
+
+    const changeTwo = () => {
+        window.two = 'NEW TWO';
+    };
+    window.requestAnimationFrame(changeTwo);
 
     // do test checking after scriptlet's execution end
     setTimeout(() => {
