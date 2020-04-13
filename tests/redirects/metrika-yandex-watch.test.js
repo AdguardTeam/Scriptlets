@@ -1,5 +1,4 @@
 /* eslint-disable no-underscore-dangle, no-eval */
-/* global QUnit */
 import { clearGlobalProps } from '../helpers';
 
 

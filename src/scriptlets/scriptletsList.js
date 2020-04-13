@@ -31,3 +31,4 @@ export * from './adjust-setInterval';
 export * from './adjust-setTimeout';
 export * from './dir-string';
 export * from './json-prune';
+export * from './prevent-requestAnimationFrame';

@@ -1,5 +1,4 @@
 /* eslint-disable max-len */
-/* global QUnit */
 
 import {
     convertScriptletToAdg,

@@ -9,6 +9,7 @@
     "import/no-extraneous-dependencies": "off"
   },
   "env": {
-    "browser": true
+    "browser": true,
+    "qunit": true
   }
 }

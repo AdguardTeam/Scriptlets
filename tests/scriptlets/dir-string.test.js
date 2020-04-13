@@ -1,4 +1,3 @@
-/* global QUnit */
 /* eslint-disable no-eval, no-underscore-dangle, no-console */
 import { clearGlobalProps } from '../helpers';
 

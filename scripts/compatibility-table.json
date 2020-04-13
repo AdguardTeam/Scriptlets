@@ -84,6 +84,10 @@
             "adg": "prevent-popads-net"
         },
         {
+            "adg": "prevent-requestAnimationFrame",
+            "ubo": "requestAnimationFrame-if.js (raf-if.js)"
+        },
+        {
             "adg": "prevent-setInterval",
             "ubo": "no-setInterval-if.js (nosiif.js)"
         },
@@ -148,9 +152,6 @@
         },
         {
             "ubo": "fingerprint2.js"
-        },
-        {
-            "ubo": "requestAnimationFrame-if.js (raf-if.js)"
         },
         {
             "abp": "trace"

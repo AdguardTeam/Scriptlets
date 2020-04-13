@@ -24,6 +24,7 @@
 | prevent-eval-if | noeval-if.js |  |
 | prevent-fab-3.2.0 |  |  |
 | prevent-popads-net |  |  |
+| prevent-requestAnimationFrame | requestAnimationFrame-if.js (raf-if.js) |  |
 | prevent-setInterval | no-setInterval-if.js (nosiif.js) |  |
 | prevent-setTimeout | no-setTimeout-if.js (nostif.js) |  |
 | prevent-window-open |  |  |
@@ -44,7 +45,6 @@
 |  | damoh-defuser.js |  |
 |  | twitch-videoad.js |  |
 |  | fingerprint2.js |  |
-|  | requestAnimationFrame-if.js (raf-if.js) |  |
 |  |  | trace |
 |  |  | uabinject-defuser |
 |  |  | hide-if-shadow-contains |
