@@ -12,7 +12,7 @@ import { hit, noopFunc, noopThis } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-fab-3.2.0")
+ * example.org#%#//scriptlet('prevent-fab-3.2.0')
  * ```
  */
 export function preventFab(source) {
@@ -33,9 +33,48 @@ export function preventFab(source) {
         return this;
     };
     Fab.prototype.setOption = noopFunc;
-    window.FuckAdBlock = window.BlockAdBlock = Fab;
-    //
-    window.fuckAdBlock = window.blockAdBlock = new Fab();
+
+    const fab = new Fab();
+    const getSetFab = {
+        get() { return Fab; },
+        set() {},
+    };
+    const getsetfab = {
+        get() { return fab; },
+        set() {},
+    };
+
+    if (Object.prototype.hasOwnProperty.call(window, 'FuckAdBlock')) {
+        window.FuckAdBlock = Fab;
+    } else {
+        Object.defineProperty(window, 'FuckAdBlock', getSetFab);
+    }
+    if (Object.prototype.hasOwnProperty.call(window, 'BlockAdBlock')) {
+        window.BlockAdBlock = Fab;
+    } else {
+        Object.defineProperty(window, 'BlockAdBlock', getSetFab);
+    }
+    if (Object.prototype.hasOwnProperty.call(window, 'SniffAdBlock')) {
+        window.SniffAdBlock = Fab;
+    } else {
+        Object.defineProperty(window, 'SniffAdBlock', getSetFab);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(window, 'fuckAdBlock')) {
+        window.fuckAdBlock = fab;
+    } else {
+        Object.defineProperty(window, 'fuckAdBlock', getsetfab);
+    }
+    if (Object.prototype.hasOwnProperty.call(window, 'blockAdBlock')) {
+        window.blockAdBlock = fab;
+    } else {
+        Object.defineProperty(window, 'blockAdBlock', getsetfab);
+    }
+    if (Object.prototype.hasOwnProperty.call(window, 'sniffAdBlock')) {
+        window.sniffAdBlock = fab;
+    } else {
+        Object.defineProperty(window, 'sniffAdBlock', getsetfab);
+    }
 }
 
 preventFab.names = [

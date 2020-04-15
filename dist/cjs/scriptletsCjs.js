@@ -726,7 +726,7 @@ var parseRule = function parseRule(ruleText) {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("abort-on-property-read", <property>)
+ * example.org#%#//scriptlet('abort-on-property-read', <property>)
  * ```
  *
  * **Parameters**
@@ -735,10 +735,10 @@ var parseRule = function parseRule(ruleText) {
  * **Examples**
  * ```
  * ! Aborts script when it tries to access `window.alert`
- * example.org#%#//scriptlet("abort-on-property-read", "alert")
+ * example.org#%#//scriptlet('abort-on-property-read', 'alert')
  *
  * ! Aborts script when it tries to access `navigator.language`
- * example.org#%#//scriptlet("abort-on-property-read", "navigator.language")
+ * example.org#%#//scriptlet('abort-on-property-read', 'navigator.language')
  * ```
  */
 
@@ -808,7 +808,7 @@ abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChai
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("abort-on-property-write", <property>)
+ * example.org#%#//scriptlet('abort-on-property-write', <property>)
  * ```
  *
  * **Parameters**
@@ -816,9 +816,8 @@ abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChai
  *
  * **Examples**
  * ```
- * ! Aborts all inline scripts trying to access `window.alert`
- * utils.escape('<script></script>')
- * // => '&lt;script&gt;&lt;/script&gt;'
+ * ! Aborts script when it tries to set `window.adblock` value
+ * example.org#%#//scriptlet('abort-on-property-write', 'adblock')
  * ```
  */
 
@@ -2038,7 +2037,7 @@ log.names = ['log'];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("noeval")
+ * example.org#%#//scriptlet('noeval')
  * ```
  */
 
@@ -2060,12 +2059,19 @@ noeval.injections = [hit];
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
  *
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet('prevent-eval-if'[, <search>])
+ * ```
+ *
  * **Parameters**
- * - `search` string or regexp matching stringified eval payload
+ * - `search` - optional string or regexp for matching stringified eval payload.
+ * If 'search is not specified — all stringified eval payload will be matched.
  *
  * **Examples**
  * ```
- * !
+ * ! Prevents eval if it matches 'test'
+ * example.org#%#//scriptlet('prevent-eval-if', 'test')
  * ```
  *
  * @param {string|RegExp} [search] string or regexp matching stringified eval payload
@@ -2099,7 +2105,7 @@ preventEvalIf.injections = [toRegExp, hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-fab-3.2.0")
+ * example.org#%#//scriptlet('prevent-fab-3.2.0')
  * ```
  */
 
@@ -2128,9 +2134,55 @@ function preventFab(source) {
   };
 
   Fab.prototype.setOption = noopFunc;
-  window.FuckAdBlock = window.BlockAdBlock = Fab; //
+  var fab = new Fab();
+  var getSetFab = {
+    get: function get() {
+      return Fab;
+    },
+    set: function set() {}
+  };
+  var getsetfab = {
+    get: function get() {
+      return fab;
+    },
+    set: function set() {}
+  };
 
-  window.fuckAdBlock = window.blockAdBlock = new Fab();
+  if (Object.prototype.hasOwnProperty.call(window, 'FuckAdBlock')) {
+    window.FuckAdBlock = Fab;
+  } else {
+    Object.defineProperty(window, 'FuckAdBlock', getSetFab);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(window, 'BlockAdBlock')) {
+    window.BlockAdBlock = Fab;
+  } else {
+    Object.defineProperty(window, 'BlockAdBlock', getSetFab);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(window, 'SniffAdBlock')) {
+    window.SniffAdBlock = Fab;
+  } else {
+    Object.defineProperty(window, 'SniffAdBlock', getSetFab);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(window, 'fuckAdBlock')) {
+    window.fuckAdBlock = fab;
+  } else {
+    Object.defineProperty(window, 'fuckAdBlock', getsetfab);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(window, 'blockAdBlock')) {
+    window.blockAdBlock = fab;
+  } else {
+    Object.defineProperty(window, 'blockAdBlock', getsetfab);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(window, 'sniffAdBlock')) {
+    window.sniffAdBlock = fab;
+  } else {
+    Object.defineProperty(window, 'sniffAdBlock', getsetfab);
+  }
 }
 preventFab.names = ['prevent-fab-3.2.0', 'nofab.js', 'ubo-nofab.js', 'fuckadblock.js-3.2.0', 'ubo-fuckadblock.js-3.2.0'];
 preventFab.injections = [hit, noopFunc, noopThis];
@@ -2662,7 +2714,7 @@ removeAttr.injections = [hit, observeDOMChanges];
  *
  * 2. Removes with specified selector
  *     ```
- *     example.org#%#//scriptlet('remove-class', 'branding', 'div[class="inner"]')
+ *     example.org#%#//scriptlet('remove-class', 'branding', 'div[class^="inner"]')
  *     ```
  *
  *     ```html
