@@ -26,8 +26,26 @@ const runScriptlet = (name) => {
     evalWrapper(resultString);
 };
 
-test('ag and ubo aliases work', (assert) => {
-    assert.expect(4);
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
+        name: 'ubo-adfly-defuser.js',
+        engine: 'test',
+        verbose: true,
+    };
+
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
+
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
+});
+
+test('ag works', (assert) => {
+    assert.expect(2);
     const nativeDefineProperty = Object.defineProperty;
     Object.defineProperty = (arg1, arg2) => {
         assert.strictEqual(arg1, window, 'Object.defineProperty should be called with window');
@@ -35,6 +53,5 @@ test('ag and ubo aliases work', (assert) => {
     };
 
     runScriptlet(name);
-    runScriptlet('ubo-adfly-defuser.js');
     Object.defineProperty = nativeDefineProperty;
 });

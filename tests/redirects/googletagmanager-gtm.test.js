@@ -21,68 +21,22 @@ const mockGoogleTagManagerApi = (endCallback) => {
     return window.dataLayer;
 };
 
-test('UBO alias', (assert) => {
-    const params = {
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
         name: 'ubo-googletagmanager_gtm.js',
+        engine: 'test',
         verbose: true,
     };
-    window.__debug = () => { window.hit = 'FIRED'; };
 
-    assert.expect(3);
+    const codeByAdgParams = window.scriptlets.redirects.getCode(adgParams);
+    const codeByUboParams = window.scriptlets.redirects.getCode(uboParams);
 
-    const endCallback = () => {
-        assert.ok(true, 'hide.end() was executed');
-    };
-    // emulate API
-    const dataLayer = mockGoogleTagManagerApi(endCallback);
-
-    // run scriptlet
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
-
-    const done = assert.async();
-    dataLayer.push({
-        eventCallback() {
-            assert.ok(true, 'Event callback was executed');
-            done();
-        },
-    });
-
-    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-
-    clearGlobalProps('__debug', 'hit');
-});
-
-test('UBO Syntax', (assert) => {
-    const params = {
-        name: 'googletagmanager_gtm.js',
-        verbose: true,
-    };
-    window.__debug = () => { window.hit = 'FIRED'; };
-
-    assert.expect(3);
-
-    const endCallback = () => {
-        assert.ok(true, 'hide.end() was executed');
-    };
-    // emulate API
-    const dataLayer = mockGoogleTagManagerApi(endCallback);
-
-    // run scriptlet
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
-
-    const done = assert.async();
-    dataLayer.push({
-        eventCallback() {
-            assert.ok(true, 'Event callback was executed');
-            done();
-        },
-    });
-
-    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-
-    clearGlobalProps('__debug', 'hit');
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
 test('AdGuard Syntax', (assert) => {

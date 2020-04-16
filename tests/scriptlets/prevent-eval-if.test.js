@@ -29,23 +29,25 @@ const runScriptlet = (name, search) => {
     nativeEval(resultString);
 };
 
-test('ubo noeval-if.js alias', (assert) => {
-    runScriptlet('ubo-noeval-if.js', 'test');
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
+        name: 'ubo-noeval-if.js',
+        engine: 'test',
+        verbose: true,
+    };
 
-    const uboNoEvalIf = 'uboNoEvalIf';
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
 
-    const evalWrapper = eval;
-    const firstActual = evalWrapper(`(function () {return '${uboNoEvalIf}'})()`);
-    assert.strictEqual(window.hit, undefined, 'hit function should not fire for not matched function');
-    assert.strictEqual(firstActual, uboNoEvalIf, 'result of eval evaluation should exist');
-
-    const secondActual = evalWrapper(`(function () {const test = 0; return '${uboNoEvalIf}'})()`);
-    assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
-    assert.strictEqual(secondActual, undefined, 'result of eval evaluation should be undefined');
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
-
-test('AG prevent-eval-if', (assert) => {
+test('AG prevent-eval-if works', (assert) => {
     runScriptlet(name, '/\\(.*test.*\\(\\)/');
 
     const agPreventEvalIf = 'agPreventEvalIf';

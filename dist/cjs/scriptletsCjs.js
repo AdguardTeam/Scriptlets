@@ -726,7 +726,7 @@ var parseRule = function parseRule(ruleText) {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("abort-on-property-read", <property>)
+ * example.org#%#//scriptlet('abort-on-property-read', <property>)
  * ```
  *
  * **Parameters**
@@ -735,10 +735,10 @@ var parseRule = function parseRule(ruleText) {
  * **Examples**
  * ```
  * ! Aborts script when it tries to access `window.alert`
- * example.org#%#//scriptlet("abort-on-property-read", "alert")
+ * example.org#%#//scriptlet('abort-on-property-read', 'alert')
  *
  * ! Aborts script when it tries to access `navigator.language`
- * example.org#%#//scriptlet("abort-on-property-read", "navigator.language")
+ * example.org#%#//scriptlet('abort-on-property-read', 'navigator.language')
  * ```
  */
 
@@ -808,7 +808,7 @@ abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChai
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("abort-on-property-write", <property>)
+ * example.org#%#//scriptlet('abort-on-property-write', <property>)
  * ```
  *
  * **Parameters**
@@ -816,9 +816,8 @@ abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChai
  *
  * **Examples**
  * ```
- * ! Aborts all inline scripts trying to access `window.alert`
- * utils.escape('<script></script>')
- * // => '&lt;script&gt;&lt;/script&gt;'
+ * ! Aborts script when it tries to set `window.adblock` value
+ * example.org#%#//scriptlet('abort-on-property-write', 'adblock')
  * ```
  */
 
@@ -2038,7 +2037,7 @@ log.names = ['log'];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("noeval")
+ * example.org#%#//scriptlet('noeval')
  * ```
  */
 
@@ -2060,12 +2059,19 @@ noeval.injections = [hit];
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
  *
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet('prevent-eval-if'[, <search>])
+ * ```
+ *
  * **Parameters**
- * - `search` string or regexp matching stringified eval payload
+ * - `search` - optional string or regexp for matching stringified eval payload.
+ * If 'search is not specified — all stringified eval payload will be matched.
  *
  * **Examples**
  * ```
- * !
+ * ! Prevents eval if it matches 'test'
+ * example.org#%#//scriptlet('prevent-eval-if', 'test')
  * ```
  *
  * @param {string|RegExp} [search] string or regexp matching stringified eval payload
@@ -2662,7 +2668,7 @@ removeAttr.injections = [hit, observeDOMChanges];
  *
  * 2. Removes with specified selector
  *     ```
- *     example.org#%#//scriptlet('remove-class', 'branding', 'div[class="inner"]')
+ *     example.org#%#//scriptlet('remove-class', 'branding', 'div[class^="inner"]')
  *     ```
  *
  *     ```html
@@ -2734,7 +2740,7 @@ function removeClass(source, classNames, selector) {
 
   observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
 }
-removeClass.names = ['remove-class'];
+removeClass.names = ['remove-class', 'remove-class.js', 'ubo-remove-class.js', 'rc.js', 'ubo-rc.js'];
 removeClass.injections = [hit, observeDOMChanges];
 
 /**
@@ -4609,6 +4615,7 @@ var getRedirectByName = function getRedirectByName(name) {
 /**
  * Returns redirect code by param
  * @param {Source} source
+ * @returns {string} redirect code
  */
 
 
@@ -4647,9 +4654,10 @@ var redirectsCjs = {
  */
 
 /**
-* Returns scriptlet code by param
-* @param {Source} source
-*/
+ * Returns scriptlet code by param
+ * @param {Source} source
+ * @returns {string} scriptlet code
+ */
 
 function getScriptletCode(source) {
   if (!validator.isValidScriptletName(source.name)) {

@@ -12,50 +12,29 @@ const evalWrap = eval;
 const changingProps = [PROPERTY, 'hit', '__debug'];
 
 module(name);
-test('abort-on-property-write: ubo alias, set prop for existed prop', (assert) => {
-    const params = {
-        name: `ubo-${name}.js`,
-        args: [PROPERTY],
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
         verbose: true,
     };
-    window.__debug = () => {
-        window.hit = 'value';
+    const uboParams = {
+        name: 'ubo-abort-on-property-write.js',
+        engine: 'test',
+        verbose: true,
     };
-    window[PROPERTY] = 'value';
-    const resString = window.scriptlets.invoke(params);
-    evalWrap(resString);
-    assert.throws(
-        () => {
-            window[PROPERTY] = 'new value';
-        },
-        /ReferenceError/,
-        `should throw Reference error when try to write property ${PROPERTY}`,
-    );
-    assert.equal(window.hit, 'value', 'Hit function was executed');
-    clearGlobalProps(...changingProps);
-});
+    const abpParams = {
+        name: 'abp-abort-on-property-write',
+        engine: 'test',
+        verbose: true,
+    };
 
-test('abort-on-property-write: abp alias, set prop for existed prop', (assert) => {
-    const params = {
-        name: `abp-${name}`,
-        args: [PROPERTY],
-        verbose: true,
-    };
-    window.__debug = () => {
-        window.hit = 'value';
-    };
-    window[PROPERTY] = 'value';
-    const resString = window.scriptlets.invoke(params);
-    evalWrap(resString);
-    assert.throws(
-        () => {
-            window[PROPERTY] = 'new value';
-        },
-        /ReferenceError/,
-        `should throw Reference error when try to write property ${PROPERTY}`,
-    );
-    assert.equal(window.hit, 'value', 'Hit function was executed');
-    clearGlobalProps(...changingProps);
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
+    const codeByAbpParams = window.scriptlets.invoke(abpParams);
+
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
+    assert.strictEqual(codeByAdgParams, codeByAbpParams, 'abp name - ok');
 });
 
 test('abort-on-property-write: adg alias, set prop for existed prop', (assert) => {

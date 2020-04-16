@@ -20,35 +20,22 @@ const createHit = () => {
 
 const evalWrapper = eval;
 
-test('ubo alias', (assert) => {
-    createHit();
-    const params = {
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
         name: 'ubo-nano-setTimeout-booster.js',
-        args: ['intervalValue', '100', '2'],
+        engine: 'test',
         verbose: true,
     };
 
-    const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
 
-    const done1 = assert.async();
-    const done2 = assert.async();
-
-    const timeout = setTimeout(() => {
-        window.intervalValue = 'value';
-    }, 100);
-
-    setTimeout(() => {
-        assert.notOk(window.intervalValue, 'Still not defined');
-        done1();
-    }, 150);
-
-    setTimeout(() => {
-        assert.strictEqual(window.intervalValue, 'value', 'Defined after boosted setTimeout');
-        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-        clearTimeout(timeout);
-        done2();
-    }, 250);
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
 test('Adg no args', (assert) => {
