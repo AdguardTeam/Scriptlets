@@ -18,6 +18,24 @@ const runScriptlet = (name, propsToRemove, requiredInitialProps) => {
     evalWrapper(resultString);
 };
 
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
+        name: 'ubo-json-prune.js',
+        engine: 'test',
+        verbose: true,
+    };
+
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
+
+    assert.strictEqual(codeByAdgParams.toString(), codeByUboParams.toString(), 'ubo name - ok');
+});
+
 test('removes propsToRemove', (assert) => {
     runScriptlet('json-prune', 'c');
     assert.deepEqual(JSON.parse('{"a":1,"b":2,"c":3}'), { a: 1, b: 2 }, 'should remove single propsToRemove');

@@ -19,44 +19,22 @@ const contentService = {
     setContent: null,
 };
 
-test('UBO alias', (assert) => {
-    const params = {
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
         name: 'ubo-googletagservices_gpt.js',
+        engine: 'test',
         verbose: true,
     };
-    window.__debug = () => { window.hit = 'FIRED'; };
 
-    // run scriptlet
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
+    const codeByAdgParams = window.scriptlets.redirects.getCode(adgParams);
+    const codeByUboParams = window.scriptlets.redirects.getCode(uboParams);
 
-    assert.ok(window.googletag, 'window.googletag have been created');
-    assert.equal(window.googletag.apiReady, true, 'apiReady');
-    assert.notDeepEqual(window.googletag.companionAds(), companionAdsService, 'companionAds() returns the mocked data');
-    assert.notDeepEqual(window.googletag.content(), contentService, 'content() returns the mocked data');
-
-    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    clearGlobalProps('__debug', 'hit');
-});
-
-test('UBO Syntax', (assert) => {
-    const params = {
-        name: 'googletagservices_gpt.js',
-        verbose: true,
-    };
-    window.__debug = () => { window.hit = 'FIRED'; };
-
-    // run scriptlet
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
-
-    assert.ok(window.googletag, 'window.googletag have been created');
-    assert.equal(window.googletag.apiReady, true, 'apiReady');
-    assert.notDeepEqual(window.googletag.companionAds(), companionAdsService, 'companionAds() returns the mocked data');
-    assert.notDeepEqual(window.googletag.content(), contentService, 'content() returns the mocked data');
-
-    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    clearGlobalProps('__debug', 'hit');
+    assert.strictEqual(codeByAdgParams.toString(), codeByUboParams.toString(), 'ubo name - ok');
 });
 
 test('AdGuard Syntax', (assert) => {

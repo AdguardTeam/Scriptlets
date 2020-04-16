@@ -26,47 +26,29 @@ const addAndRemoveInlineScript = (scriptText) => {
     scriptElement.parentNode.removeChild(scriptElement);
 };
 
-test('ubo alias', (assert) => {
-    const property = '___aaa';
-    const params = {
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
         name: 'ubo-abort-current-inline-script.js',
-        args: [property],
+        engine: 'test',
         verbose: true,
     };
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
-    const resString = window.scriptlets.invoke(params);
-
-    window.onerror = onError(assert);
-
-    evalWrapper(resString);
-    addAndRemoveInlineScript('window.___aaa;');
-
-    assert.strictEqual(window.hit, 'FIRED');
-
-    clearGlobalProps(...changingGlobals);
-});
-
-test('abp alias', (assert) => {
-    const property = '___aaa';
-    const params = {
+    const abpParams = {
         name: 'abp-abort-current-inline-script',
-        args: [property],
+        engine: 'test',
         verbose: true,
     };
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
-    const resString = window.scriptlets.invoke(params);
 
-    window.onerror = onError(assert);
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
+    const codeByAbpParams = window.scriptlets.invoke(abpParams);
 
-    evalWrapper(resString);
-    addAndRemoveInlineScript('window.___aaa;');
-
-    assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps(...changingGlobals);
+    assert.strictEqual(codeByAdgParams.toString(), codeByUboParams.toString(), 'ubo name - ok');
+    assert.strictEqual(codeByAdgParams.toString(), codeByAbpParams.toString(), 'abp name - ok');
 });
 
 test('works', (assert) => {

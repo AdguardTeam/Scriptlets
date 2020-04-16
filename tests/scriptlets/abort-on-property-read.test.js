@@ -23,39 +23,29 @@ const afterEach = () => {
 
 module(name, { beforeEach, afterEach });
 
-test('abort-on-property-read simple check ubo alias', (assert) => {
-    const params = {
-        name: `ubo-${name}.js`,
-        args: [PROPERTY],
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
+        name: 'ubo-abort-on-property-read.js',
+        engine: 'test',
+        verbose: true,
+    };
+    const abpParams = {
+        name: 'abp-abort-on-property-read',
+        engine: 'test',
         verbose: true,
     };
 
-    window[PROPERTY] = 'value';
-    const resString = window.scriptlets.invoke(params);
-    evalWrap(resString);
-    assert.throws(
-        () => window[PROPERTY],
-        /ReferenceError/,
-        `should throw Reference error when try to access property ${PROPERTY}`,
-    );
-    assert.equal(window.hit, 'value', 'Hit function was executed');
-});
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
+    const codeByAbpParams = window.scriptlets.invoke(abpParams);
 
-test('abort-on-property-read simple check abp alias', (assert) => {
-    const params = {
-        name: `abp-${name}`,
-        args: [PROPERTY],
-        verbose: true,
-    };
-    window[PROPERTY] = 'value';
-    const resString = window.scriptlets.invoke(params);
-    evalWrap(resString);
-    assert.throws(
-        () => window[PROPERTY],
-        /ReferenceError/,
-        `should throw Reference error when try to access property ${PROPERTY}`,
-    );
-    assert.equal(window.hit, 'value', 'Hit function was executed');
+    assert.strictEqual(codeByAdgParams.toString(), codeByUboParams.toString(), 'ubo name - ok');
+    assert.strictEqual(codeByAdgParams.toString(), codeByAbpParams.toString(), 'abp name - ok');
 });
 
 test('abort-on-property-read simple', (assert) => {

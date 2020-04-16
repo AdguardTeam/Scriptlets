@@ -31,6 +31,24 @@ const afterEach = () => {
 
 module(name, { beforeEach, afterEach });
 
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
+        name: 'ubo-no-setTimeout-if.js',
+        engine: 'test',
+        verbose: true,
+    };
+
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
+
+    assert.strictEqual(codeByAdgParams.toString(), codeByUboParams.toString(), 'ubo name - ok');
+});
+
 
 test('prevent-setTimeout: adg no args -- logging', (assert) => {
     const params = {
@@ -64,43 +82,6 @@ test('prevent-setTimeout: adg no args -- logging', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         assert.strictEqual(window[agLogSetTimeout], 'changed', 'property changed');
         clearGlobalProps(agLogSetTimeout);
-        done();
-    }, 50);
-});
-
-
-test('prevent-setTimeout: ubo alias no args -- logging', (assert) => {
-    const params = {
-        name: 'ubo-no-setTimeout-if.js',
-        args: [],
-        verbose: true,
-    };
-    const scriptlet = window.scriptlets.invoke(params);
-    evalWrap(scriptlet);
-    const done = assert.async();
-
-    const uboLogSetTimeout = 'uboLogSetTimeout';
-    function callback() {
-        window[uboLogSetTimeout] = 'changed';
-    }
-    const timeout = 10;
-
-    const timeoutId = setTimeout(callback, timeout);
-    testTimeouts.push(timeoutId);
-
-    // eslint-disable-next-line no-console
-    console.log = function log(input) {
-        if (input.indexOf('trace') > -1) {
-            return;
-        }
-        assert.strictEqual(input, `setTimeout("${callback.toString()}", ${timeout})`, 'console.hit input should be equal');
-    };
-
-    // We need to run our assertion after all timeouts
-    setTimeout(() => {
-        assert.equal(window.hit, 'value', 'Hit function was executed');
-        assert.strictEqual(window[uboLogSetTimeout], 'changed', 'property changed');
-        clearGlobalProps(uboLogSetTimeout);
         done();
     }, 50);
 });

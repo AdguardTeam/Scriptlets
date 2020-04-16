@@ -37,6 +37,24 @@ const fillPopAdsWithValues = () => {
 
 const isEmpty = (obj) => Object.keys(obj).length === 0 && obj.constructor === Object;
 
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
+        name: 'ubo-popads-dummy.js',
+        engine: 'test',
+        verbose: true,
+    };
+
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
+
+    assert.strictEqual(codeByAdgParams.toString(), codeByUboParams.toString(), 'ubo name - ok');
+});
+
 test('works', (assert) => {
     fillPopAdsWithValues();
     assert.strictEqual(window[popAdsProp], popAdsProp);
@@ -47,14 +65,11 @@ test('works', (assert) => {
     assert.strictEqual(window.hit, 'FIRED');
 });
 
-test('ag and ubo aliases work', (assert) => {
+test('ag works', (assert) => {
     const stub = sinon.stub(Object, 'defineProperties').callsFake((obj, props) => props);
     runScriptlet(name);
-    assert.ok(stub.calledOnce, 'Object.defineProperties called once');
-    assert.ok(stub.calledWith(window), 'Object.defineProperties called with window object');
 
-    runScriptlet('ubo-popads-dummy.js');
-    assert.ok(stub.calledTwice, 'Object.defineProperties called twice');
+    assert.ok(stub.calledOnce, 'Object.defineProperties called once');
     assert.ok(stub.calledWith(window), 'Object.defineProperties called with window object');
 
     stub.restore();

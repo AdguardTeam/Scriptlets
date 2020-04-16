@@ -28,19 +28,22 @@ const runScriptlet = (name) => {
     evalWrapper(resultString);
 };
 
-test('ubo alias works', (assert) => {
-    if (!window.RTCPeerConnection) {
-        assert.ok(true, 'Browser does not support RTCPeerConnection');
-        return;
-    }
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
+        name: 'ubo-nowebrtc.js',
+        engine: 'test',
+        verbose: true,
+    };
 
-    runScriptlet('ubo-nowebrtc.js');
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
 
-    const localConnection = new RTCPeerConnection();
-    const sendChannel = localConnection.createDataChannel('sendChannel');
-
-    assert.strictEqual(window.hit, 'FIRED');
-    assert.notOk(sendChannel);
+    assert.strictEqual(codeByAdgParams.toString(), codeByUboParams.toString(), 'ubo name - ok');
 });
 
 test('does not allow to create webRTC', (assert) => {

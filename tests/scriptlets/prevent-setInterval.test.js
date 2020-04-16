@@ -31,6 +31,23 @@ const afterEach = () => {
 
 module(name, { beforeEach, afterEach });
 
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
+        name: 'ubo-no-setInterval-if.js',
+        engine: 'test',
+        verbose: true,
+    };
+
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
+
+    assert.strictEqual(codeByAdgParams.toString(), codeByUboParams.toString(), 'ubo name - ok');
+});
 
 test('prevent-setInterval: adg no args -- logging', (assert) => {
     const params = {
@@ -64,43 +81,6 @@ test('prevent-setInterval: adg no args -- logging', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         assert.strictEqual(window[agLogSetInterval], 'changed', 'property changed');
         clearGlobalProps(agLogSetInterval);
-        done();
-    }, 50);
-});
-
-
-test('prevent-setInterval: ubo alias no args -- logging', (assert) => {
-    const params = {
-        name: 'ubo-no-setInterval-if.js',
-        args: [],
-        verbose: true,
-    };
-    const scriptlet = window.scriptlets.invoke(params);
-    evalWrap(scriptlet);
-    const done = assert.async();
-
-    const uboLogSetInterval = 'uboLogSetInterval';
-    function callback() {
-        window[uboLogSetInterval] = 'changed';
-    }
-    const timeout = 10;
-
-    const intervalId = setInterval(callback, timeout);
-    testIntervals.push(intervalId);
-
-    // eslint-disable-next-line no-console
-    console.log = function log(input) {
-        if (input.indexOf('trace') > -1) {
-            return;
-        }
-        assert.strictEqual(input, `setInterval("${callback.toString()}", ${timeout})`, 'console.hit input should be equal');
-    };
-
-    // We need to run our assertion after all timeouts
-    setTimeout(() => {
-        assert.equal(window.hit, 'value', 'Hit function was executed');
-        assert.strictEqual(window[uboLogSetInterval], 'changed', 'property changed');
-        clearGlobalProps(uboLogSetInterval);
         done();
     }, 50);
 });

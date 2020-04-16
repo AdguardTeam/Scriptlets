@@ -109,6 +109,10 @@ export function removeClass(source, classNames, selector) {
 
 removeClass.names = [
     'remove-class',
+    'remove-class.js',
+    'ubo-remove-class.js',
+    'rc.js',
+    'ubo-rc.js',
 ];
 
 removeClass.injections = [hit, observeDOMChanges];

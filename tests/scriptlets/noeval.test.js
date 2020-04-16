@@ -30,48 +30,23 @@ const runScriptlet = (name) => {
     nativeEval(resultString);
 };
 
-test('ubo noeval alias', (assert) => {
-    runScriptlet('ubo-noeval.js');
-
-    const evalStr = '2';
-
-    console.log = function log(input) {
-        nativeConsole(input);
-        if (input.indexOf('trace') > -1) {
-            return;
-        }
-        assert.ok(input.includes('AdGuard has prevented eval:'), 'console.hit should print info');
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
+        name: 'ubo-noeval.js',
+        engine: 'test',
+        verbose: true,
     };
 
-    const evalWrapper = eval;
-    const actual = evalWrapper(evalStr);
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
 
-    assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
-    assert.strictEqual(actual, undefined, 'result of eval evaluation should be undefined');
+    assert.strictEqual(codeByAdgParams.toString(), codeByUboParams.toString(), 'ubo name - ok');
 });
-
-test('ubo silent-noeval alias', (assert) => {
-    runScriptlet('ubo-silent-noeval.js');
-
-    const evalStr = '2';
-
-    // set assertions amount
-    assert.expect(3);
-
-    console.log = function log(input) {
-        if (input.indexOf('trace') > -1) {
-            return;
-        }
-        assert.ok(input.includes('AdGuard has prevented eval:'), 'console.hit should print info');
-    };
-
-    const evalWrapper = eval;
-    const actual = evalWrapper(evalStr);
-
-    assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
-    assert.strictEqual(actual, undefined, 'result of eval evaluation should be undefined');
-});
-
 
 test('AG noeval alias', (assert) => {
     runScriptlet(name);

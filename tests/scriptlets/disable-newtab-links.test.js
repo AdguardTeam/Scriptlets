@@ -26,28 +26,25 @@ const createLink = () => {
     return elem;
 };
 
-test('ubo alias', (assert) => {
-    createHit();
-    const params = {
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
         name: 'ubo-disable-newtab-links.js',
-        args: [],
+        engine: 'test',
         verbose: true,
     };
 
-    const elem = createLink();
-    const resString = window.scriptlets.invoke(params);
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
 
-    evalWrapper(resString);
-    elem.click();
-
-    const done = assert.async();
-    setTimeout(() => {
-        assert.strictEqual(window.hit, 'FIRED');
-        done();
-    });
+    assert.strictEqual(codeByAdgParams.toString(), codeByUboParams.toString(), 'ubo name - ok');
 });
 
-test('adg alias', (assert) => {
+test('adg works', (assert) => {
     createHit();
     const params = {
         name,
