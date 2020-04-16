@@ -43,7 +43,7 @@ test('Checking if alias name works', (assert) => {
     const codeByAdgParams = window.scriptlets.invoke(adgParams);
     const codeByUboParams = window.scriptlets.invoke(uboParams);
 
-    assert.strictEqual(codeByAdgParams.toString(), codeByUboParams.toString(), 'ubo name - ok');
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
 test('Cookie works fine', (assert) => {

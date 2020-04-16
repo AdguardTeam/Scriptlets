@@ -33,7 +33,7 @@ test('Checking if alias name works', (assert) => {
     const codeByAdgParams = window.scriptlets.invoke(adgParams);
     const codeByAbpParams = window.scriptlets.invoke(abpParams);
 
-    assert.strictEqual(codeByAdgParams.toString(), codeByAbpParams.toString(), 'abp name - ok');
+    assert.strictEqual(codeByAdgParams, codeByAbpParams, 'abp name - ok');
 });
 
 test('Adg rule times = 2', (assert) => {

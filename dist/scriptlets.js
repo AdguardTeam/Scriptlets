@@ -4616,6 +4616,7 @@
     /**
      * Returns redirect code by param
      * @param {Source} source
+     * @returns {string} redirect code
      */
 
 
@@ -4654,9 +4655,10 @@
      */
 
     /**
-    * Returns scriptlet code by param
-    * @param {Source} source
-    */
+     * Returns scriptlet code by param
+     * @param {Source} source
+     * @returns {string} scriptlet code
+     */
 
     function getScriptletCode(source) {
       if (!validator.isValidScriptletName(source.name)) {

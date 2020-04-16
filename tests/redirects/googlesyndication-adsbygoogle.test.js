@@ -35,7 +35,7 @@ test('Checking if alias name works', (assert) => {
     const codeByAdgParams = window.scriptlets.redirects.getCode(adgParams);
     const codeByUboParams = window.scriptlets.redirects.getCode(uboParams);
 
-    assert.strictEqual(codeByAdgParams.toString(), codeByUboParams.toString());
+    assert.strictEqual(codeByAdgParams, codeByUboParams);
 });
 
 test('Redirect testing', (assert) => {

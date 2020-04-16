@@ -47,8 +47,8 @@ test('Checking if alias name works', (assert) => {
     const codeByUboParams = window.scriptlets.invoke(uboParams);
     const codeByAbpParams = window.scriptlets.invoke(abpParams);
 
-    assert.strictEqual(codeByAdgParams.toString(), codeByUboParams.toString(), 'ubo name - ok');
-    assert.strictEqual(codeByAdgParams.toString(), codeByAbpParams.toString(), 'abp name - ok');
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
+    assert.strictEqual(codeByAdgParams, codeByAbpParams, 'abp name - ok');
 });
 
 test('works', (assert) => {

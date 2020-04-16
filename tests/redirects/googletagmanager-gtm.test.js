@@ -36,7 +36,7 @@ test('Checking if alias name works', (assert) => {
     const codeByAdgParams = window.scriptlets.redirects.getCode(adgParams);
     const codeByUboParams = window.scriptlets.redirects.getCode(uboParams);
 
-    assert.strictEqual(codeByAdgParams.toString(), codeByUboParams.toString(), 'ubo name - ok');
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
 test('AdGuard Syntax', (assert) => {
