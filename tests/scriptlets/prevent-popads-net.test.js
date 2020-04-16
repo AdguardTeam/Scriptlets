@@ -28,14 +28,28 @@ const runScriptlet = (name) => {
     evalWrapper(resultString);
 };
 
-test('ag and ubo aliases work', (assert) => {
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
+        name: 'ubo-popads.net.js',
+        engine: 'test',
+        verbose: true,
+    };
+
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
+
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
+});
+
+test('ag works', (assert) => {
     const stub = sinon.stub(Object, 'defineProperties').callsFake((obj, props) => props);
     runScriptlet(name);
     assert.ok(stub.calledOnce, 'Object.defineProperties called once');
-    assert.ok(stub.calledWith(window), 'Object.defineProperties called with window object');
-
-    runScriptlet('ubo-popads.net.js');
-    assert.ok(stub.calledTwice, 'Object.defineProperties called twice');
     assert.ok(stub.calledWith(window), 'Object.defineProperties called with window object');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');

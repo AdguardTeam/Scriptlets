@@ -20,62 +20,22 @@ const mockGoogleDataLayer = (endCallback) => {
     return window.dataLayer;
 };
 
-test('UBO alias', (assert) => {
-    const params = {
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
         name: 'ubo-google-analytics_analytics.js',
+        engine: 'test',
         verbose: true,
     };
-    window.__debug = () => { window.hit = 'FIRED'; };
 
-    const endCallback = () => {
-        assert.ok(true, 'hide.end() was executed');
-    };
-    // emulate DataLayer
-    mockGoogleDataLayer(endCallback);
+    const codeByAdgParams = window.scriptlets.redirects.getCode(adgParams);
+    const codeByUboParams = window.scriptlets.redirects.getCode(uboParams);
 
-    // run scriptlet
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
-
-    // check ga api
-    assert.ok(window.ga, 'ga object was created');
-    assert.ok(window.ga.create(), 'Tracker was created');
-    assert.notOk(window.ga.getByName(), 'getByName returns null');
-    assert.strictEqual(window.ga.getAll().length, 0, 'getAll returns empty array');
-    assert.notOk(window.ga.remove(), 'remove returns undefined');
-    assert.strictEqual(window.ga.loaded, true, 'loaded returns true');
-    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-
-    clearGlobalProps('__debug', 'hit', 'dataLayer', 'ga');
-});
-
-test('UBO Syntax', (assert) => {
-    const params = {
-        name: 'google-analytics_analytics.js',
-        verbose: true,
-    };
-    window.__debug = () => { window.hit = 'FIRED'; };
-
-    const endCallback = () => {
-        assert.ok(true, 'hide.end() was executed');
-    };
-    // emulate DataLayer
-    mockGoogleDataLayer(endCallback);
-
-    // run scriptlet
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
-
-    // check ga api
-    assert.ok(window.ga, 'ga object was created');
-    assert.ok(window.ga.create(), 'Tracker was created');
-    assert.notOk(window.ga.getByName(), 'getByName returns null');
-    assert.strictEqual(window.ga.getAll().length, 0, 'getAll returns empty array');
-    assert.notOk(window.ga.remove(), 'remove returns undefined');
-    assert.strictEqual(window.ga.loaded, true, 'loaded returns true');
-    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-
-    clearGlobalProps('__debug', 'hit', 'dataLayer', 'ga');
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
 test('AdGuard Syntax', (assert) => {

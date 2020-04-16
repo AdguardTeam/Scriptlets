@@ -32,38 +32,22 @@ function addAttr(elem, attr) {
 }
 
 
-test('ubo alias', (assert) => {
-    createHit();
-    const attrs = ['test1', 'test2'];
-    const className = 'test';
-    const params = {
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
         name: 'ubo-remove-attr.js',
-        args: [attrs.join('|'), `.${className}`],
+        engine: 'test',
         verbose: true,
     };
 
-    const elem = createElem(className, attrs);
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
 
-    const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
-
-    attrs.forEach((a) => {
-        assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
-    });
-    assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps('hit');
-
-    const done = assert.async();
-
-    setTimeout(() => { addAttr(elem, 'test2'); }, 10);
-
-    setTimeout(() => {
-        attrs.forEach((a) => {
-            assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
-        });
-        assert.strictEqual(window.hit, 'FIRED');
-        done();
-    }, 50);
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
 

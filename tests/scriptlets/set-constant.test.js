@@ -24,26 +24,22 @@ const createScriptletRunner = (counter) => (property, value) => {
     return counter;
 };
 
-test('ubo alias works', (assert) => {
-    window.__debug = () => {
-        window.hit = 'FIRED';
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
     };
-
-    const value = 'false';
-    const property = 'ubo';
-    const params = {
+    const uboParams = {
         name: 'ubo-set-constant.js',
-        args: [property, value],
+        engine: 'test',
         verbose: true,
     };
 
-    const resString = window.scriptlets.invoke(params);
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
 
-    evalWrapper(resString);
-
-    assert.strictEqual(window[property], false);
-    assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps(property);
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
 test('sets values correctly', (assert) => {
