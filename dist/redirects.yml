@@ -352,7 +352,16 @@
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
-          var prefix = source.ruleText || ''; // Used to check if scriptlet uses 'hit' function for logging
+          var prefix = source.ruleText || '';
+
+          if (source.domainName) {
+            var SCRIPTLET_MARKER = '#%#//'; // delete all domains from ruleText and leave just rule part
+
+            var rulePart = source.ruleText.slice(source.ruleText.indexOf(SCRIPTLET_MARKER)); // prepare applied scriptlet rule for specific domain
+
+            prefix = "".concat(source.domainName).concat(rulePart);
+          } // Used to check if scriptlet uses 'hit' function for logging
+
 
           var LOG_MARKER = 'log: ';
 
@@ -451,7 +460,16 @@
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
-          var prefix = source.ruleText || ''; // Used to check if scriptlet uses 'hit' function for logging
+          var prefix = source.ruleText || '';
+
+          if (source.domainName) {
+            var SCRIPTLET_MARKER = '#%#//'; // delete all domains from ruleText and leave just rule part
+
+            var rulePart = source.ruleText.slice(source.ruleText.indexOf(SCRIPTLET_MARKER)); // prepare applied scriptlet rule for specific domain
+
+            prefix = "".concat(source.domainName).concat(rulePart);
+          } // Used to check if scriptlet uses 'hit' function for logging
+
 
           var LOG_MARKER = 'log: ';
 
@@ -537,7 +555,16 @@
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
-          var prefix = source.ruleText || ''; // Used to check if scriptlet uses 'hit' function for logging
+          var prefix = source.ruleText || '';
+
+          if (source.domainName) {
+            var SCRIPTLET_MARKER = '#%#//'; // delete all domains from ruleText and leave just rule part
+
+            var rulePart = source.ruleText.slice(source.ruleText.indexOf(SCRIPTLET_MARKER)); // prepare applied scriptlet rule for specific domain
+
+            prefix = "".concat(source.domainName).concat(rulePart);
+          } // Used to check if scriptlet uses 'hit' function for logging
+
 
           var LOG_MARKER = 'log: ';
 
@@ -610,7 +637,16 @@
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
-          var prefix = source.ruleText || ''; // Used to check if scriptlet uses 'hit' function for logging
+          var prefix = source.ruleText || '';
+
+          if (source.domainName) {
+            var SCRIPTLET_MARKER = '#%#//'; // delete all domains from ruleText and leave just rule part
+
+            var rulePart = source.ruleText.slice(source.ruleText.indexOf(SCRIPTLET_MARKER)); // prepare applied scriptlet rule for specific domain
+
+            prefix = "".concat(source.domainName).concat(rulePart);
+          } // Used to check if scriptlet uses 'hit' function for logging
+
 
           var LOG_MARKER = 'log: ';
 
@@ -806,7 +842,16 @@
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
-          var prefix = source.ruleText || ''; // Used to check if scriptlet uses 'hit' function for logging
+          var prefix = source.ruleText || '';
+
+          if (source.domainName) {
+            var SCRIPTLET_MARKER = '#%#//'; // delete all domains from ruleText and leave just rule part
+
+            var rulePart = source.ruleText.slice(source.ruleText.indexOf(SCRIPTLET_MARKER)); // prepare applied scriptlet rule for specific domain
+
+            prefix = "".concat(source.domainName).concat(rulePart);
+          } // Used to check if scriptlet uses 'hit' function for logging
+
 
           var LOG_MARKER = 'log: ';
 
@@ -971,7 +1016,16 @@
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
-          var prefix = source.ruleText || ''; // Used to check if scriptlet uses 'hit' function for logging
+          var prefix = source.ruleText || '';
+
+          if (source.domainName) {
+            var SCRIPTLET_MARKER = '#%#//'; // delete all domains from ruleText and leave just rule part
+
+            var rulePart = source.ruleText.slice(source.ruleText.indexOf(SCRIPTLET_MARKER)); // prepare applied scriptlet rule for specific domain
+
+            prefix = "".concat(source.domainName).concat(rulePart);
+          } // Used to check if scriptlet uses 'hit' function for logging
+
 
           var LOG_MARKER = 'log: ';
 
@@ -1089,7 +1143,16 @@
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
-          var prefix = source.ruleText || ''; // Used to check if scriptlet uses 'hit' function for logging
+          var prefix = source.ruleText || '';
+
+          if (source.domainName) {
+            var SCRIPTLET_MARKER = '#%#//'; // delete all domains from ruleText and leave just rule part
+
+            var rulePart = source.ruleText.slice(source.ruleText.indexOf(SCRIPTLET_MARKER)); // prepare applied scriptlet rule for specific domain
+
+            prefix = "".concat(source.domainName).concat(rulePart);
+          } // Used to check if scriptlet uses 'hit' function for logging
+
 
           var LOG_MARKER = 'log: ';
 
@@ -1149,7 +1212,16 @@
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
-          var prefix = source.ruleText || ''; // Used to check if scriptlet uses 'hit' function for logging
+          var prefix = source.ruleText || '';
+
+          if (source.domainName) {
+            var SCRIPTLET_MARKER = '#%#//'; // delete all domains from ruleText and leave just rule part
+
+            var rulePart = source.ruleText.slice(source.ruleText.indexOf(SCRIPTLET_MARKER)); // prepare applied scriptlet rule for specific domain
+
+            prefix = "".concat(source.domainName).concat(rulePart);
+          } // Used to check if scriptlet uses 'hit' function for logging
+
 
           var LOG_MARKER = 'log: ';
 
@@ -1209,7 +1281,16 @@
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
-          var prefix = source.ruleText || ''; // Used to check if scriptlet uses 'hit' function for logging
+          var prefix = source.ruleText || '';
+
+          if (source.domainName) {
+            var SCRIPTLET_MARKER = '#%#//'; // delete all domains from ruleText and leave just rule part
+
+            var rulePart = source.ruleText.slice(source.ruleText.indexOf(SCRIPTLET_MARKER)); // prepare applied scriptlet rule for specific domain
+
+            prefix = "".concat(source.domainName).concat(rulePart);
+          } // Used to check if scriptlet uses 'hit' function for logging
+
 
           var LOG_MARKER = 'log: ';
 

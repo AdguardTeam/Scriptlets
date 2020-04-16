@@ -15,7 +15,15 @@ export const hit = (source, message) => {
         const log = console.log.bind(console);
         const trace = console.trace.bind(console);
 
-        const prefix = source.ruleText || '';
+        let prefix = source.ruleText || '';
+
+        if (source.domainName) {
+            const SCRIPTLET_MARKER = '#%#//';
+            // delete all domains from ruleText and leave just rule part
+            const rulePart = source.ruleText.slice(source.ruleText.indexOf(SCRIPTLET_MARKER));
+            // prepare applied scriptlet rule for specific domain
+            prefix = `${source.domainName}${rulePart}`;
+        }
 
         // Used to check if scriptlet uses 'hit' function for logging
         const LOG_MARKER = 'log: ';
