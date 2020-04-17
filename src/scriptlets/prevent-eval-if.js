@@ -45,6 +45,7 @@ preventEvalIf.names = [
     'prevent-eval-if',
     'noeval-if.js',
     'ubo-noeval-if.js',
+    'ubo-noeval-if',
 ];
 
 preventEvalIf.injections = [toRegExp, hit];

@@ -82,6 +82,7 @@ removeCookie.names = [
     'remove-cookie',
     'cookie-remover.js',
     'ubo-cookie-remover.js',
+    'ubo-cookie-remover',
 ];
 
 removeCookie.injections = [toRegExp, hit];

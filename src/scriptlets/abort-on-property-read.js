@@ -79,6 +79,8 @@ abortOnPropertyRead.names = [
     'ubo-abort-on-property-read.js',
     'aopr.js',
     'ubo-aopr.js',
+    'ubo-abort-on-property-read',
+    'ubo-aopr',
     'abp-abort-on-property-read',
 ];
 abortOnPropertyRead.injections = [

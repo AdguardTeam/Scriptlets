@@ -77,6 +77,8 @@ adjustSetTimeout.names = [
     'ubo-nano-setTimeout-booster.js',
     'nano-stb.js',
     'ubo-nano-stb.js',
+    'ubo-nano-setTimeout-booster',
+    'ubo-nano-stb',
 ];
 
 adjustSetTimeout.injections = [toRegExp, hit];

@@ -68,6 +68,8 @@ preventAddEventListener.names = [
     'ubo-addEventListener-defuser.js',
     'aeld.js',
     'ubo-aeld.js',
+    'ubo-addEventListener-defuser',
+    'ubo-aeld',
 ];
 
 preventAddEventListener.injections = [toRegExp, hit];

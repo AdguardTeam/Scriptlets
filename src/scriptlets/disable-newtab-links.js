@@ -33,6 +33,7 @@ disableNewtabLinks.names = [
     'disable-newtab-links',
     'disable-newtab-links.js',
     'ubo-disable-newtab-links.js',
+    'ubo-disable-newtab-links',
 ];
 
 disableNewtabLinks.injections = [

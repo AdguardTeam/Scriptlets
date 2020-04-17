@@ -71,6 +71,8 @@ abortOnPropertyWrite.names = [
     'ubo-abort-on-property-write.js',
     'aopw.js',
     'ubo-aopw.js',
+    'ubo-abort-on-property-write',
+    'ubo-aopw',
     'abp-abort-on-property-write',
 ];
 

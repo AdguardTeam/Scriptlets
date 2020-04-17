@@ -116,6 +116,8 @@ preventRequestAnimationFrame.names = [
     'ubo-requestAnimationFrame-if.js',
     'raf-if.js',
     'ubo-raf-if.js',
+    'ubo-requestAnimationFrame-if',
+    'ubo-raf-if',
 ];
 
 preventRequestAnimationFrame.injections = [hit, startsWith, toRegExp, noopFunc];

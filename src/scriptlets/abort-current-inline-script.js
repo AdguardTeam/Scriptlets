@@ -159,6 +159,11 @@ abortCurrentInlineScript.names = [
     'ubo-abort-current-inline-script.js',
     'acis.js',
     'ubo-acis.js',
+    // AdGuard extension handles syntax of ubo-rules but converts them
+    // so rules like 'testcases.adguard.com##+js(acis, __testCase4)'
+    // converted to 'testcases.adguard.com#%#//scriptlet("ubo-acis", "__testCase4"))'
+    'ubo-abort-current-inline-script',
+    'ubo-acis',
     'abp-abort-current-inline-script',
 ];
 

@@ -84,6 +84,8 @@ removeAttr.names = [
     'ubo-remove-attr.js',
     'ra.js',
     'ubo-ra.js',
+    'ubo-remove-attr',
+    'ubo-ra',
 ];
 
 removeAttr.injections = [hit, observeDOMChanges];

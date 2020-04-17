@@ -162,6 +162,10 @@ preventSetInterval.names = [
     'ubo-nosiif.js',
     'sid.js', // old short scriptlet name
     'ubo-sid.js',
+    'ubo-no-setInterval-if',
+    'ubo-setInterval-defuser',
+    'ubo-nosiif',
+    'ubo-sid',
 ];
 
 preventSetInterval.injections = [toRegExp, startsWith, hit, noopFunc];
