@@ -18,9 +18,16 @@ export const hit = (source, message) => {
         let prefix = source.ruleText || '';
 
         if (source.domainName) {
-            const SCRIPTLET_MARKER = '#%#//';
+            const AG_SCRIPTLET_MARKER = '#%#//';
+            const UBO_SCRIPTLET_MARKER = '##+js';
+            let ruleStartIndex;
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+                ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+                ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
             // delete all domains from ruleText and leave just rule part
-            const rulePart = source.ruleText.slice(source.ruleText.indexOf(SCRIPTLET_MARKER));
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             // prepare applied scriptlet rule for specific domain
             prefix = `${source.domainName}${rulePart}`;
         }

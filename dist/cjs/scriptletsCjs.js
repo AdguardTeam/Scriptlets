@@ -255,9 +255,18 @@ var hit = function hit(source, message) {
     var prefix = source.ruleText || '';
 
     if (source.domainName) {
-      var SCRIPTLET_MARKER = '#%#//'; // delete all domains from ruleText and leave just rule part
+      var AG_SCRIPTLET_MARKER = '#%#//';
+      var UBO_SCRIPTLET_MARKER = '##+js';
+      var ruleStartIndex;
 
-      var rulePart = source.ruleText.slice(source.ruleText.indexOf(SCRIPTLET_MARKER)); // prepare applied scriptlet rule for specific domain
+      if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+        ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+      } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+        ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+      } // delete all domains from ruleText and leave just rule part
+
+
+      var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
 
       prefix = "".concat(source.domainName).concat(rulePart);
     } // Used to check if scriptlet uses 'hit' function for logging
