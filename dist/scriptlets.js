@@ -4588,7 +4588,10 @@
         GoogleTagServicesGpt: GoogleTagServicesGpt,
         ScoreCardResearchBeacon: ScoreCardResearchBeacon,
         metrikaYandexTag: metrikaYandexTag,
-        metrikaYandexWatch: metrikaYandexWatch
+        metrikaYandexWatch: metrikaYandexWatch,
+        preventFab: preventFab,
+        setPopadsDummy: setPopadsDummy,
+        preventPopadsNet: preventPopadsNet
     });
 
     /**
