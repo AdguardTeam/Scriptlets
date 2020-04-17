@@ -44,6 +44,7 @@ preventFab.names = [
     'ubo-nofab.js',
     'fuckadblock.js-3.2.0',
     'ubo-fuckadblock.js-3.2.0',
+    'ubo-nofab',
 ];
 
 preventFab.injections = [hit, noopFunc, noopThis];

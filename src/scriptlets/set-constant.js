@@ -138,6 +138,8 @@ setConstant.names = [
     'ubo-set-constant.js',
     'set.js',
     'ubo-set.js',
+    'ubo-set-constant',
+    'ubo-set',
 ];
 setConstant.injections = [
     getPropertyInChain,

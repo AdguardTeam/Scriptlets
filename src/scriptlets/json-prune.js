@@ -105,6 +105,7 @@ jsonPrune.names = [
     'json-prune',
     'json-prune.js',
     'ubo-json-prune.js',
+    'ubo-json-prune',
 ];
 
 jsonPrune.injections = [hit, getPropertyInChain];

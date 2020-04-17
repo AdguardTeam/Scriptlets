@@ -31,6 +31,8 @@ noeval.names = [
     'silent-noeval.js',
     'ubo-noeval.js',
     'ubo-silent-noeval.js',
+    'ubo-noeval',
+    'ubo-silent-noeval',
 ];
 
 noeval.injections = [hit];

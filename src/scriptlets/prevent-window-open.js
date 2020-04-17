@@ -118,6 +118,7 @@ preventWindowOpen.names = [
     'prevent-window-open',
     'window.open-defuser.js',
     'ubo-window.open-defuser.js',
+    'ubo-window.open-defuser',
 ];
 
 preventWindowOpen.injections = [

@@ -38,6 +38,7 @@ preventPopadsNet.names = [
     'prevent-popads-net',
     'popads.net.js',
     'ubo-popads.net.js',
+    'ubo-popads.net',
 ];
 
 preventPopadsNet.injections = [createOnErrorHandler, randomId, hit];

@@ -162,6 +162,10 @@ preventSetTimeout.names = [
     'ubo-nostif.js',
     'std.js', // old short scriptlet name
     'ubo-std.js',
+    'ubo-no-setTimeout-if',
+    'ubo-setTimeout-defuser',
+    'ubo-nostif',
+    'ubo-std',
 ];
 
 preventSetTimeout.injections = [toRegExp, startsWith, hit, noopFunc];

@@ -87,6 +87,7 @@ preventAdfly.names = [
     'prevent-adfly',
     'adfly-defuser.js',
     'ubo-adfly-defuser.js',
+    'ubo-adfly-defuser',
 ];
 
 preventAdfly.injections = [setPropertyAccess, hit];
