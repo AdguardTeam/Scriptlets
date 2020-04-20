@@ -46,7 +46,7 @@ export function preventFab(source) {
         set() {},
     };
 
-    // redefined Fab data properties which if it exists
+    // redefined Fab data properties which if 'FuckAdBlock' variable exists
     if (Object.prototype.hasOwnProperty.call(window, 'FuckAdBlock')) {
         window.FuckAdBlock = Fab;
     } else {
