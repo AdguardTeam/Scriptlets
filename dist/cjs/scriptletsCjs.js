@@ -2148,7 +2148,7 @@ preventEvalIf.injections = [toRegExp, hit];
  */
 
 function preventFab(source) {
-  hit(source);
+  hit(source); // redefines Fab function for adblock detection
 
   var Fab = function Fab() {};
 
@@ -2184,11 +2184,12 @@ function preventFab(source) {
       return fab;
     },
     set: function set() {}
-  };
+  }; // redefined Fab data properties which if it exists
 
   if (Object.prototype.hasOwnProperty.call(window, 'FuckAdBlock')) {
     window.FuckAdBlock = Fab;
   } else {
+    // or redefined Fab accessor properties
     Object.defineProperty(window, 'FuckAdBlock', getSetFab);
   }
 

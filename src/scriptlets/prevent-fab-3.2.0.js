@@ -17,6 +17,8 @@ import { hit, noopFunc, noopThis } from '../helpers';
  */
 export function preventFab(source) {
     hit(source);
+
+    // redefines Fab function for adblock detection
     const Fab = function () {};
     Fab.prototype.check = noopFunc;
     Fab.prototype.clearEvent = noopFunc;
@@ -44,9 +46,11 @@ export function preventFab(source) {
         set() {},
     };
 
+    // redefined Fab data properties which if it exists
     if (Object.prototype.hasOwnProperty.call(window, 'FuckAdBlock')) {
         window.FuckAdBlock = Fab;
     } else {
+        // or redefined Fab accessor properties
         Object.defineProperty(window, 'FuckAdBlock', getSetFab);
     }
     if (Object.prototype.hasOwnProperty.call(window, 'BlockAdBlock')) {
