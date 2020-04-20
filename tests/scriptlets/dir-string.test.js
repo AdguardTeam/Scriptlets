@@ -18,19 +18,22 @@ const createHit = () => {
 
 const evalWrapper = eval;
 
-
-test('ubo alias', (assert) => {
-    createHit();
-    const params = {
-        name: 'abp-dir-string',
-        args: [],
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
         verbose: true,
     };
-    const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    const abpParams = {
+        name: 'abp-dir-string',
+        engine: 'test',
+        verbose: true,
+    };
 
-    console.dir({});
-    assert.strictEqual(window.hit, 'FIRED', 'Console dir was updated and invoked');
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByAbpParams = window.scriptlets.invoke(abpParams);
+
+    assert.strictEqual(codeByAdgParams, codeByAbpParams, 'abp name - ok');
 });
 
 test('Adg rule times = 2', (assert) => {

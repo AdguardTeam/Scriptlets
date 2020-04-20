@@ -25,6 +25,24 @@ const afterEach = () => {
 
 module(name, { beforeEach, afterEach });
 
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
+        name: 'ubo-window.open-defuser.js',
+        engine: 'test',
+        verbose: true,
+    };
+
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
+
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
+});
+
 test('prevent-window-open: adg no args', (assert) => {
     const params = {
         name,
@@ -36,20 +54,6 @@ test('prevent-window-open: adg no args', (assert) => {
     evalWrap(scriptlet);
     // check if scriptlet works
     window.open('some url');
-    assert.equal(window.hit, 'value', 'Hit function was executed');
-});
-
-test('prevent-window-open: ubo alias: not reverse, string', (assert) => {
-    const params = {
-        name: 'ubo-window.open-defuser.js',
-        args: ['1', 'test'],
-        verbose: true,
-    };
-    const scriptlet = window.scriptlets.invoke(params);
-    // run scriptlet code
-    evalWrap(scriptlet);
-    // check if scriptlet works
-    window.open('test url', 'some target');
     assert.equal(window.hit, 'value', 'Hit function was executed');
 });
 

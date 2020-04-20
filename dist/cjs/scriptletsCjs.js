@@ -252,7 +252,25 @@ var hit = function hit(source, message) {
   try {
     var log = console.log.bind(console);
     var trace = console.trace.bind(console);
-    var prefix = source.ruleText || ''; // Used to check if scriptlet uses 'hit' function for logging
+    var prefix = source.ruleText || '';
+
+    if (source.domainName) {
+      var AG_SCRIPTLET_MARKER = '#%#//';
+      var UBO_SCRIPTLET_MARKER = '##+js';
+      var ruleStartIndex;
+
+      if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+        ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+      } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+        ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+      } // delete all domains from ruleText and leave just rule part
+
+
+      var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
+
+      prefix = "".concat(source.domainName).concat(rulePart);
+    } // Used to check if scriptlet uses 'hit' function for logging
+
 
     var LOG_MARKER = 'log: ';
 
@@ -468,10 +486,7 @@ function _arrayWithHoles(arr) {
 var arrayWithHoles = _arrayWithHoles;
 
 function _iterableToArrayLimit(arr, i) {
-  if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) {
-    return;
-  }
-
+  if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return;
   var _arr = [];
   var _n = true;
   var _d = false;
@@ -499,14 +514,37 @@ function _iterableToArrayLimit(arr, i) {
 
 var iterableToArrayLimit = _iterableToArrayLimit;
 
+function _arrayLikeToArray(arr, len) {
+  if (len == null || len > arr.length) len = arr.length;
+
+  for (var i = 0, arr2 = new Array(len); i < len; i++) {
+    arr2[i] = arr[i];
+  }
+
+  return arr2;
+}
+
+var arrayLikeToArray = _arrayLikeToArray;
+
+function _unsupportedIterableToArray(o, minLen) {
+  if (!o) return;
+  if (typeof o === "string") return arrayLikeToArray(o, minLen);
+  var n = Object.prototype.toString.call(o).slice(8, -1);
+  if (n === "Object" && o.constructor) n = o.constructor.name;
+  if (n === "Map" || n === "Set") return Array.from(n);
+  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
+}
+
+var unsupportedIterableToArray = _unsupportedIterableToArray;
+
 function _nonIterableRest() {
-  throw new TypeError("Invalid attempt to destructure non-iterable instance");
+  throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
 }
 
 var nonIterableRest = _nonIterableRest;
 
 function _slicedToArray(arr, i) {
-  return arrayWithHoles(arr) || iterableToArrayLimit(arr, i) || nonIterableRest();
+  return arrayWithHoles(arr) || iterableToArrayLimit(arr, i) || unsupportedIterableToArray(arr, i) || nonIterableRest();
 }
 
 var slicedToArray = _slicedToArray;
@@ -2786,7 +2824,7 @@ function removeClass(source, classNames, selector) {
 
   observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
 }
-removeClass.names = ['remove-class'];
+removeClass.names = ['remove-class', 'remove-class.js', 'ubo-remove-class.js', 'rc.js', 'ubo-rc.js'];
 removeClass.injections = [hit, observeDOMChanges];
 
 /**
@@ -3648,13 +3686,13 @@ var validator = {
 };
 
 function _iterableToArray(iter) {
-  if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+  if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
 }
 
 var iterableToArray = _iterableToArray;
 
 function _toArray(arr) {
-  return arrayWithHoles(arr) || iterableToArray(arr) || nonIterableRest();
+  return arrayWithHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableRest();
 }
 
 var toArray = _toArray;
@@ -4661,6 +4699,7 @@ var getRedirectByName = function getRedirectByName(name) {
 /**
  * Returns redirect code by param
  * @param {Source} source
+ * @returns {string} redirect code
  */
 
 
@@ -4696,12 +4735,14 @@ var redirectsCjs = {
  * @property {string} [version]
  * @property {boolean} [verbose] flag to enable printing to console debug information
  * @property {string} [ruleText] Source rule text is used for debugging purposes
+ * @property {string} [domainName] domain name where scriptlet is applied; for debugging purposes
  */
 
 /**
-* Returns scriptlet code by param
-* @param {Source} source
-*/
+ * Returns scriptlet code by param
+ * @param {Source} source
+ * @returns {string} scriptlet code
+ */
 
 function getScriptletCode(source) {
   if (!validator.isValidScriptletName(source.name)) {

@@ -40,30 +40,25 @@ const createFuckAdBlockSample = () => {
     window.fuckAdBlock = window.blockAdBlock = new FuckAdBlock();
 };
 
-test('ubo alias works', (assert) => {
-    const uboFuckAdBlock = 'uboFuckAdBlock';
-    createFuckAdBlockSample();
-    assert.ok(window.fuckAdBlock.check());
-    window.fuckAdBlock.onDetected(() => {
-        window[uboFuckAdBlock] = uboFuckAdBlock;
-    });
-    assert.strictEqual(window[uboFuckAdBlock], uboFuckAdBlock, 'callback should apply');
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
+        name: 'ubo-nofab.js',
+        engine: 'test',
+        verbose: true,
+    };
 
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
 
-    clearGlobalProps(uboFuckAdBlock);
-    runScriptlet('ubo-fuckadblock.js-3.2.0');
-
-    assert.notOk(window.fuckAdBlock.check(), 'should be undefined');
-    window.fuckAdBlock.onDetected(() => {
-        window[uboFuckAdBlock] = uboFuckAdBlock;
-    });
-    assert.strictEqual(window[uboFuckAdBlock], undefined, 'callback should not be applied');
-
-    assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps(uboFuckAdBlock);
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
-test('ag alias works', (assert) => {
+test('ag works', (assert) => {
     const agFuckAdBlock = 'agFuckAdBlock';
     createFuckAdBlockSample();
     assert.ok(window.fuckAdBlock.check());

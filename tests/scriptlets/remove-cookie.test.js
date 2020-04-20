@@ -28,6 +28,24 @@ const runScriptlet = (name, match) => {
     evalWrapper(resultString);
 };
 
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
+        name: 'ubo-cookie-remover.js',
+        engine: 'test',
+        verbose: true,
+    };
+
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
+
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
+});
+
 test('Cookie works fine', (assert) => {
     const cName = '__test-cookie-name__';
     document.cookie = `${cName}=cookie`;
@@ -44,16 +62,6 @@ test('Remove cookie by match', (assert) => {
     assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
     assert.strictEqual(document.cookie.includes(cName), false, 'Cookie by match was removed');
     assert.strictEqual(document.cookie.includes(cName1), true, 'Another cookies works');
-});
-
-test('Remove cookie by match ubo syntax', (assert) => {
-    const name = 'ubo-cookie-remover.js';
-    const cName = '__test-cookie-name__14';
-    document.cookie = `${cName}=cookie`;
-    runScriptlet(name, cName);
-
-    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
-    assert.strictEqual(document.cookie.includes(cName), false, 'Cookie by match was removed');
 });
 
 test('Remove all cookies', (assert) => {

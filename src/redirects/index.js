@@ -37,6 +37,7 @@ const getRedirectByName = (name) => {
 /**
  * Returns redirect code by param
  * @param {Source} source
+ * @returns {string} redirect code
  */
 const getRedirectCode = (source) => {
     const redirect = getRedirectByName(source.name);

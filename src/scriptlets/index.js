@@ -27,12 +27,14 @@ import {
  * @property {string} [version]
  * @property {boolean} [verbose] flag to enable printing to console debug information
  * @property {string} [ruleText] Source rule text is used for debugging purposes
+ * @property {string} [domainName] domain name where scriptlet is applied; for debugging purposes
  */
 
 /**
-* Returns scriptlet code by param
-* @param {Source} source
-*/
+ * Returns scriptlet code by param
+ * @param {Source} source
+ * @returns {string} scriptlet code
+ */
 function getScriptletCode(source) {
     if (!validator.isValidScriptletName(source.name)) {
         return null;

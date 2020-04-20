@@ -42,7 +42,7 @@ test('Checking if alias name works', (assert) => {
     const codeByAdgParams = window.scriptlets.invoke(adgParams);
     const codeByAliasParams = window.scriptlets.invoke(aliasParams);
 
-    assert.strictEqual(codeByAdgParams.toString(), codeByAliasParams.toString());
+    assert.strictEqual(codeByAdgParams, codeByAliasParams);
 });
 
 

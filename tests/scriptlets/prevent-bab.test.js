@@ -27,18 +27,22 @@ const runScriptlet = (name) => {
     evalWrapper(resultString);
 };
 
-test('ubo alias works', (assert) => {
-    runScriptlet('ubo-bab-defuser.js');
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
+        name: 'ubo-bab-defuser.js',
+        engine: 'test',
+        verbose: true,
+    };
 
-    const evalProp = 'evalProp';
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
 
-    const evalWrap = eval;
-
-    evalWrap(`(function test() { const temp = 'blockadblock'; window.${evalProp} = 'test';})()`);
-
-    assert.strictEqual(window[evalProp], undefined);
-    assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps(evalProp);
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
 test('works eval with AdblockBlock', (assert) => {
