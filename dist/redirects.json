@@ -166,7 +166,9 @@
             "noeval.js",
             "silent-noeval.js",
             "ubo-noeval.js",
-            "ubo-silent-noeval.js"
+            "ubo-silent-noeval.js",
+            "ubo-noeval",
+            "ubo-silent-noeval"
         ],
         "contentType": "application/javascript;base64",
         "content": "KGZ1bmN0aW9uKHNvdXJjZSwgYXJncyl7CmZ1bmN0aW9uIG5vZXZhbChzb3VyY2UpIHsKICAgIHdpbmRvdy5ldmFsID0gZnVuY3Rpb24gZXZhbFdyYXBwZXIocykgewogICAgICBoaXQoc291cmNlLCAiQWRHdWFyZCBoYXMgcHJldmVudGVkIGV2YWw6XG4iLmNvbmNhdChzKSk7CiAgICB9LmJpbmQoKTsKICB9CmZ1bmN0aW9uIGhpdChzb3VyY2UsIG1lc3NhZ2UpIHsKICAgIGlmIChzb3VyY2UudmVyYm9zZSAhPT0gdHJ1ZSkgewogICAgICByZXR1cm47CiAgICB9CgogICAgdHJ5IHsKICAgICAgdmFyIGxvZyA9IGNvbnNvbGUubG9nLmJpbmQoY29uc29sZSk7CiAgICAgIHZhciB0cmFjZSA9IGNvbnNvbGUudHJhY2UuYmluZChjb25zb2xlKTsKICAgICAgdmFyIHByZWZpeCA9IHNvdXJjZS5ydWxlVGV4dCB8fCAnJzsKICAgICAgdmFyIExPR19NQVJLRVIgPSAnbG9nOiAnOwoKICAgICAgaWYgKG1lc3NhZ2UpIHsKICAgICAgICBpZiAobWVzc2FnZS5pbmRleE9mKExPR19NQVJLRVIpID09PSAtMSkgewogICAgICAgICAgbG9nKCIiLmNvbmNhdChwcmVmaXgsICIgbWVzc2FnZTpcbiIpLmNvbmNhdChtZXNzYWdlKSk7CiAgICAgICAgfSBlbHNlIHsKICAgICAgICAgIGxvZyhtZXNzYWdlLnNsaWNlKExPR19NQVJLRVIubGVuZ3RoKSk7CiAgICAgICAgfQogICAgICB9CgogICAgICBsb2coIiIuY29uY2F0KHByZWZpeCwgIiB0cmFjZSBzdGFydCIpKTsKCiAgICAgIGlmICh0cmFjZSkgewogICAgICAgIHRyYWNlKCk7CiAgICAgIH0KCiAgICAgIGxvZygiIi5jb25jYXQocHJlZml4LCAiIHRyYWNlIGVuZCIpKTsKICAgIH0gY2F0Y2ggKGUpIHt9CgogICAgaWYgKHR5cGVvZiB3aW5kb3cuX19kZWJ1ZyA9PT0gJ2Z1bmN0aW9uJykgewogICAgICB3aW5kb3cuX19kZWJ1Zyhzb3VyY2UpOwogICAgfQogIH07CiAgICAgICAgY29uc3QgdXBkYXRlZEFyZ3MgPSBhcmdzID8gW10uY29uY2F0KHNvdXJjZSkuY29uY2F0KGFyZ3MpIDogW3NvdXJjZV07CiAgICAgICAgbm9ldmFsLmFwcGx5KHRoaXMsIHVwZGF0ZWRBcmdzKTsKICAgIAp9KSh7Im5hbWUiOiJub2V2YWwiLCJhcmdzIjpbXX0sIFtdKTs="

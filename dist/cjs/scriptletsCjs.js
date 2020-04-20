@@ -468,10 +468,7 @@ function _arrayWithHoles(arr) {
 var arrayWithHoles = _arrayWithHoles;
 
 function _iterableToArrayLimit(arr, i) {
-  if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) {
-    return;
-  }
-
+  if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return;
   var _arr = [];
   var _n = true;
   var _d = false;
@@ -499,14 +496,37 @@ function _iterableToArrayLimit(arr, i) {
 
 var iterableToArrayLimit = _iterableToArrayLimit;
 
+function _arrayLikeToArray(arr, len) {
+  if (len == null || len > arr.length) len = arr.length;
+
+  for (var i = 0, arr2 = new Array(len); i < len; i++) {
+    arr2[i] = arr[i];
+  }
+
+  return arr2;
+}
+
+var arrayLikeToArray = _arrayLikeToArray;
+
+function _unsupportedIterableToArray(o, minLen) {
+  if (!o) return;
+  if (typeof o === "string") return arrayLikeToArray(o, minLen);
+  var n = Object.prototype.toString.call(o).slice(8, -1);
+  if (n === "Object" && o.constructor) n = o.constructor.name;
+  if (n === "Map" || n === "Set") return Array.from(n);
+  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
+}
+
+var unsupportedIterableToArray = _unsupportedIterableToArray;
+
 function _nonIterableRest() {
-  throw new TypeError("Invalid attempt to destructure non-iterable instance");
+  throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
 }
 
 var nonIterableRest = _nonIterableRest;
 
 function _slicedToArray(arr, i) {
-  return arrayWithHoles(arr) || iterableToArrayLimit(arr, i) || nonIterableRest();
+  return arrayWithHoles(arr) || iterableToArrayLimit(arr, i) || unsupportedIterableToArray(arr, i) || nonIterableRest();
 }
 
 var slicedToArray = _slicedToArray;
@@ -789,7 +809,7 @@ function abortOnPropertyRead(source, property) {
   setChainPropAccess(window, property);
   window.onerror = createOnErrorHandler(rid).bind();
 }
-abortOnPropertyRead.names = ['abort-on-property-read', 'abort-on-property-read.js', 'ubo-abort-on-property-read.js', 'aopr.js', 'ubo-aopr.js', 'abp-abort-on-property-read'];
+abortOnPropertyRead.names = ['abort-on-property-read', 'abort-on-property-read.js', 'ubo-abort-on-property-read.js', 'aopr.js', 'ubo-aopr.js', 'ubo-abort-on-property-read', 'ubo-aopr', 'abp-abort-on-property-read'];
 abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
 /* eslint-disable max-len */
@@ -867,7 +887,7 @@ function abortOnPropertyWrite(source, property) {
   setChainPropAccess(window, property);
   window.onerror = createOnErrorHandler(rid).bind();
 }
-abortOnPropertyWrite.names = ['abort-on-property-write', 'abort-on-property-write.js', 'ubo-abort-on-property-write.js', 'aopw.js', 'ubo-aopw.js', 'abp-abort-on-property-write'];
+abortOnPropertyWrite.names = ['abort-on-property-write', 'abort-on-property-write.js', 'ubo-abort-on-property-write.js', 'aopw.js', 'ubo-aopw.js', 'ubo-abort-on-property-write', 'ubo-aopw', 'abp-abort-on-property-write'];
 abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
 /* eslint-disable max-len */
@@ -1032,7 +1052,7 @@ preventSetTimeout.names = ['prevent-setTimeout', 'no-setTimeout-if.js', // new i
 'ubo-no-setTimeout-if.js', 'setTimeout-defuser.js', // old name should be supported as well
 'ubo-setTimeout-defuser.js', 'nostif.js', // new short name of no-setTimeout-if
 'ubo-nostif.js', 'std.js', // old short scriptlet name
-'ubo-std.js'];
+'ubo-std.js', 'ubo-no-setTimeout-if', 'ubo-setTimeout-defuser', 'ubo-nostif', 'ubo-std'];
 preventSetTimeout.injections = [toRegExp, startsWith, hit, noopFunc];
 
 /* eslint-disable max-len */
@@ -1197,7 +1217,7 @@ preventSetInterval.names = ['prevent-setInterval', 'no-setInterval-if.js', // ne
 'ubo-no-setInterval-if.js', 'setInterval-defuser.js', // old name should be supported as well
 'ubo-setInterval-defuser.js', 'nosiif.js', // new short name of no-setInterval-if
 'ubo-nosiif.js', 'sid.js', // old short scriptlet name
-'ubo-sid.js'];
+'ubo-sid.js', 'ubo-no-setInterval-if', 'ubo-setInterval-defuser', 'ubo-nosiif', 'ubo-sid'];
 preventSetInterval.injections = [toRegExp, startsWith, hit, noopFunc];
 
 /* eslint-disable max-len */
@@ -1309,7 +1329,7 @@ function preventWindowOpen(source) {
 
   window.open = openWrapper;
 }
-preventWindowOpen.names = ['prevent-window-open', 'window.open-defuser.js', 'ubo-window.open-defuser.js'];
+preventWindowOpen.names = ['prevent-window-open', 'window.open-defuser.js', 'ubo-window.open-defuser.js', 'ubo-window.open-defuser'];
 preventWindowOpen.injections = [toRegExp, startsWith, endsWith, substringBefore, substringAfter, hit, noopFunc, trueFunc];
 
 /* eslint-disable max-len */
@@ -1463,7 +1483,10 @@ function abortCurrentInlineScript(source, property) {
   setChainPropAccess(window, property);
   window.onerror = createOnErrorHandler(rid).bind();
 }
-abortCurrentInlineScript.names = ['abort-current-inline-script', 'abort-current-inline-script.js', 'ubo-abort-current-inline-script.js', 'acis.js', 'ubo-acis.js', 'abp-abort-current-inline-script'];
+abortCurrentInlineScript.names = ['abort-current-inline-script', 'abort-current-inline-script.js', 'ubo-abort-current-inline-script.js', 'acis.js', 'ubo-acis.js', // AdGuard extension handles syntax of ubo-rules but converts them
+// so rules like 'testcases.adguard.com##+js(acis, __testCase4)'
+// converted to 'testcases.adguard.com#%#//scriptlet("ubo-acis", "__testCase4"))'
+'ubo-abort-current-inline-script', 'ubo-acis', 'abp-abort-current-inline-script'];
 abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit];
 
 /* eslint-disable max-len */
@@ -1606,7 +1629,7 @@ function setConstant(source, property, value) {
 
   setChainPropAccess(window, property);
 }
-setConstant.names = ['set-constant', 'set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js'];
+setConstant.names = ['set-constant', 'set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js', 'ubo-set-constant', 'ubo-set'];
 setConstant.injections = [getPropertyInChain, setPropertyAccess, hit, noopFunc, trueFunc, falseFunc];
 
 /* eslint-disable max-len */
@@ -1694,7 +1717,7 @@ function removeCookie(source, match) {
   rmCookie();
   window.addEventListener('beforeunload', rmCookie);
 }
-removeCookie.names = ['remove-cookie', 'cookie-remover.js', 'ubo-cookie-remover.js'];
+removeCookie.names = ['remove-cookie', 'cookie-remover.js', 'ubo-cookie-remover.js', 'ubo-cookie-remover'];
 removeCookie.injections = [toRegExp, hit];
 
 /* eslint-disable max-len */
@@ -1767,7 +1790,7 @@ function preventAddEventListener(source, eventSearch, funcSearch) {
 
   window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
 }
-preventAddEventListener.names = ['prevent-addEventListener', 'addEventListener-defuser.js', 'ubo-addEventListener-defuser.js', 'aeld.js', 'ubo-aeld.js'];
+preventAddEventListener.names = ['prevent-addEventListener', 'addEventListener-defuser.js', 'ubo-addEventListener-defuser.js', 'aeld.js', 'ubo-aeld.js', 'ubo-addEventListener-defuser', 'ubo-aeld'];
 preventAddEventListener.injections = [toRegExp, hit];
 
 /* eslint-disable consistent-return, no-eval */
@@ -1849,7 +1872,7 @@ function preventBab(source) {
     }
   };
 }
-preventBab.names = ['prevent-bab', 'nobab.js', 'ubo-nobab.js', 'bab-defuser.js', 'ubo-bab-defuser.js'];
+preventBab.names = ['prevent-bab', 'nobab.js', 'ubo-nobab.js', 'bab-defuser.js', 'ubo-bab-defuser.js', 'ubo-nobab', 'ubo-bab-defuser'];
 preventBab.injections = [hit];
 
 /* eslint-disable no-unused-vars, no-extra-bind, func-names */
@@ -1907,7 +1930,7 @@ function nowebrtc(source) {
     }.bind(null);
   }
 }
-nowebrtc.names = ['nowebrtc', 'nowebrtc.js', 'ubo-nowebrtc.js'];
+nowebrtc.names = ['nowebrtc', 'nowebrtc.js', 'ubo-nowebrtc.js', 'ubo-nowebrtc'];
 nowebrtc.injections = [hit, noopFunc];
 
 /* eslint-disable no-console */
@@ -1952,7 +1975,7 @@ function logAddEventListener(source) {
 
   window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
 }
-logAddEventListener.names = ['log-addEventListener', 'addEventListener-logger.js', 'ubo-addEventListener-logger.js', 'aell.js', 'ubo-aell.js'];
+logAddEventListener.names = ['log-addEventListener', 'addEventListener-logger.js', 'ubo-addEventListener-logger.js', 'aell.js', 'ubo-aell.js', 'ubo-addEventListener-logger', 'ubo-aell'];
 logAddEventListener.injections = [hit];
 
 /* eslint-disable no-console, no-eval */
@@ -2046,7 +2069,7 @@ function noeval(source) {
     hit(source, "AdGuard has prevented eval:\n".concat(s));
   }.bind();
 }
-noeval.names = ['noeval', 'noeval.js', 'silent-noeval.js', 'ubo-noeval.js', 'ubo-silent-noeval.js'];
+noeval.names = ['noeval', 'noeval.js', 'silent-noeval.js', 'ubo-noeval.js', 'ubo-silent-noeval.js', 'ubo-noeval', 'ubo-silent-noeval'];
 noeval.injections = [hit];
 
 /* eslint-disable no-eval, no-extra-bind, func-names */
@@ -2090,7 +2113,7 @@ function preventEvalIf(source, search) {
     return undefined;
   }.bind(window);
 }
-preventEvalIf.names = ['prevent-eval-if', 'noeval-if.js', 'ubo-noeval-if.js'];
+preventEvalIf.names = ['prevent-eval-if', 'noeval-if.js', 'ubo-noeval-if.js', 'ubo-noeval-if'];
 preventEvalIf.injections = [toRegExp, hit];
 
 /* eslint-disable no-console, func-names, no-multi-assign */
@@ -2138,7 +2161,7 @@ function preventFab(source) {
 
   window.fuckAdBlock = window.blockAdBlock = new Fab();
 }
-preventFab.names = ['prevent-fab-3.2.0', 'nofab.js', 'ubo-nofab.js', 'fuckadblock.js-3.2.0', 'ubo-fuckadblock.js-3.2.0'];
+preventFab.names = ['prevent-fab-3.2.0', 'nofab.js', 'ubo-nofab.js', 'fuckadblock.js-3.2.0', 'ubo-fuckadblock.js-3.2.0', 'ubo-nofab'];
 preventFab.injections = [hit, noopFunc, noopThis];
 
 /* eslint-disable no-console, func-names, no-multi-assign */
@@ -2175,7 +2198,7 @@ function setPopadsDummy(source) {
     }
   });
 }
-setPopadsDummy.names = ['set-popads-dummy', 'popads-dummy.js', 'ubo-popads-dummy.js'];
+setPopadsDummy.names = ['set-popads-dummy', 'popads-dummy.js', 'ubo-popads-dummy.js', 'ubo-popads-dummy'];
 setPopadsDummy.injections = [hit];
 
 /**
@@ -2213,7 +2236,7 @@ function preventPopadsNet(source) {
   window.onerror = createOnErrorHandler(rid).bind();
   hit(source);
 }
-preventPopadsNet.names = ['prevent-popads-net', 'popads.net.js', 'ubo-popads.net.js'];
+preventPopadsNet.names = ['prevent-popads-net', 'popads.net.js', 'ubo-popads.net.js', 'ubo-popads.net'];
 preventPopadsNet.injections = [createOnErrorHandler, randomId, hit];
 
 /* eslint-disable func-names */
@@ -2313,7 +2336,7 @@ function preventAdfly(source) {
     window.console.error('Failed to set up prevent-adfly scriptlet');
   }
 }
-preventAdfly.names = ['prevent-adfly', 'adfly-defuser.js', 'ubo-adfly-defuser.js'];
+preventAdfly.names = ['prevent-adfly', 'adfly-defuser.js', 'ubo-adfly-defuser.js', 'ubo-adfly-defuser'];
 preventAdfly.injections = [setPropertyAccess, hit];
 
 /* eslint-disable max-len */
@@ -2624,7 +2647,7 @@ function removeAttr(source, attrs, selector) {
 
   observeDOMChanges(rmattr, true);
 }
-removeAttr.names = ['remove-attr', 'remove-attr.js', 'ubo-remove-attr.js', 'ra.js', 'ubo-ra.js'];
+removeAttr.names = ['remove-attr', 'remove-attr.js', 'ubo-remove-attr.js', 'ra.js', 'ubo-ra.js', 'ubo-remove-attr', 'ubo-ra'];
 removeAttr.injections = [hit, observeDOMChanges];
 
 /* eslint-disable max-len */
@@ -2740,7 +2763,7 @@ function removeClass(source, classNames, selector) {
 
   observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
 }
-removeClass.names = ['remove-class', 'remove-class.js', 'ubo-remove-class.js', 'rc.js', 'ubo-rc.js'];
+removeClass.names = ['remove-class', 'remove-class.js', 'ubo-remove-class.js', 'rc.js', 'ubo-rc.js', 'ubo-remove-class', 'ubo-rc'];
 removeClass.injections = [hit, observeDOMChanges];
 
 /**
@@ -2774,7 +2797,7 @@ function disableNewtabLinks(source) {
     }
   });
 }
-disableNewtabLinks.names = ['disable-newtab-links', 'disable-newtab-links.js', 'ubo-disable-newtab-links.js'];
+disableNewtabLinks.names = ['disable-newtab-links', 'disable-newtab-links.js', 'ubo-disable-newtab-links.js', 'ubo-disable-newtab-links'];
 disableNewtabLinks.injections = [hit];
 
 /* eslint-disable max-len */
@@ -2856,7 +2879,7 @@ function adjustSetInterval(source, match, interval, boost) {
 
   window.setInterval = intervalWrapper;
 }
-adjustSetInterval.names = ['adjust-setInterval', 'nano-setInterval-booster.js', 'ubo-nano-setInterval-booster.js', 'nano-sib.js', 'ubo-nano-sib.js'];
+adjustSetInterval.names = ['adjust-setInterval', 'nano-setInterval-booster.js', 'ubo-nano-setInterval-booster.js', 'nano-sib.js', 'ubo-nano-sib.js', 'ubo-nano-setInterval-booster', 'ubo-nano-sib'];
 adjustSetInterval.injections = [toRegExp, hit];
 
 /* eslint-disable max-len */
@@ -2938,7 +2961,7 @@ function adjustSetTimeout(source, match, timeout, boost) {
 
   window.setTimeout = timeoutWrapper;
 }
-adjustSetTimeout.names = ['adjust-setTimeout', 'nano-setTimeout-booster.js', 'ubo-nano-setTimeout-booster.js', 'nano-stb.js', 'ubo-nano-stb.js'];
+adjustSetTimeout.names = ['adjust-setTimeout', 'nano-setTimeout-booster.js', 'ubo-nano-setTimeout-booster.js', 'nano-stb.js', 'ubo-nano-stb.js', 'ubo-nano-setTimeout-booster', 'ubo-nano-stb'];
 adjustSetTimeout.injections = [toRegExp, hit];
 
 /* eslint-disable max-len */
@@ -3106,7 +3129,7 @@ function jsonPrune(source, propsToRemove, requiredInitialProps) {
 
   JSON.parse = parseWrapper;
 }
-jsonPrune.names = ['json-prune', 'json-prune.js', 'ubo-json-prune.js'];
+jsonPrune.names = ['json-prune', 'json-prune.js', 'ubo-json-prune.js', 'ubo-json-prune'];
 jsonPrune.injections = [hit, getPropertyInChain];
 
 /* eslint-disable max-len */
@@ -3221,7 +3244,7 @@ function preventRequestAnimationFrame(source, match) {
 
   window.requestAnimationFrame = rafWrapper;
 }
-preventRequestAnimationFrame.names = ['prevent-requestAnimationFrame', 'requestAnimationFrame-if.js', 'ubo-requestAnimationFrame-if.js', 'raf-if.js', 'ubo-raf-if.js'];
+preventRequestAnimationFrame.names = ['prevent-requestAnimationFrame', 'no-requestAnimationFrame-if.js', 'ubo-no-requestAnimationFrame-if.js', 'norafif.js', 'ubo-norafif.js', 'ubo-no-requestAnimationFrame-if', 'ubo-norafif'];
 preventRequestAnimationFrame.injections = [hit, startsWith, toRegExp, noopFunc];
 
 /**
@@ -3602,13 +3625,13 @@ var validator = {
 };
 
 function _iterableToArray(iter) {
-  if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+  if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
 }
 
 var iterableToArray = _iterableToArray;
 
 function _toArray(arr) {
-  return arrayWithHoles(arr) || iterableToArray(arr) || nonIterableRest();
+  return arrayWithHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableRest();
 }
 
 var toArray = _toArray;

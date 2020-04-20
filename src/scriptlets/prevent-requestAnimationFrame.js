@@ -112,12 +112,12 @@ export function preventRequestAnimationFrame(source, match) {
 
 preventRequestAnimationFrame.names = [
     'prevent-requestAnimationFrame',
-    'requestAnimationFrame-if.js',
-    'ubo-requestAnimationFrame-if.js',
-    'raf-if.js',
-    'ubo-raf-if.js',
-    'ubo-requestAnimationFrame-if',
-    'ubo-raf-if',
+    'no-requestAnimationFrame-if.js',
+    'ubo-no-requestAnimationFrame-if.js',
+    'norafif.js',
+    'ubo-norafif.js',
+    'ubo-no-requestAnimationFrame-if',
+    'ubo-norafif',
 ];
 
 preventRequestAnimationFrame.injections = [hit, startsWith, toRegExp, noopFunc];

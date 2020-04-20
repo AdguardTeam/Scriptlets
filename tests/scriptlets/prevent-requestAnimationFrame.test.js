@@ -34,7 +34,7 @@ test('Checking if alias name works', (assert) => {
         verbose: true,
     };
     const aliasParams = {
-        name: 'requestAnimationFrame-if.js',
+        name: 'ubo-no-requestAnimationFrame-if.js',
         engine: 'test',
         verbose: true,
     };

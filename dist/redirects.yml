@@ -1133,6 +1133,8 @@
     - silent-noeval.js
     - ubo-noeval.js
     - ubo-silent-noeval.js
+    - ubo-noeval
+    - ubo-silent-noeval
   contentType: application/javascript
   content: |-
     (function(source, args){
