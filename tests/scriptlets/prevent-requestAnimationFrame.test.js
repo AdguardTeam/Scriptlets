@@ -165,5 +165,5 @@ test('prevent-requestAnimationFrame: !match', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         clearGlobalProps('one', 'two');
         done();
-    }, 30);
+    }, 50);
 });
