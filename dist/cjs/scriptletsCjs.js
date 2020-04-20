@@ -3138,7 +3138,7 @@ jsonPrune.injections = [hit, getPropertyInChain];
  * otherwise mismatched calls should be defused.
  *
  * Related UBO scriptlet:
- * https://github.com/gorhill/uBlock/wiki/Resources-Library#requestanimationframe-ifjs-
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-requestanimationframe-ifjs-
  *
  * **Syntax**
  * ```
@@ -4605,7 +4605,10 @@ var redirectsList = /*#__PURE__*/Object.freeze({
     GoogleTagServicesGpt: GoogleTagServicesGpt,
     ScoreCardResearchBeacon: ScoreCardResearchBeacon,
     metrikaYandexTag: metrikaYandexTag,
-    metrikaYandexWatch: metrikaYandexWatch
+    metrikaYandexWatch: metrikaYandexWatch,
+    preventFab: preventFab,
+    setPopadsDummy: setPopadsDummy,
+    preventPopadsNet: preventPopadsNet
 });
 
 /**

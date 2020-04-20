@@ -85,7 +85,7 @@
         },
         {
             "adg": "prevent-requestAnimationFrame",
-            "ubo": "requestAnimationFrame-if.js (raf-if.js)"
+            "ubo": "no-requestAnimationFrame-if.js (norafif.js)"
         },
         {
             "adg": "prevent-setInterval",
@@ -122,6 +122,9 @@
         },
         {
             "ubo": "setTimeout-defuser.js (std.js)"
+        },
+        {
+            "ubo": "requestAnimationFrame-if.js (raf-if.js)"
         },
         {
             "ubo": "webrtc-if.js"
@@ -191,6 +194,15 @@
         },
         {
             "abp": "debug"
+        },
+        {
+            "abp": "hide-if-labelled-by"
+        },
+        {
+            "abp": "hide-if-matches-xpath"
+        },
+        {
+            "abp": "profile"
         }
     ],
     "redirects": [

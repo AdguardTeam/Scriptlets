@@ -7,3 +7,6 @@ export * from './googletagservices-gpt';
 export * from './scorecardresearch-beacon';
 export * from './metrika-yandex-tag';
 export * from './metrika-yandex-watch';
+export * from './prevent-fab-3.2.0';
+export * from './set-popads-dummy';
+export * from './prevent-popads-net';
