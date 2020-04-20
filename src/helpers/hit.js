@@ -15,7 +15,22 @@ export const hit = (source, message) => {
         const log = console.log.bind(console);
         const trace = console.trace.bind(console);
 
-        const prefix = source.ruleText || '';
+        let prefix = source.ruleText || '';
+
+        if (source.domainName) {
+            const AG_SCRIPTLET_MARKER = '#%#//';
+            const UBO_SCRIPTLET_MARKER = '##+js';
+            let ruleStartIndex;
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+                ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+                ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+            // delete all domains from ruleText and leave just rule part
+            const rulePart = source.ruleText.slice(ruleStartIndex);
+            // prepare applied scriptlet rule for specific domain
+            prefix = `${source.domainName}${rulePart}`;
+        }
 
         // Used to check if scriptlet uses 'hit' function for logging
         const LOG_MARKER = 'log: ';

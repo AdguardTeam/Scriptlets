@@ -253,7 +253,25 @@
       try {
         var log = console.log.bind(console);
         var trace = console.trace.bind(console);
-        var prefix = source.ruleText || ''; // Used to check if scriptlet uses 'hit' function for logging
+        var prefix = source.ruleText || '';
+
+        if (source.domainName) {
+          var AG_SCRIPTLET_MARKER = '#%#//';
+          var UBO_SCRIPTLET_MARKER = '##+js';
+          var ruleStartIndex;
+
+          if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+          } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+          } // delete all domains from ruleText and leave just rule part
+
+
+          var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
+
+          prefix = "".concat(source.domainName).concat(rulePart);
+        } // Used to check if scriptlet uses 'hit' function for logging
+
 
         var LOG_MARKER = 'log: ';
 
@@ -4652,6 +4670,7 @@
      * @property {string} [version]
      * @property {boolean} [verbose] flag to enable printing to console debug information
      * @property {string} [ruleText] Source rule text is used for debugging purposes
+     * @property {string} [domainName] domain name where scriptlet is applied; for debugging purposes
      */
 
     /**
