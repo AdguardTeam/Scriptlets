@@ -34,7 +34,7 @@ test('Checking if alias name works', (assert) => {
         verbose: true,
     };
     const aliasParams = {
-        name: 'requestAnimationFrame-if.js',
+        name: 'ubo-no-requestAnimationFrame-if.js',
         engine: 'test',
         verbose: true,
     };
@@ -165,5 +165,5 @@ test('prevent-requestAnimationFrame: !match', (assert) => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         clearGlobalProps('one', 'two');
         done();
-    }, 30);
+    }, 50);
 });

@@ -24,7 +24,7 @@
 | prevent-eval-if | noeval-if.js |  |
 | prevent-fab-3.2.0 |  |  |
 | prevent-popads-net |  |  |
-| prevent-requestAnimationFrame | requestAnimationFrame-if.js (raf-if.js) |  |
+| prevent-requestAnimationFrame | no-requestAnimationFrame-if.js (norafif.js) |  |
 | prevent-setInterval | no-setInterval-if.js (nosiif.js) |  |
 | prevent-setTimeout | no-setTimeout-if.js (nostif.js) |  |
 | prevent-window-open |  |  |
@@ -35,6 +35,7 @@
 | set-popads-dummy |  |  |
 |  | setInterval-defuser.js (sid.js) |  |
 |  | setTimeout-defuser.js (std.js) |  |
+|  | requestAnimationFrame-if.js (raf-if.js) |  |
 |  | webrtc-if.js |  |
 |  | overlay-buster.js |  |
 |  | alert-buster.js |  |
@@ -58,6 +59,9 @@
 |  |  | hide-if-contains-image-hash |
 |  |  | ml-hide-if-graph-matches |
 |  |  | debug |
+|  |  | hide-if-labelled-by |
+|  |  | hide-if-matches-xpath |
+|  |  | profile |
 
 
 # <a id="redirects"></a> Redirects compatibility table

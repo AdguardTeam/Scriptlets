@@ -274,10 +274,12 @@
         {
             "names": [
                 "prevent-requestAnimationFrame",
-                "requestAnimationFrame-if.js",
-                "ubo-requestAnimationFrame-if.js",
-                "raf-if.js",
-                "ubo-raf-if.js"
+                "no-requestAnimationFrame-if.js",
+                "ubo-no-requestAnimationFrame-if.js",
+                "norafif.js",
+                "ubo-norafif.js",
+                "ubo-no-requestAnimationFrame-if",
+                "ubo-norafif"
             ],
             "scriptlet": "function(source, args){function preventRequestAnimationFrame(source, match) {var nativeRequestAnimationFrame = window.requestAnimationFrame;var shouldLog = typeof match === 'undefined';var INVERT_MARKER = '!';var doNotMatch = startsWith(match, INVERT_MARKER);if (doNotMatch) {match = match.slice(1);}match = match ? toRegExp(match) : toRegExp('/.?/');var rafWrapper = function rafWrapper(callback) {var shouldPrevent = false;if (shouldLog) {var logMessage = \"log: requestAnimationFrame(\\\"\".concat(callback.toString(), \"\\\")\");hit(source, logMessage);} else {shouldPrevent = match.test(callback.toString()) !== doNotMatch;}if (shouldPrevent) {hit(source);return nativeRequestAnimationFrame(noopFunc);}for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {args[_key - 1] = arguments[_key];}return nativeRequestAnimationFrame.apply(window, [callback].concat(args));};window.requestAnimationFrame = rafWrapper;}function hit(source, message) {if (source.verbose !== true) {return;}try {var log = console.log.bind(console);var trace = console.trace.bind(console);var prefix = source.ruleText || '';if (source.domainName) {var AG_SCRIPTLET_MARKER = '#%#//';var UBO_SCRIPTLET_MARKER = '##+js';var ruleStartIndex;if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);} else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);}var rulePart = source.ruleText.slice(ruleStartIndex);prefix = \"\".concat(source.domainName).concat(rulePart);}var LOG_MARKER = 'log: ';if (message) {if (message.indexOf(LOG_MARKER) === -1) {log(\"\".concat(prefix, \" message:\\n\").concat(message));} else {log(message.slice(LOG_MARKER.length));}}log(\"\".concat(prefix, \" trace start\"));if (trace) {trace();}log(\"\".concat(prefix, \" trace end\"));} catch (e) {}if (typeof window.__debug === 'function') {window.__debug(source);}}function startsWith(str, prefix) {return str && str.indexOf(prefix) === 0;}function toRegExp(str) {if (str[0] === '/' && str[str.length - 1] === '/') {return new RegExp(str.slice(1, -1));}var escaped = str.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');return new RegExp(escaped);}function noopFunc() {};const updatedArgs = args ? [].concat(source).concat(args) : [source];preventRequestAnimationFrame.apply(this, updatedArgs);}"
         }

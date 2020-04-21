@@ -3205,7 +3205,7 @@ jsonPrune.injections = [hit, getPropertyInChain];
  * otherwise mismatched calls should be defused.
  *
  * Related UBO scriptlet:
- * https://github.com/gorhill/uBlock/wiki/Resources-Library#requestanimationframe-ifjs-
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-requestanimationframe-ifjs-
  *
  * **Syntax**
  * ```
@@ -3306,7 +3306,7 @@ function preventRequestAnimationFrame(source, match) {
 
   window.requestAnimationFrame = rafWrapper;
 }
-preventRequestAnimationFrame.names = ['prevent-requestAnimationFrame', 'requestAnimationFrame-if.js', 'ubo-requestAnimationFrame-if.js', 'raf-if.js', 'ubo-raf-if.js'];
+preventRequestAnimationFrame.names = ['prevent-requestAnimationFrame', 'no-requestAnimationFrame-if.js', 'ubo-no-requestAnimationFrame-if.js', 'norafif.js', 'ubo-norafif.js', 'ubo-no-requestAnimationFrame-if', 'ubo-norafif'];
 preventRequestAnimationFrame.injections = [hit, startsWith, toRegExp, noopFunc];
 
 /**
@@ -4672,7 +4672,10 @@ var redirectsList = /*#__PURE__*/Object.freeze({
     GoogleTagServicesGpt: GoogleTagServicesGpt,
     ScoreCardResearchBeacon: ScoreCardResearchBeacon,
     metrikaYandexTag: metrikaYandexTag,
-    metrikaYandexWatch: metrikaYandexWatch
+    metrikaYandexWatch: metrikaYandexWatch,
+    preventFab: preventFab,
+    setPopadsDummy: setPopadsDummy,
+    preventPopadsNet: preventPopadsNet
 });
 
 /**
