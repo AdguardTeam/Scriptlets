@@ -515,7 +515,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#fuckadblockjs-320-
 
 **Syntax**
 ```
-example.org#%#//scriptlet("prevent-fab-3.2.0")
+example.org#%#//scriptlet('prevent-fab-3.2.0')
 ```
 [Scriptlet source](../src/scriptlets/prevent-fab-3.2.0.js)
 * * *
