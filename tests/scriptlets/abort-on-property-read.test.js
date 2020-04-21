@@ -30,7 +30,7 @@ test('Checking if alias name works', (assert) => {
         verbose: true,
     };
     const uboParams = {
-        name: 'ubo-abort-on-property-read.js',
+        name: 'ubo-aopr',
         engine: 'test',
         verbose: true,
     };

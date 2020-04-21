@@ -1,5 +1,6 @@
 import {
     startsWith,
+    endsWith,
     substringAfter,
 } from './string-utils';
 
@@ -94,7 +95,14 @@ const isAbpSnippetRule = (rule) => {
 const getScriptletByName = (name) => {
     const scriptlets = Object.keys(scriptletsList).map((key) => scriptletsList[key]);
     return scriptlets
-        .find((s) => s.names && s.names.indexOf(name) > -1);
+        .find((s) => {
+            return s.names
+                // full match name checking
+                && ((s.names.indexOf(name) > -1)
+                    // or check ubo alias name without '.js' at the end
+                    || ((!endsWith(name, '.js')) && (s.names.indexOf(`${name}.js`) > -1))
+                );
+        });
 };
 
 /**

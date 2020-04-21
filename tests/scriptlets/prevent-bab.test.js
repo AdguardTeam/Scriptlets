@@ -34,7 +34,7 @@ test('Checking if alias name works', (assert) => {
         verbose: true,
     };
     const uboParams = {
-        name: 'ubo-bab-defuser.js',
+        name: 'nobab',
         engine: 'test',
         verbose: true,
     };

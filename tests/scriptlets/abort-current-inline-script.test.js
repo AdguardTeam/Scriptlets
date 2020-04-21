@@ -33,7 +33,7 @@ test('Checking if alias name works', (assert) => {
         verbose: true,
     };
     const uboParams = {
-        name: 'ubo-abort-current-inline-script.js',
+        name: 'ubo-abort-current-inline-script',
         engine: 'test',
         verbose: true,
     };
