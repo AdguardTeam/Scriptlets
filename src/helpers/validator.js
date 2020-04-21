@@ -98,9 +98,9 @@ const getScriptletByName = (name) => {
         .find((s) => {
             return s.names
                 // full match name checking
-                && ((s.names.indexOf(name) > -1)
+                && (s.names.indexOf(name) > -1
                     // or check ubo alias name without '.js' at the end
-                    || ((!endsWith(name, '.js')) && (s.names.indexOf(`${name}.js`) > -1))
+                    || (!endsWith(name, '.js') && s.names.indexOf(`${name}.js`) > -1)
                 );
         });
 };
