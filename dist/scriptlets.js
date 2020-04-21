@@ -487,10 +487,7 @@
     var arrayWithHoles = _arrayWithHoles;
 
     function _iterableToArrayLimit(arr, i) {
-      if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) {
-        return;
-      }
-
+      if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return;
       var _arr = [];
       var _n = true;
       var _d = false;
@@ -518,14 +515,37 @@
 
     var iterableToArrayLimit = _iterableToArrayLimit;
 
+    function _arrayLikeToArray(arr, len) {
+      if (len == null || len > arr.length) len = arr.length;
+
+      for (var i = 0, arr2 = new Array(len); i < len; i++) {
+        arr2[i] = arr[i];
+      }
+
+      return arr2;
+    }
+
+    var arrayLikeToArray = _arrayLikeToArray;
+
+    function _unsupportedIterableToArray(o, minLen) {
+      if (!o) return;
+      if (typeof o === "string") return arrayLikeToArray(o, minLen);
+      var n = Object.prototype.toString.call(o).slice(8, -1);
+      if (n === "Object" && o.constructor) n = o.constructor.name;
+      if (n === "Map" || n === "Set") return Array.from(n);
+      if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
+    }
+
+    var unsupportedIterableToArray = _unsupportedIterableToArray;
+
     function _nonIterableRest() {
-      throw new TypeError("Invalid attempt to destructure non-iterable instance");
+      throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
     }
 
     var nonIterableRest = _nonIterableRest;
 
     function _slicedToArray(arr, i) {
-      return arrayWithHoles(arr) || iterableToArrayLimit(arr, i) || nonIterableRest();
+      return arrayWithHoles(arr) || iterableToArrayLimit(arr, i) || unsupportedIterableToArray(arr, i) || nonIterableRest();
     }
 
     var slicedToArray = _slicedToArray;
@@ -2124,12 +2144,12 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("prevent-fab-3.2.0")
+     * example.org#%#//scriptlet('prevent-fab-3.2.0')
      * ```
      */
 
     function preventFab(source) {
-      hit(source);
+      hit(source); // redefines Fab function for adblock detection
 
       var Fab = function Fab() {};
 
@@ -2153,9 +2173,56 @@
       };
 
       Fab.prototype.setOption = noopFunc;
-      window.FuckAdBlock = window.BlockAdBlock = Fab; //
+      var fab = new Fab();
+      var getSetFab = {
+        get: function get() {
+          return Fab;
+        },
+        set: function set() {}
+      };
+      var getsetfab = {
+        get: function get() {
+          return fab;
+        },
+        set: function set() {}
+      }; // redefined Fab data properties which if 'FuckAdBlock' variable exists
 
-      window.fuckAdBlock = window.blockAdBlock = new Fab();
+      if (Object.prototype.hasOwnProperty.call(window, 'FuckAdBlock')) {
+        window.FuckAdBlock = Fab;
+      } else {
+        // or redefined Fab accessor properties
+        Object.defineProperty(window, 'FuckAdBlock', getSetFab);
+      }
+
+      if (Object.prototype.hasOwnProperty.call(window, 'BlockAdBlock')) {
+        window.BlockAdBlock = Fab;
+      } else {
+        Object.defineProperty(window, 'BlockAdBlock', getSetFab);
+      }
+
+      if (Object.prototype.hasOwnProperty.call(window, 'SniffAdBlock')) {
+        window.SniffAdBlock = Fab;
+      } else {
+        Object.defineProperty(window, 'SniffAdBlock', getSetFab);
+      }
+
+      if (Object.prototype.hasOwnProperty.call(window, 'fuckAdBlock')) {
+        window.fuckAdBlock = fab;
+      } else {
+        Object.defineProperty(window, 'fuckAdBlock', getsetfab);
+      }
+
+      if (Object.prototype.hasOwnProperty.call(window, 'blockAdBlock')) {
+        window.blockAdBlock = fab;
+      } else {
+        Object.defineProperty(window, 'blockAdBlock', getsetfab);
+      }
+
+      if (Object.prototype.hasOwnProperty.call(window, 'sniffAdBlock')) {
+        window.sniffAdBlock = fab;
+      } else {
+        Object.defineProperty(window, 'sniffAdBlock', getsetfab);
+      }
     }
     preventFab.names = ['prevent-fab-3.2.0', 'nofab.js', 'ubo-nofab.js', 'fuckadblock.js-3.2.0', 'ubo-fuckadblock.js-3.2.0'];
     preventFab.injections = [hit, noopFunc, noopThis];
@@ -3621,13 +3688,13 @@
     };
 
     function _iterableToArray(iter) {
-      if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+      if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
     }
 
     var iterableToArray = _iterableToArray;
 
     function _toArray(arr) {
-      return arrayWithHoles(arr) || iterableToArray(arr) || nonIterableRest();
+      return arrayWithHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableRest();
     }
 
     var toArray = _toArray;
