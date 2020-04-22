@@ -127,7 +127,7 @@ test('Adg: match param and timeout', (assert) => {
     }, 50);
 });
 
-test('Adg: all params', (assert) => {
+test('Adg: all params, boost > 1 -- slowing', (assert) => {
     createHit();
     const params = {
         name,
@@ -155,4 +155,34 @@ test('Adg: all params', (assert) => {
         clearTimeout(timeout);
         done2();
     }, 250);
+});
+
+test('Adg: all params, boost < 1 -- boosting', (assert) => {
+    createHit();
+    const params = {
+        name,
+        args: ['intervalValue', '500', '0.2'],
+        verbose: true,
+    };
+
+    const resString = window.scriptlets.invoke(params);
+    evalWrapper(resString);
+
+    const done1 = assert.async();
+    const done2 = assert.async();
+
+    const timeout = setTimeout(() => {
+        window.intervalValue = 'value';
+    }, 500); // scriptlet should make it '100'
+
+    setTimeout(() => {
+        assert.notOk(window.intervalValue, 'Still not defined');
+        done1();
+    }, 50);
+
+    setTimeout(() => {
+        assert.strictEqual(window.intervalValue, 'value', 'Should be defined');
+        clearTimeout(timeout);
+        done2();
+    }, 150);
 });
