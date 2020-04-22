@@ -26,19 +26,46 @@ export function GoogleSyndicationAdsByGoogle(source) {
     };
     const adElems = document.querySelectorAll('.adsbygoogle');
     const css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
+    const statusAttrName = 'data-adsbygoogle-status';
+    const ASWIFT_IFRAME_MARKER = 'aswift_';
+    const GOOGLE_ADS_IFRAME_MARKER = 'google_ads_iframe_';
+
+    // checks if scriptlet was executed before
+    // and if .adsbygoogle > iframes are defined by AdGuard earlier
+    // TODO: remake after scriptlets context developing in 1.3
+    const wasExecutedBefore = (i) => {
+        const adElemChildren = adElems[i].childNodes;
+        let executedBefore = false;
+        if (adElemChildren.length > 0) {
+            const areIframesDefined = adElemChildren
+                .reduce((acc, el) => {
+                    return el.tagName.toLowerCase() === 'iframe'
+                        && (el.id.indexOf(ASWIFT_IFRAME_MARKER) > -1
+                            || el.id.indexOf(GOOGLE_ADS_IFRAME_MARKER) > -1)
+                        && acc;
+                }, true);
+            executedBefore = adElems[i].hasAttribute(statusAttrName) && areIframesDefined;
+        }
+
+        return executedBefore;
+    };
+
+
     let executed = false;
     for (let i = 0; i < adElems.length; i += 1) {
-        adElems[i].setAttribute('data-adsbygoogle-status', 'done');
+        if (!wasExecutedBefore(i)) {
+            adElems[i].setAttribute(statusAttrName, 'done');
 
-        const aswiftIframe = document.createElement('iframe');
-        aswiftIframe.id = `aswift_${i + 1}`;
-        aswiftIframe.style = css;
-        adElems[i].appendChild(aswiftIframe);
+            const aswiftIframe = document.createElement('iframe');
+            aswiftIframe.id = `${ASWIFT_IFRAME_MARKER}${i + 1}`;
+            aswiftIframe.style = css;
+            adElems[i].appendChild(aswiftIframe);
 
-        const googleadsIframe = document.createElement('iframe');
-        googleadsIframe.id = `google_ads_iframe_${i}`;
-        googleadsIframe.style = css;
-        adElems[i].appendChild(googleadsIframe);
+            const googleadsIframe = document.createElement('iframe');
+            googleadsIframe.id = `${GOOGLE_ADS_IFRAME_MARKER}${i + 1}`;
+            googleadsIframe.style = css;
+            adElems[i].appendChild(googleadsIframe);
+        }
 
         executed = true;
     }
