@@ -17,7 +17,7 @@ import { hit, toRegExp } from '../helpers';
  *
  * - `match` - optional, string/regular expression, matching in stringified callback function
  * - `interval` - optional, defaults to 1000, decimal integer, matching setInterval delay
- * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02..50), interval multiplier
+ * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), interval multiplier
  *
  * **Examples**
  * 1. Adjust all setInterval() x20 times where interval equal 1000ms:
