@@ -30,30 +30,28 @@ export function GoogleSyndicationAdsByGoogle(source) {
     const ASWIFT_IFRAME_MARKER = 'aswift_';
     const GOOGLE_ADS_IFRAME_MARKER = 'google_ads_iframe_';
 
-    // checks if scriptlet was executed before
-    // and if .adsbygoogle > iframes are defined by AdGuard earlier
-    // TODO: remake after scriptlets context developing in 1.3
-    const wasExecutedBefore = (i) => {
-        const adElemChildren = adElems[i].childNodes;
-        let executedBefore = false;
-        if (adElemChildren.length > 0) {
-            const areIframesDefined = adElemChildren
+    let executed = false;
+    for (let i = 0; i < adElems.length; i += 1) {
+        const adElemChildNodes = adElems[i].childNodes;
+        // childNodes of .adsbygoogle can be defined if scriptlet was executed before
+        // so we should check are that childNodes exactly defined by us
+        // TODO: remake after scriptlets context developing in 1.3
+        let areIframesDefined = false;
+        if (adElemChildNodes.length > 0) {
+            // Object.values() is not supported in IE 11
+            areIframesDefined = Object
+                .keys(adElemChildNodes)
+                .map((key) => adElemChildNodes[key])
                 .reduce((acc, el) => {
                     return el.tagName.toLowerCase() === 'iframe'
                         && (el.id.indexOf(ASWIFT_IFRAME_MARKER) > -1
                             || el.id.indexOf(GOOGLE_ADS_IFRAME_MARKER) > -1)
                         && acc;
                 }, true);
-            executedBefore = adElems[i].hasAttribute(statusAttrName) && areIframesDefined;
         }
 
-        return executedBefore;
-    };
-
-
-    let executed = false;
-    for (let i = 0; i < adElems.length; i += 1) {
-        if (!wasExecutedBefore(i)) {
+        if (!areIframesDefined) {
+            // here we do the job if scriptlet has not been executed earlier
             adElems[i].setAttribute(statusAttrName, 'done');
 
             const aswiftIframe = document.createElement('iframe');
@@ -65,9 +63,9 @@ export function GoogleSyndicationAdsByGoogle(source) {
             googleadsIframe.id = `${GOOGLE_ADS_IFRAME_MARKER}${i + 1}`;
             googleadsIframe.style = css;
             adElems[i].appendChild(googleadsIframe);
-        }
 
-        executed = true;
+            executed = true;
+        }
     }
 
     if (executed) {
