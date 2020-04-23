@@ -54,7 +54,7 @@ export function adjustSetTimeout(source, match, timeout, boost) {
     timeout = nativeIsNaN(timeout) ? 1000 : timeout;
 
     boost = parseFloat(boost);
-    boost = nativeIsNaN(timeout) || !nativeIsFinite(boost) ? 0.05 : boost;
+    boost = nativeIsNaN(boost) || !nativeIsFinite(boost) ? 0.05 : boost;
 
     match = match ? toRegExp(match) : toRegExp('/.?/');
 

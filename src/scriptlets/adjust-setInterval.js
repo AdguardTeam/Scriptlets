@@ -54,7 +54,7 @@ export function adjustSetInterval(source, match, interval, boost) {
     interval = nativeIsNaN(interval) ? 1000 : interval;
 
     boost = parseFloat(boost);
-    boost = nativeIsNaN(interval) || !nativeIsFinite(boost) ? 0.05 : boost;
+    boost = nativeIsNaN(boost) || !nativeIsFinite(boost) ? 0.05 : boost;
 
     match = match ? toRegExp(match) : toRegExp('/.?/');
 

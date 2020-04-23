@@ -186,3 +186,33 @@ test('Adg: all params, boost < 1 -- boosting', (assert) => {
         done2();
     }, 150);
 });
+
+test('Adg: all params, invalid boost value --> 0.05 by default', (assert) => {
+    createHit();
+    const params = {
+        name,
+        args: ['intervalValue', '1000', 'abc'],
+        verbose: true,
+    };
+
+    const resString = window.scriptlets.invoke(params);
+    evalWrapper(resString);
+
+    const done1 = assert.async();
+    const done2 = assert.async();
+
+    const timeout = setTimeout(() => {
+        window.intervalValue = 'value';
+    }, 1000); // scriptlet should make it '50'
+
+    setTimeout(() => {
+        assert.notOk(window.intervalValue, 'Still not defined');
+        done1();
+    }, 10);
+
+    setTimeout(() => {
+        assert.strictEqual(window.intervalValue, 'value', 'Should be defined');
+        clearTimeout(timeout);
+        done2();
+    }, 80);
+});
