@@ -12,32 +12,36 @@ import { hit, toRegExp } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("adjust-setInterval"[, match [, interval[, boost]]])
+ * example.org#%#//scriptlet('adjust-setInterval'[, match [, interval[, boost]]])
  * ```
  *
  * - `match` - optional, string/regular expression, matching in stringified callback function
- * - `interval` - optional, defaults to 1000, decimal integer, matching interval
- * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down, interval multiplier
+ * - `interval` - optional, defaults to 1000, decimal integer, matching setInterval delay
+ * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), interval multiplier
  *
  * **Examples**
  * 1. Adjust all setInterval() x20 times where interval equal 1000ms:
  *     ```
- *     example.org#%#//scriptlet("adjust-setInterval")
+ *     example.org#%#//scriptlet('adjust-setInterval')
  *     ```
  *
  * 2. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 1000ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setInterval", "example")
+ *     example.org#%#//scriptlet('adjust-setInterval', 'example')
  *     ```
  *
  * 3. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 400ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setInterval", "example", "400")
+ *     example.org#%#//scriptlet('adjust-setInterval', 'example', '400')
  *     ```
  *
- * 4. Slow down setInterval() x2 times where callback matched with `example` and interval equal 400ms
+ * 4. Slow down setInterval() x2 times where callback matched with `example` and interval equal 1000ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setInterval", "example", "400", "2")
+ *     example.org#%#//scriptlet('adjust-setInterval', 'example', '', '2')
+ *     ```
+ * 5.  Adjust all setInterval() x50 times where interval equal 2000ms
+ *     ```
+ *     example.org#%#//scriptlet('adjust-setInterval', '', '2000', '0.02')
  *     ```
  */
 /* eslint-enable max-len */
@@ -49,8 +53,8 @@ export function adjustSetInterval(source, match, interval, boost) {
     interval = parseInt(interval, 10);
     interval = nativeIsNaN(interval) ? 1000 : interval;
 
-    boost = parseInt(boost, 10);
-    boost = nativeIsNaN(interval) || !nativeIsFinite(boost) ? 0.05 : boost;
+    boost = parseFloat(boost);
+    boost = nativeIsNaN(boost) || !nativeIsFinite(boost) ? 0.05 : boost;
 
     match = match ? toRegExp(match) : toRegExp('/.?/');
 

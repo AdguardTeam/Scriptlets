@@ -16,28 +16,32 @@ import { hit, toRegExp } from '../helpers';
  * ```
  *
  * - `match` - optional, string/regular expression, matching in stringified callback function
- * - `timeout` - optional, defaults to 1000, decimal integer, matching interval
- * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down, interval multiplier
+ * - `timeout` - optional, defaults to 1000, decimal integer, matching setTimout delay
+ * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), timeout multiplier
  *
  * **Examples**
- * 1. Adjust all setTimeout() x20 times where interval equal 1000ms:
+ * 1. Adjust all setTimeout() x20 times where timeout equal 1000ms:
  *     ```
- *     example.org#%#//scriptlet("adjust-setTimeout")
- *     ```
- *
- * 2. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 1000ms
- *     ```
- *     example.org#%#//scriptlet("adjust-setTimeout", "example")
+ *     example.org#%#//scriptlet('adjust-setTimeout')
  *     ```
  *
- * 3. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 400ms
+ * 2. Adjust all setTimeout() x20 times where callback mathed with `example` and timeout equal 1000ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setTimeout", "example", "400")
+ *     example.org#%#//scriptlet('adjust-setTimeout', 'example')
  *     ```
  *
- * 4. Slow down setTimeout() x2 times where callback matched with `example` and interval equal 400ms
+ * 3. Adjust all setTimeout() x20 times where callback mathed with `example` and timeout equal 400ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setTimeout", "example", "400", "2")
+ *     example.org#%#//scriptlet('adjust-setTimeout', 'example', '400')
+ *     ```
+ *
+ * 4. Slow down setTimeout() x2 times where callback matched with `example` and timeout equal 1000ms
+ *     ```
+ *     example.org#%#//scriptlet('adjust-setTimeout', 'example', '', '2')
+ *     ```
+ * 5.  Adjust all setTimeout() x50 times where timeout equal 2000ms
+ *     ```
+ *     example.org#%#//scriptlet('adjust-setTimeout', '', '2000', '0.02')
  *     ```
  */
 /* eslint-enable max-len */
@@ -49,8 +53,8 @@ export function adjustSetTimeout(source, match, timeout, boost) {
     timeout = parseInt(timeout, 10);
     timeout = nativeIsNaN(timeout) ? 1000 : timeout;
 
-    boost = parseInt(boost, 10);
-    boost = nativeIsNaN(timeout) || !nativeIsFinite(boost) ? 0.05 : boost;
+    boost = parseFloat(boost);
+    boost = nativeIsNaN(boost) || !nativeIsFinite(boost) ? 0.05 : boost;
 
     match = match ? toRegExp(match) : toRegExp('/.?/');
 
