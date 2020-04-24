@@ -152,32 +152,36 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-setinterval-booste
 
 **Syntax**
 ```
-example.org#%#//scriptlet("adjust-setInterval"[, match [, interval[, boost]]])
+example.org#%#//scriptlet('adjust-setInterval'[, match [, interval[, boost]]])
 ```
 
 - `match` - optional, string/regular expression, matching in stringified callback function
-- `interval` - optional, defaults to 1000, decimal integer, matching interval
-- `boost` - optional, default to 0.05, float, capped at 50 times for up and down, interval multiplier
+- `interval` - optional, defaults to 1000, decimal integer, matching setInterval delay
+- `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), interval multiplier
 
 **Examples**
 1. Adjust all setInterval() x20 times where interval equal 1000ms:
     ```
-    example.org#%#//scriptlet("adjust-setInterval")
+    example.org#%#//scriptlet('adjust-setInterval')
     ```
 
 2. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 1000ms
     ```
-    example.org#%#//scriptlet("adjust-setInterval", "example")
+    example.org#%#//scriptlet('adjust-setInterval', 'example')
     ```
 
 3. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 400ms
     ```
-    example.org#%#//scriptlet("adjust-setInterval", "example", "400")
+    example.org#%#//scriptlet('adjust-setInterval', 'example', '400')
     ```
 
-4. Slow down setInterval() x2 times where callback matched with `example` and interval equal 400ms
+4. Slow down setInterval() x2 times where callback matched with `example` and interval equal 1000ms
     ```
-    example.org#%#//scriptlet("adjust-setInterval", "example", "400", "2")
+    example.org#%#//scriptlet('adjust-setInterval', 'example', '', '2')
+    ```
+5.  Adjust all setInterval() x50 times where interval equal 2000ms
+    ```
+    example.org#%#//scriptlet('adjust-setInterval', '', '2000', '0.02')
     ```
 [Scriptlet source](../src/scriptlets/adjust-setInterval.js)
 * * *
@@ -195,28 +199,32 @@ example.org#%#//scriptlet("adjust-setTimeout"[, match [, timeout[, boost]]])
 ```
 
 - `match` - optional, string/regular expression, matching in stringified callback function
-- `timeout` - optional, defaults to 1000, decimal integer, matching interval
-- `boost` - optional, default to 0.05, float, capped at 50 times for up and down, interval multiplier
+- `timeout` - optional, defaults to 1000, decimal integer, matching setTimout delay
+- `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), timeout multiplier
 
 **Examples**
-1. Adjust all setTimeout() x20 times where interval equal 1000ms:
+1. Adjust all setTimeout() x20 times where timeout equal 1000ms:
     ```
-    example.org#%#//scriptlet("adjust-setTimeout")
-    ```
-
-2. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 1000ms
-    ```
-    example.org#%#//scriptlet("adjust-setTimeout", "example")
+    example.org#%#//scriptlet('adjust-setTimeout')
     ```
 
-3. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 400ms
+2. Adjust all setTimeout() x20 times where callback mathed with `example` and timeout equal 1000ms
     ```
-    example.org#%#//scriptlet("adjust-setTimeout", "example", "400")
+    example.org#%#//scriptlet('adjust-setTimeout', 'example')
     ```
 
-4. Slow down setTimeout() x2 times where callback matched with `example` and interval equal 400ms
+3. Adjust all setTimeout() x20 times where callback mathed with `example` and timeout equal 400ms
     ```
-    example.org#%#//scriptlet("adjust-setTimeout", "example", "400", "2")
+    example.org#%#//scriptlet('adjust-setTimeout', 'example', '400')
+    ```
+
+4. Slow down setTimeout() x2 times where callback matched with `example` and timeout equal 1000ms
+    ```
+    example.org#%#//scriptlet('adjust-setTimeout', 'example', '', '2')
+    ```
+5.  Adjust all setTimeout() x50 times where timeout equal 2000ms
+    ```
+    example.org#%#//scriptlet('adjust-setTimeout', '', '2000', '0.02')
     ```
 [Scriptlet source](../src/scriptlets/adjust-setTimeout.js)
 * * *

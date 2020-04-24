@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.1.13
+ * Version 1.2.0
  */
 
 /**
@@ -2875,32 +2875,36 @@ disableNewtabLinks.injections = [hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("adjust-setInterval"[, match [, interval[, boost]]])
+ * example.org#%#//scriptlet('adjust-setInterval'[, match [, interval[, boost]]])
  * ```
  *
  * - `match` - optional, string/regular expression, matching in stringified callback function
- * - `interval` - optional, defaults to 1000, decimal integer, matching interval
- * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down, interval multiplier
+ * - `interval` - optional, defaults to 1000, decimal integer, matching setInterval delay
+ * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), interval multiplier
  *
  * **Examples**
  * 1. Adjust all setInterval() x20 times where interval equal 1000ms:
  *     ```
- *     example.org#%#//scriptlet("adjust-setInterval")
+ *     example.org#%#//scriptlet('adjust-setInterval')
  *     ```
  *
  * 2. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 1000ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setInterval", "example")
+ *     example.org#%#//scriptlet('adjust-setInterval', 'example')
  *     ```
  *
  * 3. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 400ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setInterval", "example", "400")
+ *     example.org#%#//scriptlet('adjust-setInterval', 'example', '400')
  *     ```
  *
- * 4. Slow down setInterval() x2 times where callback matched with `example` and interval equal 400ms
+ * 4. Slow down setInterval() x2 times where callback matched with `example` and interval equal 1000ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setInterval", "example", "400", "2")
+ *     example.org#%#//scriptlet('adjust-setInterval', 'example', '', '2')
+ *     ```
+ * 5.  Adjust all setInterval() x50 times where interval equal 2000ms
+ *     ```
+ *     example.org#%#//scriptlet('adjust-setInterval', '', '2000', '0.02')
  *     ```
  */
 
@@ -2914,8 +2918,8 @@ function adjustSetInterval(source, match, interval, boost) {
 
   interval = parseInt(interval, 10);
   interval = nativeIsNaN(interval) ? 1000 : interval;
-  boost = parseInt(boost, 10);
-  boost = nativeIsNaN(interval) || !nativeIsFinite(boost) ? 0.05 : boost;
+  boost = parseFloat(boost);
+  boost = nativeIsNaN(boost) || !nativeIsFinite(boost) ? 0.05 : boost;
   match = match ? toRegExp(match) : toRegExp('/.?/');
 
   if (boost < 0.02) {
@@ -2961,28 +2965,32 @@ adjustSetInterval.injections = [toRegExp, hit];
  * ```
  *
  * - `match` - optional, string/regular expression, matching in stringified callback function
- * - `timeout` - optional, defaults to 1000, decimal integer, matching interval
- * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down, interval multiplier
+ * - `timeout` - optional, defaults to 1000, decimal integer, matching setTimout delay
+ * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), timeout multiplier
  *
  * **Examples**
- * 1. Adjust all setTimeout() x20 times where interval equal 1000ms:
+ * 1. Adjust all setTimeout() x20 times where timeout equal 1000ms:
  *     ```
- *     example.org#%#//scriptlet("adjust-setTimeout")
- *     ```
- *
- * 2. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 1000ms
- *     ```
- *     example.org#%#//scriptlet("adjust-setTimeout", "example")
+ *     example.org#%#//scriptlet('adjust-setTimeout')
  *     ```
  *
- * 3. Adjust all setTimeout() x20 times where callback mathed with `example` and interval equal 400ms
+ * 2. Adjust all setTimeout() x20 times where callback mathed with `example` and timeout equal 1000ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setTimeout", "example", "400")
+ *     example.org#%#//scriptlet('adjust-setTimeout', 'example')
  *     ```
  *
- * 4. Slow down setTimeout() x2 times where callback matched with `example` and interval equal 400ms
+ * 3. Adjust all setTimeout() x20 times where callback mathed with `example` and timeout equal 400ms
  *     ```
- *     example.org#%#//scriptlet("adjust-setTimeout", "example", "400", "2")
+ *     example.org#%#//scriptlet('adjust-setTimeout', 'example', '400')
+ *     ```
+ *
+ * 4. Slow down setTimeout() x2 times where callback matched with `example` and timeout equal 1000ms
+ *     ```
+ *     example.org#%#//scriptlet('adjust-setTimeout', 'example', '', '2')
+ *     ```
+ * 5.  Adjust all setTimeout() x50 times where timeout equal 2000ms
+ *     ```
+ *     example.org#%#//scriptlet('adjust-setTimeout', '', '2000', '0.02')
  *     ```
  */
 
@@ -2996,8 +3004,8 @@ function adjustSetTimeout(source, match, timeout, boost) {
 
   timeout = parseInt(timeout, 10);
   timeout = nativeIsNaN(timeout) ? 1000 : timeout;
-  boost = parseInt(boost, 10);
-  boost = nativeIsNaN(timeout) || !nativeIsFinite(boost) ? 0.05 : boost;
+  boost = parseFloat(boost);
+  boost = nativeIsNaN(boost) || !nativeIsFinite(boost) ? 0.05 : boost;
   match = match ? toRegExp(match) : toRegExp('/.?/');
 
   if (boost < 0.02) {
@@ -3425,7 +3433,9 @@ var getScriptletByName = function getScriptletByName(name) {
     return scriptletList[key];
   });
   return scriptlets.find(function (s) {
-    return s.names && s.names.indexOf(name) > -1;
+    return s.names // full match name checking
+    && (s.names.indexOf(name) > -1 // or check ubo alias name without '.js' at the end
+    || !endsWith(name, '.js') && s.names.indexOf("".concat(name, ".js")) > -1);
   });
 };
 /**
@@ -4201,19 +4211,39 @@ function GoogleSyndicationAdsByGoogle(source) {
   };
   var adElems = document.querySelectorAll('.adsbygoogle');
   var css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
+  var statusAttrName = 'data-adsbygoogle-status';
+  var ASWIFT_IFRAME_MARKER = 'aswift_';
+  var GOOGLE_ADS_IFRAME_MARKER = 'google_ads_iframe_';
   var executed = false;
 
   for (var i = 0; i < adElems.length; i += 1) {
-    adElems[i].setAttribute('data-adsbygoogle-status', 'done');
-    var aswiftIframe = document.createElement('iframe');
-    aswiftIframe.id = "aswift_".concat(i + 1);
-    aswiftIframe.style = css;
-    adElems[i].appendChild(aswiftIframe);
-    var googleadsIframe = document.createElement('iframe');
-    googleadsIframe.id = "google_ads_iframe_".concat(i);
-    googleadsIframe.style = css;
-    adElems[i].appendChild(googleadsIframe);
-    executed = true;
+    var adElemChildNodes = adElems[i].childNodes;
+    var childNodesQuantity = adElemChildNodes.length; // childNodes of .adsbygoogle can be defined if scriptlet was executed before
+    // so we should check are that childNodes exactly defined by us
+    // TODO: remake after scriptlets context developing in 1.3
+
+    var areIframesDefined = false;
+
+    if (childNodesQuantity > 0) {
+      // it should be only 2 child iframes if scriptlet was executed
+      areIframesDefined = childNodesQuantity === 2 // the first of child nodes should be aswift iframe
+      && adElemChildNodes[0].tagName.toLowerCase() === 'iframe' && adElemChildNodes[0].id.indexOf(ASWIFT_IFRAME_MARKER) > -1 // the second of child nodes should be google_ads iframe
+      && adElemChildNodes[1].tagName.toLowerCase() === 'iframe' && adElemChildNodes[1].id.indexOf(GOOGLE_ADS_IFRAME_MARKER) > -1;
+    }
+
+    if (!areIframesDefined) {
+      // here we do the job if scriptlet has not been executed earlier
+      adElems[i].setAttribute(statusAttrName, 'done');
+      var aswiftIframe = document.createElement('iframe');
+      aswiftIframe.id = "".concat(ASWIFT_IFRAME_MARKER).concat(i + 1);
+      aswiftIframe.style = css;
+      adElems[i].appendChild(aswiftIframe);
+      var googleadsIframe = document.createElement('iframe');
+      googleadsIframe.id = "".concat(GOOGLE_ADS_IFRAME_MARKER).concat(i + 1);
+      googleadsIframe.style = css;
+      adElems[i].appendChild(googleadsIframe);
+      executed = true;
+    }
   }
 
   if (executed) {
