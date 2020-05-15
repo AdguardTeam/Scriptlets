@@ -50,4 +50,40 @@ declare module 'scriptlets' {
      * @returns array of AdGuard scriptlet rules
      */
     function convertScriptletToAdg(ruleText: string): string[];
+
+    /**
+     * Redirects module
+     */
+    const redirects: {
+        /**
+         * Checks if the `rule` is AdGuard redirect rule.
+         *
+         * @param rule
+         */
+        isAdgRedirectRule(rule: string): boolean;
+
+        /**
+         * Checks if the `rule` is **valid** AdGuard redirect resource rule
+         * @param rule
+         */
+        isValidAdgRedirectRule(rule: string): boolean;
+
+        /**
+         * Checks if the Ubo redirect `rule` has AdGuard analog. Needed for Ubo->Adg conversion
+         * @param rule
+         */
+        isUboRedirectCompatibleWithAdg(rule: string): boolean;
+
+        /**
+         * Checks if the Abp redirect `rule` has AdGuard analog. Needed for Abp->Adg conversion
+         * @param rule
+         */
+        isAbpRedirectCompatibleWithAdg(rule: string): boolean;
+
+        /**
+         * Converts redirect rule to AdGuard one
+         * @param rule
+         */
+        convertRedirectToAdg(rule: string): string;
+    }
 }
