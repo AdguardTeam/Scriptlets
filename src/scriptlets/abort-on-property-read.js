@@ -1,5 +1,5 @@
 import {
-    randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit,
+    randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, toRegExp,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -17,11 +17,12 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('abort-on-property-read', <property>)
+ * example.org#%#//scriptlet('abort-on-property-read', property[, stack])
  * ```
  *
  * **Parameters**
- * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
+ * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`
+ * - `stack` (optional) string or regular expression that must match the current function call stack trace
  *
  * **Examples**
  * ```
@@ -33,10 +34,24 @@ import {
  * ```
  */
 /* eslint-enable max-len */
-export function abortOnPropertyRead(source, property) {
+export function abortOnPropertyRead(source, property, stack) {
     if (!property) {
         return;
     }
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/82
+    stack = stack ? toRegExp(stack) : toRegExp('/.?/');
+
+    const stackTrace = new Error().stack // get original stack trace
+        .split('\n')
+        // .slice(1) // get rid of our own functions in the stack trace
+        .map((line) => line.trim()) // trim the lines
+        .join('\n'); // join
+
+    if (!stack.test(stackTrace)) {
+        return;
+    }
+
     const rid = randomId();
     const abort = () => {
         hit(source);
@@ -83,6 +98,7 @@ abortOnPropertyRead.names = [
 ];
 abortOnPropertyRead.injections = [
     randomId,
+    toRegExp,
     setPropertyAccess,
     getPropertyInChain,
     createOnErrorHandler,
