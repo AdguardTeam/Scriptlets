@@ -12,6 +12,7 @@
 * [noopvast-3.0](#noopvast-3.0)
 * [noopmp3-0.1s](#noopmp3-0.1s)
 * [noopmp4-1s](#noopmp4-1s)
+* [amazon-apstag](#amazon-apstag)
 * [google-analytics-ga](#google-analytics-ga)
 * [google-analytics](#google-analytics)
 * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
@@ -133,6 +134,20 @@ Redirects request to an empty VAST response.
 ||example.org/advert.mp4$media,redirect=noopmp4-1s
 ```
 [Redirect source](../src/redirects/static-redirects.yml)
+* * *
+
+### <a id="amazon-apstag"></a> ⚡️ amazon-apstag
+
+Mocks Amazon's apstag.js
+
+Related UBO redirect resource:
+https://github.com/gorhill/uBlock/blob/f842ab6d3c1cf0394f95d27092bf59627262da40/src/web_accessible_resources/amazon_apstag.js
+
+**Example**
+```
+||amazon-adsystem.com/aax2/apstag.js$script,redirect=amazon-apstag
+```
+[Redirect source](../src/redirects/amazon-apstag.js)
 * * *
 
 ### <a id="google-analytics-ga"></a> ⚡️ google-analytics-ga

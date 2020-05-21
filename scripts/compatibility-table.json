@@ -227,6 +227,10 @@
             "abp": "32x32-transparent-png"
         },
         {
+            "adg": "amazon-apstag",
+            "ubo": "amazon_apstag.js"
+        },
+        {
             "adg": "google-analytics",
             "ubo": "google-analytics_analytics.js"
         },
