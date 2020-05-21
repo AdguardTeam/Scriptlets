@@ -4,6 +4,7 @@ import {
     getPropertyInChain,
     createOnErrorHandler,
     hit,
+    toRegExp,
     noopFunc,
 } from '../helpers';
 
@@ -23,10 +24,22 @@ import {
  * ```
  */
 /* eslint-enable max-len */
-export function debugOnPropertyRead(source, property) {
+export function debugOnPropertyRead(source, property, stack) {
     if (!property) {
         return;
     }
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/82
+    stack = stack ? toRegExp(stack) : toRegExp('/.?/');
+    const stackTrace = new Error().stack
+        .split('\n')
+        .slice(2)
+        .map((line) => line.trim())
+        .join('\n');
+    if (!stack.test(stackTrace)) {
+        return;
+    }
+
     const rid = randomId();
     const abort = () => {
         hit(source);
@@ -72,5 +85,6 @@ debugOnPropertyRead.injections = [
     getPropertyInChain,
     createOnErrorHandler,
     hit,
+    toRegExp,
     noopFunc,
 ];

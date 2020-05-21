@@ -64,3 +64,43 @@ test('debug-on-property-write dot notation deferred defenition', (assert) => {
     assert.equal(window.hit, 'value', 'Hit function was executed');
     clearGlobalProps(...changingProps);
 });
+
+test('debug-on-property-write: stack match', (assert) => {
+    const params = {
+        name,
+        args: [
+            [PROPERTY],
+            '/test/',
+        ],
+        verbose: true,
+    };
+    window.__debug = () => {
+        window.hit = 'value';
+    };
+    window[PROPERTY] = 'value';
+    const resString = window.scriptlets.invoke(params);
+    evalWrap(resString);
+    window[PROPERTY] = 'new value';
+    assert.equal(window.hit, 'value', 'Hit function was executed');
+    clearGlobalProps(...changingProps);
+});
+
+test('debug-on-property-write: no stack match', (assert) => {
+    const params = {
+        name,
+        args: [
+            [PROPERTY],
+            'no_match.js',
+        ],
+        verbose: true,
+    };
+    window.__debug = () => {
+        window.hit = 'value';
+    };
+    window[PROPERTY] = 'value';
+    const resString = window.scriptlets.invoke(params);
+    evalWrap(resString);
+    window[PROPERTY] = 'new value';
+    assert.equal(window.hit, undefined, 'Hit function was NOT executed');
+    clearGlobalProps(...changingProps);
+});

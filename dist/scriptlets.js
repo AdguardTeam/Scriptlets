@@ -765,11 +765,12 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('abort-on-property-read', <property>)
+     * example.org#%#//scriptlet('abort-on-property-read', property[, stack])
      * ```
      *
      * **Parameters**
-     * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
+     * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`
+     * - `stack` (optional) string or regular expression that must match the current function call stack trace
      *
      * **Examples**
      * ```
@@ -778,13 +779,29 @@
      *
      * ! Aborts script when it tries to access `navigator.language`
      * example.org#%#//scriptlet('abort-on-property-read', 'navigator.language')
+     *
+     * ! Aborts script when it tries to access `window.adblock` and it's error stack trace contains `test.js`
+     * example.org#%#//scriptlet('abort-on-property-read', 'adblock', 'test.js')
      * ```
      */
 
     /* eslint-enable max-len */
 
-    function abortOnPropertyRead(source, property) {
+    function abortOnPropertyRead(source, property, stack) {
       if (!property) {
+        return;
+      } // https://github.com/AdguardTeam/Scriptlets/issues/82
+
+
+      stack = stack ? toRegExp(stack) : toRegExp('/.?/');
+      var stackTrace = new Error().stack // get original stack trace
+      .split('\n') // .slice(2) // get rid of our own functions in the stack trace
+      .map(function (line) {
+        return line.trim();
+      }) // trim the lines
+      .join('\n');
+
+      if (!stack.test(stackTrace)) {
         return;
       }
 
@@ -829,7 +846,7 @@
       window.onerror = createOnErrorHandler(rid).bind();
     }
     abortOnPropertyRead.names = ['abort-on-property-read', 'abort-on-property-read.js', 'ubo-abort-on-property-read.js', 'aopr.js', 'ubo-aopr.js', 'abp-abort-on-property-read'];
-    abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
+    abortOnPropertyRead.injections = [randomId, toRegExp, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
     /* eslint-disable max-len */
 
@@ -847,23 +864,40 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('abort-on-property-write', <property>)
+     * example.org#%#//scriptlet('abort-on-property-write', property[, stack])
      * ```
      *
      * **Parameters**
-     * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
+     * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`
+     * - `stack` (optional) string or regular expression that must match the current function call stack trace
      *
      * **Examples**
      * ```
      * ! Aborts script when it tries to set `window.adblock` value
      * example.org#%#//scriptlet('abort-on-property-write', 'adblock')
+     *
+     * ! Aborts script when it tries to set `window.adblock` value and it's error stack trace contains `checking.js`
+     * example.org#%#//scriptlet('abort-on-property-write', 'adblock', '')
      * ```
      */
 
     /* eslint-enable max-len */
 
-    function abortOnPropertyWrite(source, property) {
+    function abortOnPropertyWrite(source, property, stack) {
       if (!property) {
+        return;
+      } // https://github.com/AdguardTeam/Scriptlets/issues/82
+
+
+      stack = stack ? toRegExp(stack) : toRegExp('/.?/');
+      var stackTrace = new Error().stack // get original stack trace
+      .split('\n').slice(2) // get rid of our own functions in the stack trace
+      .map(function (line) {
+        return line.trim();
+      }) // trim the lines
+      .join('\n');
+
+      if (!stack.test(stackTrace)) {
         return;
       }
 
@@ -907,7 +941,7 @@
       window.onerror = createOnErrorHandler(rid).bind();
     }
     abortOnPropertyWrite.names = ['abort-on-property-write', 'abort-on-property-write.js', 'ubo-abort-on-property-write.js', 'aopw.js', 'ubo-aopw.js', 'abp-abort-on-property-write'];
-    abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
+    abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, toRegExp];
 
     /* eslint-disable max-len */
 
@@ -2421,8 +2455,18 @@
 
     /* eslint-enable max-len */
 
-    function debugOnPropertyRead(source, property) {
+    function debugOnPropertyRead(source, property, stack) {
       if (!property) {
+        return;
+      } // https://github.com/AdguardTeam/Scriptlets/issues/82
+
+
+      stack = stack ? toRegExp(stack) : toRegExp('/.?/');
+      var stackTrace = new Error().stack.split('\n').slice(2).map(function (line) {
+        return line.trim();
+      }).join('\n');
+
+      if (!stack.test(stackTrace)) {
         return;
       }
 
@@ -2468,7 +2512,7 @@
       window.onerror = createOnErrorHandler(rid).bind();
     }
     debugOnPropertyRead.names = ['debug-on-property-read'];
-    debugOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, noopFunc];
+    debugOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, toRegExp, noopFunc];
 
     /* eslint-disable max-len */
 
@@ -2489,8 +2533,18 @@
 
     /* eslint-enable max-len */
 
-    function debugOnPropertyWrite(source, property) {
+    function debugOnPropertyWrite(source, property, stack) {
       if (!property) {
+        return;
+      } // https://github.com/AdguardTeam/Scriptlets/issues/82
+
+
+      stack = stack ? toRegExp(stack) : toRegExp('/.?/');
+      var stackTrace = new Error().stack.split('\n').slice(2).map(function (line) {
+        return line.trim();
+      }).join('\n');
+
+      if (!stack.test(stackTrace)) {
         return;
       }
 
@@ -2535,7 +2589,7 @@
       window.onerror = createOnErrorHandler(rid).bind();
     }
     debugOnPropertyWrite.names = ['debug-on-property-write'];
-    debugOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
+    debugOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, toRegExp];
 
     /* eslint-disable max-len */
 

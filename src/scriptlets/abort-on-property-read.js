@@ -31,6 +31,9 @@ import {
  *
  * ! Aborts script when it tries to access `navigator.language`
  * example.org#%#//scriptlet('abort-on-property-read', 'navigator.language')
+ *
+ * ! Aborts script when it tries to access `window.adblock` and it's error stack trace contains `test.js`
+ * example.org#%#//scriptlet('abort-on-property-read', 'adblock', 'test.js')
  * ```
  */
 /* eslint-enable max-len */
@@ -44,9 +47,9 @@ export function abortOnPropertyRead(source, property, stack) {
 
     const stackTrace = new Error().stack // get original stack trace
         .split('\n')
-        // .slice(1) // get rid of our own functions in the stack trace
+        // .slice(2) // get rid of our own functions in the stack trace
         .map((line) => line.trim()) // trim the lines
-        .join('\n'); // join
+        .join('\n');
 
     if (!stack.test(stackTrace)) {
         return;

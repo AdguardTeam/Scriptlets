@@ -100,11 +100,12 @@ https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f1
 
 **Syntax**
 ```
-example.org#%#//scriptlet('abort-on-property-read', <property>)
+example.org#%#//scriptlet('abort-on-property-read', property[, stack])
 ```
 
 **Parameters**
-- `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
+- `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`
+- `stack` (optional) string or regular expression that must match the current function call stack trace
 
 **Examples**
 ```
@@ -113,6 +114,9 @@ example.org#%#//scriptlet('abort-on-property-read', 'alert')
 
 ! Aborts script when it tries to access `navigator.language`
 example.org#%#//scriptlet('abort-on-property-read', 'navigator.language')
+
+! Aborts script when it tries to access `window.adblock` and it's error stack trace contains `test.js`
+example.org#%#//scriptlet('abort-on-property-read', 'adblock', 'test.js')
 ```
 [Scriptlet source](../src/scriptlets/abort-on-property-read.js)
 * * *
@@ -129,16 +133,20 @@ https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f1
 
 **Syntax**
 ```
-example.org#%#//scriptlet('abort-on-property-write', <property>)
+example.org#%#//scriptlet('abort-on-property-write', property[, stack])
 ```
 
 **Parameters**
-- `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
+- `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`
+- `stack` (optional) string or regular expression that must match the current function call stack trace
 
 **Examples**
 ```
 ! Aborts script when it tries to set `window.adblock` value
 example.org#%#//scriptlet('abort-on-property-write', 'adblock')
+
+! Aborts script when it tries to set `window.adblock` value and it's error stack trace contains `checking.js`
+example.org#%#//scriptlet('abort-on-property-write', 'adblock', '')
 ```
 [Scriptlet source](../src/scriptlets/abort-on-property-write.js)
 * * *
