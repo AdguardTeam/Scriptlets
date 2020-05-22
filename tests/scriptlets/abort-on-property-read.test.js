@@ -137,3 +137,19 @@ test('abort-on-property-read: simple, does NOT match stack', (assert) => {
 
     assert.equal(window.hit, undefined, 'Hit function was NOT executed');
 });
+
+test('abort-on-property-read: simple, matches stack of our own script', (assert) => {
+    const params = {
+        name,
+        args: [
+            [PROPERTY],
+            'abortOnPropertyRead',
+        ],
+        verbose: true,
+    };
+    window[PROPERTY] = 'value';
+    const resString = window.scriptlets.invoke(params);
+    evalWrap(resString);
+
+    assert.equal(window.hit, undefined, 'Hit function was NOT executed');
+});

@@ -9,3 +9,4 @@ export * from './create-on-error-handler';
 export * from './noop';
 export * from './hit';
 export * from './observer';
+export * from './match-stack';

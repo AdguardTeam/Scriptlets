@@ -44,8 +44,7 @@ export function debugCurrentInlineScript(source, property, search = null) {
             && scriptEl !== ourScript
             && (!regex || regex.test(scriptEl.textContent))) {
             hit(source);
-            // eslint-disable-next-line no-debugger
-            debugger;
+            debugger; // eslint-disable-line no-debugger
         }
     };
 

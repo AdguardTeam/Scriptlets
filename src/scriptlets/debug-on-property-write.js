@@ -5,6 +5,7 @@ import {
     createOnErrorHandler,
     hit,
     toRegExp,
+    matchStackTrace,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -24,27 +25,15 @@ import {
  */
 /* eslint-enable max-len */
 export function debugOnPropertyWrite(source, property, stack) {
-    if (!property) {
-        return;
-    }
-
-    // https://github.com/AdguardTeam/Scriptlets/issues/82
     stack = stack ? toRegExp(stack) : toRegExp('/.?/');
-    const stackTrace = new Error().stack
-        .split('\n')
-        .slice(2)
-        .map((line) => line.trim())
-        .join('\n');
-
-    if (!stack.test(stackTrace)) {
+    if (!property
+        || !matchStackTrace(stack, new Error().stack)) {
         return;
     }
-
     const rid = randomId();
     const abort = () => {
         hit(source);
-        // eslint-disable-next-line no-debugger
-        debugger;
+        debugger; // eslint-disable-line no-debugger
     };
     const setChainPropAccess = (owner, property) => {
         const chainInfo = getPropertyInChain(owner, property);
@@ -83,4 +72,5 @@ debugOnPropertyWrite.injections = [
     createOnErrorHandler,
     hit,
     toRegExp,
+    matchStackTrace,
 ];

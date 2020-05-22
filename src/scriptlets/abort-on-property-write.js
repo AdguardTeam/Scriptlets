@@ -1,5 +1,11 @@
 import {
-    randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, toRegExp,
+    randomId,
+    setPropertyAccess,
+    getPropertyInChain,
+    createOnErrorHandler,
+    hit,
+    toRegExp,
+    matchStackTrace,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -35,20 +41,9 @@ import {
  */
 /* eslint-enable max-len */
 export function abortOnPropertyWrite(source, property, stack) {
-    if (!property) {
-        return;
-    }
-
-    // https://github.com/AdguardTeam/Scriptlets/issues/82
     stack = stack ? toRegExp(stack) : toRegExp('/.?/');
-
-    const stackTrace = new Error().stack // get original stack trace
-        .split('\n')
-        .slice(2) // get rid of our own functions in the stack trace
-        .map((line) => line.trim()) // trim the lines
-        .join('\n');
-
-    if (!stack.test(stackTrace)) {
+    if (!property
+        || !matchStackTrace(stack, new Error().stack)) {
         return;
     }
 
@@ -99,4 +94,5 @@ abortOnPropertyWrite.injections = [
     createOnErrorHandler,
     hit,
     toRegExp,
+    matchStackTrace,
 ];

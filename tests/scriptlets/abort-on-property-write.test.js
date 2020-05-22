@@ -153,3 +153,23 @@ test('abort-on-property-write: does NOT match stack', (assert) => {
     assert.equal(window.hit, undefined, 'Hit function was NOT executed');
     clearGlobalProps(...changingProps);
 });
+
+test('abort-on-property-write: matches stack of our own script', (assert) => {
+    const params = {
+        name,
+        args: [
+            [PROPERTY],
+            'abortOnPropertyWrite',
+        ],
+        verbose: true,
+    };
+    window.__debug = () => {
+        window.hit = 'value';
+    };
+    window[PROPERTY] = 'value';
+    const resString = window.scriptlets.invoke(params);
+    evalWrap(resString);
+
+    assert.equal(window.hit, undefined, 'Hit function was executed');
+    clearGlobalProps(...changingProps);
+});

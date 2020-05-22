@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.2.1
+ * Version 1.2.3
  */
 
 /**
@@ -387,6 +387,22 @@ var observeDOMChanges = function observeDOMChanges(callback) {
 };
 
 /**
+ * Checks if the stackTrace contains inputStackProp
+ * // https://github.com/AdguardTeam/Scriptlets/issues/82
+ * @param {string} inputStackProp - stack scriptlet parameter
+ * @param {string} stackTrace - script error stack trace
+ * @returns {boolean}
+ */
+var matchStackTrace = function matchStackTrace(inputStackProp, stackTrace) {
+  stackTrace = stackTrace.split('\n').slice(2) // get rid of our own functions in the stack trace
+  .map(function (line) {
+    return line.trim();
+  }) // trim the lines
+  .join('\n');
+  return inputStackProp.test(stackTrace);
+};
+
+/**
  * This file must export all used dependencies
  */
 
@@ -413,7 +429,8 @@ var dependencies = /*#__PURE__*/Object.freeze({
     noopArray: noopArray,
     noopStr: noopStr,
     hit: hit,
-    observeDOMChanges: observeDOMChanges
+    observeDOMChanges: observeDOMChanges,
+    matchStackTrace: matchStackTrace
 });
 
 /**
@@ -787,20 +804,9 @@ var parseRule = function parseRule(ruleText) {
 /* eslint-enable max-len */
 
 function abortOnPropertyRead(source, property, stack) {
-  if (!property) {
-    return;
-  } // https://github.com/AdguardTeam/Scriptlets/issues/82
-
-
   stack = stack ? toRegExp(stack) : toRegExp('/.?/');
-  var stackTrace = new Error().stack // get original stack trace
-  .split('\n') // .slice(2) // get rid of our own functions in the stack trace
-  .map(function (line) {
-    return line.trim();
-  }) // trim the lines
-  .join('\n');
 
-  if (!stack.test(stackTrace)) {
+  if (!property || !matchStackTrace(stack, new Error().stack)) {
     return;
   }
 
@@ -845,7 +851,7 @@ function abortOnPropertyRead(source, property, stack) {
   window.onerror = createOnErrorHandler(rid).bind();
 }
 abortOnPropertyRead.names = ['abort-on-property-read', 'abort-on-property-read.js', 'ubo-abort-on-property-read.js', 'aopr.js', 'ubo-aopr.js', 'abp-abort-on-property-read'];
-abortOnPropertyRead.injections = [randomId, toRegExp, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
+abortOnPropertyRead.injections = [randomId, toRegExp, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, matchStackTrace];
 
 /* eslint-disable max-len */
 
@@ -883,20 +889,9 @@ abortOnPropertyRead.injections = [randomId, toRegExp, setPropertyAccess, getProp
 /* eslint-enable max-len */
 
 function abortOnPropertyWrite(source, property, stack) {
-  if (!property) {
-    return;
-  } // https://github.com/AdguardTeam/Scriptlets/issues/82
-
-
   stack = stack ? toRegExp(stack) : toRegExp('/.?/');
-  var stackTrace = new Error().stack // get original stack trace
-  .split('\n').slice(2) // get rid of our own functions in the stack trace
-  .map(function (line) {
-    return line.trim();
-  }) // trim the lines
-  .join('\n');
 
-  if (!stack.test(stackTrace)) {
+  if (!property || !matchStackTrace(stack, new Error().stack)) {
     return;
   }
 
@@ -940,7 +935,7 @@ function abortOnPropertyWrite(source, property, stack) {
   window.onerror = createOnErrorHandler(rid).bind();
 }
 abortOnPropertyWrite.names = ['abort-on-property-write', 'abort-on-property-write.js', 'ubo-abort-on-property-write.js', 'aopw.js', 'ubo-aopw.js', 'abp-abort-on-property-write'];
-abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, toRegExp];
+abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, toRegExp, matchStackTrace];
 
 /* eslint-disable max-len */
 
@@ -2455,26 +2450,17 @@ preventAdfly.injections = [setPropertyAccess, hit];
 /* eslint-enable max-len */
 
 function debugOnPropertyRead(source, property, stack) {
-  if (!property) {
-    return;
-  } // https://github.com/AdguardTeam/Scriptlets/issues/82
-
-
   stack = stack ? toRegExp(stack) : toRegExp('/.?/');
-  var stackTrace = new Error().stack.split('\n').slice(2).map(function (line) {
-    return line.trim();
-  }).join('\n');
 
-  if (!stack.test(stackTrace)) {
+  if (!property || !matchStackTrace(stack, new Error().stack)) {
     return;
   }
 
   var rid = randomId();
 
   var abort = function abort() {
-    hit(source); // eslint-disable-next-line no-debugger
-
-    debugger;
+    hit(source);
+    debugger; // eslint-disable-line no-debugger
   };
 
   var setChainPropAccess = function setChainPropAccess(owner, property) {
@@ -2511,7 +2497,7 @@ function debugOnPropertyRead(source, property, stack) {
   window.onerror = createOnErrorHandler(rid).bind();
 }
 debugOnPropertyRead.names = ['debug-on-property-read'];
-debugOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, toRegExp, noopFunc];
+debugOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, toRegExp, matchStackTrace, noopFunc];
 
 /* eslint-disable max-len */
 
@@ -2533,26 +2519,17 @@ debugOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChai
 /* eslint-enable max-len */
 
 function debugOnPropertyWrite(source, property, stack) {
-  if (!property) {
-    return;
-  } // https://github.com/AdguardTeam/Scriptlets/issues/82
-
-
   stack = stack ? toRegExp(stack) : toRegExp('/.?/');
-  var stackTrace = new Error().stack.split('\n').slice(2).map(function (line) {
-    return line.trim();
-  }).join('\n');
 
-  if (!stack.test(stackTrace)) {
+  if (!property || !matchStackTrace(stack, new Error().stack)) {
     return;
   }
 
   var rid = randomId();
 
   var abort = function abort() {
-    hit(source); // eslint-disable-next-line no-debugger
-
-    debugger;
+    hit(source);
+    debugger; // eslint-disable-line no-debugger
   };
 
   var setChainPropAccess = function setChainPropAccess(owner, property) {
@@ -2588,7 +2565,7 @@ function debugOnPropertyWrite(source, property, stack) {
   window.onerror = createOnErrorHandler(rid).bind();
 }
 debugOnPropertyWrite.names = ['debug-on-property-write'];
-debugOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, toRegExp];
+debugOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, toRegExp, matchStackTrace];
 
 /* eslint-disable max-len */
 
@@ -2630,9 +2607,8 @@ function debugCurrentInlineScript(source, property) {
     var scriptEl = getCurrentScript();
 
     if (scriptEl instanceof HTMLScriptElement && scriptEl.textContent.length > 0 && scriptEl !== ourScript && (!regex || regex.test(scriptEl.textContent))) {
-      hit(source); // eslint-disable-next-line no-debugger
-
-      debugger;
+      hit(source);
+      debugger; // eslint-disable-line no-debugger
     }
   };
 
@@ -3410,7 +3386,7 @@ var scriptletList = /*#__PURE__*/Object.freeze({
     preventRequestAnimationFrame: preventRequestAnimationFrame
 });
 
-const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm",ubo:"googletagmanager_gtm.js"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3-0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvmap-1.0"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"disqus_embed.js"},{ubo:"disqus_forums_embed.js"},{ubo:"doubleclick_instream_ad_status.js"},{ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"}];
+const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"amazon-apstag",ubo:"amazon_apstag.js"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm",ubo:"googletagmanager_gtm.js"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3-0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvmap-1.0"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"disqus_embed.js"},{ubo:"disqus_forums_embed.js"},{ubo:"doubleclick_instream_ad_status.js"},{ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"}];
 
 var JS_RULE_MASK = '#%#';
 var COMMENT_MARKER = '!';
@@ -4744,6 +4720,38 @@ function metrikaYandexWatch(source) {
 metrikaYandexWatch.names = ['metrika-yandex-watch'];
 metrikaYandexWatch.injections = [hit, noopFunc];
 
+/**
+ * @redirect amazon-apstag
+ *
+ * @description
+ * Mocks Amazon's apstag.js
+ *
+ * Related UBO redirect resource:
+ * https://github.com/gorhill/uBlock/blob/f842ab6d3c1cf0394f95d27092bf59627262da40/src/web_accessible_resources/amazon_apstag.js
+ *
+ * **Example**
+ * ```
+ * ||amazon-adsystem.com/aax2/apstag.js$script,redirect=amazon-apstag
+ * ```
+ */
+
+function AmazonApstag(source) {
+  var apstagWrapper = {
+    fetchBids: function fetchBids(a, b) {
+      if (typeof b === 'function') {
+        b([]);
+      }
+    },
+    init: noopFunc,
+    setDisplayBids: noopFunc,
+    targetingKeys: noopFunc
+  };
+  window.apstag = apstagWrapper;
+  hit(source);
+}
+AmazonApstag.names = ['amazon-apstag', 'ubo-amazon_apstag.js', 'amazon_apstag.js'];
+AmazonApstag.injections = [hit, noopFunc];
+
 
 
 var redirectsList = /*#__PURE__*/Object.freeze({
@@ -4759,7 +4767,8 @@ var redirectsList = /*#__PURE__*/Object.freeze({
     metrikaYandexWatch: metrikaYandexWatch,
     preventFab: preventFab,
     setPopadsDummy: setPopadsDummy,
-    preventPopadsNet: preventPopadsNet
+    preventPopadsNet: preventPopadsNet,
+    AmazonApstag: AmazonApstag
 });
 
 /**
