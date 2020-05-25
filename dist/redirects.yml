@@ -1,6 +1,6 @@
 #
 #    AdGuard Scriptlets (Redirects Source)
-#    Version 1.2.2
+#    Version 1.2.3
 #
 - title: 1x1-transparent.gif
   description: |-
@@ -12,6 +12,7 @@
     - 1x1.gif
     - 1x1-transparent-gif
   comment: 'http://probablyprogramming.com/2009/03/15/the-tiniest-gif-ever'
+  file: 1x1-transparent.gif
   contentType: image/gif;base64
   content: R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 
@@ -24,6 +25,7 @@
   aliases:
     - 2x2.png
     - 2x2-transparent-png
+  file: 2x2-transparent.png
   contentType: image/png;base64
   content: >
     iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAC0lEQVQI12NgQAcAABIAAe+JVKQAAAAA
@@ -38,6 +40,7 @@
   aliases:
     - 3x2.png
     - 3x2-transparent-png
+  file: 3x2-transparent.png
   contentType: image/png;base64
   content: >
     iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAYAAACddGYaAAAAC0lEQVQI12NgwAUAABoAASRETuUAAAAA
@@ -52,6 +55,7 @@
   aliases:
     - 32x32.png
     - 32x32-transparent-png
+  file: 32x32-transparent.png
   contentType: image/png;base64
   content: >
     iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAGklEQVRYw+3BAQEAAACCIP+vbkhAAQAA
@@ -66,6 +70,7 @@
   aliases:
     - noop.html
     - blank-html
+  file: noopframe.html
   contentType: text/html
   content: |-
     <!DOCTYPE html>
@@ -82,6 +87,7 @@
     ```
   aliases:
     - blank-css
+  file: noopcss.css
   contentType: text/css
   content: ''
 
@@ -94,6 +100,7 @@
   aliases:
     - noop.js
     - blank-js
+  file: noopjs.js
   contentType: application/javascript
   content: '(function() {})()'
 
@@ -106,6 +113,7 @@
   aliases:
     - noop.txt
     - blank-text
+  file: nooptext.js
   contentType: text/plain
   content: ''
 
@@ -117,6 +125,7 @@
     ```
     ||example.org/vmap01.xml$xmlhttprequest,redirect=noopvmap-1.0
     ```
+  file: noopvmap01.xml
   contentType: text/xml
   content: >-
     <vmap:VMAP xmlns:vmap="http://www.iab.net/videosuite/vmap"
@@ -130,6 +139,7 @@
     ```
     ||example.org/vast02.xml^$xmlhttprequest,redirect=noopvast-2.0
     ```
+  file: noopvast02.xml
   contentType: text/xml
   content: <VAST version="2.0"></VAST>
 
@@ -141,6 +151,7 @@
     ```
     ||example.org/vast03.xml^$xmlhttprequest,redirect=noopvast-3.0
     ```
+  file: noopvast03.xml
   contentType: text/xml
   content: <VAST version="3.0"></VAST>
 
@@ -158,6 +169,7 @@
     https://ubuntuforums.org/showthread.php?t=1911430&p=11624471#post11624471
     ffmpeg -ar 48000 -t 0.1 -f s16le -acodec pcm_s16le -ac 2 -i /dev/zero
     -acodec libmp3lame -aq 4 output.mp3 But with 0.1 (second) instead of 60.
+  file: noopmp3.mp3
   contentType: audio/mp3;base64
   content: >
     SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU2LjQwLjEwMQAAAAAAAAAAAAAA//tUAAAAAAAAAAAAAAAA
@@ -186,6 +198,7 @@
     - blank-mp4
   comment: |
     From https://github.com/kud/blank-video
+  file: noopmp4.mp4
   contentType: video/mp4;base64
   content: >
     AAAAHGZ0eXBNNFYgAAACAGlzb21pc28yYXZjMQAAAAhmcmVlAAAGF21kYXTeBAAAbGliZmFhYyAxLjI4
@@ -334,6 +347,7 @@
             AmazonApstag.apply(this, updatedArgs);
         
     })({"name":"amazon-apstag","args":[]}, []);
+  file: amazon-apstag.js
 
 - title: google-analytics-ga
   comment: Mocks old Google Analytics API.
@@ -487,6 +501,7 @@
             GoogleAnalyticsGa.apply(this, updatedArgs);
         
     })({"name":"google-analytics-ga","args":[]}, []);
+  file: google-analytics-ga.js
 
 - title: google-analytics
   comment: Mocks Google Analytics API.
@@ -610,6 +625,7 @@
             GoogleAnalytics.apply(this, updatedArgs);
         
     })({"name":"google-analytics","args":[]}, []);
+  file: google-analytics.js
 
 - title: googlesyndication-adsbygoogle
   comment: Mocks Google AdSense API.
@@ -727,6 +743,7 @@
             GoogleSyndicationAdsByGoogle.apply(this, updatedArgs);
         
     })({"name":"googlesyndication-adsbygoogle","args":[]}, []);
+  file: googlesyndication-adsbygoogle.js
 
 - title: googletagmanager-gtm
   comment: Mocks Google Tag Manager API.
@@ -819,6 +836,7 @@
             GoogleTagManagerGtm.apply(this, updatedArgs);
         
     })({"name":"googletagmanager-gtm","args":[]}, []);
+  file: googletagmanager-gtm.js
 
 - title: googletagservices-gpt
   comment: Mocks Google Publisher Tag API.
@@ -1045,6 +1063,7 @@
             GoogleTagServicesGpt.apply(this, updatedArgs);
         
     })({"name":"googletagservices-gpt","args":[]}, []);
+  file: googletagservices-gpt.js
 
 - title: metrika-yandex-tag
   comment: Mocks Yandex Metrika API.
@@ -1216,6 +1235,7 @@
             metrikaYandexTag.apply(this, updatedArgs);
         
     })({"name":"metrika-yandex-tag","args":[]}, []);
+  file: metrika-yandex-tag.js
 
 - title: metrika-yandex-watch
   comment: Mocks the old Yandex Metrika API.
@@ -1352,6 +1372,7 @@
             metrikaYandexWatch.apply(this, updatedArgs);
         
     })({"name":"metrika-yandex-watch","args":[]}, []);
+  file: metrika-yandex-watch.js
 
 - title: noeval
   comment: >-
@@ -1429,6 +1450,7 @@
             noeval.apply(this, updatedArgs);
         
     })({"name":"noeval","args":[]}, []);
+  file: noeval.js
 
 - title: prevent-fab-3.2.0
   comment: Redirects fuckadblock script to the source js file.
@@ -1579,6 +1601,7 @@
             preventFab.apply(this, updatedArgs);
         
     })({"name":"prevent-fab-3.2.0","args":[]}, []);
+  file: prevent-fab-3.2.0.js
 
 - title: prevent-popads-net
   comment: >-
@@ -1691,6 +1714,7 @@
             preventPopadsNet.apply(this, updatedArgs);
         
     })({"name":"prevent-popads-net","args":[]}, []);
+  file: prevent-popads-net.js
 
 - title: scorecardresearch-beacon
   comment: Mocks Scorecard Research API.
@@ -1769,6 +1793,7 @@
             ScoreCardResearchBeacon.apply(this, updatedArgs);
         
     })({"name":"scorecardresearch-beacon","args":[]}, []);
+  file: scorecardresearch-beacon.js
 
 - title: set-popads-dummy
   comment: >-
@@ -1857,3 +1882,4 @@
             setPopadsDummy.apply(this, updatedArgs);
         
     })({"name":"set-popads-dummy","args":[]}, []);
+  file: set-popads-dummy.js
