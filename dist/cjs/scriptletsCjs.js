@@ -387,19 +387,19 @@ var observeDOMChanges = function observeDOMChanges(callback) {
 };
 
 /**
- * Checks if the stackTrace contains inputStackProp
+ * Checks if the stackTrace contains stackRegexp
  * // https://github.com/AdguardTeam/Scriptlets/issues/82
- * @param {string} inputStackProp - stack scriptlet parameter
+ * @param {string} stackRegexp - stack regexp
  * @param {string} stackTrace - script error stack trace
  * @returns {boolean}
  */
-var matchStackTrace = function matchStackTrace(inputStackProp, stackTrace) {
+var matchStackTrace = function matchStackTrace(stackRegexp, stackTrace) {
   stackTrace = stackTrace.split('\n').slice(2) // get rid of our own functions in the stack trace
   .map(function (line) {
     return line.trim();
   }) // trim the lines
   .join('\n');
-  return inputStackProp.test(stackTrace);
+  return stackRegexp.test(stackTrace);
 };
 
 /**

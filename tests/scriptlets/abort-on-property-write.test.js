@@ -170,6 +170,6 @@ test('abort-on-property-write: matches stack of our own script', (assert) => {
     const resString = window.scriptlets.invoke(params);
     evalWrap(resString);
 
-    assert.equal(window.hit, undefined, 'Hit function was executed');
+    assert.equal(window.hit, undefined, 'Hit function was NOT executed');
     clearGlobalProps(...changingProps);
 });
