@@ -68,10 +68,8 @@ const getComment = (rrName) => {
  */
 const prepareNonStaticRedirectFiles = (redirectsData) => {
     Object.values(redirectsData).forEach((redirect) => {
-        if (redirect.file) {
-            const redirectPath = `${REDIRECT_FILES_PATH}/${redirect.file}`;
-            fs.writeFileSync(redirectPath, redirect.content, 'utf8');
-        }
+        const redirectPath = `${REDIRECT_FILES_PATH}/${redirect.file}`;
+        fs.writeFileSync(redirectPath, redirect.content, 'utf8');
     });
 };
 
@@ -85,10 +83,6 @@ const prepareStaticRedirectFiles = (redirectsData) => {
         const {
             contentType, content, file,
         } = redirect;
-
-        if (!file) {
-            return;
-        }
 
         const redirectPath = `${REDIRECT_FILES_PATH}/${file}`;
 
@@ -106,7 +100,6 @@ const prepareStaticRedirectFiles = (redirectsData) => {
 };
 
 const nonStaticRedirects = redirectsFilesList.map((el) => {
-    const fileName = el;
     const rrName = el.replace(/\.js/, '');
     const complement = redirectsObject.find((obj) => obj.name === rrName);
     const comment = getComment(rrName);
@@ -118,7 +111,7 @@ const nonStaticRedirects = redirectsFilesList.map((el) => {
             aliases: complement.aliases,
             contentType: 'application/javascript',
             content: complement.redirect,
-            file: fileName,
+            file: el,
         };
     }
     throw new Error(`Couldn't find source for non-static redirect: ${el}`);
