@@ -99,8 +99,8 @@ const prepareStaticRedirectFiles = (redirectsData) => {
     });
 };
 
-const nonStaticRedirects = redirectsFilesList.map((el) => {
-    const rrName = el.replace(/\.js/, '');
+const nonStaticRedirects = redirectsFilesList.map((fileName) => {
+    const rrName = fileName.replace(/\.js/, '');
     const complement = redirectsObject.find((obj) => obj.name === rrName);
     const comment = getComment(rrName);
 
@@ -111,10 +111,10 @@ const nonStaticRedirects = redirectsFilesList.map((el) => {
             aliases: complement.aliases,
             contentType: 'application/javascript',
             content: complement.redirect,
-            file: el,
+            file: fileName,
         };
     }
-    throw new Error(`Couldn't find source for non-static redirect: ${el}`);
+    throw new Error(`Couldn't find source for non-static redirect: ${fileName}`);
 });
 
 const mergedRedirects = [...staticRedirects, ...nonStaticRedirects];
