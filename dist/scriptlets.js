@@ -395,12 +395,12 @@
      * @returns {boolean}
      */
     var matchStackTrace = function matchStackTrace(stackRegexp, stackTrace) {
-      stackTrace = stackTrace.split('\n').slice(2) // get rid of our own functions in the stack trace
+      var refinedStackTrace = stackTrace.split('\n').slice(2) // get rid of our own functions in the stack trace
       .map(function (line) {
         return line.trim();
       }) // trim the lines
       .join('\n');
-      return stackRegexp.test(stackTrace);
+      return stackRegexp.test(refinedStackTrace);
     };
 
     /**
@@ -805,9 +805,9 @@
     /* eslint-enable max-len */
 
     function abortOnPropertyRead(source, property, stack) {
-      stack = stack ? toRegExp(stack) : toRegExp('/.?/');
+      var stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
 
-      if (!property || !matchStackTrace(stack, new Error().stack)) {
+      if (!property || !matchStackTrace(stackRegexp, new Error().stack)) {
         return;
       }
 
@@ -890,9 +890,9 @@
     /* eslint-enable max-len */
 
     function abortOnPropertyWrite(source, property, stack) {
-      stack = stack ? toRegExp(stack) : toRegExp('/.?/');
+      var stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
 
-      if (!property || !matchStackTrace(stack, new Error().stack)) {
+      if (!property || !matchStackTrace(stackRegexp, new Error().stack)) {
         return;
       }
 
@@ -2451,9 +2451,9 @@
     /* eslint-enable max-len */
 
     function debugOnPropertyRead(source, property, stack) {
-      stack = stack ? toRegExp(stack) : toRegExp('/.?/');
+      var stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
 
-      if (!property || !matchStackTrace(stack, new Error().stack)) {
+      if (!property || !matchStackTrace(stackRegexp, new Error().stack)) {
         return;
       }
 
@@ -2520,9 +2520,9 @@
     /* eslint-enable max-len */
 
     function debugOnPropertyWrite(source, property, stack) {
-      stack = stack ? toRegExp(stack) : toRegExp('/.?/');
+      var stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
 
-      if (!property || !matchStackTrace(stack, new Error().stack)) {
+      if (!property || !matchStackTrace(stackRegexp, new Error().stack)) {
         return;
       }
 

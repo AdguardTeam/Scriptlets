@@ -26,9 +26,9 @@ import {
  */
 /* eslint-enable max-len */
 export function debugOnPropertyRead(source, property, stack) {
-    stack = stack ? toRegExp(stack) : toRegExp('/.?/');
+    const stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
     if (!property
-        || !matchStackTrace(stack, new Error().stack)) {
+        || !matchStackTrace(stackRegexp, new Error().stack)) {
         return;
     }
     const rid = randomId();

@@ -7,11 +7,11 @@
  */
 
 export const matchStackTrace = (stackRegexp, stackTrace) => {
-    stackTrace = stackTrace
+    const refinedStackTrace = stackTrace
         .split('\n')
         .slice(2) // get rid of our own functions in the stack trace
         .map((line) => line.trim()) // trim the lines
         .join('\n');
 
-    return stackRegexp.test(stackTrace);
+    return stackRegexp.test(refinedStackTrace);
 };
