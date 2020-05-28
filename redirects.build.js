@@ -18,6 +18,7 @@ const FILE_NAME = 'redirects.yml';
 const CORELIBS_FILE_NAME = 'redirects.json';
 const PATH_TO_DIST = './dist';
 const RESULT_PATH = path.resolve(PATH_TO_DIST, FILE_NAME);
+const REDIRECT_FILES_PATH = path.resolve(PATH_TO_DIST, 'redirect-files');
 const CORELIBS_RESULT_PATH = path.resolve(PATH_TO_DIST, CORELIBS_FILE_NAME);
 
 const REDIRECTS_DIRECTORY = '../src/redirects';
@@ -60,8 +61,46 @@ const getComment = (rrName) => {
     return descrArr.find((str) => str !== '');
 };
 
-const nonStaticRedirects = redirectsFilesList.map((el) => {
-    const rrName = el.replace(/\.js/, '');
+/**
+ * Copies non-static redirects sources to dist
+ *
+ * @param redirectsData
+ */
+const prepareNonStaticRedirectFiles = (redirectsData) => {
+    Object.values(redirectsData).forEach((redirect) => {
+        const redirectPath = `${REDIRECT_FILES_PATH}/${redirect.file}`;
+        fs.writeFileSync(redirectPath, redirect.content, 'utf8');
+    });
+};
+
+/**
+ * Prepares static redirects sources to dist
+ *
+ * @param redirectsData
+ */
+const prepareStaticRedirectFiles = (redirectsData) => {
+    Object.values(redirectsData).forEach((redirect) => {
+        const {
+            contentType, content, file,
+        } = redirect;
+
+        const redirectPath = `${REDIRECT_FILES_PATH}/${file}`;
+
+        let contentToWrite = content;
+        if (contentType.match(';base64')) {
+            // yaml leaves new lines or spaces
+            // replace them all because base64 isn't supposed to have them
+            contentToWrite = content.replace(/(\r\n|\n|\r|\s)/gm, '');
+            const buff = Buffer.from(contentToWrite, 'base64');
+            fs.writeFileSync(redirectPath, buff);
+        } else {
+            fs.writeFileSync(redirectPath, contentToWrite, 'utf8');
+        }
+    });
+};
+
+const nonStaticRedirects = redirectsFilesList.map((fileName) => {
+    const rrName = fileName.replace(/\.js/, '');
     const complement = redirectsObject.find((obj) => obj.name === rrName);
     const comment = getComment(rrName);
 
@@ -72,9 +111,10 @@ const nonStaticRedirects = redirectsFilesList.map((el) => {
             aliases: complement.aliases,
             contentType: 'application/javascript',
             content: complement.redirect,
+            file: fileName,
         };
     }
-    throw new Error(`Couldn't find source for non-static redirect: ${el}`);
+    throw new Error(`Couldn't find source for non-static redirect: ${fileName}`);
 });
 
 const mergedRedirects = [...staticRedirects, ...nonStaticRedirects];
@@ -90,6 +130,14 @@ if (process.env.REDIRECTS !== 'CORELIBS') {
         yamlRedirects = `${banner}${yamlRedirects}`;
 
         fs.writeFileSync(RESULT_PATH, yamlRedirects, 'utf8');
+
+        // redirect files
+        if (!fs.existsSync(REDIRECT_FILES_PATH)) {
+            fs.mkdirSync(REDIRECT_FILES_PATH);
+        }
+
+        prepareStaticRedirectFiles(staticRedirects);
+        prepareNonStaticRedirectFiles(nonStaticRedirects);
     } catch (e) {
         // eslint-disable-next-line no-console
         console.log(`Couldn't save to ${RESULT_PATH}, because of: ${e.message}`);
