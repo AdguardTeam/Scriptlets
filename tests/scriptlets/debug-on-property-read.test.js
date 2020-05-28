@@ -64,3 +64,35 @@ test('debug-on-property-read dot notation deferred defenition', (assert) => {
     console.log(window.aaa.bbb);
     assert.equal(window.hit, 'value', 'Hit function was executed');
 });
+
+test('debug-on-property-read: simple, matches stack', (assert) => {
+    const params = {
+        name,
+        args: [
+            [PROPERTY],
+            'tests.js',
+        ],
+        verbose: true,
+    };
+    window[PROPERTY] = 'value';
+    const resString = window.scriptlets.invoke(params);
+    evalWrap(resString);
+    console.log(window[PROPERTY]);
+    assert.equal(window.hit, 'value', 'Hit function was executed');
+});
+
+test('debug-on-property-read: simple, does NOT match stack', (assert) => {
+    const params = {
+        name,
+        args: [
+            [PROPERTY],
+            'no_match.js',
+        ],
+        verbose: true,
+    };
+    window[PROPERTY] = 'value';
+    const resString = window.scriptlets.invoke(params);
+    evalWrap(resString);
+    console.log(window[PROPERTY]);
+    assert.equal(window.hit, undefined, 'Hit function was NOT executed');
+});

@@ -107,3 +107,69 @@ test('abort-on-property-write dot notation deferred defenition', (assert) => {
     assert.equal(window.hit, 'value', 'Hit function was executed');
     clearGlobalProps(...changingProps);
 });
+
+test('abort-on-property-write: matches stack', (assert) => {
+    const params = {
+        name,
+        args: [
+            [PROPERTY],
+            'tests.js',
+        ],
+        verbose: true,
+    };
+    window.__debug = () => {
+        window.hit = 'value';
+    };
+    window[PROPERTY] = 'value';
+    const resString = window.scriptlets.invoke(params);
+    evalWrap(resString);
+    assert.throws(
+        () => {
+            window[PROPERTY] = 'new value';
+        },
+        /ReferenceError/,
+        `should throw Reference error when try to access property ${PROPERTY}`,
+    );
+    assert.equal(window.hit, 'value', 'Hit function was executed');
+    clearGlobalProps(...changingProps);
+});
+
+test('abort-on-property-write: does NOT match stack', (assert) => {
+    const params = {
+        name,
+        args: [
+            [PROPERTY],
+            'no_match.js',
+        ],
+        verbose: true,
+    };
+    window.__debug = () => {
+        window.hit = 'value';
+    };
+    window[PROPERTY] = 'value';
+    const resString = window.scriptlets.invoke(params);
+    evalWrap(resString);
+
+    assert.equal(window.hit, undefined, 'Hit function was NOT executed');
+    clearGlobalProps(...changingProps);
+});
+
+test('abort-on-property-write: matches stack of our own script', (assert) => {
+    const params = {
+        name,
+        args: [
+            [PROPERTY],
+            'abortOnPropertyWrite',
+        ],
+        verbose: true,
+    };
+    window.__debug = () => {
+        window.hit = 'value';
+    };
+    window[PROPERTY] = 'value';
+    const resString = window.scriptlets.invoke(params);
+    evalWrap(resString);
+
+    assert.equal(window.hit, undefined, 'Hit function was NOT executed');
+    clearGlobalProps(...changingProps);
+});

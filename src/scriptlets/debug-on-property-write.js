@@ -4,6 +4,8 @@ import {
     getPropertyInChain,
     createOnErrorHandler,
     hit,
+    toRegExp,
+    matchStackTrace,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -22,15 +24,16 @@ import {
  * ```
  */
 /* eslint-enable max-len */
-export function debugOnPropertyWrite(source, property) {
-    if (!property) {
+export function debugOnPropertyWrite(source, property, stack) {
+    const stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
+    if (!property
+        || !matchStackTrace(stackRegexp, new Error().stack)) {
         return;
     }
     const rid = randomId();
     const abort = () => {
         hit(source);
-        // eslint-disable-next-line no-debugger
-        debugger;
+        debugger; // eslint-disable-line no-debugger
     };
     const setChainPropAccess = (owner, property) => {
         const chainInfo = getPropertyInChain(owner, property);
@@ -68,4 +71,6 @@ debugOnPropertyWrite.injections = [
     getPropertyInChain,
     createOnErrorHandler,
     hit,
+    toRegExp,
+    matchStackTrace,
 ];

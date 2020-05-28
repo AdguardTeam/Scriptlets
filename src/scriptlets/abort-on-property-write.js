@@ -1,5 +1,11 @@
 import {
-    randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit,
+    randomId,
+    setPropertyAccess,
+    getPropertyInChain,
+    createOnErrorHandler,
+    hit,
+    toRegExp,
+    matchStackTrace,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -17,23 +23,30 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('abort-on-property-write', <property>)
+ * example.org#%#//scriptlet('abort-on-property-write', property[, stack])
  * ```
  *
  * **Parameters**
- * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
+ * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`
+ * - `stack` (optional) string or regular expression that must match the current function call stack trace
  *
  * **Examples**
  * ```
  * ! Aborts script when it tries to set `window.adblock` value
  * example.org#%#//scriptlet('abort-on-property-write', 'adblock')
+ *
+ * ! Aborts script when it tries to set `window.adblock` value and it's error stack trace contains `checking.js`
+ * example.org#%#//scriptlet('abort-on-property-write', 'adblock', '')
  * ```
  */
 /* eslint-enable max-len */
-export function abortOnPropertyWrite(source, property) {
-    if (!property) {
+export function abortOnPropertyWrite(source, property, stack) {
+    const stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
+    if (!property
+        || !matchStackTrace(stackRegexp, new Error().stack)) {
         return;
     }
+
     const rid = randomId();
     const abort = () => {
         hit(source);
@@ -80,4 +93,6 @@ abortOnPropertyWrite.injections = [
     getPropertyInChain,
     createOnErrorHandler,
     hit,
+    toRegExp,
+    matchStackTrace,
 ];
