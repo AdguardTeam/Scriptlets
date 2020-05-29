@@ -17,6 +17,9 @@ const mockGoogleTagManagerApi = (endCallback) => {
         },
         push() {},
     };
+    window.google_optimize = {
+        get: () => { return true; },
+    };
 
     return window.dataLayer;
 };
@@ -46,7 +49,7 @@ test('AdGuard Syntax', (assert) => {
     };
     window.__debug = () => { window.hit = 'FIRED'; };
 
-    assert.expect(3);
+    assert.expect(4);
 
     const endCallback = () => {
         assert.ok(true, 'hide.end() was executed');
@@ -65,6 +68,8 @@ test('AdGuard Syntax', (assert) => {
             done();
         },
     });
+
+    assert.strictEqual(window.google_optimize.get(), undefined, 'google_optimize.get has been mocked');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 
