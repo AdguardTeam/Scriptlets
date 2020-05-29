@@ -12,21 +12,20 @@ import { hit, toRegExp } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("remove-cookie"[, match])
+ * example.org#%#//scriptlet('remove-cookie'[, match])
  * ```
  *
- * **Parameters**
- * - `match` (optional) String or regex matching the cookie name. If not specified all accessible cookies will be removed.
+ * - `match` - optional, string or regex matching the cookie name. If not specified all accessible cookies will be removed.
  *
  * **Examples**
  * 1. Removes all cookies:
  * ```
- *     example.org#%#//scriptlet("remove-cookie")
+ *     example.org#%#//scriptlet('remove-cookie')
  * ```
  *
  * 2. Removes cookies which name contains `example` string.
  * ```
- *     example.org#%#//scriptlet("remove-cookie", "example")
+ *     example.org#%#//scriptlet('remove-cookie', 'example')
  * ```
  *
  *     For instance this cookie will be removed

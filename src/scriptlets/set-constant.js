@@ -21,12 +21,11 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("set-constant", <property>, <value>)
+ * example.org#%#//scriptlet('set-constant', property, value)
  * ```
  *
- * **Parameters**
- * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
- * - `value` (required). Possible values:
+ * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`.
+ * - `value` - required. Possible values:
  *     - positive decimal integer `<= 32767`
  *     - one of the predefined constants:
  *         - `undefined`
@@ -42,10 +41,10 @@ import {
  * **Examples**
  * ```
  * ! window.firstConst === false // this comparision will return true
- * example.org#%#//scriptlet("set-constant", "firstConst", "false")
+ * example.org#%#//scriptlet('set-constant', 'firstConst', 'false')
  *
  * ! window.secondConst() === true // call to the secondConst will return true
- * example.org#%#//scriptlet("set-constant", "secondConst", "trueFunc")
+ * example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc')
  * ```
  */
 /* eslint-enable max-len */

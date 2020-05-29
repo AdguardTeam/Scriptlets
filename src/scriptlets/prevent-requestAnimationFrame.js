@@ -16,12 +16,10 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('prevent-requestAnimationFrame'[, <search>])
+ * example.org#%#//scriptlet('prevent-requestAnimationFrame'[, search])
  * ```
  *
- * **Parameters**
- *
- * - `search` (optional) string or regular expression.
+ * - `search` - optional, string or regular expression.
  * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
  * If do not start with `!`, the stringified callback will be matched.
  *
@@ -29,7 +27,6 @@ import {
  * So do not use the scriptlet without any parameter in production filter lists.
  *
  * **Examples**
- *
  * 1. Prevents `requestAnimationFrame` calls if the callback matches `/\.test/`.
  *     ```bash
  *     example.org#%#//scriptlet('prevent-requestAnimationFrame', '/\.test/')

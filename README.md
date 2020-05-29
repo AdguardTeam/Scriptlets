@@ -32,14 +32,17 @@ rule = [domains]  "#%#//scriptlet(" scriptletName arguments ")"
 > * The meanining of the arguments depends on the scriptlet.
 > * You can use either single or double quotes for the scriptlet name and arguments.
 > * Special characters must be escaped properly:
->     * `"prop[\"nested\"]"` - valid
->     * `"prop['nested']"` - also valid
+>     * `'prop["nested"]'` - valid
+>     * `"prop['nested']"` - valid
+>     * `"prop[\"nested\"]"` - also valid
 >     * `"prop["nested"]"` - not valid
+>     * `'prop['nested']'` - not valid
 
 **Example**
 
 ```
-example.org#%#//scriptlet("abort-on-property-read", "alert")
+example.org#%#//scriptlet('abort-on-property-read', 'alert')
+example.org#%#//scriptlet('remove-class', 'branding', 'div[class^="inner"]')
 ```
 
 This rule applies the `abort-on-property-read` scriptlet on all pages of `example.org` and its subdomains, and passes one orgument to it (`alert`).

@@ -21,7 +21,7 @@ import {
  * **Syntax**
  * ```
  * ! Aborts script when it tries to access `window.alert`
- * example.org#%#//scriptlet("debug-on-property-read", "alert")
+ * example.org#%#//scriptlet('debug-on-property-read', 'alert')
  * ```
  */
 /* eslint-enable max-len */

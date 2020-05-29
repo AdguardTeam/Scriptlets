@@ -16,9 +16,9 @@ import { hit, observeDOMChanges } from '../helpers';
  * example.org#%#//scriptlet('remove-class', classes[, selector])
  * ```
  *
- * - `classes` — required, class or list of classes separated by '|';
- * - `selector` — optional, CSS selector, specifies DOM nodes from which the classes will be removed;
- * if there is no selector, every class independently will be removed from all nodes which has one
+ * - `classes` — required, class or list of classes separated by '|'
+ * - `selector` — optional, CSS selector, specifies DOM nodes from which the classes will be removed.
+ * If there is no `selector`, each class of `classes` independently will be removed from all nodes which has one
  *
  * **Examples**
  * 1.  Removes by classes

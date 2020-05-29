@@ -12,7 +12,7 @@ import { hit, setPropertyAccess } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-adfly")
+ * example.org#%#//scriptlet('prevent-adfly')
  * ```
  */
 export function preventAdfly(source) {

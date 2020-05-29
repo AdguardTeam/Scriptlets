@@ -11,7 +11,7 @@ import { hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("disable-newtab-links")
+ * example.org#%#//scriptlet('disable-newtab-links')
  * ```
  */
 export function disableNewtabLinks(source) {

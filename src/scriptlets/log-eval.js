@@ -9,7 +9,7 @@ import { hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("log-eval")
+ * example.org#%#//scriptlet('log-eval')
  * ```
  */
 export function logEval(source) {

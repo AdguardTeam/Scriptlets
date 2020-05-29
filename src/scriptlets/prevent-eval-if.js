@@ -13,12 +13,11 @@ import { toRegExp, hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('prevent-eval-if'[, <search>])
+ * example.org#%#//scriptlet('prevent-eval-if'[, search])
  * ```
  *
- * **Parameters**
- * - `search` - optional string or regexp for matching stringified eval payload.
- * If 'search is not specified — all stringified eval payload will be matched.
+ * - `search` - optional, string or regexp for matching stringified eval payload.
+ * If 'search is not specified — all stringified eval payload will be matched
  *
  * **Examples**
  * ```

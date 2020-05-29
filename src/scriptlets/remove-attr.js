@@ -16,7 +16,7 @@ import { hit, observeDOMChanges } from '../helpers';
  * example.org#%#//scriptlet('remove-attr', attrs[, selector])
  * ```
  *
- * - `attrs` — required, attribute or list of attributes joined by '|';
+ * - `attrs` — required, attribute or list of attributes joined by '|'
  * - `selector` — optional, CSS selector, specifies DOM nodes from which the attributes will be removed
  *
  * **Examples**

@@ -9,16 +9,16 @@ import { hit, getPropertyInChain } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("json-prune"[, propsToRemove [, obligatoryProps]])
+ * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps]])
  * ```
  *
- * - `propsToRemove` - string of space-separated properties to remove
+ * - `propsToRemove` - optional, string of space-separated properties to remove
  * - `obligatoryProps` - optional, string of space-separated properties which must be all present for the pruning to occur
  *
  * **Examples**
  * 1. Removes property `example` from the results of JSON.parse call
  *     ```
- *     example.org#%#//scriptlet("json-prune", "example")
+ *     example.org#%#//scriptlet('json-prune', 'example')
  *     ```
  *
  *     For instance, the following call will return `{ one: 1}`
@@ -29,7 +29,7 @@ import { hit, getPropertyInChain } from '../helpers';
  *
  * 2. If there are no specified properties in the result of JSON.parse call, pruning will NOT occur
  *     ```
- *     example.org#%#//scriptlet("json-prune", "one", "obligatoryProp")
+ *     example.org#%#//scriptlet('json-prune', 'one', 'obligatoryProp')
  *     ```
  *
  *     For instance, the following call will return `{ one: 1, two: 2}`
@@ -41,12 +41,12 @@ import { hit, getPropertyInChain } from '../helpers';
  * 3. A property in a list of properties can be a chain of properties
  *
  *     ```
- *     example.org#%#//scriptlet("json-prune", "a.b", "adpath.url.first")
+ *     example.org#%#//scriptlet('json-prune', 'a.b', 'adpath.url.first')
  *     ```
  *
  * 4. Call with no arguments will log the current hostname and json payload at the console
  *     ```
- *     example.org#%#//scriptlet("json-prune")
+ *     example.org#%#//scriptlet('json-prune')
  *     ```
  */
 /* eslint-enable max-len */

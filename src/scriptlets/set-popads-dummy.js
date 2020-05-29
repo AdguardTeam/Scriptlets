@@ -12,7 +12,7 @@ import { hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("set-popads-dummy")
+ * example.org#%#//scriptlet('set-popads-dummy')
  * ```
  */
 export function setPopadsDummy(source) {

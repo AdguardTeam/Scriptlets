@@ -21,15 +21,14 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('prevent-window-open'[, <match>[, <search>[, <replacement>]]])
+ * example.org#%#//scriptlet('prevent-window-open'[, match[, search[, replacement]]])
  * ```
  *
- * **Parameters**
- * - `match` (optional) defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching",
- * - `search` (optional) string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call.
- * - `replacement` (optional) string to return prop value or property instead of window.open; defaults to return noopFunc
- * **Example**
+ * - `match` - optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
+ * - `search` - optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
+ * - `replacement` - optional, string to return prop value or property instead of window.open; defaults to return noopFunc
  *
+ * **Example**
  * 1. Prevent all `window.open` calls:
  * ```
  *     example.org#%#//scriptlet('prevent-window-open')

@@ -24,12 +24,11 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('abort-current-inline-script', <property> [, <search>])
+ * example.org#%#//scriptlet('abort-current-inline-script', property[, search])
  * ```
  *
- * **Parameters**
- * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
- * - `search` (optional) string or regular expression that must match the inline script contents. If not set, abort all inline scripts which are trying to access the specified property.
+ * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
+ * - `search` - optional, string or regular expression that must match the inline script contents. If not set, abort all inline scripts which are trying to access the specified property
  *
  * **Examples**
  * 1. Aborts all inline scripts trying to access `window.alert`
