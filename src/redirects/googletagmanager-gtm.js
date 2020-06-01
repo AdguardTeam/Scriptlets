@@ -16,7 +16,7 @@ import { hit, noopFunc } from '../helpers';
  */
 export function GoogleTagManagerGtm(source) {
     window.ga = window.ga || noopFunc;
-    const { dataLayer } = window;
+    const { dataLayer, google_optimize } = window; // eslint-disable-line camelcase
     if (dataLayer instanceof Object === false) {
         return;
     }
@@ -31,6 +31,14 @@ export function GoogleTagManagerGtm(source) {
                 setTimeout(data.eventCallback, 1);
             }
         };
+    }
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/81
+    if (google_optimize instanceof Object && typeof google_optimize.get === 'function') { // eslint-disable-line camelcase
+        const googleOptimizeWrapper = { };
+        googleOptimizeWrapper.get = noopFunc;
+
+        window.google_optimize = googleOptimizeWrapper;
     }
 
     hit(source);

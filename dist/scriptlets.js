@@ -4302,7 +4302,8 @@
     function GoogleTagManagerGtm(source) {
       window.ga = window.ga || noopFunc;
       var _window = window,
-          dataLayer = _window.dataLayer;
+          dataLayer = _window.dataLayer,
+          google_optimize = _window.google_optimize; // eslint-disable-line camelcase
 
       if (dataLayer instanceof Object === false) {
         return;
@@ -4318,6 +4319,14 @@
             setTimeout(data.eventCallback, 1);
           }
         };
+      } // https://github.com/AdguardTeam/Scriptlets/issues/81
+
+
+      if (google_optimize instanceof Object && typeof google_optimize.get === 'function') {
+        // eslint-disable-line camelcase
+        var googleOptimizeWrapper = {};
+        googleOptimizeWrapper.get = noopFunc;
+        window.google_optimize = googleOptimizeWrapper;
       }
 
       hit(source);
