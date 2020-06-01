@@ -13,7 +13,7 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-popads-net")
+ * example.org#%#//scriptlet('prevent-popads-net')
  * ```
  */
 export function preventPopadsNet(source) {

@@ -12,22 +12,21 @@ import { hit, toRegExp } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-addEventListener"[, eventSearch[, functionSearch]])
+ * example.org#%#//scriptlet('prevent-addEventListener'[, eventSearch[, functionSearch]])
  * ```
  *
- * **Parameters**
- * - `eventSearch` (optional) String or regex matching the event name. If not specified, the scriptlets prevents all event listeners.
- * - `functionSearch` (optional) String or regex matching the event listener function body. If not set, the scriptlet prevents all event listeners with event name matching `eventSearch`.
+ * - `eventSearch` - optional, string or regex matching the event name. If not specified, the scriptlets prevents all event listeners
+ * - `functionSearch` - optional, string or regex matching the event listener function body. If not set, the scriptlet prevents all event listeners with event name matching `eventSearch`
  *
  * **Examples**
  * 1. Prevent all `click` listeners:
  * ```
- *     example.org#%#//scriptlet("prevent-addEventListener", "click")
+ *     example.org#%#//scriptlet('prevent-addEventListener', 'click')
  * ```
 
 2. Prevent 'click' listeners with the callback body containing `searchString`.
  * ```
- *     example.org#%#//scriptlet("prevent-addEventListener", "click", "searchString")
+ *     example.org#%#//scriptlet('prevent-addEventListener', 'click', 'searchString')
  * ```
  *
  *     For instance, this listener will not be called:

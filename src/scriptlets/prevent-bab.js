@@ -12,7 +12,7 @@ import { hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-bab")
+ * example.org#%#//scriptlet('prevent-bab')
  * ```
  */
 export function preventBab(source) {

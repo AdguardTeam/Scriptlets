@@ -785,9 +785,8 @@
      * example.org#%#//scriptlet('abort-on-property-read', property[, stack])
      * ```
      *
-     * **Parameters**
-     * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`
-     * - `stack` (optional) string or regular expression that must match the current function call stack trace
+     * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
+     * - `stack` - optional, string or regular expression that must match the current function call stack trace
      *
      * **Examples**
      * ```
@@ -873,9 +872,8 @@
      * example.org#%#//scriptlet('abort-on-property-write', property[, stack])
      * ```
      *
-     * **Parameters**
-     * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`
-     * - `stack` (optional) string or regular expression that must match the current function call stack trace
+     * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
+     * - `stack` - optional, string or regular expression that must match the current function call stack trace
      *
      * **Examples**
      * ```
@@ -883,7 +881,7 @@
      * example.org#%#//scriptlet('abort-on-property-write', 'adblock')
      *
      * ! Aborts script when it tries to set `window.adblock` value and it's error stack trace contains `checking.js`
-     * example.org#%#//scriptlet('abort-on-property-write', 'adblock', '')
+     * example.org#%#//scriptlet('abort-on-property-write', 'adblock', 'checking.js')
      * ```
      */
 
@@ -954,26 +952,23 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("prevent-setTimeout"[, <search>[, <delay>]])
+     * example.org#%#//scriptlet('prevent-setTimeout'[, search[, delay]])
      * ```
-     *
-     * **Parameters**
      *
      * Call with no arguments will log calls to setTimeout while debugging (`log-setTimeout` superseding),
      * so production filter lists' rules definitely require at least one of the parameters:
-     * - `search` (optional) string or regular expression.
+     * - `search` - optional, string or regular expression.
      * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
      * If do not start with `!`, the stringified callback will be matched.
      * If not set, prevents all `setTimeout` calls due to specified `delay`.
-     * - `delay` (optional) must be an integer.
+     * - `delay` - optional, must be an integer.
      * If starts with `!`, scriptlet will not match the delay but all other will be defused.
      * If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
      *
      * **Examples**
-     *
      * 1. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.
      *     ```bash
-     *     example.org#%#//scriptlet("prevent-setTimeout", "/\.test/")
+     *     example.org#%#//scriptlet('prevent-setTimeout', '/\.test/')
      *     ```
      *
      *     For instance, the following call will be prevented:
@@ -985,7 +980,7 @@
      *
      * 2. Prevents `setTimeout` calls if the callback does not contain `value`.
      *     ```
-     *     example.org#%#//scriptlet("prevent-setTimeout", "!value")
+     *     example.org#%#//scriptlet('prevent-setTimeout', '!value')
      *     ```
      *
      *     For instance, only the first of the following calls will be prevented:
@@ -1003,7 +998,7 @@
      *
      * 3. Prevents `setTimeout` calls if the callback contains `value` and the delay is not set to `300`.
      *     ```
-     *     example.org#%#//scriptlet("prevent-setTimeout", "value", "!300")
+     *     example.org#%#//scriptlet('prevent-setTimeout', 'value', '!300')
      *     ```
      *
      *     For instance, only the first of the following calls will not be prevented:
@@ -1021,7 +1016,7 @@
      *
      * 4. Prevents `setTimeout` calls if the callback does not contain `value` and the delay is not set to `300`.
      *     ```
-     *     example.org#%#//scriptlet("prevent-setTimeout", "!value", "!300")
+     *     example.org#%#//scriptlet('prevent-setTimeout', '!value', '!300')
      *     ```
      *
      *     For instance, only the second of the following calls will be prevented:
@@ -1119,26 +1114,23 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("prevent-setInterval"[, <search>[, <delay>]])
+     * example.org#%#//scriptlet('prevent-setInterval'[, search[, delay]])
      * ```
-     *
-     * **Parameters**
      *
      * Call with no arguments will log calls to setInterval while debugging (`log-setInterval` superseding),
      * so production filter lists' rules definitely require at least one of the parameters:
-     * - `search` (optional) string or regular expression.
+     * - `search` - optional, string or regular expression.
      * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
      * If do not start with `!`, the stringified callback will be matched.
      * If not set, prevents all `setInterval` calls due to specified `delay`.
-     * - `delay` (optional) must be an integer.
+     * - `delay` - optional, must be an integer.
      * If starts with `!`, scriptlet will not match the delay but all other will be defused.
      * If do not start with `!`, the delay passed to the `setInterval` call will be matched.
      *
      *  **Examples**
-     *
      * 1. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the delay.
      *     ```bash
-     *     example.org#%#//scriptlet("prevent-setInterval", "/\.test/")
+     *     example.org#%#//scriptlet('prevent-setInterval', '/\.test/')
      *     ```
      *
      *     For instance, the following call will be prevented:
@@ -1150,7 +1142,7 @@
      *
      * 2. Prevents `setInterval` calls if the callback does not contain `value`.
      *     ```
-     *     example.org#%#//scriptlet("prevent-setInterval", "!value")
+     *     example.org#%#//scriptlet('prevent-setInterval', '!value')
      *     ```
      *
      *     For instance, only the first of the following calls will be prevented:
@@ -1168,7 +1160,7 @@
      *
      * 3. Prevents `setInterval` calls if the callback contains `value` and the delay is not set to `300`.
      *     ```
-     *     example.org#%#//scriptlet("prevent-setInterval", "value", "!300")
+     *     example.org#%#//scriptlet('prevent-setInterval', 'value', '!300')
      *     ```
      *
      *     For instance, only the first of the following calls will not be prevented:
@@ -1186,7 +1178,7 @@
      *
      * 4. Prevents `setInterval` calls if the callback does not contain `value` and the delay is not set to `300`.
      *     ```
-     *     example.org#%#//scriptlet("prevent-setInterval", "!value", "!300")
+     *     example.org#%#//scriptlet('prevent-setInterval', '!value', '!300')
      *     ```
      *
      *     For instance, only the second of the following calls will be prevented:
@@ -1281,15 +1273,14 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('prevent-window-open'[, <match>[, <search>[, <replacement>]]])
+     * example.org#%#//scriptlet('prevent-window-open'[, match[, search[, replacement]]])
      * ```
      *
-     * **Parameters**
-     * - `match` (optional) defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching",
-     * - `search` (optional) string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call.
-     * - `replacement` (optional) string to return prop value or property instead of window.open; defaults to return noopFunc
-     * **Example**
+     * - `match` - optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
+     * - `search` - optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
+     * - `replacement` - optional, string to return prop value or property instead of window.open; defaults to return noopFunc
      *
+     * **Example**
      * 1. Prevent all `window.open` calls:
      * ```
      *     example.org#%#//scriptlet('prevent-window-open')
@@ -1398,12 +1389,11 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('abort-current-inline-script', <property> [, <search>])
+     * example.org#%#//scriptlet('abort-current-inline-script', property[, search])
      * ```
      *
-     * **Parameters**
-     * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
-     * - `search` (optional) string or regular expression that must match the inline script contents. If not set, abort all inline scripts which are trying to access the specified property.
+     * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
+     * - `search` - optional, string or regular expression that must match the inline script contents. If not set, abort all inline scripts which are trying to access the specified property
      *
      * **Examples**
      * 1. Aborts all inline scripts trying to access `window.alert`
@@ -1549,12 +1539,11 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("set-constant", <property>, <value>)
+     * example.org#%#//scriptlet('set-constant', property, value)
      * ```
      *
-     * **Parameters**
-     * - `property` (required) path to a property (joined with `.` if needed). The property must be attached to `window`.
-     * - `value` (required). Possible values:
+     * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`.
+     * - `value` - required. Possible values:
      *     - positive decimal integer `<= 32767`
      *     - one of the predefined constants:
      *         - `undefined`
@@ -1570,10 +1559,10 @@
      * **Examples**
      * ```
      * ! window.firstConst === false // this comparision will return true
-     * example.org#%#//scriptlet("set-constant", "firstConst", "false")
+     * example.org#%#//scriptlet('set-constant', 'firstConst', 'false')
      *
      * ! window.secondConst() === true // call to the secondConst will return true
-     * example.org#%#//scriptlet("set-constant", "secondConst", "trueFunc")
+     * example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc')
      * ```
      */
 
@@ -1690,21 +1679,20 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("remove-cookie"[, match])
+     * example.org#%#//scriptlet('remove-cookie'[, match])
      * ```
      *
-     * **Parameters**
-     * - `match` (optional) String or regex matching the cookie name. If not specified all accessible cookies will be removed.
+     * - `match` - optional, string or regex matching the cookie name. If not specified all accessible cookies will be removed.
      *
      * **Examples**
      * 1. Removes all cookies:
      * ```
-     *     example.org#%#//scriptlet("remove-cookie")
+     *     example.org#%#//scriptlet('remove-cookie')
      * ```
      *
      * 2. Removes cookies which name contains `example` string.
      * ```
-     *     example.org#%#//scriptlet("remove-cookie", "example")
+     *     example.org#%#//scriptlet('remove-cookie', 'example')
      * ```
      *
      *     For instance this cookie will be removed
@@ -1778,22 +1766,21 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("prevent-addEventListener"[, eventSearch[, functionSearch]])
+     * example.org#%#//scriptlet('prevent-addEventListener'[, eventSearch[, functionSearch]])
      * ```
      *
-     * **Parameters**
-     * - `eventSearch` (optional) String or regex matching the event name. If not specified, the scriptlets prevents all event listeners.
-     * - `functionSearch` (optional) String or regex matching the event listener function body. If not set, the scriptlet prevents all event listeners with event name matching `eventSearch`.
+     * - `eventSearch` - optional, string or regex matching the event name. If not specified, the scriptlets prevents all event listeners
+     * - `functionSearch` - optional, string or regex matching the event listener function body. If not set, the scriptlet prevents all event listeners with event name matching `eventSearch`
      *
      * **Examples**
      * 1. Prevent all `click` listeners:
      * ```
-     *     example.org#%#//scriptlet("prevent-addEventListener", "click")
+     *     example.org#%#//scriptlet('prevent-addEventListener', 'click')
      * ```
 
     2. Prevent 'click' listeners with the callback body containing `searchString`.
      * ```
-     *     example.org#%#//scriptlet("prevent-addEventListener", "click", "searchString")
+     *     example.org#%#//scriptlet('prevent-addEventListener', 'click', 'searchString')
      * ```
      *
      *     For instance, this listener will not be called:
@@ -1850,7 +1837,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("prevent-bab")
+     * example.org#%#//scriptlet('prevent-bab')
      * ```
      */
 
@@ -1934,7 +1921,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("nowebrtc")
+     * example.org#%#//scriptlet('nowebrtc')
      * ```
      */
 
@@ -1990,7 +1977,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("log-addEventListener")
+     * example.org#%#//scriptlet('log-addEventListener')
      * ```
      */
 
@@ -2032,7 +2019,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("log-eval")
+     * example.org#%#//scriptlet('log-eval')
      * ```
      */
 
@@ -2075,9 +2062,10 @@
      * @description
      * A simple scriptlet which only purpose is to print arguments to console.
      * This scriptlet can be helpful for debugging and troubleshooting other scriptlets.
+     *
      * **Example**
      * ```
-     * example.org#%#//scriptlet("log", "arg1", "arg2")
+     * example.org#%#//scriptlet('log', 'arg1', 'arg2')
      * ```
      */
     function log() {
@@ -2129,12 +2117,11 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('prevent-eval-if'[, <search>])
+     * example.org#%#//scriptlet('prevent-eval-if'[, search])
      * ```
      *
-     * **Parameters**
-     * - `search` - optional string or regexp for matching stringified eval payload.
-     * If 'search is not specified — all stringified eval payload will be matched.
+     * - `search` - optional, string or regexp for matching stringified eval payload.
+     * If 'search is not specified — all stringified eval payload will be matched
      *
      * **Examples**
      * ```
@@ -2268,7 +2255,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("set-popads-dummy")
+     * example.org#%#//scriptlet('set-popads-dummy')
      * ```
      */
 
@@ -2304,7 +2291,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("prevent-popads-net")
+     * example.org#%#//scriptlet('prevent-popads-net')
      * ```
      */
 
@@ -2343,7 +2330,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("prevent-adfly")
+     * example.org#%#//scriptlet('prevent-adfly')
      * ```
      */
 
@@ -2444,7 +2431,7 @@
      * **Syntax**
      * ```
      * ! Aborts script when it tries to access `window.alert`
-     * example.org#%#//scriptlet("debug-on-property-read", "alert")
+     * example.org#%#//scriptlet('debug-on-property-read', 'alert')
      * ```
      */
 
@@ -2513,7 +2500,7 @@
      * **Syntax**
      * ```
      * ! Aborts script when it tries to write in property `window.test`
-     * example.org#%#//scriptlet("debug-on-property-write", "test")
+     * example.org#%#//scriptlet('debug-on-property-write', 'test')
      * ```
      */
 
@@ -2581,7 +2568,7 @@
      * **Syntax**
      *```
      * ! Aborts script when it tries to access `window.alert`
-     * example.org#%#//scriptlet("debug-current-inline-script", "alert")
+     * example.org#%#//scriptlet('debug-current-inline-script', 'alert')
      * ```
      */
 
@@ -2673,7 +2660,7 @@
      * example.org#%#//scriptlet('remove-attr', attrs[, selector])
      * ```
      *
-     * - `attrs` — required, attribute or list of attributes joined by '|';
+     * - `attrs` — required, attribute or list of attributes joined by '|'
      * - `selector` — optional, CSS selector, specifies DOM nodes from which the attributes will be removed
      *
      * **Examples**
@@ -2760,9 +2747,9 @@
      * example.org#%#//scriptlet('remove-class', classes[, selector])
      * ```
      *
-     * - `classes` — required, class or list of classes separated by '|';
-     * - `selector` — optional, CSS selector, specifies DOM nodes from which the classes will be removed;
-     * if there is no selector, every class independently will be removed from all nodes which has one
+     * - `classes` — required, class or list of classes separated by '|'
+     * - `selector` — optional, CSS selector, specifies DOM nodes from which the classes will be removed.
+     * If there is no `selector`, each class of `classes` independently will be removed from all nodes which has one
      *
      * **Examples**
      * 1.  Removes by classes
@@ -2870,7 +2857,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("disable-newtab-links")
+     * example.org#%#//scriptlet('disable-newtab-links')
      * ```
      */
 
@@ -2992,7 +2979,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("adjust-setTimeout"[, match [, timeout[, boost]]])
+     * example.org#%#//scriptlet('adjust-setTimeout'[, match [, timeout[, boost]]])
      * ```
      *
      * - `match` - optional, string/regular expression, matching in stringified callback function
@@ -3082,14 +3069,14 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("dir-string"[, times])
+     * example.org#%#//scriptlet('dir-string'[, times])
      * ```
      * - `times` - optional, the number of times to call the `toString` method of the argument to `console.dir`
      *
      * **Example**
      * ```
      * ! Run 2 times
-     * example.org#%#//scriptlet("dir-string", "2")
+     * example.org#%#//scriptlet('dir-string', '2')
      * ```
      */
 
@@ -3132,16 +3119,16 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet("json-prune"[, propsToRemove [, obligatoryProps]])
+     * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps]])
      * ```
      *
-     * - `propsToRemove` - string of space-separated properties to remove
+     * - `propsToRemove` - optional, string of space-separated properties to remove
      * - `obligatoryProps` - optional, string of space-separated properties which must be all present for the pruning to occur
      *
      * **Examples**
      * 1. Removes property `example` from the results of JSON.parse call
      *     ```
-     *     example.org#%#//scriptlet("json-prune", "example")
+     *     example.org#%#//scriptlet('json-prune', 'example')
      *     ```
      *
      *     For instance, the following call will return `{ one: 1}`
@@ -3152,7 +3139,7 @@
      *
      * 2. If there are no specified properties in the result of JSON.parse call, pruning will NOT occur
      *     ```
-     *     example.org#%#//scriptlet("json-prune", "one", "obligatoryProp")
+     *     example.org#%#//scriptlet('json-prune', 'one', 'obligatoryProp')
      *     ```
      *
      *     For instance, the following call will return `{ one: 1, two: 2}`
@@ -3164,12 +3151,12 @@
      * 3. A property in a list of properties can be a chain of properties
      *
      *     ```
-     *     example.org#%#//scriptlet("json-prune", "a.b", "adpath.url.first")
+     *     example.org#%#//scriptlet('json-prune', 'a.b', 'adpath.url.first')
      *     ```
      *
      * 4. Call with no arguments will log the current hostname and json payload at the console
      *     ```
-     *     example.org#%#//scriptlet("json-prune")
+     *     example.org#%#//scriptlet('json-prune')
      *     ```
      */
 
@@ -3248,12 +3235,10 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('prevent-requestAnimationFrame'[, <search>])
+     * example.org#%#//scriptlet('prevent-requestAnimationFrame'[, search])
      * ```
      *
-     * **Parameters**
-     *
-     * - `search` (optional) string or regular expression.
+     * - `search` - optional, string or regular expression.
      * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
      * If do not start with `!`, the stringified callback will be matched.
      *
@@ -3261,7 +3246,6 @@
      * So do not use the scriptlet without any parameter in production filter lists.
      *
      * **Examples**
-     *
      * 1. Prevents `requestAnimationFrame` calls if the callback matches `/\.test/`.
      *     ```bash
      *     example.org#%#//scriptlet('prevent-requestAnimationFrame', '/\.test/')

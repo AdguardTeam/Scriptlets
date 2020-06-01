@@ -12,7 +12,7 @@ import { hit, toRegExp } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("adjust-setTimeout"[, match [, timeout[, boost]]])
+ * example.org#%#//scriptlet('adjust-setTimeout'[, match [, timeout[, boost]]])
  * ```
  *
  * - `match` - optional, string/regular expression, matching in stringified callback function

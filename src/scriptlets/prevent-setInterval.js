@@ -17,26 +17,23 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet("prevent-setInterval"[, <search>[, <delay>]])
+ * example.org#%#//scriptlet('prevent-setInterval'[, search[, delay]])
  * ```
- *
- * **Parameters**
  *
  * Call with no arguments will log calls to setInterval while debugging (`log-setInterval` superseding),
  * so production filter lists' rules definitely require at least one of the parameters:
- * - `search` (optional) string or regular expression.
+ * - `search` - optional, string or regular expression.
  * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
  * If do not start with `!`, the stringified callback will be matched.
  * If not set, prevents all `setInterval` calls due to specified `delay`.
- * - `delay` (optional) must be an integer.
+ * - `delay` - optional, must be an integer.
  * If starts with `!`, scriptlet will not match the delay but all other will be defused.
  * If do not start with `!`, the delay passed to the `setInterval` call will be matched.
  *
  *  **Examples**
- *
  * 1. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the delay.
  *     ```bash
- *     example.org#%#//scriptlet("prevent-setInterval", "/\.test/")
+ *     example.org#%#//scriptlet('prevent-setInterval', '/\.test/')
  *     ```
  *
  *     For instance, the following call will be prevented:
@@ -48,7 +45,7 @@ import {
  *
  * 2. Prevents `setInterval` calls if the callback does not contain `value`.
  *     ```
- *     example.org#%#//scriptlet("prevent-setInterval", "!value")
+ *     example.org#%#//scriptlet('prevent-setInterval', '!value')
  *     ```
  *
  *     For instance, only the first of the following calls will be prevented:
@@ -66,7 +63,7 @@ import {
  *
  * 3. Prevents `setInterval` calls if the callback contains `value` and the delay is not set to `300`.
  *     ```
- *     example.org#%#//scriptlet("prevent-setInterval", "value", "!300")
+ *     example.org#%#//scriptlet('prevent-setInterval', 'value', '!300')
  *     ```
  *
  *     For instance, only the first of the following calls will not be prevented:
@@ -84,7 +81,7 @@ import {
  *
  * 4. Prevents `setInterval` calls if the callback does not contain `value` and the delay is not set to `300`.
  *     ```
- *     example.org#%#//scriptlet("prevent-setInterval", "!value", "!300")
+ *     example.org#%#//scriptlet('prevent-setInterval', '!value', '!300')
  *     ```
  *
  *     For instance, only the second of the following calls will be prevented:

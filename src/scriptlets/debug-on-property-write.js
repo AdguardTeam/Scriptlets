@@ -20,7 +20,7 @@ import {
  * **Syntax**
  * ```
  * ! Aborts script when it tries to write in property `window.test`
- * example.org#%#//scriptlet("debug-on-property-write", "test")
+ * example.org#%#//scriptlet('debug-on-property-write', 'test')
  * ```
  */
 /* eslint-enable max-len */
