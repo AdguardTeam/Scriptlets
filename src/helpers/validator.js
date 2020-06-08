@@ -253,14 +253,14 @@ const getRedirectName = (rule, marker) => {
  * @param {string} rule - rule text
  */
 const isAdgRedirectRule = (rule) => {
-    const basePartMarker = '/((?!\\$|\\,).{1})redirect=(.{0,}?)\\$(popup)?/';
+    const MARKER_IN_BASE_PART_MASK = '/((?!\\$|\\,).{1})redirect=(.{0,}?)\\$(popup)?/';
     return (
         !isComment(rule)
         && rule.indexOf(REDIRECT_RULE_TYPES.ADG.marker) > -1
         // some js rules may have 'redirect=' in it, so we should get rid of them
         && rule.indexOf(JS_RULE_MARKER) === -1
         // get rid of rules like '_redirect=*://look.$popup'
-        && !(toRegExp(basePartMarker).test(rule))
+        && !(toRegExp(MARKER_IN_BASE_PART_MASK).test(rule))
     );
 };
 
