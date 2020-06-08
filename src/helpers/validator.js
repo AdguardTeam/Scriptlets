@@ -11,7 +11,7 @@ import * as scriptletsList from '../scriptlets/scriptletsList';
 
 import { redirects } from '../../scripts/compatibility-table.json';
 
-const JS_RULE_MASK = '#%#';
+const JS_RULE_MARKER = '#%#';
 const COMMENT_MARKER = '!';
 
 /**
@@ -258,7 +258,7 @@ const isAdgRedirectRule = (rule) => {
         !isComment(rule)
         && rule.indexOf(REDIRECT_RULE_TYPES.ADG.marker) > -1
         // some js rules may have 'redirect=' in it, so we should get rid of them
-        && !(rule.indexOf(JS_RULE_MASK) > -1)
+        && rule.indexOf(JS_RULE_MARKER) === -1
         // get rid of rules like '_redirect=*://look.$popup'
         && !(toRegExp(basePartMarker).test(rule))
     );
