@@ -140,9 +140,17 @@ test('Test redirect rule validation', (assert) => {
     let inputRule = '||example.org$xmlhttprequest,redirect=noopvast-2.0';
     assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), true);
 
-    // redirect name is wrong, but this one only for checking isAdgRedirectRule()
+    // redirect name is wrong, but this one only for checking ADG redirect marker "redirect="
     inputRule = '||example.com/banner$image,redirect=redirect.png';
     assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);
+
+    // js-rule with 'redirect=' in it should not be considered as redirect rule
+    inputRule = 'intermarche.pl#%#document.cookie = "interapp_redirect=false; path=/;";';
+    assert.strictEqual(validator.isAdgRedirectRule(inputRule), false);
+
+    // rules with 'redirect=' marker in base rule part should be skipped
+    inputRule = '_redirect=*://look.$popup';
+    assert.strictEqual(validator.isAdgRedirectRule(inputRule), false);
 
     // check is ubo redirect valid for conversion
     inputRule = '||example.orf^$media,redirect=noop-1s.mp4,third-party';
