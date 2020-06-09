@@ -65,8 +65,8 @@ import {
  *     ```
  */
 /* eslint-enable max-len */
-export function abortCurrentInlineScript(source, property, search = null) {
-    const regex = search ? toRegExp(search) : null;
+export function abortCurrentInlineScript(source, property, search) {
+    const searchRegexp = search ? toRegExp(search) : toRegExp('/.?/');
     const rid = randomId();
 
     const getCurrentScript = () => {
@@ -81,6 +81,9 @@ export function abortCurrentInlineScript(source, property, search = null) {
 
     const abort = () => {
         const scriptEl = getCurrentScript();
+        if (!scriptEl) {
+            return;
+        }
         let content = scriptEl.textContent;
 
         // We are using Node.prototype.textContent property descriptor
@@ -95,7 +98,7 @@ export function abortCurrentInlineScript(source, property, search = null) {
         if (scriptEl instanceof HTMLScriptElement
             && content.length > 0
             && scriptEl !== ourScript
-            && (!regex || regex.test(content))) {
+            && searchRegexp.test(content)) {
             hit(source);
             throw new ReferenceError(rid);
         }

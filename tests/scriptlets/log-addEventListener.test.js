@@ -12,7 +12,7 @@ const changingProps = ['hit', '__debug'];
 
 const evalWrapper = eval;
 
-const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+const nativeAddEventListener = window.addEventListener;
 const nativeConsole = console.log;
 
 
@@ -22,7 +22,7 @@ const beforeEach = () => {
 
 const afterEach = () => {
     console.log = nativeConsole;
-    window.EventTarget.prototype.addEventListener = nativeAddEventListener;
+    window.addEventListener = nativeAddEventListener;
     clearGlobalProps(...changingProps);
 };
 

@@ -4,7 +4,7 @@ import { clearGlobalProps } from '../helpers';
 const { test, module } = QUnit;
 const name = 'prevent-addEventListener';
 
-const originalEventLister = window.EventTarget.prototype.addEventListener;
+const originalEventLister = window.addEventListener;
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -14,7 +14,7 @@ const beforeEach = () => {
 
 const afterEach = () => {
     clearGlobalProps('__debug', 'hit');
-    window.EventTarget.prototype.addEventListener = originalEventLister;
+    window.addEventListener = originalEventLister;
 };
 
 module(name, { beforeEach, afterEach });

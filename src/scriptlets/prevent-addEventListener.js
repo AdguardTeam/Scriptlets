@@ -38,10 +38,10 @@ import { hit, toRegExp } from '../helpers';
  */
 /* eslint-enable max-len */
 export function preventAddEventListener(source, eventSearch, funcSearch) {
-    eventSearch = eventSearch ? toRegExp(eventSearch) : toRegExp('/.?/');
-    funcSearch = funcSearch ? toRegExp(funcSearch) : toRegExp('/.?/');
+    const eventSearchRegexp = eventSearch ? toRegExp(eventSearch) : toRegExp('/.?/');
+    const funcSearchRegexp = funcSearch ? toRegExp(funcSearch) : toRegExp('/.?/');
 
-    const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+    const nativeAddEventListener = window.addEventListener;
     function addEventListenerWrapper(eventName, callback, ...args) {
         // The scriptlet might cause a website broke
         // if the website uses test addEventListener with callback = null
@@ -51,14 +51,14 @@ export function preventAddEventListener(source, eventSearch, funcSearch) {
             funcToCheck = callback.toString();
         }
 
-        if (eventSearch.test(eventName.toString()) && funcSearch.test(funcToCheck)) {
+        if (eventSearchRegexp.test(eventName.toString()) && funcSearchRegexp.test(funcToCheck)) {
             hit(source);
             return undefined;
         }
         return nativeAddEventListener.apply(this, [eventName, callback, ...args]);
     }
 
-    window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
+    window.addEventListener = addEventListenerWrapper;
 }
 
 preventAddEventListener.names = [
