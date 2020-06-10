@@ -31,7 +31,7 @@ import { hit } from '../helpers';
  */
 /* eslint-enable max-len */
 export function setCookie(source, name, value) {
-    if (!name && !value) {
+    if (!name || !value) {
         return;
     }
 
