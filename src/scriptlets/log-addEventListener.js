@@ -17,7 +17,7 @@ import { hit } from '../helpers';
  */
 export function logAddEventListener(source) {
     const log = console.log.bind(console);
-    const nativeAddEventListener = window.addEventListener;
+    const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
     function addEventListenerWrapper(eventName, callback, ...args) {
         hit(source);
         // The scriptlet might cause a website broke
@@ -30,7 +30,7 @@ export function logAddEventListener(source) {
         log(`addEventListener("${eventName}", ${callbackToLog})`);
         return nativeAddEventListener.apply(this, [eventName, callback, ...args]);
     }
-    window.addEventListener = addEventListenerWrapper;
+    window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
 }
 
 logAddEventListener.names = [

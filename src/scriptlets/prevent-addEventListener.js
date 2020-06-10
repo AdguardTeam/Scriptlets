@@ -41,7 +41,7 @@ export function preventAddEventListener(source, eventSearch, funcSearch) {
     const eventSearchRegexp = eventSearch ? toRegExp(eventSearch) : toRegExp('/.?/');
     const funcSearchRegexp = funcSearch ? toRegExp(funcSearch) : toRegExp('/.?/');
 
-    const nativeAddEventListener = window.addEventListener;
+    const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
     function addEventListenerWrapper(eventName, callback, ...args) {
         // The scriptlet might cause a website broke
         // if the website uses test addEventListener with callback = null
@@ -58,7 +58,7 @@ export function preventAddEventListener(source, eventSearch, funcSearch) {
         return nativeAddEventListener.apply(this, [eventName, callback, ...args]);
     }
 
-    window.addEventListener = addEventListenerWrapper;
+    window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
 }
 
 preventAddEventListener.names = [
