@@ -1,0 +1,100 @@
+/* eslint-disable no-eval, no-underscore-dangle */
+import { clearGlobalProps } from '../helpers';
+
+const { test, module } = QUnit;
+const name = 'set-cookie';
+
+const beforeEach = () => {
+    window.__debug = () => {
+        window.hit = 'FIRED';
+    };
+};
+
+const afterEach = () => {
+    clearGlobalProps('hit', '__debug');
+};
+
+module(name, { beforeEach, afterEach });
+
+const evalWrapper = eval;
+
+const runScriptlet = (name, ...args) => {
+    const params = {
+        name,
+        args,
+        verbose: true,
+    };
+    const resultString = window.scriptlets.invoke(params);
+    evalWrapper(resultString);
+};
+
+const clearCookie = (cName) => {
+    document.cookie = `${cName}=; max-age=0`;
+};
+
+test('Set cookie with valid value', (assert) => {
+    let cName = '__test-cookie_OK';
+    let cValue = 'OK';
+    runScriptlet(name, cName, cValue);
+    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+    assert.strictEqual(document.cookie.includes(cName) && document.cookie.includes(cValue), true, 'Cookie has been set');
+    clearCookie(cName);
+
+    cName = '__test-cookie_true';
+    cValue = 'true';
+    runScriptlet(name, cName, cValue);
+    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+    assert.strictEqual(document.cookie.includes(cName) && document.cookie.includes(cValue), true, 'Cookie has been set');
+    clearCookie(cName);
+
+    cName = '__test-cookie_false';
+    cValue = 'false';
+    runScriptlet(name, cName, cValue);
+    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+    assert.strictEqual(document.cookie.includes(cName) && document.cookie.includes(cValue), true, 'Cookie has been set');
+    clearCookie(cName);
+
+    cName = '__test-cookie_no';
+    cValue = 'no';
+    runScriptlet(name, cName, cValue);
+    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+    assert.strictEqual(document.cookie.includes(cName) && document.cookie.includes(cValue), true, 'Cookie has been set');
+    clearCookie(cName);
+
+    cName = '__test-cookie_0';
+    cValue = '0';
+    runScriptlet(name, cName, cValue);
+    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+    assert.strictEqual(document.cookie.includes(cName) && document.cookie.includes(cValue), true, 'Cookie has been set');
+    clearCookie(cName);
+
+    cName = '__test-cookie_1';
+    cValue = '1';
+    runScriptlet(name, cName, cValue);
+    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+    assert.strictEqual(document.cookie.includes(cName) && document.cookie.includes(cValue), true, 'Cookie has been set');
+    clearCookie(cName);
+});
+
+test('Set cookie with invalid value', (assert) => {
+    let cName = '__test2-cookie_approved';
+    let cValue = 'approved';
+    runScriptlet(name, cName, cValue);
+    assert.strictEqual(window.hit, undefined, 'Hit was not fired');
+    assert.strictEqual(document.cookie.includes(cName), false, 'Cookie has not been set');
+    assert.strictEqual(document.cookie.includes(cValue), false, 'Cookie has not been set');
+
+    cName = '__test2-cookie_dismiss';
+    cValue = 'dismiss';
+    runScriptlet(name, cName, cValue);
+    assert.strictEqual(window.hit, undefined, 'Hit was not fired');
+    assert.strictEqual(document.cookie.includes(cName), false, 'Cookie has not been set');
+    assert.strictEqual(document.cookie.includes(cValue), false, 'Cookie has not been set');
+
+    cName = '__test2-cookie_pcbc';
+    cValue = '_pcbc';
+    runScriptlet(name, cName, cValue);
+    assert.strictEqual(window.hit, undefined, 'Hit was not fired');
+    assert.strictEqual(document.cookie.includes(cName), false, 'Cookie has not been set');
+    assert.strictEqual(document.cookie.includes(cValue), false, 'Cookie has not been set');
+});

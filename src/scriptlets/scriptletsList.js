@@ -32,3 +32,4 @@ export * from './adjust-setTimeout';
 export * from './dir-string';
 export * from './json-prune';
 export * from './prevent-requestAnimationFrame';
+export * from './set-cookie';
