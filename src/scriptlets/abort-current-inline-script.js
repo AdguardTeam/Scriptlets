@@ -30,6 +30,10 @@ import {
  * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
  * - `search` - optional, string or regular expression that must match the inline script contents. If not set, abort all inline scripts which are trying to access the specified property
  *
+ * > Note please that for inline script with addEventListener in it
+ * `property` should be set as `EventTarget.prototype.addEventListener`,
+ * not just `addEventListener`.
+ *
  * **Examples**
  * 1. Aborts all inline scripts trying to access `window.alert`
  *     ```
@@ -65,8 +69,8 @@ import {
  *     ```
  */
 /* eslint-enable max-len */
-export function abortCurrentInlineScript(source, property, search = null) {
-    const regex = search ? toRegExp(search) : null;
+export function abortCurrentInlineScript(source, property, search) {
+    const searchRegexp = search ? toRegExp(search) : toRegExp('/.?/');
     const rid = randomId();
 
     const getCurrentScript = () => {
@@ -81,6 +85,9 @@ export function abortCurrentInlineScript(source, property, search = null) {
 
     const abort = () => {
         const scriptEl = getCurrentScript();
+        if (!scriptEl) {
+            return;
+        }
         let content = scriptEl.textContent;
 
         // We are using Node.prototype.textContent property descriptor
@@ -95,7 +102,7 @@ export function abortCurrentInlineScript(source, property, search = null) {
         if (scriptEl instanceof HTMLScriptElement
             && content.length > 0
             && scriptEl !== ourScript
-            && (!regex || regex.test(content))) {
+            && searchRegexp.test(content)) {
             hit(source);
             throw new ReferenceError(rid);
         }
