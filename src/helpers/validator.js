@@ -21,13 +21,11 @@ const COMMENT_MARKER = '!';
  */
 const isComment = (rule) => startsWith(rule, COMMENT_MARKER);
 
-
 /* ************************************************************************
  *
  * Scriptlets
  *
  ************************************************************************** */
-
 
 /**
  * uBlock scriptlet rule mask
@@ -48,7 +46,6 @@ const ABP_SCRIPTLET_EXCEPTION_MASK = '#@$#';
  * AdGuard CSS rule mask
  */
 const ADG_CSS_MASK_REG = /#@?\$#.+?\s*\{.*\}\s*$/g;
-
 
 /**
  * Checks if the `rule` is AdGuard scriptlet rule
@@ -246,7 +243,6 @@ const getRedirectName = (rule, marker) => {
     return substringAfter(redirectNamePart, marker);
 };
 
-
 /**
  * Checks if the `rule` is AdGuard redirect rule.
  * Discards comments and JS rules and checks if the `rule` has 'redirect' modifier.
@@ -293,7 +289,6 @@ const isValidAdgRedirectRule = (rule) => {
     return isRedirectRuleByType(rule, 'VALID_ADG');
 };
 
-
 /**
 * Checks if the AdGuard redirect `rule` has Ubo analog. Needed for Adg->Ubo conversion
 * @param {string} rule - AdGuard rule text
@@ -320,7 +315,6 @@ const isUboRedirectCompatibleWithAdg = (rule) => {
 const isAbpRedirectCompatibleWithAdg = (rule) => {
     return isRedirectRuleByType(rule, 'ABP');
 };
-
 
 /**
  * Checks if the rule has specified content type before Adg -> Ubo conversion.

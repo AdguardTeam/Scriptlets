@@ -85,7 +85,6 @@ test('prevent-setInterval: adg no args -- logging', (assert) => {
     }, 50);
 });
 
-
 test('prevent-setInterval: adg by setInterval callback name', (assert) => {
     const params = {
         name,
@@ -119,7 +118,6 @@ test('prevent-setInterval: adg by setInterval callback name', (assert) => {
     testIntervals.push(intervalAnother);
 });
 
-
 test('prevent-setInterval: adg by code matching', (assert) => {
     const params = {
         name,
@@ -152,7 +150,6 @@ test('prevent-setInterval: adg by code matching', (assert) => {
     const intervalAnother = setInterval(anotherTimeout);
     testIntervals.push(intervalAnother);
 });
-
 
 test('prevent-setInterval: adg -- !match', (assert) => {
     const params = {
@@ -193,7 +190,6 @@ test('prevent-setInterval: adg -- !match', (assert) => {
     testIntervals.push(intervalTest3);
 });
 
-
 test('prevent-setInterval: adg -- match + !delay', (assert) => {
     const params = {
         name,
@@ -231,7 +227,6 @@ test('prevent-setInterval: adg -- match + !delay', (assert) => {
     const intervalTest3 = setInterval(test3, 60);
     testIntervals.push(intervalTest3);
 });
-
 
 test('prevent-setInterval: adg -- !match + !delay', (assert) => {
     const params = {

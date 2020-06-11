@@ -55,7 +55,6 @@ export function GoogleAnalyticsGa(source) {
     // eslint-disable-next-line no-multi-assign
     window._gaq = gaq.qf = gaq;
 
-
     // Gat constructor
     function Gat() { }
 

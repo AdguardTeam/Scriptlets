@@ -28,7 +28,6 @@ const afterEach = () => {
     console.log = nativeConsole; // eslint-disable-line no-console
 };
 
-
 module(name, { beforeEach, afterEach });
 
 test('Checking if alias name works', (assert) => {
@@ -48,7 +47,6 @@ test('Checking if alias name works', (assert) => {
 
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
-
 
 test('prevent-setTimeout: adg no args -- logging', (assert) => {
     const params = {
@@ -86,7 +84,6 @@ test('prevent-setTimeout: adg no args -- logging', (assert) => {
     }, 50);
 });
 
-
 test('prevent-setTimeout: adg by setTimeout callback name', (assert) => {
     const params = {
         name,
@@ -120,7 +117,6 @@ test('prevent-setTimeout: adg by setTimeout callback name', (assert) => {
     testTimeouts.push(timeoutAnother);
 });
 
-
 test('prevent-setTimeout: adg by code matching', (assert) => {
     const params = {
         name,
@@ -153,7 +149,6 @@ test('prevent-setTimeout: adg by code matching', (assert) => {
     const timeoutAnother = setTimeout(anotherTimeout);
     testTimeouts.push(timeoutAnother);
 });
-
 
 test('prevent-setTimeout: adg -- !match', (assert) => {
     const params = {
@@ -194,7 +189,6 @@ test('prevent-setTimeout: adg -- !match', (assert) => {
     testTimeouts.push(timeoutTest3);
 });
 
-
 test('prevent-setTimeout: adg -- match + !delay', (assert) => {
     const params = {
         name,
@@ -232,7 +226,6 @@ test('prevent-setTimeout: adg -- match + !delay', (assert) => {
     const timeoutTest3 = setTimeout(test3, 60);
     testTimeouts.push(timeoutTest3);
 });
-
 
 test('prevent-setTimeout: adg -- !match + !delay', (assert) => {
     const params = {

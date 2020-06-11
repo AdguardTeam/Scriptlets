@@ -17,7 +17,6 @@ import {
     convertAdgScriptletToUbo,
 } from '../helpers/converter';
 
-
 /**
  * @typedef {Object} Source - scriptlet properties
  * @property {string} name Scriptlet name

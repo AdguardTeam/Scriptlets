@@ -33,7 +33,6 @@ test('Test scriptlet rule validation', (assert) => {
     assert.strictEqual(isValidScriptletRule(inputRule), false);
 });
 
-
 test('Test comment', (assert) => {
     let comment = "! example.org#%#//scriptlet('abort-on-property-read', 'I10C')";
     let expComment = "! example.org#%#//scriptlet('abort-on-property-read', 'I10C')";

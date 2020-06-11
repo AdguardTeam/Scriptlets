@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 
-
 /* ************************************************************************
  *
  * Common
@@ -117,7 +116,6 @@ function markTableWithDiff(diff, ruleType, platform) {
     fs.writeFileSync(COMPATIBILITY_TABLE_DATA, table);
 }
 
-
 /* ************************************************************************
  *
  * UBO Scriptlets
@@ -190,7 +188,6 @@ async function checkForUBOScriptletsUpdates() {
 
     return diff;
 }
-
 
 /* ************************************************************************
  *

@@ -1,6 +1,5 @@
 import * as dependencies from '.';
 
-
 /**
  * Concat dependencies to scriptlet code
  * @param {string} scriptlet string view of scriptlet
