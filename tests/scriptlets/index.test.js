@@ -29,3 +29,4 @@ import './adjust-setTimeout.test';
 import './dir-string.test';
 import './json-prune.test';
 import './prevent-requestAnimationFrame.test';
+import './set-cookie.test';

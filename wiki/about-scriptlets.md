@@ -29,6 +29,7 @@
 * [remove-class](#remove-class)
 * [remove-cookie](#remove-cookie)
 * [set-constant](#set-constant)
+* [set-cookie](#set-cookie)
 * [set-popads-dummy](#set-popads-dummy)
 * * *
 ### <a id="abort-current-inline-script"></a> ⚡️ abort-current-inline-script
@@ -1035,6 +1036,34 @@ example.org#%#//scriptlet('set-constant', 'firstConst', 'false')
 example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc')
 ```
 [Scriptlet source](../src/scriptlets/set-constant.js)
+* * *
+
+### <a id="set-cookie"></a> ⚡️ set-cookie
+
+Sets a cookie with the specified name and value. Cookie path defaults to root.
+
+**Syntax**
+```
+example.org#%#//scriptlet('set-cookie', name, value)
+```
+
+- `name` - required, cookie name to be set
+- `value` - required, cookie value; possible values:
+    - number `>= 0 && <= 15`
+    - one of the predefined constants:
+        - `true` / `True`
+        - `false` / `False`
+        - `yes` / `Yes` / `Y`
+        - `no`
+        - `ok` / `OK`
+
+**Examples**
+```
+example.org#%#//scriptlet('set-cookie', 'checking', 'ok')
+
+example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', '1')
+```
+[Scriptlet source](../src/scriptlets/set-cookie.js)
 * * *
 
 ### <a id="set-popads-dummy"></a> ⚡️ set-popads-dummy
