@@ -1395,6 +1395,10 @@
      * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
      * - `search` - optional, string or regular expression that must match the inline script contents. If not set, abort all inline scripts which are trying to access the specified property
      *
+     * > Note please that for inline script with addEventListener in it
+     * `property` should be set as `EventTarget.prototype.addEventListener`,
+     * not just `addEventListener`.
+     *
      * **Examples**
      * 1. Aborts all inline scripts trying to access `window.alert`
      *     ```
@@ -1432,9 +1436,8 @@
 
     /* eslint-enable max-len */
 
-    function abortCurrentInlineScript(source, property) {
-      var search = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      var regex = search ? toRegExp(search) : null;
+    function abortCurrentInlineScript(source, property, search) {
+      var searchRegexp = search ? toRegExp(search) : toRegExp('/.?/');
       var rid = randomId();
 
       var getCurrentScript = function getCurrentScript() {
@@ -1451,6 +1454,11 @@
 
       var abort = function abort() {
         var scriptEl = getCurrentScript();
+
+        if (!scriptEl) {
+          return;
+        }
+
         var content = scriptEl.textContent; // We are using Node.prototype.textContent property descriptor
         // to get the real script content
         // even when document.currentScript.textContent is replaced.
@@ -1462,7 +1470,7 @@
         } catch (e) {} // eslint-disable-line no-empty
 
 
-        if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && (!regex || regex.test(content))) {
+        if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && searchRegexp.test(content)) {
           hit(source);
           throw new ReferenceError(rid);
         }
@@ -1794,8 +1802,8 @@
     /* eslint-enable max-len */
 
     function preventAddEventListener(source, eventSearch, funcSearch) {
-      eventSearch = eventSearch ? toRegExp(eventSearch) : toRegExp('/.?/');
-      funcSearch = funcSearch ? toRegExp(funcSearch) : toRegExp('/.?/');
+      var eventSearchRegexp = eventSearch ? toRegExp(eventSearch) : toRegExp('/.?/');
+      var funcSearchRegexp = funcSearch ? toRegExp(funcSearch) : toRegExp('/.?/');
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
       function addEventListenerWrapper(eventName, callback) {
@@ -1808,7 +1816,7 @@
           funcToCheck = callback.toString();
         }
 
-        if (eventSearch.test(eventName.toString()) && funcSearch.test(funcToCheck)) {
+        if (eventSearchRegexp.test(eventName.toString()) && funcSearchRegexp.test(funcToCheck)) {
           hit(source);
           return undefined;
         }
@@ -3117,6 +3125,9 @@
      * @description
      * Removes specified properties from the result of calling JSON.parse and returns the caller
      *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#json-prunejs-
+     *
      * **Syntax**
      * ```
      * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps]])
@@ -3332,6 +3343,90 @@
     preventRequestAnimationFrame.names = ['prevent-requestAnimationFrame', 'no-requestAnimationFrame-if.js', 'ubo-no-requestAnimationFrame-if.js', 'norafif.js', 'ubo-norafif.js', 'ubo-no-requestAnimationFrame-if', 'ubo-norafif'];
     preventRequestAnimationFrame.injections = [hit, startsWith, toRegExp, noopFunc];
 
+    /* eslint-disable max-len */
+
+    /**
+     * @scriptlet set-cookie
+     *
+     * @description
+     * Sets a cookie with the specified name and value. Cookie path defaults to root.
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('set-cookie', name, value)
+     * ```
+     *
+     * - `name` - required, cookie name to be set
+     * - `value` - required, cookie value; possible values:
+     *     - number `>= 0 && <= 15`
+     *     - one of the predefined constants:
+     *         - `true` / `True`
+     *         - `false` / `False`
+     *         - `yes` / `Yes` / `Y`
+     *         - `no`
+     *         - `ok` / `OK`
+     *
+     * **Examples**
+     * ```
+     * example.org#%#//scriptlet('set-cookie', 'checking', 'ok')
+     *
+     * example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', '1')
+     * ```
+     */
+
+    /* eslint-enable max-len */
+
+    function setCookie(source, name, value) {
+      if (!name || !value) {
+        return;
+      }
+
+      var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
+
+      var valueToSet;
+
+      if (value === 'true') {
+        valueToSet = 'true';
+      } else if (value === 'True') {
+        valueToSet = 'True';
+      } else if (value === 'false') {
+        valueToSet = 'false';
+      } else if (value === 'False') {
+        valueToSet = 'False';
+      } else if (value === 'yes') {
+        valueToSet = 'yes';
+      } else if (value === 'Yes') {
+        valueToSet = 'Yes';
+      } else if (value === 'Y') {
+        valueToSet = 'Y';
+      } else if (value === 'no') {
+        valueToSet = 'no';
+      } else if (value === 'ok') {
+        valueToSet = 'ok';
+      } else if (value === 'OK') {
+        valueToSet = 'OK';
+      } else if (/^\d+$/.test(value)) {
+        valueToSet = parseFloat(value);
+
+        if (nativeIsNaN(valueToSet)) {
+          return;
+        }
+
+        if (Math.abs(valueToSet) < 0 || Math.abs(valueToSet) > 15) {
+          return;
+        }
+      } else {
+        return;
+      }
+
+      var pathToSet = 'path=/;';
+      var cookieData = "".concat(encodeURIComponent(name), "=").concat(encodeURIComponent(valueToSet), "; ").concat(pathToSet);
+      hit(source);
+      document.cookie = cookieData;
+    }
+    setCookie.names = ['set-cookie'];
+    setCookie.injections = [hit];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -3368,12 +3463,13 @@
         adjustSetTimeout: adjustSetTimeout,
         dirString: dirString,
         jsonPrune: jsonPrune,
-        preventRequestAnimationFrame: preventRequestAnimationFrame
+        preventRequestAnimationFrame: preventRequestAnimationFrame,
+        setCookie: setCookie
     });
 
     const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"amazon-apstag",ubo:"amazon_apstag.js"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm",ubo:"googletagmanager_gtm.js"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3-0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvmap-1.0"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"disqus_embed.js"},{ubo:"disqus_forums_embed.js"},{ubo:"doubleclick_instream_ad_status.js"},{ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"}];
 
-    var JS_RULE_MASK = '#%#';
+    var JS_RULE_MARKER = '#%#';
     var COMMENT_MARKER = '!';
     /**
      * Checks if rule text is comment e.g. !!example.org##+js(set-constant.js, test, false)
@@ -3596,8 +3692,10 @@
 
 
     var isAdgRedirectRule = function isAdgRedirectRule(rule) {
-      return !isComment(rule) // some js rules may have 'redirect=' in it, so we should get rid of them
-      && !rule.indexOf(JS_RULE_MASK) > -1 && rule.indexOf(REDIRECT_RULE_TYPES.ADG.marker) > -1;
+      var MARKER_IN_BASE_PART_MASK = '/((?!\\$|\\,).{1})redirect=(.{0,}?)\\$(popup)?/';
+      return !isComment(rule) && rule.indexOf(REDIRECT_RULE_TYPES.ADG.marker) > -1 // some js rules may have 'redirect=' in it, so we should get rid of them
+      && rule.indexOf(JS_RULE_MARKER) === -1 // get rid of rules like '_redirect=*://look.$popup'
+      && !toRegExp(MARKER_IN_BASE_PART_MASK).test(rule);
     };
     /**
      * Checks if the `rule` satisfies the `type`

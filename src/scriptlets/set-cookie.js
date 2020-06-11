@@ -5,7 +5,7 @@ import { hit } from '../helpers';
  * @scriptlet set-cookie
  *
  * @description
- * Sets cookie pair `name`=`value`. Cookie path defaults to root (`path=/;`).
+ * Sets a cookie with the specified name and value. Cookie path defaults to root.
  *
  * **Syntax**
  * ```
@@ -17,7 +17,7 @@ import { hit } from '../helpers';
  *     - number `>= 0 && <= 15`
  *     - one of the predefined constants:
  *         - `true` / `True`
- *         - `false`
+ *         - `false` / `False`
  *         - `yes` / `Yes` / `Y`
  *         - `no`
  *         - `ok` / `OK`
@@ -43,6 +43,8 @@ export function setCookie(source, name, value) {
         valueToSet = 'True';
     } else if (value === 'false') {
         valueToSet = 'false';
+    } else if (value === 'False') {
+        valueToSet = 'False';
     } else if (value === 'yes') {
         valueToSet = 'yes';
     } else if (value === 'Yes') {
