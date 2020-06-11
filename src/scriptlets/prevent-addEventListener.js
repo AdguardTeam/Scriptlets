@@ -38,8 +38,8 @@ import { hit, toRegExp } from '../helpers';
  */
 /* eslint-enable max-len */
 export function preventAddEventListener(source, eventSearch, funcSearch) {
-    eventSearch = eventSearch ? toRegExp(eventSearch) : toRegExp('/.?/');
-    funcSearch = funcSearch ? toRegExp(funcSearch) : toRegExp('/.?/');
+    const eventSearchRegexp = eventSearch ? toRegExp(eventSearch) : toRegExp('/.?/');
+    const funcSearchRegexp = funcSearch ? toRegExp(funcSearch) : toRegExp('/.?/');
 
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
     function addEventListenerWrapper(eventName, callback, ...args) {
@@ -51,7 +51,7 @@ export function preventAddEventListener(source, eventSearch, funcSearch) {
             funcToCheck = callback.toString();
         }
 
-        if (eventSearch.test(eventName.toString()) && funcSearch.test(funcToCheck)) {
+        if (eventSearchRegexp.test(eventName.toString()) && funcSearchRegexp.test(funcToCheck)) {
             hit(source);
             return undefined;
         }

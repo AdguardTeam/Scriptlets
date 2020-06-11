@@ -7,6 +7,9 @@ import { hit, getPropertyInChain } from '../helpers';
  * @description
  * Removes specified properties from the result of calling JSON.parse and returns the caller
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#json-prunejs-
+ *
  * **Syntax**
  * ```
  * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps]])
