@@ -1,6 +1,5 @@
 import jsYaml from 'js-yaml';
 
-
 /**
  * Redirect - object used to redirect some requests
  * e.g.

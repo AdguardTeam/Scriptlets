@@ -45,7 +45,6 @@ test('Checking if alias name works', (assert) => {
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
-
 test('Adg rule: no selector', (assert) => {
     createHit();
     const classNames = ['example', 'test'];
@@ -82,7 +81,6 @@ test('Adg rule: no selector', (assert) => {
         done();
     }, 50);
 });
-
 
 test('Adg rule', (assert) => {
     createHit();

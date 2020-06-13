@@ -1,4 +1,3 @@
-
 /**
  * Generate random six symbols id
  */

@@ -1,7 +1,6 @@
 /* eslint-disable no-underscore-dangle, no-eval */
 import { clearGlobalProps } from '../helpers';
 
-
 const { test, module } = QUnit;
 const name = 'metrika-yandex-watch';
 

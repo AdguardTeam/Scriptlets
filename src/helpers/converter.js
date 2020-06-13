@@ -36,7 +36,6 @@ const UBO_XHR_TYPE = 'xhr';
 
 const ADG_XHR_TYPE = 'xmlhttprequest';
 
-
 /**
  * Returns array of strings separated by space which not in quotes
  * @param {string} str
@@ -221,7 +220,6 @@ export const isValidScriptletRule = (input) => {
 
     return isValid;
 };
-
 
 /**
  * Converts Ubo redirect rule to Adg one

@@ -15,7 +15,6 @@ const evalWrapper = eval;
 const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 const nativeConsole = console.log;
 
-
 const beforeEach = () => {
     window.__debug = hit;
 };

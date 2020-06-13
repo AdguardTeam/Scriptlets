@@ -96,7 +96,6 @@ export function GoogleTagServicesGpt(source) {
         updateCorrelator: noopFunc,
     };
 
-
     const { googletag = {} } = window;
     const { cmd = [] } = googletag;
 

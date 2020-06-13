@@ -31,7 +31,6 @@ function addAttr(elem, attr) {
     elem.setAttribute(attr, true);
 }
 
-
 test('Checking if alias name works', (assert) => {
     const adgParams = {
         name,
@@ -49,7 +48,6 @@ test('Checking if alias name works', (assert) => {
 
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
-
 
 test('Adg rule: no selector', (assert) => {
     createHit();
@@ -84,7 +82,6 @@ test('Adg rule: no selector', (assert) => {
         done();
     }, 100);
 });
-
 
 test('Adg rule', (assert) => {
     createHit();

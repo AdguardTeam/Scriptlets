@@ -45,7 +45,6 @@ test('Checking if alias name works', (assert) => {
     assert.strictEqual(codeByAdgParams, codeByAliasParams);
 });
 
-
 test('prevent-requestAnimationFrame: no args -- logging', (assert) => {
     const params = {
         name,
@@ -80,7 +79,6 @@ test('prevent-requestAnimationFrame: no args -- logging', (assert) => {
     }, 20);
 });
 
-
 test('prevent-requestAnimationFrame: by callback name', (assert) => {
     const params = {
         name,
@@ -107,7 +105,6 @@ test('prevent-requestAnimationFrame: by callback name', (assert) => {
     }, 10);
 });
 
-
 test('prevent-requestAnimationFrame: by regex match', (assert) => {
     const params = {
         name,
@@ -133,7 +130,6 @@ test('prevent-requestAnimationFrame: by regex match', (assert) => {
         done();
     }, 10);
 });
-
 
 test('prevent-requestAnimationFrame: !match', (assert) => {
     const params = {

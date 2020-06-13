@@ -57,7 +57,6 @@ import { hit, observeDOMChanges } from '../helpers';
  */
 /* eslint-enable max-len */
 
-
 export function removeClass(source, classNames, selector) {
     if (!classNames) { return; }
     classNames = classNames.split(/\s*\|\s*/);

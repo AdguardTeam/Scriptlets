@@ -199,7 +199,6 @@ test('Patched textContent', (assert) => {
     };
     const resString = window.scriptlets.invoke(params);
 
-
     window.onerror = onError(assert);
 
     evalWrapper(resString);
@@ -226,7 +225,6 @@ test('Patched textContent', (assert) => {
         window.hit = 'FIRED';
     };
     const resString = window.scriptlets.invoke(params);
-
 
     window.onerror = onError(assert);
 

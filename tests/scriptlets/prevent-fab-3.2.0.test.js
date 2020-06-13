@@ -67,7 +67,6 @@ test('ag works', (assert) => {
     });
     assert.strictEqual(window[agFuckAdBlock], agFuckAdBlock, 'callback should apply');
 
-
     clearGlobalProps(agFuckAdBlock);
     runScriptlet(name);
 

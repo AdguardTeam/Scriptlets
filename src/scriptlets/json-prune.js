@@ -103,7 +103,6 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps) {
     JSON.parse = parseWrapper;
 }
 
-
 jsonPrune.names = [
     'json-prune',
     'json-prune.js',
