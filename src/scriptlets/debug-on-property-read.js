@@ -37,7 +37,7 @@ export function debugOnPropertyRead(source, property, stack) {
         debugger; // eslint-disable-line no-debugger
     };
     const setChainPropAccess = (owner, property) => {
-        const chainInfo = getPropertyInChain(owner, property);
+        const chainInfo = getPropertyInChain(owner, property)[0];
         let { base } = chainInfo;
         const { prop, chain } = chainInfo;
         if (chain) {
