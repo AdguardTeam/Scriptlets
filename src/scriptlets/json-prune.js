@@ -70,12 +70,17 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps) {
 
         for (let i = 0; i < needlePaths.length; i += 1) {
             const needlePath = needlePaths[i];
-            const details = getPropertyInChain(root, needlePath, false);
+            const details = getPropertyInChain(root, needlePath, false, true);
             const nestedPropName = needlePath.split('.').pop();
-            if (details && details.base[nestedPropName] === undefined) {
-                return false;
-            }
+
+            let shouldProcess = false;
+            details.forEach((el) => {
+                shouldProcess = !(el.base[nestedPropName] === undefined) || shouldProcess;
+            });
+
+            return shouldProcess;
         }
+
         return true;
     }
 
@@ -91,10 +96,12 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps) {
             return r;
         }
         prunePaths.forEach((path) => {
-            const ownerObj = getPropertyInChain(r, path, false);
-            if (ownerObj !== undefined && ownerObj.base) {
-                delete ownerObj.base[ownerObj.prop];
-            }
+            const ownerObjArr = getPropertyInChain(r, path, false, true);
+            ownerObjArr.forEach((ownerObj) => {
+                if (ownerObj !== undefined && ownerObj.base) {
+                    delete ownerObj.base[ownerObj.prop];
+                }
+            });
         });
         hit(source);
         return r;
