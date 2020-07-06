@@ -17,7 +17,8 @@
     },
     "husky": {
         "hooks": {
-            "pre-commit": "yarn run lint"
+            "pre-commit": "yarn lint",
+            "pre-push": "yarn corelibs && yarn build"
         }
     },
     "author": "devteam@adguard.com",
