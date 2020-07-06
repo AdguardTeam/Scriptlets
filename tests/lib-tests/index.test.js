@@ -151,6 +151,19 @@ test('Test redirect rule validation', (assert) => {
     inputRule = '_redirect=*://look.$popup';
     assert.strictEqual(validator.isAdgRedirectRule(inputRule), false);
 
+    // check is adg redirect valid for conversion to ubo
+    inputRule = '||example.orf^$media,redirect=noopmp4-1s,third-party';
+    assert.strictEqual(validator.isAdgRedirectCompatibleWithUbo(inputRule), true);
+    // invalid redirect name
+    inputRule = '||example.orf^$media,redirect=no-mp4';
+    assert.strictEqual(validator.isAdgRedirectCompatibleWithUbo(inputRule), false);
+    // rules with 'redirect=' marker in base rule part should be skipped
+    inputRule = '_redirect=*://look.$popup';
+    assert.strictEqual(validator.isAdgRedirectCompatibleWithUbo(inputRule), false);
+    // js-rule with 'redirect=' in it should not be considered as redirect rule
+    inputRule = 'intermarche.pl#%#document.cookie = "interapp_redirect=false; path=/;";';
+    assert.strictEqual(validator.isAdgRedirectCompatibleWithUbo(inputRule), false);
+
     // check is ubo redirect valid for conversion
     inputRule = '||example.orf^$media,redirect=noop-1s.mp4,third-party';
     assert.strictEqual(validator.isUboRedirectCompatibleWithAdg(inputRule), true);
