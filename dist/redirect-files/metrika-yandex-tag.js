@@ -148,10 +148,10 @@ function hit(source, message) {
       }
 
       log("".concat(prefix, " trace end"));
-    } catch (e) {} // try catch for Edge 15
-    // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-    // console.log throws an error
-    // This is necessary for unit-tests only!
+    } catch (e) {// try catch for Edge 15
+      // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
+      // console.log throws an error
+    } // This is necessary for unit-tests only!
 
 
     if (typeof window.__debug === 'function') {
