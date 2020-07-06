@@ -295,7 +295,7 @@ const isValidAdgRedirectRule = (rule) => {
 * @returns {boolean} - true if the rule can be converted to Ubo
 */
 const isAdgRedirectCompatibleWithUbo = (rule) => {
-    return isRedirectRuleByType(rule, 'ADG');
+    return isAdgRedirectRule(rule) && isRedirectRuleByType(rule, 'ADG');
 };
 
 /**
