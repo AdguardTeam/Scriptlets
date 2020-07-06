@@ -12,7 +12,7 @@
 | debug-on-property-write |  |  |
 | dir-string |  | dir-string |
 | disable-newtab-links | disable-newtab-links.js |  |
-| json-prune | json-prune.js |  |
+| json-prune | json-prune.js | json-prune |
 | log-addEventListener | addEventListener-logger.js (aell.js) |  |
 | log-eval |  |  |
 | log |  | log |
