@@ -1,6 +1,6 @@
 {
     "name": "scriptlets",
-    "version": "1.2.9",
+    "version": "1.2.10",
     "scripts": {
         "watch": "rollup -c -w",
         "build": "rollup -c && babel-node redirects.build.js",
@@ -14,12 +14,12 @@
         "wiki:build-docs": "node scripts/build-docs.js",
         "wiki:check-updates": "node ./scripts/check-sources-updates.js",
         "wiki:update": "yarn wiki:check-updates && node ./scripts/build-compatibility-table.js",
-        "pre-push-update-builds": "yarn corelibs && yarn build && git add . && git commit -m \"update builds\" --no-verify && git push --no-verify"
+        "prepare-builds": "yarn corelibs && yarn build"
     },
     "husky": {
         "hooks": {
             "pre-commit": "yarn lint",
-            "post-commit": "yarn corelibs && yarn build && git add . && git commit --no-verify -m \"update builds\""
+            "pre-push": "yarn prepare-builds"
         }
     },
     "author": "devteam@adguard.com",
