@@ -83,7 +83,7 @@
 
       if (shouldLookThrough) {
         var nextProp = chain.slice(pos + 1);
-        var baseKeys = Object.keys(base); // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src a.1.src'), 
+        var baseKeys = Object.keys(base); // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src a.1.src'),
         // each one of base keys should be considered as a potential chain prop in final path
 
         baseKeys.forEach(function (key) {
