@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.2.3
+ * Version 1.2.5
  */
 
 /**
@@ -289,10 +289,10 @@ var hit = function hit(source, message) {
     }
 
     log("".concat(prefix, " trace end"));
-  } catch (e) {} // try catch for Edge 15
-  // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-  // console.log throws an error
-  // This is necessary for unit-tests only!
+  } catch (e) {// try catch for Edge 15
+    // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
+    // console.log throws an error
+  } // This is necessary for unit-tests only!
 
 
   if (typeof window.__debug === 'function') {
@@ -3127,6 +3127,8 @@ dirString.injections = [hit];
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#json-prunejs-
  *
+ * Related ABP source:
+ * https://github.com/adblockplus/adblockpluscore/blob/master/lib/content/snippets.js#L1285
  * **Syntax**
  * ```
  * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps]])
@@ -3735,7 +3737,7 @@ var isValidAdgRedirectRule = function isValidAdgRedirectRule(rule) {
 
 
 var isAdgRedirectCompatibleWithUbo = function isAdgRedirectCompatibleWithUbo(rule) {
-  return isRedirectRuleByType(rule, 'ADG');
+  return isAdgRedirectRule(rule) && isRedirectRuleByType(rule, 'ADG');
 };
 /**
 * Checks if the Ubo redirect `rule` has AdGuard analog. Needed for Ubo->Adg conversion

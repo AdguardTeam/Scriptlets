@@ -42,7 +42,8 @@
         },
         {
             "adg": "json-prune",
-            "ubo": "json-prune.js"
+            "ubo": "json-prune.js",
+            "abp": "json-prune"
         },
         {
             "adg": "log-addEventListener",

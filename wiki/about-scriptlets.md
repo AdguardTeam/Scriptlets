@@ -327,6 +327,8 @@ Removes specified properties from the result of calling JSON.parse and returns t
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#json-prunejs-
 
+Related ABP source:
+https://github.com/adblockplus/adblockpluscore/blob/master/lib/content/snippets.js#L1285
 **Syntax**
 ```
 example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps]])
