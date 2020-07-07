@@ -1,6 +1,6 @@
 {
     "name": "scriptlets",
-    "version": "1.2.8",
+    "version": "1.2.9",
     "scripts": {
         "watch": "rollup -c -w",
         "build": "rollup -c && babel-node redirects.build.js",
@@ -19,7 +19,7 @@
     "husky": {
         "hooks": {
             "pre-commit": "yarn lint",
-            "post-commit": "yarn corelibs && yarn build && git add . && git commit -m \"update builds\" --no-verify"
+            "post-commit": "yarn corelibs && yarn build && git add . && git commit --no-verify -m \"update builds\""
         }
     },
     "author": "devteam@adguard.com",
