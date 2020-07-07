@@ -61,7 +61,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps) {
     const prunePaths = propsToRemove !== undefined && propsToRemove !== ''
         ? propsToRemove.split(/ +/)
         : [];
-    const needlePaths = requiredInitialProps !== undefined && requiredInitialProps !== ''
+    const requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== ''
         ? requiredInitialProps.split(/ +/)
         : [];
 
@@ -70,10 +70,10 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps) {
             return false;
         }
 
-        for (let i = 0; i < needlePaths.length; i += 1) {
-            const needlePath = needlePaths[i];
-            const details = getPropertyInChain(root, needlePath, false, true);
-            const nestedPropName = needlePath.split('.').pop();
+        for (let i = 0; i < requiredPaths.length; i += 1) {
+            const requiredPath = requiredPaths[i];
+            const details = getPropertyInChain(root, requiredPath, false, true);
+            const nestedPropName = requiredPath.split('.').pop();
 
             let shouldProcess = false;
             details.forEach((el) => {

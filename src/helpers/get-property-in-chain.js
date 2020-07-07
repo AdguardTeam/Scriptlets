@@ -24,7 +24,7 @@
 export function getPropertyInChain(base, chain, addProp = true, lookThrough = false, output = []) {
     const pos = chain.indexOf('.');
     if (pos === -1) {
-        // for paths like 'a.b.*' every final nasted prop should be processed
+        // for paths like 'a.b.*' every final nested prop should be processed
         if (chain === '*') {
             Object.keys(base).forEach((key) => {
                 output.push({ base, prop: key });
@@ -45,21 +45,23 @@ export function getPropertyInChain(base, chain, addProp = true, lookThrough = fa
         const nextProp = chain.slice(pos + 1);
         const baseKeys = Object.keys(base);
 
+        // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src a.1.src'),
+        // each one of base keys should be considered as a potential chain prop in final path
         baseKeys.forEach((key) => {
             const item = base[key];
-            return getPropertyInChain(item, nextProp, addProp, lookThrough, output);
+            getPropertyInChain(item, nextProp, addProp, lookThrough, output);
         });
     }
 
-    const own = base[prop];
+    const nextBase = base[prop];
     chain = chain.slice(pos + 1);
-    if (own !== undefined) {
-        return getPropertyInChain(own, chain, addProp, lookThrough, output);
+    if (nextBase !== undefined) {
+        getPropertyInChain(nextBase, chain, addProp, lookThrough, output);
     }
 
     if (addProp) {
         Object.defineProperty(base, prop, { configurable: true });
-        output.push({ base: own, prop, chain });
+        output.push({ base: nextBase, prop, chain });
     }
 
     return output;

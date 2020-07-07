@@ -48,39 +48,69 @@
      * @param {string} chain
      * @param {boolean} [addProp=true]
      * defines is nonexistent base property should be assigned as 'undefined'
-     * @returns {Chain}
+     * @param {boolean} [lookThrough=false]
+     * should the method look through it's props in order to wildcard
+     * @param {Array} [output=[]] result acc
+     * @returns {Chain[]} array of objects
      */
     function getPropertyInChain(base, chain) {
       var addProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+      var lookThrough = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+      var output = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : [];
       var pos = chain.indexOf('.');
 
       if (pos === -1) {
-        return {
-          base: base,
-          prop: chain
-        };
+        // for paths like 'a.b.*' every final nested prop should be processed
+        if (chain === '*') {
+          Object.keys(base).forEach(function (key) {
+            output.push({
+              base: base,
+              prop: key
+            });
+          });
+        } else {
+          output.push({
+            base: base,
+            prop: chain
+          });
+        }
+
+        return output;
       }
 
       var prop = chain.slice(0, pos);
-      var own = base[prop];
+      var shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === '*' && base instanceof Object;
+
+      if (shouldLookThrough) {
+        var nextProp = chain.slice(pos + 1);
+        var baseKeys = Object.keys(base); // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src a.1.src'), 
+        // each one of base keys should be considered as a potential chain prop in final path
+
+        baseKeys.forEach(function (key) {
+          var item = base[key];
+          getPropertyInChain(item, nextProp, addProp, lookThrough, output);
+        });
+      }
+
+      var nextBase = base[prop];
       chain = chain.slice(pos + 1);
 
-      if (own !== undefined) {
-        return getPropertyInChain(own, chain, addProp);
+      if (nextBase !== undefined) {
+        getPropertyInChain(nextBase, chain, addProp, lookThrough, output);
       }
 
-      if (!addProp) {
-        return false;
+      if (addProp) {
+        Object.defineProperty(base, prop, {
+          configurable: true
+        });
+        output.push({
+          base: nextBase,
+          prop: prop,
+          chain: chain
+        });
       }
 
-      Object.defineProperty(base, prop, {
-        configurable: true
-      });
-      return {
-        base: own,
-        prop: prop,
-        chain: chain
-      };
+      return output;
     }
 
     /**
@@ -818,7 +848,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
+        var chainInfo = getPropertyInChain(owner, property)[0];
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -902,7 +932,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
+        var chainInfo = getPropertyInChain(owner, property)[0];
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -1477,7 +1507,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
+        var chainInfo = getPropertyInChain(owner, property)[0];
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain; // The scriptlet might be executed before the chain property has been created
@@ -1629,7 +1659,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
+        var chainInfo = getPropertyInChain(owner, property)[0];
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -2460,7 +2490,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
+        var chainInfo = getPropertyInChain(owner, property)[0];
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -2529,7 +2559,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
+        var chainInfo = getPropertyInChain(owner, property)[0];
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -2609,7 +2639,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
+        var chainInfo = getPropertyInChain(owner, property)[0];
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -3179,21 +3209,30 @@
       // eslint-disable-next-line no-console
       var log = console.log.bind(console);
       var prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
-      var needlePaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
+      var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
 
       function isPruningNeeded(root) {
         if (!root) {
           return false;
         }
 
-        for (var i = 0; i < needlePaths.length; i += 1) {
-          var needlePath = needlePaths[i];
-          var details = getPropertyInChain(root, needlePath, false);
-          var nestedPropName = needlePath.split('.').pop();
+        var _loop = function _loop(i) {
+          var requiredPath = requiredPaths[i];
+          var details = getPropertyInChain(root, requiredPath, false, true);
+          var nestedPropName = requiredPath.split('.').pop();
+          var shouldProcess = false;
+          details.forEach(function (el) {
+            shouldProcess = !(el.base[nestedPropName] === undefined) || shouldProcess;
+          });
+          return {
+            v: shouldProcess
+          };
+        };
 
-          if (details && details.base[nestedPropName] === undefined) {
-            return false;
-          }
+        for (var i = 0; i < requiredPaths.length; i += 1) {
+          var _ret = _loop(i);
+
+          if (typeof _ret === "object") return _ret.v;
         }
 
         return true;
@@ -3218,11 +3257,12 @@
         }
 
         prunePaths.forEach(function (path) {
-          var ownerObj = getPropertyInChain(r, path, false);
-
-          if (ownerObj !== undefined && ownerObj.base) {
-            delete ownerObj.base[ownerObj.prop];
-          }
+          var ownerObjArr = getPropertyInChain(r, path, false, true);
+          ownerObjArr.forEach(function (ownerObj) {
+            if (ownerObj !== undefined && ownerObj.base) {
+              delete ownerObj.base[ownerObj.prop];
+            }
+          });
         });
         hit(source);
         return r;
