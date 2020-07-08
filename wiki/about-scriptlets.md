@@ -1028,6 +1028,7 @@ example.org#%#//scriptlet('set-constant', property, value)
         - `falseFunc` - function returning false
         - `''` - empty string
         - `-1` - number value `-1`
+- `stack` - optional, string or regular expression that matches the file to limit scriptlet applying
 
 **Examples**
 ```

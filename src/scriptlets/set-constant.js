@@ -5,6 +5,8 @@ import {
     falseFunc,
     getPropertyInChain,
     setPropertyAccess,
+    toRegExp,
+    matchStackTrace,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -37,19 +39,25 @@ import {
  *         - `falseFunc` - function returning false
  *         - `''` - empty string
  *         - `-1` - number value `-1`
+ * - `stack` - optional, string or regular expression that matches the file to limit scriptlet applying
  *
  * **Examples**
  * ```
- * ! window.firstConst === false // this comparision will return true
+ * ! window.firstConst === false // this comparision will return false
  * example.org#%#//scriptlet('set-constant', 'firstConst', 'false')
  *
- * ! window.secondConst() === true // call to the secondConst will return true
+ * ! window.second() === trueFunc // 'second' call will return true
  * example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc')
+ *
+ * ! document.third() === falseFunc  // 'third' call will return false if the method is related to checking.js
+ * example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc', 'checking.js')
  * ```
  */
 /* eslint-enable max-len */
-export function setConstant(source, property, value) {
-    if (!property) {
+export function setConstant(source, property, value, stack) {
+    const stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
+    if (!property
+        || !matchStackTrace(stackRegexp, new Error().stack)) {
         return;
     }
 
@@ -141,6 +149,8 @@ setConstant.names = [
 setConstant.injections = [
     getPropertyInChain,
     setPropertyAccess,
+    toRegExp,
+    matchStackTrace,
     hit,
     noopFunc,
     trueFunc,
