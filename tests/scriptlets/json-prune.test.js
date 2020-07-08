@@ -96,6 +96,10 @@ test('removes propsToRemove if single requiredInitialProps is specified', (asser
     assert.deepEqual(JSON.parse('{"z":1, "y":2}'), { z: 1 }, 'should remove propsToRemove if multiple requiredInitialProps are specified');
     runScriptlet('json-prune', 'z y', 'z y');
     assert.deepEqual(JSON.parse('{"z":1, "y":2}'), {}, 'should remove propsToRemove if multiple requiredInitialProps are specified');
+    runScriptlet('json-prune', 'y', 'z y x');
+    assert.deepEqual(JSON.parse('{"z":1, "y":2, "x":3}'), { z: 1, x: 3 }, 'should remove propsToRemove if multiple requiredInitialProps are specified');
+    runScriptlet('json-prune', 'x y', 'z y x w');
+    assert.deepEqual(JSON.parse('{"w":0, "z":1, "y":2, "x":3}'), { w: 0, z: 1 }, 'should remove propsToRemove if multiple requiredInitialProps are specified');
 });
 
 test('removes nested propsToRemove if single requiredInitialProps is specified', (assert) => {

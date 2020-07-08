@@ -12,6 +12,7 @@ import { hit, getPropertyInChain } from '../helpers';
  *
  * Related ABP source:
  * https://github.com/adblockplus/adblockpluscore/blob/master/lib/content/snippets.js#L1285
+ *
  * **Syntax**
  * ```
  * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps]])
@@ -19,6 +20,9 @@ import { hit, getPropertyInChain } from '../helpers';
  *
  * - `propsToRemove` - optional, string of space-separated properties to remove
  * - `obligatoryProps` - optional, string of space-separated properties which must be all present for the pruning to occur
+ *
+ * > Note please that you can use wildcard `*` for chain property name.
+ * e.g. 'ad.*.src' instead of 'ad.0.src ad.1.src ad.2.src ...'
  *
  * **Examples**
  * 1. Removes property `example` from the results of JSON.parse call
@@ -49,7 +53,13 @@ import { hit, getPropertyInChain } from '../helpers';
  *     example.org#%#//scriptlet('json-prune', 'a.b', 'adpath.url.first')
  *     ```
  *
- * 4. Call with no arguments will log the current hostname and json payload at the console
+ * 4. A property in a list of properties can be a chain of properties with wildcard in it
+ *
+ *     ```
+ *     example.org#%#//scriptlet('json-prune', 'content.*.media.src', 'content.*.media.preroll')
+ *     ```
+ *
+ * 5. Call with no arguments will log the current hostname and json payload at the console
  *     ```
  *     example.org#%#//scriptlet('json-prune')
  *     ```

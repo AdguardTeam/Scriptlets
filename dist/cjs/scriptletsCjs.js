@@ -37,7 +37,7 @@ function setPropertyAccess(object, property, descriptor) {
  */
 
 /**
- * Check is property exist in base object recursively
+ * Check if the property exists in the base object (recursively)
  *
  * If property doesn't exist in base object,
  * defines this property (for addProp = true)
@@ -82,7 +82,7 @@ function getPropertyInChain(base, chain) {
 
   if (shouldLookThrough) {
     var nextProp = chain.slice(pos + 1);
-    var baseKeys = Object.keys(base); // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src a.1.src'),
+    var baseKeys = Object.keys(base); // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src ad.1.src'),
     // each one of base keys should be considered as a potential chain prop in final path
 
     baseKeys.forEach(function (key) {
@@ -3159,6 +3159,7 @@ dirString.injections = [hit];
  *
  * Related ABP source:
  * https://github.com/adblockplus/adblockpluscore/blob/master/lib/content/snippets.js#L1285
+ *
  * **Syntax**
  * ```
  * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps]])
@@ -3167,6 +3168,9 @@ dirString.injections = [hit];
  * - `propsToRemove` - optional, string of space-separated properties to remove
  * - `obligatoryProps` - optional, string of space-separated properties which must be all present for the pruning to occur
  *
+ * > Note please that you can use wildcard `*` for chain property name.
+ * e.g. 'ad.*.src' instead of 'ad.0.src ad.1.src ad.2.src ...'
+ * 
  * **Examples**
  * 1. Removes property `example` from the results of JSON.parse call
  *     ```
@@ -3196,7 +3200,13 @@ dirString.injections = [hit];
  *     example.org#%#//scriptlet('json-prune', 'a.b', 'adpath.url.first')
  *     ```
  *
- * 4. Call with no arguments will log the current hostname and json payload at the console
+ * 4. A property in a list of properties can be a chain of properties with wildcard in it
+ *
+ *     ```
+ *     example.org#%#//scriptlet('json-prune', 'content.*.media.src', 'content.*.media.preroll')
+ *     ```
+ *
+ * 5. Call with no arguments will log the current hostname and json payload at the console
  *     ```
  *     example.org#%#//scriptlet('json-prune')
  *     ```

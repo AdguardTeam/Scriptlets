@@ -6,7 +6,7 @@
  */
 
 /**
- * Check is property exist in base object recursively
+ * Check if the property exists in the base object (recursively)
  *
  * If property doesn't exist in base object,
  * defines this property (for addProp = true)
@@ -45,7 +45,7 @@ export function getPropertyInChain(base, chain, addProp = true, lookThrough = fa
         const nextProp = chain.slice(pos + 1);
         const baseKeys = Object.keys(base);
 
-        // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src a.1.src'),
+        // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src ad.1.src'),
         // each one of base keys should be considered as a potential chain prop in final path
         baseKeys.forEach((key) => {
             const item = base[key];
