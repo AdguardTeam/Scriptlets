@@ -1,6 +1,6 @@
 {
     "name": "scriptlets",
-    "version": "1.2.10",
+    "version": "1.2.5",
     "scripts": {
         "watch": "rollup -c -w",
         "build": "rollup -c && babel-node redirects.build.js",
@@ -18,8 +18,7 @@
     },
     "husky": {
         "hooks": {
-            "pre-commit": "yarn lint",
-            "pre-push": "yarn prepare-builds"
+            "pre-commit": "yarn lint && echo \"DO NOT FORGET ABOUT BUILDS UPDATE (yarn prepare-builds)\""
         }
     },
     "author": "devteam@adguard.com",
