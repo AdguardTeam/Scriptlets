@@ -1032,11 +1032,14 @@ example.org#%#//scriptlet('set-constant', property, value)
 
 **Examples**
 ```
-! window.firstConst === false // this comparision will return true
+! window.firstConst === false // this comparision will return false
 example.org#%#//scriptlet('set-constant', 'firstConst', 'false')
 
-! window.secondConst() === true // call to the secondConst will return true
+! window.second() === trueFunc // 'second' call will return true
 example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc')
+
+! document.third() === falseFunc  // 'third' call will return false if the method is related to checking.js
+example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc', 'checking.js')
 ```
 [Scriptlet source](../src/scriptlets/set-constant.js)
 * * *
