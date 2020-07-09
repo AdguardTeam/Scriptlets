@@ -3170,7 +3170,7 @@ dirString.injections = [hit];
  *
  * > Note please that you can use wildcard `*` for chain property name.
  * e.g. 'ad.*.src' instead of 'ad.0.src ad.1.src ad.2.src ...'
- * 
+ *
  * **Examples**
  * 1. Removes property `example` from the results of JSON.parse call
  *     ```
@@ -3225,26 +3225,30 @@ function jsonPrune(source, propsToRemove, requiredInitialProps) {
       return false;
     }
 
-    var _loop = function _loop(i) {
-      var requiredPath = requiredPaths[i];
-      var details = getPropertyInChain(root, requiredPath, false, true);
-      var nestedPropName = requiredPath.split('.').pop();
-      var shouldProcess = false;
-      details.forEach(function (el) {
-        shouldProcess = !(el.base[nestedPropName] === undefined) || shouldProcess;
-      });
-      return {
-        v: shouldProcess
-      };
-    };
+    var shouldProcess;
 
     for (var i = 0; i < requiredPaths.length; i += 1) {
-      var _ret = _loop(i);
+      var requiredPath = requiredPaths[i];
+      var nestedPropName = requiredPath.split('.').pop();
+      var hasWildcard = requiredPath.indexOf('.*.') > -1 || requiredPath.indexOf('*.') > -1 || requiredPath.indexOf('.*') > -1; // if the path has wildcard, getPropertyInChain should 'look though' chain props
 
-      if (typeof _ret === "object") return _ret.v;
+      var details = getPropertyInChain(root, requiredPath, false, hasWildcard); // start value of 'shouldProcess' due to checking below
+
+      shouldProcess = !hasWildcard;
+
+      for (var _i = 0; _i < details.length; _i += 1) {
+        if (hasWildcard) {
+          // if there is a wildcard,
+          // at least one (||) of props chain should be present in object
+          shouldProcess = !(details[_i].base[nestedPropName] === undefined) || shouldProcess;
+        } else {
+          // otherwise each one (&&) of them should be there
+          shouldProcess = !(details[_i].base[nestedPropName] === undefined) && shouldProcess;
+        }
+      }
     }
 
-    return true;
+    return shouldProcess;
   }
 
   var nativeParse = JSON.parse;

@@ -76,6 +76,11 @@ test('can NOT remove any propsToRemove if requiredInitialProps are absent in the
     assert.deepEqual(JSON.parse('{"x":1}'), { x: 1 }, 'should NOT remove propsToRemove if single requiredInitialProps is absent in the object');
     runScriptlet('json-prune', 'x y', 'requiredInitialProps');
     assert.deepEqual(JSON.parse('{"x":1, "y":2}'), { x: 1, y: 2 }, 'should NOT remove multiple propsToRemove if single requiredInitialProps is absent in the object');
+    runScriptlet('json-prune', 'x y', 'z y x v');
+    assert.deepEqual(JSON.parse('{"w":0, "z":1, "y":2, "x":3}'),
+        {
+            w: 0, z: 1, y: 2, x: 3,
+        }, 'should remove propsToRemove if one of requiredInitialProps is absent');
 });
 
 test('can NOT remove any propsToRemove if single nested requiredInitialProps is absent', (assert) => {
@@ -85,7 +90,7 @@ test('can NOT remove any propsToRemove if single nested requiredInitialProps is 
     assert.deepEqual(JSON.parse('{"nested":{"x":1, "y":2}}'), { nested: { x: 1, y: 2 } }, 'should NOT remove propsToRemove if single nested requiredInitialProps is absent in the object');
 });
 
-test('removes propsToRemove if single requiredInitialProps is specified', (assert) => {
+test('removes propsToRemove if requiredInitialProps are specified', (assert) => {
     runScriptlet('json-prune', 'y', 'y');
     assert.deepEqual(JSON.parse('{"z":1, "y":2}'), { z: 1 }, 'should remove propsToRemove if equals to requiredInitialProps');
     runScriptlet('json-prune', 'y', 'z');
@@ -144,6 +149,13 @@ test('removes propsToRemove if nested requiredInitialProps has wildcard', (asser
     assert.deepEqual(JSON.parse('{"a": {"src":"ad_src"}, "b": {"preview":true}}'), { a: {}, b: { preview: true } }, 'should remove propsToRemove as well');
     runScriptlet('json-prune', 'a.*.src', '*.preview');
     assert.deepEqual(JSON.parse('{"a": { "0": {"id":0, "src":"ad_src_0"}, "1": {"id":1, "src":"ad_src_1"}, "2": {"id":2, "src":"ad_src_2"}}, "b": {"ready":true, "preview":true}}'), { a: { 0: { id: 0 }, 1: { id: 1 }, 2: { id: 2 } }, b: { ready: true, preview: true } }, 'should remove propsToRemove as well -- wildcard in propsToRemove and requiredInitialProps');
+});
+
+test('can NOT remove propsToRemove if nested requiredInitialProps has wildcard but there is no match', (assert) => {
+    runScriptlet('json-prune', 'x', 'y.*.ad');
+    assert.deepEqual(JSON.parse('{"x": {"a": {"ad":true}, "b": {"ad":1}}, "y": {"c": {"inner":true}}}'), { x: { a: { ad: true }, b: { ad: 1 } }, y: { c: { inner: true } } }, 'should not remove propsToRemove');
+    runScriptlet('json-prune', 'a.src', 'c.*.media');
+    assert.deepEqual(JSON.parse('{"a": {"src":"ad_src"}, "b": {"0": { "media":"video"}}}'), { a: { src: 'ad_src' }, b: { 0: { media: 'video' } } }, 'should not remove propsToRemove as well');
 });
 
 test('does NOT remove propsToRemove if invoked without parameter propsToRemove and return hostname', (assert) => {

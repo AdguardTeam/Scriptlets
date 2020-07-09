@@ -80,20 +80,36 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps) {
             return false;
         }
 
+        let shouldProcess;
         for (let i = 0; i < requiredPaths.length; i += 1) {
             const requiredPath = requiredPaths[i];
-            const details = getPropertyInChain(root, requiredPath, false, true);
             const nestedPropName = requiredPath.split('.').pop();
 
-            let shouldProcess = false;
-            details.forEach((el) => {
-                shouldProcess = !(el.base[nestedPropName] === undefined) || shouldProcess;
-            });
+            const hasWildcard = requiredPath.indexOf('.*.') > -1
+                || requiredPath.indexOf('*.') > -1
+                || requiredPath.indexOf('.*') > -1;
 
-            return shouldProcess;
+            // if the path has wildcard, getPropertyInChain should 'look though' chain props
+            const details = getPropertyInChain(root, requiredPath, false, hasWildcard);
+
+            // start value of 'shouldProcess' due to checking below
+            shouldProcess = !hasWildcard;
+
+            for (let i = 0; i < details.length; i += 1) {
+                if (hasWildcard) {
+                    // if there is a wildcard,
+                    // at least one (||) of props chain should be present in object
+                    shouldProcess = !(details[i].base[nestedPropName] === undefined)
+                        || shouldProcess;
+                } else {
+                    // otherwise each one (&&) of them should be there
+                    shouldProcess = !(details[i].base[nestedPropName] === undefined)
+                        && shouldProcess;
+                }
+            }
         }
 
-        return true;
+        return shouldProcess;
     }
 
     const nativeParse = JSON.parse;
