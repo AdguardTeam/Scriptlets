@@ -1,4 +1,6 @@
-import { hit, getPropertyInChain } from '../helpers';
+import {
+    hit, toRegExp, matchStackTrace, getPropertyInChain,
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -55,7 +57,12 @@ import { hit, getPropertyInChain } from '../helpers';
  *     ```
  */
 /* eslint-enable max-len */
-export function jsonPrune(source, propsToRemove, requiredInitialProps) {
+export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
+    const stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
+    if (!matchStackTrace(stackRegexp, new Error().stack)) {
+        return;
+    }
+
     // eslint-disable-next-line no-console
     const log = console.log.bind(console);
     const prunePaths = propsToRemove !== undefined && propsToRemove !== ''
@@ -111,4 +118,4 @@ jsonPrune.names = [
     'ubo-json-prune.js',
 ];
 
-jsonPrune.injections = [hit, getPropertyInChain];
+jsonPrune.injections = [hit, toRegExp, matchStackTrace, getPropertyInChain];

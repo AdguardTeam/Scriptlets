@@ -1562,21 +1562,27 @@ abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyI
  *         - `falseFunc` - function returning false
  *         - `''` - empty string
  *         - `-1` - number value `-1`
+ * - `stack` - optional, string or regular expression that matches the file to limit scriptlet applying
  *
  * **Examples**
  * ```
- * ! window.firstConst === false // this comparision will return true
+ * ! window.firstConst === false // this comparision will return false
  * example.org#%#//scriptlet('set-constant', 'firstConst', 'false')
  *
- * ! window.secondConst() === true // call to the secondConst will return true
+ * ! window.second() === trueFunc // 'second' call will return true
  * example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc')
+ *
+ * ! document.third() === falseFunc  // 'third' call will return false if the method is related to checking.js
+ * example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc', 'checking.js')
  * ```
  */
 
 /* eslint-enable max-len */
 
-function setConstant(source, property, value) {
-  if (!property) {
+function setConstant(source, property, value, stack) {
+  var stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
+
+  if (!property || !matchStackTrace(stackRegexp, new Error().stack)) {
     return;
   }
 
@@ -1671,7 +1677,7 @@ function setConstant(source, property, value) {
   setChainPropAccess(window, property);
 }
 setConstant.names = ['set-constant', 'set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js'];
-setConstant.injections = [getPropertyInChain, setPropertyAccess, hit, noopFunc, trueFunc, falseFunc];
+setConstant.injections = [getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, hit, noopFunc, trueFunc, falseFunc];
 
 /* eslint-disable max-len */
 
@@ -3174,8 +3180,14 @@ dirString.injections = [hit];
 
 /* eslint-enable max-len */
 
-function jsonPrune(source, propsToRemove, requiredInitialProps) {
-  // eslint-disable-next-line no-console
+function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
+  var stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
+
+  if (!matchStackTrace(stackRegexp, new Error().stack)) {
+    return;
+  } // eslint-disable-next-line no-console
+
+
   var log = console.log.bind(console);
   var prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
   var needlePaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
@@ -3230,7 +3242,7 @@ function jsonPrune(source, propsToRemove, requiredInitialProps) {
   JSON.parse = parseWrapper;
 }
 jsonPrune.names = ['json-prune', 'json-prune.js', 'ubo-json-prune.js'];
-jsonPrune.injections = [hit, getPropertyInChain];
+jsonPrune.injections = [hit, toRegExp, matchStackTrace, getPropertyInChain];
 
 /* eslint-disable max-len */
 
