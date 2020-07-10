@@ -3229,8 +3229,8 @@ function jsonPrune(source, propsToRemove, requiredInitialProps) {
 
     for (var i = 0; i < requiredPaths.length; i += 1) {
       var requiredPath = requiredPaths[i];
-      var nestedPropName = requiredPath.split('.').pop();
-      var hasWildcard = requiredPath.indexOf('.*.') > -1 || requiredPath.indexOf('*.') > -1 || requiredPath.indexOf('.*') > -1; // if the path has wildcard, getPropertyInChain should 'look though' chain props
+      var lastNestedPropName = requiredPath.split('.').pop();
+      var hasWildcard = requiredPath.indexOf('.*.') > -1 || requiredPath.indexOf('*.') > -1 || requiredPath.indexOf('.*') > -1; // if the path has wildcard, getPropertyInChain should 'look through' chain props
 
       var details = getPropertyInChain(root, requiredPath, false, hasWildcard); // start value of 'shouldProcess' due to checking below
 
@@ -3240,10 +3240,10 @@ function jsonPrune(source, propsToRemove, requiredInitialProps) {
         if (hasWildcard) {
           // if there is a wildcard,
           // at least one (||) of props chain should be present in object
-          shouldProcess = !(details[_i].base[nestedPropName] === undefined) || shouldProcess;
+          shouldProcess = !(details[_i].base[lastNestedPropName] === undefined) || shouldProcess;
         } else {
           // otherwise each one (&&) of them should be there
-          shouldProcess = !(details[_i].base[nestedPropName] === undefined) && shouldProcess;
+          shouldProcess = !(details[_i].base[lastNestedPropName] === undefined) && shouldProcess;
         }
       }
     }
@@ -3258,19 +3258,21 @@ function jsonPrune(source, propsToRemove, requiredInitialProps) {
       args[_key] = arguments[_key];
     }
 
-    var r = nativeParse.apply(window, args);
+    var root = nativeParse.apply(window, args);
 
     if (prunePaths.length === 0) {
-      log(window.location.hostname, r);
-      return r;
+      log(window.location.hostname, root);
+      return root;
     }
 
-    if (isPruningNeeded(r) === false) {
-      return r;
-    }
+    if (isPruningNeeded(root) === false) {
+      return root;
+    } // if pruning is needed, we check every input pathToRemove
+    // and delete it if root has it
+
 
     prunePaths.forEach(function (path) {
-      var ownerObjArr = getPropertyInChain(r, path, false, true);
+      var ownerObjArr = getPropertyInChain(root, path, false, true);
       ownerObjArr.forEach(function (ownerObj) {
         if (ownerObj !== undefined && ownerObj.base) {
           delete ownerObj.base[ownerObj.prop];
@@ -3278,7 +3280,7 @@ function jsonPrune(source, propsToRemove, requiredInitialProps) {
       });
     });
     hit(source);
-    return r;
+    return root;
   };
 
   JSON.parse = parseWrapper;
