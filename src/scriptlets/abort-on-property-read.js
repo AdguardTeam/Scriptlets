@@ -55,7 +55,7 @@ export function abortOnPropertyRead(source, property, stack) {
         throw new ReferenceError(rid);
     };
     const setChainPropAccess = (owner, property) => {
-        const chainInfo = getPropertyInChain(owner, property);
+        const chainInfo = getPropertyInChain(owner, property)[0];
         let { base } = chainInfo;
         const { prop, chain } = chainInfo;
         if (chain) {

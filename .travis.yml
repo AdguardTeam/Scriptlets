@@ -1,6 +1,10 @@
 language: node_js
+
 node_js:
-  - "10"
+  - 10
+
+cache: false
+
 script:
   - bash -e ./build.sh
 
