@@ -1576,7 +1576,7 @@ abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyI
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('set-constant', property, value)
+ * example.org#%#//scriptlet('set-constant', property, value[, stack])
  * ```
  *
  * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`.
@@ -1592,21 +1592,27 @@ abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyI
  *         - `falseFunc` - function returning false
  *         - `''` - empty string
  *         - `-1` - number value `-1`
+ * - `stack` - optional, string or regular expression that must match the current function call stack trace
  *
  * **Examples**
  * ```
- * ! window.firstConst === false // this comparision will return true
+ * ! window.firstConst === false // this comparision will return false
  * example.org#%#//scriptlet('set-constant', 'firstConst', 'false')
  *
- * ! window.secondConst() === true // call to the secondConst will return true
+ * ! window.second() === trueFunc // 'second' call will return true
  * example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc')
+ *
+ * ! document.third() === falseFunc  // 'third' call will return false if the method is related to checking.js
+ * example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc', 'checking.js')
  * ```
  */
 
 /* eslint-enable max-len */
 
-function setConstant(source, property, value) {
-  if (!property) {
+function setConstant(source, property, value, stack) {
+  var stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
+
+  if (!property || !matchStackTrace(stackRegexp, new Error().stack)) {
     return;
   }
 
@@ -1701,7 +1707,7 @@ function setConstant(source, property, value) {
   setChainPropAccess(window, property);
 }
 setConstant.names = ['set-constant', 'set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js'];
-setConstant.injections = [getPropertyInChain, setPropertyAccess, hit, noopFunc, trueFunc, falseFunc];
+setConstant.injections = [getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, hit, noopFunc, trueFunc, falseFunc];
 
 /* eslint-disable max-len */
 
@@ -3162,11 +3168,12 @@ dirString.injections = [hit];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps]])
+ * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, stack]]])
  * ```
  *
  * - `propsToRemove` - optional, string of space-separated properties to remove
  * - `obligatoryProps` - optional, string of space-separated properties which must be all present for the pruning to occur
+ * - `stack` - optional, string or regular expression that must match the current function call stack trace
  *
  * > Note please that you can use wildcard `*` for chain property name.
  * e.g. 'ad.*.src' instead of 'ad.0.src ad.1.src ad.2.src ...'
@@ -3200,13 +3207,18 @@ dirString.injections = [hit];
  *     example.org#%#//scriptlet('json-prune', 'a.b', 'adpath.url.first')
  *     ```
  *
- * 4. A property in a list of properties can be a chain of properties with wildcard in it
+ * 4. Removes property `content.ad` from the results of JSON.parse call it's error stack trace contains `test.js`
+ *     ```
+ *     example.org#%#//scriptlet('json-prune', 'content.ad', '', 'test.js')
+ *     ```
+ *
+ * 5. A property in a list of properties can be a chain of properties with wildcard in it
  *
  *     ```
  *     example.org#%#//scriptlet('json-prune', 'content.*.media.src', 'content.*.media.preroll')
  *     ```
  *
- * 5. Call with no arguments will log the current hostname and json payload at the console
+ * 6. Call with no arguments will log the current hostname and json payload at the console
  *     ```
  *     example.org#%#//scriptlet('json-prune')
  *     ```
@@ -3214,8 +3226,14 @@ dirString.injections = [hit];
 
 /* eslint-enable max-len */
 
-function jsonPrune(source, propsToRemove, requiredInitialProps) {
-  // eslint-disable-next-line no-console
+function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
+  var stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
+
+  if (!matchStackTrace(stackRegexp, new Error().stack)) {
+    return;
+  } // eslint-disable-next-line no-console
+
+
   var log = console.log.bind(console);
   var prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
   var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
@@ -3286,7 +3304,7 @@ function jsonPrune(source, propsToRemove, requiredInitialProps) {
   JSON.parse = parseWrapper;
 }
 jsonPrune.names = ['json-prune', 'json-prune.js', 'ubo-json-prune.js'];
-jsonPrune.injections = [hit, getPropertyInChain];
+jsonPrune.injections = [hit, toRegExp, matchStackTrace, getPropertyInChain];
 
 /* eslint-disable max-len */
 

@@ -12,10 +12,10 @@ module(name, { afterEach });
 
 const evalWrapper = eval;
 
-const createScriptletRunner = (counter) => (property, value) => {
+const createScriptletRunner = (counter) => (...args) => {
     const params = {
         name,
-        args: [property, value],
+        args,
         verbose: true,
     };
     const resultString = window.scriptlets.invoke(params);
@@ -153,5 +153,48 @@ test('values with same types are not overwritten, values with different types ar
     assert.strictEqual(window[property], firstValue, 'values with same types are not overwritten');
     window[property] = anotherTypeValue;
     assert.strictEqual(window[property], anotherTypeValue, 'values with different types are overwritten');
+    clearGlobalProps(property);
+});
+
+test('sets values correctly + stack match', (assert) => {
+    window.__debug = () => {
+        window.counter = window.counter ? window.counter + 1 : 1;
+    };
+    const stackMatch = 'tests.js';
+    const runSetConstantScriptlet = createScriptletRunner(0);
+    let counter;
+
+    const trueProp = 'trueProp';
+    counter = runSetConstantScriptlet(trueProp, 'true', stackMatch);
+    assert.strictEqual(window[trueProp], true);
+    assert.strictEqual(window.counter, counter);
+    clearGlobalProps(trueProp);
+
+    const noopFuncProp = 'noopFuncProp';
+    counter = runSetConstantScriptlet(noopFuncProp, 'noopFunc', stackMatch);
+    assert.strictEqual(window[noopFuncProp](), undefined);
+    assert.strictEqual(window.counter, counter);
+    clearGlobalProps(noopFuncProp);
+});
+
+test('sets values correctly + no stack match', (assert) => {
+    window.__debug = () => {
+        window.counter = window.counter ? window.counter + 1 : 1;
+    };
+    let counter; // eslint-disable-line no-unused-vars
+    const stackNoMatch = 'no_match.js';
+
+    const runSetConstantScriptlet = createScriptletRunner(0);
+    window.chained = { property: {} };
+    counter = runSetConstantScriptlet('chained.property.aaa', 'true', stackNoMatch);
+    assert.strictEqual(window.chained.property.aaa, undefined);
+    assert.strictEqual(window.counter, undefined);
+    clearGlobalProps('chained');
+
+    const property = 'customProp';
+    const firstValue = 10;
+    counter = runSetConstantScriptlet(property, firstValue, stackNoMatch);
+    assert.strictEqual(window[property], undefined);
+    assert.strictEqual(window.counter, undefined);
     clearGlobalProps(property);
 });
