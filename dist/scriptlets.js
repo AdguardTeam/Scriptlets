@@ -38,7 +38,7 @@
      */
 
     /**
-     * Check is property exist in base object recursively
+     * Check if the property exists in the base object (recursively)
      *
      * If property doesn't exist in base object,
      * defines this property (for addProp = true)
@@ -48,39 +48,69 @@
      * @param {string} chain
      * @param {boolean} [addProp=true]
      * defines is nonexistent base property should be assigned as 'undefined'
-     * @returns {Chain}
+     * @param {boolean} [lookThrough=false]
+     * should the method look through it's props in order to wildcard
+     * @param {Array} [output=[]] result acc
+     * @returns {Chain[]} array of objects
      */
     function getPropertyInChain(base, chain) {
       var addProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+      var lookThrough = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+      var output = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : [];
       var pos = chain.indexOf('.');
 
       if (pos === -1) {
-        return {
-          base: base,
-          prop: chain
-        };
+        // for paths like 'a.b.*' every final nested prop should be processed
+        if (chain === '*') {
+          Object.keys(base).forEach(function (key) {
+            output.push({
+              base: base,
+              prop: key
+            });
+          });
+        } else {
+          output.push({
+            base: base,
+            prop: chain
+          });
+        }
+
+        return output;
       }
 
       var prop = chain.slice(0, pos);
-      var own = base[prop];
+      var shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === '*' && base instanceof Object;
+
+      if (shouldLookThrough) {
+        var nextProp = chain.slice(pos + 1);
+        var baseKeys = Object.keys(base); // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src ad.1.src'),
+        // each one of base keys should be considered as a potential chain prop in final path
+
+        baseKeys.forEach(function (key) {
+          var item = base[key];
+          getPropertyInChain(item, nextProp, addProp, lookThrough, output);
+        });
+      }
+
+      var nextBase = base[prop];
       chain = chain.slice(pos + 1);
 
-      if (own !== undefined) {
-        return getPropertyInChain(own, chain, addProp);
+      if (nextBase !== undefined) {
+        getPropertyInChain(nextBase, chain, addProp, lookThrough, output);
       }
 
-      if (!addProp) {
-        return false;
+      if (addProp) {
+        Object.defineProperty(base, prop, {
+          configurable: true
+        });
+        output.push({
+          base: nextBase,
+          prop: prop,
+          chain: chain
+        });
       }
 
-      Object.defineProperty(base, prop, {
-        configurable: true
-      });
-      return {
-        base: own,
-        prop: prop,
-        chain: chain
-      };
+      return output;
     }
 
     /**
@@ -818,7 +848,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
+        var chainInfo = getPropertyInChain(owner, property)[0];
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -902,7 +932,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
+        var chainInfo = getPropertyInChain(owner, property)[0];
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -1477,7 +1507,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
+        var chainInfo = getPropertyInChain(owner, property)[0];
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain; // The scriptlet might be executed before the chain property has been created
@@ -1635,7 +1665,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
+        var chainInfo = getPropertyInChain(owner, property)[0];
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -2466,7 +2496,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
+        var chainInfo = getPropertyInChain(owner, property)[0];
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -2535,7 +2565,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
+        var chainInfo = getPropertyInChain(owner, property)[0];
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -2615,7 +2645,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
+        var chainInfo = getPropertyInChain(owner, property)[0];
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -3136,6 +3166,7 @@
      *
      * Related ABP source:
      * https://github.com/adblockplus/adblockpluscore/blob/master/lib/content/snippets.js#L1285
+     *
      * **Syntax**
      * ```
      * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps]])
@@ -3143,6 +3174,9 @@
      *
      * - `propsToRemove` - optional, string of space-separated properties to remove
      * - `obligatoryProps` - optional, string of space-separated properties which must be all present for the pruning to occur
+     *
+     * > Note please that you can use wildcard `*` for chain property name.
+     * e.g. 'ad.*.src' instead of 'ad.0.src ad.1.src ad.2.src ...'
      *
      * **Examples**
      * 1. Removes property `example` from the results of JSON.parse call
@@ -3173,7 +3207,13 @@
      *     example.org#%#//scriptlet('json-prune', 'a.b', 'adpath.url.first')
      *     ```
      *
-     * 4. Call with no arguments will log the current hostname and json payload at the console
+     * 4. A property in a list of properties can be a chain of properties with wildcard in it
+     *
+     *     ```
+     *     example.org#%#//scriptlet('json-prune', 'content.*.media.src', 'content.*.media.preroll')
+     *     ```
+     *
+     * 5. Call with no arguments will log the current hostname and json payload at the console
      *     ```
      *     example.org#%#//scriptlet('json-prune')
      *     ```
@@ -3191,24 +3231,37 @@
 
       var log = console.log.bind(console);
       var prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
-      var needlePaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
+      var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
 
       function isPruningNeeded(root) {
         if (!root) {
           return false;
         }
 
-        for (var i = 0; i < needlePaths.length; i += 1) {
-          var needlePath = needlePaths[i];
-          var details = getPropertyInChain(root, needlePath, false);
-          var nestedPropName = needlePath.split('.').pop();
+        var shouldProcess;
 
-          if (details && details.base[nestedPropName] === undefined) {
-            return false;
+        for (var i = 0; i < requiredPaths.length; i += 1) {
+          var requiredPath = requiredPaths[i];
+          var lastNestedPropName = requiredPath.split('.').pop();
+          var hasWildcard = requiredPath.indexOf('.*.') > -1 || requiredPath.indexOf('*.') > -1 || requiredPath.indexOf('.*') > -1; // if the path has wildcard, getPropertyInChain should 'look through' chain props
+
+          var details = getPropertyInChain(root, requiredPath, false, hasWildcard); // start value of 'shouldProcess' due to checking below
+
+          shouldProcess = !hasWildcard;
+
+          for (var _i = 0; _i < details.length; _i += 1) {
+            if (hasWildcard) {
+              // if there is a wildcard,
+              // at least one (||) of props chain should be present in object
+              shouldProcess = !(details[_i].base[lastNestedPropName] === undefined) || shouldProcess;
+            } else {
+              // otherwise each one (&&) of them should be there
+              shouldProcess = !(details[_i].base[lastNestedPropName] === undefined) && shouldProcess;
+            }
           }
         }
 
-        return true;
+        return shouldProcess;
       }
 
       var nativeParse = JSON.parse;
@@ -3218,26 +3271,29 @@
           args[_key] = arguments[_key];
         }
 
-        var r = nativeParse.apply(window, args);
+        var root = nativeParse.apply(window, args);
 
         if (prunePaths.length === 0) {
-          log(window.location.hostname, r);
-          return r;
+          log(window.location.hostname, root);
+          return root;
         }
 
-        if (isPruningNeeded(r) === false) {
-          return r;
-        }
+        if (isPruningNeeded(root) === false) {
+          return root;
+        } // if pruning is needed, we check every input pathToRemove
+        // and delete it if root has it
+
 
         prunePaths.forEach(function (path) {
-          var ownerObj = getPropertyInChain(r, path, false);
-
-          if (ownerObj !== undefined && ownerObj.base) {
-            delete ownerObj.base[ownerObj.prop];
-          }
+          var ownerObjArr = getPropertyInChain(root, path, false, true);
+          ownerObjArr.forEach(function (ownerObj) {
+            if (ownerObj !== undefined && ownerObj.base) {
+              delete ownerObj.base[ownerObj.prop];
+            }
+          });
         });
         hit(source);
-        return r;
+        return root;
       };
 
       JSON.parse = parseWrapper;
@@ -4857,8 +4913,6 @@
     }
     AmazonApstag.names = ['amazon-apstag', 'ubo-amazon_apstag.js', 'amazon_apstag.js'];
     AmazonApstag.injections = [hit, noopFunc];
-
-
 
     var redirectsList = /*#__PURE__*/Object.freeze({
         __proto__: null,

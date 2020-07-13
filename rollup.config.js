@@ -1,10 +1,10 @@
-import resolve from 'rollup-plugin-node-resolve';
-import commonjs from 'rollup-plugin-commonjs';
-import babel from 'rollup-plugin-babel';
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+import babel from '@rollup/plugin-babel';
 import cleanup from 'rollup-plugin-cleanup';
 import copy from 'rollup-plugin-copy';
 import clear from 'rollup-plugin-clear';
-import json from 'rollup-plugin-json';
+import json from '@rollup/plugin-json';
 
 import project from './package.json';
 
@@ -54,8 +54,7 @@ const mainConfig = {
             namedExports: true,
         }),
         babel({
-            exclude: 'node_modules/**',
-            runtimeHelpers: true,
+            babelHelpers: 'runtime',
         }),
     ],
 };
@@ -86,8 +85,7 @@ const cjsConfig = {
             namedExports: true,
         }),
         babel({
-            exclude: 'node_modules/**',
-            runtimeHelpers: true,
+            babelHelpers: 'runtime',
         }),
         copy({
             targets: [
@@ -119,8 +117,7 @@ const redirectsBuild = {
             namedExports: true,
         }),
         babel({
-            exclude: 'node_modules/**',
-            runtimeHelpers: true,
+            babelHelpers: 'runtime',
         }),
     ],
 };
@@ -151,8 +148,7 @@ const testConfig = {
             namedExports: true,
         }),
         babel({
-            exclude: 'node_modules/**',
-            runtimeHelpers: true,
+            babelHelpers: 'runtime',
         }),
         copy({
             targets: [{
@@ -193,8 +189,7 @@ const tmpRedirectsConfig = {
             namedExports: true,
         }),
         babel({
-            exclude: 'node_modules/**',
-            runtimeHelpers: true,
+            babelHelpers: 'runtime',
         }),
     ],
 };
