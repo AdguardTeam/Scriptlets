@@ -3178,6 +3178,9 @@ dirString.injections = [hit];
  * > Note please that you can use wildcard `*` for chain property name.
  * e.g. 'ad.*.src' instead of 'ad.0.src ad.1.src ad.2.src ...'
  *
+ * > Note please that you can use wildcard `*` for chain property name.
+ * e.g. 'ad.*.src' instead of 'ad.0.src ad.1.src ad.2.src ...'
+ *
  * **Examples**
  * 1. Removes property `example` from the results of JSON.parse call
  *     ```
