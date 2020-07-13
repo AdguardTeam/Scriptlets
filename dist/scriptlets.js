@@ -1577,7 +1577,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('set-constant', property, value)
+     * example.org#%#//scriptlet('set-constant', property, value[, stack])
      * ```
      *
      * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`.
@@ -1593,7 +1593,7 @@
      *         - `falseFunc` - function returning false
      *         - `''` - empty string
      *         - `-1` - number value `-1`
-     * - `stack` - optional, string or regular expression that matches the file to limit scriptlet applying
+     * - `stack` - optional, string or regular expression that must match the current function call stack trace
      *
      * **Examples**
      * ```
@@ -3169,11 +3169,12 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps]])
+     * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, stack]]])
      * ```
      *
      * - `propsToRemove` - optional, string of space-separated properties to remove
      * - `obligatoryProps` - optional, string of space-separated properties which must be all present for the pruning to occur
+     * - `stack` - optional, string or regular expression that must match the current function call stack trace
      *
      * > Note please that you can use wildcard `*` for chain property name.
      * e.g. 'ad.*.src' instead of 'ad.0.src ad.1.src ad.2.src ...'
@@ -3207,13 +3208,18 @@
      *     example.org#%#//scriptlet('json-prune', 'a.b', 'adpath.url.first')
      *     ```
      *
-     * 4. A property in a list of properties can be a chain of properties with wildcard in it
+     * 4. Removes property `content.ad` from the results of JSON.parse call it's error stack trace contains `test.js`
+     *     ```
+     *     example.org#%#//scriptlet('json-prune', 'content.ad', '', 'test.js')
+     *     ```
+     *
+     * 5. A property in a list of properties can be a chain of properties with wildcard in it
      *
      *     ```
      *     example.org#%#//scriptlet('json-prune', 'content.*.media.src', 'content.*.media.preroll')
      *     ```
      *
-     * 5. Call with no arguments will log the current hostname and json payload at the console
+     * 6. Call with no arguments will log the current hostname and json payload at the console
      *     ```
      *     example.org#%#//scriptlet('json-prune')
      *     ```

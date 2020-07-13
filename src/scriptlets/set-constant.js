@@ -23,7 +23,7 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('set-constant', property, value)
+ * example.org#%#//scriptlet('set-constant', property, value[, stack])
  * ```
  *
  * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`.
@@ -39,7 +39,7 @@ import {
  *         - `falseFunc` - function returning false
  *         - `''` - empty string
  *         - `-1` - number value `-1`
- * - `stack` - optional, string or regular expression that matches the file to limit scriptlet applying
+ * - `stack` - optional, string or regular expression that must match the current function call stack trace
  *
  * **Examples**
  * ```
