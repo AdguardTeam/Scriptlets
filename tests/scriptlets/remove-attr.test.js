@@ -72,7 +72,7 @@ test('Adg rule: no selector', (assert) => {
     const done = assert.async();
 
     setTimeout(() => { addAttr(elem, 'test1'); }, 20);
-    setTimeout(() => { addAttr(elem, 'test2'); }, 30);
+    setTimeout(() => { addAttr(elem, 'test2'); }, 40);
 
     setTimeout(() => {
         attrs.forEach((a) => {

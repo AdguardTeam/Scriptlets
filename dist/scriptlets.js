@@ -41,22 +41,63 @@
      * Check if the property exists in the base object (recursively)
      *
      * If property doesn't exist in base object,
-     * defines this property (for addProp = true)
+     * defines this property as 'undefined'
      * and returns base, property name and remaining part of property chain
      *
      * @param {Object} base
      * @param {string} chain
-     * @param {boolean} [addProp=true]
-     * defines is nonexistent base property should be assigned as 'undefined'
+     * @returns {Chain}
+     */
+    function getPropertyInChain(base, chain) {
+      var pos = chain.indexOf('.');
+
+      if (pos === -1) {
+        return {
+          base: base,
+          prop: chain
+        };
+      }
+
+      var prop = chain.slice(0, pos);
+      var nextBase = base[prop];
+      chain = chain.slice(pos + 1);
+
+      if (nextBase !== undefined) {
+        return getPropertyInChain(nextBase, chain);
+      }
+
+      Object.defineProperty(base, prop, {
+        configurable: true
+      });
+      return {
+        base: nextBase,
+        prop: prop,
+        chain: chain
+      };
+    }
+
+    /**
+     * @typedef Chain
+     * @property {Object} base
+     * @property {string} prop
+     * @property {string} [chain]
+     */
+
+    /**
+     * Check if the property exists in the base object (recursively).
+     * Similar to getPropertyInChain but upgraded for json-prune:
+     * handle wildcard properties and does not define nonexistent base property as 'undefined'
+     *
+     * @param {Object} base
+     * @param {string} chain
      * @param {boolean} [lookThrough=false]
      * should the method look through it's props in order to wildcard
      * @param {Array} [output=[]] result acc
      * @returns {Chain[]} array of objects
      */
-    function getPropertyInChain(base, chain) {
-      var addProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
-      var lookThrough = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
-      var output = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : [];
+    function getWildcardPropertyInChain(base, chain) {
+      var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
       var pos = chain.indexOf('.');
 
       if (pos === -1) {
@@ -88,7 +129,7 @@
 
         baseKeys.forEach(function (key) {
           var item = base[key];
-          getPropertyInChain(item, nextProp, addProp, lookThrough, output);
+          getWildcardPropertyInChain(item, nextProp, lookThrough, output);
         });
       }
 
@@ -96,18 +137,7 @@
       chain = chain.slice(pos + 1);
 
       if (nextBase !== undefined) {
-        getPropertyInChain(nextBase, chain, addProp, lookThrough, output);
-      }
-
-      if (addProp) {
-        Object.defineProperty(base, prop, {
-          configurable: true
-        });
-        output.push({
-          base: nextBase,
-          prop: prop,
-          chain: chain
-        });
+        getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
       }
 
       return output;
@@ -442,6 +472,7 @@
         randomId: randomId,
         setPropertyAccess: setPropertyAccess,
         getPropertyInChain: getPropertyInChain,
+        getWildcardPropertyInChain: getWildcardPropertyInChain,
         escapeRegExp: escapeRegExp,
         toRegExp: toRegExp,
         getBeforeRegExp: getBeforeRegExp,
@@ -848,7 +879,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property)[0];
+        var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -932,7 +963,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property)[0];
+        var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -1507,7 +1538,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property)[0];
+        var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain; // The scriptlet might be executed before the chain property has been created
@@ -1665,7 +1696,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property)[0];
+        var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -2496,7 +2527,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property)[0];
+        var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -2565,7 +2596,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property)[0];
+        var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -2645,7 +2676,7 @@
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property)[0];
+        var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
@@ -3251,7 +3282,7 @@
           var lastNestedPropName = requiredPath.split('.').pop();
           var hasWildcard = requiredPath.indexOf('.*.') > -1 || requiredPath.indexOf('*.') > -1 || requiredPath.indexOf('.*') > -1; // if the path has wildcard, getPropertyInChain should 'look through' chain props
 
-          var details = getPropertyInChain(root, requiredPath, false, hasWildcard); // start value of 'shouldProcess' due to checking below
+          var details = getWildcardPropertyInChain(root, requiredPath, hasWildcard); // start value of 'shouldProcess' due to checking below
 
           shouldProcess = !hasWildcard;
 
@@ -3291,7 +3322,7 @@
 
 
         prunePaths.forEach(function (path) {
-          var ownerObjArr = getPropertyInChain(root, path, false, true);
+          var ownerObjArr = getWildcardPropertyInChain(root, path, true);
           ownerObjArr.forEach(function (ownerObj) {
             if (ownerObj !== undefined && ownerObj.base) {
               delete ownerObj.base[ownerObj.prop];
@@ -3305,7 +3336,7 @@
       JSON.parse = parseWrapper;
     }
     jsonPrune.names = ['json-prune', 'json-prune.js', 'ubo-json-prune.js'];
-    jsonPrune.injections = [hit, toRegExp, matchStackTrace, getPropertyInChain];
+    jsonPrune.injections = [hit, toRegExp, matchStackTrace, getWildcardPropertyInChain];
 
     /* eslint-disable max-len */
 
