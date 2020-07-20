@@ -37,7 +37,7 @@ function setPropertyAccess(object, property, descriptor) {
  */
 
 /**
- * Check is property exist in base object (recursively)
+ * Check if the property exists in the base object (recursively)
  *
  * If property doesn't exist in base object,
  * defines this property as 'undefined'
