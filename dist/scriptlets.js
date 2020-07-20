@@ -98,7 +98,6 @@
     function getWildcardPropertyInChain(base, chain) {
       var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
       var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
-      debugger;
       var pos = chain.indexOf('.');
 
       if (pos === -1) {
