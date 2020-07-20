@@ -49,7 +49,7 @@ export function debugCurrentInlineScript(source, property, search = null) {
     };
 
     const setChainPropAccess = (owner, property) => {
-        const chainInfo = getPropertyInChain(owner, property)[0];
+        const chainInfo = getPropertyInChain(owner, property);
         let { base } = chainInfo;
         const { prop, chain } = chainInfo;
         if (chain) {

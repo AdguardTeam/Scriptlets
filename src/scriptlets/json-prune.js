@@ -1,5 +1,5 @@
 import {
-    hit, toRegExp, matchStackTrace, getPropertyInChain,
+    hit, toRegExp, matchStackTrace, getWildcardPropertyInChain,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -103,7 +103,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
                 || requiredPath.indexOf('.*') > -1;
 
             // if the path has wildcard, getPropertyInChain should 'look through' chain props
-            const details = getPropertyInChain(root, requiredPath, false, hasWildcard);
+            const details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
 
             // start value of 'shouldProcess' due to checking below
             shouldProcess = !hasWildcard;
@@ -139,7 +139,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
         // if pruning is needed, we check every input pathToRemove
         // and delete it if root has it
         prunePaths.forEach((path) => {
-            const ownerObjArr = getPropertyInChain(root, path, false, true);
+            const ownerObjArr = getWildcardPropertyInChain(root, path, true);
             ownerObjArr.forEach((ownerObj) => {
                 if (ownerObj !== undefined && ownerObj.base) {
                     delete ownerObj.base[ownerObj.prop];
@@ -159,4 +159,4 @@ jsonPrune.names = [
     'ubo-json-prune.js',
 ];
 
-jsonPrune.injections = [hit, toRegExp, matchStackTrace, getPropertyInChain];
+jsonPrune.injections = [hit, toRegExp, matchStackTrace, getWildcardPropertyInChain];

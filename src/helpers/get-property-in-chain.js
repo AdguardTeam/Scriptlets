@@ -6,63 +6,28 @@
  */
 
 /**
- * Check if the property exists in the base object (recursively)
+ * Check is property exist in base object (recursively)
  *
  * If property doesn't exist in base object,
- * defines this property (for addProp = true)
+ * defines this property as 'undefined'
  * and returns base, property name and remaining part of property chain
  *
  * @param {Object} base
  * @param {string} chain
- * @param {boolean} [addProp=true]
- * defines is nonexistent base property should be assigned as 'undefined'
- * @param {boolean} [lookThrough=false]
- * should the method look through it's props in order to wildcard
- * @param {Array} [output=[]] result acc
- * @returns {Chain[]} array of objects
+ * @returns {Chain}
  */
-export function getPropertyInChain(base, chain, addProp = true, lookThrough = false, output = []) {
+export function getPropertyInChain(base, chain) {
     const pos = chain.indexOf('.');
     if (pos === -1) {
-        // for paths like 'a.b.*' every final nested prop should be processed
-        if (chain === '*') {
-            Object.keys(base).forEach((key) => {
-                output.push({ base, prop: key });
-            });
-        } else {
-            output.push({ base, prop: chain });
-        }
-
-        return output;
+        return { base, prop: chain };
     }
-
     const prop = chain.slice(0, pos);
-
-    const shouldLookThrough = (prop === '[]' && Array.isArray(base))
-        || (prop === '*' && base instanceof Object);
-
-    if (shouldLookThrough) {
-        const nextProp = chain.slice(pos + 1);
-        const baseKeys = Object.keys(base);
-
-        // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src ad.1.src'),
-        // each one of base keys should be considered as a potential chain prop in final path
-        baseKeys.forEach((key) => {
-            const item = base[key];
-            getPropertyInChain(item, nextProp, addProp, lookThrough, output);
-        });
-    }
-
     const nextBase = base[prop];
     chain = chain.slice(pos + 1);
     if (nextBase !== undefined) {
-        getPropertyInChain(nextBase, chain, addProp, lookThrough, output);
+        return getPropertyInChain(nextBase, chain);
     }
 
-    if (addProp) {
-        Object.defineProperty(base, prop, { configurable: true });
-        output.push({ base: nextBase, prop, chain });
-    }
-
-    return output;
+    Object.defineProperty(base, prop, { configurable: true });
+    return { base: nextBase, prop, chain };
 }
