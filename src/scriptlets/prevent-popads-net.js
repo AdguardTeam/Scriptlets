@@ -36,8 +36,10 @@ export function preventPopadsNet(source) {
 
 preventPopadsNet.names = [
     'prevent-popads-net',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'popads.net.js',
     'ubo-popads.net.js',
+    'ubo-popads.net',
 ];
 
 preventPopadsNet.injections = [createOnErrorHandler, randomId, hit];

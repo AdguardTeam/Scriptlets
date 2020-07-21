@@ -36,8 +36,10 @@ export function setPopadsDummy(source) {
 
 setPopadsDummy.names = [
     'set-popads-dummy',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'popads-dummy.js',
     'ubo-popads-dummy.js',
+    'ubo-popads-dummy',
 ];
 
 setPopadsDummy.injections = [hit];

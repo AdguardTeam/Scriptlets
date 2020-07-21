@@ -79,10 +79,13 @@ export function abortOnPropertyWrite(source, property, stack) {
 
 abortOnPropertyWrite.names = [
     'abort-on-property-write',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-property-write.js',
     'ubo-abort-on-property-write.js',
     'aopw.js',
     'ubo-aopw.js',
+    'ubo-abort-on-property-write',
+    'ubo-aopw',
     'abp-abort-on-property-write',
 ];
 

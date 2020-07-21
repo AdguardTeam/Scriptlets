@@ -79,8 +79,10 @@ export function removeCookie(source, match) {
 
 removeCookie.names = [
     'remove-cookie',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'cookie-remover.js',
     'ubo-cookie-remover.js',
+    'ubo-cookie-remover',
 ];
 
 removeCookie.injections = [toRegExp, hit];

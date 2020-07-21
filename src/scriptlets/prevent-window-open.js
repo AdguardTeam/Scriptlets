@@ -115,8 +115,10 @@ export function preventWindowOpen(source, match = 1, search, replacement) {
 
 preventWindowOpen.names = [
     'prevent-window-open',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'window.open-defuser.js',
     'ubo-window.open-defuser.js',
+    'ubo-window.open-defuser',
 ];
 
 preventWindowOpen.injections = [

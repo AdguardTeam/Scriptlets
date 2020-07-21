@@ -80,10 +80,13 @@ export function removeAttr(source, attrs, selector) {
 
 removeAttr.names = [
     'remove-attr',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-attr.js',
     'ubo-remove-attr.js',
     'ra.js',
     'ubo-ra.js',
+    'ubo-remove-attr',
+    'ubo-ra',
 ];
 
 removeAttr.injections = [hit, observeDOMChanges];

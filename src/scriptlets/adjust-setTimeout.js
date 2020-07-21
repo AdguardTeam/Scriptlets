@@ -77,10 +77,13 @@ export function adjustSetTimeout(source, match, timeout, boost) {
 
 adjustSetTimeout.names = [
     'adjust-setTimeout',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'nano-setTimeout-booster.js',
     'ubo-nano-setTimeout-booster.js',
     'nano-stb.js',
     'ubo-nano-stb.js',
+    'ubo-nano-setTimeout-booster',
+    'ubo-nano-stb',
 ];
 
 adjustSetTimeout.injections = [toRegExp, hit];

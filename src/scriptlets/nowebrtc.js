@@ -52,8 +52,10 @@ export function nowebrtc(source) {
 
 nowebrtc.names = [
     'nowebrtc',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'nowebrtc.js',
     'ubo-nowebrtc.js',
+    'ubo-nowebrtc',
 ];
 
 nowebrtc.injections = [hit, noopFunc];
