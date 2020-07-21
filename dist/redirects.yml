@@ -1392,6 +1392,8 @@
     - silent-noeval.js
     - ubo-noeval.js
     - ubo-silent-noeval.js
+    - ubo-noeval
+    - ubo-silent-noeval
   contentType: application/javascript
   content: |-
     (function(source, args){
@@ -1468,6 +1470,7 @@
     - ubo-nofab.js
     - fuckadblock.js-3.2.0
     - ubo-fuckadblock.js-3.2.0
+    - ubo-nofab
   contentType: application/javascript
   content: |-
     (function(source, args){
@@ -1619,6 +1622,7 @@
   aliases:
     - popads.net.js
     - ubo-popads.net.js
+    - ubo-popads.net
   contentType: application/javascript
   content: |-
     (function(source, args){
@@ -1811,6 +1815,7 @@
   aliases:
     - popads-dummy.js
     - ubo-popads-dummy.js
+    - ubo-popads-dummy
   contentType: application/javascript
   content: |-
     (function(source, args){

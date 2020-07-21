@@ -151,6 +151,7 @@ export function preventSetInterval(source, match, delay) {
 
 preventSetInterval.names = [
     'prevent-setInterval',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'no-setInterval-if.js', // new implementation of setInterval-defuser.js
     'ubo-no-setInterval-if.js',
     'setInterval-defuser.js', // old name should be supported as well
@@ -159,6 +160,10 @@ preventSetInterval.names = [
     'ubo-nosiif.js',
     'sid.js', // old short scriptlet name
     'ubo-sid.js',
+    'ubo-no-setInterval-if',
+    'ubo-setInterval-defuser',
+    'ubo-nosiif',
+    'ubo-sid',
 ];
 
 preventSetInterval.injections = [toRegExp, startsWith, hit, noopFunc];

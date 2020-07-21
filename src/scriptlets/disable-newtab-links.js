@@ -31,8 +31,10 @@ export function disableNewtabLinks(source) {
 
 disableNewtabLinks.names = [
     'disable-newtab-links',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'disable-newtab-links.js',
     'ubo-disable-newtab-links.js',
+    'ubo-disable-newtab-links',
 ];
 
 disableNewtabLinks.injections = [

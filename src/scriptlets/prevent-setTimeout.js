@@ -151,6 +151,7 @@ export function preventSetTimeout(source, match, delay) {
 
 preventSetTimeout.names = [
     'prevent-setTimeout',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'no-setTimeout-if.js', // new implementation of setTimeout-defuser.js
     'ubo-no-setTimeout-if.js',
     'setTimeout-defuser.js', // old name should be supported as well
@@ -159,6 +160,10 @@ preventSetTimeout.names = [
     'ubo-nostif.js',
     'std.js', // old short scriptlet name
     'ubo-std.js',
+    'ubo-no-setTimeout-if',
+    'ubo-setTimeout-defuser',
+    'ubo-nostif',
+    'ubo-std',
 ];
 
 preventSetTimeout.injections = [toRegExp, startsWith, hit, noopFunc];
