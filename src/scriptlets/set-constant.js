@@ -141,10 +141,13 @@ export function setConstant(source, property, value, stack) {
 
 setConstant.names = [
     'set-constant',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'set-constant.js',
     'ubo-set-constant.js',
     'set.js',
     'ubo-set.js',
+    'ubo-set-constant',
+    'ubo-set',
 ];
 setConstant.injections = [
     getPropertyInChain,

@@ -63,10 +63,13 @@ export function preventAddEventListener(source, eventSearch, funcSearch) {
 
 preventAddEventListener.names = [
     'prevent-addEventListener',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'addEventListener-defuser.js',
     'ubo-addEventListener-defuser.js',
     'aeld.js',
     'ubo-aeld.js',
+    'ubo-addEventListener-defuser',
+    'ubo-aeld',
 ];
 
 preventAddEventListener.injections = [toRegExp, hit];

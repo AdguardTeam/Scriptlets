@@ -109,6 +109,7 @@ export function preventRequestAnimationFrame(source, match) {
 
 preventRequestAnimationFrame.names = [
     'prevent-requestAnimationFrame',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'no-requestAnimationFrame-if.js',
     'ubo-no-requestAnimationFrame-if.js',
     'norafif.js',

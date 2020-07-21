@@ -155,8 +155,11 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
 
 jsonPrune.names = [
     'json-prune',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune.js',
     'ubo-json-prune.js',
+    'ubo-json-prune',
+    'abp-json-prune',
 ];
 
 jsonPrune.injections = [hit, toRegExp, matchStackTrace, getWildcardPropertyInChain];

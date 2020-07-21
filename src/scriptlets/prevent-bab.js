@@ -69,10 +69,13 @@ export function preventBab(source) {
 
 preventBab.names = [
     'prevent-bab',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'nobab.js',
     'ubo-nobab.js',
     'bab-defuser.js',
     'ubo-bab-defuser.js',
+    'ubo-nobab',
+    'ubo-bab-defuser',
 ];
 
 preventBab.injections = [hit];

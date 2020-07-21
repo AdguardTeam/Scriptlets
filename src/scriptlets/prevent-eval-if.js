@@ -42,8 +42,10 @@ export function preventEvalIf(source, search) {
 
 preventEvalIf.names = [
     'prevent-eval-if',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'noeval-if.js',
     'ubo-noeval-if.js',
+    'ubo-noeval-if',
 ];
 
 preventEvalIf.injections = [toRegExp, hit];

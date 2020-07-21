@@ -87,10 +87,13 @@ export function abortOnPropertyRead(source, property, stack) {
 
 abortOnPropertyRead.names = [
     'abort-on-property-read',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-property-read.js',
     'ubo-abort-on-property-read.js',
     'aopr.js',
     'ubo-aopr.js',
+    'ubo-abort-on-property-read',
+    'ubo-aopr',
     'abp-abort-on-property-read',
 ];
 abortOnPropertyRead.injections = [

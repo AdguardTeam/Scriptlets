@@ -27,10 +27,13 @@ export function noeval(source) {
 
 noeval.names = [
     'noeval',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'noeval.js',
     'silent-noeval.js',
     'ubo-noeval.js',
     'ubo-silent-noeval.js',
+    'ubo-noeval',
+    'ubo-silent-noeval',
 ];
 
 noeval.injections = [hit];

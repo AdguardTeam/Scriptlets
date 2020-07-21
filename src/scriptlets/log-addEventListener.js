@@ -35,10 +35,13 @@ export function logAddEventListener(source) {
 
 logAddEventListener.names = [
     'log-addEventListener',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'addEventListener-logger.js',
     'ubo-addEventListener-logger.js',
     'aell.js',
     'ubo-aell.js',
+    'ubo-addEventListener-logger',
+    'ubo-aell',
 ];
 
 logAddEventListener.injections = [hit];

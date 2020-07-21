@@ -77,10 +77,13 @@ export function adjustSetInterval(source, match, interval, boost) {
 
 adjustSetInterval.names = [
     'adjust-setInterval',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'nano-setInterval-booster.js',
     'ubo-nano-setInterval-booster.js',
     'nano-sib.js',
     'ubo-nano-sib.js',
+    'ubo-nano-setInterval-booster',
+    'ubo-nano-sib',
 ];
 
 adjustSetInterval.injections = [toRegExp, hit];
