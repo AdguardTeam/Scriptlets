@@ -110,7 +110,14 @@ export function setConstant(source, property, value, stack) {
         let { base } = chainInfo;
         const { prop, chain } = chainInfo;
 
+        // The scriptlet might be executed before the chain property has been created.
+        // In this case we're checking whether the base element exists or not
+        // and if not, we simply exit without overriding anything
         if (base instanceof Object === false && base === null) {
+            const props = property.split('.');
+            const propIndex = props.indexOf(prop);
+            const baseName = props[propIndex - 1];
+            console.log(`The scriptlet had been executed before the ${baseName} was loaded.`); // eslint-disable-line no-console
             return;
         }
 
