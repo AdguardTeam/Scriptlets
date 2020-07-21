@@ -109,6 +109,11 @@ export function setConstant(source, property, value, stack) {
         const chainInfo = getPropertyInChain(owner, property);
         let { base } = chainInfo;
         const { prop, chain } = chainInfo;
+
+        if (base instanceof Object === false && base === null) {
+            return;
+        }
+
         if (chain) {
             const setter = (a) => {
                 base = a;

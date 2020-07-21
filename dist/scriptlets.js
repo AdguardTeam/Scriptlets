@@ -1701,6 +1701,10 @@
         var prop = chainInfo.prop,
             chain = chainInfo.chain;
 
+        if (base instanceof Object === false && base === null) {
+          return;
+        }
+
         if (chain) {
           var setter = function setter(a) {
             base = a;
