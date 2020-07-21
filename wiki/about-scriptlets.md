@@ -871,13 +871,13 @@ example.org#%#//scriptlet('prevent-window-open'[, match[, search[, replacement]]
 ```
 5. Prevent all `window.open` calls and return 'trueFunc' instead of it if website checks it:
 ```
-    example.org#%#//scriptlet('prevent-window-open', , , 'trueFunc')
+    example.org#%#//scriptlet('prevent-window-open', '', '', 'trueFunc')
 ```
 6. Prevent all `window.open` and returns callback
 which returns object with property 'propName'=noopFunc
 as a property of window.open if website checks it:
 ```
-    example.org#%#//scriptlet('prevent-window-open', '1', , '{propName=noopFunc}')
+    example.org#%#//scriptlet('prevent-window-open', '1', '', '{propName=noopFunc}')
 ```
 [Scriptlet source](../src/scriptlets/prevent-window-open.js)
 * * *
