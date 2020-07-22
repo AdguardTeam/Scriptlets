@@ -1367,13 +1367,13 @@
      * ```
      * 5. Prevent all `window.open` calls and return 'trueFunc' instead of it if website checks it:
      * ```
-     *     example.org#%#//scriptlet('prevent-window-open', , , 'trueFunc')
+     *     example.org#%#//scriptlet('prevent-window-open', '', '', 'trueFunc')
      * ```
      * 6. Prevent all `window.open` and returns callback
      * which returns object with property 'propName'=noopFunc
      * as a property of window.open if website checks it:
      * ```
-     *     example.org#%#//scriptlet('prevent-window-open', '1', , '{propName=noopFunc}')
+     *     example.org#%#//scriptlet('prevent-window-open', '1', '', '{propName=noopFunc}')
      * ```
      */
 
@@ -1705,7 +1705,21 @@
         var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
-            chain = chainInfo.chain;
+            chain = chainInfo.chain; // The scriptlet might be executed before the chain property has been created.
+        // In this case we're checking whether the base element exists or not
+        // and if not, we simply exit without overriding anything
+
+        if (base instanceof Object === false && base === null) {
+          // log the reason only while debugging
+          if (source.verbose) {
+            var props = property.split('.');
+            var propIndex = props.indexOf(prop);
+            var baseName = props[propIndex - 1];
+            console.log("set-constant failed because the property '".concat(baseName, "' does not exist")); // eslint-disable-line no-console
+          }
+
+          return;
+        }
 
         if (chain) {
           var setter = function setter(a) {
