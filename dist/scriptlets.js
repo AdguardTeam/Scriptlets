@@ -1710,10 +1710,13 @@
         // and if not, we simply exit without overriding anything
 
         if (base instanceof Object === false && base === null) {
-          var props = property.split('.');
-          var propIndex = props.indexOf(prop);
-          var baseName = props[propIndex - 1];
-          console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded.")); // eslint-disable-line no-console
+          // log the reason only while debugging
+          if (source.verbose) {
+            var props = property.split('.');
+            var propIndex = props.indexOf(prop);
+            var baseName = props[propIndex - 1];
+            console.log("set-constant failed because the property '".concat(baseName, "' does not exist")); // eslint-disable-line no-console
+          }
 
           return;
         }
