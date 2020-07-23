@@ -33,3 +33,4 @@ export * from './dir-string';
 export * from './json-prune';
 export * from './prevent-requestAnimationFrame';
 export * from './set-cookie';
+export * from './hyperlink-setter';

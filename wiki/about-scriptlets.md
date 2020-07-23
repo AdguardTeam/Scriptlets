@@ -9,6 +9,7 @@
 * [debug-on-property-write](#debug-on-property-write)
 * [dir-string](#dir-string)
 * [disable-newtab-links](#disable-newtab-links)
+* [hyperlink-setter](#hyperlink-setter)
 * [json-prune](#json-prune)
 * [log-addEventListener](#log-addEventListener)
 * [log-eval](#log-eval)
@@ -318,6 +319,17 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#disable-newtab-linksjs-
 example.org#%#//scriptlet('disable-newtab-links')
 ```
 [Scriptlet source](../src/scriptlets/disable-newtab-links.js)
+* * *
+
+### <a id="hyperlink-setter"></a> ⚡️ hyperlink-setter
+
+Set the links properly. It is specified to work only on multiup.org for now.
+
+**Syntax**
+```
+multiup.org#%#//scriptlet('hyperlink-setter')
+```
+[Scriptlet source](../src/scriptlets/hyperlink-setter.js)
 * * *
 
 ### <a id="json-prune"></a> ⚡️ json-prune

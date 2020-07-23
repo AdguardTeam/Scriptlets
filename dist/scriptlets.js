@@ -3574,6 +3574,48 @@
     setCookie.injections = [hit];
 
     /**
+     * @scriptlet hyperlink-setter
+     *
+     * @description
+     * Set the links properly. It is specified to work only on multiup.org for now.
+     *
+     * **Syntax**
+     * ```
+     * multiup.org#%#//scriptlet('hyperlink-setter')
+     * ```
+     */
+
+    function hyperlinkSetter(source) {
+      var linkSetter = function linkSetter(e) {
+        if (e) {
+          window.removeEventListener(e.type, linkSetter, true);
+        }
+
+        var buttons = document.querySelectorAll('.panel-footer > form[action] > button[link]');
+        var forms = document.querySelectorAll('.panel-footer > form[action]');
+        var shouldResetLink = buttons.length !== 0 && forms.length !== 0 && buttons.length === forms.length;
+
+        if (shouldResetLink) {
+          for (var i = 0; i < forms.length; i += 1) {
+            var properLink = buttons[i].getAttribute('link');
+            forms[i].setAttribute('action', properLink);
+            forms[i].setAttribute('target', '_blank');
+          }
+
+          hit(source);
+        }
+      };
+
+      if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', linkSetter, true);
+      } else {
+        linkSetter();
+      }
+    }
+    hyperlinkSetter.names = ['hyperlink-setter'];
+    hyperlinkSetter.injections = [hit];
+
+    /**
      * This file must export all scriptlets which should be accessible
      */
 
@@ -3610,7 +3652,8 @@
         dirString: dirString,
         jsonPrune: jsonPrune,
         preventRequestAnimationFrame: preventRequestAnimationFrame,
-        setCookie: setCookie
+        setCookie: setCookie,
+        hyperlinkSetter: hyperlinkSetter
     });
 
     const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"amazon-apstag",ubo:"amazon_apstag.js"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm",ubo:"googletagmanager_gtm.js"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3-0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvmap-1.0"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"disqus_embed.js"},{ubo:"disqus_forums_embed.js"},{ubo:"doubleclick_instream_ad_status.js"},{ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"}];

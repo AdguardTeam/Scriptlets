@@ -41,6 +41,9 @@
             "ubo": "disable-newtab-links.js"
         },
         {
+            "adg": "hyperlink-setter"
+        },
+        {
             "adg": "json-prune",
             "ubo": "json-prune.js",
             "abp": "json-prune"
