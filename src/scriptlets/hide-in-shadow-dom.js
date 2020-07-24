@@ -19,8 +19,7 @@ import { hit, observeDOMChanges } from '../helpers';
  * **Examples**
  *
 /* eslint-enable max-len */
-export function hideInShadowDom(source) {
-    const selector = 'vt-ui-contact-fab';
+export function hideInShadowDom(source, selector) {
     const rootElement = document.documentElement;
 
     const querySelectorShadow = (selector, rootElement) => {
