@@ -10,50 +10,71 @@ import { hit, observeDOMChanges } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('hide-in-shadow-dom', selector, rootElement)
+ * example.org#%#//scriptlet('hide-in-shadow-dom', selector[, baseSelector])
  * ```
  *
- * - `selector` — required, CSS selector to use
- * - `rootElement` — optional, base element we're using for the given selector
+ * - `selector` — required, CSS selector of element in shadow-dom to hide
+ * - `baseSelector` — optional, base selector to specify selector search area,
+ * defaults to document.documentElement
  *
  * **Examples**
  *
 /* eslint-enable max-len */
-export function hideInShadowDom(source, selector) {
-    const rootElement = document.documentElement;
+export function hideInShadowDom(source, selector, baseSelector) {
+    // if there is no baseSelector given,
+    // we should find the closest to the root elements with shadowRoot property
+    // and consider them as bases to pierce shadow-doms
+    const findBaseElements = () => {
+        const bases = [];
+        const rootElement = document.documentElement;
+        const pageElems = rootElement.querySelectorAll('*');
+        pageElems.forEach((el) => {
+            if (el.shadowRoot) {
+                bases.push(el);
+            }
+        });
+        return bases;
+    };
 
-    const querySelectorShadow = (selector, rootElement) => {
-        const el = rootElement.querySelector(selector);
-        if (el) {
-            // found the element we were looking for, exiting
-            return el;
-        }
-        const probes = rootElement.querySelectorAll('*');
-        // eslint-disable-next-line consistent-return
-        probes.forEach((probe) => {
-            if (probe.shadowRoot) {
-                // check the shadow root (and it's nested roots)
-                const shadowElement = querySelectorShadow(selector, probe.shadowRoot);
-                if (shadowElement) {
-                    // found the element we were looking for, exiting
-                    shadowElement.style = 'display: none!important;';
-                    hit(source);
-                    return shadowElement;
-                }
+    const findTargetsToHide = (selector, baseSelector) => {
+        const targets = [];
+        const baseElements = !baseSelector ? findBaseElements() : document.querySelectorAll(baseSelector);
+
+        // it's possible to have a few baseElements found by baseSelector on the page
+        baseElements.forEach((baseEl) => {
+            // check presence of selector element inside base element if it's not in shadow-dom
+            const simpleElems = baseEl.querySelectorAll(selector);
+            simpleElems.forEach((el) => targets.push(el));
+
+            const shadowElem = baseEl.shadowRoot;
+            if (shadowElem) {
+                const shadowElems = shadowElem.querySelectorAll(selector);
+                shadowElems.forEach((el) => {
+                    targets.push(el);
+                });
             }
         });
 
-        // nothing found, returning empty array
-        return null;
+        return targets;
     };
 
-    const pierceHandler = () => {
-        querySelectorShadow(selector, rootElement);
+    const hideHandler = () => {
+        let hidden = false;
+        const DISPLAY_NONE_CSS = 'display:none!important;';
+        const targets = findTargetsToHide(selector, baseSelector);
+        targets.forEach((targetEl) => {
+            targetEl.style = DISPLAY_NONE_CSS;
+            hidden = true;
+        });
+
+        if (hidden) {
+            hit(source);
+        }
     };
 
-    pierceHandler();
+    hideHandler();
 
-    observeDOMChanges(pierceHandler, true);
+    observeDOMChanges(hideHandler, true);
 }
 
 hideInShadowDom.names = [

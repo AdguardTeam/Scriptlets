@@ -3572,6 +3572,86 @@ function setCookie(source, name, value) {
 setCookie.names = ['set-cookie'];
 setCookie.injections = [hit];
 
+// shadow-dom in process
+/* eslint-disable max-len */
+
+/**
+ * @scriptlet hide-in-shadow-dom
+ *
+ * @description
+ *
+ *
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet('hide-in-shadow-dom', selector[, baseSelector])
+ * ```
+ *
+ * - `selector` — required, CSS selector of element in shadow-dom to hide
+ * - `baseSelector` — optional, base selector to specify selector search area,
+ * defaults to document.documentElement
+ *
+ * **Examples**
+ *
+/* eslint-enable max-len */
+
+function hideInShadowDom(source, selector, baseSelector) {
+  // if there is no baseSelector given,
+  // we should find the closest to the root elements with shadowRoot property
+  // and consider them as bases to pierce shadow-doms
+  var findBaseElements = function findBaseElements() {
+    var bases = [];
+    var rootElement = document.documentElement;
+    var pageElems = rootElement.querySelectorAll('*');
+    pageElems.forEach(function (el) {
+      if (el.shadowRoot) {
+        bases.push(el);
+      }
+    });
+    return bases;
+  };
+
+  var findTargetsToHide = function findTargetsToHide(selector, baseSelector) {
+    var targets = [];
+    var baseElements = !baseSelector ? findBaseElements() : document.querySelectorAll(baseSelector); // it's possible to have a few baseElements found by baseSelector on the page
+
+    baseElements.forEach(function (baseEl) {
+      // check presence of selector element inside base element if it's not in shadow-dom
+      var simpleElems = baseEl.querySelectorAll(selector);
+      simpleElems.forEach(function (el) {
+        return targets.push(el);
+      });
+      var shadowElem = baseEl.shadowRoot;
+
+      if (shadowElem) {
+        var shadowElems = shadowElem.querySelectorAll(selector);
+        shadowElems.forEach(function (el) {
+          targets.push(el);
+        });
+      }
+    });
+    return targets;
+  };
+
+  var hideHandler = function hideHandler() {
+    var hidden = false;
+    var DISPLAY_NONE_CSS = 'display:none!important;';
+    var targets = findTargetsToHide(selector, baseSelector);
+    targets.forEach(function (targetEl) {
+      targetEl.style = DISPLAY_NONE_CSS;
+      hidden = true;
+    });
+
+    if (hidden) {
+      hit(source);
+    }
+  };
+
+  hideHandler();
+  observeDOMChanges(hideHandler, true);
+}
+hideInShadowDom.names = ['hide-in-shadow-dom'];
+hideInShadowDom.injections = [hit, observeDOMChanges];
+
 /**
  * This file must export all scriptlets which should be accessible
  */
@@ -3609,7 +3689,8 @@ var scriptletList = /*#__PURE__*/Object.freeze({
     dirString: dirString,
     jsonPrune: jsonPrune,
     preventRequestAnimationFrame: preventRequestAnimationFrame,
-    setCookie: setCookie
+    setCookie: setCookie,
+    hideInShadowDom: hideInShadowDom
 });
 
 const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"amazon-apstag",ubo:"amazon_apstag.js"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm",ubo:"googletagmanager_gtm.js"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3-0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvmap-1.0"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"disqus_embed.js"},{ubo:"disqus_forums_embed.js"},{ubo:"doubleclick_instream_ad_status.js"},{ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"}];
