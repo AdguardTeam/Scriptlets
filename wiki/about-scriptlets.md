@@ -323,7 +323,7 @@ example.org#%#//scriptlet('disable-newtab-links')
 
 ### <a id="hide-in-shadow-dom"></a> ⚡️ hide-in-shadow-dom
 
-
+Hides elements in open shadow-dom.
 
 **Syntax**
 ```
@@ -335,8 +335,13 @@ example.org#%#//scriptlet('hide-in-shadow-dom', selector[, baseSelector])
 defaults to document.documentElement
 
 **Examples**
+```
+! hides menu bar
+virustotal.com#%#//scriptlet('hide-in-shadow-dom', 'iron-pages', 'vt-virustotal-app')
 
-/* eslint-enable max-len
+! hides floating element
+virustotal.com#%#//scriptlet('hide-in-shadow-dom', 'vt-ui-contact-fab')
+```
 [Scriptlet source](../src/scriptlets/hide-in-shadow-dom.js)
 * * *
 

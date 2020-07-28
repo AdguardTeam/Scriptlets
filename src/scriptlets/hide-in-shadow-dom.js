@@ -1,12 +1,10 @@
-// shadow-dom in process
 import { hit, observeDOMChanges } from '../helpers';
 
-/* eslint-disable max-len */
 /**
  * @scriptlet hide-in-shadow-dom
  *
  * @description
- *
+ * Hides elements in open shadow-dom.
  *
  * **Syntax**
  * ```
@@ -18,15 +16,26 @@ import { hit, observeDOMChanges } from '../helpers';
  * defaults to document.documentElement
  *
  * **Examples**
+ * ```
+ * ! hides menu bar
+ * virustotal.com#%#//scriptlet('hide-in-shadow-dom', 'iron-pages', 'vt-virustotal-app')
  *
-/* eslint-enable max-len */
+ * ! hides floating element
+ * virustotal.com#%#//scriptlet('hide-in-shadow-dom', 'vt-ui-contact-fab')
+ * ```
+ */
 export function hideInShadowDom(source, selector, baseSelector) {
-    // if there is no baseSelector given,
-    // we should find the closest to the root elements with shadowRoot property
-    // and consider them as bases to pierce shadow-doms
+    /**
+     * Finds base elements if there is no baseSelector given.
+     * In that case we should find the closest to the root elements with shadowRoot property
+     * and consider them as bases to pierce shadow-doms
+     */
     const findBaseElements = () => {
         const bases = [];
         const rootElement = document.documentElement;
+        // if some element has shadowRoot property,
+        // querySelectorAll('*') will reach it
+        // and will not explore its childNode 'cause it can not
         const pageElems = rootElement.querySelectorAll('*');
         pageElems.forEach((el) => {
             if (el.shadowRoot) {
@@ -38,7 +47,8 @@ export function hideInShadowDom(source, selector, baseSelector) {
 
     const findTargetsToHide = (selector, baseSelector) => {
         const targets = [];
-        const baseElements = !baseSelector ? findBaseElements() : document.querySelectorAll(baseSelector);
+        const baseElements = !baseSelector ? findBaseElements()
+            : document.querySelectorAll(baseSelector);
 
         // it's possible to have a few baseElements found by baseSelector on the page
         baseElements.forEach((baseEl) => {
@@ -48,8 +58,8 @@ export function hideInShadowDom(source, selector, baseSelector) {
 
             const shadowElem = baseEl.shadowRoot;
             if (shadowElem) {
-                const shadowElems = shadowElem.querySelectorAll(selector);
-                shadowElems.forEach((el) => {
+                const shadowChildren = shadowElem.querySelectorAll(selector);
+                shadowChildren.forEach((el) => {
                     targets.push(el);
                 });
             }

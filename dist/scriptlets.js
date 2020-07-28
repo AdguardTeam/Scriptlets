@@ -3573,14 +3573,11 @@
     setCookie.names = ['set-cookie'];
     setCookie.injections = [hit];
 
-    // shadow-dom in process
-    /* eslint-disable max-len */
-
     /**
      * @scriptlet hide-in-shadow-dom
      *
      * @description
-     *
+     * Hides elements in open shadow-dom.
      *
      * **Syntax**
      * ```
@@ -3592,16 +3589,27 @@
      * defaults to document.documentElement
      *
      * **Examples**
+     * ```
+     * ! hides menu bar
+     * virustotal.com#%#//scriptlet('hide-in-shadow-dom', 'iron-pages', 'vt-virustotal-app')
      *
-    /* eslint-enable max-len */
+     * ! hides floating element
+     * virustotal.com#%#//scriptlet('hide-in-shadow-dom', 'vt-ui-contact-fab')
+     * ```
+     */
 
     function hideInShadowDom(source, selector, baseSelector) {
-      // if there is no baseSelector given,
-      // we should find the closest to the root elements with shadowRoot property
-      // and consider them as bases to pierce shadow-doms
+      /**
+       * Finds base elements if there is no baseSelector given.
+       * In that case we should find the closest to the root elements with shadowRoot property
+       * and consider them as bases to pierce shadow-doms
+       */
       var findBaseElements = function findBaseElements() {
         var bases = [];
-        var rootElement = document.documentElement;
+        var rootElement = document.documentElement; // if some element has shadowRoot property,
+        // querySelectorAll('*') will reach it
+        // and will not explore its childNode 'cause it can not
+
         var pageElems = rootElement.querySelectorAll('*');
         pageElems.forEach(function (el) {
           if (el.shadowRoot) {
@@ -3624,8 +3632,8 @@
           var shadowElem = baseEl.shadowRoot;
 
           if (shadowElem) {
-            var shadowElems = shadowElem.querySelectorAll(selector);
-            shadowElems.forEach(function (el) {
+            var shadowChildren = shadowElem.querySelectorAll(selector);
+            shadowChildren.forEach(function (el) {
               targets.push(el);
             });
           }
