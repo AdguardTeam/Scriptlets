@@ -61,7 +61,9 @@ test('Redirect testing', (assert) => {
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
     assert.strictEqual(hasAdAttr, true, '.adsbygoogle has \'data-adsbygoogle-status\' attribute');
     assert.ok(aswiftIframe, 'aswift iframe was created by scriptlet');
+    assert.notEqual(aswiftIframe.contentWindow.length, 0, 'aswiftIframe.contentWindow was mocked by scriptlet');
     assert.ok(googleadsIframe, 'google_ads iframe was created by scriptlet');
+    assert.notEqual(googleadsIframe.contentWindow.length, 0, 'aswiftIframe.contentWindow was mocked by scriptlet');
     assert.strictEqual(createdIframes.length, 2, '2 iframes was created as a child of .adsbygoogle');
 
     // check if API was mocked
