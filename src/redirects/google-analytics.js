@@ -25,7 +25,9 @@ export function GoogleAnalytics(source) {
     proto.send = noopFunc;
 
     const googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';
-    function ga() {
+    // a -- fake arg for 'ga.length < 1' antiadblock checking
+    // eslint-disable-next-line no-unused-vars
+    function ga(a) {
         const len = arguments.length;
         if (len === 0) {
             return;
