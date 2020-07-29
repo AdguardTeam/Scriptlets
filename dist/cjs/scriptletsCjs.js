@@ -4295,9 +4295,10 @@ function GoogleAnalytics(source) {
   proto.get = noopFunc;
   proto.set = noopFunc;
   proto.send = noopFunc;
-  var googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';
+  var googleAnalyticsName = window.GoogleAnalyticsObject || 'ga'; // a -- fake arg for 'ga.length < 1' antiadblock checking
+  // eslint-disable-next-line no-unused-vars
 
-  function ga() {
+  function ga(a) {
     var len = arguments.length;
 
     if (len === 0) {
