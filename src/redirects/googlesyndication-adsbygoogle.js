@@ -17,7 +17,7 @@ import { hit } from '../helpers';
  */
 /* eslint-enable max-len */
 export function GoogleSyndicationAdsByGoogle(source) {
-    window.adsbygoogle = window.adsbygoogle || {
+    window.adsbygoogle = {
         length: 0,
         loaded: true,
         push() {
@@ -57,11 +57,15 @@ export function GoogleSyndicationAdsByGoogle(source) {
             aswiftIframe.id = `${ASWIFT_IFRAME_MARKER}${i + 1}`;
             aswiftIframe.style = css;
             adElems[i].appendChild(aswiftIframe);
+            const innerAswiftIframe = document.createElement('iframe');
+            aswiftIframe.contentWindow.document.body.appendChild(innerAswiftIframe);
 
             const googleadsIframe = document.createElement('iframe');
             googleadsIframe.id = `${GOOGLE_ADS_IFRAME_MARKER}${i + 1}`;
             googleadsIframe.style = css;
             adElems[i].appendChild(googleadsIframe);
+            const innerGoogleadsIframe = document.createElement('iframe');
+            googleadsIframe.contentWindow.document.body.appendChild(innerGoogleadsIframe);
 
             executed = true;
         }

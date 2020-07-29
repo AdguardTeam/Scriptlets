@@ -1,6 +1,6 @@
 (function(source, args){
 function GoogleSyndicationAdsByGoogle(source) {
-    window.adsbygoogle = window.adsbygoogle || {
+    window.adsbygoogle = {
       length: 0,
       loaded: true,
       push: function push() {
@@ -36,10 +36,14 @@ function GoogleSyndicationAdsByGoogle(source) {
         aswiftIframe.id = "".concat(ASWIFT_IFRAME_MARKER).concat(i + 1);
         aswiftIframe.style = css;
         adElems[i].appendChild(aswiftIframe);
+        var innerAswiftIframe = document.createElement('iframe');
+        aswiftIframe.contentWindow.document.body.appendChild(innerAswiftIframe);
         var googleadsIframe = document.createElement('iframe');
         googleadsIframe.id = "".concat(GOOGLE_ADS_IFRAME_MARKER).concat(i + 1);
         googleadsIframe.style = css;
         adElems[i].appendChild(googleadsIframe);
+        var innerGoogleadsIframe = document.createElement('iframe');
+        googleadsIframe.contentWindow.document.body.appendChild(innerGoogleadsIframe);
         executed = true;
       }
     }
