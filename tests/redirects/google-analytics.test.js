@@ -57,6 +57,7 @@ test('AdGuard Syntax', (assert) => {
 
     // check ga api
     assert.ok(window.ga, 'ga object was created');
+    assert.notEqual(window.ga.length, 0, 'ga.length was mocked');
     assert.ok(window.ga.create(), 'Tracker was created');
     assert.notOk(window.ga.getByName(), 'getByName returns null');
     assert.strictEqual(window.ga.getAll().length, 0, 'getAll returns empty array');

@@ -3600,51 +3600,69 @@
 
     function hideInShadowDom(source, selector, baseSelector) {
       /**
-       * Finds base elements if there is no baseSelector given.
-       * In that case we should find the closest to the root elements with shadowRoot property
+       * Finds shadow host elements.
+       * We should find the closest to the root elements with shadowRoot property
        * and consider them as bases to pierce shadow-doms
+       * @param {HTMLElement} rootElement root element to start searching from
+       * @returns {nodeList[]} shadow dom hosts
        */
-      var findBaseElements = function findBaseElements() {
-        var bases = [];
-        var rootElement = document.documentElement; // if some element has shadowRoot property,
+      var findHostElements = function findHostElements(rootElement) {
+        var hosts = []; // if some element has shadowRoot property,
         // querySelectorAll('*') will reach it
-        // and will not explore its childNode 'cause it can not
+        // and will not explore its childNodes 'cause it can not
 
         var pageElems = rootElement.querySelectorAll('*');
         pageElems.forEach(function (el) {
           if (el.shadowRoot) {
-            bases.push(el);
+            hosts.push(el);
           }
         });
-        return bases;
+        return hosts;
       };
 
-      var findTargetsToHide = function findTargetsToHide(selector, baseSelector) {
-        var targets = [];
-        var baseElements = !baseSelector ? findBaseElements() : document.querySelectorAll(baseSelector); // it's possible to have a few baseElements found by baseSelector on the page
+      var findTargetsToHide = function findTargetsToHide(selector, hostElements) {
+        var targets = []; // it's possible to get a few hostElements found by baseSelector on the page
 
-        baseElements.forEach(function (baseEl) {
+        hostElements.forEach(function (host) {
           // check presence of selector element inside base element if it's not in shadow-dom
-          var simpleElems = baseEl.querySelectorAll(selector);
-          simpleElems.forEach(function (el) {
-            return targets.push(el);
-          });
-          var shadowElem = baseEl.shadowRoot;
+          var simpleElems = host.querySelectorAll(selector);
 
-          if (shadowElem) {
-            var shadowChildren = shadowElem.querySelectorAll(selector);
-            shadowChildren.forEach(function (el) {
-              targets.push(el);
+          if (simpleElems.length !== 0) {
+            simpleElems.forEach(function (el) {
+              return targets.push(el);
             });
+          }
+
+          var shadowRootElem = host.shadowRoot;
+
+          if (shadowRootElem) {
+            var shadowChildren = shadowRootElem.querySelectorAll(selector); // we have found our target elements if shadowChildren is not empty
+
+            if (shadowChildren.length !== 0) {
+              shadowChildren.forEach(function (el) {
+                targets.push(el);
+              });
+            } else {
+              // if there is no childNodes in shadowRootElem that satisfies given selector,
+              // shadowRootElem is reputed as root element for finding inner shadow dom hosts
+              // and selector searching continues inside them (recursively)
+              var innerShadowHosts = findHostElements(shadowRootElem);
+              var innerShadowChildren = findTargetsToHide(selector, innerShadowHosts);
+              innerShadowChildren.forEach(function (el) {
+                targets.push(el);
+              });
+            }
           }
         });
         return targets;
       };
 
       var hideHandler = function hideHandler() {
+        // if no baseSelector, we should find shadow host elements on the page
+        var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
         var hidden = false;
         var DISPLAY_NONE_CSS = 'display:none!important;';
-        var targets = findTargetsToHide(selector, baseSelector);
+        var targets = findTargetsToHide(selector, hostElements);
         targets.forEach(function (targetEl) {
           targetEl.style = DISPLAY_NONE_CSS;
           hidden = true;
@@ -4385,9 +4403,10 @@
       proto.get = noopFunc;
       proto.set = noopFunc;
       proto.send = noopFunc;
-      var googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';
+      var googleAnalyticsName = window.GoogleAnalyticsObject || 'ga'; // a -- fake arg for 'ga.length < 1' antiadblock checking
+      // eslint-disable-next-line no-unused-vars
 
-      function ga() {
+      function ga(a) {
         var len = arguments.length;
 
         if (len === 0) {
@@ -4550,7 +4569,7 @@
     /* eslint-enable max-len */
 
     function GoogleSyndicationAdsByGoogle(source) {
-      window.adsbygoogle = window.adsbygoogle || {
+      window.adsbygoogle = {
         length: 0,
         loaded: true,
         push: function push() {
@@ -4586,10 +4605,14 @@
           aswiftIframe.id = "".concat(ASWIFT_IFRAME_MARKER).concat(i + 1);
           aswiftIframe.style = css;
           adElems[i].appendChild(aswiftIframe);
+          var innerAswiftIframe = document.createElement('iframe');
+          aswiftIframe.contentWindow.document.body.appendChild(innerAswiftIframe);
           var googleadsIframe = document.createElement('iframe');
           googleadsIframe.id = "".concat(GOOGLE_ADS_IFRAME_MARKER).concat(i + 1);
           googleadsIframe.style = css;
           adElems[i].appendChild(googleadsIframe);
+          var innerGoogleadsIframe = document.createElement('iframe');
+          googleadsIframe.contentWindow.document.body.appendChild(innerGoogleadsIframe);
           executed = true;
         }
       }
