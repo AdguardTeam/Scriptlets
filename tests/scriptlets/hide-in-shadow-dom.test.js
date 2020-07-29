@@ -75,4 +75,7 @@ test('works fine -- few levels of shadow-doms', (assert) => {
     const elemStyleDisplayProp = window.getComputedStyle(elemToCheck).display;
     assert.strictEqual(elemStyleDisplayProp, 'none', `Element ${SELECTOR} hidden`);
     assert.strictEqual(window.hit, 'FIRED');
+    inner.remove();
+    testChild.remove();
+    testHost.remove();
 });
