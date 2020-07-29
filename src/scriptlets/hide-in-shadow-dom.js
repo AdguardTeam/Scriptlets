@@ -26,42 +26,56 @@ import { hit, observeDOMChanges } from '../helpers';
  */
 export function hideInShadowDom(source, selector, baseSelector) {
     /**
-     * Finds base elements if there is no baseSelector given.
-     * In that case we should find the closest to the root elements with shadowRoot property
+     * Finds shadow host elements.
+     * We should find the closest to the root elements with shadowRoot property
      * and consider them as bases to pierce shadow-doms
+     * @param {HTMLElement} rootElement root element to start searching from
+     * @returns {nodeList[]} shadow dom hosts
      */
-    const findBaseElements = () => {
-        const bases = [];
-        const rootElement = document.documentElement;
+    const findHostElements = (rootElement) => {
+        const hosts = [];
         // if some element has shadowRoot property,
         // querySelectorAll('*') will reach it
-        // and will not explore its childNode 'cause it can not
+        // and will not explore its childNodes 'cause it can not
         const pageElems = rootElement.querySelectorAll('*');
         pageElems.forEach((el) => {
             if (el.shadowRoot) {
-                bases.push(el);
+                hosts.push(el);
             }
         });
-        return bases;
+        return hosts;
     };
 
-    const findTargetsToHide = (selector, baseSelector) => {
+    const findTargetsToHide = (selector, hostElements) => {
         const targets = [];
-        const baseElements = !baseSelector ? findBaseElements()
-            : document.querySelectorAll(baseSelector);
 
-        // it's possible to have a few baseElements found by baseSelector on the page
-        baseElements.forEach((baseEl) => {
+        // it's possible to get a few hostElements found by baseSelector on the page
+        hostElements.forEach((host) => {
             // check presence of selector element inside base element if it's not in shadow-dom
-            const simpleElems = baseEl.querySelectorAll(selector);
-            simpleElems.forEach((el) => targets.push(el));
+            const simpleElems = host.querySelectorAll(selector);
+            if (simpleElems.length !== 0) {
+                simpleElems.forEach((el) => targets.push(el));
+            }
 
-            const shadowElem = baseEl.shadowRoot;
-            if (shadowElem) {
-                const shadowChildren = shadowElem.querySelectorAll(selector);
-                shadowChildren.forEach((el) => {
-                    targets.push(el);
-                });
+            const shadowRootElem = host.shadowRoot;
+            if (shadowRootElem) {
+                const shadowChildren = shadowRootElem.querySelectorAll(selector);
+
+                // we have found our target elements if shadowChildren is not empty
+                if (shadowChildren.length !== 0) {
+                    shadowChildren.forEach((el) => {
+                        targets.push(el);
+                    });
+                } else {
+                    // if there is no childNodes in shadowRootElem that satisfies given selector,
+                    // shadowRootElem is reputed as root element for finding inner shadow dom hosts
+                    // and selector searching continues inside them (recursively)
+                    const innerShadowHosts = findHostElements(shadowRootElem);
+                    const innerShadowChildren = findTargetsToHide(selector, innerShadowHosts);
+                    innerShadowChildren.forEach((el) => {
+                        targets.push(el);
+                    });
+                }
             }
         });
 
@@ -69,9 +83,14 @@ export function hideInShadowDom(source, selector, baseSelector) {
     };
 
     const hideHandler = () => {
+        // if no baseSelector, we should find shadow host elements on the page
+        const hostElements = !baseSelector ? findHostElements(document.documentElement)
+            : document.querySelectorAll(baseSelector);
+
         let hidden = false;
         const DISPLAY_NONE_CSS = 'display:none!important;';
-        const targets = findTargetsToHide(selector, baseSelector);
+
+        const targets = findTargetsToHide(selector, hostElements);
         targets.forEach((targetEl) => {
             targetEl.style = DISPLAY_NONE_CSS;
             hidden = true;
