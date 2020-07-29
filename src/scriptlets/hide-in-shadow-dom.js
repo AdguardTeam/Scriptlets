@@ -25,6 +25,12 @@ import { hit, observeDOMChanges } from '../helpers';
  * ```
  */
 export function hideInShadowDom(source, selector, baseSelector) {
+    // do nothing if browser does not support ShadowRoot
+    // https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot
+    if (!ShadowRoot) {
+        return;
+    }
+
     /**
      * Finds shadow host elements.
      * We should find the closest to the root elements with shadowRoot property

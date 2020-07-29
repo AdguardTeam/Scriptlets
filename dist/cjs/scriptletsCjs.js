@@ -3598,6 +3598,11 @@ setCookie.injections = [hit];
  */
 
 function hideInShadowDom(source, selector, baseSelector) {
+  // do nothing if browser does not support ShadowRoot
+  // https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot
+  if (!ShadowRoot) {
+    return;
+  }
   /**
    * Finds shadow host elements.
    * We should find the closest to the root elements with shadowRoot property
@@ -3605,6 +3610,8 @@ function hideInShadowDom(source, selector, baseSelector) {
    * @param {HTMLElement} rootElement root element to start searching from
    * @returns {nodeList[]} shadow dom hosts
    */
+
+
   var findHostElements = function findHostElements(rootElement) {
     var hosts = []; // if some element has shadowRoot property,
     // querySelectorAll('*') will reach it
