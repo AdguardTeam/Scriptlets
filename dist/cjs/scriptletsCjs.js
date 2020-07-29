@@ -3600,7 +3600,7 @@ setCookie.injections = [hit];
 function hideInShadowDom(source, selector, baseSelector) {
   // do nothing if browser does not support ShadowRoot
   // https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot
-  if (!ShadowRoot) {
+  if (!Element.prototype.attachShadow) {
     return;
   }
   /**

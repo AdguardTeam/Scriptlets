@@ -57,7 +57,7 @@ test('works fine -- few levels of shadow-doms', (assert) => {
         verbose: true,
     };
 
-    if (ShadowRoot) {
+    if (Element.prototype.attachShadow) {
         const testHost = document.createElement('div');
         testHost.id = 'shadowHost';
         document.body.appendChild(testHost);
