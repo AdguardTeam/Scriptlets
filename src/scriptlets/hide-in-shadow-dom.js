@@ -98,7 +98,7 @@ export function hideInShadowDom(source, selector, baseSelector) {
 
         const targets = findTargetsToHide(selector, hostElements);
         targets.forEach((targetEl) => {
-            targetEl.style = DISPLAY_NONE_CSS;
+            targetEl.style.cssText = DISPLAY_NONE_CSS;
             hidden = true;
         });
 
