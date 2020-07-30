@@ -19,15 +19,18 @@ const createHit = () => {
 const evalWrapper = eval;
 
 test('works fine', (assert) => {
-    createHit();
-    const SELECTOR = '#test';
-    const params = {
-        name,
-        args: [SELECTOR],
-        verbose: true,
-    };
+    // some browsers do not support ShadowRoot
+    // for example, Firefox 52 which is used for browserstack tests
+    // https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot
+    if (Element.prototype.attachShadow) {
+        createHit();
+        const SELECTOR = '#test';
+        const params = {
+            name,
+            args: [SELECTOR],
+            verbose: true,
+        };
 
-    if (ShadowRoot) {
         const testHost = document.createElement('div');
         testHost.id = 'shadowHost';
         document.body.appendChild(testHost);
@@ -45,19 +48,21 @@ test('works fine', (assert) => {
         assert.strictEqual(window.hit, 'FIRED');
         testChild.remove();
         testHost.remove();
+    } else {
+        assert.strictEqual(true, true, 'fake test to avoid qunit error');
     }
 });
 
 test('works fine -- few levels of shadow-doms', (assert) => {
-    createHit();
-    const SELECTOR = '#inner';
-    const params = {
-        name,
-        args: [SELECTOR],
-        verbose: true,
-    };
-
     if (Element.prototype.attachShadow) {
+        createHit();
+        const SELECTOR = '#inner';
+        const params = {
+            name,
+            args: [SELECTOR],
+            verbose: true,
+        };
+
         const testHost = document.createElement('div');
         testHost.id = 'shadowHost';
         document.body.appendChild(testHost);
@@ -81,5 +86,7 @@ test('works fine -- few levels of shadow-doms', (assert) => {
         inner.remove();
         testChild.remove();
         testHost.remove();
+    } else {
+        assert.strictEqual(true, true, 'fake test to avoid qunit error');
     }
 });
