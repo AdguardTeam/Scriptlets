@@ -262,8 +262,10 @@ This scriptlet is basically the same as [abort-on-property-read](#abort-on-prope
 
 **Syntax**
 ```
-! Aborts script when it tries to access `window.alert`
+! Debug script if it tries to access `window.alert`
 example.org#%#//scriptlet('debug-on-property-read', 'alert')
+! of `window.open`
+example.org#%#//scriptlet('debug-on-property-read', 'open')
 ```
 [Scriptlet source](../src/scriptlets/debug-on-property-read.js)
 * * *

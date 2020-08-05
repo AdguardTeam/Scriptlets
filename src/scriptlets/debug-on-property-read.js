@@ -20,8 +20,10 @@ import {
  *
  * **Syntax**
  * ```
- * ! Aborts script when it tries to access `window.alert`
+ * ! Debug script if it tries to access `window.alert`
  * example.org#%#//scriptlet('debug-on-property-read', 'alert')
+ * ! of `window.open`
+ * example.org#%#//scriptlet('debug-on-property-read', 'open')
  * ```
  */
 /* eslint-enable max-len */
