@@ -4,7 +4,7 @@ import { hit, observeDOMChanges } from '../helpers';
  * @scriptlet hide-in-shadow-dom
  *
  * @description
- * Hides elements in open shadow-dom.
+ * Hides elements inside open shadow DOM elements.
  *
  * **Syntax**
  * ```
@@ -12,8 +12,11 @@ import { hit, observeDOMChanges } from '../helpers';
  * ```
  *
  * - `selector` — required, CSS selector of element in shadow-dom to hide
- * - `baseSelector` — optional, base selector to specify selector search area,
+ * - `baseSelector` — optional, selector of specific page DOM element,
+ * narrows down the part of the page DOM where shadow-dom host supposed to be,
  * defaults to document.documentElement
+ *
+ * > `baseSelector` should match element of the page DOM, but not of shadow DOM
  *
  * **Examples**
  * ```
@@ -32,19 +35,18 @@ export function hideInShadowDom(source, selector, baseSelector) {
     }
 
     /**
-     * Finds shadow host elements.
-     * We should find the closest to the root elements with shadowRoot property
-     * and consider them as bases to pierce shadow-doms
-     * @param {HTMLElement} rootElement root element to start searching from
-     * @returns {nodeList[]} shadow dom hosts
+     * Finds shadow-dom host (elements with shadowRoot property) in DOM of rootElement.
+     * @param {HTMLElement} rootElement
+     * @returns {nodeList[]} shadow-dom hosts
      */
     const findHostElements = (rootElement) => {
         const hosts = [];
-        // if some element has shadowRoot property,
-        // querySelectorAll('*') will reach it
-        // and will not explore its childNodes 'cause it can not
-        const pageElems = rootElement.querySelectorAll('*');
-        pageElems.forEach((el) => {
+        // Element.querySelectorAll() returns list of elements
+        // which are defined in DOM of Element.
+        // Meanwhile, inner DOM of the element with shadowRoot property
+        // is absolutely another DOM and which can not be reached by querySelectorAll('*')
+        const domElems = rootElement.querySelectorAll('*');
+        domElems.forEach((el) => {
             if (el.shadowRoot) {
                 hosts.push(el);
             }
@@ -52,59 +54,78 @@ export function hideInShadowDom(source, selector, baseSelector) {
         return hosts;
     };
 
-    const findTargetsToHide = (selector, hostElements) => {
+    /**
+     * @typedef {Object} PierceData
+     * @property {Array} targets found elements
+     * @property {Array} innerHosts inner shadow-dom hosts
+     */
+
+    /**
+     * Pierces open shadow-dom in order to find:
+     * - elements by 'selector' matching
+     * - inner shadow-dom hosts
+     * @param {string} selector
+     * @param {nodeList[]} hostElements
+     * @returns {PierceData}
+     */
+    const pierceShadowDom = (selector, hostElements) => {
         const targets = [];
+        const innerHostsAcc = [];
+
+        const collectTargets = (arr) => {
+            if (arr.length !== 0) {
+                arr.forEach((el) => targets.push(el));
+            }
+        };
 
         // it's possible to get a few hostElements found by baseSelector on the page
         hostElements.forEach((host) => {
             // check presence of selector element inside base element if it's not in shadow-dom
             const simpleElems = host.querySelectorAll(selector);
-            if (simpleElems.length !== 0) {
-                simpleElems.forEach((el) => targets.push(el));
-            }
+            collectTargets(simpleElems);
 
             const shadowRootElem = host.shadowRoot;
-            if (shadowRootElem) {
-                const shadowChildren = shadowRootElem.querySelectorAll(selector);
+            const shadowChildren = shadowRootElem.querySelectorAll(selector);
+            collectTargets(shadowChildren);
 
-                // we have found our target elements if shadowChildren is not empty
-                if (shadowChildren.length !== 0) {
-                    shadowChildren.forEach((el) => {
-                        targets.push(el);
-                    });
-                } else {
-                    // if there is no childNodes in shadowRootElem that satisfies given selector,
-                    // shadowRootElem is reputed as root element for finding inner shadow dom hosts
-                    // and selector searching continues inside them (recursively)
-                    const innerShadowHosts = findHostElements(shadowRootElem);
-                    const innerShadowChildren = findTargetsToHide(selector, innerShadowHosts);
-                    innerShadowChildren.forEach((el) => {
-                        targets.push(el);
-                    });
-                }
-            }
+            // find inner shadow-dom hosts inside processing shadow-dom
+            innerHostsAcc.push(findHostElements(shadowRootElem));
         });
 
-        return targets;
+        // if there were more than one host element,
+        // innerHostsAcc is an array of arrays and should be flatten
+        const innerHosts = innerHostsAcc.flat(Infinity);
+        return { targets, innerHosts };
     };
 
+    /**
+     * Handles shadow-dom piercing and hiding of found elements
+     */
     const hideHandler = () => {
-        // if no baseSelector, we should find shadow host elements on the page
-        const hostElements = !baseSelector ? findHostElements(document.documentElement)
+        // start value of shadow-dom hosts for the page dom
+        let hostElements = !baseSelector ? findHostElements(document.documentElement)
             : document.querySelectorAll(baseSelector);
 
-        let hidden = false;
-        const DISPLAY_NONE_CSS = 'display:none!important;';
+        do {
+            let hidden = false;
+            const DISPLAY_NONE_CSS = 'display:none!important;';
 
-        const targets = findTargetsToHide(selector, hostElements);
-        targets.forEach((targetEl) => {
-            targetEl.style.cssText = DISPLAY_NONE_CSS;
-            hidden = true;
-        });
+            const { targets, innerHosts } = pierceShadowDom(selector, hostElements);
 
-        if (hidden) {
-            hit(source);
-        }
+            targets.forEach((targetEl) => {
+                targetEl.style.cssText = DISPLAY_NONE_CSS;
+                hidden = true;
+            });
+
+            if (hidden) {
+                hit(source);
+            }
+
+            // continue to pierce for inner shadow-dom hosts
+            // and search inside them while the next iteration
+            hostElements = innerHosts;
+        // loop until there is no shadow-doms left to pierce
+        } while (hostElements.length !== 0);
     };
 
     hideHandler();

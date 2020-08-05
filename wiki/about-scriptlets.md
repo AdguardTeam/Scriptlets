@@ -323,7 +323,7 @@ example.org#%#//scriptlet('disable-newtab-links')
 
 ### <a id="hide-in-shadow-dom"></a> ⚡️ hide-in-shadow-dom
 
-Hides elements in open shadow-dom.
+Hides elements inside open shadow DOM elements.
 
 **Syntax**
 ```
@@ -331,8 +331,11 @@ example.org#%#//scriptlet('hide-in-shadow-dom', selector[, baseSelector])
 ```
 
 - `selector` — required, CSS selector of element in shadow-dom to hide
-- `baseSelector` — optional, base selector to specify selector search area,
+- `baseSelector` — optional, selector of specific page DOM element,
+narrows down the part of the page DOM where shadow-dom host supposed to be,
 defaults to document.documentElement
+
+> `baseSelector` should match element of the page DOM, but not of shadow DOM
 
 **Examples**
 ```
