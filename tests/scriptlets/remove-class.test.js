@@ -78,6 +78,10 @@ test('Adg rule: no selector', (assert) => {
             assert.notOk(third.classList.contains(a), `Class '${a}' has been removed`);
         });
         assert.strictEqual(window.hit, 'FIRED');
+        // clean up test elements
+        first.remove();
+        second.remove();
+        third.remove();
         done();
     }, 50);
 });
@@ -115,6 +119,9 @@ test('Adg rule', (assert) => {
             assert.notOk(childElement.classList.contains(a), `Class '${a}' has been removed`);
         });
         assert.strictEqual(window.hit, 'FIRED');
+        // clean up test elements
+        childElement.remove();
+        parentElement.remove();
         done();
     }, 150);
 });
