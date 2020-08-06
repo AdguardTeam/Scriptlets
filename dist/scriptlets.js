@@ -464,6 +464,37 @@
     };
 
     /**
+     * Some browsers do not support Array.prototype.flat()
+     * for example, Opera 42 which is used for browserstack tests
+     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flat
+     * @param {Array} input
+     */
+    var flatten = function flatten(input) {
+      var stack = [];
+      input.forEach(function (el) {
+        return stack.push(el);
+      });
+      var res = [];
+
+      while (stack.length) {
+        // pop value from stack
+        var next = stack.pop();
+
+        if (Array.isArray(next)) {
+          // push back array items, won't modify the original input
+          next.forEach(function (el) {
+            return stack.push(el);
+          });
+        } else {
+          res.push(next);
+        }
+      } // reverse to restore input order
+
+
+      return res.reverse();
+    };
+
+    /**
      * This file must export all used dependencies
      */
 
@@ -492,7 +523,8 @@
         noopStr: noopStr,
         hit: hit,
         observeDOMChanges: observeDOMChanges,
-        matchStackTrace: matchStackTrace
+        matchStackTrace: matchStackTrace,
+        flatten: flatten
     });
 
     /**
@@ -3671,7 +3703,7 @@
         }); // if there were more than one host element,
         // innerHostsAcc is an array of arrays and should be flatten
 
-        var innerHosts = innerHostsAcc.flat(Infinity);
+        var innerHosts = flatten(innerHostsAcc);
         return {
           targets: targets,
           innerHosts: innerHosts
@@ -3684,7 +3716,7 @@
 
       var hideHandler = function hideHandler() {
         // start value of shadow-dom hosts for the page dom
-        var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
+        var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector); // if there is shadow-dom host, they should be explored
 
         var _loop = function _loop() {
           var hidden = false;
@@ -3705,19 +3737,19 @@
           // and search inside them while the next iteration
 
 
-          hostElements = innerHosts; // loop until there is no shadow-doms left to pierce
+          hostElements = innerHosts;
         };
 
-        do {
+        while (hostElements.length !== 0) {
           _loop();
-        } while (hostElements.length !== 0);
+        }
       };
 
       hideHandler();
       observeDOMChanges(hideHandler, true);
     }
     hideInShadowDom.names = ['hide-in-shadow-dom'];
-    hideInShadowDom.injections = [hit, observeDOMChanges];
+    hideInShadowDom.injections = [hit, observeDOMChanges, flatten];
 
     /**
      * This file must export all scriptlets which should be accessible

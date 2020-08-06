@@ -1,4 +1,4 @@
-import { hit, observeDOMChanges } from '../helpers';
+import { hit, observeDOMChanges, flatten } from '../helpers';
 
 /**
  * @scriptlet hide-in-shadow-dom
@@ -94,7 +94,7 @@ export function hideInShadowDom(source, selector, baseSelector) {
 
         // if there were more than one host element,
         // innerHostsAcc is an array of arrays and should be flatten
-        const innerHosts = innerHostsAcc.flat(Infinity);
+        const innerHosts = flatten(innerHostsAcc);
         return { targets, innerHosts };
     };
 
@@ -106,7 +106,8 @@ export function hideInShadowDom(source, selector, baseSelector) {
         let hostElements = !baseSelector ? findHostElements(document.documentElement)
             : document.querySelectorAll(baseSelector);
 
-        do {
+        // if there is shadow-dom host, they should be explored
+        while (hostElements.length !== 0) {
             let hidden = false;
             const DISPLAY_NONE_CSS = 'display:none!important;';
 
@@ -124,8 +125,7 @@ export function hideInShadowDom(source, selector, baseSelector) {
             // continue to pierce for inner shadow-dom hosts
             // and search inside them while the next iteration
             hostElements = innerHosts;
-        // loop until there is no shadow-doms left to pierce
-        } while (hostElements.length !== 0);
+        }
     };
 
     hideHandler();
@@ -137,4 +137,4 @@ hideInShadowDom.names = [
     'hide-in-shadow-dom',
 ];
 
-hideInShadowDom.injections = [hit, observeDOMChanges];
+hideInShadowDom.injections = [hit, observeDOMChanges, flatten];
