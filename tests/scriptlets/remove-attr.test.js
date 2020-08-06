@@ -79,8 +79,10 @@ test('Adg rule: no selector', (assert) => {
             assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
         });
         assert.strictEqual(window.hit, 'FIRED');
+        // clean up test element
+        elem.remove();
         done();
-    }, 100);
+    }, 150);
 });
 
 test('Adg rule', (assert) => {
@@ -113,6 +115,8 @@ test('Adg rule', (assert) => {
             assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
         });
         assert.strictEqual(window.hit, 'FIRED');
+        // clean up test element
+        elem.remove();
         done();
     }, 100);
 });
