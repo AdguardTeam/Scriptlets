@@ -11,3 +11,4 @@ export * from './noop';
 export * from './hit';
 export * from './observer';
 export * from './match-stack';
+export * from './array-utils';

@@ -30,3 +30,4 @@ import './dir-string.test';
 import './json-prune.test';
 import './prevent-requestAnimationFrame.test';
 import './set-cookie.test';
+import './hide-in-shadow-dom.test';

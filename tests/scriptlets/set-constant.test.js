@@ -170,11 +170,11 @@ test('sets values correctly + stack match', (assert) => {
     assert.strictEqual(window.counter, counter);
     clearGlobalProps(trueProp);
 
-    const noopFuncProp = 'noopFuncProp';
-    counter = runSetConstantScriptlet(noopFuncProp, 'noopFunc', stackMatch);
-    assert.strictEqual(window[noopFuncProp](), undefined);
+    const numProp = 'numProp';
+    counter = runSetConstantScriptlet(numProp, 123, stackMatch);
+    assert.strictEqual(window[numProp], 123);
     assert.strictEqual(window.counter, counter);
-    clearGlobalProps(noopFuncProp);
+    clearGlobalProps(numProp);
 });
 
 test('sets values correctly + no stack match', (assert) => {

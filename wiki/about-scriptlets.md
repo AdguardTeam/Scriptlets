@@ -9,6 +9,7 @@
 * [debug-on-property-write](#debug-on-property-write)
 * [dir-string](#dir-string)
 * [disable-newtab-links](#disable-newtab-links)
+* [hide-in-shadow-dom](#hide-in-shadow-dom)
 * [json-prune](#json-prune)
 * [log-addEventListener](#log-addEventListener)
 * [log-eval](#log-eval)
@@ -320,6 +321,33 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#disable-newtab-linksjs-
 example.org#%#//scriptlet('disable-newtab-links')
 ```
 [Scriptlet source](../src/scriptlets/disable-newtab-links.js)
+* * *
+
+### <a id="hide-in-shadow-dom"></a> ⚡️ hide-in-shadow-dom
+
+Hides elements inside open shadow DOM elements.
+
+**Syntax**
+```
+example.org#%#//scriptlet('hide-in-shadow-dom', selector[, baseSelector])
+```
+
+- `selector` — required, CSS selector of element in shadow-dom to hide
+- `baseSelector` — optional, selector of specific page DOM element,
+narrows down the part of the page DOM where shadow-dom host supposed to be,
+defaults to document.documentElement
+
+> `baseSelector` should match element of the page DOM, but not of shadow DOM
+
+**Examples**
+```
+! hides menu bar
+virustotal.com#%#//scriptlet('hide-in-shadow-dom', 'iron-pages', 'vt-virustotal-app')
+
+! hides floating element
+virustotal.com#%#//scriptlet('hide-in-shadow-dom', 'vt-ui-contact-fab')
+```
+[Scriptlet source](../src/scriptlets/hide-in-shadow-dom.js)
 * * *
 
 ### <a id="json-prune"></a> ⚡️ json-prune
