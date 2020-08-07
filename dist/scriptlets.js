@@ -177,10 +177,14 @@
       return str.substring(0, index);
     };
     var startsWith = function startsWith(str, prefix) {
-      return str && str.indexOf(prefix) === 0;
+      // if str === '', (str && false) will return ''
+      // that's why it has to be !!str
+      return !!str && str.indexOf(prefix) === 0;
     };
     var endsWith = function endsWith(str, prefix) {
-      return str && str.indexOf(prefix) === str.length - 1;
+      // if str === '', (str && false) will return ''
+      // that's why it has to be !!str
+      return !!str && str.indexOf(prefix) === str.length - 1;
     };
     var substringAfter = function substringAfter(str, separator) {
       if (!str) {
