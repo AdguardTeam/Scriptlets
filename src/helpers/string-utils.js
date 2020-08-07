@@ -30,11 +30,15 @@ export const getBeforeRegExp = (str, rx) => {
 };
 
 export const startsWith = (str, prefix) => {
-    return str && str.indexOf(prefix) === 0;
+    // if str === '', (str && false) will return ''
+    // that's why it has to be !!str
+    return !!str && str.indexOf(prefix) === 0;
 };
 
 export const endsWith = (str, prefix) => {
-    return str && str.indexOf(prefix) === str.length - 1;
+    // if str === '', (str && false) will return ''
+    // that's why it has to be !!str
+    return !!str && str.indexOf(prefix) === str.length - 1;
 };
 
 export const substringAfter = (str, separator) => {
