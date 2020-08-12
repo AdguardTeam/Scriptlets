@@ -52,6 +52,12 @@ declare module 'scriptlets' {
     function convertScriptletToAdg(ruleText: string): string[];
 
     /**
+     * Checks if ruleText is valid scriptlet rule
+     * @param ruleText
+     */
+    function isValidScriptletRule(ruleText: string): boolean;
+
+    /**
      * Redirects module
      */
     const redirects: {
