@@ -100,7 +100,10 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
 
             const hasWildcard = requiredPath.indexOf('.*.') > -1
                 || requiredPath.indexOf('*.') > -1
-                || requiredPath.indexOf('.*') > -1;
+                || requiredPath.indexOf('.*') > -1
+                || requiredPath.indexOf('.[].') > -1
+                || requiredPath.indexOf('[].') > -1
+                || requiredPath.indexOf('.[]') > -1;
 
             // if the path has wildcard, getPropertyInChain should 'look through' chain props
             const details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
