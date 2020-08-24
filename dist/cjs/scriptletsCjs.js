@@ -101,7 +101,7 @@ function getWildcardPropertyInChain(base, chain) {
 
   if (pos === -1) {
     // for paths like 'a.b.*' every final nested prop should be processed
-    if (chain === '*') {
+    if (chain === '*' || chain === '[]') {
       Object.keys(base).forEach(function (key) {
         output.push({
           base: base,
@@ -119,7 +119,7 @@ function getWildcardPropertyInChain(base, chain) {
   }
 
   var prop = chain.slice(0, pos);
-  var shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === '*' && base instanceof Object;
+  var shouldLookThrough = (prop === '*' || prop === '[]') && base instanceof Object;
 
   if (shouldLookThrough) {
     var nextProp = chain.slice(pos + 1);
@@ -3354,7 +3354,7 @@ function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
     for (var i = 0; i < requiredPaths.length; i += 1) {
       var requiredPath = requiredPaths[i];
       var lastNestedPropName = requiredPath.split('.').pop();
-      var hasWildcard = requiredPath.indexOf('.*.') > -1 || requiredPath.indexOf('*.') > -1 || requiredPath.indexOf('.*') > -1; // if the path has wildcard, getPropertyInChain should 'look through' chain props
+      var hasWildcard = requiredPath.indexOf('.*.') > -1 || requiredPath.indexOf('*.') > -1 || requiredPath.indexOf('.*') > -1 || requiredPath.indexOf('.[].') > -1 || requiredPath.indexOf('[].') > -1 || requiredPath.indexOf('.[]') > -1; // if the path has wildcard, getPropertyInChain should 'look through' chain props
 
       var details = getWildcardPropertyInChain(root, requiredPath, hasWildcard); // start value of 'shouldProcess' due to checking below
 
