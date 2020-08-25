@@ -38,7 +38,6 @@ const mainConfig = {
         entryFileNames: '[name].js',
         format: 'iife',
         strict: false,
-        sourcemap: true,
         banner,
         footer,
     },
@@ -69,7 +68,6 @@ const cjsConfig = {
         format: 'cjs',
         exports: 'named',
         strict: false,
-        sourcemap: true,
         banner,
         footer,
     },
@@ -102,7 +100,6 @@ const redirectsBuild = {
         name: 'Redirects',
         format: 'iife',
         strict: false,
-        sourcemap: true,
         banner,
     },
     plugins: [
@@ -175,7 +172,6 @@ const tmpRedirectsConfig = {
         entryFileNames: '[name].js',
         format: 'iife',
         strict: false,
-        sourcemap: true,
     },
     plugins: [
         resolve(),
