@@ -10,7 +10,7 @@ import validator from './validator';
 
 import { parseRule } from './parse-rule';
 
-import * as scriptletList from '../scriptlets/scriptletsList';
+import * as scriptletList from '../scriptlets/scriptlets-list';
 
 /**
  * AdGuard scriptlet rule

@@ -14,7 +14,7 @@ import {
     convertAdgRedirectToUbo,
 } from '../helpers/converter';
 
-import * as redirectsList from './redirectsList';
+import * as redirectsList from './redirects-list';
 
 /**
  * Finds redirect resource by it's name

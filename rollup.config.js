@@ -31,7 +31,7 @@ const TMP_DIR = 'tmp';
 
 const mainConfig = {
     input: {
-        scriptlets: 'src/scriptlets/scriptletsWrapper.js',
+        scriptlets: 'src/scriptlets/scriptlets-wrapper.js',
     },
     output: {
         dir: 'dist',
@@ -60,7 +60,7 @@ const mainConfig = {
 
 const cjsConfig = {
     input: {
-        scriptletsCjs: 'src/scriptlets/scriptletsCjsWrapper.js',
+        scriptletsCjs: 'src/scriptlets/scriptlets-cjs-wrapper.js',
     },
     output: {
         dir: 'dist/cjs',
@@ -164,7 +164,7 @@ const testConfig = {
 
 const tmpRedirectsConfig = {
     input: {
-        tmpRedirects: 'src/redirects/redirectsWrapper.js',
+        tmpRedirects: 'src/redirects/redirects-wrapper.js',
     },
     output: {
         name: 'tmpRedirects',
