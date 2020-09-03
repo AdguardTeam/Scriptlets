@@ -23,7 +23,7 @@
     },
     "author": "devteam@adguard.com",
     "license": "LGPL-3.0",
-    "main": "dist/cjs/scriptletsCjs.js",
+    "main": "dist/cjs/scriptlets.cjs.js",
     "types": "dist/cjs/scriptlets.d.ts",
     "devDependencies": {
         "@babel/cli": "^7.8.4",

@@ -60,7 +60,7 @@ const mainConfig = {
 
 const cjsConfig = {
     input: {
-        scriptletsCjs: 'src/scriptlets/scriptlets-cjs-wrapper.js',
+        'scriptlets.cjs': 'src/scriptlets/scriptlets-cjs-wrapper.js',
     },
     output: {
         dir: 'dist/cjs',
