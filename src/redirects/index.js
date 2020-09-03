@@ -16,6 +16,8 @@ import {
 
 import * as redirectsList from './redirects-list';
 
+import Redirects from './redirects';
+
 /**
  * Finds redirect resource by it's name
  * @param {string} name - redirect name
@@ -54,6 +56,7 @@ const getRedirectCode = (source) => {
 };
 
 export const redirectsCjs = {
+    Redirects,
     getCode: getRedirectCode,
     isAdgRedirectRule: validator.isAdgRedirectRule,
     isValidAdgRedirectRule: validator.isValidAdgRedirectRule,
