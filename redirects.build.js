@@ -1,5 +1,5 @@
 import yaml from 'js-yaml';
-import * as redirectsList from './src/redirects/redirectsList';
+import * as redirectsList from './src/redirects/redirects-list';
 import { version } from './package.json';
 
 const fs = require('fs');

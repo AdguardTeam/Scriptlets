@@ -7,7 +7,7 @@ import {
 
 import { ADG_SCRIPTLET_MASK } from './parse-rule';
 
-import * as scriptletsList from '../scriptlets/scriptletsList';
+import * as scriptletsList from '../scriptlets/scriptlets-list';
 
 import { redirects } from '../../scripts/compatibility-table.json';
 

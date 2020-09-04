@@ -15,15 +15,15 @@ const ABOUT_REDIRECTS_PATH = path.resolve(__dirname, '../wiki/about-redirects.md
 const NON_SCRIPTLETS_FILES = [
     'index.js',
     'scriptlets.js',
-    'scriptletsList.js',
-    'scriptletsWrapper.js',
-    'scriptletsCjsWrapper.js',
+    'scriptlets-list.js',
+    'scriptlets-wrapper.js',
+    'scriptlets-cjs-wrapper.js',
 ];
 const NON_REDIRECTS_FILES = [
     'index.js',
     'redirects.js',
-    'redirectsList.js',
-    'redirectsWrapper.js',
+    'redirects-list.js',
+    'redirects-wrapper.js',
 ];
 
 /**

@@ -113,7 +113,8 @@
         },
         {
             "adg": "set-constant",
-            "ubo": "set-constant.js (set.js)"
+            "ubo": "set-constant.js (set.js)",
+            "abp": "override-property-read"
         },
         {
             "adg": "set-popads-dummy"
@@ -204,6 +205,9 @@
         },
         {
             "abp": "profile"
+        },
+        {
+            "abp": "freeze-element"
         }
     ],
     "redirects": [
@@ -326,12 +330,6 @@
         },
         {
             "ubo": "chartbeat.js"
-        },
-        {
-            "ubo": "disqus_embed.js"
-        },
-        {
-            "ubo": "disqus_forums_embed.js"
         },
         {
             "ubo": "doubleclick_instream_ad_status.js"

@@ -31,7 +31,7 @@
 | remove-attr | remove-attr.js (ra.js) |  |
 | remove-class | remove-class.js (rc.js) |  |
 | remove-cookie | cookie-remover.js |  |
-| set-constant | set-constant.js (set.js) |  |
+| set-constant | set-constant.js (set.js) | override-property-read |
 | set-popads-dummy |  |  |
 |  | setInterval-defuser.js (sid.js) |  |
 |  | setTimeout-defuser.js (std.js) |  |
@@ -62,6 +62,7 @@
 |  |  | hide-if-labelled-by |
 |  |  | hide-if-matches-xpath |
 |  |  | profile |
+|  |  | freeze-element |
 
 
 # <a id="redirects"></a> Redirects compatibility table
@@ -98,8 +99,6 @@
 |  | amazon_ads.js |  |
 |  | ampproject_v0.js |  |
 |  | chartbeat.js |  |
-|  | disqus_embed.js |  |
-|  | disqus_forums_embed.js |  |
 |  | doubleclick_instream_ad_status.js |  |
 |  | empty |  |
 |  | google-analytics_cx_api.js |  |

@@ -14,7 +14,9 @@ import {
     convertAdgRedirectToUbo,
 } from '../helpers/converter';
 
-import * as redirectsList from './redirectsList';
+import * as redirectsList from './redirects-list';
+
+import Redirects from './redirects';
 
 /**
  * Finds redirect resource by it's name
@@ -54,6 +56,7 @@ const getRedirectCode = (source) => {
 };
 
 export const redirectsCjs = {
+    Redirects,
     getCode: getRedirectCode,
     isAdgRedirectRule: validator.isAdgRedirectRule,
     isValidAdgRedirectRule: validator.isValidAdgRedirectRule,

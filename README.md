@@ -121,7 +121,7 @@ yarn browserstack
 
 #### Scriptlets library
 
-You are welcome to use scriptlets and redirect resources as a CJS module. They can be imported from `dist/cjs/scriptletsCjs.js`:
+You are welcome to use scriptlets and redirect resources as a CJS module. They can be imported from `dist/cjs/scriptlets.cjs.js`:
 
 ```javascript
 const scriptlets = require('scriptlets');
