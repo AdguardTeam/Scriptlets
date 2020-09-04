@@ -61,6 +61,14 @@ declare module 'scriptlets' {
     }
 
     /**
+     * Redirects class
+     */
+    class Redirects {
+        constructor(rawYaml: string): Redirect;
+        getRedirect(title: string): Redirect;
+    }
+
+    /**
      * Returns scriptlet code by param
      *
      * @param source
@@ -89,7 +97,7 @@ declare module 'scriptlets' {
         /**
          * Object with redirects titles in the keys and RedirectSources
          */
-        Redirects: Redirect[];
+        Redirects: Redirects;
 
         /**
          * Checks if the `rule` is AdGuard redirect rule.
