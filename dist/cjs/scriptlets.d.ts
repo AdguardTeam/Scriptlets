@@ -64,7 +64,7 @@ declare module 'scriptlets' {
      * Redirects class
      */
     class Redirects {
-        constructor(rawYaml: string): Redirect;
+        constructor(rawYaml: string);
         getRedirect(title: string): Redirect;
     }
 

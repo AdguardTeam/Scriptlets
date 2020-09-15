@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.3
+ * Version 1.3.4
  */
 
 (function () {
@@ -286,6 +286,13 @@
       return this;
     }
     /**
+     * Function returns empty string
+     */
+
+    var noopStr = function noopStr() {
+      return '';
+    };
+    /**
      * Function returns empty array
      */
 
@@ -293,11 +300,11 @@
       return [];
     };
     /**
-     * Function returns empty string
+     * Function returns empty array
      */
 
-    var noopStr = function noopStr() {
-      return '';
+    var noopObject = function noopObject() {
+      return {};
     };
 
     /* eslint-disable no-console, no-underscore-dangle */
@@ -523,8 +530,9 @@
         trueFunc: trueFunc,
         falseFunc: falseFunc,
         noopThis: noopThis,
-        noopArray: noopArray,
         noopStr: noopStr,
+        noopArray: noopArray,
+        noopObject: noopObject,
         hit: hit,
         observeDOMChanges: observeDOMChanges,
         matchStackTrace: matchStackTrace,
@@ -1664,6 +1672,8 @@
      *         - `false`
      *         - `true`
      *         - `null`
+     *         - `emptyObj` - empty object
+     *         - `emptyArr` - empty array
      *         - `noopFunc` - function with empty body
      *         - `trueFunc` - function returning true
      *         - `falseFunc` - function returning false
@@ -1695,6 +1705,8 @@
 
       var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
 
+      var emptyArr = noopArray();
+      var emptyObj = noopObject();
       var constantValue;
 
       if (value === 'undefined') {
@@ -1705,6 +1717,10 @@
         constantValue = true;
       } else if (value === 'null') {
         constantValue = null;
+      } else if (value === 'emptyArr') {
+        constantValue = emptyArr;
+      } else if (value === 'emptyObj') {
+        constantValue = emptyObj;
       } else if (value === 'noopFunc') {
         constantValue = noopFunc;
       } else if (value === 'trueFunc') {
@@ -1799,7 +1815,7 @@
     }
     setConstant.names = ['set-constant', // aliases are needed for matching the related scriptlet converted into our syntax
     'set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js', 'ubo-set-constant', 'ubo-set', 'abp-override-property-read'];
-    setConstant.injections = [getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, hit, noopFunc, trueFunc, falseFunc];
+    setConstant.injections = [getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, hit, noopArray, noopObject, noopFunc, trueFunc, falseFunc];
 
     /* eslint-disable max-len */
 

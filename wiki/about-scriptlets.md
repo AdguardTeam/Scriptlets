@@ -1072,6 +1072,8 @@ example.org#%#//scriptlet('set-constant', property, value[, stack])
         - `false`
         - `true`
         - `null`
+        - `emptyObj` - empty object
+        - `emptyArr` - empty array
         - `noopFunc` - function with empty body
         - `trueFunc` - function returning true
         - `falseFunc` - function returning false
