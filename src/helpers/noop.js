@@ -36,6 +36,6 @@ export const noopStr = () => '';
 export const noopArray = () => [];
 
 /**
- * Function returns empty array
+ * Function returns empty object
  */
 export const noopObject = () => ({});

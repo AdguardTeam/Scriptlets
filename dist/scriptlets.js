@@ -300,7 +300,7 @@
       return [];
     };
     /**
-     * Function returns empty array
+     * Function returns empty object
      */
 
     var noopObject = function noopObject() {
