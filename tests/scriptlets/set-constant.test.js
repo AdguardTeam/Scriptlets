@@ -76,6 +76,22 @@ test('sets values correctly', (assert) => {
     assert.strictEqual(window.counter, counter);
     clearGlobalProps(nullProp);
 
+    // setting constant to empty array
+    const emptyArr = 'emptyArr';
+    counter = runSetConstantScriptlet(emptyArr, 'emptyArr');
+    assert.ok(window[emptyArr] instanceof Array);
+    assert.strictEqual(window[emptyArr].length, 0);
+    assert.strictEqual(window.counter, counter);
+    clearGlobalProps(emptyArr);
+
+    // setting constant to empty object
+    const emptyObj = 'emptyObj';
+    counter = runSetConstantScriptlet(emptyObj, 'emptyObj');
+    assert.ok(window[emptyObj] instanceof Object);
+    assert.strictEqual(Object.keys(window[emptyObj]).length, 0);
+    assert.strictEqual(window.counter, counter);
+    clearGlobalProps(emptyObj);
+
     // setting constant to noopFunc;
     const noopFuncProp = 'noopFuncProp';
     counter = runSetConstantScriptlet(noopFuncProp, 'noopFunc');

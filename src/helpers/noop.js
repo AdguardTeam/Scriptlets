@@ -26,11 +26,16 @@ export function noopThis() {
 }
 
 /**
+ * Function returns empty string
+ */
+export const noopStr = () => '';
+
+/**
  * Function returns empty array
  */
 export const noopArray = () => [];
 
 /**
- * Function returns empty string
+ * Function returns empty object
  */
-export const noopStr = () => '';
+export const noopObject = () => ({});
