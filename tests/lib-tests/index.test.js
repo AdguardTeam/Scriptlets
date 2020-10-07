@@ -177,6 +177,20 @@ test('Test redirect rule validation', (assert) => {
     // invalid redirect name
     inputRule = '||example.com^$script,rewrite=abp-resource:noop-js';
     assert.strictEqual(validator.isAbpRedirectCompatibleWithAdg(inputRule), false);
+
+    // do not confuse with other script rules
+    inputRule = 'intermarche.pl#%#document.cookie = "interapp_redirect=false; path=/;";';
+    assert.strictEqual(validator.isAbpRedirectCompatibleWithAdg(inputRule), false);
+
+    // do not confuse with other script rules
+    inputRule = 'intermarche.pl#%#document.cookie = "interapp_redirect=false; path=/;";';
+    assert.strictEqual(validator.isUboRedirectCompatibleWithAdg(inputRule), false);
+
+    inputRule = '&pub_redirect=';
+    assert.strictEqual(validator.isUboRedirectCompatibleWithAdg(inputRule), false);
+
+    inputRule = '@@||popsci.com/gdpr.html?redirect=';
+    assert.strictEqual(validator.isUboRedirectCompatibleWithAdg(inputRule), false);
 });
 
 test('Test Adguard redirect resource rule', (assert) => {

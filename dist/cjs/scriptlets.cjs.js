@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.4
+ * Version 1.3.5
  */
 
 /**
@@ -4058,6 +4058,11 @@ var isRedirectRuleByType = function isRedirectRuleByType(rule, type) {
 
   if (rule && !isComment(rule) && rule.indexOf(marker) > -1) {
     var redirectName = getRedirectName(rule, marker);
+
+    if (!redirectName) {
+      return false;
+    }
+
     return redirectName === Object.keys(compatibility).find(function (el) {
       return el === redirectName;
     });
