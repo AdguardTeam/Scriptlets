@@ -273,6 +273,10 @@ const isRedirectRuleByType = (rule, type) => {
         && (rule.indexOf(marker) > -1)) {
         const redirectName = getRedirectName(rule, marker);
 
+        if (!redirectName) {
+            return false;
+        }
+
         return redirectName === Object
             .keys(compatibility)
             .find((el) => el === redirectName);
