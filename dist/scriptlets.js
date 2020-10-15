@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.5
+ * Version 1.3.6
  */
 
 (function () {
@@ -4515,13 +4515,19 @@
 
 
         var lastArg = arguments[len - 1];
+        var replacer;
 
-        if (typeof lastArg !== 'object' || lastArg === null || typeof lastArg.hitCallback !== 'function') {
-          return;
+        if (lastArg instanceof Object && lastArg !== null && typeof lastArg.hitCallback === 'function') {
+          replacer = lastArg.hitCallback;
+        } else if (typeof lastArg === 'function') {
+          // https://github.com/AdguardTeam/Scriptlets/issues/98
+          replacer = function replacer() {
+            lastArg(ga.create());
+          };
         }
 
         try {
-          lastArg.hitCallback(); // eslint-disable-next-line no-empty
+          setTimeout(replacer, 1); // eslint-disable-next-line no-empty
         } catch (ex) {}
       }
 

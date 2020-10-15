@@ -38,7 +38,7 @@ test('Checking if alias name works', (assert) => {
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
-test('AdGuard Syntax', (assert) => {
+test('Check ga api', (assert) => {
     const params = {
         name,
         verbose: true,
@@ -66,4 +66,30 @@ test('AdGuard Syntax', (assert) => {
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 
     clearGlobalProps('__debug', 'hit', 'dataLayer', 'ga');
+});
+
+test('Function as lastArg', (assert) => {
+    const params = {
+        name,
+        verbose: true,
+    };
+    window.__debug = () => { window.hit = 'FIRED'; };
+
+    // run scriptlet
+    const resString = window.scriptlets.redirects.getCode(params);
+    evalWrapper(resString);
+    const done = assert.async();
+
+    const testMethod = () => {
+        window.test = true;
+    };
+    window.ga(testMethod);
+
+    assert.ok(window.ga, 'ga object was created');
+    assert.notEqual(window.ga.length, 0, 'ga.length was mocked');
+    setTimeout(() => {
+        assert.equal(window.test, true, 'lastArg-function has run');
+        clearGlobalProps('__debug', 'hit', 'ga');
+        done();
+    }, 20);
 });
