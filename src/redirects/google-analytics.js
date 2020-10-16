@@ -34,15 +34,21 @@ export function GoogleAnalytics(source) {
         }
         // eslint-disable-next-line prefer-rest-params
         const lastArg = arguments[len - 1];
-        if (typeof lastArg !== 'object'
-            || lastArg === null
-            || typeof lastArg.hitCallback !== 'function'
-        ) {
-            return;
+
+        let replacer;
+        if (lastArg instanceof Object
+            && lastArg !== null
+            && typeof lastArg.hitCallback === 'function') {
+            replacer = lastArg.hitCallback;
+        } else if (typeof lastArg === 'function') {
+            // https://github.com/AdguardTeam/Scriptlets/issues/98
+            replacer = () => {
+                lastArg(ga.create());
+            };
         }
 
         try {
-            lastArg.hitCallback();
+            setTimeout(replacer, 1);
             // eslint-disable-next-line no-empty
         } catch (ex) { }
     }
