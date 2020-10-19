@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.6
+ * Version 1.3.7
  */
 
 /**
@@ -4235,7 +4235,7 @@ var convertUboScriptletToAdg = function convertUboScriptletToAdg(rule) {
     template = ADGUARD_SCRIPTLET_TEMPLATE;
   }
 
-  var args = getStringInBraces(rule).split(/, /g).map(function (arg, index) {
+  var args = getStringInBraces(rule).split(/,\s?/g).map(function (arg, index) {
     var outputArg;
 
     if (index === 0) {
