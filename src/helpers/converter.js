@@ -73,7 +73,7 @@ export const convertUboScriptletToAdg = (rule) => {
         template = ADGUARD_SCRIPTLET_TEMPLATE;
     }
     const args = getStringInBraces(rule)
-        .split(/,\s?/g)
+        .split(/, /g)
         .map((arg, index) => {
             let outputArg;
             if (index === 0) {

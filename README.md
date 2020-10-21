@@ -180,6 +180,7 @@ scriptlets.isAbpSnippetRule(rule);
 */
 scriptlets.convertUboToAdg(rule);
 ```
+> Note that parameters in UBO rule should be separated by comma + space. Otherwise, the rule is not valid.
 
 ```javascript
 /**
