@@ -25,6 +25,10 @@ test('Test scriptlet rule validation', (assert) => {
     inputRule = 'example.org#@%#//scriptlet("ubo-aopw.js", "notDetected")';
     assert.strictEqual(isValidScriptletRule(inputRule), true);
 
+    // no space between parameters
+    inputRule = 'example.org##+js(aopr,__cad.cpm_popunder)';
+    assert.strictEqual(isValidScriptletRule(inputRule), false);
+
     // invalid scriptlet name
     inputRule = 'example.org#@%#//scriptlet("ubo-abort-scriptlet.js", "notDetected")';
     assert.strictEqual(isValidScriptletRule(inputRule), false);
@@ -60,6 +64,7 @@ test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
     let blockingRule = 'example.org##+js(setTimeout-defuser.js, [native code], 8000)';
     let expBlockRule = 'example.org#%#//scriptlet(\'ubo-setTimeout-defuser.js\', \'[native code]\', \'8000\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
+
     // '$' as parameter
     blockingRule = 'example.org##+js(abort-current-inline-script, $, popup)';
     expBlockRule = 'example.org#%#//scriptlet(\'ubo-abort-current-inline-script.js\', \'$\', \'popup\')';
