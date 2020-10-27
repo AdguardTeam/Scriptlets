@@ -7,6 +7,7 @@
 * [noopcss](#noopcss)
 * [noopjs](#noopjs)
 * [nooptext](#nooptext)
+* [empty](#empty)
 * [noopvmap-1.0](#noopvmap-1.0)
 * [noopvast-2.0](#noopvast-2.0)
 * [noopvast-3.0](#noopvast-3.0)
@@ -86,6 +87,16 @@
 **Example**
 ```
 ||example.org/advert.js$xmlhttprequest,redirect=nooptext
+```
+[Redirect source](../src/redirects/static-redirects.yml)
+* * *
+
+### <a id="empty"></a> ⚡️ empty
+Pretty much the same as `nooptext`. Used for conversion of modifier `empty` so better avoid its using in production filter lists.
+
+**Example**
+```
+||example.org/log$redirect=empty
 ```
 [Redirect source](../src/redirects/static-redirects.yml)
 * * *

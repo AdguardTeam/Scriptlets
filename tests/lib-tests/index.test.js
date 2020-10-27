@@ -144,6 +144,10 @@ test('Test redirect rule validation', (assert) => {
     let inputRule = '||example.org$xmlhttprequest,redirect=noopvast-2.0';
     assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), true);
 
+    // check if 'empty' redirect is valid
+    inputRule = '||example.com/log$redirect=empty';
+    assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), true);
+
     // redirect name is wrong, but this one only for checking ADG redirect marker "redirect="
     inputRule = '||example.com/banner$image,redirect=redirect.png';
     assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);
@@ -158,6 +162,9 @@ test('Test redirect rule validation', (assert) => {
 
     // check is adg redirect valid for conversion to ubo
     inputRule = '||example.orf^$media,redirect=noopmp4-1s,third-party';
+    assert.strictEqual(validator.isAdgRedirectCompatibleWithUbo(inputRule), true);
+    // check 'empty' redirect
+    inputRule = '||example.com/log$redirect=empty';
     assert.strictEqual(validator.isAdgRedirectCompatibleWithUbo(inputRule), true);
     // invalid redirect name
     inputRule = '||example.orf^$media,redirect=no-mp4';
@@ -242,6 +249,17 @@ test('Test redirect rule validation for ADG -> UBO converting', (assert) => {
     // no source type
     adgRule = '||example.com^$important,redirect=nooptext';
     assert.strictEqual(validator.hasValidContentType(adgRule), false);
+
+    // no source type for 'empty' is allowed
+    adgRule = ' ||example.org^$redirect=empty,third-party';
+    assert.strictEqual(validator.hasValidContentType(adgRule), true);
+
+    // only text source types for 'empty' are allowed
+    adgRule = ' ||example.org^$script,redirect=empty,third-party';
+    assert.strictEqual(validator.hasValidContentType(adgRule), true);
+    // so 'media' is not valid
+    adgRule = ' ||example.org^$stylesheet,media,redirect=empty,third-party';
+    assert.strictEqual(validator.hasValidContentType(adgRule), false);
 });
 
 test('Test REDIRECT converting - ADG -> UBO', (assert) => {
@@ -251,5 +269,9 @@ test('Test REDIRECT converting - ADG -> UBO', (assert) => {
 
     adgRule = '||example.com/images/*.png$image,important,redirect=1x1-transparent.gif,domain=example.com|example.org';
     expectedUboRule = '||example.com/images/*.png$image,important,redirect=1x1.gif,domain=example.com|example.org';
+    assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
+
+    adgRule = '||example.com/vast/$important,redirect=empty,~thirt-party';
+    expectedUboRule = '||example.com/vast/$important,redirect=empty,~thirt-party';
     assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
 });

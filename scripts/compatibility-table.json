@@ -183,9 +183,6 @@
             "abp": "hide-if-contains-image"
         },
         {
-            "abp": "readd"
-        },
-        {
             "abp": "strip-fetch-query-parameter"
         },
         {
@@ -208,6 +205,15 @@
         },
         {
             "abp": "freeze-element"
+        },
+        {
+            "ubo": "abort-on-stack-trace.js (aost.js)"
+        },
+        {
+            "abp": "prepareInjection"
+        },
+        {
+            "abp": "commitInjection"
         }
     ],
     "redirects": [
@@ -335,6 +341,7 @@
             "ubo": "doubleclick_instream_ad_status.js"
         },
         {
+            "adg": "empty",
             "ubo": "empty"
         },
         {
@@ -363,6 +370,9 @@
         },
         {
             "ubo": "noeval.js"
+        },
+        {
+            "ubo": "click2load.html"
         }
     ]
 }
