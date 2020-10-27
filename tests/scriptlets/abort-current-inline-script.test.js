@@ -248,3 +248,37 @@ test('Patched textContent', (assert) => {
     assert.strictEqual(window.hit, 'FIRED');
     clearGlobalProps(...changingGlobals);
 });
+
+test('abort self-cleaning and self-removing iife', (assert) => {
+    const property = 'alert';
+    const search = 'test';
+    const params = {
+        name,
+        args: [property, search],
+        verbose: true,
+    };
+    window.__debug = () => {
+        window.hit = 'FIRED';
+    };
+    const resString = window.scriptlets.invoke(params);
+
+    window.onerror = onError(assert);
+
+    evalWrapper(resString);
+    addAndRemoveInlineScript(`!(function () {
+        var t, e = window.document;
+        debugger;
+        try {
+            (t = e.currentScript).textContent = "";
+        } catch (t) {}
+        
+        try {
+            t.parentNode.removeChild(t);
+        } catch (t) {}
+        
+        ${property}("${search}");
+        })();`);
+
+    assert.strictEqual(window.hit, 'FIRED');
+    clearGlobalProps(...changingGlobals);
+});
