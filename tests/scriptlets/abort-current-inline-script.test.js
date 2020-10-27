@@ -267,7 +267,6 @@ test('abort self-cleaning and self-removing iife', (assert) => {
     evalWrapper(resString);
     addAndRemoveInlineScript(`!(function () {
         var t, e = window.document;
-        debugger;
         try {
             (t = e.currentScript).textContent = "";
         } catch (t) {}
