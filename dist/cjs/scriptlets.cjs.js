@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.7
+ * Version 1.3.8
  */
 
 /**
@@ -102,12 +102,13 @@ function getWildcardPropertyInChain(base, chain) {
   if (pos === -1) {
     // for paths like 'a.b.*' every final nested prop should be processed
     if (chain === '*' || chain === '[]') {
-      Object.keys(base).forEach(function (key) {
+      // eslint-disable-next-line no-restricted-syntax, guard-for-in
+      for (var key in base) {
         output.push({
           base: base,
           prop: key
         });
-      });
+      }
     } else {
       output.push({
         base: base,
@@ -119,7 +120,7 @@ function getWildcardPropertyInChain(base, chain) {
   }
 
   var prop = chain.slice(0, pos);
-  var shouldLookThrough = (prop === '*' || prop === '[]') && base instanceof Object;
+  var shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === '*' && base instanceof Object;
 
   if (shouldLookThrough) {
     var nextProp = chain.slice(pos + 1);
@@ -3419,10 +3420,10 @@ function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
       ownerObjArr.forEach(function (ownerObj) {
         if (ownerObj !== undefined && ownerObj.base) {
           delete ownerObj.base[ownerObj.prop];
+          hit(source);
         }
       });
     });
-    hit(source);
     return root;
   };
 

@@ -22,9 +22,10 @@ export function getWildcardPropertyInChain(base, chain, lookThrough = false, out
     if (pos === -1) {
         // for paths like 'a.b.*' every final nested prop should be processed
         if (chain === '*' || chain === '[]') {
-            Object.keys(base).forEach((key) => {
+            // eslint-disable-next-line no-restricted-syntax, guard-for-in
+            for (const key in base) {
                 output.push({ base, prop: key });
-            });
+            }
         } else {
             output.push({ base, prop: chain });
         }
@@ -34,8 +35,8 @@ export function getWildcardPropertyInChain(base, chain, lookThrough = false, out
 
     const prop = chain.slice(0, pos);
 
-    const shouldLookThrough = (prop === '*' || prop === '[]')
-        && base instanceof Object;
+    const shouldLookThrough = (prop === '[]' && Array.isArray(base))
+        || (prop === '*' && base instanceof Object);
 
     if (shouldLookThrough) {
         const nextProp = chain.slice(pos + 1);
