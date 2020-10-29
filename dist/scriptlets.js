@@ -105,6 +105,7 @@
         if (chain === '*' || chain === '[]') {
           // eslint-disable-next-line no-restricted-syntax
           for (var key in base) {
+            // to process each key in base except inherited ones
             if (Object.prototype.hasOwnProperty.call(base, key)) {
               output.push({
                 base: base,
