@@ -71,6 +71,14 @@
         "content": ""
     },
     {
+        "title": "empty",
+        "aliases": [
+            "empty"
+        ],
+        "contentType": "text/plain;base64",
+        "content": ""
+    },
+    {
         "title": "noopvmap-1.0",
         "contentType": "text/xml;base64",
         "content": "PHZtYXA6Vk1BUCB4bWxuczp2bWFwPSJodHRwOi8vd3d3LmlhYi5uZXQvdmlkZW9zdWl0ZS92bWFwIiB2ZXJzaW9uPSIxLjAiPjwvdm1hcDpWTUFQPg=="
