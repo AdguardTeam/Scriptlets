@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.8
+ * Version 1.3.9
  */
 
 (function () {
@@ -103,12 +103,14 @@
       if (pos === -1) {
         // for paths like 'a.b.*' every final nested prop should be processed
         if (chain === '*' || chain === '[]') {
-          // eslint-disable-next-line no-restricted-syntax, guard-for-in
+          // eslint-disable-next-line no-restricted-syntax
           for (var key in base) {
-            output.push({
-              base: base,
-              prop: key
-            });
+            if (Object.prototype.hasOwnProperty.call(base, key)) {
+              output.push({
+                base: base,
+                prop: key
+              });
+            }
           }
         } else {
           output.push({

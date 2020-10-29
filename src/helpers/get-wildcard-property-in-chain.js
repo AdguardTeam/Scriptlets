@@ -22,9 +22,11 @@ export function getWildcardPropertyInChain(base, chain, lookThrough = false, out
     if (pos === -1) {
         // for paths like 'a.b.*' every final nested prop should be processed
         if (chain === '*' || chain === '[]') {
-            // eslint-disable-next-line no-restricted-syntax, guard-for-in
+            // eslint-disable-next-line no-restricted-syntax
             for (const key in base) {
-                output.push({ base, prop: key });
+                if (Object.prototype.hasOwnProperty.call(base, key)) {
+                    output.push({ base, prop: key });
+                }
             }
         } else {
             output.push({ base, prop: chain });
