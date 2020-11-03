@@ -79,6 +79,9 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
         return;
     }
 
+    // eslint-disable-next-line no-debugger
+    debugger;
+
     // eslint-disable-next-line no-console
     const log = console.log.bind(console);
     const prunePaths = propsToRemove !== undefined && propsToRemove !== ''
@@ -131,26 +134,49 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
     const nativeParse = JSON.parse;
 
     const parseWrapper = (...args) => {
-        const root = nativeParse.apply(window, args);
-        if (prunePaths.length === 0) {
-            log(window.location.hostname, root);
-            return root;
+        log(typeof args, args);
+        const isEmptySrt = args === '';
+        if (isEmptySrt) {
+            return;
         }
-        if (isPruningNeeded(root) === false) {
-            return root;
+        const isArrWithEmptySrt = args instanceof Array && args.length === 1 && args[0] === '';
+        if (isArrWithEmptySrt) {
+            return;
         }
-        // if pruning is needed, we check every input pathToRemove
-        // and delete it if root has it
-        prunePaths.forEach((path) => {
-            const ownerObjArr = getWildcardPropertyInChain(root, path, true);
-            ownerObjArr.forEach((ownerObj) => {
-                if (ownerObj !== undefined && ownerObj.base) {
-                    delete ownerObj.base[ownerObj.prop];
+        try {
+            const root = nativeParse.apply(window, args);
+            if (prunePaths.length === 0) {
+                log(window.location.hostname, root);
+
+                // eslint-disable-next-line no-debugger
+                debugger;
+
+                const isArgsAreOneItemArray = args instanceof Array && args.length === 1;
+                if (isArgsAreOneItemArray) {
+                    const altResult = [JSON.stringify(root)];
+                    return altResult; // eslint-disable-line consistent-return
                 }
+                return root; // eslint-disable-line consistent-return
+            }
+            if (isPruningNeeded(root) === false) {
+                return root; // eslint-disable-line consistent-return
+            }
+
+            // if pruning is needed, we check every input pathToRemove
+            // and delete it if root has it
+            prunePaths.forEach((path) => {
+                const ownerObjArr = getWildcardPropertyInChain(root, path, true);
+                ownerObjArr.forEach((ownerObj) => {
+                    if (ownerObj !== undefined && ownerObj.base) {
+                        delete ownerObj.base[ownerObj.prop];
+                    }
+                });
             });
-        });
-        hit(source);
-        return root;
+            hit(source);
+            return root; // eslint-disable-line consistent-return
+        } catch (e) {
+            log('!!! alarm: ', e.message);
+        }
     };
 
     JSON.parse = parseWrapper;
