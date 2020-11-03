@@ -169,10 +169,11 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
                 ownerObjArr.forEach((ownerObj) => {
                     if (ownerObj !== undefined && ownerObj.base) {
                         delete ownerObj.base[ownerObj.prop];
+                        hit(source);
                     }
                 });
             });
-            hit(source);
+
             return root; // eslint-disable-line consistent-return
         } catch (e) {
             log('!!! alarm: ', e.message);

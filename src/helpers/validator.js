@@ -129,14 +129,24 @@ const isValidScriptletName = (name) => {
  */
 const ADG_UBO_REDIRECT_MARKER = 'redirect=';
 const ABP_REDIRECT_MARKER = 'rewrite=abp-resource:';
+const EMPTY_REDIRECT_MARKER = 'empty';
 
 const VALID_SOURCE_TYPES = [
     'image',
+    'media',
     'subdocument',
     'stylesheet',
     'script',
     'xmlhttprequest',
-    'media',
+    'other',
+];
+
+const EMPTY_REDIRECT_SUPPORTED_TYPES = [
+    'subdocument',
+    'stylesheet',
+    'script',
+    'xmlhttprequest',
+    'other',
 ];
 
 const validAdgRedirects = redirects.filter((el) => el.adg);
@@ -339,10 +349,27 @@ const isAbpRedirectCompatibleWithAdg = (rule) => {
 const hasValidContentType = (rule) => {
     if (isRedirectRuleByType(rule, 'ADG')) {
         const ruleModifiers = parseModifiers(rule);
-        const sourceType = ruleModifiers
-            .find((el) => VALID_SOURCE_TYPES.indexOf(el) > -1);
+        // rule can have more than one source type modifier
+        const sourceTypes = ruleModifiers
+            .filter((el) => VALID_SOURCE_TYPES.indexOf(el) > -1);
 
-        return sourceType !== undefined;
+        const isSourceTypeSpecified = sourceTypes.length > 0;
+        const isEmptyRedirect = ruleModifiers.indexOf(`${ADG_UBO_REDIRECT_MARKER}${EMPTY_REDIRECT_MARKER}`) > -1;
+
+        if (isEmptyRedirect) {
+            if (isSourceTypeSpecified) {
+                const isValidType = sourceTypes.reduce((acc, sType) => {
+                    const isEmptySupported = EMPTY_REDIRECT_SUPPORTED_TYPES
+                        .find((type) => type === sType);
+                    return !!isEmptySupported && acc;
+                }, true);
+                return isValidType;
+            }
+            // no source type for 'empty' is allowed
+            return true;
+        }
+
+        return isSourceTypeSpecified;
     }
     return false;
 };

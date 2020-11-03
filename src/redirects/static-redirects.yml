@@ -117,6 +117,20 @@
   contentType: text/plain
   content: ''
 
+- title: empty
+  description: |-
+    Pretty much the same as `nooptext`. Used for conversion of modifier `empty` so better avoid its using in production filter lists.
+
+    **Example**
+    ```
+    ||example.org/log$redirect=empty
+    ```
+  aliases:
+    - empty
+  file: nooptext.js
+  contentType: text/plain
+  content: ''
+
 - title: noopvmap-1.0
   description: |-
     Redirects request to an empty VMAP response.

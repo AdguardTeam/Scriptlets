@@ -140,16 +140,20 @@ test('removes propsToRemove with wildcard', (assert) => {
     assert.deepEqual(JSON.parse('{"0": {"media": {"id":0, "src":0}, "ad": {"id":0, "src":0}}, "1": {"media": {"id":1, "src":1}, "ad": {"id":1, "src":1}}}'), { 0: {}, 1: {} }, 'should remove propsToRemove with wildcard');
     runScriptlet('json-prune', '*.*.*');
     assert.deepEqual(JSON.parse('{"0": {"media": {"id":0, "src":0}, "ad": {"id":0, "src":0}}, "1": {"media": {"id":1, "src":1}, "ad": {"id":1, "src":1}}}'), { 0: { media: {}, ad: {} }, 1: { media: {}, ad: {} } }, 'should remove propsToRemove with wildcard');
-    runScriptlet('json-prune', 'x.[].ad');
+    runScriptlet('json-prune', 'x.*.ad');
     assert.deepEqual(JSON.parse('{"x": {"0": {"ad":0, "preview":true}, "1": {"ad":1, "preview":false}}}'), { x: { 0: { preview: true }, 1: { preview: false } } }, 'should remove propsToRemove with wildcard in the middle - multiple');
-    runScriptlet('json-prune', '[].ad');
+    runScriptlet('json-prune', '*.ad');
     assert.deepEqual(JSON.parse('{"0": {"media": {"id":0, "src":0}, "ad": {"id":0, "src":0}}, "1": {"media": {"id":1, "src":1}, "ad": {"id":1, "src":1}}}'), { 0: { media: { id: 0, src: 0 } }, 1: { media: { id: 1, src: 1 } } }, 'should remove propsToRemove with wildcard at the start');
-    runScriptlet('json-prune', '[].ad.*');
+    runScriptlet('json-prune', '*.ad.*');
     assert.deepEqual(JSON.parse('{"0": {"media": {"id":0, "src":0}, "ad": {"id":0, "src":0}}, "1": {"media": {"id":1, "src":1}, "ad": {"id":1, "src":1}}}'), { 0: { media: { id: 0, src: 0 }, ad: {} }, 1: { media: { id: 1, src: 1 }, ad: {} } }, 'should remove propsToRemove with wildcard - mixed');
-    runScriptlet('json-prune', '[].*');
+    runScriptlet('json-prune', '*.*');
     assert.deepEqual(JSON.parse('{"0": {"media": {"id":0, "src":0}, "ad": {"id":0, "src":0}}, "1": {"media": {"id":1, "src":1}, "ad": {"id":1, "src":1}}}'), { 0: {}, 1: {} }, 'should remove propsToRemove with wildcard');
-    runScriptlet('json-prune', '[].*.*');
+    runScriptlet('json-prune', '*.*.*');
     assert.deepEqual(JSON.parse('{"0": {"media": {"id":0, "src":0}, "ad": {"id":0, "src":0}}, "1": {"media": {"id":1, "src":1}, "ad": {"id":1, "src":1}}}'), { 0: { media: {}, ad: {} }, 1: { media: {}, ad: {} } }, 'should remove propsToRemove with wildcard');
+    runScriptlet('json-prune', 'a.[].src');
+    assert.deepEqual(JSON.parse('{"a": [ {"id":0, "src":"ad_src_0"}, {"id":1, "src":"ad_src_1"}, {"id":2, "src":"ad_src_2"}], "b": {"ready":true, "preview":true}}'), { a: [{ id: 0 }, { id: 1 }, { id: 2 }], b: { ready: true, preview: true } }, 'should remove propsToRemove -- wildcard in propsToRemove for array');
+    runScriptlet('json-prune', '[].ads');
+    assert.deepEqual(JSON.parse('[ {"media":"ertu", "ads":"ad_src_0"}, {"media":"sgesr", "ads":"ad_src_1"}, {"media":"yhiuo", "ads":"ad_src_2"} ]'), [{ media: 'ertu' }, { media: 'sgesr' }, { media: 'yhiuo' }], 'should remove propsToRemove -- wildcard in propsToRemove for array');
 });
 
 test('removes propsToRemove if nested requiredInitialProps has wildcard', (assert) => {
@@ -159,8 +163,8 @@ test('removes propsToRemove if nested requiredInitialProps has wildcard', (asser
     assert.deepEqual(JSON.parse('{"a": {"src":"ad_src"}, "b": {"preview":true}}'), { a: {}, b: { preview: true } }, 'should remove propsToRemove as well');
     runScriptlet('json-prune', 'a.*.src', '*.preview');
     assert.deepEqual(JSON.parse('{"a": { "0": {"id":0, "src":"ad_src_0"}, "1": {"id":1, "src":"ad_src_1"}, "2": {"id":2, "src":"ad_src_2"}}, "b": {"ready":true, "preview":true}}'), { a: { 0: { id: 0 }, 1: { id: 1 }, 2: { id: 2 } }, b: { ready: true, preview: true } }, 'should remove propsToRemove as well -- wildcard in propsToRemove and requiredInitialProps');
-    runScriptlet('json-prune', 'a.[].src', '*.preview');
-    assert.deepEqual(JSON.parse('{"a": { "0": {"id":0, "src":"ad_src_0"}, "1": {"id":1, "src":"ad_src_1"}, "2": {"id":2, "src":"ad_src_2"}}, "b": {"ready":true, "preview":true}}'), { a: { 0: { id: 0 }, 1: { id: 1 }, 2: { id: 2 } }, b: { ready: true, preview: true } }, 'should remove propsToRemove as well -- wildcard in propsToRemove and requiredInitialProps');
+    runScriptlet('json-prune', 'mov.[].src.[].*', '*.preview');
+    assert.deepEqual(JSON.parse('{"mov": [ {"id":0, "src": [ {"a0":"a00"} ]}, {"id":1, "src": [ {"b1":"b11"} ] } ], "b": {"ready":true, "preview":true} }'), { mov: [{ id: 0, src: [{}] }, { id: 1, src: [{}] }], b: { ready: true, preview: true } }, 'should remove propsToRemove as well -- wildcard in propsToRemove and requiredInitialProps');
 });
 
 test('can NOT remove propsToRemove if nested requiredInitialProps has wildcard but there is no match', (assert) => {
