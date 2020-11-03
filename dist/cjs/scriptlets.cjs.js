@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.9
+ * Version 1.3.10
  */
 
 /**
@@ -3401,35 +3401,37 @@ function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
   var nativeParse = JSON.parse;
 
   var parseWrapper = function parseWrapper() {
-    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-      args[_key] = arguments[_key];
-    }
-
-    var root = nativeParse.apply(window, args);
+    var root = nativeParse.apply(void 0, arguments);
 
     if (prunePaths.length === 0) {
       log(window.location.hostname, root);
       return root;
     }
 
-    if (isPruningNeeded(root) === false) {
-      return root;
-    } // if pruning is needed, we check every input pathToRemove
-    // and delete it if root has it
+    try {
+      if (isPruningNeeded(root) === false) {
+        return root;
+      } // if pruning is needed, we check every input pathToRemove
+      // and delete it if root has it
 
 
-    prunePaths.forEach(function (path) {
-      var ownerObjArr = getWildcardPropertyInChain(root, path, true);
-      ownerObjArr.forEach(function (ownerObj) {
-        if (ownerObj !== undefined && ownerObj.base) {
-          delete ownerObj.base[ownerObj.prop];
-          hit(source);
-        }
+      prunePaths.forEach(function (path) {
+        var ownerObjArr = getWildcardPropertyInChain(root, path, true);
+        ownerObjArr.forEach(function (ownerObj) {
+          if (ownerObj !== undefined && ownerObj.base) {
+            delete ownerObj.base[ownerObj.prop];
+            hit(source);
+          }
+        });
       });
-    });
+    } catch (e) {
+      log(e.message);
+    }
+
     return root;
   };
 
+  parseWrapper.toString = nativeParse.toString.bind(nativeParse);
   JSON.parse = parseWrapper;
 }
 jsonPrune.names = ['json-prune', // aliases are needed for matching the related scriptlet converted into our syntax
