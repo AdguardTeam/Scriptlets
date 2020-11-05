@@ -3402,7 +3402,12 @@
       var nativeParse = JSON.parse;
 
       var parseWrapper = function parseWrapper() {
-        var root = nativeParse.apply(void 0, arguments);
+        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        // bound nativeParse execution to the window object
+        var root = nativeParse.apply(window, args);
 
         if (prunePaths.length === 0) {
           log(window.location.hostname, root);
@@ -3426,7 +3431,7 @@
             });
           });
         } catch (e) {
-          log(e.message);
+          log(e.stack);
         }
 
         return root;
