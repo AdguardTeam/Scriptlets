@@ -3405,8 +3405,8 @@ function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
       args[_key] = arguments[_key];
     }
 
-    // bound nativeParse execution to the window object
-    var root = nativeParse.apply(window, args);
+    // call nativeParse as JSON.parse which is bound to JSON object
+    var root = nativeParse.apply(JSON, args);
 
     if (prunePaths.length === 0) {
       log(window.location.hostname, root);
@@ -3430,7 +3430,7 @@ function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
         });
       });
     } catch (e) {
-      log(e.stack);
+      log(e.toString());
     }
 
     return root;

@@ -131,8 +131,8 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
     const nativeParse = JSON.parse;
 
     const parseWrapper = (...args) => {
-        // bound nativeParse execution to the window object
-        const root = nativeParse.apply(window, args);
+        // call nativeParse as JSON.parse which is bound to JSON object
+        const root = nativeParse.apply(JSON, args);
 
         if (prunePaths.length === 0) {
             log(window.location.hostname, root);
@@ -156,7 +156,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
                 });
             });
         } catch (e) {
-            log(e.stack);
+            log(e.toString());
         }
 
         return root;
