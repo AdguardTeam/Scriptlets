@@ -131,29 +131,38 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
     const nativeParse = JSON.parse;
 
     const parseWrapper = (...args) => {
-        const root = nativeParse.apply(window, args);
+        // call nativeParse as JSON.parse which is bound to JSON object
+        const root = nativeParse.apply(JSON, args);
+
         if (prunePaths.length === 0) {
             log(window.location.hostname, root);
             return root;
         }
-        if (isPruningNeeded(root) === false) {
-            return root;
-        }
-        // if pruning is needed, we check every input pathToRemove
-        // and delete it if root has it
-        prunePaths.forEach((path) => {
-            const ownerObjArr = getWildcardPropertyInChain(root, path, true);
-            ownerObjArr.forEach((ownerObj) => {
-                if (ownerObj !== undefined && ownerObj.base) {
-                    delete ownerObj.base[ownerObj.prop];
-                    hit(source);
-                }
+
+        try {
+            if (isPruningNeeded(root) === false) {
+                return root;
+            }
+
+            // if pruning is needed, we check every input pathToRemove
+            // and delete it if root has it
+            prunePaths.forEach((path) => {
+                const ownerObjArr = getWildcardPropertyInChain(root, path, true);
+                ownerObjArr.forEach((ownerObj) => {
+                    if (ownerObj !== undefined && ownerObj.base) {
+                        delete ownerObj.base[ownerObj.prop];
+                        hit(source);
+                    }
+                });
             });
-        });
+        } catch (e) {
+            log(e.toString());
+        }
 
         return root;
     };
 
+    parseWrapper.toString = nativeParse.toString.bind(nativeParse);
     JSON.parse = parseWrapper;
 }
 
