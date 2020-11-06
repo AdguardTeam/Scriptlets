@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.10
+ * Version 1.3.11
  */
 
 (function () {
@@ -4268,7 +4268,14 @@
         template = ADGUARD_SCRIPTLET_TEMPLATE;
       }
 
-      var args = getStringInBraces(rule).split(/, /g).map(function (arg, index) {
+      var parsedArgs = getStringInBraces(rule).split(/,\s/g);
+
+      if (parsedArgs.length === 1) {
+        // Most probably this is not correct separator, in this case we use ','
+        parsedArgs = getStringInBraces(rule).split(/,/g);
+      }
+
+      var args = parsedArgs.map(function (arg, index) {
         var outputArg;
 
         if (index === 0) {
