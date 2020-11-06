@@ -72,8 +72,12 @@ export const convertUboScriptletToAdg = (rule) => {
     } else {
         template = ADGUARD_SCRIPTLET_TEMPLATE;
     }
-    const args = getStringInBraces(rule)
-        .split(/, /g)
+    let parsedArgs = getStringInBraces(rule).split(/,\s/g);
+    if (parsedArgs.length === 1) {
+        // Most probably this is not correct separator, in this case we use ','
+        parsedArgs = getStringInBraces(rule).split(/,/g);
+    }
+    const args = parsedArgs
         .map((arg, index) => {
             let outputArg;
             if (index === 0) {
