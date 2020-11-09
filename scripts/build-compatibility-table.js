@@ -29,7 +29,14 @@ function getTableData() {
  * abp: string
  * }} item { an }
  */
-const getRow = (item) => (`| ${item.adg || ''} | ${item.ubo || ''} | ${item.abp || ''} |${os.EOL}`);
+const getRow = (id, item) => {
+    let adgCell = '';
+    if (item.adg) {
+        adgCell = `[${item.adg}](../wiki/about-${id}.md#${item.adg})`;
+    }
+
+    return `| ${adgCell} | ${item.ubo || ''} | ${item.abp || ''} |${os.EOL}`;
+};
 
 /**
  * Generates table header
@@ -50,7 +57,12 @@ function buildTable(title, data = [], id = '') {
     // header
     res += getTableHeader();
     // rows
-    res += data.map(getRow).join('');
+    res += data
+        .map((item) => {
+            const row = getRow(id, item);
+            return row;
+        })
+        .join('');
 
     return res;
 }
