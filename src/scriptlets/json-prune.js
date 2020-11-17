@@ -128,12 +128,11 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
         return shouldProcess;
     }
 
-    const nativeParse = JSON.parse;
-
-    const parseWrapper = (...args) => {
-        // call nativeParse as JSON.parse which is bound to JSON object
-        const root = nativeParse.apply(JSON, args);
-
+    /**
+     * Prunes properties of 'root' object
+     * @param {Object} root
+     */
+    const jsonPruner = (root) => {
         if (prunePaths.length === 0) {
             log(window.location.hostname, root);
             return root;
@@ -162,8 +161,36 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
         return root;
     };
 
-    parseWrapper.toString = nativeParse.toString.bind(nativeParse);
-    JSON.parse = parseWrapper;
+    const nativeJSONParse = JSON.parse;
+    const jsonParseWrapper = (...args) => {
+        // dealing with stringified json in args, which should be parsed.
+        // so we call nativeJSONParse as JSON.parse which is bound to JSON object
+        const root = nativeJSONParse.apply(JSON, args);
+        return jsonPruner(root);
+    };
+
+    // JSON.parse mocking
+    jsonParseWrapper.toString = nativeJSONParse.toString.bind(nativeJSONParse);
+    JSON.parse = jsonParseWrapper;
+
+    // eslint-disable-next-line compat/compat
+    const nativeResponseJson = Response.prototype.json;
+    // eslint-disable-next-line func-names
+    const responseJsonWrapper = function () {
+        const promise = nativeResponseJson.apply(this);
+        return promise.then((obj) => {
+            return jsonPruner(obj);
+        });
+    };
+
+    // do nothing if browser does not support Response (e.g. Internet Explorer)
+    // https://developer.mozilla.org/en-US/docs/Web/API/Response
+    if (typeof Response === 'undefined') {
+        return;
+    }
+
+    // eslint-disable-next-line compat/compat
+    Response.prototype.json = responseJsonWrapper;
 }
 
 jsonPrune.names = [

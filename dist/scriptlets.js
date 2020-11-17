@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.11
+ * Version 1.3.12
  */
 
 (function () {
@@ -3398,17 +3398,13 @@
 
         return shouldProcess;
       }
+      /**
+       * Prunes properties of 'root' object
+       * @param {Object} root
+       */
 
-      var nativeParse = JSON.parse;
 
-      var parseWrapper = function parseWrapper() {
-        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-          args[_key] = arguments[_key];
-        }
-
-        // call nativeParse as JSON.parse which is bound to JSON object
-        var root = nativeParse.apply(JSON, args);
-
+      var jsonPruner = function jsonPruner(root) {
         if (prunePaths.length === 0) {
           log(window.location.hostname, root);
           return root;
@@ -3437,8 +3433,40 @@
         return root;
       };
 
-      parseWrapper.toString = nativeParse.toString.bind(nativeParse);
-      JSON.parse = parseWrapper;
+      var nativeJSONParse = JSON.parse;
+
+      var jsonParseWrapper = function jsonParseWrapper() {
+        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        // dealing with stringified json in args, which should be parsed.
+        // so we call nativeJSONParse as JSON.parse which is bound to JSON object
+        var root = nativeJSONParse.apply(JSON, args);
+        return jsonPruner(root);
+      }; // JSON.parse mocking
+
+
+      jsonParseWrapper.toString = nativeJSONParse.toString.bind(nativeJSONParse);
+      JSON.parse = jsonParseWrapper; // eslint-disable-next-line compat/compat
+
+      var nativeResponseJson = Response.prototype.json; // eslint-disable-next-line func-names
+
+      var responseJsonWrapper = function responseJsonWrapper() {
+        var promise = nativeResponseJson.apply(this);
+        return promise.then(function (obj) {
+          return jsonPruner(obj);
+        });
+      }; // do nothing if browser does not support Response (e.g. Internet Explorer)
+      // https://developer.mozilla.org/en-US/docs/Web/API/Response
+
+
+      if (typeof Response === 'undefined') {
+        return;
+      } // eslint-disable-next-line compat/compat
+
+
+      Response.prototype.json = responseJsonWrapper;
     }
     jsonPrune.names = ['json-prune', // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune.js', 'ubo-json-prune.js', 'ubo-json-prune', 'abp-json-prune'];

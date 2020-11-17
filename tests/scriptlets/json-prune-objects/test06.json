@@ -1,0 +1,17 @@
+[
+    { 
+        "content": [
+            { 
+                "id": 0,
+                "source": "example.com"
+            },
+            { 
+                "id": 1,
+                "source": "example.org"
+            }
+        ],
+        "state": {
+            "ready": true
+        }
+    }
+]

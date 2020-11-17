@@ -36,6 +36,134 @@ test('Checking if alias name works', (assert) => {
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
+test('Response.json() mocking -- remove single propsToRemove', async (assert) => {
+    const INPUT_JSON_PATH = './json-prune-objects/test01.json';
+    const inputRequest = new Request(INPUT_JSON_PATH);
+
+    runScriptlet('json-prune', 'c3');
+    const expectedJson = {
+        a1: 1,
+        b2: 'test',
+    };
+    const done = assert.async();
+
+    const response = await fetch(inputRequest);
+    const actualJson = await response.json();
+
+    assert.deepEqual(actualJson, expectedJson);
+    done();
+});
+
+test('Response.json() mocking -- remove multiple propsToRemove', async (assert) => {
+    const INPUT_JSON_PATH = './json-prune-objects/test02.json';
+    const inputRequest = new Request(INPUT_JSON_PATH);
+
+    runScriptlet('json-prune', 'src count');
+    const expectedJson = {
+        ad: 1,
+    };
+    const done = assert.async();
+
+    const response = await fetch(inputRequest);
+    const actualJson = await response.json();
+
+    assert.deepEqual(actualJson, expectedJson);
+    done();
+});
+
+test('Response.json() mocking -- remove single nested property', async (assert) => {
+    const INPUT_JSON_PATH = './json-prune-objects/test03.json';
+    const inputRequest = new Request(INPUT_JSON_PATH);
+
+    runScriptlet('json-prune', 'cc.arr');
+    const expectedJson = {
+        aa: 1,
+        bb: 'test',
+        cc: {
+            id: 0,
+            src: 'example.org',
+        },
+    };
+
+    const done = assert.async();
+
+    const response = await fetch(inputRequest);
+    const actualJson = await response.json();
+
+    assert.deepEqual(actualJson, expectedJson);
+    done();
+});
+
+test('Response.json() mocking -- remove multiple mixed properties', async (assert) => {
+    const INPUT_JSON_PATH = './json-prune-objects/test04.json';
+    const inputRequest = new Request(INPUT_JSON_PATH);
+
+    runScriptlet('json-prune', 'ab cc1.arr cc1.id');
+    const expectedJson = {
+        bc: 123,
+        cc1: {
+            src: 'example.org',
+        },
+    };
+
+    const done = assert.async();
+
+    const response = await fetch(inputRequest);
+    const actualJson = await response.json();
+
+    assert.deepEqual(actualJson, expectedJson);
+    done();
+});
+
+test('Response.json() mocking -- remove single properties with wildcard', async (assert) => {
+    const INPUT_JSON_PATH = './json-prune-objects/test05.json';
+    const inputRequest = new Request(INPUT_JSON_PATH);
+
+    runScriptlet('json-prune', '*.id');
+    const expectedJson = {
+        ax: 1,
+        xx: {
+            nested: {
+                inner1: 123,
+            },
+        },
+    };
+
+    const done = assert.async();
+
+    const response = await fetch(inputRequest);
+    const actualJson = await response.json();
+
+    assert.deepEqual(actualJson, expectedJson);
+    done();
+});
+
+test('Response.json() mocking -- remove single properties with wildcard', async (assert) => {
+    const INPUT_JSON_PATH = './json-prune-objects/test06.json';
+    const inputRequest = new Request(INPUT_JSON_PATH);
+
+    runScriptlet('json-prune', '[].content.[].source', 'state.ready');
+    const expectedJson = [
+        {
+            content: [
+                { id: 0 },
+                { id: 1 },
+            ],
+            state: {
+                ready: true,
+            },
+        },
+    ];
+
+    const done = assert.async();
+
+    const response = await fetch(inputRequest);
+    const actualJson = await response.json();
+
+    assert.deepEqual(actualJson, expectedJson);
+    done();
+});
+
 test('removes propsToRemove', (assert) => {
     runScriptlet('json-prune', 'c');
     assert.deepEqual(JSON.parse('{"a":1,"b":2,"c":3}'), { a: 1, b: 2 }, 'should remove single propsToRemove');
