@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.11
+ * Version 1.3.12
  */
 
 (function () {
@@ -3406,8 +3406,15 @@
           args[_key] = arguments[_key];
         }
 
-        // call nativeParse as JSON.parse which is bound to JSON object
-        var root = nativeParse.apply(JSON, args);
+        // if Response.json() is being mocked,
+        // there is an object in args already
+        var root = args[0];
+
+        if (typeof args[0] === 'string') {
+          // if there is stringified json in args, it should be parsed
+          // so call nativeParse as JSON.parse which is bound to JSON object
+          root = nativeParse.apply(JSON, args);
+        }
 
         if (prunePaths.length === 0) {
           log(window.location.hostname, root);
@@ -3435,10 +3442,28 @@
         }
 
         return root;
+      }; // eslint-disable-next-line compat/compat
+
+
+      var nativeJson = Response.prototype.json; // eslint-disable-next-line func-names
+
+      var responseJsonWrapper = function responseJsonWrapper() {
+        var promise = nativeJson.apply(this);
+        return promise.then(function (obj) {
+          return parseWrapper(obj);
+        });
       };
 
       parseWrapper.toString = nativeParse.toString.bind(nativeParse);
-      JSON.parse = parseWrapper;
+      JSON.parse = parseWrapper; // do nothing if browser does not support Response (e.g. Internet Explorer)
+      // https://developer.mozilla.org/en-US/docs/Web/API/Response
+
+      if (!Response) {
+        return;
+      } // eslint-disable-next-line compat/compat
+
+
+      Response.prototype.json = responseJsonWrapper;
     }
     jsonPrune.names = ['json-prune', // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune.js', 'ubo-json-prune.js', 'ubo-json-prune', 'abp-json-prune'];

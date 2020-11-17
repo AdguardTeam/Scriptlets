@@ -170,7 +170,8 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
 
     // eslint-disable-next-line compat/compat
     const nativeJson = Response.prototype.json;
-    const responseJsonWrapper = () => {
+    // eslint-disable-next-line func-names
+    const responseJsonWrapper = function () {
         const promise = nativeJson.apply(this);
         return promise.then((obj) => {
             return parseWrapper(obj);
