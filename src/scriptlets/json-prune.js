@@ -128,18 +128,11 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
         return shouldProcess;
     }
 
-    const nativeParse = JSON.parse;
-
-    const parseWrapper = (...args) => {
-        // if Response.json() is being mocked,
-        // there is an object in args already
-        let root = args[0];
-        if (typeof args[0] === 'string') {
-            // if there is stringified json in args, it should be parsed
-            // so call nativeParse as JSON.parse which is bound to JSON object
-            root = nativeParse.apply(JSON, args);
-        }
-
+    /**
+     * Prunes properties of 'root' object
+     * @param {Object} root
+     */
+    const jsonPruner = (root) => {
         if (prunePaths.length === 0) {
             log(window.location.hostname, root);
             return root;
@@ -168,22 +161,31 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
         return root;
     };
 
+    const nativeJSONParse = JSON.parse;
+    const jsonParseWrapper = (...args) => {
+        // dealing with stringified json in args, which should be parsed.
+        // so we call nativeJSONParse as JSON.parse which is bound to JSON object
+        const root = nativeJSONParse.apply(JSON, args);
+        return jsonPruner(root);
+    };
+
+    // JSON.parse mocking
+    jsonParseWrapper.toString = nativeJSONParse.toString.bind(nativeJSONParse);
+    JSON.parse = jsonParseWrapper;
+
     // eslint-disable-next-line compat/compat
-    const nativeJson = Response.prototype.json;
+    const nativeResponseJson = Response.prototype.json;
     // eslint-disable-next-line func-names
     const responseJsonWrapper = function () {
-        const promise = nativeJson.apply(this);
+        const promise = nativeResponseJson.apply(this);
         return promise.then((obj) => {
-            return parseWrapper(obj);
+            return jsonPruner(obj);
         });
     };
 
-    parseWrapper.toString = nativeParse.toString.bind(nativeParse);
-    JSON.parse = parseWrapper;
-
     // do nothing if browser does not support Response (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/API/Response
-    if (!Response) {
+    if (typeof Response === 'undefined') {
         return;
     }
 

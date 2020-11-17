@@ -36,7 +36,7 @@ test('Checking if alias name works', (assert) => {
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
-test('Responce.json() mocking -- remove single propsToRemove', async (assert) => {
+test('Response.json() mocking -- remove single propsToRemove', async (assert) => {
     const INPUT_JSON_PATH = './json-prune-objects/test01.json';
     const inputRequest = new Request(INPUT_JSON_PATH);
 
@@ -54,7 +54,7 @@ test('Responce.json() mocking -- remove single propsToRemove', async (assert) =>
     done();
 });
 
-test('Responce.json() mocking -- remove multiple propsToRemove', async (assert) => {
+test('Response.json() mocking -- remove multiple propsToRemove', async (assert) => {
     const INPUT_JSON_PATH = './json-prune-objects/test02.json';
     const inputRequest = new Request(INPUT_JSON_PATH);
 
@@ -71,7 +71,7 @@ test('Responce.json() mocking -- remove multiple propsToRemove', async (assert) 
     done();
 });
 
-test('Responce.json() mocking -- remove single nested property', async (assert) => {
+test('Response.json() mocking -- remove single nested property', async (assert) => {
     const INPUT_JSON_PATH = './json-prune-objects/test03.json';
     const inputRequest = new Request(INPUT_JSON_PATH);
 
@@ -94,7 +94,7 @@ test('Responce.json() mocking -- remove single nested property', async (assert) 
     done();
 });
 
-test('Responce.json() mocking -- remove multiple mixed properties', async (assert) => {
+test('Response.json() mocking -- remove multiple mixed properties', async (assert) => {
     const INPUT_JSON_PATH = './json-prune-objects/test04.json';
     const inputRequest = new Request(INPUT_JSON_PATH);
 
@@ -115,7 +115,7 @@ test('Responce.json() mocking -- remove multiple mixed properties', async (asser
     done();
 });
 
-test('Responce.json() mocking -- remove single properties with wildcard', async (assert) => {
+test('Response.json() mocking -- remove single properties with wildcard', async (assert) => {
     const INPUT_JSON_PATH = './json-prune-objects/test05.json';
     const inputRequest = new Request(INPUT_JSON_PATH);
 
@@ -138,7 +138,7 @@ test('Responce.json() mocking -- remove single properties with wildcard', async 
     done();
 });
 
-test('Responce.json() mocking -- remove single properties with wildcard', async (assert) => {
+test('Response.json() mocking -- remove single properties with wildcard', async (assert) => {
     const INPUT_JSON_PATH = './json-prune-objects/test06.json';
     const inputRequest = new Request(INPUT_JSON_PATH);
 
