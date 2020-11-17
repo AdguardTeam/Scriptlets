@@ -152,6 +152,7 @@ const testConfig = {
                 src: [
                     'tests/tests.html',
                     'tests/styles.css',
+                    'tests/scriptlets/json-prune-objects',
                     'node_modules/qunit/qunit/qunit.js',
                     'node_modules/sinon/pkg/sinon.js',
                     'dist/scriptlets.js',

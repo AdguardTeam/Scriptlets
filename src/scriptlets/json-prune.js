@@ -131,8 +131,14 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
     const nativeParse = JSON.parse;
 
     const parseWrapper = (...args) => {
-        // call nativeParse as JSON.parse which is bound to JSON object
-        const root = nativeParse.apply(JSON, args);
+        // if Response.json() is being mocked,
+        // there is an object in args already
+        let root = args[0];
+        if (typeof args[0] === 'string') {
+            // if there is stringified json in args, it should be parsed
+            // so call nativeParse as JSON.parse which is bound to JSON object
+            root = nativeParse.apply(JSON, args);
+        }
 
         if (prunePaths.length === 0) {
             log(window.location.hostname, root);
@@ -162,8 +168,26 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
         return root;
     };
 
+    // eslint-disable-next-line compat/compat
+    const nativeJson = Response.prototype.json;
+    const responseJsonWrapper = () => {
+        const promise = nativeJson.apply(this);
+        return promise.then((obj) => {
+            return parseWrapper(obj);
+        });
+    };
+
     parseWrapper.toString = nativeParse.toString.bind(nativeParse);
     JSON.parse = parseWrapper;
+
+    // do nothing if browser does not support Response (e.g. Internet Explorer)
+    // https://developer.mozilla.org/en-US/docs/Web/API/Response
+    if (!Response) {
+        return;
+    }
+
+    // eslint-disable-next-line compat/compat
+    Response.prototype.json = responseJsonWrapper;
 }
 
 jsonPrune.names = [

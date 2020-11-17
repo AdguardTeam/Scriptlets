@@ -1,0 +1,12 @@
+{
+    "ab": "test",
+    "bc": 123,
+    "cc1": {
+        "id": 0,
+        "src": "example.org",
+        "arr": [
+            { "inner1": 123 },
+            { "inner2": 456 }
+        ]
+    }
+}

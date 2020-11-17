@@ -1,0 +1,12 @@
+{
+    "aa": 1,
+    "bb": "test",
+    "cc": {
+        "id": 0,
+        "src": "example.org",
+        "arr": [
+            { "inner1": 123 },
+            { "inner2": 456 }
+        ]
+    }
+}
