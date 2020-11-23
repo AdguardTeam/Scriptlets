@@ -174,6 +174,9 @@ test('Test redirect rule validation', (assert) => {
     // invalid redirect name
     inputRule = '||example.orf^$media,redirect=no-mp4';
     assert.strictEqual(validator.isAdgRedirectCompatibleWithUbo(inputRule), false);
+    // no ubo analog for redirect
+    inputRule = '||example.com/ad/vmap/*$xmlhttprequest,redirect=noopvmap-1.0';
+    assert.strictEqual(validator.isAdgRedirectCompatibleWithUbo(inputRule), false);
     // rules with 'redirect=' marker in base rule part should be skipped
     inputRule = '_redirect=*://look.$popup';
     assert.strictEqual(validator.isAdgRedirectCompatibleWithUbo(inputRule), false);
@@ -247,9 +250,11 @@ test('Test redirect rule validation for ADG -> UBO converting', (assert) => {
     adgRule = '||example.com/images/*.png$image,important,redirect=1x1-transparent.gif,domain=example.com|example.org';
     assert.strictEqual(validator.hasValidContentType(adgRule), true);
 
-    // abp rule ->> false
-    adgRule = '||example.com^$script,rewrite=abp-resource:blank-js';
-    assert.strictEqual(validator.hasValidContentType(adgRule), false);
+    // abp rule ->> error because only ADG rules accepted
+    assert.throws(() => {
+        adgRule = '||example.com^$script,rewrite=abp-resource:blank-js';
+        convertAdgRedirectToUbo(adgRule);
+    }, 'unable to convert -- no such ubo redirect');
 
     // no source type
     adgRule = '||example.com^$important,redirect=nooptext';
@@ -279,4 +284,14 @@ test('Test REDIRECT converting - ADG -> UBO', (assert) => {
     adgRule = '||example.com/vast/$important,redirect=empty,~thirt-party';
     expectedUboRule = '||example.com/vast/$important,redirect=empty,~thirt-party';
     assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
+
+    assert.throws(() => {
+        adgRule = '||example.com/ad/vmap/*$xmlhttprequest,redirect=noopvast-2.0';
+        convertAdgRedirectToUbo(adgRule);
+    }, 'unable to convert -- no such ubo redirect');
+
+    assert.throws(() => {
+        adgRule = '||example.com/ad/vmap/*$redirect=nooptext';
+        convertAdgRedirectToUbo(adgRule);
+    }, 'unable to convert -- no source type specified');
 });

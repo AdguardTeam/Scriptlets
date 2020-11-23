@@ -347,31 +347,32 @@ const isAbpRedirectCompatibleWithAdg = (rule) => {
  * @returns {boolean}
  */
 const hasValidContentType = (rule) => {
-    if (isRedirectRuleByType(rule, 'ADG')) {
-        const ruleModifiers = parseModifiers(rule);
-        // rule can have more than one source type modifier
-        const sourceTypes = ruleModifiers
-            .filter((el) => VALID_SOURCE_TYPES.indexOf(el) > -1);
-
-        const isSourceTypeSpecified = sourceTypes.length > 0;
-        const isEmptyRedirect = ruleModifiers.indexOf(`${ADG_UBO_REDIRECT_MARKER}${EMPTY_REDIRECT_MARKER}`) > -1;
-
-        if (isEmptyRedirect) {
-            if (isSourceTypeSpecified) {
-                const isValidType = sourceTypes.reduce((acc, sType) => {
-                    const isEmptySupported = EMPTY_REDIRECT_SUPPORTED_TYPES
-                        .find((type) => type === sType);
-                    return !!isEmptySupported && acc;
-                }, true);
-                return isValidType;
-            }
-            // no source type for 'empty' is allowed
-            return true;
-        }
-
-        return isSourceTypeSpecified;
+    if (!isAdgRedirectCompatibleWithUbo(rule)) {
+        throw new Error(`Unable to convert - unsupported by uBO redirect in rule: ${rule}`);
     }
-    return false;
+
+    const ruleModifiers = parseModifiers(rule);
+    // rule can have more than one source type modifier
+    const sourceTypes = ruleModifiers
+        .filter((el) => VALID_SOURCE_TYPES.indexOf(el) > -1);
+
+    const isSourceTypeSpecified = sourceTypes.length > 0;
+    const isEmptyRedirect = ruleModifiers.indexOf(`${ADG_UBO_REDIRECT_MARKER}${EMPTY_REDIRECT_MARKER}`) > -1;
+
+    if (isEmptyRedirect) {
+        if (isSourceTypeSpecified) {
+            const isValidType = sourceTypes.reduce((acc, sType) => {
+                const isEmptySupported = EMPTY_REDIRECT_SUPPORTED_TYPES
+                    .find((type) => type === sType);
+                return !!isEmptySupported && acc;
+            }, true);
+            return isValidType;
+        }
+        // no source type for 'empty' is allowed
+        return true;
+    }
+
+    return isSourceTypeSpecified;
 };
 
 const validator = {
