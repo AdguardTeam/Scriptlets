@@ -217,10 +217,10 @@ export const isValidScriptletRule = (input) => {
 
     // checking if each of parsed scriptlets is valid
     // if at least one of them is not valid - whole 'input' rule is not valid too
-    const isValid = rulesArray.reduce((acc, rule) => {
+    const isValid = rulesArray.every((rule) => {
         const parsedRule = parseRule(rule);
-        return validator.isValidScriptletName(parsedRule.name) && acc;
-    }, true);
+        return validator.isValidScriptletName(parsedRule.name);
+    });
 
     return isValid;
 };
@@ -296,8 +296,11 @@ export const convertRedirectToAdg = (rule) => {
  * @returns {string}
  */
 export const convertAdgRedirectToUbo = (rule) => {
+    if (!validator.isAdgRedirectCompatibleWithUbo(rule)) {
+        throw new Error(`Unable to convert for uBO - unsupported redirect in rule: ${rule}`);
+    }
     if (!validator.hasValidContentType(rule)) {
-        throw new Error(`Rule is not valid for converting to Ubo. Source type is not specified in the rule: ${rule}`);
+        throw new Error(`Unable to convert for uBO - source type is not specified in rule: ${rule}`);
     } else {
         const firstPartOfRule = substringBefore(rule, '$');
         const uboModifiers = validator.parseModifiers(rule);
