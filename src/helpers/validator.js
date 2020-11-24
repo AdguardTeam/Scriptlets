@@ -347,10 +347,6 @@ const isAbpRedirectCompatibleWithAdg = (rule) => {
  * @returns {boolean}
  */
 const hasValidContentType = (rule) => {
-    if (!isAdgRedirectCompatibleWithUbo(rule)) {
-        throw new Error(`Unable to convert - unsupported by uBO redirect in rule: ${rule}`);
-    }
-
     const ruleModifiers = parseModifiers(rule);
     // rule can have more than one source type modifier
     const sourceTypes = ruleModifiers
@@ -361,11 +357,9 @@ const hasValidContentType = (rule) => {
 
     if (isEmptyRedirect) {
         if (isSourceTypeSpecified) {
-            const isValidType = sourceTypes.reduce((acc, sType) => {
-                const isEmptySupported = EMPTY_REDIRECT_SUPPORTED_TYPES
-                    .find((type) => type === sType);
-                return !!isEmptySupported && acc;
-            }, true);
+            const isValidType = sourceTypes.every((sType) => {
+                return EMPTY_REDIRECT_SUPPORTED_TYPES.indexOf(sType) > -1;
+            });
             return isValidType;
         }
         // no source type for 'empty' is allowed
