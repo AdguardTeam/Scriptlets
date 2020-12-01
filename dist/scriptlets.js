@@ -1175,23 +1175,21 @@
       match = match ? toRegExp(match) : toRegExp('/.?/');
 
       var timeoutWrapper = function timeoutWrapper(callback, timeout) {
-        // https://github.com/AdguardTeam/Scriptlets/issues/105
-        if (typeof callback === 'undefined') {
-          return false;
-        }
+        var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
 
-        var shouldPrevent = false;
+        try {
+          if (shouldLog) {
+            hit(source);
+            log("setTimeout(\"".concat(callback.toString(), "\", ").concat(timeout, ")"));
+          } else if (!delay) {
+            shouldPrevent = match.test(callback.toString()) !== isNotMatch;
+          } else if (match === '/.?/') {
+            shouldPrevent = timeout === delay !== isNotDelay;
+          } else {
+            shouldPrevent = match.test(callback.toString()) !== isNotMatch && timeout === delay !== isNotDelay;
+          }
+        } catch (e) {} // eslint-disable-line no-empty
 
-        if (shouldLog) {
-          hit(source);
-          log("setTimeout(\"".concat(callback.toString(), "\", ").concat(timeout, ")"));
-        } else if (!delay) {
-          shouldPrevent = match.test(callback.toString()) !== isNotMatch;
-        } else if (match === '/.?/') {
-          shouldPrevent = timeout === delay !== isNotDelay;
-        } else {
-          shouldPrevent = match.test(callback.toString()) !== isNotMatch && timeout === delay !== isNotDelay;
-        }
 
         if (shouldPrevent) {
           hit(source);
@@ -1343,23 +1341,21 @@
       match = match ? toRegExp(match) : toRegExp('/.?/');
 
       var intervalWrapper = function intervalWrapper(callback, interval) {
-        // https://github.com/AdguardTeam/Scriptlets/issues/105
-        if (typeof callback === 'undefined') {
-          return false;
-        }
+        var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
 
-        var shouldPrevent = false;
+        try {
+          if (shouldLog) {
+            hit(source);
+            log("setInterval(\"".concat(callback.toString(), "\", ").concat(interval, ")"));
+          } else if (!delay) {
+            shouldPrevent = match.test(callback.toString()) !== isNotMatch;
+          } else if (match === '/.?/') {
+            shouldPrevent = interval === delay !== isNotDelay;
+          } else {
+            shouldPrevent = match.test(callback.toString()) !== isNotMatch && interval === delay !== isNotDelay;
+          }
+        } catch (e) {} // eslint-disable-line no-empty
 
-        if (shouldLog) {
-          hit(source);
-          log("setInterval(\"".concat(callback.toString(), "\", ").concat(interval, ")"));
-        } else if (!delay) {
-          shouldPrevent = match.test(callback.toString()) !== isNotMatch;
-        } else if (match === '/.?/') {
-          shouldPrevent = interval === delay !== isNotDelay;
-        } else {
-          shouldPrevent = match.test(callback.toString()) !== isNotMatch && interval === delay !== isNotDelay;
-        }
 
         if (shouldPrevent) {
           hit(source);

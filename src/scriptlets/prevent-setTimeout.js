@@ -126,22 +126,22 @@ export function preventSetTimeout(source, match, delay) {
     match = match ? toRegExp(match) : toRegExp('/.?/');
 
     const timeoutWrapper = (callback, timeout, ...args) => {
-        // https://github.com/AdguardTeam/Scriptlets/issues/105
-        if (typeof callback === 'undefined') {
-            return false;
-        }
         let shouldPrevent = false;
-        if (shouldLog) {
-            hit(source);
-            log(`setTimeout("${callback.toString()}", ${timeout})`);
-        } else if (!delay) {
-            shouldPrevent = match.test(callback.toString()) !== isNotMatch;
-        } else if (match === '/.?/') {
-            shouldPrevent = (timeout === delay) !== isNotDelay;
-        } else {
-            shouldPrevent = match.test(callback.toString()) !== isNotMatch
-                && (timeout === delay) !== isNotDelay;
-        }
+
+        // https://github.com/AdguardTeam/Scriptlets/issues/105
+        try {
+            if (shouldLog) {
+                hit(source);
+                log(`setTimeout("${callback.toString()}", ${timeout})`);
+            } else if (!delay) {
+                shouldPrevent = match.test(callback.toString()) !== isNotMatch;
+            } else if (match === '/.?/') {
+                shouldPrevent = (timeout === delay) !== isNotDelay;
+            } else {
+                shouldPrevent = match.test(callback.toString()) !== isNotMatch
+                    && (timeout === delay) !== isNotDelay;
+            }
+        } catch (e) {} // eslint-disable-line no-empty
 
         if (shouldPrevent) {
             hit(source);

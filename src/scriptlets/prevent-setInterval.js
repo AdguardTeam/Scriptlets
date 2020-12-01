@@ -126,22 +126,22 @@ export function preventSetInterval(source, match, delay) {
     match = match ? toRegExp(match) : toRegExp('/.?/');
 
     const intervalWrapper = (callback, interval, ...args) => {
-        // https://github.com/AdguardTeam/Scriptlets/issues/105
-        if (typeof callback === 'undefined') {
-            return false;
-        }
         let shouldPrevent = false;
-        if (shouldLog) {
-            hit(source);
-            log(`setInterval("${callback.toString()}", ${interval})`);
-        } else if (!delay) {
-            shouldPrevent = match.test(callback.toString()) !== isNotMatch;
-        } else if (match === '/.?/') {
-            shouldPrevent = (interval === delay) !== isNotDelay;
-        } else {
-            shouldPrevent = match.test(callback.toString()) !== isNotMatch
-                && (interval === delay) !== isNotDelay;
-        }
+
+        // https://github.com/AdguardTeam/Scriptlets/issues/105
+        try {
+            if (shouldLog) {
+                hit(source);
+                log(`setInterval("${callback.toString()}", ${interval})`);
+            } else if (!delay) {
+                shouldPrevent = match.test(callback.toString()) !== isNotMatch;
+            } else if (match === '/.?/') {
+                shouldPrevent = (interval === delay) !== isNotDelay;
+            } else {
+                shouldPrevent = match.test(callback.toString()) !== isNotMatch
+                    && (interval === delay) !== isNotDelay;
+            }
+        } catch (e) {} // eslint-disable-line no-empty
 
         if (shouldPrevent) {
             hit(source);
