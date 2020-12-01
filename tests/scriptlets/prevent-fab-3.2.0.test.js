@@ -66,6 +66,7 @@ test('ag works', (assert) => {
         window[agFuckAdBlock] = agFuckAdBlock;
     });
     assert.strictEqual(window[agFuckAdBlock], agFuckAdBlock, 'callback should apply');
+    assert.notOk(window.fuckAdBlock.options);
 
     clearGlobalProps(agFuckAdBlock);
     runScriptlet(name);
@@ -75,6 +76,7 @@ test('ag works', (assert) => {
         window[agFuckAdBlock] = agFuckAdBlock;
     });
     assert.strictEqual(window[agFuckAdBlock], undefined, 'callback should not be applied');
+    assert.ok(window.fuckAdBlock.options);
 
     assert.strictEqual(window.hit, 'FIRED');
     clearGlobalProps(agFuckAdBlock);
