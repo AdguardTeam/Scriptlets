@@ -126,6 +126,10 @@ export function preventSetTimeout(source, match, delay) {
     match = match ? toRegExp(match) : toRegExp('/.?/');
 
     const timeoutWrapper = (callback, timeout, ...args) => {
+        // https://github.com/AdguardTeam/Scriptlets/issues/105
+        if (typeof callback === 'undefined') {
+            return false;
+        }
         let shouldPrevent = false;
         if (shouldLog) {
             hit(source);
