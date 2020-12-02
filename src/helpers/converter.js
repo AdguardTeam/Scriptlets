@@ -292,6 +292,12 @@ export const convertRedirectToAdg = (rule) => {
 
 /**
  * Converts Adg redirect rule to Ubo one
+ * 1. Checks if there is Ubo analog for Adg rule
+ * 2. Parses the rule and chechs if there are any source type modifiers which are required by Ubo
+ *    and if there are no one we add it manually to the end.
+ *    Source types are chosen according to redirect name
+ *    e.g. ||ad.com^$redirect=<name>,important  ->>  ||ad.com^$redirect=<name>,important,script
+ * 3. Replaces Adg redirect name by Ubo analog
  * @param {string} rule
  * @returns {string}
  */
@@ -299,22 +305,33 @@ export const convertAdgRedirectToUbo = (rule) => {
     if (!validator.isAdgRedirectCompatibleWithUbo(rule)) {
         throw new Error(`Unable to convert for uBO - unsupported redirect in rule: ${rule}`);
     }
-    if (!validator.hasValidContentType(rule)) {
-        throw new Error(`Unable to convert for uBO - source type is not specified in rule: ${rule}`);
-    } else {
-        const firstPartOfRule = substringBefore(rule, '$');
-        const uboModifiers = validator.parseModifiers(rule);
-        const adgModifiers = uboModifiers
-            .map((el) => {
-                if (el.indexOf(validator.REDIRECT_RULE_TYPES.ADG.marker) > -1) {
-                    const adgName = substringAfter(el, validator.REDIRECT_RULE_TYPES.ADG.marker);
-                    const uboName = validator.REDIRECT_RULE_TYPES.ADG.compatibility[adgName];
-                    return `${validator.REDIRECT_RULE_TYPES.UBO.marker}${uboName}`;
-                }
-                return el;
-            })
-            .join(',');
 
-        return `${firstPartOfRule}$${adgModifiers}`;
+    const basePart = substringBefore(rule, '$');
+    const adgModifiers = validator.parseModifiers(rule);
+
+    const adgRedirectModifier = adgModifiers
+        .find((el) => el.indexOf(validator.REDIRECT_RULE_TYPES.ADG.marker) > -1);
+    const adgRedirectName = adgRedirectModifier
+        .slice(validator.REDIRECT_RULE_TYPES.ADG.marker.length);
+    const uboRedirectName = validator.REDIRECT_RULE_TYPES.ADG.compatibility[adgRedirectName];
+    const uboRedirectModifier = `${validator.REDIRECT_RULE_TYPES.UBO.marker}${uboRedirectName}`;
+
+    if (!validator.hasValidContentType(rule)) {
+        // add missed source types as content type modifiers
+        const sourceTypesData = validator.ABSENT_SOURCE_TYPE_REPLACEMENT
+            .find((el) => el.NAME === adgRedirectName);
+        const additionModifiers = sourceTypesData.TYPES;
+        adgModifiers.push(...additionModifiers);
     }
+
+    const uboModifiers = adgModifiers
+        .map((el) => {
+            if (el === adgRedirectModifier) {
+                return uboRedirectModifier;
+            }
+            return el;
+        })
+        .join(',');
+
+    return `${basePart}$${uboModifiers}`;
 };

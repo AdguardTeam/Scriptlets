@@ -2360,6 +2360,10 @@ function preventFab(source) {
   };
 
   Fab.prototype.setOption = noopFunc;
+  Fab.prototype.options = {
+    set: noopFunc,
+    get: noopFunc
+  };
   var fab = new Fab();
   var getSetFab = {
     get: function get() {
@@ -3980,6 +3984,39 @@ var ABP_REDIRECT_MARKER = 'rewrite=abp-resource:';
 var EMPTY_REDIRECT_MARKER = 'empty';
 var VALID_SOURCE_TYPES = ['image', 'media', 'subdocument', 'stylesheet', 'script', 'xmlhttprequest', 'other'];
 var EMPTY_REDIRECT_SUPPORTED_TYPES = ['subdocument', 'stylesheet', 'script', 'xmlhttprequest', 'other'];
+/**
+ * Source types for redirect rules if there is no one of them.
+ * Used for ADG -> UBO conversion.
+ */
+
+var ABSENT_SOURCE_TYPE_REPLACEMENT = [{
+  NAME: 'nooptext',
+  TYPES: EMPTY_REDIRECT_SUPPORTED_TYPES
+}, {
+  NAME: 'noopjs',
+  TYPES: ['script']
+}, {
+  NAME: 'noopframe',
+  TYPES: ['subdocument']
+}, {
+  NAME: '1x1-transparent.gif',
+  TYPES: ['image']
+}, {
+  NAME: 'noopmp3-0.1s',
+  TYPES: ['media']
+}, {
+  NAME: 'noopmp4-1s',
+  TYPES: ['media']
+}, {
+  NAME: 'googlesyndication-adsbygoogle',
+  TYPES: ['xmlhttprequest', 'script']
+}, {
+  NAME: 'google-analytics',
+  TYPES: ['script']
+}, {
+  NAME: 'googletagservices-gpt',
+  TYPES: ['script']
+}];
 var validAdgRedirects = redirects.filter(function (el) {
   return el.adg;
 });
@@ -4214,6 +4251,7 @@ var validator = {
   getScriptletByName: getScriptletByName,
   isValidScriptletName: isValidScriptletName,
   REDIRECT_RULE_TYPES: REDIRECT_RULE_TYPES,
+  ABSENT_SOURCE_TYPE_REPLACEMENT: ABSENT_SOURCE_TYPE_REPLACEMENT,
   isAdgRedirectRule: isAdgRedirectRule,
   isValidAdgRedirectRule: isValidAdgRedirectRule,
   isAdgRedirectCompatibleWithUbo: isAdgRedirectCompatibleWithUbo,
@@ -4224,11 +4262,29 @@ var validator = {
   hasValidContentType: hasValidContentType
 };
 
+function _arrayWithoutHoles(arr) {
+  if (Array.isArray(arr)) return arrayLikeToArray(arr);
+}
+
+var arrayWithoutHoles = _arrayWithoutHoles;
+
 function _iterableToArray(iter) {
   if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
 }
 
 var iterableToArray = _iterableToArray;
+
+function _nonIterableSpread() {
+  throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+}
+
+var nonIterableSpread = _nonIterableSpread;
+
+function _toConsumableArray(arr) {
+  return arrayWithoutHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableSpread();
+}
+
+var toConsumableArray = _toConsumableArray;
 
 function _toArray(arr) {
   return arrayWithHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableRest();
@@ -4525,6 +4581,12 @@ var convertRedirectToAdg = function convertRedirectToAdg(rule) {
 };
 /**
  * Converts Adg redirect rule to Ubo one
+ * 1. Checks if there is Ubo analog for Adg rule
+ * 2. Parses the rule and chechs if there are any source type modifiers which are required by Ubo
+ *    and if there are no one we add it manually to the end.
+ *    Source types are chosen according to redirect name
+ *    e.g. ||ad.com^$redirect=<name>,important  ->>  ||ad.com^$redirect=<name>,important,script
+ * 3. Replaces Adg redirect name by Ubo analog
  * @param {string} rule
  * @returns {string}
  */
@@ -4534,22 +4596,32 @@ var convertAdgRedirectToUbo = function convertAdgRedirectToUbo(rule) {
     throw new Error("Unable to convert for uBO - unsupported redirect in rule: ".concat(rule));
   }
 
-  if (!validator.hasValidContentType(rule)) {
-    throw new Error("Unable to convert for uBO - source type is not specified in rule: ".concat(rule));
-  } else {
-    var firstPartOfRule = substringBefore(rule, '$');
-    var uboModifiers = validator.parseModifiers(rule);
-    var adgModifiers = uboModifiers.map(function (el) {
-      if (el.indexOf(validator.REDIRECT_RULE_TYPES.ADG.marker) > -1) {
-        var adgName = substringAfter(el, validator.REDIRECT_RULE_TYPES.ADG.marker);
-        var uboName = validator.REDIRECT_RULE_TYPES.ADG.compatibility[adgName];
-        return "".concat(validator.REDIRECT_RULE_TYPES.UBO.marker).concat(uboName);
-      }
+  var basePart = substringBefore(rule, '$');
+  var adgModifiers = validator.parseModifiers(rule);
+  var adgRedirectModifier = adgModifiers.find(function (el) {
+    return el.indexOf(validator.REDIRECT_RULE_TYPES.ADG.marker) > -1;
+  });
+  var adgRedirectName = adgRedirectModifier.slice(validator.REDIRECT_RULE_TYPES.ADG.marker.length);
+  var uboRedirectName = validator.REDIRECT_RULE_TYPES.ADG.compatibility[adgRedirectName];
+  var uboRedirectModifier = "".concat(validator.REDIRECT_RULE_TYPES.UBO.marker).concat(uboRedirectName);
 
-      return el;
-    }).join(',');
-    return "".concat(firstPartOfRule, "$").concat(adgModifiers);
+  if (!validator.hasValidContentType(rule)) {
+    // add missed source types as content type modifiers
+    var sourceTypesData = validator.ABSENT_SOURCE_TYPE_REPLACEMENT.find(function (el) {
+      return el.NAME === adgRedirectName;
+    });
+    var additionModifiers = sourceTypesData.TYPES;
+    adgModifiers.push.apply(adgModifiers, toConsumableArray(additionModifiers));
   }
+
+  var uboModifiers = adgModifiers.map(function (el) {
+    if (el === adgRedirectModifier) {
+      return uboRedirectModifier;
+    }
+
+    return el;
+  }).join(',');
+  return "".concat(basePart, "$").concat(uboModifiers);
 };
 
 /**

@@ -35,6 +35,10 @@ export function preventFab(source) {
         return this;
     };
     Fab.prototype.setOption = noopFunc;
+    Fab.prototype.options = {
+        set: noopFunc,
+        get: noopFunc,
+    };
 
     const fab = new Fab();
     const getSetFab = {

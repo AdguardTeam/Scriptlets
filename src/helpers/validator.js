@@ -149,6 +149,49 @@ const EMPTY_REDIRECT_SUPPORTED_TYPES = [
     'other',
 ];
 
+/**
+ * Source types for redirect rules if there is no one of them.
+ * Used for ADG -> UBO conversion.
+ */
+const ABSENT_SOURCE_TYPE_REPLACEMENT = [
+    {
+        NAME: 'nooptext',
+        TYPES: EMPTY_REDIRECT_SUPPORTED_TYPES,
+    },
+    {
+        NAME: 'noopjs',
+        TYPES: ['script'],
+    },
+    {
+        NAME: 'noopframe',
+        TYPES: ['subdocument'],
+    },
+    {
+        NAME: '1x1-transparent.gif',
+        TYPES: ['image'],
+    },
+    {
+        NAME: 'noopmp3-0.1s',
+        TYPES: ['media'],
+    },
+    {
+        NAME: 'noopmp4-1s',
+        TYPES: ['media'],
+    },
+    {
+        NAME: 'googlesyndication-adsbygoogle',
+        TYPES: ['xmlhttprequest', 'script'],
+    },
+    {
+        NAME: 'google-analytics',
+        TYPES: ['script'],
+    },
+    {
+        NAME: 'googletagservices-gpt',
+        TYPES: ['script'],
+    },
+];
+
 const validAdgRedirects = redirects.filter((el) => el.adg);
 
 /**
@@ -380,6 +423,7 @@ const validator = {
     getScriptletByName,
     isValidScriptletName,
     REDIRECT_RULE_TYPES,
+    ABSENT_SOURCE_TYPE_REPLACEMENT,
     isAdgRedirectRule,
     isValidAdgRedirectRule,
     isAdgRedirectCompatibleWithUbo,

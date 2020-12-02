@@ -273,8 +273,11 @@ test('Test redirect rule validation for ADG -> UBO converting', (assert) => {
 });
 
 test('Test REDIRECT converting - ADG -> UBO', (assert) => {
-    let adgRule = '||example.com^$xmlhttprequest,redirect=nooptext';
-    let expectedUboRule = '||example.com^$xmlhttprequest,redirect=noop.txt';
+    let adgRule;
+    let expectedUboRule;
+
+    adgRule = '||example.com^$xmlhttprequest,redirect=nooptext';
+    expectedUboRule = '||example.com^$xmlhttprequest,redirect=noop.txt';
     assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
 
     adgRule = '||example.com/images/*.png$image,important,redirect=1x1-transparent.gif,domain=example.com|example.org';
@@ -290,8 +293,16 @@ test('Test REDIRECT converting - ADG -> UBO', (assert) => {
         convertAdgRedirectToUbo(adgRule);
     }, 'unable to convert -- no such ubo redirect');
 
-    assert.throws(() => {
-        adgRule = '||example.com/ad/vmap/*$redirect=nooptext';
-        convertAdgRedirectToUbo(adgRule);
-    }, 'unable to convert -- no source type specified');
+    // add source type modifiers while convertion if there is no one of them
+    adgRule = '||example.com/images/*.png$redirect=1x1-transparent.gif,domain=example.com|example.org,important';
+    expectedUboRule = '||example.com/images/*.png$redirect=1x1.gif,domain=example.com|example.org,important,image';
+    assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
+
+    adgRule = '||example.com/*.mp4$important,redirect=noopmp4-1s,~thirt-party';
+    expectedUboRule = '||example.com/*.mp4$important,redirect=noop-1s.mp4,~thirt-party,media';
+    assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
+
+    adgRule = '||ad.example.com^$redirect=nooptext,important';
+    expectedUboRule = '||ad.example.com^$redirect=noop.txt,important,subdocument,stylesheet,script,xmlhttprequest,other';
+    assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
 });
