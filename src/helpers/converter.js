@@ -292,6 +292,12 @@ export const convertRedirectToAdg = (rule) => {
 
 /**
  * Converts Adg redirect rule to Ubo one
+ * 1. Checks if there is Ubo analog for Adg rule
+ * 2. Parses the rule and chechs if there are any source type modifiers which are required by Ubo
+ *    and if there are no one we add it manually to the end.
+ *    Source types are chosen according to redirect name
+ *    e.g. ||ad.com^$redirect=<name>,important  ->>  ||ad.com^$redirect=<name>,important,script
+ * 3. Replaces Adg redirect name by Ubo analog
  * @param {string} rule
  * @returns {string}
  */
