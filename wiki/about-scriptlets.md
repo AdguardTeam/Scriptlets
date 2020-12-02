@@ -694,6 +694,9 @@ If not set, prevents all `setInterval` calls due to specified `delay`.
 If starts with `!`, scriptlet will not match the delay but all other will be defused.
 If do not start with `!`, the delay passed to the `setInterval` call will be matched.
 
+> If `prevent-setInterval` without parameters logs smth like `setInterval(undefined, 1000)`,
+it means that no callback was passed to setInterval() and that's not scriptlet issue
+
  **Examples**
 1. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the delay.
     ```bash
@@ -790,6 +793,9 @@ If not set, prevents all `setTimeout` calls due to specified `delay`.
 - `delay` - optional, must be an integer.
 If starts with `!`, scriptlet will not match the delay but all other will be defused.
 If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
+
+> If `prevent-setTimeout` without parameters logs smth like `setTimeout(undefined, 1000)`,
+it means that no callback was passed to setTimeout() and that's not scriptlet issue
 
 **Examples**
 1. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.

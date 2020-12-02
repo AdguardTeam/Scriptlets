@@ -1076,6 +1076,9 @@
      * If starts with `!`, scriptlet will not match the delay but all other will be defused.
      * If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
      *
+     * > If `prevent-setTimeout` without parameters logs smth like `setTimeout(undefined, 1000)`,
+     * it means that no callback was passed to setTimeout() and that's not scriptlet issue
+     *
      * **Examples**
      * 1. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.
      *     ```bash
@@ -1177,20 +1180,17 @@
       var timeoutWrapper = function timeoutWrapper(callback, timeout) {
         var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
 
-        try {
-          if (shouldLog) {
-            log("setTimeout(\"".concat(callback.toString(), "\", ").concat(timeout, ")"));
-            hit(source);
-          } else if (!delay) {
-            shouldPrevent = match.test(callback.toString()) !== isNotMatch;
-          } else if (match === '/.?/') {
-            shouldPrevent = timeout === delay !== isNotDelay;
-          } else {
-            shouldPrevent = match.test(callback.toString()) !== isNotMatch && timeout === delay !== isNotDelay;
-          }
-        } catch (e) {
-          var logMessage = "log: prevent-setTimeout error -- no callback passed to setTimeout().\n".concat(e);
-          hit(source, logMessage);
+        var cbString = String(callback);
+
+        if (shouldLog) {
+          hit(source);
+          log("setTimeout(".concat(cbString, ", ").concat(timeout, ")"));
+        } else if (!delay) {
+          shouldPrevent = match.test(cbString) !== isNotMatch;
+        } else if (match === '/.?/') {
+          shouldPrevent = timeout === delay !== isNotDelay;
+        } else {
+          shouldPrevent = match.test(cbString) !== isNotMatch && timeout === delay !== isNotDelay;
         }
 
         if (shouldPrevent) {
@@ -1244,6 +1244,9 @@
      * If starts with `!`, scriptlet will not match the delay but all other will be defused.
      * If do not start with `!`, the delay passed to the `setInterval` call will be matched.
      *
+     * > If `prevent-setInterval` without parameters logs smth like `setInterval(undefined, 1000)`,
+     * it means that no callback was passed to setInterval() and that's not scriptlet issue
+
      *  **Examples**
      * 1. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the delay.
      *     ```bash
@@ -1345,20 +1348,17 @@
       var intervalWrapper = function intervalWrapper(callback, interval) {
         var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
 
-        try {
-          if (shouldLog) {
-            hit(source);
-            log("setInterval(\"".concat(callback.toString(), "\", ").concat(interval, ")"));
-          } else if (!delay) {
-            shouldPrevent = match.test(callback.toString()) !== isNotMatch;
-          } else if (match === '/.?/') {
-            shouldPrevent = interval === delay !== isNotDelay;
-          } else {
-            shouldPrevent = match.test(callback.toString()) !== isNotMatch && interval === delay !== isNotDelay;
-          }
-        } catch (e) {
-          var logMessage = "log: prevent-setInterval error -- no callback passed to setInterval().\n".concat(e);
-          hit(source, logMessage);
+        var cbString = String(callback);
+
+        if (shouldLog) {
+          hit(source);
+          log("setInterval(".concat(cbString, ", ").concat(interval, ")"));
+        } else if (!delay) {
+          shouldPrevent = match.test(cbString) !== isNotMatch;
+        } else if (match === '/.?/') {
+          shouldPrevent = interval === delay !== isNotDelay;
+        } else {
+          shouldPrevent = match.test(cbString) !== isNotMatch && interval === delay !== isNotDelay;
         }
 
         if (shouldPrevent) {
