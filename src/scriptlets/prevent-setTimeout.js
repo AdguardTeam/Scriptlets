@@ -131,8 +131,8 @@ export function preventSetTimeout(source, match, delay) {
         // https://github.com/AdguardTeam/Scriptlets/issues/105
         try {
             if (shouldLog) {
-                hit(source);
                 log(`setTimeout("${callback.toString()}", ${timeout})`);
+                hit(source);
             } else if (!delay) {
                 shouldPrevent = match.test(callback.toString()) !== isNotMatch;
             } else if (match === '/.?/') {
@@ -141,7 +141,10 @@ export function preventSetTimeout(source, match, delay) {
                 shouldPrevent = match.test(callback.toString()) !== isNotMatch
                     && (timeout === delay) !== isNotDelay;
             }
-        } catch (e) {} // eslint-disable-line no-empty
+        } catch (e) {
+            const logMessage = `log: prevent-setTimeout error -- no callback passed to setTimeout().\n${e}`;
+            hit(source, logMessage);
+        }
 
         if (shouldPrevent) {
             hit(source);

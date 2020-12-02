@@ -141,7 +141,10 @@ export function preventSetInterval(source, match, delay) {
                 shouldPrevent = match.test(callback.toString()) !== isNotMatch
                     && (interval === delay) !== isNotDelay;
             }
-        } catch (e) {} // eslint-disable-line no-empty
+        } catch (e) {
+            const logMessage = `log: prevent-setInterval error -- no callback passed to setInterval().\n${e}`;
+            hit(source, logMessage);
+        }
 
         if (shouldPrevent) {
             hit(source);

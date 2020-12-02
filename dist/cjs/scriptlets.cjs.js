@@ -1178,8 +1178,8 @@ function preventSetTimeout(source, match, delay) {
 
     try {
       if (shouldLog) {
-        hit(source);
         log("setTimeout(\"".concat(callback.toString(), "\", ").concat(timeout, ")"));
+        hit(source);
       } else if (!delay) {
         shouldPrevent = match.test(callback.toString()) !== isNotMatch;
       } else if (match === '/.?/') {
@@ -1187,8 +1187,10 @@ function preventSetTimeout(source, match, delay) {
       } else {
         shouldPrevent = match.test(callback.toString()) !== isNotMatch && timeout === delay !== isNotDelay;
       }
-    } catch (e) {} // eslint-disable-line no-empty
-
+    } catch (e) {
+      var logMessage = "log: prevent-setTimeout error -- no callback passed to setTimeout().\n".concat(e);
+      hit(source, logMessage);
+    }
 
     if (shouldPrevent) {
       hit(source);
@@ -1353,8 +1355,10 @@ function preventSetInterval(source, match, delay) {
       } else {
         shouldPrevent = match.test(callback.toString()) !== isNotMatch && interval === delay !== isNotDelay;
       }
-    } catch (e) {} // eslint-disable-line no-empty
-
+    } catch (e) {
+      var logMessage = "log: prevent-setInterval error -- no callback passed to setInterval().\n".concat(e);
+      hit(source, logMessage);
+    }
 
     if (shouldPrevent) {
       hit(source);
