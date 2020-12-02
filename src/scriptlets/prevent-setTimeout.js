@@ -30,6 +30,9 @@ import {
  * If starts with `!`, scriptlet will not match the delay but all other will be defused.
  * If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
  *
+ * > If `prevent-setTimeout` without parameters logs smth like `setTimeout(undefined, 1000)`,
+ * it means that no callback was passed to setTimeout() and that's not scriptlet issue
+ *
  * **Examples**
  * 1. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.
  *     ```bash
@@ -127,15 +130,19 @@ export function preventSetTimeout(source, match, delay) {
 
     const timeoutWrapper = (callback, timeout, ...args) => {
         let shouldPrevent = false;
+
+        // https://github.com/AdguardTeam/Scriptlets/issues/105
+        const cbString = String(callback);
+
         if (shouldLog) {
             hit(source);
-            log(`setTimeout("${callback.toString()}", ${timeout})`);
+            log(`setTimeout(${cbString}, ${timeout})`);
         } else if (!delay) {
-            shouldPrevent = match.test(callback.toString()) !== isNotMatch;
+            shouldPrevent = match.test(cbString) !== isNotMatch;
         } else if (match === '/.?/') {
             shouldPrevent = (timeout === delay) !== isNotDelay;
         } else {
-            shouldPrevent = match.test(callback.toString()) !== isNotMatch
+            shouldPrevent = match.test(cbString) !== isNotMatch
                 && (timeout === delay) !== isNotDelay;
         }
 

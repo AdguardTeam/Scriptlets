@@ -1075,6 +1075,9 @@ abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInCha
  * If starts with `!`, scriptlet will not match the delay but all other will be defused.
  * If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
  *
+ * > If `prevent-setTimeout` without parameters logs smth like `setTimeout(undefined, 1000)`,
+ * it means that no callback was passed to setTimeout() and that's not scriptlet issue
+ *
  * **Examples**
  * 1. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.
  *     ```bash
@@ -1174,17 +1177,19 @@ function preventSetTimeout(source, match, delay) {
   match = match ? toRegExp(match) : toRegExp('/.?/');
 
   var timeoutWrapper = function timeoutWrapper(callback, timeout) {
-    var shouldPrevent = false;
+    var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
+
+    var cbString = String(callback);
 
     if (shouldLog) {
       hit(source);
-      log("setTimeout(\"".concat(callback.toString(), "\", ").concat(timeout, ")"));
+      log("setTimeout(".concat(cbString, ", ").concat(timeout, ")"));
     } else if (!delay) {
-      shouldPrevent = match.test(callback.toString()) !== isNotMatch;
+      shouldPrevent = match.test(cbString) !== isNotMatch;
     } else if (match === '/.?/') {
       shouldPrevent = timeout === delay !== isNotDelay;
     } else {
-      shouldPrevent = match.test(callback.toString()) !== isNotMatch && timeout === delay !== isNotDelay;
+      shouldPrevent = match.test(cbString) !== isNotMatch && timeout === delay !== isNotDelay;
     }
 
     if (shouldPrevent) {
@@ -1238,6 +1243,9 @@ preventSetTimeout.injections = [toRegExp, startsWith, hit, noopFunc];
  * If starts with `!`, scriptlet will not match the delay but all other will be defused.
  * If do not start with `!`, the delay passed to the `setInterval` call will be matched.
  *
+ * > If `prevent-setInterval` without parameters logs smth like `setInterval(undefined, 1000)`,
+ * it means that no callback was passed to setInterval() and that's not scriptlet issue
+
  *  **Examples**
  * 1. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the delay.
  *     ```bash
@@ -1337,17 +1345,19 @@ function preventSetInterval(source, match, delay) {
   match = match ? toRegExp(match) : toRegExp('/.?/');
 
   var intervalWrapper = function intervalWrapper(callback, interval) {
-    var shouldPrevent = false;
+    var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
+
+    var cbString = String(callback);
 
     if (shouldLog) {
       hit(source);
-      log("setInterval(\"".concat(callback.toString(), "\", ").concat(interval, ")"));
+      log("setInterval(".concat(cbString, ", ").concat(interval, ")"));
     } else if (!delay) {
-      shouldPrevent = match.test(callback.toString()) !== isNotMatch;
+      shouldPrevent = match.test(cbString) !== isNotMatch;
     } else if (match === '/.?/') {
       shouldPrevent = interval === delay !== isNotDelay;
     } else {
-      shouldPrevent = match.test(callback.toString()) !== isNotMatch && interval === delay !== isNotDelay;
+      shouldPrevent = match.test(cbString) !== isNotMatch && interval === delay !== isNotDelay;
     }
 
     if (shouldPrevent) {
