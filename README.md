@@ -1,9 +1,8 @@
 # AdGuard Scriptlets and Redirect resources
-[![Build Status](https://travis-ci.com/AdguardTeam/Scriptlets.svg?branch=master)](https://travis-ci.com/AdguardTeam/Scriptlets)
 
 * [Scriptlets](#scriptlets)
     * [Syntax](#scriptlet-syntax)
-    * [Available scriptlets](./wiki/about-scriptlets.md#scriptlets)        
+    * [Available scriptlets](./wiki/about-scriptlets.md#scriptlets)
     * [Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)
 * [Redirect resources](#redirect-resources)
     * [Syntax](#redirect-syntax)
@@ -17,7 +16,7 @@
 
 Scriptlet is a JavaScript function that provides extended capabilities for content blocking. These functions can be used in a declarative manner in AdGuard filtering rules.
 
-AdGuard supports a lot of different scriptlets. Please note, that in order to achieve cross-blocker compatibility, we also support syntax of uBO and ABP. 
+AdGuard supports a lot of different scriptlets. Please note, that in order to achieve cross-blocker compatibility, we also support syntax of uBO and ABP.
 
 ### <a id="scriptlet-syntax"></a> Syntax
 

@@ -42,7 +42,7 @@
         "eslint-plugin-compat": "^3.3.0",
         "eslint-plugin-import": "^2.18.2",
         "husky": "^3.1.0",
-        "node-qunit-puppeteer": "^1.0.16",
+        "node-qunit-puppeteer": "^2.0.3",
         "qunit": "^2.9.3",
         "rollup": "^2.21.0",
         "rollup-plugin-cleanup": "^3.1.1",
