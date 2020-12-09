@@ -17,16 +17,13 @@ jobs:
         env:
           BROWSERSTACK_USER: ${{ secrets.BROWSERSTACK_USER }}
           BROWSERSTACK_KEY: ${{ secrets.BROWSERSTACK_KEY }}
-        run: |
+        run: |-
           yarn install
           yarn test
           yarn browserstack
           yarn corelibs
           yarn build
           yarn wiki:check-updates
-        with:
-          BROWSERSTACK_USER: ${{ secrets.BROWSERSTACK_USER }}
-          BROWSERSTACK_KEY: ${{ secrets.BROWSERSTACK_KEY }}
 
   notify:
     needs:
