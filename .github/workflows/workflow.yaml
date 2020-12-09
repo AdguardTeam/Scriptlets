@@ -6,6 +6,9 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    env:
+      BROWSERSTACK_USER: ${{ secrets.BROWSERSTACK_USER }}
+      BROWSERSTACK_KEY: ${{ secrets.BROWSERSTACK_KEY }}
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.jobs
@@ -13,17 +16,23 @@ jobs:
         with:
           node-version: 14.x
 
-      - name: yarn
-        env:
-          BROWSERSTACK_USER: ${{ secrets.BROWSERSTACK_USER }}
-          BROWSERSTACK_KEY: ${{ secrets.BROWSERSTACK_KEY }}
-        run: |-
-          yarn install
-          yarn test
-          yarn browserstack
-          yarn corelibs
-          yarn build
-          yarn wiki:check-updates
+      - name: yarn install
+        run: yarn install
+
+      - name: yarn test
+        run: yarn test
+
+      - name: yarn browserstack
+        run: yarn browserstack
+
+      - name: yarn corelibs
+        run: yarn corelibs
+
+      - name: yarn build
+        run: yarn build
+
+      - name: yarn wiki:check-updates
+        run: yarn wiki:check-updates
 
   notify:
     needs:
