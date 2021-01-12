@@ -9,7 +9,7 @@ import { hit } from '../helpers';
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('set-cookie', name, value)
+ * example.org#%#//scriptlet('set-cookie', name, value, reload)
  * ```
  *
  * - `name` - required, cookie name to be set
@@ -21,19 +21,40 @@ import { hit } from '../helpers';
  *         - `yes` / `Yes` / `Y`
  *         - `no`
  *         - `ok` / `OK`
+ * - `reload` - optional, page reload flag;
+ * any positive number or non-empty string for 'true', 0 or empty string for 'false'; defaults to `false`
  *
  * **Examples**
  * ```
  * example.org#%#//scriptlet('set-cookie', 'checking', 'ok')
  *
  * example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', '1')
+ *
+ * // for reloading -- both are correct
+ * example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1', '1')
+ * example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1', 'reload')
  * ```
  */
 /* eslint-enable max-len */
-export function setCookie(source, name, value) {
+export function setCookie(source, name, value, reload = false) {
     if (!name || !value) {
         return;
     }
+
+    const isCookieAlreadySet = document.cookie.split(';')
+        .some((cookieStr) => {
+            const pos = cookieStr.indexOf('=');
+            if (pos === -1) {
+                return false;
+            }
+            const cookieName = cookieStr.slice(0, pos).trim();
+            const cookieValue = cookieStr.slice(pos + 1).trim();
+
+            return name === cookieName && value === cookieValue;
+        });
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/111
+    const shouldReload = !!reload && !isCookieAlreadySet;
 
     const nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
     let valueToSet;
@@ -75,6 +96,10 @@ export function setCookie(source, name, value) {
 
     hit(source);
     document.cookie = cookieData;
+
+    if (shouldReload) {
+        document.location.reload();
+    }
 }
 
 setCookie.names = [

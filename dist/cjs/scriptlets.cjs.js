@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.13
+ * Version 1.3.14
  */
 
 /**
@@ -3608,7 +3608,7 @@ preventRequestAnimationFrame.injections = [hit, startsWith, toRegExp, noopFunc];
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('set-cookie', name, value)
+ * example.org#%#//scriptlet('set-cookie', name, value, reload)
  * ```
  *
  * - `name` - required, cookie name to be set
@@ -3620,22 +3620,43 @@ preventRequestAnimationFrame.injections = [hit, startsWith, toRegExp, noopFunc];
  *         - `yes` / `Yes` / `Y`
  *         - `no`
  *         - `ok` / `OK`
+ * - `reload` - optional, page reload flag;
+ * any positive number or non-empty string for 'true', 0 or empty string for 'false'; defaults to `false`
  *
  * **Examples**
  * ```
  * example.org#%#//scriptlet('set-cookie', 'checking', 'ok')
  *
  * example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', '1')
+ *
+ * // for reloading -- both are correct
+ * example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1', '1')
+ * example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1', 'reload')
  * ```
  */
 
 /* eslint-enable max-len */
 
 function setCookie(source, name, value) {
+  var reload = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+
   if (!name || !value) {
     return;
   }
 
+  var isCookieAlreadySet = document.cookie.split(';').some(function (cookieStr) {
+    var pos = cookieStr.indexOf('=');
+
+    if (pos === -1) {
+      return false;
+    }
+
+    var cookieName = cookieStr.slice(0, pos).trim();
+    var cookieValue = cookieStr.slice(pos + 1).trim();
+    return name === cookieName && value === cookieValue;
+  }); // https://github.com/AdguardTeam/Scriptlets/issues/111
+
+  var shouldReload = !!reload && !isCookieAlreadySet;
   var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
 
   var valueToSet;
@@ -3678,6 +3699,10 @@ function setCookie(source, name, value) {
   var cookieData = "".concat(encodeURIComponent(name), "=").concat(encodeURIComponent(valueToSet), "; ").concat(pathToSet);
   hit(source);
   document.cookie = cookieData;
+
+  if (shouldReload) {
+    document.location.reload();
+  }
 }
 setCookie.names = ['set-cookie'];
 setCookie.injections = [hit];

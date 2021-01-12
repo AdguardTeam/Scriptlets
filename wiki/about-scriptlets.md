@@ -1107,7 +1107,7 @@ Sets a cookie with the specified name and value. Cookie path defaults to root.
 
 **Syntax**
 ```
-example.org#%#//scriptlet('set-cookie', name, value)
+example.org#%#//scriptlet('set-cookie', name, value, reload)
 ```
 
 - `name` - required, cookie name to be set
@@ -1119,12 +1119,18 @@ example.org#%#//scriptlet('set-cookie', name, value)
         - `yes` / `Yes` / `Y`
         - `no`
         - `ok` / `OK`
+- `reload` - optional, page reload flag;
+any positive number or non-empty string for 'true', 0 or empty string for 'false'; defaults to `false`
 
 **Examples**
 ```
 example.org#%#//scriptlet('set-cookie', 'checking', 'ok')
 
 example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', '1')
+
+// for reloading -- both are correct
+example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1', '1')
+example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1', 'reload')
 ```
 [Scriptlet source](../src/scriptlets/set-cookie.js)
 * * *
