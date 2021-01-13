@@ -5,6 +5,7 @@
  */
 
 (function () {
+
     /**
      * Generate random six symbols id
      */
@@ -8006,7 +8007,7 @@
 
       alias = state.input.slice(_position, state.position);
 
-      if (!state.anchorMap.hasOwnProperty(alias)) {
+      if (!_hasOwnProperty$2.call(state.anchorMap, alias)) {
         throwError(state, 'unidentified alias "' + alias + '"');
       }
 
