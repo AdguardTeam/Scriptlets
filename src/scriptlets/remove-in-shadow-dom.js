@@ -7,17 +7,17 @@ import {
 } from '../helpers';
 
 /**
- * @scriptlet hide-in-shadow-dom
+ * @scriptlet remove-in-shadow-dom
  *
  * @description
- * Hides elements inside open shadow DOM elements.
+ * Removes elements inside open shadow DOM elements.
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('hide-in-shadow-dom', selector[, baseSelector])
+ * example.org#%#//scriptlet('remove-in-shadow-dom', selector[, baseSelector])
  * ```
  *
- * - `selector` — required, CSS selector of element in shadow-dom to hide
+ * - `selector` — required, CSS selector of element in shadow-dom to remove
  * - `baseSelector` — optional, selector of specific page DOM element,
  * narrows down the part of the page DOM where shadow-dom host supposed to be,
  * defaults to document.documentElement
@@ -26,44 +26,43 @@ import {
  *
  * **Examples**
  * ```
- * ! hides menu bar
- * virustotal.com#%#//scriptlet('hide-in-shadow-dom', 'iron-pages', 'vt-virustotal-app')
+ * ! removes menu bar
+ * virustotal.com#%#//scriptlet('remove-in-shadow-dom', 'iron-pages', 'vt-virustotal-app')
  *
- * ! hides floating element
- * virustotal.com#%#//scriptlet('hide-in-shadow-dom', 'vt-ui-contact-fab')
+ * ! removes floating element
+ * virustotal.com#%#//scriptlet('remove-in-shadow-dom', 'vt-ui-contact-fab')
  * ```
  */
-export function hideInShadowDom(source, selector, baseSelector) {
+export function removeInShadowDom(source, selector, baseSelector) {
     // do nothing if browser does not support ShadowRoot
     // https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot
     if (!Element.prototype.attachShadow) {
         return;
     }
 
-    const hideElement = (targetElement) => {
-        const DISPLAY_NONE_CSS = 'display:none!important;';
-        targetElement.style.cssText = DISPLAY_NONE_CSS;
+    const removeElement = (targetElement) => {
+        targetElement.remove();
     };
 
     /**
-     * Handles shadow-dom piercing and hiding of found elements
+     * Handles shadow-dom piercing and removing of found elements
      */
-    const hideHandler = () => {
+    const removeHandler = () => {
         // start value of shadow-dom hosts for the page dom
         let hostElements = !baseSelector ? findHostElements(document.documentElement)
             : document.querySelectorAll(baseSelector);
 
         // if there is shadow-dom host, they should be explored
         while (hostElements.length !== 0) {
-            let isHidden = false;
+            let isRemoved = false;
             const { targets, innerHosts } = pierceShadowDom(selector, hostElements);
 
             targets.forEach((targetEl) => {
-                hideElement(targetEl);
-                isHidden = true;
+                removeElement(targetEl);
+                isRemoved = true;
             });
 
-            if (isHidden) {
+            if (isRemoved) {
                 hit(source);
             }
 
@@ -73,16 +72,16 @@ export function hideInShadowDom(source, selector, baseSelector) {
         }
     };
 
-    hideHandler();
+    removeHandler();
 
-    observeDOMChanges(hideHandler, true);
+    observeDOMChanges(removeHandler, true);
 }
 
-hideInShadowDom.names = [
-    'hide-in-shadow-dom',
+removeInShadowDom.names = [
+    'remove-in-shadow-dom',
 ];
 
-hideInShadowDom.injections = [
+removeInShadowDom.injections = [
     hit,
     observeDOMChanges,
     flatten,
