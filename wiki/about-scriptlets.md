@@ -30,6 +30,7 @@
 * [remove-class](#remove-class)
 * [remove-cookie](#remove-cookie)
 * [set-constant](#set-constant)
+* [set-cookie-reload](#set-cookie-reload)
 * [set-cookie](#set-cookie)
 * [set-popads-dummy](#set-popads-dummy)
 * * *
@@ -1101,13 +1102,14 @@ example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc', 'checking.j
 [Scriptlet source](../src/scriptlets/set-constant.js)
 * * *
 
-### <a id="set-cookie"></a> ⚡️ set-cookie
+### <a id="set-cookie-reload"></a> ⚡️ set-cookie-reload
 
-Sets a cookie with the specified name and value. Cookie path defaults to root.
+Sets a cookie with the specified name and value with page reloading for proper cookie setting.
+If reloading option is not needed, use [set-cookie](#set-cookie) scriptlet.
 
 **Syntax**
 ```
-example.org#%#//scriptlet('set-cookie', name, value, reload)
+example.org#%#//scriptlet('set-cookie-reload', name, value)
 ```
 
 - `name` - required, cookie name to be set
@@ -1119,18 +1121,40 @@ example.org#%#//scriptlet('set-cookie', name, value, reload)
         - `yes` / `Yes` / `Y`
         - `no`
         - `ok` / `OK`
-- `reload` - optional, page reload flag;
-any positive number or non-empty string for 'true', 0 or empty string for 'false'; defaults to `false`
 
 **Examples**
 ```
-example.org#%#//scriptlet('set-cookie', 'checking', 'ok')
+example.org#%#//scriptlet('set-cookie-reload', 'checking', 'ok')
 
-example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', '1')
+example.org#%#//scriptlet('set-cookie-reload', 'gdpr-settings-cookie', '1')
+```
+[Scriptlet source](../src/scriptlets/set-cookie-reload.js)
+* * *
 
-// for reloading -- both are correct
-example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1', '1')
-example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1', 'reload')
+### <a id="set-cookie"></a> ⚡️ set-cookie
+
+Sets a cookie with the specified name and value. Cookie path defaults to root.
+
+**Syntax**
+```
+example.org#%#//scriptlet('set-cookie', name, value)
+```
+
+- `name` - required, cookie name to be set
+- `value` - required, cookie value; possible values:
+    - number `>= 0 && <= 15`
+    - one of the predefined constants:
+        - `true` / `True`
+        - `false` / `False`
+        - `yes` / `Yes` / `Y`
+        - `no`
+        - `ok` / `OK`
+
+**Examples**
+```
+example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1'
+
+example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', 'true')
 ```
 [Scriptlet source](../src/scriptlets/set-cookie.js)
 * * *
