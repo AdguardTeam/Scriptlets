@@ -33,5 +33,6 @@ export * from './dir-string';
 export * from './json-prune';
 export * from './prevent-requestAnimationFrame';
 export * from './set-cookie';
+export * from './set-cookie-reload';
 export * from './hide-in-shadow-dom';
 export * from './remove-in-shadow-dom';

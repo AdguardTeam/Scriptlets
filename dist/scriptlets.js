@@ -576,6 +576,60 @@
     };
 
     /**
+     * Prepares cookie string if given parameters are ok
+     * @param {string} name cookie name to set
+     * @param {string} value cookie value to set
+     * @returns {string|null} cookie string if ok OR null if not
+     */
+    var prepareCookie = function prepareCookie(name, value) {
+      if (!name || !value) {
+        return null;
+      }
+
+      var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
+
+      var valueToSet;
+
+      if (value === 'true') {
+        valueToSet = 'true';
+      } else if (value === 'True') {
+        valueToSet = 'True';
+      } else if (value === 'false') {
+        valueToSet = 'false';
+      } else if (value === 'False') {
+        valueToSet = 'False';
+      } else if (value === 'yes') {
+        valueToSet = 'yes';
+      } else if (value === 'Yes') {
+        valueToSet = 'Yes';
+      } else if (value === 'Y') {
+        valueToSet = 'Y';
+      } else if (value === 'no') {
+        valueToSet = 'no';
+      } else if (value === 'ok') {
+        valueToSet = 'ok';
+      } else if (value === 'OK') {
+        valueToSet = 'OK';
+      } else if (/^\d+$/.test(value)) {
+        valueToSet = parseFloat(value);
+
+        if (nativeIsNaN(valueToSet)) {
+          return null;
+        }
+
+        if (Math.abs(valueToSet) < 0 || Math.abs(valueToSet) > 15) {
+          return null;
+        }
+      } else {
+        return null;
+      }
+
+      var pathToSet = 'path=/;';
+      var cookieData = "".concat(encodeURIComponent(name), "=").concat(encodeURIComponent(valueToSet), "; ").concat(pathToSet);
+      return cookieData;
+    };
+
+    /**
      * This file must export all used dependencies
      */
 
@@ -608,7 +662,8 @@
         matchStackTrace: matchStackTrace,
         findHostElements: findHostElements,
         pierceShadowDom: pierceShadowDom,
-        flatten: flatten
+        flatten: flatten,
+        prepareCookie: prepareCookie
     });
 
     /**
@@ -3692,64 +3747,81 @@
      *
      * **Examples**
      * ```
-     * example.org#%#//scriptlet('set-cookie', 'checking', 'ok')
+     * example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1'
      *
-     * example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', '1')
+     * example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', 'true')
      * ```
      */
 
     /* eslint-enable max-len */
 
     function setCookie(source, name, value) {
-      if (!name || !value) {
-        return;
+      var cookieData = prepareCookie(name, value);
+
+      if (cookieData) {
+        hit(source);
+        document.cookie = cookieData;
       }
-
-      var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
-
-      var valueToSet;
-
-      if (value === 'true') {
-        valueToSet = 'true';
-      } else if (value === 'True') {
-        valueToSet = 'True';
-      } else if (value === 'false') {
-        valueToSet = 'false';
-      } else if (value === 'False') {
-        valueToSet = 'False';
-      } else if (value === 'yes') {
-        valueToSet = 'yes';
-      } else if (value === 'Yes') {
-        valueToSet = 'Yes';
-      } else if (value === 'Y') {
-        valueToSet = 'Y';
-      } else if (value === 'no') {
-        valueToSet = 'no';
-      } else if (value === 'ok') {
-        valueToSet = 'ok';
-      } else if (value === 'OK') {
-        valueToSet = 'OK';
-      } else if (/^\d+$/.test(value)) {
-        valueToSet = parseFloat(value);
-
-        if (nativeIsNaN(valueToSet)) {
-          return;
-        }
-
-        if (Math.abs(valueToSet) < 0 || Math.abs(valueToSet) > 15) {
-          return;
-        }
-      } else {
-        return;
-      }
-
-      var pathToSet = 'path=/;';
-      var cookieData = "".concat(encodeURIComponent(name), "=").concat(encodeURIComponent(valueToSet), "; ").concat(pathToSet);
-      hit(source);
-      document.cookie = cookieData;
     }
     setCookie.names = ['set-cookie'];
-    setCookie.injections = [hit];
+    setCookie.injections = [hit, prepareCookie];
+
+    /**
+     * @scriptlet set-cookie-reload
+     *
+     * @description
+     * Sets a cookie with the specified name and value, and then reloads the current page.
+     * If reloading option is not needed, use [set-cookie](#set-cookie) scriptlet.
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('set-cookie-reload', name, value)
+     * ```
+     *
+     * - `name` - required, cookie name to be set
+     * - `value` - required, cookie value; possible values:
+     *     - number `>= 0 && <= 15`
+     *     - one of the predefined constants:
+     *         - `true` / `True`
+     *         - `false` / `False`
+     *         - `yes` / `Yes` / `Y`
+     *         - `no`
+     *         - `ok` / `OK`
+     *
+     * **Examples**
+     * ```
+     * example.org#%#//scriptlet('set-cookie-reload', 'checking', 'ok')
+     *
+     * example.org#%#//scriptlet('set-cookie-reload', 'gdpr-settings-cookie', '1')
+     * ```
+     */
+
+    function setCookieReload(source, name, value) {
+      var isCookieAlreadySet = document.cookie.split(';').some(function (cookieStr) {
+        var pos = cookieStr.indexOf('=');
+
+        if (pos === -1) {
+          return false;
+        }
+
+        var cookieName = cookieStr.slice(0, pos).trim();
+        var cookieValue = cookieStr.slice(pos + 1).trim();
+        return name === cookieName && value === cookieValue;
+      });
+      var shouldReload = !isCookieAlreadySet;
+      var cookieData = prepareCookie(name, value);
+
+      if (cookieData) {
+        hit(source);
+        document.cookie = cookieData;
+
+        if (shouldReload) {
+          window.location.reload();
+        }
+      }
+    }
+    setCookieReload.names = ['set-cookie-reload'];
+    setCookieReload.injections = [hit, prepareCookie];
 
     /**
      * @scriptlet hide-in-shadow-dom
@@ -3940,6 +4012,7 @@
         jsonPrune: jsonPrune,
         preventRequestAnimationFrame: preventRequestAnimationFrame,
         setCookie: setCookie,
+        setCookieReload: setCookieReload,
         hideInShadowDom: hideInShadowDom,
         removeInShadowDom: removeInShadowDom
     });
