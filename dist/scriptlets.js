@@ -513,7 +513,7 @@
     /**
      * Finds shadow-dom host (elements with shadowRoot property) in DOM of rootElement.
      * @param {HTMLElement} rootElement
-     * @returns {nodeList[]} shadow-dom hosts
+     * @returns {HTMLElement[]} shadow-dom hosts
      */
 
     var findHostElements = function findHostElements(rootElement) {
@@ -531,9 +531,16 @@
       return hosts;
     };
     /**
+     * A collection of nodes.
+     *
+     * @external NodeList
+     * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/NodeList NodeList}
+     */
+
+    /**
      * @typedef {Object} PierceData
-     * @property {Array} targets found elements
-     * @property {Array} innerHosts inner shadow-dom hosts
+     * @property {HTMLElement[]} targets found elements that match the specified selector
+     * @property {HTMLElement[]} innerHosts inner shadow-dom hosts
      */
 
     /**
@@ -541,30 +548,21 @@
      * - elements by 'selector' matching
      * - inner shadow-dom hosts
      * @param {string} selector
-     * @param {nodeList[]} hostElements
+     * @param {HTMLElement[]|external:NodeList} hostElements
      * @returns {PierceData}
      */
 
     var pierceShadowDom = function pierceShadowDom(selector, hostElements) {
       var targets = [];
-      var innerHostsAcc = [];
-
-      var collectTargets = function collectTargets(arr) {
-        if (arr.length !== 0) {
-          arr.forEach(function (el) {
-            return targets.push(el);
-          });
-        }
-      }; // it's possible to get a few hostElements found by baseSelector on the page
-
+      var innerHostsAcc = []; // it's possible to get a few hostElements found by baseSelector on the page
 
       hostElements.forEach(function (host) {
         // check presence of selector element inside base element if it's not in shadow-dom
         var simpleElems = host.querySelectorAll(selector);
-        collectTargets(simpleElems);
+        targets = targets.concat(Array.from(simpleElems));
         var shadowRootElem = host.shadowRoot;
         var shadowChildren = shadowRootElem.querySelectorAll(selector);
-        collectTargets(shadowChildren); // find inner shadow-dom hosts inside processing shadow-dom
+        targets = targets.concat(Array.from(shadowChildren)); // find inner shadow-dom hosts inside processing shadow-dom
 
         innerHostsAcc.push(findHostElements(shadowRootElem));
       }); // if there were more than one host element,
@@ -6039,7 +6037,7 @@
       return Object.prototype.toString.call(object) === '[object Number]' && object % 1 === 0 && !common.isNegativeZero(object);
     }
 
-    var int_1 = new type('tag:yaml.org,2002:int', {
+    var int = new type('tag:yaml.org,2002:int', {
       kind: 'scalar',
       resolve: resolveYamlInteger,
       construct: constructYamlInteger,
@@ -6171,7 +6169,7 @@
       return Object.prototype.toString.call(object) === '[object Number]' && (object % 1 !== 0 || common.isNegativeZero(object));
     }
 
-    var float_1 = new type('tag:yaml.org,2002:float', {
+    var float = new type('tag:yaml.org,2002:float', {
       kind: 'scalar',
       resolve: resolveYamlFloat,
       construct: constructYamlFloat,
@@ -6182,7 +6180,7 @@
 
     var json = new schema({
       include: [failsafe],
-      implicit: [_null, bool, int_1, float_1]
+      implicit: [_null, bool, int, float]
     });
 
     var core = new schema({
@@ -6291,8 +6289,8 @@
       resolve: resolveYamlMerge
     });
 
-    function commonjsRequire () {
-    	throw new Error('Dynamic requires are not currently supported by @rollup/plugin-commonjs');
+    function commonjsRequire (target) {
+    	throw new Error('Could not dynamically require "' + target + '". Please configure the dynamicRequireTargets option of @rollup/plugin-commonjs appropriately for this require call to behave properly.');
     }
 
     /*eslint-disable no-bitwise*/

@@ -42,24 +42,18 @@ export const findHostElements = (rootElement) => {
  * @returns {PierceData}
  */
 export const pierceShadowDom = (selector, hostElements) => {
-    const targets = [];
+    let targets = [];
     const innerHostsAcc = [];
-
-    const collectTargets = (arr) => {
-        if (arr.length !== 0) {
-            arr.forEach((el) => targets.push(el));
-        }
-    };
 
     // it's possible to get a few hostElements found by baseSelector on the page
     hostElements.forEach((host) => {
         // check presence of selector element inside base element if it's not in shadow-dom
         const simpleElems = host.querySelectorAll(selector);
-        collectTargets(simpleElems);
+        targets = targets.concat(Array.from(simpleElems));
 
         const shadowRootElem = host.shadowRoot;
         const shadowChildren = shadowRootElem.querySelectorAll(selector);
-        collectTargets(shadowChildren);
+        targets = targets.concat(Array.from(shadowChildren));
 
         // find inner shadow-dom hosts inside processing shadow-dom
         innerHostsAcc.push(findHostElements(shadowRootElem));
