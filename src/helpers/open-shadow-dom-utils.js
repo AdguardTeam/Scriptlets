@@ -3,7 +3,7 @@ import { flatten } from './array-utils';
 /**
  * Finds shadow-dom host (elements with shadowRoot property) in DOM of rootElement.
  * @param {HTMLElement} rootElement
- * @returns {nodeList[]} shadow-dom hosts
+ * @returns {HTMLElement[]} shadow-dom hosts
  */
 export const findHostElements = (rootElement) => {
     const hosts = [];
@@ -21,9 +21,16 @@ export const findHostElements = (rootElement) => {
 };
 
 /**
+ * A collection of nodes.
+ *
+ * @external NodeList
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/NodeList NodeList}
+ */
+
+/**
  * @typedef {Object} PierceData
- * @property {Array} targets found elements
- * @property {Array} innerHosts inner shadow-dom hosts
+ * @property {HTMLElement[]} targets found elements that match the specified selector
+ * @property {HTMLElement[]} innerHosts inner shadow-dom hosts
  */
 
 /**
@@ -31,7 +38,7 @@ export const findHostElements = (rootElement) => {
  * - elements by 'selector' matching
  * - inner shadow-dom hosts
  * @param {string} selector
- * @param {nodeList[]} hostElements
+ * @param {HTMLElement[]|external:NodeList} hostElements
  * @returns {PierceData}
  */
 export const pierceShadowDom = (selector, hostElements) => {

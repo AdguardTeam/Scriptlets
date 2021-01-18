@@ -54,7 +54,7 @@ test('simple check', (assert) => {
         //   </div>
         // </body>
 
-        // cheching before
+        // checking before
         const elemToCheckBefore = testHost.shadowRoot.querySelector('p#test');
         assert.strictEqual(elemToCheckBefore.tagName, 'P');
         assert.strictEqual(elemToCheckBefore.id, 'test', `Element ${SELECTOR} is present`);
@@ -62,7 +62,7 @@ test('simple check', (assert) => {
         const resString = window.scriptlets.invoke(params);
         evalWrapper(resString);
 
-        // cheching after
+        // checking after
         const elemToCheckAfter = testHost.shadowRoot.querySelector('p#test');
         assert.strictEqual(elemToCheckAfter, null, `Element ${SELECTOR} is removed`);
         assert.strictEqual(window.hit, 'FIRED');
@@ -106,7 +106,7 @@ test('few levels of shadow-doms', (assert) => {
         //   </div>
         // </body>
 
-        // cheching before
+        // checking before
         const elemToCheckBefore = testHost.shadowRoot.querySelector('div#testChild').shadowRoot.querySelector('p#inner');
         assert.strictEqual(elemToCheckBefore.tagName, 'P');
         assert.strictEqual(elemToCheckBefore.id, 'inner', `Element ${SELECTOR} is present`);
@@ -114,7 +114,7 @@ test('few levels of shadow-doms', (assert) => {
         const resString = window.scriptlets.invoke(params);
         evalWrapper(resString);
 
-        // cheching after
+        // checking after
         const elemToCheckAfter = testHost.shadowRoot.querySelector('div#testChild').shadowRoot.querySelector('p#inner');
         assert.strictEqual(elemToCheckAfter, null, `Element ${SELECTOR} is removed`);
         assert.strictEqual(window.hit, 'FIRED');
@@ -170,7 +170,7 @@ test('multiple shadow-doms inside another shadow-dom', (assert) => {
         //   </div>
         // </body>
 
-        // cheching before
+        // checking before
         const firstElemBefore = testHost.shadowRoot.querySelector('div#first').shadowRoot.querySelector('p#inner');
         const secondElemBefore = testHost.shadowRoot.querySelector('div#second').shadowRoot.querySelector('span#inner');
         assert.strictEqual(firstElemBefore.tagName, 'P');
@@ -239,7 +239,7 @@ test('shadow-dom host next to shadow-dom inside parental shadow-dom', (assert) =
         //   </div>
         // </body>
 
-        // cheching before
+        // checking before
         const firstElemBefore = testHost.shadowRoot.querySelector('div#shadowInner').shadowRoot.querySelector('p#inner');
         const secondElemBefore = testHost.querySelector('div#simpleChild').shadowRoot.querySelector('span#inner');
         assert.strictEqual(firstElemBefore.tagName, 'P');
@@ -250,7 +250,7 @@ test('shadow-dom host next to shadow-dom inside parental shadow-dom', (assert) =
         const resString = window.scriptlets.invoke(params);
         evalWrapper(resString);
 
-        // cheching after
+        // checking after
         const firstElemAfter = testHost.shadowRoot.querySelector('div#shadowInner').shadowRoot.querySelector('p#inner');
         const secondElemAfter = testHost.querySelector('div#simpleChild').shadowRoot.querySelector('span#inner');
         assert.strictEqual(firstElemAfter, null, `Element ${SELECTOR} is removed`);
@@ -311,7 +311,7 @@ test('continue inner shadow-dom host searching after success with selector match
         //   </div>
         // </body>
 
-        // cheching before
+        // checking before
         const simpleElemBefore = testHost.shadowRoot.querySelector('div#simpleChild').querySelector('p#inner');
         const shadowElemBefore = testHost.shadowRoot.querySelector('div#shadowChild').shadowRoot.querySelector('span#inner');
         assert.strictEqual(simpleElemBefore.tagName, 'P');
@@ -322,7 +322,7 @@ test('continue inner shadow-dom host searching after success with selector match
         const resString = window.scriptlets.invoke(params);
         evalWrapper(resString);
 
-        // cheching after
+        // checking after
         const simpleElemAfter = testHost.shadowRoot.querySelector('div#simpleChild').querySelector('p#inner');
         const shadowElemAfter = testHost.shadowRoot.querySelector('div#shadowChild').shadowRoot.querySelector('span#inner');
         assert.strictEqual(simpleElemAfter, null, `Element ${SELECTOR} is removed`);
