@@ -34,3 +34,4 @@ export * from './json-prune';
 export * from './prevent-requestAnimationFrame';
 export * from './set-cookie';
 export * from './hide-in-shadow-dom';
+export * from './set-cookie-reload';

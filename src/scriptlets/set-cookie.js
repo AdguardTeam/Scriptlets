@@ -1,4 +1,4 @@
-import { hit } from '../helpers';
+import { hit, prepareCookie } from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -24,61 +24,23 @@ import { hit } from '../helpers';
  *
  * **Examples**
  * ```
- * example.org#%#//scriptlet('set-cookie', 'checking', 'ok')
+ * example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1'
  *
- * example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', '1')
+ * example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', 'true')
  * ```
  */
 /* eslint-enable max-len */
 export function setCookie(source, name, value) {
-    if (!name || !value) {
-        return;
+    const cookieData = prepareCookie(name, value);
+
+    if (cookieData) {
+        hit(source);
+        document.cookie = cookieData;
     }
-
-    const nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
-    let valueToSet;
-    if (value === 'true') {
-        valueToSet = 'true';
-    } else if (value === 'True') {
-        valueToSet = 'True';
-    } else if (value === 'false') {
-        valueToSet = 'false';
-    } else if (value === 'False') {
-        valueToSet = 'False';
-    } else if (value === 'yes') {
-        valueToSet = 'yes';
-    } else if (value === 'Yes') {
-        valueToSet = 'Yes';
-    } else if (value === 'Y') {
-        valueToSet = 'Y';
-    } else if (value === 'no') {
-        valueToSet = 'no';
-    } else if (value === 'ok') {
-        valueToSet = 'ok';
-    } else if (value === 'OK') {
-        valueToSet = 'OK';
-    } else if (/^\d+$/.test(value)) {
-        valueToSet = parseFloat(value);
-        if (nativeIsNaN(valueToSet)) {
-            return;
-        }
-        if (Math.abs(valueToSet) < 0 || Math.abs(valueToSet) > 15) {
-            return;
-        }
-    } else {
-        return;
-    }
-
-    const pathToSet = 'path=/;';
-
-    const cookieData = `${encodeURIComponent(name)}=${encodeURIComponent(valueToSet)}; ${pathToSet}`;
-
-    hit(source);
-    document.cookie = cookieData;
 }
 
 setCookie.names = [
     'set-cookie',
 ];
 
-setCookie.injections = [hit];
+setCookie.injections = [hit, prepareCookie];
