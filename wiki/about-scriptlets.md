@@ -1104,7 +1104,7 @@ example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc', 'checking.j
 
 ### <a id="set-cookie-reload"></a> ⚡️ set-cookie-reload
 
-Sets a cookie with the specified name and value with page reloading for proper cookie setting.
+Sets a cookie with the specified name and value, and then reloads the current page.
 If reloading option is not needed, use [set-cookie](#set-cookie) scriptlet.
 
 **Syntax**

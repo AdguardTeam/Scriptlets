@@ -4,7 +4,7 @@ import { hit, prepareCookie } from '../helpers';
  * @scriptlet set-cookie-reload
  *
  * @description
- * Sets a cookie with the specified name and value with page reloading for proper cookie setting.
+ * Sets a cookie with the specified name and value, and then reloads the current page.
  * If reloading option is not needed, use [set-cookie](#set-cookie) scriptlet.
  *
  * **Syntax**
