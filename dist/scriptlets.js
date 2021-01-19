@@ -559,10 +559,10 @@
       hostElements.forEach(function (host) {
         // check presence of selector element inside base element if it's not in shadow-dom
         var simpleElems = host.querySelectorAll(selector);
-        targets = targets.concat(Array.from(simpleElems));
+        targets = targets.concat([].slice.call(simpleElems));
         var shadowRootElem = host.shadowRoot;
         var shadowChildren = shadowRootElem.querySelectorAll(selector);
-        targets = targets.concat(Array.from(shadowChildren)); // find inner shadow-dom hosts inside processing shadow-dom
+        targets = targets.concat([].slice.call(shadowChildren)); // find inner shadow-dom hosts inside processing shadow-dom
 
         innerHostsAcc.push(findHostElements(shadowRootElem));
       }); // if there were more than one host element,

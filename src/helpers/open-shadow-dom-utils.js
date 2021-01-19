@@ -49,11 +49,11 @@ export const pierceShadowDom = (selector, hostElements) => {
     hostElements.forEach((host) => {
         // check presence of selector element inside base element if it's not in shadow-dom
         const simpleElems = host.querySelectorAll(selector);
-        targets = targets.concat(Array.from(simpleElems));
+        targets = targets.concat([].slice.call(simpleElems));
 
         const shadowRootElem = host.shadowRoot;
         const shadowChildren = shadowRootElem.querySelectorAll(selector);
-        targets = targets.concat(Array.from(shadowChildren));
+        targets = targets.concat([].slice.call(shadowChildren));
 
         // find inner shadow-dom hosts inside processing shadow-dom
         innerHostsAcc.push(findHostElements(shadowRootElem));
