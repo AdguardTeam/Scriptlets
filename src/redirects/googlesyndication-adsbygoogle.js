@@ -1,4 +1,4 @@
-import { hit } from '../helpers';
+import { hit, noopFunc } from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -18,11 +18,10 @@ import { hit } from '../helpers';
 /* eslint-enable max-len */
 export function GoogleSyndicationAdsByGoogle(source) {
     window.adsbygoogle = {
-        length: 0,
+        // https://github.com/AdguardTeam/Scriptlets/issues/113
+        // length: 0,
         loaded: true,
-        push() {
-            this.length += 1;
-        },
+        push: noopFunc,
     };
     const adElems = document.querySelectorAll('.adsbygoogle');
     const css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
@@ -84,4 +83,5 @@ GoogleSyndicationAdsByGoogle.names = [
 
 GoogleSyndicationAdsByGoogle.injections = [
     hit,
+    noopFunc,
 ];

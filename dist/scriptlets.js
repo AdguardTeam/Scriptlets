@@ -4896,11 +4896,10 @@
 
     function GoogleSyndicationAdsByGoogle(source) {
       window.adsbygoogle = {
-        length: 0,
+        // https://github.com/AdguardTeam/Scriptlets/issues/113
+        // length: 0,
         loaded: true,
-        push: function push() {
-          this.length += 1;
-        }
+        push: noopFunc
       };
       var adElems = document.querySelectorAll('.adsbygoogle');
       var css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
@@ -4948,7 +4947,7 @@
       }
     }
     GoogleSyndicationAdsByGoogle.names = ['googlesyndication-adsbygoogle', 'ubo-googlesyndication_adsbygoogle.js', 'googlesyndication_adsbygoogle.js'];
-    GoogleSyndicationAdsByGoogle.injections = [hit];
+    GoogleSyndicationAdsByGoogle.injections = [hit, noopFunc];
 
     /**
      * @redirect googletagmanager-gtm
@@ -6035,7 +6034,7 @@
       return Object.prototype.toString.call(object) === '[object Number]' && object % 1 === 0 && !common.isNegativeZero(object);
     }
 
-    var int_1 = new type('tag:yaml.org,2002:int', {
+    var int = new type('tag:yaml.org,2002:int', {
       kind: 'scalar',
       resolve: resolveYamlInteger,
       construct: constructYamlInteger,
@@ -6167,7 +6166,7 @@
       return Object.prototype.toString.call(object) === '[object Number]' && (object % 1 !== 0 || common.isNegativeZero(object));
     }
 
-    var float_1 = new type('tag:yaml.org,2002:float', {
+    var float = new type('tag:yaml.org,2002:float', {
       kind: 'scalar',
       resolve: resolveYamlFloat,
       construct: constructYamlFloat,
@@ -6178,7 +6177,7 @@
 
     var json = new schema({
       include: [failsafe],
-      implicit: [_null, bool, int_1, float_1]
+      implicit: [_null, bool, int, float]
     });
 
     var core = new schema({
@@ -6287,8 +6286,8 @@
       resolve: resolveYamlMerge
     });
 
-    function commonjsRequire () {
-    	throw new Error('Dynamic requires are not currently supported by @rollup/plugin-commonjs');
+    function commonjsRequire (target) {
+    	throw new Error('Could not dynamically require "' + target + '". Please configure the dynamicRequireTargets option of @rollup/plugin-commonjs appropriately for this require call to behave properly.');
     }
 
     /*eslint-disable no-bitwise*/
