@@ -66,6 +66,12 @@ test('Redirect testing', (assert) => {
     assert.notEqual(googleadsIframe.contentWindow.length, 0, 'aswiftIframe.contentWindow was mocked by scriptlet');
     assert.strictEqual(createdIframes.length, 2, '2 iframes was created as a child of .adsbygoogle');
 
+    assert.strictEqual(window.adsbygoogle.length, undefined, 'adsbygoogle.length check');
+
+    // check if API was mocked
+    window.adsbygoogle.push('somedata');
+    assert.strictEqual(window.adsbygoogle.length, 1, 'API was mocked');
+
     clearGlobalProps('__debug', 'hit', 'adsbygoogle');
     removeBodyElement(ad);
 });

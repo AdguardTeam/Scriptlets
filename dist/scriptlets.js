@@ -4899,7 +4899,12 @@
         // https://github.com/AdguardTeam/Scriptlets/issues/113
         // length: 0,
         loaded: true,
-        push: noopFunc
+        push: function push() {
+          if (typeof this.length === 'undefined') {
+            this.length = 0;
+            this.length += 1;
+          }
+        }
       };
       var adElems = document.querySelectorAll('.adsbygoogle');
       var css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
@@ -4947,7 +4952,7 @@
       }
     }
     GoogleSyndicationAdsByGoogle.names = ['googlesyndication-adsbygoogle', 'ubo-googlesyndication_adsbygoogle.js', 'googlesyndication_adsbygoogle.js'];
-    GoogleSyndicationAdsByGoogle.injections = [hit, noopFunc];
+    GoogleSyndicationAdsByGoogle.injections = [hit];
 
     /**
      * @redirect googletagmanager-gtm

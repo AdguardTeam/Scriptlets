@@ -4,7 +4,12 @@ function GoogleSyndicationAdsByGoogle(source) {
       // https://github.com/AdguardTeam/Scriptlets/issues/113
       // length: 0,
       loaded: true,
-      push: noopFunc
+      push: function push() {
+        if (typeof this.length === 'undefined') {
+          this.length = 0;
+          this.length += 1;
+        }
+      }
     };
     var adElems = document.querySelectorAll('.adsbygoogle');
     var css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
@@ -105,8 +110,7 @@ function hit(source, message) {
     if (typeof window.__debug === 'function') {
       window.__debug(source);
     }
-  }
-function noopFunc() {};
+  };
         const updatedArgs = args ? [].concat(source).concat(args) : [source];
         GoogleSyndicationAdsByGoogle.apply(this, updatedArgs);
     
