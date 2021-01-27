@@ -6114,7 +6114,7 @@
       return Object.prototype.toString.call(object) === '[object Number]' && object % 1 === 0 && !common.isNegativeZero(object);
     }
 
-    var int = new type('tag:yaml.org,2002:int', {
+    var int_1 = new type('tag:yaml.org,2002:int', {
       kind: 'scalar',
       resolve: resolveYamlInteger,
       construct: constructYamlInteger,
@@ -6246,7 +6246,7 @@
       return Object.prototype.toString.call(object) === '[object Number]' && (object % 1 !== 0 || common.isNegativeZero(object));
     }
 
-    var float = new type('tag:yaml.org,2002:float', {
+    var float_1 = new type('tag:yaml.org,2002:float', {
       kind: 'scalar',
       resolve: resolveYamlFloat,
       construct: constructYamlFloat,
@@ -6257,7 +6257,7 @@
 
     var json = new schema({
       include: [failsafe],
-      implicit: [_null, bool, int, float]
+      implicit: [_null, bool, int_1, float_1]
     });
 
     var core = new schema({
@@ -6366,8 +6366,8 @@
       resolve: resolveYamlMerge
     });
 
-    function commonjsRequire (target) {
-    	throw new Error('Could not dynamically require "' + target + '". Please configure the dynamicRequireTargets option of @rollup/plugin-commonjs appropriately for this require call to behave properly.');
+    function commonjsRequire () {
+    	throw new Error('Dynamic requires are not currently supported by @rollup/plugin-commonjs');
     }
 
     /*eslint-disable no-bitwise*/
