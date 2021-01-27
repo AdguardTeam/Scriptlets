@@ -4971,10 +4971,14 @@
 
     function GoogleSyndicationAdsByGoogle(source) {
       window.adsbygoogle = {
-        length: 0,
+        // https://github.com/AdguardTeam/Scriptlets/issues/113
+        // length: 0,
         loaded: true,
         push: function push() {
-          this.length += 1;
+          if (typeof this.length === 'undefined') {
+            this.length = 0;
+            this.length += 1;
+          }
         }
       };
       var adElems = document.querySelectorAll('.adsbygoogle');
