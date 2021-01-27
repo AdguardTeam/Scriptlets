@@ -11,5 +11,6 @@ export * from './noop';
 export * from './hit';
 export * from './observer';
 export * from './match-stack';
+export * from './open-shadow-dom-utils';
 export * from './array-utils';
 export * from './prepare-cookie';

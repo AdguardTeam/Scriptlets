@@ -29,6 +29,7 @@
 * [remove-attr](#remove-attr)
 * [remove-class](#remove-class)
 * [remove-cookie](#remove-cookie)
+* [remove-in-shadow-dom](#remove-in-shadow-dom)
 * [set-constant](#set-constant)
 * [set-cookie-reload](#set-cookie-reload)
 * [set-cookie](#set-cookie)
@@ -1052,6 +1053,33 @@ example.org#%#//scriptlet('remove-cookie'[, match])
     document.cookie = '__example=randomValue';
     ```
 [Scriptlet source](../src/scriptlets/remove-cookie.js)
+* * *
+
+### <a id="remove-in-shadow-dom"></a> ⚡️ remove-in-shadow-dom
+
+Removes elements inside open shadow DOM elements.
+
+**Syntax**
+```
+example.org#%#//scriptlet('remove-in-shadow-dom', selector[, baseSelector])
+```
+
+- `selector` — required, CSS selector of element in shadow-dom to remove
+- `baseSelector` — optional, selector of specific page DOM element,
+narrows down the part of the page DOM where shadow-dom host supposed to be,
+defaults to document.documentElement
+
+> `baseSelector` should match element of the page DOM, but not of shadow DOM
+
+**Examples**
+```
+! removes menu bar
+virustotal.com#%#//scriptlet('remove-in-shadow-dom', 'iron-pages', 'vt-virustotal-app')
+
+! removes floating element
+virustotal.com#%#//scriptlet('remove-in-shadow-dom', 'vt-ui-contact-fab')
+```
+[Scriptlet source](../src/scriptlets/remove-in-shadow-dom.js)
 * * *
 
 ### <a id="set-constant"></a> ⚡️ set-constant

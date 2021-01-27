@@ -32,3 +32,4 @@ import './set-cookie.test';
 import './set-cookie-reload.test';
 import './remove-cookie.test';
 import './hide-in-shadow-dom.test';
+import './remove-in-shadow-dom.test';
