@@ -1,0 +1,81 @@
+---
+version: 2
+plan:
+  project-key: AJL
+  key: SCRIPSPECS
+  name: scriptlets - test
+variables:
+  dockerNode: buildkite/puppeteer:5.2.1
+
+stages:
+  - Build:
+      manual: 'false'
+      final: 'false'
+      jobs:
+        - Build
+
+  - Cleanup:
+      final: 'true'
+      jobs:
+        - Cleanup
+
+Build:
+  key: BUILD
+  docker:
+    image: "${bamboo.dockerNode}"
+    volumes:
+      ${bamboo.tmp.directory}/yarn: "${bamboo.yarnCache}"
+    docker-run-arguments:
+      - --net=host
+  tasks:
+    - checkout:
+        force-clean-build: 'true'
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -e
+            set -x
+            # Kill browserstack processes
+            lsof -t -i:9961 || echo "no browserstack processes"
+            yarn install
+            yarn test
+            yarn browserstack
+            yarn build
+            yarn wiki:check-updates
+
+        environment: BROWSERSTACK_USER="${bamboo.browserstackUser}" \
+                     BROWSERSTACK_KEY="${bamboo.browserstackPassword}" \
+  final-tasks:
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            chown -R "${bamboo.hostUid}":"${bamboo.hostGid}" "${bamboo.yarnCache}"
+    - clean
+  requirements:
+    - adg-docker: 'true'
+
+Cleanup:
+  key: CLEAN
+  requirements:
+    - adg-docker: 'true'
+
+branches:
+  create: for-pull-request
+  delete:
+    after-deleted-days: '1'
+    after-inactive-days: '5'
+  link-to-jira: 'true'
+
+notifications:
+  - events:
+      - plan-status-changed
+    recipients:
+      - webhook:
+          name: Build webhook
+          url: http://jirahub.service.eu.consul/v1/webhook/bamboo?channel=adguard-qa
+
+labels: []
+other:
+  concurrent-build-plugin: system-default
