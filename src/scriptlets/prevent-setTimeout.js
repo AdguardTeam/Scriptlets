@@ -161,15 +161,18 @@ preventSetTimeout.names = [
     // aliases are needed for matching the related scriptlet converted into our syntax
     'no-setTimeout-if.js', // new implementation of setTimeout-defuser.js
     'ubo-no-setTimeout-if.js',
-    'setTimeout-defuser.js', // old name should be supported as well
-    'ubo-setTimeout-defuser.js',
     'nostif.js', // new short name of no-setTimeout-if
     'ubo-nostif.js',
-    'std.js', // old short scriptlet name
-    'ubo-std.js',
     'ubo-no-setTimeout-if',
-    'ubo-setTimeout-defuser',
     'ubo-nostif',
+    // old scriptlet names which should be supported as well.
+    // should be removed eventually.
+    // do not remove until other filter lists maintainers use them
+    'setTimeout-defuser.js',
+    'ubo-setTimeout-defuser.js',
+    'ubo-setTimeout-defuser',
+    'std.js',
+    'ubo-std.js',
     'ubo-std',
 ];
 

@@ -139,6 +139,8 @@
     ```
     ||example.org/vmap01.xml$xmlhttprequest,redirect=noopvmap-1.0
     ```
+  aliases:
+    - noop-vmap1.0.xml
   file: noopvmap01.xml
   contentType: text/xml
   content: <vmap:VMAP xmlns:vmap="http://www.iab.net/videosuite/vmap" version="1.0"></vmap:VMAP>

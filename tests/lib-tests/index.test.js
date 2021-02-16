@@ -176,7 +176,7 @@ test('Test redirect rule validation', (assert) => {
     assert.strictEqual(validator.isAdgRedirectCompatibleWithUbo(inputRule), false);
     // no ubo analog for redirect
     inputRule = '||example.com/ad/vmap/*$xmlhttprequest,redirect=noopvmap-1.0';
-    assert.strictEqual(validator.isAdgRedirectCompatibleWithUbo(inputRule), false);
+    assert.strictEqual(validator.isAdgRedirectCompatibleWithUbo(inputRule), true);
     // rules with 'redirect=' marker in base rule part should be skipped
     inputRule = '_redirect=*://look.$popup';
     assert.strictEqual(validator.isAdgRedirectCompatibleWithUbo(inputRule), false);

@@ -58,14 +58,14 @@ export function GoogleSyndicationAdsByGoogle(source) {
             adElems[i].setAttribute(statusAttrName, 'done');
 
             const aswiftIframe = document.createElement('iframe');
-            aswiftIframe.id = `${ASWIFT_IFRAME_MARKER}${i + 1}`;
+            aswiftIframe.id = `${ASWIFT_IFRAME_MARKER}${i}`;
             aswiftIframe.style = css;
             adElems[i].appendChild(aswiftIframe);
             const innerAswiftIframe = document.createElement('iframe');
             aswiftIframe.contentWindow.document.body.appendChild(innerAswiftIframe);
 
             const googleadsIframe = document.createElement('iframe');
-            googleadsIframe.id = `${GOOGLE_ADS_IFRAME_MARKER}${i + 1}`;
+            googleadsIframe.id = `${GOOGLE_ADS_IFRAME_MARKER}${i}`;
             googleadsIframe.style = css;
             adElems[i].appendChild(googleadsIframe);
             const innerGoogleadsIframe = document.createElement('iframe');

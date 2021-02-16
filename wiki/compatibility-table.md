@@ -26,16 +26,15 @@
 | [prevent-popads-net](../wiki/about-scriptlets.md#prevent-popads-net) |  |  |
 | [prevent-requestAnimationFrame](../wiki/about-scriptlets.md#prevent-requestAnimationFrame) | no-requestAnimationFrame-if.js (norafif.js) |  |
 | [prevent-setInterval](../wiki/about-scriptlets.md#prevent-setInterval) | no-setInterval-if.js (nosiif.js) |  |
-| [prevent-setTimeout](../wiki/about-scriptlets.md#prevent-setTimeout) | no-setTimeout-if.js (nostif.js) |  |
+| [prevent-setTimeout](../wiki/about-scriptlets.md#prevent-setTimeout) | no-setTimeout-if.js (nostif.js, setTimeout-defuser.js) |  |
 | [prevent-window-open](../wiki/about-scriptlets.md#prevent-window-open) |  |  |
 | [remove-attr](../wiki/about-scriptlets.md#remove-attr) | remove-attr.js (ra.js) |  |
 | [remove-class](../wiki/about-scriptlets.md#remove-class) | remove-class.js (rc.js) |  |
 | [remove-cookie](../wiki/about-scriptlets.md#remove-cookie) | cookie-remover.js |  |
 | [set-constant](../wiki/about-scriptlets.md#set-constant) | set-constant.js (set.js) | override-property-read |
 | [set-popads-dummy](../wiki/about-scriptlets.md#set-popads-dummy) |  |  |
-|  | setInterval-defuser.js (sid.js) |  |
-|  | setTimeout-defuser.js (std.js) |  |
-|  | requestAnimationFrame-if.js (raf-if.js) |  |
+|  | setInterval-defuser.js (sid.js) (removed) |  |
+|  | requestAnimationFrame-if.js (raf-if.js) (removed) |  |
 |  | webrtc-if.js |  |
 |  | overlay-buster.js |  |
 |  | alert-buster.js |  |
@@ -65,6 +64,9 @@
 |  | abort-on-stack-trace.js (aost.js) |  |
 |  |  | prepareInjection |
 |  |  | commitInjection |
+|  | no-fetch-if.js |  |
+|  |  | abort-on-iframe-property-read |
+|  |  | abort-on-iframe-property-write |
 
 
 # <a id="redirects"></a> Redirects compatibility table
@@ -90,7 +92,7 @@
 | [nooptext](../wiki/about-redirects.md#nooptext) | noop.txt | blank-text |
 | [noopmp3-0.1s](../wiki/about-redirects.md#noopmp3-0.1s) | noop-0.1s.mp3 | blank-mp3 |
 | [noopmp4-1s](../wiki/about-redirects.md#noopmp4-1s) | noop-1s.mp4 | blank-mp4 |
-| [noopvmap-1.0](../wiki/about-redirects.md#noopvmap-1.0) |  |  |
+| [noopvmap-1.0](../wiki/about-redirects.md#noopvmap-1.0) | noop-vmap1.0.xml |  |
 | [noopvast-2.0](../wiki/about-redirects.md#noopvast-2.0) |  |  |
 | [noopvast-3.0](../wiki/about-redirects.md#noopvast-3.0) |  |  |
 | [prevent-fab-3.2.0](../wiki/about-redirects.md#prevent-fab-3.2.0) | nofab.js |  |

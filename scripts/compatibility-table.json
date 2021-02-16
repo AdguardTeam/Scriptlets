@@ -94,7 +94,7 @@
         },
         {
             "adg": "prevent-setTimeout",
-            "ubo": "no-setTimeout-if.js (nostif.js)"
+            "ubo": "no-setTimeout-if.js (nostif.js, setTimeout-defuser.js)"
         },
         {
             "adg": "prevent-window-open"
@@ -120,13 +120,10 @@
             "adg": "set-popads-dummy"
         },
         {
-            "ubo": "setInterval-defuser.js (sid.js)"
+            "ubo": "setInterval-defuser.js (sid.js) (removed)"
         },
         {
-            "ubo": "setTimeout-defuser.js (std.js)"
-        },
-        {
-            "ubo": "requestAnimationFrame-if.js (raf-if.js)"
+            "ubo": "requestAnimationFrame-if.js (raf-if.js) (removed)"
         },
         {
             "ubo": "webrtc-if.js"
@@ -214,6 +211,15 @@
         },
         {
             "abp": "commitInjection"
+        },
+        {
+            "ubo": "no-fetch-if.js"
+        },
+        {
+            "abp": "abort-on-iframe-property-read"
+        },
+        {
+            "abp": "abort-on-iframe-property-write"
         }
     ],
     "redirects": [
@@ -301,7 +307,8 @@
             "abp": "blank-mp4"
         },
         {
-            "adg": "noopvmap-1.0"
+            "adg": "noopvmap-1.0",
+            "ubo": "noop-vmap1.0.xml"
         },
         {
             "adg": "noopvast-2.0"

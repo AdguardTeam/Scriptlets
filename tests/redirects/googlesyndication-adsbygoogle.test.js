@@ -55,8 +55,8 @@ test('Redirect testing', (assert) => {
     const adsbygoogleElems = document.getElementsByClassName('adsbygoogle');
     const hasAdAttr = adsbygoogleElems[0].hasAttribute('data-adsbygoogle-status');
     const createdIframes = adsbygoogleElems[0].getElementsByTagName('iframe');
-    const aswiftIframe = document.querySelector('#aswift_1');
-    const googleadsIframe = document.querySelector('#google_ads_iframe_1');
+    const aswiftIframe = document.querySelector('#aswift_0');
+    const googleadsIframe = document.querySelector('#google_ads_iframe_0');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
     assert.strictEqual(hasAdAttr, true, '.adsbygoogle has \'data-adsbygoogle-status\' attribute');
