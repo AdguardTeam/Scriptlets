@@ -5,7 +5,7 @@ plan:
   key: SCRIPSPECS
   name: scriptlets - test
 variables:
-  dockerNode: buildkite/puppeteer:5.2.1
+  dockerPuppeteer: buildkite/puppeteer:5.2.1
 
 stages:
   - Build:
@@ -14,19 +14,12 @@ stages:
       jobs:
         - Build
 
-  - Cleanup:
-      final: 'true'
-      jobs:
-        - Cleanup
-
 Build:
   key: BUILD
   docker:
-    image: "${bamboo.dockerNode}"
+    image: "${bamboo.dockerPuppeteer}"
     volumes:
-      ${bamboo.tmp.directory}/yarn: "${bamboo.yarnCache}"
-    docker-run-arguments:
-      - --net=host
+      ${system.YARN_DIR}: "${bamboo.cacheYarn}"
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -36,8 +29,6 @@ Build:
           - |-
             set -e
             set -x
-            # Kill browserstack processes
-            lsof -t -i:9961 || echo "no browserstack processes"
             yarn install
             yarn test
             yarn browserstack
@@ -45,19 +36,9 @@ Build:
             yarn wiki:check-updates
 
         environment: BROWSERSTACK_USER="${bamboo.browserstackUser}" \
-                     BROWSERSTACK_KEY="${bamboo.browserstackPassword}" \
+                     BROWSERSTACK_KEY="${bamboo.browserstackPassword}"
   final-tasks:
-    - script:
-        interpreter: SHELL
-        scripts:
-          - |-
-            chown -R "${bamboo.hostUid}":"${bamboo.hostGid}" "${bamboo.yarnCache}"
     - clean
-  requirements:
-    - adg-docker: 'true'
-
-Cleanup:
-  key: CLEAN
   requirements:
     - adg-docker: 'true'
 
