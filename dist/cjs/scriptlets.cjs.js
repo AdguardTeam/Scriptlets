@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.14
+ * Version 1.3.15
  */
 
 /**
@@ -4462,6 +4462,9 @@ var UBO_ALIAS_NAME_MARKER = 'ubo-'; // https://github.com/gorhill/uBlock/wiki/St
 
 var UBO_XHR_TYPE = 'xhr';
 var ADG_XHR_TYPE = 'xmlhttprequest';
+var ADG_SET_CONSTANT_NAME = 'set-constant';
+var ADG_SET_CONSTANT_EMPTY_STRING = '';
+var UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
 /**
  * Returns array of strings separated by space which not in quotes
  * @param {string} str
@@ -4594,7 +4597,15 @@ var convertAdgScriptletToUbo = function convertAdgScriptletToUbo(rule) {
   if (validator.isAdgScriptletRule(rule)) {
     var _parseRule = parseRule(rule),
         parsedName = _parseRule.name,
-        parsedParams = _parseRule.args; // object of name and aliases for the Adg-scriptlet
+        parsedParams = _parseRule.args;
+
+    var preparedParams; // https://github.com/AdguardTeam/FiltersCompiler/issues/102
+
+    if (parsedName === ADG_SET_CONSTANT_NAME && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_STRING) {
+      preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_STRING];
+    } else {
+      preparedParams = parsedParams;
+    } // object of name and aliases for the Adg-scriptlet
 
 
     var adgScriptletObject = Object.keys(scriptletList).map(function (el) {
@@ -4633,7 +4644,7 @@ var convertAdgScriptletToUbo = function convertAdgScriptletToUbo(rule) {
         var uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '') // '.js' in the Ubo scriptlet name can be omitted
         // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
         .replace('.js', '');
-        var args = parsedParams.length > 0 ? "".concat(uboName, ", ").concat(parsedParams.join(', ')) : uboName;
+        var args = preparedParams.length > 0 ? "".concat(uboName, ", ").concat(preparedParams.join(', ')) : uboName;
         var uboRule = replacePlaceholders(template, {
           domains: domains,
           args: args

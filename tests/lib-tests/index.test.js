@@ -29,6 +29,10 @@ test('Test scriptlet rule validation', (assert) => {
     inputRule = 'example.org##+js(aopr,__cad.cpm_popunder)';
     assert.strictEqual(isValidScriptletRule(inputRule), true);
 
+    // set-constant empty string
+    inputRule = 'example.org##+js(set-constant, config.ads.desktopPreroll, \'\')';
+    assert.strictEqual(isValidScriptletRule(inputRule), true);
+
     // invalid scriptlet name
     inputRule = 'example.org#@%#//scriptlet("ubo-abort-scriptlet.js", "notDetected")';
     assert.strictEqual(isValidScriptletRule(inputRule), false);
@@ -73,6 +77,10 @@ test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
     // '$' as parameter
     blockingRule = 'example.org##+js(abort-current-inline-script, $, popup)';
     expBlockRule = 'example.org#%#//scriptlet(\'ubo-abort-current-inline-script.js\', \'$\', \'popup\')';
+    assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
+    // '' as set-constant parameter
+    blockingRule = 'example.org##+js(set-constant, config.ads.desktopPreroll, \'\')';
+    expBlockRule = 'example.org#%#//scriptlet(\'ubo-set-constant.js\', \'config.ads.desktopPreroll\', \'\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
     // double quotes in scriptlet parameter
     blockingRule = 'example.com#@#+js(remove-attr.js, href, a[data-st-area="Header-back"])';
@@ -123,25 +131,32 @@ test('Test SCRIPTLET converting - multiple ABP -> ADG', (assert) => {
 
 test('Test SCRIPTLET converting - ADG -> UBO', (assert) => {
     // blocking rule
-    const rule = 'example.org#%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')';
-    const exp = 'example.org##+js(no-setTimeout-if, [native code], 8000)';
-    assert.strictEqual(convertAdgScriptletToUbo(rule), exp);
+    let inputAdg = 'example.org#%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')';
+    let expectedUbo = 'example.org##+js(no-setTimeout-if, [native code], 8000)';
+    assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
+
+    // '' as set-constant parameter
+    inputAdg = 'example.org#%#//scriptlet(\'set-constant\', \'config.ads.desktopPreroll\', \'\')';
+    expectedUbo = 'example.org##+js(set-constant, config.ads.desktopPreroll, \'\')';
+    assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
+
     // scriptlet with no parameters
-    const inputAdgRule = 'example.com#%#//scriptlet("prevent-adfly")';
-    const expectedUboResult = 'example.com##+js(adfly-defuser)';
-    assert.strictEqual(convertAdgScriptletToUbo(inputAdgRule), expectedUboResult);
+    inputAdg = 'example.com#%#//scriptlet("prevent-adfly")';
+    expectedUbo = 'example.com##+js(adfly-defuser)';
+    assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
+
     // whitelist rule
-    const whitelistRule = 'example.org#@%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')';
-    const expectedResult = 'example.org#@#+js(no-setTimeout-if, [native code], 8000)';
-    assert.strictEqual(convertAdgScriptletToUbo(whitelistRule), expectedResult);
+    inputAdg = 'example.org#@%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')';
+    expectedUbo = 'example.org#@#+js(no-setTimeout-if, [native code], 8000)';
+    assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
 
-    let actual = convertAdgScriptletToUbo('example.org#%#//scriptlet("ubo-abort-on-property-read.js", "alert")');
-    let expected = 'example.org##+js(abort-on-property-read, alert)';
-    assert.strictEqual(actual, expected);
+    inputAdg = 'example.org#%#//scriptlet("ubo-abort-on-property-read.js", "alert")';
+    expectedUbo = 'example.org##+js(abort-on-property-read, alert)';
+    assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
 
-    actual = convertAdgScriptletToUbo('example.com#%#//scriptlet("abp-abort-current-inline-script", "console.log", "Hello")');
-    expected = 'example.com##+js(abort-current-inline-script, console.log, Hello)';
-    assert.strictEqual(actual, expected);
+    inputAdg = 'example.com#%#//scriptlet("abp-abort-current-inline-script", "console.log", "Hello")';
+    expectedUbo = 'example.com##+js(abort-current-inline-script, console.log, Hello)';
+    assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
 });
 
 test('Test redirect rule validation', (assert) => {

@@ -36,6 +36,10 @@ const UBO_XHR_TYPE = 'xhr';
 
 const ADG_XHR_TYPE = 'xmlhttprequest';
 
+const ADG_SET_CONSTANT_NAME = 'set-constant';
+const ADG_SET_CONSTANT_EMPTY_STRING = '';
+const UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
+
 /**
  * Returns array of strings separated by space which not in quotes
  * @param {string} str
@@ -156,6 +160,15 @@ export const convertAdgScriptletToUbo = (rule) => {
     if (validator.isAdgScriptletRule(rule)) {
         const { name: parsedName, args: parsedParams } = parseRule(rule);
 
+        let preparedParams;
+        // https://github.com/AdguardTeam/FiltersCompiler/issues/102
+        if (parsedName === ADG_SET_CONSTANT_NAME
+            && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_STRING) {
+            preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_STRING];
+        } else {
+            preparedParams = parsedParams;
+        }
+
         // object of name and aliases for the Adg-scriptlet
         const adgScriptletObject = Object
             .keys(scriptletList)
@@ -189,7 +202,7 @@ export const convertAdgScriptletToUbo = (rule) => {
                     // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
                     .replace('.js', '');
 
-                const args = (parsedParams.length > 0) ? `${uboName}, ${parsedParams.join(', ')}` : uboName;
+                const args = (preparedParams.length > 0) ? `${uboName}, ${preparedParams.join(', ')}` : uboName;
 
                 const uboRule = replacePlaceholders(
                     template,
