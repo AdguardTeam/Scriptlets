@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.15
+ * Version 1.3.16
  */
 
 /**
@@ -258,10 +258,12 @@ function createOnErrorHandler(rid) {
 
 /**
  * Noop function
+ * @return {undefined} undefined
  */
 var noopFunc = function noopFunc() {};
 /**
  * Function returns null
+ * @return {null} null
  */
 
 var noopNull = function noopNull() {
@@ -269,6 +271,7 @@ var noopNull = function noopNull() {
 };
 /**
  * Function returns true
+ * @return {boolean} true
  */
 
 var trueFunc = function trueFunc() {
@@ -276,6 +279,7 @@ var trueFunc = function trueFunc() {
 };
 /**
  * Function returns false
+ * @return {boolean} false
  */
 
 var falseFunc = function falseFunc() {
@@ -290,6 +294,7 @@ function noopThis() {
 }
 /**
  * Function returns empty string
+ * @return {string} empty string
  */
 
 var noopStr = function noopStr() {
@@ -297,6 +302,7 @@ var noopStr = function noopStr() {
 };
 /**
  * Function returns empty array
+ * @return {Array} empty array
  */
 
 var noopArray = function noopArray() {
@@ -304,6 +310,7 @@ var noopArray = function noopArray() {
 };
 /**
  * Function returns empty object
+ * @return {Object} empty object
  */
 
 var noopObject = function noopObject() {
@@ -3974,6 +3981,40 @@ removeInShadowDom.names = ['remove-in-shadow-dom'];
 removeInShadowDom.injections = [hit, observeDOMChanges, flatten, findHostElements, pierceShadowDom];
 
 /**
+ * @scriptlet no-floc
+ *
+ * @description
+ * Prevents using Google Chrome tracking feature called Federated Learning of Cohorts (aka "FLoC")
+ *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-flocjs-
+ *
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet('no-floc')
+ * ```
+ */
+
+function noFloc(source) {
+  var FLOC_PROPERTY_NAME = 'interestCohort';
+
+  if (Document instanceof Object === false) {
+    return;
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(Document.prototype, FLOC_PROPERTY_NAME) || Document.prototype[FLOC_PROPERTY_NAME] instanceof Function === false) {
+    return;
+  }
+
+  var undef = noopFunc();
+  Document.prototype[FLOC_PROPERTY_NAME] = undef;
+  hit(source);
+}
+noFloc.names = ['no-floc', // aliases are needed for matching the related scriptlet converted into our syntax
+'no-floc.js', 'ubo-no-floc.js', 'ubo-no-floc'];
+noFloc.injections = [hit, noopFunc];
+
+/**
  * This file must export all scriptlets which should be accessible
  */
 
@@ -4013,7 +4054,8 @@ var scriptletList = /*#__PURE__*/Object.freeze({
     setCookie: setCookie,
     setCookieReload: setCookieReload,
     hideInShadowDom: hideInShadowDom,
-    removeInShadowDom: removeInShadowDom
+    removeInShadowDom: removeInShadowDom,
+    noFloc: noFloc
 });
 
 const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"amazon-apstag",ubo:"amazon_apstag.js"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm",ubo:"googletagmanager_gtm.js"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3-0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvmap-1.0",ubo:"noop-vmap1.0.xml"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"doubleclick_instream_ad_status.js"},{adg:"empty",ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"},{ubo:"click2load.html"}];

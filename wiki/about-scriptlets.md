@@ -14,6 +14,7 @@
 * [log-addEventListener](#log-addEventListener)
 * [log-eval](#log-eval)
 * [log](#log)
+* [no-floc](#no-floc)
 * [noeval](#noeval)
 * [nowebrtc](#nowebrtc)
 * [prevent-addEventListener](#prevent-addEventListener)
@@ -456,6 +457,20 @@ This scriptlet can be helpful for debugging and troubleshooting other scriptlets
 example.org#%#//scriptlet('log', 'arg1', 'arg2')
 ```
 [Scriptlet source](../src/scriptlets/log.js)
+* * *
+
+### <a id="no-floc"></a> ⚡️ no-floc
+
+Prevents using Google Chrome tracking feature called Federated Learning of Cohorts (aka "FLoC")
+
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/wiki/Resources-Library#no-flocjs-
+
+**Syntax**
+```
+example.org#%#//scriptlet('no-floc')
+```
+[Scriptlet source](../src/scriptlets/no-floc.js)
 * * *
 
 ### <a id="noeval"></a> ⚡️ noeval

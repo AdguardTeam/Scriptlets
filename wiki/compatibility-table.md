@@ -16,6 +16,7 @@
 | [log-addEventListener](../wiki/about-scriptlets.md#log-addEventListener) | addEventListener-logger.js (aell.js) |  |
 | [log-eval](../wiki/about-scriptlets.md#log-eval) |  |  |
 | [log](../wiki/about-scriptlets.md#log) |  | log |
+| [no-floc](../wiki/about-scriptlets.md#no-floc) | no-floc.js |  |
 | [noeval](../wiki/about-scriptlets.md#noeval) |  |  |
 | [nowebrtc](../wiki/about-scriptlets.md#nowebrtc) | nowebrtc.js |  |
 | [prevent-addEventListener](../wiki/about-scriptlets.md#prevent-addEventListener) | addEventListener-defuser.js (aeld.js) |  |
@@ -46,7 +47,7 @@
 |  | twitch-videoad.js |  |
 |  | fingerprint2.js |  |
 |  |  | trace |
-|  |  | uabinject-defuser |
+|  |  | uabinject-defuser (removed) |
 |  |  | hide-if-shadow-contains |
 |  |  | hide-if-contains |
 |  |  | hide-if-contains-visible-text |

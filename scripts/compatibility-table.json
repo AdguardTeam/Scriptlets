@@ -57,6 +57,10 @@
             "abp": "log"
         },
         {
+            "adg": "no-floc",
+            "ubo": "no-floc.js"
+        },
+        {
             "adg": "noeval"
         },
         {
@@ -159,7 +163,7 @@
             "abp": "trace"
         },
         {
-            "abp": "uabinject-defuser"
+            "abp": "uabinject-defuser (removed)"
         },
         {
             "abp": "hide-if-shadow-contains"
