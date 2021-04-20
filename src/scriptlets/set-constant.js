@@ -9,6 +9,7 @@ import {
     setPropertyAccess,
     toRegExp,
     matchStackTrace,
+    nativeIsNaN,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -62,13 +63,10 @@ import {
  */
 /* eslint-enable max-len */
 export function setConstant(source, property, value, stack) {
-    const stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
     if (!property
-        || !matchStackTrace(stackRegexp, new Error().stack)) {
+        || !matchStackTrace(stack, new Error().stack)) {
         return;
     }
-
-    const nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
 
     const emptyArr = noopArray();
     const emptyObj = noopObject();
@@ -180,14 +178,15 @@ setConstant.names = [
     'abp-override-property-read',
 ];
 setConstant.injections = [
-    getPropertyInChain,
-    setPropertyAccess,
-    toRegExp,
-    matchStackTrace,
     hit,
     noopArray,
     noopObject,
     noopFunc,
     trueFunc,
     falseFunc,
+    getPropertyInChain,
+    setPropertyAccess,
+    toRegExp,
+    matchStackTrace,
+    nativeIsNaN,
 ];

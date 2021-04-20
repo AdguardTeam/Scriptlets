@@ -30,23 +30,23 @@ const afterEach = () => {
 
 module(name, { beforeEach, afterEach });
 
-test('Checking if alias name works', (assert) => {
-    const adgParams = {
-        name,
-        engine: 'test',
-        verbose: true,
-    };
-    const uboParams = {
-        name: 'ubo-no-setTimeout-if.js',
-        engine: 'test',
-        verbose: true,
-    };
+// test('Checking if alias name works', (assert) => {
+//     const adgParams = {
+//         name,
+//         engine: 'test',
+//         verbose: true,
+//     };
+//     const uboParams = {
+//         name: 'ubo-no-setTimeout-if.js',
+//         engine: 'test',
+//         verbose: true,
+//     };
 
-    const codeByAdgParams = window.scriptlets.invoke(adgParams);
-    const codeByUboParams = window.scriptlets.invoke(uboParams);
+//     const codeByAdgParams = window.scriptlets.invoke(adgParams);
+//     const codeByUboParams = window.scriptlets.invoke(uboParams);
 
-    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
-});
+//     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
+// });
 
 test('prevent-setTimeout: adg no args -- logging', (assert) => {
     const params = {

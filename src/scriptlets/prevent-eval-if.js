@@ -28,11 +28,11 @@ import { toRegExp, hit } from '../helpers';
  * @param {string|RegExp} [search] string or regexp matching stringified eval payload
  */
 export function preventEvalIf(source, search) {
-    search = search ? toRegExp(search) : toRegExp('/.?/');
+    const searchRegexp = toRegExp(search);
 
     const nativeEval = window.eval;
     window.eval = function (payload) {
-        if (!search.test(payload.toString())) {
+        if (!searchRegexp.test(payload.toString())) {
             return nativeEval.call(window, payload);
         }
         hit(source, payload);

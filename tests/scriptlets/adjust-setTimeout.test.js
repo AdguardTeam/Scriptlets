@@ -1,5 +1,5 @@
 /* eslint-disable no-eval, no-underscore-dangle */
-import { clearGlobalProps } from '../helpers';
+import { clearGlobalProps, getRandomNumber } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'adjust-setTimeout';
@@ -38,7 +38,7 @@ test('Checking if alias name works', (assert) => {
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
-test('Adg no args', (assert) => {
+test('no args', (assert) => {
     createHit();
     const params = {
         name,
@@ -55,14 +55,14 @@ test('Adg no args', (assert) => {
         window.intervalValue = 'value';
     }, 1000);
 
-    setTimeout(() => {
+    nativeSetTimeout(() => {
         assert.strictEqual(window.intervalValue, 'value', 'Should be defined because default boost value equal 0.05');
         clearTimeout(timeout);
         done();
     }, 100);
 });
 
-test('Adg: match param', (assert) => {
+test('only match param', (assert) => {
     createHit();
     const params = {
         name,
@@ -85,25 +85,25 @@ test('Adg: match param', (assert) => {
         window.someKey = 'value';
     }, 200);
 
-    setTimeout(() => {
+    nativeSetTimeout(() => {
         assert.strictEqual(window.intervalValue, 'value', 'Should be defined because default boost value equal 0.05');
         clearTimeout(timeout);
         done1();
     }, 100);
 
-    setTimeout(() => {
+    nativeSetTimeout(() => {
         assert.notOk(window.someKey);
         done2();
     }, 150);
 
-    setTimeout(() => {
+    nativeSetTimeout(() => {
         assert.strictEqual(window.someKey, 'value', 'All others timeouts should be okay');
         clearTimeout(regularTimeout);
         done3();
     }, 250);
 });
 
-test('Adg: match param and timeout', (assert) => {
+test('match param + timeout + no boost', (assert) => {
     createHit();
     const params = {
         name,
@@ -120,14 +120,14 @@ test('Adg: match param and timeout', (assert) => {
         window.intervalValue = 'value';
     }, 500);
 
-    setTimeout(() => {
+    nativeSetTimeout(() => {
         assert.strictEqual(window.intervalValue, 'value', 'Should be defined because default boost value equal 0.05');
         clearTimeout(timeout);
         done();
     }, 50);
 });
 
-test('Adg: all params, boost > 1 -- slowing', (assert) => {
+test('all params, boost > 1 (slowing)', (assert) => {
     createHit();
     const params = {
         name,
@@ -145,19 +145,19 @@ test('Adg: all params, boost > 1 -- slowing', (assert) => {
         window.intervalValue = 'value';
     }, 100);
 
-    setTimeout(() => {
+    nativeSetTimeout(() => {
         assert.notOk(window.intervalValue, 'Still not defined');
         done1();
     }, 150);
 
-    setTimeout(() => {
+    nativeSetTimeout(() => {
         assert.strictEqual(window.intervalValue, 'value', 'Should be defined');
         clearTimeout(timeout);
         done2();
     }, 250);
 });
 
-test('Adg: all params, boost < 1 -- boosting', (assert) => {
+test('all params, boost < 1 (boosting)', (assert) => {
     createHit();
     const params = {
         name,
@@ -175,19 +175,19 @@ test('Adg: all params, boost < 1 -- boosting', (assert) => {
         window.intervalValue = 'value';
     }, 500); // scriptlet should make it '100'
 
-    setTimeout(() => {
+    nativeSetTimeout(() => {
         assert.notOk(window.intervalValue, 'Still not defined');
         done1();
     }, 50);
 
-    setTimeout(() => {
+    nativeSetTimeout(() => {
         assert.strictEqual(window.intervalValue, 'value', 'Should be defined');
         clearTimeout(timeout);
         done2();
     }, 150);
 });
 
-test('Adg: all params, invalid boost value --> 0.05 by default', (assert) => {
+test('all params, invalid boost value --> 0.05 by default', (assert) => {
     createHit();
     const params = {
         name,
@@ -205,14 +205,70 @@ test('Adg: all params, invalid boost value --> 0.05 by default', (assert) => {
         window.intervalValue = 'value';
     }, 1000); // scriptlet should make it '50'
 
-    setTimeout(() => {
+    nativeSetTimeout(() => {
         assert.notOk(window.intervalValue, 'Still not defined');
         done1();
     }, 10);
 
-    setTimeout(() => {
+    nativeSetTimeout(() => {
         assert.strictEqual(window.intervalValue, 'value', 'Should be defined');
         clearTimeout(timeout);
         done2();
     }, 80);
+});
+
+test('match param + wildcard timeout', (assert) => {
+    createHit();
+    const params = {
+        name,
+        args: ['intervalValue', '*'],
+        verbose: true,
+    };
+
+    const resString = window.scriptlets.invoke(params);
+    evalWrapper(resString);
+
+    const done = assert.async();
+
+    const randomDelay = getRandomNumber(300, 500);
+    const timeout = setTimeout(() => {
+        window.intervalValue = 'value';
+    }, randomDelay);
+
+    nativeSetTimeout(() => {
+        assert.strictEqual(window.intervalValue, 'value', 'Should be defined because default boost value equal 0.05');
+        clearTimeout(timeout);
+        done();
+    }, 50);
+});
+
+test('match param + wildcard timeout + boost > 1 (slowing)', (assert) => {
+    createHit();
+    const params = {
+        name,
+        args: ['intervalValue', '*', '2'],
+        verbose: true,
+    };
+
+    const resString = window.scriptlets.invoke(params);
+    evalWrapper(resString);
+
+    const done1 = assert.async();
+    const done2 = assert.async();
+
+    const randomDelay = getRandomNumber(90, 110);
+    const timeout = setTimeout(() => {
+        window.intervalValue = 'value';
+    }, randomDelay);
+
+    nativeSetTimeout(() => {
+        assert.notOk(window.intervalValue, 'Still not defined');
+        done1();
+    }, 150);
+
+    nativeSetTimeout(() => {
+        assert.strictEqual(window.intervalValue, 'value', 'Should be defined');
+        clearTimeout(timeout);
+        done2();
+    }, 250);
 });

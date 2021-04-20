@@ -69,13 +69,11 @@ export function preventWindowOpen(source, match = 1, search, replacement) {
     // e.g.: +'1' -> 1; +false -> 0
     match = +match > 0;
 
-    search = search
-        ? toRegExp(search)
-        : toRegExp('/.?/');
+    const searchRegexp = toRegExp(search);
 
     // eslint-disable-next-line consistent-return
     const openWrapper = (str, ...args) => {
-        if (match !== search.test(str)) {
+        if (match !== searchRegexp.test(str)) {
             return nativeOpen.apply(window, [str, ...args]);
         }
 

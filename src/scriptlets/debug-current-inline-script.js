@@ -24,7 +24,7 @@ import {
  */
 /* eslint-enable max-len */
 export function debugCurrentInlineScript(source, property, search = null) {
-    const regex = search ? toRegExp(search) : null;
+    const searchRegexp = toRegExp(search);
     const rid = randomId();
 
     const getCurrentScript = () => {
@@ -42,7 +42,7 @@ export function debugCurrentInlineScript(source, property, search = null) {
         if (scriptEl instanceof HTMLScriptElement
             && scriptEl.textContent.length > 0
             && scriptEl !== ourScript
-            && (!regex || regex.test(scriptEl.textContent))) {
+            && (!search || searchRegexp.test(scriptEl.textContent))) {
             hit(source);
             debugger; // eslint-disable-line no-debugger
         }

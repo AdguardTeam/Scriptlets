@@ -1,3 +1,4 @@
+import { nativeIsNaN } from './number-utils';
 /**
  * Prepares cookie string if given parameters are ok
  * @param {string} name cookie name to set
@@ -9,7 +10,6 @@ export const prepareCookie = (name, value) => {
         return null;
     }
 
-    const nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
     let valueToSet;
     if (value === 'true') {
         valueToSet = 'true';

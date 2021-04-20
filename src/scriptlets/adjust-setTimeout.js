@@ -1,4 +1,13 @@
-import { hit, toRegExp } from '../helpers';
+import {
+    hit,
+    toRegExp,
+    nativeIsNaN,
+    nativeIsFinite,
+    getBoostMultiplier,
+    getMatchDelay,
+    shouldMatchAnyDelay,
+    isDelayMatched,
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -16,7 +25,7 @@ import { hit, toRegExp } from '../helpers';
  * ```
  *
  * - `match` - optional, string/regular expression, matching in stringified callback function
- * - `timeout` - optional, defaults to 1000, decimal integer, matching setTimout delay
+ * - `timeout` - optional, defaults to 1000, matching setTimout delay; decimal integer OR '*' for any delay
  * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), timeout multiplier
  *
  * **Examples**
@@ -39,38 +48,27 @@ import { hit, toRegExp } from '../helpers';
  *     ```
  *     example.org#%#//scriptlet('adjust-setTimeout', 'example', '', '2')
  *     ```
- * 5.  Adjust all setTimeout() x50 times where timeout equal 2000ms
+ * 5. Adjust all setTimeout() x50 times where timeout equal 2000ms
  *     ```
  *     example.org#%#//scriptlet('adjust-setTimeout', '', '2000', '0.02')
+ *     ```
+ * 6. Adjust all setTimeout() x20 times where callback mathed with `test` and timeout is randomized
+ *     ```
+ *     example.org#%#//scriptlet('adjust-setTimeout', 'test', '*')
  *     ```
  */
 /* eslint-enable max-len */
 export function adjustSetTimeout(source, match, timeout, boost) {
-    const nativeTimeout = window.setTimeout;
-    const nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
-    const nativeIsFinite = Number.isFinite || window.isFinite; // eslint-disable-line compat/compat
+    const nativeSetTimeout = window.setTimeout;
 
-    timeout = parseInt(timeout, 10);
-    timeout = nativeIsNaN(timeout) ? 1000 : timeout;
-
-    boost = parseFloat(boost);
-    boost = nativeIsNaN(boost) || !nativeIsFinite(boost) ? 0.05 : boost;
-
-    match = match ? toRegExp(match) : toRegExp('/.?/');
-
-    if (boost < 0.02) {
-        boost = 0.02;
-    }
-    if (boost > 50) {
-        boost = 50;
-    }
+    const matchRegexp = toRegExp(match);
 
     const timeoutWrapper = (cb, d, ...args) => {
-        if (d === timeout && match.test(cb.toString())) {
-            d *= boost;
+        if (matchRegexp.test(cb.toString()) && isDelayMatched(timeout, d)) {
+            d *= getBoostMultiplier(boost);
             hit(source);
         }
-        return nativeTimeout.apply(window, [cb, d, ...args]);
+        return nativeSetTimeout.apply(window, [cb, d, ...args]);
     };
     window.setTimeout = timeoutWrapper;
 }
@@ -86,4 +84,13 @@ adjustSetTimeout.names = [
     'ubo-nano-stb',
 ];
 
-adjustSetTimeout.injections = [toRegExp, hit];
+adjustSetTimeout.injections = [
+    hit,
+    toRegExp,
+    nativeIsNaN,
+    nativeIsFinite,
+    getBoostMultiplier,
+    getMatchDelay,
+    shouldMatchAnyDelay,
+    isDelayMatched,
+];

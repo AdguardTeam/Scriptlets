@@ -40,9 +40,8 @@ import {
  */
 /* eslint-enable max-len */
 export function abortOnPropertyWrite(source, property, stack) {
-    const stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
     if (!property
-        || !matchStackTrace(stackRegexp, new Error().stack)) {
+        || !matchStackTrace(stack, new Error().stack)) {
         return;
     }
 

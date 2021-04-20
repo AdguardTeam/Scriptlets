@@ -1,5 +1,9 @@
 import {
-    hit, noopFunc, toRegExp, startsWith,
+    hit,
+    toRegExp,
+    startsWith,
+    noopFunc,
+    nativeIsNaN,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -106,7 +110,6 @@ import {
 /* eslint-enable max-len */
 export function preventSetInterval(source, match, delay) {
     const nativeInterval = window.setInterval;
-    const nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
     const log = console.log.bind(console); // eslint-disable-line no-console
 
     // logs setIntervals to console if no arguments have been specified
@@ -115,18 +118,13 @@ export function preventSetInterval(source, match, delay) {
     const INVERT_MARKER = '!';
 
     const isNotMatch = startsWith(match, INVERT_MARKER);
-    if (isNotMatch) {
-        match = match.slice(1);
-    }
+    const rawMatch = isNotMatch ? match.slice(1) : match;
+    const matchRegexp = toRegExp(rawMatch);
+
     const isNotDelay = startsWith(delay, INVERT_MARKER);
-    if (isNotDelay) {
-        delay = delay.slice(1);
-    }
-
-    delay = parseInt(delay, 10);
-    delay = nativeIsNaN(delay) ? null : delay;
-
-    match = match ? toRegExp(match) : toRegExp('/.?/');
+    let rawDelay = isNotDelay ? delay.slice(1) : delay;
+    rawDelay = parseInt(rawDelay, 10);
+    const delayMatch = nativeIsNaN(rawDelay) ? null : rawDelay;
 
     const intervalWrapper = (callback, interval, ...args) => {
         let shouldPrevent = false;
@@ -137,13 +135,13 @@ export function preventSetInterval(source, match, delay) {
         if (shouldLog) {
             hit(source);
             log(`setInterval(${cbString}, ${interval})`);
-        } else if (!delay) {
-            shouldPrevent = match.test(cbString) !== isNotMatch;
-        } else if (match === '/.?/') {
-            shouldPrevent = (interval === delay) !== isNotDelay;
+        } else if (!delayMatch) {
+            shouldPrevent = matchRegexp.test(cbString) !== isNotMatch;
+        } else if (!match) {
+            shouldPrevent = (interval === delayMatch) !== isNotDelay;
         } else {
-            shouldPrevent = match.test(cbString) !== isNotMatch
-                && (interval === delay) !== isNotDelay;
+            shouldPrevent = matchRegexp.test(cbString) !== isNotMatch
+                && (interval === delayMatch) !== isNotDelay;
         }
 
         if (shouldPrevent) {
@@ -173,4 +171,10 @@ preventSetInterval.names = [
     'ubo-sid',
 ];
 
-preventSetInterval.injections = [toRegExp, startsWith, hit, noopFunc];
+preventSetInterval.injections = [
+    hit,
+    toRegExp,
+    startsWith,
+    noopFunc,
+    nativeIsNaN,
+];

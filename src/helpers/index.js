@@ -14,3 +14,5 @@ export * from './match-stack';
 export * from './open-shadow-dom-utils';
 export * from './array-utils';
 export * from './prepare-cookie';
+export * from './number-utils';
+export * from './adjust-set-utils';

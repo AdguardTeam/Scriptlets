@@ -79,13 +79,10 @@ export function preventRequestAnimationFrame(source, match) {
     const shouldLog = typeof match === 'undefined';
 
     const INVERT_MARKER = '!';
-
     const doNotMatch = startsWith(match, INVERT_MARKER);
-    if (doNotMatch) {
-        match = match.slice(1);
-    }
 
-    match = match ? toRegExp(match) : toRegExp('/.?/');
+    const rawMatch = doNotMatch ? match.slice(1) : match;
+    const matchRegexp = toRegExp(rawMatch);
 
     const rafWrapper = (callback, ...args) => {
         let shouldPrevent = false;
@@ -93,7 +90,7 @@ export function preventRequestAnimationFrame(source, match) {
             const logMessage = `log: requestAnimationFrame("${callback.toString()}")`;
             hit(source, logMessage);
         } else {
-            shouldPrevent = match.test(callback.toString()) !== doNotMatch;
+            shouldPrevent = matchRegexp.test(callback.toString()) !== doNotMatch;
         }
 
         if (shouldPrevent) {
