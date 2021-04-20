@@ -164,6 +164,11 @@
      */
 
     var toRegExp = function toRegExp(str) {
+      if (!str || str === '') {
+        var DEFAULT_VALUE = '.?';
+        return new RegExp(DEFAULT_VALUE);
+      }
+
       if (str[0] === '/' && str[str.length - 1] === '/') {
         return new RegExp(str.slice(1, -1));
       }
@@ -473,11 +478,17 @@
     /**
      * Checks if the stackTrace contains stackRegexp
      * // https://github.com/AdguardTeam/Scriptlets/issues/82
-     * @param {string} stackRegexp - stack regexp
+     * @param {string|undefined} stackMatch - input stack value to match
      * @param {string} stackTrace - script error stack trace
      * @returns {boolean}
      */
-    var matchStackTrace = function matchStackTrace(stackRegexp, stackTrace) {
+
+    var matchStackTrace = function matchStackTrace(stackMatch, stackTrace) {
+      if (!stackMatch || stackMatch === '') {
+        return true;
+      }
+
+      var stackRegexp = toRegExp(stackMatch);
       var refinedStackTrace = stackTrace.split('\n').slice(2) // get rid of our own functions in the stack trace
       .map(function (line) {
         return line.trim();
@@ -582,18 +593,28 @@
       };
     };
 
+    var nativeIsNaN = function nativeIsNaN(num) {
+      var native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
+
+      return native(num);
+    };
+    var nativeIsFinite = function nativeIsFinite(num) {
+      var native = Number.isFinite || window.isFinite; // eslint-disable-line compat/compat
+
+      return native(num);
+    };
+
     /**
      * Prepares cookie string if given parameters are ok
      * @param {string} name cookie name to set
      * @param {string} value cookie value to set
      * @returns {string|null} cookie string if ok OR null if not
      */
+
     var prepareCookie = function prepareCookie(name, value) {
       if (!name || !value) {
         return null;
       }
-
-      var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
 
       var valueToSet;
 
@@ -636,6 +657,54 @@
       return cookieData;
     };
 
+    var shouldMatchAnyDelay = function shouldMatchAnyDelay(delay) {
+      var ANY_DELAY_WILDCARD = '*';
+      return delay === ANY_DELAY_WILDCARD;
+    };
+    /**
+     * Handles input delay value
+     * @param {*} delay
+     * @returns {number} proper number delay value
+     */
+
+    var getMatchDelay = function getMatchDelay(delay) {
+      var parsedDelay = parseInt(delay, 10);
+      var delayMatch = nativeIsNaN(parsedDelay) ? 1000 // default scriptlet value
+      : parsedDelay;
+      return delayMatch;
+    };
+    /**
+     * Checks delay match condition
+     * @param {*} inputDelay
+     * @param {number} realDelay
+     * @returns {boolean}
+     */
+
+    var isDelayMatched = function isDelayMatched(inputDelay, realDelay) {
+      return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
+    };
+    /**
+     * Handles input boost value
+     * @param {*} boost
+     * @returns {number} proper number boost multiplier value
+     */
+
+    var getBoostMultiplier = function getBoostMultiplier(boost) {
+      var parsedBoost = parseFloat(boost);
+      var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? 0.05 // default scriptlet value
+      : parsedBoost;
+
+      if (boostMultiplier < 0.02) {
+        boostMultiplier = 0.02;
+      }
+
+      if (boostMultiplier > 50) {
+        boostMultiplier = 50;
+      }
+
+      return boostMultiplier;
+    };
+
     /**
      * This file must export all used dependencies
      */
@@ -670,7 +739,13 @@
         findHostElements: findHostElements,
         pierceShadowDom: pierceShadowDom,
         flatten: flatten,
-        prepareCookie: prepareCookie
+        prepareCookie: prepareCookie,
+        nativeIsNaN: nativeIsNaN,
+        nativeIsFinite: nativeIsFinite,
+        shouldMatchAnyDelay: shouldMatchAnyDelay,
+        getMatchDelay: getMatchDelay,
+        isDelayMatched: isDelayMatched,
+        getBoostMultiplier: getBoostMultiplier
     });
 
     /**
@@ -1043,9 +1118,7 @@
     /* eslint-enable max-len */
 
     function abortOnPropertyRead(source, property, stack) {
-      var stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
-
-      if (!property || !matchStackTrace(stackRegexp, new Error().stack)) {
+      if (!property || !matchStackTrace(stack, new Error().stack)) {
         return;
       }
 
@@ -1128,9 +1201,7 @@
     /* eslint-enable max-len */
 
     function abortOnPropertyWrite(source, property, stack) {
-      var stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
-
-      if (!property || !matchStackTrace(stackRegexp, new Error().stack)) {
+      if (!property || !matchStackTrace(stack, new Error().stack)) {
         return;
       }
 
@@ -1284,28 +1355,18 @@
 
     function preventSetTimeout(source, match, delay) {
       var nativeTimeout = window.setTimeout;
-      var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
-
       var log = console.log.bind(console); // eslint-disable-line no-console
       // logs setTimeouts to console if no arguments have been specified
 
       var shouldLog = typeof match === 'undefined' && typeof delay === 'undefined';
       var INVERT_MARKER = '!';
       var isNotMatch = startsWith(match, INVERT_MARKER);
-
-      if (isNotMatch) {
-        match = match.slice(1);
-      }
-
+      var rawMatch = isNotMatch ? match.slice(1) : match;
+      var matchRegexp = toRegExp(rawMatch);
       var isNotDelay = startsWith(delay, INVERT_MARKER);
-
-      if (isNotDelay) {
-        delay = delay.slice(1);
-      }
-
-      delay = parseInt(delay, 10);
-      delay = nativeIsNaN(delay) ? null : delay;
-      match = match ? toRegExp(match) : toRegExp('/.?/');
+      var rawDelay = isNotDelay ? delay.slice(1) : delay;
+      rawDelay = parseInt(rawDelay, 10);
+      var delayMatch = nativeIsNaN(rawDelay) ? null : rawDelay;
 
       var timeoutWrapper = function timeoutWrapper(callback, timeout) {
         var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
@@ -1315,12 +1376,12 @@
         if (shouldLog) {
           hit(source);
           log("setTimeout(".concat(cbString, ", ").concat(timeout, ")"));
-        } else if (!delay) {
-          shouldPrevent = match.test(cbString) !== isNotMatch;
-        } else if (match === '/.?/') {
-          shouldPrevent = timeout === delay !== isNotDelay;
+        } else if (!delayMatch) {
+          shouldPrevent = matchRegexp.test(cbString) !== isNotMatch;
+        } else if (rawMatch === '/.?/') {
+          shouldPrevent = timeout === delayMatch !== isNotDelay;
         } else {
-          shouldPrevent = match.test(cbString) !== isNotMatch && timeout === delay !== isNotDelay;
+          shouldPrevent = matchRegexp.test(cbString) !== isNotMatch && timeout === delayMatch !== isNotDelay;
         }
 
         if (shouldPrevent) {
@@ -1344,7 +1405,7 @@
     // should be removed eventually.
     // do not remove until other filter lists maintainers use them
     'setTimeout-defuser.js', 'ubo-setTimeout-defuser.js', 'ubo-setTimeout-defuser', 'std.js', 'ubo-std.js', 'ubo-std'];
-    preventSetTimeout.injections = [toRegExp, startsWith, hit, noopFunc];
+    preventSetTimeout.injections = [hit, toRegExp, startsWith, noopFunc, nativeIsNaN];
 
     /* eslint-disable max-len */
 
@@ -1453,28 +1514,18 @@
 
     function preventSetInterval(source, match, delay) {
       var nativeInterval = window.setInterval;
-      var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
-
       var log = console.log.bind(console); // eslint-disable-line no-console
       // logs setIntervals to console if no arguments have been specified
 
       var shouldLog = typeof match === 'undefined' && typeof delay === 'undefined';
       var INVERT_MARKER = '!';
       var isNotMatch = startsWith(match, INVERT_MARKER);
-
-      if (isNotMatch) {
-        match = match.slice(1);
-      }
-
+      var rawMatch = isNotMatch ? match.slice(1) : match;
+      var matchRegexp = toRegExp(rawMatch);
       var isNotDelay = startsWith(delay, INVERT_MARKER);
-
-      if (isNotDelay) {
-        delay = delay.slice(1);
-      }
-
-      delay = parseInt(delay, 10);
-      delay = nativeIsNaN(delay) ? null : delay;
-      match = match ? toRegExp(match) : toRegExp('/.?/');
+      var rawDelay = isNotDelay ? delay.slice(1) : delay;
+      rawDelay = parseInt(rawDelay, 10);
+      var delayMatch = nativeIsNaN(rawDelay) ? null : rawDelay;
 
       var intervalWrapper = function intervalWrapper(callback, interval) {
         var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
@@ -1484,12 +1535,12 @@
         if (shouldLog) {
           hit(source);
           log("setInterval(".concat(cbString, ", ").concat(interval, ")"));
-        } else if (!delay) {
-          shouldPrevent = match.test(cbString) !== isNotMatch;
-        } else if (match === '/.?/') {
-          shouldPrevent = interval === delay !== isNotDelay;
+        } else if (!delayMatch) {
+          shouldPrevent = matchRegexp.test(cbString) !== isNotMatch;
+        } else if (!match) {
+          shouldPrevent = interval === delayMatch !== isNotDelay;
         } else {
-          shouldPrevent = match.test(cbString) !== isNotMatch && interval === delay !== isNotDelay;
+          shouldPrevent = matchRegexp.test(cbString) !== isNotMatch && interval === delayMatch !== isNotDelay;
         }
 
         if (shouldPrevent) {
@@ -1512,7 +1563,7 @@
     'ubo-setInterval-defuser.js', 'nosiif.js', // new short name of no-setInterval-if
     'ubo-nosiif.js', 'sid.js', // old short scriptlet name
     'ubo-sid.js', 'ubo-no-setInterval-if', 'ubo-setInterval-defuser', 'ubo-nosiif', 'ubo-sid'];
-    preventSetInterval.injections = [toRegExp, startsWith, hit, noopFunc];
+    preventSetInterval.injections = [hit, toRegExp, startsWith, noopFunc, nativeIsNaN];
 
     /* eslint-disable max-len */
 
@@ -1578,10 +1629,10 @@
       // e.g.: +'1' -> 1; +false -> 0
 
       match = +match > 0;
-      search = search ? toRegExp(search) : toRegExp('/.?/'); // eslint-disable-next-line consistent-return
+      var searchRegexp = toRegExp(search); // eslint-disable-next-line consistent-return
 
       var openWrapper = function openWrapper(str) {
-        if (match !== search.test(str)) {
+        if (match !== searchRegexp.test(str)) {
           for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
             args[_key - 1] = arguments[_key];
           }
@@ -1692,7 +1743,7 @@
     /* eslint-enable max-len */
 
     function abortCurrentInlineScript(source, property, search) {
-      var searchRegexp = search ? toRegExp(search) : toRegExp('/.?/');
+      var searchRegexp = toRegExp(search);
       var rid = randomId();
 
       var getCurrentScript = function getCurrentScript() {
@@ -1842,13 +1893,9 @@
     /* eslint-enable max-len */
 
     function setConstant(source, property, value, stack) {
-      var stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
-
-      if (!property || !matchStackTrace(stackRegexp, new Error().stack)) {
+      if (!property || !matchStackTrace(stack, new Error().stack)) {
         return;
       }
-
-      var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
 
       var emptyArr = noopArray();
       var emptyObj = noopObject();
@@ -1960,7 +2007,7 @@
     }
     setConstant.names = ['set-constant', // aliases are needed for matching the related scriptlet converted into our syntax
     'set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js', 'ubo-set-constant', 'ubo-set', 'abp-override-property-read'];
-    setConstant.injections = [getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, hit, noopArray, noopObject, noopFunc, trueFunc, falseFunc];
+    setConstant.injections = [hit, noopArray, noopObject, noopFunc, trueFunc, falseFunc, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, nativeIsNaN];
 
     /* eslint-disable max-len */
 
@@ -2000,7 +2047,7 @@
     /* eslint-enable max-len */
 
     function removeCookie(source, match) {
-      var regex = match ? toRegExp(match) : toRegExp('/.?/');
+      var matchRegexp = toRegExp(match);
 
       var removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
         var cookieSpec = "".concat(cookieName, "=");
@@ -2027,7 +2074,7 @@
 
           var cookieName = cookieStr.slice(0, pos).trim();
 
-          if (!regex.test(cookieName)) {
+          if (!matchRegexp.test(cookieName)) {
             return;
           }
 
@@ -2091,8 +2138,8 @@
     /* eslint-enable max-len */
 
     function preventAddEventListener(source, eventSearch, funcSearch) {
-      var eventSearchRegexp = eventSearch ? toRegExp(eventSearch) : toRegExp('/.?/');
-      var funcSearchRegexp = funcSearch ? toRegExp(funcSearch) : toRegExp('/.?/');
+      var eventSearchRegexp = toRegExp(eventSearch);
+      var funcSearchRegexp = toRegExp(funcSearch);
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
       function addEventListenerWrapper(eventName, callback) {
@@ -2435,11 +2482,11 @@
      */
 
     function preventEvalIf(source, search) {
-      search = search ? toRegExp(search) : toRegExp('/.?/');
+      var searchRegexp = toRegExp(search);
       var nativeEval = window.eval;
 
       window.eval = function (payload) {
-        if (!search.test(payload.toString())) {
+        if (!searchRegexp.test(payload.toString())) {
           return nativeEval.call(window, payload);
         }
 
@@ -2751,9 +2798,7 @@
     /* eslint-enable max-len */
 
     function debugOnPropertyRead(source, property, stack) {
-      var stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
-
-      if (!property || !matchStackTrace(stackRegexp, new Error().stack)) {
+      if (!property || !matchStackTrace(stack, new Error().stack)) {
         return;
       }
 
@@ -2820,9 +2865,8 @@
     /* eslint-enable max-len */
 
     function debugOnPropertyWrite(source, property, stack) {
-      var stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
-
-      if (!property || !matchStackTrace(stackRegexp, new Error().stack)) {
+      // const stackRegexp = toRegExp(stack);
+      if (!property || !matchStackTrace(stack, new Error().stack)) {
         return;
       }
 
@@ -2889,7 +2933,7 @@
 
     function debugCurrentInlineScript(source, property) {
       var search = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      var regex = search ? toRegExp(search) : null;
+      var searchRegexp = toRegExp(search);
       var rid = randomId();
 
       var getCurrentScript = function getCurrentScript() {
@@ -2907,7 +2951,7 @@
       var abort = function abort() {
         var scriptEl = getCurrentScript();
 
-        if (scriptEl instanceof HTMLScriptElement && scriptEl.textContent.length > 0 && scriptEl !== ourScript && (!regex || regex.test(scriptEl.textContent))) {
+        if (scriptEl instanceof HTMLScriptElement && scriptEl.textContent.length > 0 && scriptEl !== ourScript && (!search || searchRegexp.test(scriptEl.textContent))) {
           hit(source);
           debugger; // eslint-disable-line no-debugger
         }
@@ -3213,7 +3257,7 @@
      * ```
      *
      * - `match` - optional, string/regular expression, matching in stringified callback function
-     * - `interval` - optional, defaults to 1000, decimal integer, matching setInterval delay
+     * - `interval` - optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
      * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), interval multiplier
      *
      * **Examples**
@@ -3236,37 +3280,25 @@
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval', 'example', '', '2')
      *     ```
-     * 5.  Adjust all setInterval() x50 times where interval equal 2000ms
+     * 5. Adjust all setInterval() x50 times where interval equal 2000ms
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval', '', '2000', '0.02')
+     *     ```
+     * 6. Adjust all setInterval() x50 times where interval is randomized
+     *     ```
+     *     example.org#%#//scriptlet('adjust-setInterval', '', '*', '0.02')
      *     ```
      */
 
     /* eslint-enable max-len */
 
     function adjustSetInterval(source, match, interval, boost) {
-      var nativeInterval = window.setInterval;
-      var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
-
-      var nativeIsFinite = Number.isFinite || window.isFinite; // eslint-disable-line compat/compat
-
-      interval = parseInt(interval, 10);
-      interval = nativeIsNaN(interval) ? 1000 : interval;
-      boost = parseFloat(boost);
-      boost = nativeIsNaN(boost) || !nativeIsFinite(boost) ? 0.05 : boost;
-      match = match ? toRegExp(match) : toRegExp('/.?/');
-
-      if (boost < 0.02) {
-        boost = 0.02;
-      }
-
-      if (boost > 50) {
-        boost = 50;
-      }
+      var nativeSetInterval = window.setInterval;
+      var matchRegexp = toRegExp(match);
 
       var intervalWrapper = function intervalWrapper(cb, d) {
-        if (d === interval && match.test(cb.toString())) {
-          d *= boost;
+        if (matchRegexp.test(cb.toString()) && isDelayMatched(interval, d)) {
+          d *= getBoostMultiplier(boost);
           hit(source);
         }
 
@@ -3274,14 +3306,14 @@
           args[_key - 2] = arguments[_key];
         }
 
-        return nativeInterval.apply(window, [cb, d].concat(args));
+        return nativeSetInterval.apply(window, [cb, d].concat(args));
       };
 
       window.setInterval = intervalWrapper;
     }
     adjustSetInterval.names = ['adjust-setInterval', // aliases are needed for matching the related scriptlet converted into our syntax
     'nano-setInterval-booster.js', 'ubo-nano-setInterval-booster.js', 'nano-sib.js', 'ubo-nano-sib.js', 'ubo-nano-setInterval-booster', 'ubo-nano-sib'];
-    adjustSetInterval.injections = [toRegExp, hit];
+    adjustSetInterval.injections = [hit, toRegExp, nativeIsNaN, nativeIsFinite, getBoostMultiplier, getMatchDelay, shouldMatchAnyDelay, isDelayMatched];
 
     /* eslint-disable max-len */
 
@@ -3300,7 +3332,7 @@
      * ```
      *
      * - `match` - optional, string/regular expression, matching in stringified callback function
-     * - `timeout` - optional, defaults to 1000, decimal integer, matching setTimout delay
+     * - `timeout` - optional, defaults to 1000, matching setTimout delay; decimal integer OR '*' for any delay
      * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), timeout multiplier
      *
      * **Examples**
@@ -3323,37 +3355,25 @@
      *     ```
      *     example.org#%#//scriptlet('adjust-setTimeout', 'example', '', '2')
      *     ```
-     * 5.  Adjust all setTimeout() x50 times where timeout equal 2000ms
+     * 5. Adjust all setTimeout() x50 times where timeout equal 2000ms
      *     ```
      *     example.org#%#//scriptlet('adjust-setTimeout', '', '2000', '0.02')
+     *     ```
+     * 6. Adjust all setTimeout() x20 times where callback mathed with `test` and timeout is randomized
+     *     ```
+     *     example.org#%#//scriptlet('adjust-setTimeout', 'test', '*')
      *     ```
      */
 
     /* eslint-enable max-len */
 
     function adjustSetTimeout(source, match, timeout, boost) {
-      var nativeTimeout = window.setTimeout;
-      var nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
-
-      var nativeIsFinite = Number.isFinite || window.isFinite; // eslint-disable-line compat/compat
-
-      timeout = parseInt(timeout, 10);
-      timeout = nativeIsNaN(timeout) ? 1000 : timeout;
-      boost = parseFloat(boost);
-      boost = nativeIsNaN(boost) || !nativeIsFinite(boost) ? 0.05 : boost;
-      match = match ? toRegExp(match) : toRegExp('/.?/');
-
-      if (boost < 0.02) {
-        boost = 0.02;
-      }
-
-      if (boost > 50) {
-        boost = 50;
-      }
+      var nativeSetTimeout = window.setTimeout;
+      var matchRegexp = toRegExp(match);
 
       var timeoutWrapper = function timeoutWrapper(cb, d) {
-        if (d === timeout && match.test(cb.toString())) {
-          d *= boost;
+        if (matchRegexp.test(cb.toString()) && isDelayMatched(timeout, d)) {
+          d *= getBoostMultiplier(boost);
           hit(source);
         }
 
@@ -3361,14 +3381,14 @@
           args[_key - 2] = arguments[_key];
         }
 
-        return nativeTimeout.apply(window, [cb, d].concat(args));
+        return nativeSetTimeout.apply(window, [cb, d].concat(args));
       };
 
       window.setTimeout = timeoutWrapper;
     }
     adjustSetTimeout.names = ['adjust-setTimeout', // aliases are needed for matching the related scriptlet converted into our syntax
     'nano-setTimeout-booster.js', 'ubo-nano-setTimeout-booster.js', 'nano-stb.js', 'ubo-nano-stb.js', 'ubo-nano-setTimeout-booster', 'ubo-nano-stb'];
-    adjustSetTimeout.injections = [toRegExp, hit];
+    adjustSetTimeout.injections = [hit, toRegExp, nativeIsNaN, nativeIsFinite, getBoostMultiplier, getMatchDelay, shouldMatchAnyDelay, isDelayMatched];
 
     /* eslint-disable max-len */
 
@@ -3502,9 +3522,7 @@
     /* eslint-enable max-len */
 
     function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
-      var stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
-
-      if (!matchStackTrace(stackRegexp, new Error().stack)) {
+      if (!!stack && !matchStackTrace(stack, new Error().stack)) {
         return;
       } // eslint-disable-next-line no-console
 
@@ -3695,12 +3713,8 @@
       var shouldLog = typeof match === 'undefined';
       var INVERT_MARKER = '!';
       var doNotMatch = startsWith(match, INVERT_MARKER);
-
-      if (doNotMatch) {
-        match = match.slice(1);
-      }
-
-      match = match ? toRegExp(match) : toRegExp('/.?/');
+      var rawMatch = doNotMatch ? match.slice(1) : match;
+      var matchRegexp = toRegExp(rawMatch);
 
       var rafWrapper = function rafWrapper(callback) {
         var shouldPrevent = false;
@@ -3709,7 +3723,7 @@
           var logMessage = "log: requestAnimationFrame(\"".concat(callback.toString(), "\")");
           hit(source, logMessage);
         } else {
-          shouldPrevent = match.test(callback.toString()) !== doNotMatch;
+          shouldPrevent = matchRegexp.test(callback.toString()) !== doNotMatch;
         }
 
         if (shouldPrevent) {
@@ -3772,7 +3786,7 @@
       }
     }
     setCookie.names = ['set-cookie'];
-    setCookie.injections = [hit, prepareCookie];
+    setCookie.injections = [hit, nativeIsNaN, prepareCookie];
 
     /**
      * @scriptlet set-cookie-reload
@@ -3829,7 +3843,7 @@
       }
     }
     setCookieReload.names = ['set-cookie-reload'];
-    setCookieReload.injections = [hit, prepareCookie];
+    setCookieReload.injections = [hit, nativeIsNaN, prepareCookie];
 
     /**
      * @scriptlet hide-in-shadow-dom
@@ -6168,7 +6182,7 @@
       return Object.prototype.toString.call(object) === '[object Number]' && object % 1 === 0 && !common.isNegativeZero(object);
     }
 
-    var int_1 = new type('tag:yaml.org,2002:int', {
+    var int = new type('tag:yaml.org,2002:int', {
       kind: 'scalar',
       resolve: resolveYamlInteger,
       construct: constructYamlInteger,
@@ -6300,7 +6314,7 @@
       return Object.prototype.toString.call(object) === '[object Number]' && (object % 1 !== 0 || common.isNegativeZero(object));
     }
 
-    var float_1 = new type('tag:yaml.org,2002:float', {
+    var float = new type('tag:yaml.org,2002:float', {
       kind: 'scalar',
       resolve: resolveYamlFloat,
       construct: constructYamlFloat,
@@ -6311,7 +6325,7 @@
 
     var json = new schema({
       include: [failsafe],
-      implicit: [_null, bool, int_1, float_1]
+      implicit: [_null, bool, int, float]
     });
 
     var core = new schema({
@@ -6420,8 +6434,8 @@
       resolve: resolveYamlMerge
     });
 
-    function commonjsRequire () {
-    	throw new Error('Dynamic requires are not currently supported by @rollup/plugin-commonjs');
+    function commonjsRequire (target) {
+    	throw new Error('Could not dynamically require "' + target + '". Please configure the dynamicRequireTargets option of @rollup/plugin-commonjs appropriately for this require call to behave properly.');
     }
 
     /*eslint-disable no-bitwise*/
