@@ -55,7 +55,7 @@ notifications:
     recipients:
       - webhook:
           name: Build webhook
-          url: http://jirahub.service.eu.consul/v1/webhook/bamboo?channel=adguard-qa
+          url: http://jirahub.service.eu.consul/v1/webhook/bamboo
 
 labels: []
 other:
