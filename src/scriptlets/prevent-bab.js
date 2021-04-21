@@ -19,12 +19,13 @@ export function preventBab(source) {
     const nativeSetTimeout = window.setTimeout;
     const babRegex = /\.bab_elementid.$/;
 
-    window.setTimeout = (callback, ...args) => {
+    const timeoutWrapper = (callback, ...args) => {
         if (typeof callback !== 'string' || !babRegex.test(callback)) {
-            return nativeSetTimeout.call(this, callback, ...args);
+            return nativeSetTimeout.apply(window, [callback, ...args]);
         }
         hit(source);
     };
+    window.setTimeout = timeoutWrapper;
 
     const signatures = [
         ['blockadblock'],
@@ -51,7 +52,8 @@ export function preventBab(source) {
     };
 
     const nativeEval = window.eval;
-    window.eval = (str) => {
+
+    const evalWrapper = (str) => {
         if (!check(str)) {
             return nativeEval(str);
         }
@@ -65,6 +67,7 @@ export function preventBab(source) {
             el.parentNode.removeChild(el);
         }
     };
+    window.eval = evalWrapper.bind(window);
 }
 
 preventBab.names = [
