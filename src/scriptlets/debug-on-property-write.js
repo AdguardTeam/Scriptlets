@@ -25,7 +25,6 @@ import {
  */
 /* eslint-enable max-len */
 export function debugOnPropertyWrite(source, property, stack) {
-    // const stackRegexp = toRegExp(stack);
     if (!property
         || !matchStackTrace(stack, new Error().stack)) {
         return;
