@@ -81,8 +81,8 @@ export function preventRequestAnimationFrame(source, match) {
     const INVERT_MARKER = '!';
     const doNotMatch = startsWith(match, INVERT_MARKER);
 
-    const rawMatch = doNotMatch ? match.slice(1) : match;
-    const matchRegexp = toRegExp(rawMatch);
+    const matchValue = doNotMatch ? match.slice(1) : match;
+    const matchRegexp = toRegExp(matchValue);
 
     const rafWrapper = (callback, ...args) => {
         let shouldPrevent = false;

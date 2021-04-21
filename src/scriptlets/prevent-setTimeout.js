@@ -118,13 +118,13 @@ export function preventSetTimeout(source, match, delay) {
     const INVERT_MARKER = '!';
 
     const isNotMatch = startsWith(match, INVERT_MARKER);
-    const rawMatch = isNotMatch ? match.slice(1) : match;
-    const matchRegexp = toRegExp(rawMatch);
+    const matchValue = isNotMatch ? match.slice(1) : match;
+    const matchRegexp = toRegExp(matchValue);
 
     const isNotDelay = startsWith(delay, INVERT_MARKER);
-    let rawDelay = isNotDelay ? delay.slice(1) : delay;
-    rawDelay = parseInt(rawDelay, 10);
-    const delayMatch = nativeIsNaN(rawDelay) ? null : rawDelay;
+    let delayValue = isNotDelay ? delay.slice(1) : delay;
+    delayValue = parseInt(delayValue, 10);
+    const delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
 
     const timeoutWrapper = (callback, timeout, ...args) => {
         let shouldPrevent = false;
@@ -137,7 +137,7 @@ export function preventSetTimeout(source, match, delay) {
             log(`setTimeout(${cbString}, ${timeout})`);
         } else if (!delayMatch) {
             shouldPrevent = matchRegexp.test(cbString) !== isNotMatch;
-        } else if (rawMatch === '/.?/') {
+        } else if (matchValue === '/.?/') {
             shouldPrevent = (timeout === delayMatch) !== isNotDelay;
         } else {
             shouldPrevent = matchRegexp.test(cbString) !== isNotMatch

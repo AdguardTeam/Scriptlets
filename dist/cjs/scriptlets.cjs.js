@@ -591,11 +591,24 @@ var pierceShadowDom = function pierceShadowDom(selector, hostElements) {
   };
 };
 
+/**
+ * Determines whether the passed value is NaN
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isNaN
+ * @param {*} num
+ * @returns {boolean}
+ */
 var nativeIsNaN = function nativeIsNaN(num) {
   var native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
 
   return native(num);
 };
+/**
+ * Determines whether the passed value is a finite number
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isFinite
+ * @param {*} num
+ * @returns {boolean}
+ */
+
 var nativeIsFinite = function nativeIsFinite(num) {
   var native = Number.isFinite || window.isFinite; // eslint-disable-line compat/compat
 
@@ -666,8 +679,9 @@ var shouldMatchAnyDelay = function shouldMatchAnyDelay(delay) {
  */
 
 var getMatchDelay = function getMatchDelay(delay) {
+  var DEFAULT_DELAY = 1000;
   var parsedDelay = parseInt(delay, 10);
-  var delayMatch = nativeIsNaN(parsedDelay) ? 1000 // default scriptlet value
+  var delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY // default scriptlet value
   : parsedDelay;
   return delayMatch;
 };
@@ -688,16 +702,19 @@ var isDelayMatched = function isDelayMatched(inputDelay, realDelay) {
  */
 
 var getBoostMultiplier = function getBoostMultiplier(boost) {
+  var DEFAULT_MULTIPLIER = 0.05;
+  var MIN_MULTIPLIER = 0.02;
+  var MAX_MULTIPLIER = 50;
   var parsedBoost = parseFloat(boost);
-  var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? 0.05 // default scriptlet value
+  var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER // default scriptlet value
   : parsedBoost;
 
-  if (boostMultiplier < 0.02) {
-    boostMultiplier = 0.02;
+  if (boostMultiplier < MIN_MULTIPLIER) {
+    boostMultiplier = MIN_MULTIPLIER;
   }
 
-  if (boostMultiplier > 50) {
-    boostMultiplier = 50;
+  if (boostMultiplier > MAX_MULTIPLIER) {
+    boostMultiplier = MAX_MULTIPLIER;
   }
 
   return boostMultiplier;
@@ -1359,12 +1376,12 @@ function preventSetTimeout(source, match, delay) {
   var shouldLog = typeof match === 'undefined' && typeof delay === 'undefined';
   var INVERT_MARKER = '!';
   var isNotMatch = startsWith(match, INVERT_MARKER);
-  var rawMatch = isNotMatch ? match.slice(1) : match;
-  var matchRegexp = toRegExp(rawMatch);
+  var matchValue = isNotMatch ? match.slice(1) : match;
+  var matchRegexp = toRegExp(matchValue);
   var isNotDelay = startsWith(delay, INVERT_MARKER);
-  var rawDelay = isNotDelay ? delay.slice(1) : delay;
-  rawDelay = parseInt(rawDelay, 10);
-  var delayMatch = nativeIsNaN(rawDelay) ? null : rawDelay;
+  var delayValue = isNotDelay ? delay.slice(1) : delay;
+  delayValue = parseInt(delayValue, 10);
+  var delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
 
   var timeoutWrapper = function timeoutWrapper(callback, timeout) {
     var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
@@ -1376,7 +1393,7 @@ function preventSetTimeout(source, match, delay) {
       log("setTimeout(".concat(cbString, ", ").concat(timeout, ")"));
     } else if (!delayMatch) {
       shouldPrevent = matchRegexp.test(cbString) !== isNotMatch;
-    } else if (rawMatch === '/.?/') {
+    } else if (matchValue === '/.?/') {
       shouldPrevent = timeout === delayMatch !== isNotDelay;
     } else {
       shouldPrevent = matchRegexp.test(cbString) !== isNotMatch && timeout === delayMatch !== isNotDelay;
@@ -1518,12 +1535,12 @@ function preventSetInterval(source, match, delay) {
   var shouldLog = typeof match === 'undefined' && typeof delay === 'undefined';
   var INVERT_MARKER = '!';
   var isNotMatch = startsWith(match, INVERT_MARKER);
-  var rawMatch = isNotMatch ? match.slice(1) : match;
-  var matchRegexp = toRegExp(rawMatch);
+  var matchValue = isNotMatch ? match.slice(1) : match;
+  var matchRegexp = toRegExp(matchValue);
   var isNotDelay = startsWith(delay, INVERT_MARKER);
-  var rawDelay = isNotDelay ? delay.slice(1) : delay;
-  rawDelay = parseInt(rawDelay, 10);
-  var delayMatch = nativeIsNaN(rawDelay) ? null : rawDelay;
+  var delayValue = isNotDelay ? delay.slice(1) : delay;
+  delayValue = parseInt(delayValue, 10);
+  var delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
 
   var intervalWrapper = function intervalWrapper(callback, interval) {
     var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
@@ -2863,7 +2880,6 @@ debugOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChai
 /* eslint-enable max-len */
 
 function debugOnPropertyWrite(source, property, stack) {
-  // const stackRegexp = toRegExp(stack);
   if (!property || !matchStackTrace(stack, new Error().stack)) {
     return;
   }
@@ -3711,8 +3727,8 @@ function preventRequestAnimationFrame(source, match) {
   var shouldLog = typeof match === 'undefined';
   var INVERT_MARKER = '!';
   var doNotMatch = startsWith(match, INVERT_MARKER);
-  var rawMatch = doNotMatch ? match.slice(1) : match;
-  var matchRegexp = toRegExp(rawMatch);
+  var matchValue = doNotMatch ? match.slice(1) : match;
+  var matchRegexp = toRegExp(matchValue);
 
   var rafWrapper = function rafWrapper(callback) {
     var shouldPrevent = false;

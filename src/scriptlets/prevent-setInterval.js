@@ -118,13 +118,13 @@ export function preventSetInterval(source, match, delay) {
     const INVERT_MARKER = '!';
 
     const isNotMatch = startsWith(match, INVERT_MARKER);
-    const rawMatch = isNotMatch ? match.slice(1) : match;
-    const matchRegexp = toRegExp(rawMatch);
+    const matchValue = isNotMatch ? match.slice(1) : match;
+    const matchRegexp = toRegExp(matchValue);
 
     const isNotDelay = startsWith(delay, INVERT_MARKER);
-    let rawDelay = isNotDelay ? delay.slice(1) : delay;
-    rawDelay = parseInt(rawDelay, 10);
-    const delayMatch = nativeIsNaN(rawDelay) ? null : rawDelay;
+    let delayValue = isNotDelay ? delay.slice(1) : delay;
+    delayValue = parseInt(delayValue, 10);
+    const delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
 
     const intervalWrapper = (callback, interval, ...args) => {
         let shouldPrevent = false;
