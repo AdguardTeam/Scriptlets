@@ -74,8 +74,7 @@ import {
  */
 /* eslint-enable max-len */
 export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
-    const stackRegexp = stack ? toRegExp(stack) : toRegExp('/.?/');
-    if (!matchStackTrace(stackRegexp, new Error().stack)) {
+    if (!!stack && !matchStackTrace(stack, new Error().stack)) {
         return;
     }
 

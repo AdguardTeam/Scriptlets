@@ -12,6 +12,10 @@ export const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
  * @returns {RegExp}
  */
 export const toRegExp = (str) => {
+    if (!str || str === '') {
+        const DEFAULT_VALUE = '.?';
+        return new RegExp(DEFAULT_VALUE);
+    }
     if (str[0] === '/' && str[str.length - 1] === '/') {
         return new RegExp(str.slice(1, -1));
     }

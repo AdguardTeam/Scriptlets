@@ -1,5 +1,5 @@
 /* eslint-disable no-eval, no-underscore-dangle */
-import { clearGlobalProps } from '../helpers';
+import { clearGlobalProps, getRandomNumber } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'adjust-setInterval';
@@ -38,7 +38,7 @@ test('Checking if alias name works', (assert) => {
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
-test('Adg no args', (assert) => {
+test('no args', (assert) => {
     createHit();
     const params = {
         name,
@@ -62,7 +62,7 @@ test('Adg no args', (assert) => {
     }, 100);
 });
 
-test('Adg: match param', (assert) => {
+test('only match param', (assert) => {
     createHit();
     const params = {
         name,
@@ -103,7 +103,7 @@ test('Adg: match param', (assert) => {
     }, 250);
 });
 
-test('Adg: match param and interval', (assert) => {
+test('match param + interval', (assert) => {
     createHit();
     const params = {
         name,
@@ -127,7 +127,7 @@ test('Adg: match param and interval', (assert) => {
     }, 50);
 });
 
-test('Adg: all params, boost > 1 -- slowing', (assert) => {
+test('all params, boost > 1 (slowing)', (assert) => {
     createHit();
     const params = {
         name,
@@ -157,7 +157,7 @@ test('Adg: all params, boost > 1 -- slowing', (assert) => {
     }, 250);
 });
 
-test('Adg: all params, boost < 1 -- boosting', (assert) => {
+test('all params, boost < 1 (boosting)', (assert) => {
     createHit();
     const params = {
         name,
@@ -187,7 +187,7 @@ test('Adg: all params, boost < 1 -- boosting', (assert) => {
     }, 150);
 });
 
-test('Adg: all params, invalid boost value --> 0.05 by default', (assert) => {
+test('all params, invalid boost value --> 0.05 by default', (assert) => {
     createHit();
     const params = {
         name,
@@ -215,4 +215,60 @@ test('Adg: all params, invalid boost value --> 0.05 by default', (assert) => {
         clearTimeout(interval);
         done2();
     }, 80);
+});
+
+test('match param + interval', (assert) => {
+    createHit();
+    const params = {
+        name,
+        args: ['intervalValue', '*'],
+        verbose: true,
+    };
+
+    const resString = window.scriptlets.invoke(params);
+    evalWrapper(resString);
+
+    const done = assert.async();
+
+    const randomDelay = getRandomNumber(400, 500);
+    const interval = setInterval(() => {
+        window.intervalValue = 'value';
+    }, randomDelay);
+
+    setTimeout(() => {
+        assert.strictEqual(window.intervalValue, 'value', 'Should be defined because default boost value equal 0.05');
+        clearInterval(interval);
+        done();
+    }, 50);
+});
+
+test('all params, boost < 1 (boosting)', (assert) => {
+    createHit();
+    const params = {
+        name,
+        args: ['intervalValue', '*', '0.2'],
+        verbose: true,
+    };
+
+    const resString = window.scriptlets.invoke(params);
+    evalWrapper(resString);
+
+    const done1 = assert.async();
+    const done2 = assert.async();
+
+    const randomDelay = getRandomNumber(450, 500);
+    const interval = setInterval(() => {
+        window.intervalValue = 'value';
+    }, randomDelay); // scriptlet should divide delay by 5
+
+    setTimeout(() => {
+        assert.notOk(window.intervalValue, 'Still not defined');
+        done1();
+    }, 50);
+
+    setTimeout(() => {
+        assert.strictEqual(window.intervalValue, 'value', 'Should be defined');
+        clearInterval(interval);
+        done2();
+    }, 150);
 });
