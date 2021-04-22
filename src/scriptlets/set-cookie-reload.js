@@ -1,4 +1,4 @@
-import { hit, prepareCookie } from '../helpers';
+import { hit, nativeIsNaN, prepareCookie } from '../helpers';
 
 /**
  * @scriptlet set-cookie-reload
@@ -60,4 +60,4 @@ setCookieReload.names = [
     'set-cookie-reload',
 ];
 
-setCookieReload.injections = [hit, prepareCookie];
+setCookieReload.injections = [hit, nativeIsNaN, prepareCookie];

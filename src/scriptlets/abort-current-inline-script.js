@@ -70,7 +70,7 @@ import {
  */
 /* eslint-enable max-len */
 export function abortCurrentInlineScript(source, property, search) {
-    const searchRegexp = search ? toRegExp(search) : toRegExp('/.?/');
+    const searchRegexp = toRegExp(search);
     const rid = randomId();
 
     const getCurrentScript = () => {

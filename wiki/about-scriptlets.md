@@ -170,7 +170,7 @@ example.org#%#//scriptlet('adjust-setInterval'[, match [, interval[, boost]]])
 ```
 
 - `match` - optional, string/regular expression, matching in stringified callback function
-- `interval` - optional, defaults to 1000, decimal integer, matching setInterval delay
+- `interval` - optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
 - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), interval multiplier
 
 **Examples**
@@ -193,9 +193,13 @@ example.org#%#//scriptlet('adjust-setInterval'[, match [, interval[, boost]]])
     ```
     example.org#%#//scriptlet('adjust-setInterval', 'example', '', '2')
     ```
-5.  Adjust all setInterval() x50 times where interval equal 2000ms
+5. Adjust all setInterval() x50 times where interval equal 2000ms
     ```
     example.org#%#//scriptlet('adjust-setInterval', '', '2000', '0.02')
+    ```
+6. Adjust all setInterval() x50 times where interval is randomized
+    ```
+    example.org#%#//scriptlet('adjust-setInterval', '', '*', '0.02')
     ```
 [Scriptlet source](../src/scriptlets/adjust-setInterval.js)
 * * *
@@ -213,7 +217,7 @@ example.org#%#//scriptlet('adjust-setTimeout'[, match [, timeout[, boost]]])
 ```
 
 - `match` - optional, string/regular expression, matching in stringified callback function
-- `timeout` - optional, defaults to 1000, decimal integer, matching setTimout delay
+- `timeout` - optional, defaults to 1000, matching setTimout delay; decimal integer OR '*' for any delay
 - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), timeout multiplier
 
 **Examples**
@@ -236,9 +240,13 @@ example.org#%#//scriptlet('adjust-setTimeout'[, match [, timeout[, boost]]])
     ```
     example.org#%#//scriptlet('adjust-setTimeout', 'example', '', '2')
     ```
-5.  Adjust all setTimeout() x50 times where timeout equal 2000ms
+5. Adjust all setTimeout() x50 times where timeout equal 2000ms
     ```
     example.org#%#//scriptlet('adjust-setTimeout', '', '2000', '0.02')
+    ```
+6. Adjust all setTimeout() x20 times where callback mathed with `test` and timeout is randomized
+    ```
+    example.org#%#//scriptlet('adjust-setTimeout', 'test', '*')
     ```
 [Scriptlet source](../src/scriptlets/adjust-setTimeout.js)
 * * *

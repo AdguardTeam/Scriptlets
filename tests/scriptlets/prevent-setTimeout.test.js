@@ -76,7 +76,7 @@ test('prevent-setTimeout: adg no args -- logging', (assert) => {
     };
 
     // We need to run our assertion after all timeouts
-    setTimeout(() => {
+    nativeSetTimeout(() => {
         assert.equal(window.hit, 'value', 'Hit function was executed');
         assert.strictEqual(window[agLogSetTimeout], 'changed', 'property changed');
         clearGlobalProps(agLogSetTimeout);
@@ -96,7 +96,7 @@ test('prevent-setTimeout: adg by setTimeout callback name', (assert) => {
     window.one = 'value';
     window.two = 'value';
     // We need to run our assertion after all timeouts
-    setTimeout(() => {
+    nativeSetTimeout(() => {
         assert.equal(window.one, 'value', 'Target property not changed');
         // eslint-disable-next-line max-len
         assert.equal(window.two, 'new value', 'Another property should successfully changed by another timeout');
@@ -129,7 +129,7 @@ test('prevent-setTimeout: adg by code matching', (assert) => {
     window.one = 'value';
     window.two = 'value';
     // We need to run our assertion after all timeouts
-    setTimeout(() => {
+    nativeSetTimeout(() => {
         assert.equal(window.one, 'value', 'Target property not changed');
         // eslint-disable-next-line max-len
         assert.equal(window.two, 'new value', 'Another property should  be successfully changed by another timeout');
@@ -163,7 +163,7 @@ test('prevent-setTimeout: adg -- !match', (assert) => {
     window.two = 'two';
     window.three = 'three';
     // We need to run our assertion after all timeouts
-    setTimeout(() => {
+    nativeSetTimeout(() => {
         assert.equal(window.one, 'NEW ONE', '!match-property not changed');
         // eslint-disable-next-line max-len
         assert.equal(window.two, 'two', 'Second property should be successfully changed');
@@ -202,7 +202,7 @@ test('prevent-setTimeout: adg -- match + !delay', (assert) => {
     window.two = 'old two';
     window.three = 'old three';
     // We need to run our assertion after all timeouts
-    setTimeout(() => {
+    nativeSetTimeout(() => {
         assert.equal(window.one, 'old one', 'Target property not changed');
         assert.equal(window.two, 'CHANGED2', 'Second property should be successfully changed');
         assert.equal(window.three, 'old three', 'Target property not changed');
@@ -241,7 +241,7 @@ test('prevent-setTimeout: adg -- !match + !delay', (assert) => {
     window.three = 'old';
     window.four = 'old';
     // We need to run our assertion after all timeouts
-    setTimeout(() => {
+    nativeSetTimeout(() => {
         assert.equal(window.one, 'first20', 'property should be successfully changed');
         assert.equal(window.two, 'first50', 'property should be successfully changed');
         assert.equal(window.three, 'old', 'Target property not changed');

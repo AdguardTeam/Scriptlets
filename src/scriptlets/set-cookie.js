@@ -1,4 +1,4 @@
-import { hit, prepareCookie } from '../helpers';
+import { hit, nativeIsNaN, prepareCookie } from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -43,4 +43,4 @@ setCookie.names = [
     'set-cookie',
 ];
 
-setCookie.injections = [hit, prepareCookie];
+setCookie.injections = [hit, nativeIsNaN, prepareCookie];

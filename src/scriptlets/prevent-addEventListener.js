@@ -38,10 +38,10 @@ import { hit, toRegExp } from '../helpers';
  */
 /* eslint-enable max-len */
 export function preventAddEventListener(source, eventSearch, funcSearch) {
-    const eventSearchRegexp = eventSearch ? toRegExp(eventSearch) : toRegExp('/.?/');
-    const funcSearchRegexp = funcSearch ? toRegExp(funcSearch) : toRegExp('/.?/');
-
+    const eventSearchRegexp = toRegExp(eventSearch);
+    const funcSearchRegexp = toRegExp(funcSearch);
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+
     function addEventListenerWrapper(eventName, callback, ...args) {
         // The scriptlet might cause a website broke
         // if the website uses test addEventListener with callback = null

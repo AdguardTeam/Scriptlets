@@ -35,7 +35,7 @@ import { hit, toRegExp } from '../helpers';
  */
 /* eslint-enable max-len */
 export function removeCookie(source, match) {
-    const regex = match ? toRegExp(match) : toRegExp('/.?/');
+    const matchRegexp = toRegExp(match);
 
     const removeCookieFromHost = (cookieName, hostName) => {
         const cookieSpec = `${cookieName}=`;
@@ -60,7 +60,7 @@ export function removeCookie(source, match) {
             }
 
             const cookieName = cookieStr.slice(0, pos).trim();
-            if (!regex.test(cookieName)) {
+            if (!matchRegexp.test(cookieName)) {
                 return;
             }
 

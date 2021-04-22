@@ -1,5 +1,9 @@
 import {
-    hit, noopFunc, toRegExp, startsWith,
+    hit,
+    toRegExp,
+    startsWith,
+    noopFunc,
+    nativeIsNaN,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -106,7 +110,6 @@ import {
 /* eslint-enable max-len */
 export function preventSetTimeout(source, match, delay) {
     const nativeTimeout = window.setTimeout;
-    const nativeIsNaN = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
     const log = console.log.bind(console); // eslint-disable-line no-console
 
     // logs setTimeouts to console if no arguments have been specified
@@ -115,18 +118,13 @@ export function preventSetTimeout(source, match, delay) {
     const INVERT_MARKER = '!';
 
     const isNotMatch = startsWith(match, INVERT_MARKER);
-    if (isNotMatch) {
-        match = match.slice(1);
-    }
+    const matchValue = isNotMatch ? match.slice(1) : match;
+    const matchRegexp = toRegExp(matchValue);
+
     const isNotDelay = startsWith(delay, INVERT_MARKER);
-    if (isNotDelay) {
-        delay = delay.slice(1);
-    }
-
-    delay = parseInt(delay, 10);
-    delay = nativeIsNaN(delay) ? null : delay;
-
-    match = match ? toRegExp(match) : toRegExp('/.?/');
+    let delayValue = isNotDelay ? delay.slice(1) : delay;
+    delayValue = parseInt(delayValue, 10);
+    const delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
 
     const timeoutWrapper = (callback, timeout, ...args) => {
         let shouldPrevent = false;
@@ -137,13 +135,13 @@ export function preventSetTimeout(source, match, delay) {
         if (shouldLog) {
             hit(source);
             log(`setTimeout(${cbString}, ${timeout})`);
-        } else if (!delay) {
-            shouldPrevent = match.test(cbString) !== isNotMatch;
-        } else if (match === '/.?/') {
-            shouldPrevent = (timeout === delay) !== isNotDelay;
+        } else if (!delayMatch) {
+            shouldPrevent = matchRegexp.test(cbString) !== isNotMatch;
+        } else if (matchValue === '/.?/') {
+            shouldPrevent = (timeout === delayMatch) !== isNotDelay;
         } else {
-            shouldPrevent = match.test(cbString) !== isNotMatch
-                && (timeout === delay) !== isNotDelay;
+            shouldPrevent = matchRegexp.test(cbString) !== isNotMatch
+                && (timeout === delayMatch) !== isNotDelay;
         }
 
         if (shouldPrevent) {
@@ -176,4 +174,10 @@ preventSetTimeout.names = [
     'ubo-std',
 ];
 
-preventSetTimeout.injections = [toRegExp, startsWith, hit, noopFunc];
+preventSetTimeout.injections = [
+    hit,
+    toRegExp,
+    startsWith,
+    noopFunc,
+    nativeIsNaN,
+];
