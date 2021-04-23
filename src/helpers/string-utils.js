@@ -33,16 +33,28 @@ export const getBeforeRegExp = (str, rx) => {
     return str.substring(0, index);
 };
 
+/**
+ * Checks whether the string starts with the substring
+ * @param {string} str full string
+ * @param {string} prefix substring
+ * @returns {boolean}
+ */
 export const startsWith = (str, prefix) => {
     // if str === '', (str && false) will return ''
     // that's why it has to be !!str
     return !!str && str.indexOf(prefix) === 0;
 };
 
-export const endsWith = (str, prefix) => {
+/**
+ * Checks whether the string ends with the substring
+ * @param {string} str full string
+ * @param {string} ending substring
+ * @returns {boolean}
+ */
+export const endsWith = (str, ending) => {
     // if str === '', (str && false) will return ''
     // that's why it has to be !!str
-    return !!str && str.indexOf(prefix) === str.length - 1;
+    return !!str && str.indexOf(ending) === str.length - ending.length;
 };
 
 export const substringAfter = (str, separator) => {
@@ -84,4 +96,34 @@ export const getStringInBraces = (str) => {
     const firstIndex = str.indexOf('(');
     const lastIndex = str.lastIndexOf(')');
     return str.substring(firstIndex + 1, lastIndex);
+};
+
+/**
+ * Prepares RTCPeerConnection config as string for proper logging
+ * @param {*} config
+ * @returns {string} stringified config
+*/
+export const convertRtcConfigToString = (config) => {
+    const UNDEF_STR = 'undefined';
+    let str = UNDEF_STR;
+
+    if (config === null) {
+        str = 'null';
+    } else if (config instanceof Object) {
+        const SERVERS_PROP_NAME = 'iceServers';
+        const URLS_PROP_NAME = 'urls';
+        /*
+            const exampleConfig = {
+                'iceServers': [
+                    'urls': ['stun:35.66.206.188:443'],
+                ],
+            };
+        */
+        if (Object.prototype.hasOwnProperty.call(config, SERVERS_PROP_NAME)
+            && Object.prototype.hasOwnProperty.call(config[SERVERS_PROP_NAME][0], URLS_PROP_NAME)
+            && !!(config[SERVERS_PROP_NAME][0][URLS_PROP_NAME])) {
+            str = config[SERVERS_PROP_NAME][0][URLS_PROP_NAME].toString();
+        }
+    }
+    return str;
 };
