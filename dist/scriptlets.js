@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.16
+ * Version 1.3.17
  */
 
 (function () {
@@ -186,15 +186,29 @@
       var index = str.search(rx);
       return str.substring(0, index);
     };
+    /**
+     * Checks whether the string starts with the substring
+     * @param {string} str full string
+     * @param {string} prefix substring
+     * @returns {boolean}
+     */
+
     var startsWith = function startsWith(str, prefix) {
       // if str === '', (str && false) will return ''
       // that's why it has to be !!str
       return !!str && str.indexOf(prefix) === 0;
     };
-    var endsWith = function endsWith(str, prefix) {
+    /**
+     * Checks whether the string ends with the substring
+     * @param {string} str full string
+     * @param {string} ending substring
+     * @returns {boolean}
+     */
+
+    var endsWith = function endsWith(str, ending) {
       // if str === '', (str && false) will return ''
       // that's why it has to be !!str
-      return !!str && str.indexOf(prefix) === str.length - 1;
+      return !!str && str.indexOf(ending) === str.length - ending.length;
     };
     var substringAfter = function substringAfter(str, separator) {
       if (!str) {
@@ -235,6 +249,36 @@
       var firstIndex = str.indexOf('(');
       var lastIndex = str.lastIndexOf(')');
       return str.substring(firstIndex + 1, lastIndex);
+    };
+    /**
+     * Prepares RTCPeerConnection config as string for proper logging
+     * @param {*} config
+     * @returns {string} stringified config
+    */
+
+    var convertRtcConfigToString = function convertRtcConfigToString(config) {
+      var UNDEF_STR = 'undefined';
+      var str = UNDEF_STR;
+
+      if (config === null) {
+        str = 'null';
+      } else if (config instanceof Object) {
+        var SERVERS_PROP_NAME = 'iceServers';
+        var URLS_PROP_NAME = 'urls';
+        /*
+            const exampleConfig = {
+                'iceServers': [
+                    'urls': ['stun:35.66.206.188:443'],
+                ],
+            };
+        */
+
+        if (Object.prototype.hasOwnProperty.call(config, SERVERS_PROP_NAME) && Object.prototype.hasOwnProperty.call(config[SERVERS_PROP_NAME][0], URLS_PROP_NAME) && !!config[SERVERS_PROP_NAME][0][URLS_PROP_NAME]) {
+          str = config[SERVERS_PROP_NAME][0][URLS_PROP_NAME].toString();
+        }
+      }
+
+      return str;
     };
 
     /**
@@ -741,6 +785,7 @@
         substringBefore: substringBefore,
         wrapInSingleQuotes: wrapInSingleQuotes,
         getStringInBraces: getStringInBraces,
+        convertRtcConfigToString: convertRtcConfigToString,
         createOnErrorHandler: createOnErrorHandler,
         noopFunc: noopFunc,
         noopNull: noopNull,
@@ -2167,9 +2212,10 @@
 
         if (callback && typeof callback === 'function') {
           funcToCheck = callback.toString();
-        }
+        } // https://github.com/AdguardTeam/Scriptlets/issues/125
 
-        if (eventSearchRegexp.test(eventName.toString()) && funcSearchRegexp.test(funcToCheck)) {
+
+        if (typeof eventName !== 'undefined' && eventSearchRegexp.test(eventName.toString()) && funcSearchRegexp.test(funcToCheck)) {
           hit(source);
           return undefined;
         }
@@ -2204,23 +2250,22 @@
      */
 
     function preventBab(source) {
-      var _this = this;
-
       var nativeSetTimeout = window.setTimeout;
       var babRegex = /\.bab_elementid.$/;
 
-      window.setTimeout = function (callback) {
+      var timeoutWrapper = function timeoutWrapper(callback) {
         if (typeof callback !== 'string' || !babRegex.test(callback)) {
           for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
             args[_key - 1] = arguments[_key];
           }
 
-          return nativeSetTimeout.call.apply(nativeSetTimeout, [_this, callback].concat(args));
+          return nativeSetTimeout.apply(window, [callback].concat(args));
         }
 
         hit(source);
       };
 
+      window.setTimeout = timeoutWrapper;
       var signatures = [['blockadblock'], ['babasbm'], [/getItem\('babn'\)/], ['getElementById', 'String.fromCharCode', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 'charAt', 'DOMContentLoaded', 'AdBlock', 'addEventListener', 'doScroll', 'fromCharCode', '<<2|r>>4', 'sessionStorage', 'clientWidth', 'localStorage', 'Math', 'random']];
 
       var check = function check(str) {
@@ -2247,7 +2292,7 @@
 
       var nativeEval = window.eval;
 
-      window.eval = function (str) {
+      var evalWrapper = function evalWrapper(str) {
         if (!check(str)) {
           return nativeEval(str);
         }
@@ -2265,6 +2310,8 @@
           el.parentNode.removeChild(el);
         }
       };
+
+      window.eval = evalWrapper.bind(window);
     }
     preventBab.names = ['prevent-bab', // aliases are needed for matching the related scriptlet converted into our syntax
     'nobab.js', 'ubo-nobab.js', 'bab-defuser.js', 'ubo-bab-defuser.js', 'ubo-nobab', 'ubo-bab-defuser'];
@@ -2304,7 +2351,7 @@
       }
 
       var rtcReplacement = function rtcReplacement(config) {
-        hit(source, "Document tried to create an RTCPeerConnection: ".concat(config));
+        hit(source, "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config)));
       };
 
       rtcReplacement.prototype = {
@@ -2327,7 +2374,7 @@
     }
     nowebrtc.names = ['nowebrtc', // aliases are needed for matching the related scriptlet converted into our syntax
     'nowebrtc.js', 'ubo-nowebrtc.js', 'ubo-nowebrtc'];
-    nowebrtc.injections = [hit, noopFunc];
+    nowebrtc.injections = [hit, noopFunc, convertRtcConfigToString];
 
     /* eslint-disable no-console */
     /**

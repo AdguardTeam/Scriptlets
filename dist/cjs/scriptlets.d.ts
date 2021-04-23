@@ -33,6 +33,11 @@ declare module 'scriptlets' {
          * Source rule text is used for debugging purposes
          */
         ruleText: string;
+
+        /**
+         * Domain name, used to improve logging
+         */
+        domainName?: string
     }
 
     /**
