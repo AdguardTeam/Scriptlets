@@ -65,7 +65,7 @@ test('no-floc - works', (assert) => {
     runScriptlet(name);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
-    assert.strictEqual(Document.prototype[FLOC_PROPERTY_NAME], undefined, 'interestCohort mocked');
+    assert.rejects(Document.prototype[FLOC_PROPERTY_NAME](), 'mocked interestCohort returns Promise.reject()');
 });
 
 test('no-floc - check for interestCohort presence', (assert) => {

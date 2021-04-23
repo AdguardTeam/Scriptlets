@@ -367,6 +367,13 @@
     var noopObject = function noopObject() {
       return {};
     };
+    /**
+     * Function returns Promise.reject()
+     */
+
+    var noopPromiseReject = function noopPromiseReject() {
+      return Promise.reject();
+    }; // eslint-disable-line compat/compat
 
     /* eslint-disable no-console, no-underscore-dangle */
 
@@ -795,6 +802,7 @@
         noopStr: noopStr,
         noopArray: noopArray,
         noopObject: noopObject,
+        noopPromiseReject: noopPromiseReject,
         hit: hit,
         observeDOMChanges: observeDOMChanges,
         matchStackTrace: matchStackTrace,
@@ -4083,15 +4091,16 @@
 
       if (!Object.prototype.hasOwnProperty.call(Document.prototype, FLOC_PROPERTY_NAME) || Document.prototype[FLOC_PROPERTY_NAME] instanceof Function === false) {
         return;
-      }
+      } // document.interestCohort() is async function so it's better to return Promise.reject()
+      // https://github.com/WICG/floc/blob/dcd4c042fa6a81b048e04a78b184ea4203a75219/README.md
 
-      var undef = noopFunc();
-      Document.prototype[FLOC_PROPERTY_NAME] = undef;
+
+      Document.prototype[FLOC_PROPERTY_NAME] = noopPromiseReject;
       hit(source);
     }
     noFloc.names = ['no-floc', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-floc.js', 'ubo-no-floc.js', 'ubo-no-floc'];
-    noFloc.injections = [hit, noopFunc];
+    noFloc.injections = [hit, noopPromiseReject];
 
     /**
      * This file must export all scriptlets which should be accessible

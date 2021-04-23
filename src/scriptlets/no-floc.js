@@ -1,6 +1,6 @@
 import {
     hit,
-    noopFunc,
+    noopPromiseReject,
 } from '../helpers';
 
 /**
@@ -28,8 +28,9 @@ export function noFloc(source) {
         return;
     }
 
-    const undef = noopFunc();
-    Document.prototype[FLOC_PROPERTY_NAME] = undef;
+    // document.interestCohort() is async function so it's better to return Promise.reject()
+    // https://github.com/WICG/floc/blob/dcd4c042fa6a81b048e04a78b184ea4203a75219/README.md
+    Document.prototype[FLOC_PROPERTY_NAME] = noopPromiseReject;
     hit(source);
 }
 
@@ -43,5 +44,5 @@ noFloc.names = [
 
 noFloc.injections = [
     hit,
-    noopFunc,
+    noopPromiseReject,
 ];

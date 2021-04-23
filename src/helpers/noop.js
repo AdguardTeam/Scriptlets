@@ -46,3 +46,8 @@ export const noopArray = () => [];
  * @return {Object} empty object
  */
 export const noopObject = () => ({});
+
+/**
+ * Function returns Promise.reject()
+ */
+export const noopPromiseReject = () => Promise.reject(); // eslint-disable-line compat/compat

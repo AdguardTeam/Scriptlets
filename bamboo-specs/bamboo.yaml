@@ -5,7 +5,7 @@ plan:
   key: SCRIPSPECS
   name: scriptlets - test
 variables:
-  dockerPuppeteer: buildkite/puppeteer:5.2.1
+  dockerPuppeteer: buildkite/puppeteer:8.0.0
 
 stages:
   - Build:
