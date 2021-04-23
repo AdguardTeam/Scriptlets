@@ -51,7 +51,10 @@ export function preventAddEventListener(source, eventSearch, funcSearch) {
             funcToCheck = callback.toString();
         }
 
-        if (eventSearchRegexp.test(eventName.toString()) && funcSearchRegexp.test(funcToCheck)) {
+        // https://github.com/AdguardTeam/Scriptlets/issues/125
+        if (typeof eventName !== 'undefined'
+            && eventSearchRegexp.test(eventName.toString())
+            && funcSearchRegexp.test(funcToCheck)) {
             hit(source);
             return undefined;
         }

@@ -21,6 +21,11 @@ module(name, { beforeEach, afterEach });
 
 const evalWrapper = eval;
 
+/**
+ * Runs scriptlet with given parameters
+ * @param {*} event event name match
+ * @param {*} func callback match
+ */
 const runScriptlet = (event, func) => {
     const params = {
         name,
@@ -50,13 +55,33 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('should not prevent addEventListener if callback = null', (assert) => {
-    runScriptlet('testPassive', 'clicked');
+    const TEST_EVENT_NAME = 'testPassive';
+    const TEST_CALLBACK_MATCH = 'clicked';
+    runScriptlet(TEST_EVENT_NAME, TEST_CALLBACK_MATCH);
 
     const element = document.createElement('div');
-    element.addEventListener('testPassive', null);
+    element.addEventListener(TEST_EVENT_NAME, null);
     element.click();
 
-    assert.strictEqual(window.hit, undefined, 'hit function is not fired');
+    assert.strictEqual(window.hit, undefined, 'hit should not be fired');
+});
+
+test('should not prevent addEventListener if event is undefined', (assert) => {
+    const TEST_EVENT_NAME = window.undefinedEvent; // not defined
+    const TEST_CALLBACK_MATCH = 'clicked';
+
+    runScriptlet(TEST_EVENT_NAME, TEST_CALLBACK_MATCH);
+
+    const testProp = 'test';
+    window[testProp] = 'start';
+    const element = document.createElement('div');
+    element.addEventListener(TEST_EVENT_NAME, () => {
+        window[testProp] = 'final';
+    });
+
+    assert.strictEqual(window.hit, undefined, 'hit should not be fired');
+    assert.strictEqual(window[testProp], 'start', 'property should not be changed');
+    clearGlobalProps(testProp);
 });
 
 test('does not allow to add event listener', (assert) => {
