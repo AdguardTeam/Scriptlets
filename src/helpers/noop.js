@@ -51,3 +51,9 @@ export const noopObject = () => ({});
  * Function returns Promise.reject()
  */
 export const noopPromiseReject = () => Promise.reject(); // eslint-disable-line compat/compat
+
+/**
+ * Returns Promise object that is resolved with an empty response
+ */
+// eslint-disable-next-line compat/compat
+export const noopPromiseResolve = () => Promise.resolve(new Response());

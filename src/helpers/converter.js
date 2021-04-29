@@ -40,6 +40,11 @@ const ADG_SET_CONSTANT_NAME = 'set-constant';
 const ADG_SET_CONSTANT_EMPTY_STRING = '';
 const UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
 
+const ADG_PREVENT_FETCH_NAME = 'prevent-fetch';
+const ADG_PREVENT_FETCH_EMPTY_STRING = '';
+const ADG_PREVENT_FETCH_WILDCARD = '*';
+const UBO_NO_FETCH_IF_WILDCARD = '/^/';
+
 /**
  * Returns array of strings separated by space which not in quotes
  * @param {string} str
@@ -165,6 +170,11 @@ export const convertAdgScriptletToUbo = (rule) => {
         if (parsedName === ADG_SET_CONSTANT_NAME
             && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_STRING) {
             preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_STRING];
+        } else if (parsedName === ADG_PREVENT_FETCH_NAME
+            // https://github.com/AdguardTeam/Scriptlets/issues/109
+            && (parsedParams[0] === ADG_PREVENT_FETCH_WILDCARD
+                || parsedParams[0] === ADG_PREVENT_FETCH_EMPTY_STRING)) {
+            preparedParams = [UBO_NO_FETCH_IF_WILDCARD];
         } else {
             preparedParams = parsedParams;
         }

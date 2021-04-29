@@ -77,7 +77,7 @@ test('prevents set timeout with AdblockBlock', (assert) => {
     runScriptlet('prevent-bab');
     const timeoutProp = 'timeoutProp';
     const func = `(function test(id) {window.${timeoutProp} = 'test'})(test.bab_elementid)`;
-    setTimeout(func);
+    setTimeout(func); // eslint-disable-line no-implied-eval
 
     const done = assert.async();
 

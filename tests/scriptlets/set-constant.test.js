@@ -12,7 +12,11 @@ module(name, { afterEach });
 
 const evalWrapper = eval;
 
-const createScriptletRunner = (counter) => (...args) => {
+/**
+ * Runs scriptlets with given args
+ * @param {Array} args array of scriptlet args
+ */
+const runScriptlet = (args) => {
     const params = {
         name,
         args,
@@ -20,6 +24,10 @@ const createScriptletRunner = (counter) => (...args) => {
     };
     const resultString = window.scriptlets.invoke(params);
     evalWrapper(resultString);
+};
+
+const createScriptletRunner = (counter) => (...args) => {
+    runScriptlet(args);
     counter += 1;
     return counter;
 };
@@ -197,19 +205,20 @@ test('sets values correctly + no stack match', (assert) => {
     window.__debug = () => {
         window.counter = window.counter ? window.counter + 1 : 1;
     };
-    let counter; // eslint-disable-line no-unused-vars
+    window.chained = { property: {} };
     const stackNoMatch = 'no_match.js';
 
-    const runSetConstantScriptlet = createScriptletRunner(0);
-    window.chained = { property: {} };
-    counter = runSetConstantScriptlet('chained.property.aaa', 'true', stackNoMatch);
+    runScriptlet(['chained.property.aaa', 'true', stackNoMatch]);
+
     assert.strictEqual(window.chained.property.aaa, undefined);
     assert.strictEqual(window.counter, undefined);
     clearGlobalProps('chained');
 
     const property = 'customProp';
     const firstValue = 10;
-    counter = runSetConstantScriptlet(property, firstValue, stackNoMatch);
+
+    runScriptlet([property, firstValue, stackNoMatch]);
+
     assert.strictEqual(window[property], undefined);
     assert.strictEqual(window.counter, undefined);
     clearGlobalProps(property);

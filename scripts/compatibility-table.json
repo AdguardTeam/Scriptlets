@@ -86,6 +86,10 @@
             "adg": "prevent-fab-3.2.0"
         },
         {
+            "adg": "prevent-fetch",
+            "ubo": "no-fetch-if.js"
+        },
+        {
             "adg": "prevent-popads-net"
         },
         {
@@ -215,9 +219,6 @@
         },
         {
             "abp": "commitInjection"
-        },
-        {
-            "ubo": "no-fetch-if.js"
         },
         {
             "abp": "abort-on-iframe-property-read"

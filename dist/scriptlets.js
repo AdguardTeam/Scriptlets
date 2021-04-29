@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.17
+ * Version 1.3.18
  */
 
 (function () {
@@ -375,6 +375,15 @@
       return Promise.reject();
     }; // eslint-disable-line compat/compat
 
+    /**
+     * Returns Promise object that is resolved with an empty response
+     */
+    // eslint-disable-next-line compat/compat
+
+    var noopPromiseResolve = function noopPromiseResolve() {
+      return Promise.resolve(new Response());
+    };
+
     /* eslint-disable no-console, no-underscore-dangle */
 
     /**
@@ -391,7 +400,8 @@
 
       try {
         var log = console.log.bind(console);
-        var trace = console.trace.bind(console);
+        var trace = console.trace.bind(console); // eslint-disable-line compat/compat
+
         var prefix = source.ruleText || '';
 
         if (source.domainName) {
@@ -492,7 +502,7 @@
       /**
        * Used for remove-class
        */
-      // eslint-disable-next-line no-use-before-define
+      // eslint-disable-next-line no-use-before-define, compat/compat
 
       var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
 
@@ -774,6 +784,130 @@
     };
 
     /**
+     * Converts object to array of pairs.
+     * Object.entries() polyfill because it is not supported by IE
+     * https://caniuse.com/?search=Object.entries
+     * @param {Object} object
+     * @returns {Array} array of pairs
+     */
+    var getObjectEntries = function getObjectEntries(object) {
+      var keys = Object.keys(object);
+      var entries = [];
+      keys.forEach(function (key) {
+        return entries.push([key, object[key]]);
+      });
+      return entries;
+    };
+    /**
+     * Converts array of pairs to object.
+     * Object.fromEntries() polyfill because it is not supported by IE
+     * https://caniuse.com/?search=Object.fromEntries
+     * @param {Array} entries - array of pairs
+     * @returns {Object}
+     */
+
+    var getObjectFromEntries = function getObjectFromEntries(entries) {
+      var output = entries.reduce(function (acc, el) {
+        var key = el[0];
+        var value = el[1];
+        acc[key] = value;
+        return acc;
+      }, {});
+      return output;
+    };
+
+    /**
+     * Collects Request options to object
+     * @param {Request} request
+     * @returns {Object} data object
+     */
+
+    var getRequestData = function getRequestData(request) {
+      var REQUEST_INIT_OPTIONS = ['url', 'method', 'headers', 'body', 'mode', 'credentials', 'cache', 'redirect', 'referrer', 'integrity'];
+      var entries = REQUEST_INIT_OPTIONS.map(function (key) {
+        // if request has no such option, value will be undefined
+        var value = request[key];
+        return [key, value];
+      });
+      return getObjectFromEntries(entries);
+    };
+    /**
+     * Collects fetch args to object
+     * @param {*} args fetch args
+     * @returns {Object} data object
+     */
+
+    var getFetchData = function getFetchData(args) {
+      var fetchPropsObj = {};
+      var fetchUrl;
+      var fetchInit;
+
+      if (args[0] instanceof Request) {
+        // if Request passed to fetch, it will be in array
+        var requestData = getRequestData(args[0]);
+        fetchUrl = requestData.url;
+        fetchInit = requestData;
+      } else {
+        fetchUrl = args[0]; // eslint-disable-line prefer-destructuring
+
+        fetchInit = args[1]; // eslint-disable-line prefer-destructuring
+      }
+
+      fetchPropsObj.url = fetchUrl;
+
+      if (fetchInit instanceof Object) {
+        Object.keys(fetchInit).forEach(function (prop) {
+          fetchPropsObj[prop] = fetchInit[prop];
+        });
+      }
+
+      return fetchPropsObj;
+    };
+    /**
+     * Converts object to string for logging
+     * @param {Object} obj data object
+     * @returns {string}
+     */
+
+    var objectToString = function objectToString(obj) {
+      return getObjectEntries(obj).map(function (pair) {
+        var key = pair[0];
+        var value = pair[1];
+        var recordValueStr = value;
+
+        if (value instanceof Object) {
+          recordValueStr = "{ ".concat(objectToString(value), " }");
+        }
+
+        return "".concat(key, ":\"").concat(recordValueStr, "\"");
+      }).join(' ');
+    };
+    /**
+     * Converts prevent-fetch propsToMatch input string to object
+     * @param {string} propsToMatchStr
+     * @returns {Object} object where 'key' is prop name and 'value' is prop value
+     */
+
+    var convertMatchPropsToObj = function convertMatchPropsToObj(propsToMatchStr) {
+      var PROPS_DIVIDER = ' ';
+      var PAIRS_MARKER = ':';
+      var propsObj = {};
+      var props = propsToMatchStr.split(PROPS_DIVIDER);
+      props.forEach(function (prop) {
+        var dividerInd = prop.indexOf(PAIRS_MARKER);
+
+        if (dividerInd === -1) {
+          propsObj.url = toRegExp(prop);
+        } else {
+          var key = prop.slice(0, dividerInd);
+          var value = prop.slice(dividerInd + 1);
+          propsObj[key] = toRegExp(value);
+        }
+      });
+      return propsObj;
+    };
+
+    /**
      * This file must export all used dependencies
      */
 
@@ -803,6 +937,7 @@
         noopArray: noopArray,
         noopObject: noopObject,
         noopPromiseReject: noopPromiseReject,
+        noopPromiseResolve: noopPromiseResolve,
         hit: hit,
         observeDOMChanges: observeDOMChanges,
         matchStackTrace: matchStackTrace,
@@ -815,7 +950,13 @@
         shouldMatchAnyDelay: shouldMatchAnyDelay,
         getMatchDelay: getMatchDelay,
         isDelayMatched: isDelayMatched,
-        getBoostMultiplier: getBoostMultiplier
+        getBoostMultiplier: getBoostMultiplier,
+        getRequestData: getRequestData,
+        getFetchData: getFetchData,
+        objectToString: objectToString,
+        convertMatchPropsToObj: convertMatchPropsToObj,
+        getObjectEntries: getObjectEntries,
+        getObjectFromEntries: getObjectFromEntries
     });
 
     /**
@@ -880,76 +1021,6 @@
     function wrapInNonameFunc(code) {
       return "function(source, args){\n".concat(code, "\n}");
     }
-
-    function _arrayWithHoles(arr) {
-      if (Array.isArray(arr)) return arr;
-    }
-
-    var arrayWithHoles = _arrayWithHoles;
-
-    function _iterableToArrayLimit(arr, i) {
-      if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return;
-      var _arr = [];
-      var _n = true;
-      var _d = false;
-      var _e = undefined;
-
-      try {
-        for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
-          _arr.push(_s.value);
-
-          if (i && _arr.length === i) break;
-        }
-      } catch (err) {
-        _d = true;
-        _e = err;
-      } finally {
-        try {
-          if (!_n && _i["return"] != null) _i["return"]();
-        } finally {
-          if (_d) throw _e;
-        }
-      }
-
-      return _arr;
-    }
-
-    var iterableToArrayLimit = _iterableToArrayLimit;
-
-    function _arrayLikeToArray(arr, len) {
-      if (len == null || len > arr.length) len = arr.length;
-
-      for (var i = 0, arr2 = new Array(len); i < len; i++) {
-        arr2[i] = arr[i];
-      }
-
-      return arr2;
-    }
-
-    var arrayLikeToArray = _arrayLikeToArray;
-
-    function _unsupportedIterableToArray(o, minLen) {
-      if (!o) return;
-      if (typeof o === "string") return arrayLikeToArray(o, minLen);
-      var n = Object.prototype.toString.call(o).slice(8, -1);
-      if (n === "Object" && o.constructor) n = o.constructor.name;
-      if (n === "Map" || n === "Set") return Array.from(o);
-      if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
-    }
-
-    var unsupportedIterableToArray = _unsupportedIterableToArray;
-
-    function _nonIterableRest() {
-      throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-    }
-
-    var nonIterableRest = _nonIterableRest;
-
-    function _slicedToArray(arr, i) {
-      return arrayWithHoles(arr) || iterableToArrayLimit(arr, i) || unsupportedIterableToArray(arr, i) || nonIterableRest();
-    }
-
-    var slicedToArray = _slicedToArray;
 
     function _defineProperty(obj, key, value) {
       if (key in obj) {
@@ -4102,6 +4173,100 @@
     'no-floc.js', 'ubo-no-floc.js', 'ubo-no-floc'];
     noFloc.injections = [hit, noopPromiseReject];
 
+    /* eslint-disable max-len */
+
+    /**
+     * @scriptlet prevent-fetch
+     *
+     * @description
+     * Prevents `fetch` calls if **all** given parameters match
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-fetch-ifjs-
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('prevent-fetch'[, propsToMatch])
+     * ```
+     *
+     * - `propsToMatch` - optional, string of space-separated properties to match; possible props:
+     *   - string or regular expression for matching the URL passed to fetch call; empty string or wildcard `*` for all fetch calls match
+     *   - colon-separated pairs `name:value` where
+     *     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
+     *     - `value` is string or regular expression for matching the value of the option passed to fetch call
+     *
+     * > Usage with no arguments will log fetch calls to browser console;
+     * which is usefull for debugging but permitted for production filter lists.
+     *
+     * **Examples**
+     * 1. Prevent all fetch calls
+     *     ```
+     *     example.org#%#//scriptlet('prevent-fetch', '*')
+     *     ```
+     *
+     * 2. Prevent fetch call for specific url
+     *     ```
+     *     example.org#%#//scriptlet('prevent-fetch', '/url\\.part/')
+     *     ```
+     *
+     * 3. Prevent fetch call for specific request method
+     *     ```
+     *     example.org#%#//scriptlet('prevent-fetch', 'method:HEAD')
+     *     ```
+     *
+     * 4. Prevent fetch call for specific url and request method
+     *     ```
+     *     example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/')
+     *     ```
+     */
+
+    /* eslint-enable max-len */
+
+    function preventFetch(source, propsToMatch) {
+      // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
+      // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
+      // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+      if (typeof fetch === 'undefined' || typeof Proxy === 'undefined') {
+        return;
+      }
+
+      var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+        var shouldPrevent = false;
+        var fetchData = getFetchData(args);
+
+        if (typeof propsToMatch === 'undefined') {
+          // log if no propsToMatch given
+          var logMessage = "log: fetch( ".concat(objectToString(fetchData), " )");
+          hit(source, logMessage);
+        } else if (propsToMatch === '' || propsToMatch === '*') {
+          // prevent all fetch calls
+          shouldPrevent = true;
+        } else {
+          var matchData = convertMatchPropsToObj(propsToMatch); // prevent only if all props match
+
+          shouldPrevent = Object.keys(matchData).every(function (matchKey) {
+            var matchValue = matchData[matchKey];
+            return Object.prototype.hasOwnProperty.call(fetchData, matchKey) && matchValue.test(fetchData[matchKey]);
+          });
+        }
+
+        if (shouldPrevent) {
+          hit(source);
+          return noopPromiseResolve();
+        }
+
+        return Reflect.apply(target, thisArg, args);
+      };
+
+      var fetchHandler = {
+        apply: handlerWrapper
+      };
+      fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
+    }
+    preventFetch.names = ['prevent-fetch', // aliases are needed for matching the related scriptlet converted into our syntax
+    'no-fetch-if.js', 'ubo-no-fetch-if.js', 'ubo-no-fetch-if'];
+    preventFetch.injections = [hit, toRegExp, noopPromiseResolve, getRequestData, getObjectEntries, getObjectFromEntries, getFetchData, objectToString, convertMatchPropsToObj];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -4143,7 +4308,8 @@
         setCookieReload: setCookieReload,
         hideInShadowDom: hideInShadowDom,
         removeInShadowDom: removeInShadowDom,
-        noFloc: noFloc
+        noFloc: noFloc,
+        preventFetch: preventFetch
     });
 
     const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"amazon-apstag",ubo:"amazon_apstag.js"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm",ubo:"googletagmanager_gtm.js"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3-0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvmap-1.0",ubo:"noop-vmap1.0.xml"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"doubleclick_instream_ad_status.js"},{adg:"empty",ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"},{ubo:"click2load.html"}];
@@ -4300,30 +4466,11 @@
       return el.adg;
     });
     /**
-     * Converts array of pairs to object.
-     * Sort of Object.fromEntries() polyfill.
-     * @param {Array} pairs - array of pairs
-     * @returns {Object}
-     */
-
-    var objFromEntries = function objFromEntries(pairs) {
-      var output = pairs.reduce(function (acc, el) {
-        var _el = slicedToArray(el, 2),
-            key = _el[0],
-            value = _el[1];
-
-        acc[key] = value;
-        return acc;
-      }, {});
-      return output;
-    };
-    /**
      * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
      * It's used for UBO -> ADG converting
      */
 
-
-    var uboToAdgCompatibility = objFromEntries(validAdgRedirects.filter(function (el) {
+    var uboToAdgCompatibility = getObjectFromEntries(validAdgRedirects.filter(function (el) {
       return el.ubo;
     }).map(function (el) {
       return [el.ubo, el.adg];
@@ -4333,7 +4480,7 @@
      * It's used for ABP -> ADG converting
      */
 
-    var abpToAdgCompatibility = objFromEntries(validAdgRedirects.filter(function (el) {
+    var abpToAdgCompatibility = getObjectFromEntries(validAdgRedirects.filter(function (el) {
       return el.abp;
     }).map(function (el) {
       return [el.abp, el.adg];
@@ -4343,7 +4490,7 @@
      * It's used for ADG -> UBO converting
      */
 
-    var adgToUboCompatibility = objFromEntries(validAdgRedirects.filter(function (el) {
+    var adgToUboCompatibility = getObjectFromEntries(validAdgRedirects.filter(function (el) {
       return el.ubo;
     }).map(function (el) {
       return [el.adg, el.ubo];
@@ -4353,7 +4500,7 @@
      * 'adgToUboCompatibility' is still needed for ADG -> UBO converting
      */
 
-    var validAdgCompatibility = objFromEntries(validAdgRedirects.map(function (el) {
+    var validAdgCompatibility = getObjectFromEntries(validAdgRedirects.map(function (el) {
       return [el.adg, 'valid adg redirect'];
     }));
     var REDIRECT_RULE_TYPES = {
@@ -4541,6 +4688,18 @@
       hasValidContentType: hasValidContentType
     };
 
+    function _arrayLikeToArray(arr, len) {
+      if (len == null || len > arr.length) len = arr.length;
+
+      for (var i = 0, arr2 = new Array(len); i < len; i++) {
+        arr2[i] = arr[i];
+      }
+
+      return arr2;
+    }
+
+    var arrayLikeToArray = _arrayLikeToArray;
+
     function _arrayWithoutHoles(arr) {
       if (Array.isArray(arr)) return arrayLikeToArray(arr);
     }
@@ -4553,6 +4712,17 @@
 
     var iterableToArray = _iterableToArray;
 
+    function _unsupportedIterableToArray(o, minLen) {
+      if (!o) return;
+      if (typeof o === "string") return arrayLikeToArray(o, minLen);
+      var n = Object.prototype.toString.call(o).slice(8, -1);
+      if (n === "Object" && o.constructor) n = o.constructor.name;
+      if (n === "Map" || n === "Set") return Array.from(o);
+      if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
+    }
+
+    var unsupportedIterableToArray = _unsupportedIterableToArray;
+
     function _nonIterableSpread() {
       throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
     }
@@ -4564,6 +4734,18 @@
     }
 
     var toConsumableArray = _toConsumableArray;
+
+    function _arrayWithHoles(arr) {
+      if (Array.isArray(arr)) return arr;
+    }
+
+    var arrayWithHoles = _arrayWithHoles;
+
+    function _nonIterableRest() {
+      throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+    }
+
+    var nonIterableRest = _nonIterableRest;
 
     function _toArray(arr) {
       return arrayWithHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableRest();
@@ -4595,6 +4777,10 @@
     var ADG_SET_CONSTANT_NAME = 'set-constant';
     var ADG_SET_CONSTANT_EMPTY_STRING = '';
     var UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
+    var ADG_PREVENT_FETCH_NAME = 'prevent-fetch';
+    var ADG_PREVENT_FETCH_EMPTY_STRING = '';
+    var ADG_PREVENT_FETCH_WILDCARD = '*';
+    var UBO_NO_FETCH_IF_WILDCARD = '/^/';
     /**
      * Returns array of strings separated by space which not in quotes
      * @param {string} str
@@ -4733,6 +4919,9 @@
 
         if (parsedName === ADG_SET_CONSTANT_NAME && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_STRING) {
           preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_STRING];
+        } else if (parsedName === ADG_PREVENT_FETCH_NAME // https://github.com/AdguardTeam/Scriptlets/issues/109
+        && (parsedParams[0] === ADG_PREVENT_FETCH_WILDCARD || parsedParams[0] === ADG_PREVENT_FETCH_EMPTY_STRING)) {
+          preparedParams = [UBO_NO_FETCH_IF_WILDCARD];
         } else {
           preparedParams = parsedParams;
         } // object of name and aliases for the Adg-scriptlet

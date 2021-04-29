@@ -34,3 +34,4 @@ import './remove-cookie.test';
 import './hide-in-shadow-dom.test';
 import './remove-in-shadow-dom.test';
 import './no-floc.test';
+import './prevent-fetch.test';

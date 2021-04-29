@@ -16,3 +16,5 @@ export * from './array-utils';
 export * from './prepare-cookie';
 export * from './number-utils';
 export * from './adjust-set-utils';
+export * from './fetch-utils';
+export * from './object-utils';

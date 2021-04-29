@@ -38,7 +38,7 @@ export const observeDOMChanges = (callback, observeAttrs = false, attrsToObserv 
     /**
      * Used for remove-class
      */
-    // eslint-disable-next-line no-use-before-define
+    // eslint-disable-next-line no-use-before-define, compat/compat
     const observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
 
     const connect = () => {

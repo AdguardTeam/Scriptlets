@@ -24,6 +24,7 @@
 | [prevent-bab](../wiki/about-scriptlets.md#prevent-bab) |  |  |
 | [prevent-eval-if](../wiki/about-scriptlets.md#prevent-eval-if) | noeval-if.js |  |
 | [prevent-fab-3.2.0](../wiki/about-scriptlets.md#prevent-fab-3.2.0) |  |  |
+| [prevent-fetch](../wiki/about-scriptlets.md#prevent-fetch) | no-fetch-if.js |  |
 | [prevent-popads-net](../wiki/about-scriptlets.md#prevent-popads-net) |  |  |
 | [prevent-requestAnimationFrame](../wiki/about-scriptlets.md#prevent-requestAnimationFrame) | no-requestAnimationFrame-if.js (norafif.js) |  |
 | [prevent-setInterval](../wiki/about-scriptlets.md#prevent-setInterval) | no-setInterval-if.js (nosiif.js) |  |
@@ -65,7 +66,6 @@
 |  | abort-on-stack-trace.js (aost.js) |  |
 |  |  | prepareInjection |
 |  |  | commitInjection |
-|  | no-fetch-if.js |  |
 |  |  | abort-on-iframe-property-read |
 |  |  | abort-on-iframe-property-write |
 

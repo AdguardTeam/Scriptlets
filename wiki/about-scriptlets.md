@@ -22,6 +22,7 @@
 * [prevent-bab](#prevent-bab)
 * [prevent-eval-if](#prevent-eval-if)
 * [prevent-fab-3.2.0](#prevent-fab-3.2.0)
+* [prevent-fetch](#prevent-fetch)
 * [prevent-popads-net](#prevent-popads-net)
 * [prevent-requestAnimationFrame](#prevent-requestAnimationFrame)
 * [prevent-setInterval](#prevent-setInterval)
@@ -611,6 +612,50 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#fuckadblockjs-320-
 example.org#%#//scriptlet('prevent-fab-3.2.0')
 ```
 [Scriptlet source](../src/scriptlets/prevent-fab-3.2.0.js)
+* * *
+
+### <a id="prevent-fetch"></a> ⚡️ prevent-fetch
+
+Prevents `fetch` calls if **all** given parameters match
+
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/wiki/Resources-Library#no-fetch-ifjs-
+
+**Syntax**
+```
+example.org#%#//scriptlet('prevent-fetch'[, propsToMatch])
+```
+
+- `propsToMatch` - optional, string of space-separated properties to match; possible props:
+  - string or regular expression for matching the URL passed to fetch call; empty string or wildcard `*` for all fetch calls match
+  - colon-separated pairs `name:value` where
+    - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
+    - `value` is string or regular expression for matching the value of the option passed to fetch call
+
+> Usage with no arguments will log fetch calls to browser console;
+which is usefull for debugging but permitted for production filter lists.
+
+**Examples**
+1. Prevent all fetch calls
+    ```
+    example.org#%#//scriptlet('prevent-fetch', '*')
+    ```
+
+2. Prevent fetch call for specific url
+    ```
+    example.org#%#//scriptlet('prevent-fetch', '/url\\.part/')
+    ```
+
+3. Prevent fetch call for specific request method
+    ```
+    example.org#%#//scriptlet('prevent-fetch', 'method:HEAD')
+    ```
+
+4. Prevent fetch call for specific url and request method
+    ```
+    example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/')
+    ```
+[Scriptlet source](../src/scriptlets/prevent-fetch.js)
 * * *
 
 ### <a id="prevent-popads-net"></a> ⚡️ prevent-popads-net

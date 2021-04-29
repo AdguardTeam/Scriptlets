@@ -13,7 +13,7 @@ export const hit = (source, message) => {
 
     try {
         const log = console.log.bind(console);
-        const trace = console.trace.bind(console);
+        const trace = console.trace.bind(console); // eslint-disable-line compat/compat
 
         let prefix = source.ruleText || '';
 

@@ -157,6 +157,10 @@ test('Test SCRIPTLET converting - ADG -> UBO', (assert) => {
     inputAdg = 'example.com#%#//scriptlet("abp-abort-current-inline-script", "console.log", "Hello")';
     expectedUbo = 'example.com##+js(abort-current-inline-script, console.log, Hello)';
     assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
+
+    inputAdg = 'example.com#%#//scriptlet(\'prevent-fetch\', \'*\')';
+    expectedUbo = 'example.com##+js(no-fetch-if, /^/)';
+    assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
 });
 
 test('Test redirect rule validation', (assert) => {

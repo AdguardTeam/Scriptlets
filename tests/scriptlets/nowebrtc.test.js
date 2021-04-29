@@ -66,7 +66,7 @@ test('RTCPeerConnection without config', (assert) => {
 
     runScriptlet(name);
 
-    const localConnection = new RTCPeerConnection();
+    const localConnection = new RTCPeerConnection(); // eslint-disable-line compat/compat
     const sendChannel = localConnection.createDataChannel('sendChannel');
 
     assert.strictEqual(window.hit, 'FIRED');
@@ -81,7 +81,7 @@ test('RTCPeerConnection with config', (assert) => {
 
     runScriptlet(name);
 
-    const testPeer = new RTCPeerConnection(testPeerConfig);
+    const testPeer = new RTCPeerConnection(testPeerConfig); // eslint-disable-line compat/compat
     const dataChannel = testPeer.createDataChannel('', {
         reliable: true,
     });
@@ -111,7 +111,7 @@ test('log checking', (assert) => {
 
     runScriptlet(name);
 
-    // eslint-disable-next-line no-unused-vars
+    // eslint-disable-next-line no-unused-vars, compat/compat
     const testPeer = new RTCPeerConnection(testPeerConfig);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');

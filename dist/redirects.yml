@@ -1,6 +1,6 @@
 #
 #    AdGuard Scriptlets (Redirects Source)
-#    Version 1.3.17
+#    Version 1.3.18
 #
 - title: 1x1-transparent.gif
   description: |-
@@ -315,7 +315,8 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
+          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
+
           var prefix = source.ruleText || '';
 
           if (source.domainName) {
@@ -469,7 +470,8 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
+          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
+
           var prefix = source.ruleText || '';
 
           if (source.domainName) {
@@ -594,7 +596,8 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
+          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
+
           var prefix = source.ruleText || '';
 
           if (source.domainName) {
@@ -727,7 +730,8 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
+          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
+
           var prefix = source.ruleText || '';
 
           if (source.domainName) {
@@ -828,7 +832,8 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
+          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
+
           var prefix = source.ruleText || '';
 
           if (source.domainName) {
@@ -1043,7 +1048,8 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
+          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
+
           var prefix = source.ruleText || '';
 
           if (source.domainName) {
@@ -1227,7 +1233,8 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
+          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
+
           var prefix = source.ruleText || '';
 
           if (source.domainName) {
@@ -1364,7 +1371,8 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
+          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
+
           var prefix = source.ruleText || '';
 
           if (source.domainName) {
@@ -1445,7 +1453,8 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
+          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
+
           var prefix = source.ruleText || '';
 
           if (source.domainName) {
@@ -1597,7 +1606,8 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
+          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
+
           var prefix = source.ruleText || '';
 
           if (source.domainName) {
@@ -1715,7 +1725,8 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
+          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
+
           var prefix = source.ruleText || '';
 
           if (source.domainName) {
@@ -1794,7 +1805,8 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
+          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
+
           var prefix = source.ruleText || '';
 
           if (source.domainName) {
@@ -1884,7 +1896,8 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
+          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
+
           var prefix = source.ruleText || '';
 
           if (source.domainName) {

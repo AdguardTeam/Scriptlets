@@ -5,6 +5,8 @@ import {
     toRegExp,
 } from './string-utils';
 
+import { getObjectFromEntries } from './object-utils';
+
 import { ADG_SCRIPTLET_MASK } from './parse-rule';
 
 import * as scriptletsList from '../scriptlets/scriptlets-list';
@@ -195,26 +197,10 @@ const ABSENT_SOURCE_TYPE_REPLACEMENT = [
 const validAdgRedirects = redirects.filter((el) => el.adg);
 
 /**
- * Converts array of pairs to object.
- * Sort of Object.fromEntries() polyfill.
- * @param {Array} pairs - array of pairs
- * @returns {Object}
- */
-const objFromEntries = (pairs) => {
-    const output = pairs
-        .reduce((acc, el) => {
-            const [key, value] = el;
-            acc[key] = value;
-            return acc;
-        }, {});
-    return output;
-};
-
-/**
  * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
  * It's used for UBO -> ADG converting
  */
-const uboToAdgCompatibility = objFromEntries(
+const uboToAdgCompatibility = getObjectFromEntries(
     validAdgRedirects
         .filter((el) => el.ubo)
         .map((el) => {
@@ -226,7 +212,7 @@ const uboToAdgCompatibility = objFromEntries(
  * Compatibility object where KEYS = ABP redirect names and VALUES = ADG redirect names
  * It's used for ABP -> ADG converting
  */
-const abpToAdgCompatibility = objFromEntries(
+const abpToAdgCompatibility = getObjectFromEntries(
     validAdgRedirects
         .filter((el) => el.abp)
         .map((el) => {
@@ -238,7 +224,7 @@ const abpToAdgCompatibility = objFromEntries(
  * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
  * It's used for ADG -> UBO converting
  */
-const adgToUboCompatibility = objFromEntries(
+const adgToUboCompatibility = getObjectFromEntries(
     validAdgRedirects
         .filter((el) => el.ubo)
         .map((el) => {
@@ -250,7 +236,7 @@ const adgToUboCompatibility = objFromEntries(
  * Needed for AdGuard redirect names validation where KEYS = **valid** AdGuard redirect names
  * 'adgToUboCompatibility' is still needed for ADG -> UBO converting
  */
-const validAdgCompatibility = objFromEntries(
+const validAdgCompatibility = getObjectFromEntries(
     validAdgRedirects
         .map((el) => {
             return [el.adg, 'valid adg redirect'];
