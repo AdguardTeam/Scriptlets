@@ -74,11 +74,11 @@ export function abortCurrentInlineScript(source, property, search) {
     const rid = randomId();
 
     const getCurrentScript = () => {
-        if (!document.currentScript) { // eslint-disable-line compat/compat
-            const scripts = document.getElementsByTagName('script');
-            return scripts[scripts.length - 1];
+        if ('currentScript' in document) {
+            return document.currentScript; // eslint-disable-line compat/compat
         }
-        return document.currentScript; // eslint-disable-line compat/compat
+        const scripts = document.getElementsByTagName('script');
+        return scripts[scripts.length - 1];
     };
 
     const ourScript = getCurrentScript();
