@@ -228,8 +228,9 @@ export const convertAdgScriptletToUbo = (rule) => {
 };
 
 /**
- * Validates any scriptlet rule
- * @param {string} input - can be Adguard or Ubo or Abp scriptlet rule
+ * Checks whether the ADG scriptlet exists or UBO/ABP scriptlet is compatible to ADG
+ * @param {string} input - can be ADG or UBO or ABP scriptlet rule
+ * @returns {boolean}
  */
 export const isValidScriptletRule = (input) => {
     if (!input) {

@@ -39,6 +39,9 @@ test('Test scriptlet rule validation', (assert) => {
 
     inputRule = 'example.org#$#hide-if-has-and-matches-style \'d[id^="_"]\' \'div > s\' \'display: none\'; hide-if-contains /.*/ .p \'a[href^="/ad__c?"]\'';
     assert.strictEqual(isValidScriptletRule(inputRule), false);
+
+    inputRule = 'example.org#$#hide-if-contains li.serp-item \'li.serp-item div.label\'';
+    assert.strictEqual(isValidScriptletRule(inputRule), false);
 });
 
 test('Test comment', (assert) => {
@@ -113,9 +116,14 @@ test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
 });
 
 test('Test SCRIPTLET converting - ABP -> ADG', (assert) => {
-    const rule = "example.org#$#hide-if-contains li.serp-item 'li.serp-item div.label'";
-    const exp = 'example.org#%#//scriptlet(\'abp-hide-if-contains\', \'li.serp-item\', \'li.serp-item div.label\')';
-    assert.strictEqual(convertScriptletToAdg(rule)[0], exp);
+    const rule = 'esheeq.co#$#abort-on-property-read atob; abort-on-property-write Fingerprint2; abort-on-property-read decodeURIComponent; abort-on-property-read RegExp';
+    const exp = [
+        'esheeq.co#%#//scriptlet(\'abp-abort-on-property-read\', \'atob\')',
+        'esheeq.co#%#//scriptlet(\'abp-abort-on-property-write\', \'Fingerprint2\')',
+        'esheeq.co#%#//scriptlet(\'abp-abort-on-property-read\', \'decodeURIComponent\')',
+        'esheeq.co#%#//scriptlet(\'abp-abort-on-property-read\', \'RegExp\')',
+    ];
+    assert.deepEqual(convertScriptletToAdg(rule), exp);
 });
 
 test('Test SCRIPTLET converting - multiple ABP -> ADG', (assert) => {

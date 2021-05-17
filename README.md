@@ -150,7 +150,7 @@ scriptlets.isValidScriptletName(name);
 
 ```javascript
 /**
-* Validates any scriptlet rule
+* Checks whether the ADG scriptlet exists or UBO/ABP scriptlet is compatible to ADG
 *
 * ADG or UBO rule is single-scriptlet, but ABP rule may contain more than one snippet
 * so if at least one of them is not valid - whole 'input' rule is not valid too.
