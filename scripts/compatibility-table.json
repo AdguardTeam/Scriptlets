@@ -265,8 +265,8 @@
             "ubo": "googlesyndication_adsbygoogle.js"
         },
         {
-            "adg": "googletagmanager-gtm",
-            "ubo": "googletagmanager_gtm.js"
+            "adg": "googletagmanager-gtm (removed)",
+            "ubo": "googletagmanager_gtm.js (removed)"
         },
         {
             "adg": "googletagservices-gpt",

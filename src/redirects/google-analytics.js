@@ -1,19 +1,24 @@
 import {
-    hit, noopFunc, noopNull, noopArray,
+    hit,
+    noopFunc,
+    noopNull,
+    noopArray,
 } from '../helpers';
 
 /**
  * @redirect google-analytics
  *
  * @description
- * Mocks Google Analytics API.
+ * Mocks Google's Analytics and Tag Manager APIs.
+ * [Covers obsolete googletagmanager-gtm redirect functionality](https://github.com/AdguardTeam/Scriptlets/issues/127).
  *
  * Related UBO redirect resource:
- * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_analytics.js
+ * https://github.com/gorhill/uBlock/blob/8cd2a1d263a96421487b39040c1d23eb01169484/src/web_accessible_resources/google-analytics_analytics.js
  *
  * **Example**
  * ```
  * ||google-analytics.com/analytics.js$script,redirect=google-analytics
+ * ||googletagmanager.com/gtm.js$script,redirect=googletagmanager-gtm
  * ```
  */
 export function GoogleAnalytics(source) {
@@ -60,12 +65,30 @@ export function GoogleAnalytics(source) {
     ga.loaded = true;
     window[googleAnalyticsName] = ga;
 
-    const { dataLayer } = window;
-    if (dataLayer instanceof Object
-        && dataLayer.hide instanceof Object
-        && typeof dataLayer.hide.end === 'function'
-    ) {
+    const { dataLayer, google_optimize } = window; // eslint-disable-line camelcase
+    if (dataLayer instanceof Object === false) {
+        return;
+    }
+
+    if (dataLayer.hide instanceof Object
+        && typeof dataLayer.hide.end === 'function') {
         dataLayer.hide.end();
+    }
+
+    if (typeof dataLayer.push === 'function') {
+        dataLayer.push = (data) => {
+            if (data instanceof Object && typeof data.eventCallback === 'function') {
+                setTimeout(data.eventCallback, 1);
+            }
+        };
+    }
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/81
+    if (google_optimize instanceof Object && typeof google_optimize.get === 'function') { // eslint-disable-line camelcase
+        const googleOptimizeWrapper = { };
+        googleOptimizeWrapper.get = noopFunc;
+
+        window.google_optimize = googleOptimizeWrapper;
     }
 
     hit(source);
@@ -75,6 +98,10 @@ GoogleAnalytics.names = [
     'google-analytics',
     'ubo-google-analytics_analytics.js',
     'google-analytics_analytics.js',
+    // https://github.com/AdguardTeam/Scriptlets/issues/127
+    'googletagmanager-gtm',
+    'ubo-googletagmanager_gtm.js',
+    'googletagmanager_gtm.js',
 ];
 
 GoogleAnalytics.injections = [

@@ -82,7 +82,7 @@
 | [google-analytics](../wiki/about-redirects.md#google-analytics) | google-analytics_analytics.js |  |
 | [google-analytics-ga](../wiki/about-redirects.md#google-analytics-ga) | google-analytics_ga.js |  |
 | [googlesyndication-adsbygoogle](../wiki/about-redirects.md#googlesyndication-adsbygoogle) | googlesyndication_adsbygoogle.js |  |
-| [googletagmanager-gtm](../wiki/about-redirects.md#googletagmanager-gtm) | googletagmanager_gtm.js |  |
+| googletagmanager-gtm (removed) | googletagmanager_gtm.js (removed) |  |
 | [googletagservices-gpt](../wiki/about-redirects.md#googletagservices-gpt) | googletagservices_gpt.js |  |
 | [metrika-yandex-watch](../wiki/about-redirects.md#metrika-yandex-watch) |  |  |
 | [metrika-yandex-tag](../wiki/about-redirects.md#metrika-yandex-tag) |  |  |

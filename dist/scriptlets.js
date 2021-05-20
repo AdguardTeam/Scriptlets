@@ -1888,13 +1888,12 @@
       var rid = randomId();
 
       var getCurrentScript = function getCurrentScript() {
-        if (!document.currentScript) {
-          // eslint-disable-line compat/compat
-          var scripts = document.getElementsByTagName('script');
-          return scripts[scripts.length - 1];
+        if ('currentScript' in document) {
+          return document.currentScript; // eslint-disable-line compat/compat
         }
 
-        return document.currentScript; // eslint-disable-line compat/compat
+        var scripts = document.getElementsByTagName('script');
+        return scripts[scripts.length - 1];
       };
 
       var ourScript = getCurrentScript();
@@ -3079,13 +3078,12 @@
       var rid = randomId();
 
       var getCurrentScript = function getCurrentScript() {
-        if (!document.currentScript) {
-          // eslint-disable-line compat/compat
-          var scripts = document.getElementsByTagName('script');
-          return scripts[scripts.length - 1];
+        if ('currentScript' in document) {
+          return document.currentScript; // eslint-disable-line compat/compat
         }
 
-        return document.currentScript; // eslint-disable-line compat/compat
+        var scripts = document.getElementsByTagName('script');
+        return scripts[scripts.length - 1];
       };
 
       var ourScript = getCurrentScript();
@@ -4265,7 +4263,7 @@
     }
     preventFetch.names = ['prevent-fetch', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-fetch-if.js', 'ubo-no-fetch-if.js', 'ubo-no-fetch-if'];
-    preventFetch.injections = [hit, toRegExp, noopPromiseResolve, getRequestData, getObjectEntries, getObjectFromEntries, getFetchData, objectToString, convertMatchPropsToObj];
+    preventFetch.injections = [hit, getFetchData, objectToString, convertMatchPropsToObj, noopPromiseResolve, toRegExp, getRequestData, getObjectEntries, getObjectFromEntries];
 
     /**
      * This file must export all scriptlets which should be accessible
@@ -4312,7 +4310,7 @@
         preventFetch: preventFetch
     });
 
-    const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"amazon-apstag",ubo:"amazon_apstag.js"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm",ubo:"googletagmanager_gtm.js"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3-0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvmap-1.0",ubo:"noop-vmap1.0.xml"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"doubleclick_instream_ad_status.js"},{adg:"empty",ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"},{ubo:"click2load.html"}];
+    const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"amazon-apstag",ubo:"amazon_apstag.js"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm (removed)",ubo:"googletagmanager_gtm.js (removed)"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3-0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvmap-1.0",ubo:"noop-vmap1.0.xml"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"doubleclick_instream_ad_status.js"},{adg:"empty",ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"},{ubo:"click2load.html"}];
 
     var JS_RULE_MARKER = '#%#';
     var COMMENT_MARKER = '!';
@@ -4976,8 +4974,9 @@
       return res;
     };
     /**
-     * Validates any scriptlet rule
-     * @param {string} input - can be Adguard or Ubo or Abp scriptlet rule
+     * Checks whether the ADG scriptlet exists or UBO/ABP scriptlet is compatible to ADG
+     * @param {string} input - can be ADG or UBO or ABP scriptlet rule
+     * @returns {boolean}
      */
 
     var isValidScriptletRule = function isValidScriptletRule(input) {
@@ -5107,14 +5106,16 @@
      * @redirect google-analytics
      *
      * @description
-     * Mocks Google Analytics API.
+     * Mocks Google's Analytics and Tag Manager APIs.
+     * [Covers obsolete googletagmanager-gtm redirect functionality](https://github.com/AdguardTeam/Scriptlets/issues/127).
      *
      * Related UBO redirect resource:
-     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_analytics.js
+     * https://github.com/gorhill/uBlock/blob/8cd2a1d263a96421487b39040c1d23eb01169484/src/web_accessible_resources/google-analytics_analytics.js
      *
      * **Example**
      * ```
      * ||google-analytics.com/analytics.js$script,redirect=google-analytics
+     * ||googletagmanager.com/gtm.js$script,redirect=googletagmanager-gtm
      * ```
      */
 
@@ -5165,15 +5166,37 @@
       ga.loaded = true;
       window[googleAnalyticsName] = ga;
       var _window = window,
-          dataLayer = _window.dataLayer;
+          dataLayer = _window.dataLayer,
+          google_optimize = _window.google_optimize; // eslint-disable-line camelcase
 
-      if (dataLayer instanceof Object && dataLayer.hide instanceof Object && typeof dataLayer.hide.end === 'function') {
+      if (dataLayer instanceof Object === false) {
+        return;
+      }
+
+      if (dataLayer.hide instanceof Object && typeof dataLayer.hide.end === 'function') {
         dataLayer.hide.end();
+      }
+
+      if (typeof dataLayer.push === 'function') {
+        dataLayer.push = function (data) {
+          if (data instanceof Object && typeof data.eventCallback === 'function') {
+            setTimeout(data.eventCallback, 1);
+          }
+        };
+      } // https://github.com/AdguardTeam/Scriptlets/issues/81
+
+
+      if (google_optimize instanceof Object && typeof google_optimize.get === 'function') {
+        // eslint-disable-line camelcase
+        var googleOptimizeWrapper = {};
+        googleOptimizeWrapper.get = noopFunc;
+        window.google_optimize = googleOptimizeWrapper;
       }
 
       hit(source);
     }
-    GoogleAnalytics.names = ['google-analytics', 'ubo-google-analytics_analytics.js', 'google-analytics_analytics.js'];
+    GoogleAnalytics.names = ['google-analytics', 'ubo-google-analytics_analytics.js', 'google-analytics_analytics.js', // https://github.com/AdguardTeam/Scriptlets/issues/127
+    'googletagmanager-gtm', 'ubo-googletagmanager_gtm.js', 'googletagmanager_gtm.js'];
     GoogleAnalytics.injections = [hit, noopFunc, noopNull, noopArray];
 
     /* eslint-disable no-underscore-dangle */
@@ -5357,56 +5380,6 @@
     }
     GoogleSyndicationAdsByGoogle.names = ['googlesyndication-adsbygoogle', 'ubo-googlesyndication_adsbygoogle.js', 'googlesyndication_adsbygoogle.js'];
     GoogleSyndicationAdsByGoogle.injections = [hit];
-
-    /**
-     * @redirect googletagmanager-gtm
-     *
-     * @description
-     * Mocks Google Tag Manager API.
-     *
-     * Related UBO redirect resource:
-     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagmanager_gtm.js
-     *
-     * **Example**
-     * ```
-     * ||googletagmanager.com/gtm.js$script,redirect=googletagmanager-gtm
-     * ```
-     */
-
-    function GoogleTagManagerGtm(source) {
-      window.ga = window.ga || noopFunc;
-      var _window = window,
-          dataLayer = _window.dataLayer,
-          google_optimize = _window.google_optimize; // eslint-disable-line camelcase
-
-      if (dataLayer instanceof Object === false) {
-        return;
-      }
-
-      if (dataLayer.hide instanceof Object && typeof dataLayer.hide.end === 'function') {
-        dataLayer.hide.end();
-      }
-
-      if (typeof dataLayer.push === 'function') {
-        dataLayer.push = function (data) {
-          if (data instanceof Object && typeof data.eventCallback === 'function') {
-            setTimeout(data.eventCallback, 1);
-          }
-        };
-      } // https://github.com/AdguardTeam/Scriptlets/issues/81
-
-
-      if (google_optimize instanceof Object && typeof google_optimize.get === 'function') {
-        // eslint-disable-line camelcase
-        var googleOptimizeWrapper = {};
-        googleOptimizeWrapper.get = noopFunc;
-        window.google_optimize = googleOptimizeWrapper;
-      }
-
-      hit(source);
-    }
-    GoogleTagManagerGtm.names = ['googletagmanager-gtm', 'ubo-googletagmanager_gtm.js', 'googletagmanager_gtm.js'];
-    GoogleTagManagerGtm.injections = [hit, noopFunc];
 
     /**
      * @redirect googletagservices-gpt
@@ -5842,7 +5815,6 @@
         GoogleAnalytics: GoogleAnalytics,
         GoogleAnalyticsGa: GoogleAnalyticsGa,
         GoogleSyndicationAdsByGoogle: GoogleSyndicationAdsByGoogle,
-        GoogleTagManagerGtm: GoogleTagManagerGtm,
         GoogleTagServicesGpt: GoogleTagServicesGpt,
         ScoreCardResearchBeacon: ScoreCardResearchBeacon,
         metrikaYandexTag: metrikaYandexTag,

@@ -2,7 +2,6 @@ export * from './noeval';
 export * from './google-analytics';
 export * from './google-analytics-ga';
 export * from './googlesyndication-adsbygoogle';
-export * from './googletagmanager-gtm';
 export * from './googletagservices-gpt';
 export * from './scorecardresearch-beacon';
 export * from './metrika-yandex-tag';

@@ -1,23 +1,16 @@
 /* eslint-disable no-console, camelcase */
 const fs = require('fs');
-const path = require('path');
 const axios = require('axios');
+const {
+    REMOVED_MARKER,
+    COMPATIBILITY_TABLE_DATA_PATH,
+} = require('./constants');
 
 /* ************************************************************************
  *
  * Common
  *
  ************************************************************************** */
-
-/**
- * Rules which were removed from the list should be marked with it
- */
-const REMOVED_RULE_MARKER = '(removed)';
-
-/**
- * Path to compatibility data source json
- */
-const COMPATIBILITY_TABLE_DATA = path.resolve(__dirname, './compatibility-table.json');
 
 /**
  * Checks if arrays contain the same strings
@@ -39,7 +32,7 @@ const areArraysOfStringsEqual = (arr1, arr2) => {
  * Returns parsed compatibility table
  */
 const getCompatibilityTable = () => {
-    const rawData = fs.readFileSync(COMPATIBILITY_TABLE_DATA);
+    const rawData = fs.readFileSync(COMPATIBILITY_TABLE_DATA_PATH);
     const parsed = JSON.parse(rawData);
     return parsed;
 };
@@ -75,7 +68,7 @@ const getDiff = (oldList, newList) => {
 
     diff.removed = oldList.filter((item) => (
         !newList.includes(item)
-        && item.indexOf(REMOVED_RULE_MARKER) === -1
+        && item.indexOf(REMOVED_MARKER) === -1
     ));
     diff.added = newList.filter((item) => !oldList.includes(item));
 
@@ -98,7 +91,7 @@ function markTableWithDiff(diff, ruleType, platform) {
         if (removed.includes(rule)) {
             return {
                 ...item,
-                [platform]: `${rule} ${REMOVED_RULE_MARKER}`,
+                [platform]: `${rule} ${REMOVED_MARKER}`,
             };
         }
         return item;
@@ -113,7 +106,7 @@ function markTableWithDiff(diff, ruleType, platform) {
 
     table = JSON.stringify(table, null, 4);
 
-    fs.writeFileSync(COMPATIBILITY_TABLE_DATA, table);
+    fs.writeFileSync(COMPATIBILITY_TABLE_DATA_PATH, table);
 }
 
 /* ************************************************************************

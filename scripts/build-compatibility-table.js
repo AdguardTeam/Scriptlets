@@ -1,22 +1,16 @@
 const fs = require('fs');
-const path = require('path');
 const os = require('os');
-
-/**
- * Source file for compatibility tables
- */
-const COMPATIBILITY_TABLE_DATA = path.resolve(__dirname, './compatibility-table.json');
-
-/**
- * File with compatibility tables
- */
-const COMPATIBILITY_TABLE = path.resolve(__dirname, '../wiki/compatibility-table.md');
+const {
+    REMOVED_MARKER,
+    COMPATIBILITY_TABLE_DATA_PATH,
+    WIKI_COMPATIBILITY_TABLE_PATH,
+} = require('./constants');
 
 /**
  * Returns data for compatibility tables
  */
 function getTableData() {
-    const rawData = fs.readFileSync(COMPATIBILITY_TABLE_DATA);
+    const rawData = fs.readFileSync(COMPATIBILITY_TABLE_DATA_PATH);
     const parsed = JSON.parse(rawData);
     return parsed;
 }
@@ -32,7 +26,9 @@ function getTableData() {
 const getRow = (id, item) => {
     let adgCell = '';
     if (item.adg) {
-        adgCell = `[${item.adg}](../wiki/about-${id}.md#${item.adg})`;
+        adgCell = item.adg.includes(REMOVED_MARKER)
+            ? item.adg
+            : `[${item.adg}](../wiki/about-${id}.md#${item.adg})`;
     }
 
     return `| ${adgCell} | ${item.ubo || ''} | ${item.abp || ''} |${os.EOL}`;
@@ -72,7 +68,7 @@ function buildTable(title, data = [], id = '') {
  */
 function saveTables(...args) {
     const res = args.join(`${os.EOL}${os.EOL}`);
-    fs.writeFileSync(COMPATIBILITY_TABLE, res);
+    fs.writeFileSync(WIKI_COMPATIBILITY_TABLE_PATH, res);
 }
 
 /**

@@ -15,6 +15,16 @@ const mockGoogleDataLayer = (endCallback) => {
                 endCallback();
             },
         },
+        push() {},
+    };
+
+    return window.dataLayer;
+};
+
+const mockGoogleTagManagerApi = (endCallback) => {
+    mockGoogleDataLayer(endCallback);
+    window.google_optimize = {
+        get: () => { return true; },
     };
 
     return window.dataLayer;
@@ -36,6 +46,24 @@ test('Checking if alias name works', (assert) => {
     const codeByUboParams = window.scriptlets.redirects.getCode(uboParams);
 
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
+});
+
+test('Check whether googletagmanager-gtm works as alias', (assert) => {
+    const analyticsParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const tagmanagerParams = {
+        name: 'googletagmanager-gtm',
+        engine: 'test',
+        verbose: true,
+    };
+
+    const codeByAnalyticsParams = window.scriptlets.redirects.getCode(analyticsParams);
+    const codeByTagmanagerParams = window.scriptlets.redirects.getCode(tagmanagerParams);
+
+    assert.strictEqual(codeByAnalyticsParams, codeByTagmanagerParams, 'googletagmanager-gtm - ok');
 });
 
 test('Check ga api', (assert) => {
@@ -92,4 +120,38 @@ test('Function as lastArg', (assert) => {
         clearGlobalProps('__debug', 'hit', 'ga');
         done();
     }, 20);
+});
+
+test('Test google tag manager mocking', (assert) => {
+    const params = {
+        name,
+        verbose: true,
+    };
+    window.__debug = () => { window.hit = 'FIRED'; };
+
+    assert.expect(4);
+
+    const endCallback = () => {
+        assert.ok(true, 'hide.end() was executed');
+    };
+    // emulate API
+    const dataLayer = mockGoogleTagManagerApi(endCallback);
+
+    // run scriptlet
+    const resString = window.scriptlets.redirects.getCode(params);
+    evalWrapper(resString);
+
+    const done = assert.async();
+    dataLayer.push({
+        eventCallback() {
+            assert.ok(true, 'Event callback was executed');
+            done();
+        },
+    });
+
+    assert.strictEqual(window.google_optimize.get(), undefined, 'google_optimize.get has been mocked');
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
+
+    clearGlobalProps('__debug', 'hit');
 });

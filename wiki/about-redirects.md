@@ -17,7 +17,6 @@
 * [google-analytics-ga](#google-analytics-ga)
 * [google-analytics](#google-analytics)
 * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
-* [googletagmanager-gtm](#googletagmanager-gtm)
 * [googletagservices-gpt](#googletagservices-gpt)
 * [metrika-yandex-tag](#metrika-yandex-tag)
 * [metrika-yandex-watch](#metrika-yandex-watch)
@@ -177,14 +176,16 @@ https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/
 
 ### <a id="google-analytics"></a> ⚡️ google-analytics
 
-Mocks Google Analytics API.
+Mocks Google's Analytics and Tag Manager APIs.
+[Covers obsolete googletagmanager-gtm redirect functionality](https://github.com/AdguardTeam/Scriptlets/issues/127).
 
 Related UBO redirect resource:
-https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_analytics.js
+https://github.com/gorhill/uBlock/blob/8cd2a1d263a96421487b39040c1d23eb01169484/src/web_accessible_resources/google-analytics_analytics.js
 
 **Example**
 ```
 ||google-analytics.com/analytics.js$script,redirect=google-analytics
+||googletagmanager.com/gtm.js$script,redirect=googletagmanager-gtm
 ```
 [Redirect source](../src/redirects/google-analytics.js)
 * * *
@@ -201,20 +202,6 @@ https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/
 ||pagead2.googlesyndication.com/pagead/js/adsbygoogle.js$script,redirect=googlesyndication-adsbygoogle
 ```
 [Redirect source](../src/redirects/googlesyndication-adsbygoogle.js)
-* * *
-
-### <a id="googletagmanager-gtm"></a> ⚡️ googletagmanager-gtm
-
-Mocks Google Tag Manager API.
-
-Related UBO redirect resource:
-https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagmanager_gtm.js
-
-**Example**
-```
-||googletagmanager.com/gtm.js$script,redirect=googletagmanager-gtm
-```
-[Redirect source](../src/redirects/googletagmanager-gtm.js)
 * * *
 
 ### <a id="googletagservices-gpt"></a> ⚡️ googletagservices-gpt
