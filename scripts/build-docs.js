@@ -130,7 +130,7 @@ const generateMD = (data) => {
         const typeOfSrc = el.type === 'scriptlet' ? 'Scriptlet' : 'Redirect';
 
         const body = `### <a id="${el.name}"></a> ⚡️ ${el.name}
-${el.description}
+${el.description}\n
 [${typeOfSrc} source](${el.source})
 * * *\n\n`;
         acc.body.push(body);

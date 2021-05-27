@@ -94,6 +94,7 @@ not just `addEventListener`.
     ```html
     <script>alert("Hi, little world");</script>
     ```
+
 [Scriptlet source](../src/scriptlets/abort-current-inline-script.js)
 * * *
 
@@ -126,6 +127,7 @@ example.org#%#//scriptlet('abort-on-property-read', 'navigator.language')
 ! Aborts script when it tries to access `window.adblock` and it's error stack trace contains `test.js`
 example.org#%#//scriptlet('abort-on-property-read', 'adblock', 'test.js')
 ```
+
 [Scriptlet source](../src/scriptlets/abort-on-property-read.js)
 * * *
 
@@ -155,6 +157,7 @@ example.org#%#//scriptlet('abort-on-property-write', 'adblock')
 ! Aborts script when it tries to set `window.adblock` value and it's error stack trace contains `checking.js`
 example.org#%#//scriptlet('abort-on-property-write', 'adblock', 'checking.js')
 ```
+
 [Scriptlet source](../src/scriptlets/abort-on-property-write.js)
 * * *
 
@@ -202,6 +205,7 @@ example.org#%#//scriptlet('adjust-setInterval'[, match [, interval[, boost]]])
     ```
     example.org#%#//scriptlet('adjust-setInterval', '', '*', '0.02')
     ```
+
 [Scriptlet source](../src/scriptlets/adjust-setInterval.js)
 * * *
 
@@ -249,6 +253,7 @@ example.org#%#//scriptlet('adjust-setTimeout'[, match [, timeout[, boost]]])
     ```
     example.org#%#//scriptlet('adjust-setTimeout', 'test', '*')
     ```
+
 [Scriptlet source](../src/scriptlets/adjust-setTimeout.js)
 * * *
 
@@ -263,6 +268,7 @@ This scriptlet is basically the same as [abort-current-inline-script](#abort-cur
 ! Aborts script when it tries to access `window.alert`
 example.org#%#//scriptlet('debug-current-inline-script', 'alert')
 ```
+
 [Scriptlet source](../src/scriptlets/debug-current-inline-script.js)
 * * *
 
@@ -279,6 +285,7 @@ example.org#%#//scriptlet('debug-on-property-read', 'alert')
 ! of `window.open`
 example.org#%#//scriptlet('debug-on-property-read', 'open')
 ```
+
 [Scriptlet source](../src/scriptlets/debug-on-property-read.js)
 * * *
 
@@ -293,6 +300,7 @@ This scriptlet is basically the same as [abort-on-property-write](#abort-on-prop
 ! Aborts script when it tries to write in property `window.test`
 example.org#%#//scriptlet('debug-on-property-write', 'test')
 ```
+
 [Scriptlet source](../src/scriptlets/debug-on-property-write.js)
 * * *
 
@@ -318,6 +326,7 @@ example.org#%#//scriptlet('dir-string'[, times])
 ! Run 2 times
 example.org#%#//scriptlet('dir-string', '2')
 ```
+
 [Scriptlet source](../src/scriptlets/dir-string.js)
 * * *
 
@@ -332,6 +341,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#disable-newtab-linksjs-
 ```
 example.org#%#//scriptlet('disable-newtab-links')
 ```
+
 [Scriptlet source](../src/scriptlets/disable-newtab-links.js)
 * * *
 
@@ -359,6 +369,7 @@ virustotal.com#%#//scriptlet('hide-in-shadow-dom', 'iron-pages', 'vt-virustotal-
 ! hides floating element
 virustotal.com#%#//scriptlet('hide-in-shadow-dom', 'vt-ui-contact-fab')
 ```
+
 [Scriptlet source](../src/scriptlets/hide-in-shadow-dom.js)
 * * *
 
@@ -428,6 +439,7 @@ e.g. 'ad.*.src' instead of 'ad.0.src ad.1.src ad.2.src ...'
     ```
     example.org#%#//scriptlet('json-prune')
     ```
+
 [Scriptlet source](../src/scriptlets/json-prune.js)
 * * *
 
@@ -442,6 +454,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-logger
 ```
 example.org#%#//scriptlet('log-addEventListener')
 ```
+
 [Scriptlet source](../src/scriptlets/log-addEventListener.js)
 * * *
 
@@ -453,6 +466,7 @@ Logs all `eval()` or `new Function()` calls to the console.
 ```
 example.org#%#//scriptlet('log-eval')
 ```
+
 [Scriptlet source](../src/scriptlets/log-eval.js)
 * * *
 
@@ -465,6 +479,7 @@ This scriptlet can be helpful for debugging and troubleshooting other scriptlets
 ```
 example.org#%#//scriptlet('log', 'arg1', 'arg2')
 ```
+
 [Scriptlet source](../src/scriptlets/log.js)
 * * *
 
@@ -479,6 +494,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#no-flocjs-
 ```
 example.org#%#//scriptlet('no-floc')
 ```
+
 [Scriptlet source](../src/scriptlets/no-floc.js)
 * * *
 
@@ -497,6 +513,7 @@ See [redirect description](../wiki/about-redirects.md#noeval).
 ```
 example.org#%#//scriptlet('noeval')
 ```
+
 [Scriptlet source](../src/scriptlets/noeval.js)
 * * *
 
@@ -511,6 +528,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-
 ```
 example.org#%#//scriptlet('nowebrtc')
 ```
+
 [Scriptlet source](../src/scriptlets/nowebrtc.js)
 * * *
 
@@ -546,6 +564,7 @@ example.org#%#//scriptlet('prevent-addEventListener'[, eventSearch[, functionSea
         window.test = 'searchString';
     });
 ```
+
 [Scriptlet source](../src/scriptlets/prevent-addEventListener.js)
 * * *
 
@@ -560,6 +579,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#adfly-defuserjs-
 ```
 example.org#%#//scriptlet('prevent-adfly')
 ```
+
 [Scriptlet source](../src/scriptlets/prevent-adfly.js)
 * * *
 
@@ -574,6 +594,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#bab-defuserjs-
 ```
 example.org#%#//scriptlet('prevent-bab')
 ```
+
 [Scriptlet source](../src/scriptlets/prevent-bab.js)
 * * *
 
@@ -597,6 +618,7 @@ If 'search is not specified — all stringified eval payload will be matched
 ! Prevents eval if it matches 'test'
 example.org#%#//scriptlet('prevent-eval-if', 'test')
 ```
+
 [Scriptlet source](../src/scriptlets/prevent-eval-if.js)
 * * *
 
@@ -611,6 +633,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#fuckadblockjs-320-
 ```
 example.org#%#//scriptlet('prevent-fab-3.2.0')
 ```
+
 [Scriptlet source](../src/scriptlets/prevent-fab-3.2.0.js)
 * * *
 
@@ -655,6 +678,7 @@ which is usefull for debugging but permitted for production filter lists.
     ```
     example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/')
     ```
+
 [Scriptlet source](../src/scriptlets/prevent-fetch.js)
 * * *
 
@@ -669,6 +693,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#popadsnetjs-
 ```
 example.org#%#//scriptlet('prevent-popads-net')
 ```
+
 [Scriptlet source](../src/scriptlets/prevent-popads-net.js)
 * * *
 
@@ -736,6 +761,7 @@ So do not use the scriptlet without any parameter in production filter lists.
         }
     });
     ```
+
 [Scriptlet source](../src/scriptlets/prevent-requestAnimationFrame.js)
 * * *
 
@@ -836,6 +862,7 @@ it means that no callback was passed to setInterval() and that's not scriptlet i
         window.value = "test -- executed";
     }, 500);
     ```
+
 [Scriptlet source](../src/scriptlets/prevent-setInterval.js)
 * * *
 
@@ -936,6 +963,7 @@ it means that no callback was passed to setTimeout() and that's not scriptlet is
         window.value = "test -- executed";
     }, 500);
     ```
+
 [Scriptlet source](../src/scriptlets/prevent-setTimeout.js)
 * * *
 
@@ -948,14 +976,21 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#windowopen-defuserjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet('prevent-window-open'[, match[, search[, replacement]]])
+example.org#%#//scriptlet('prevent-window-open'[, match[, delay[, replacement]]])
 ```
 
-- `match` - optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
-- `search` - optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
-- `replacement` - optional, string to return prop value or property instead of window.open; defaults to return noopFunc
+- `match` - optional, string or regular expression. If not set, all window.open calls will be matched.
+If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
+If do not start with `!`, the stringified callback will be matched.
+- `delay` - optional, number of seconds. If not set, scriptlet will return `null`,
+otherwise valid sham window object as injected `iframe` will be returned
+for accessing it's methods (blur(), focus() etc.) and will be removed after the delay.
+- `replacement` - optional, string; one of the predefined constants:
+    - `obj` - for returning an object instead of default iframe;
+       for cases when the page requires a valid `window` instance to be returned
+    - `log` - for logging window.open calls; permitted for production filter lists.
 
-**Example**
+**Examples**
 1. Prevent all `window.open` calls:
 ```
     example.org#%#//scriptlet('prevent-window-open')
@@ -963,28 +998,33 @@ example.org#%#//scriptlet('prevent-window-open'[, match[, search[, replacement]]
 
 2. Prevent `window.open` for all URLs containing `example`:
 ```
-    example.org#%#//scriptlet('prevent-window-open', '1', 'example')
+    example.org#%#//scriptlet('prevent-window-open', 'example')
 ```
 
 3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
 ```
-    example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
+    example.org#%#//scriptlet('prevent-window-open', '/example\./')
 ```
 
 4. Prevent `window.open` for all URLs **NOT** containing `example`:
 ```
+    example.org#%#//scriptlet('prevent-window-open', '!example')
+```
+
+Old syntax of prevent-window-open parameters:
+- `match` - optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
+- `search` - optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
+- `replacement` - optional, string to return prop value or property instead of window.open; defaults to return noopFunc.
+**Examples**
+```
+    example.org#%#//scriptlet('prevent-window-open', '1', '/example\./'
     example.org#%#//scriptlet('prevent-window-open', '0', 'example')
-```
-5. Prevent all `window.open` calls and return 'trueFunc' instead of it if website checks it:
-```
     example.org#%#//scriptlet('prevent-window-open', '', '', 'trueFunc')
-```
-6. Prevent all `window.open` and returns callback
-which returns object with property 'propName'=noopFunc
-as a property of window.open if website checks it:
-```
     example.org#%#//scriptlet('prevent-window-open', '1', '', '{propName=noopFunc}')
 ```
+
+> For better compatibility with uBO, old syntax is not recommended to use.
+
 [Scriptlet source](../src/scriptlets/prevent-window-open.js)
 * * *
 
@@ -1034,6 +1074,7 @@ example.org#%#//scriptlet('remove-attr', attrs[, selector])
         <div class="inner">Some text</div>
     </div>
     ```
+
 [Scriptlet source](../src/scriptlets/remove-attr.js)
 * * *
 
@@ -1088,6 +1129,7 @@ If there is no `selector`, each class of `classes` independently will be removed
         <div class="inner bad">Some text</div>
     </div>
     ```
+
 [Scriptlet source](../src/scriptlets/remove-class.js)
 * * *
 
@@ -1120,6 +1162,7 @@ example.org#%#//scriptlet('remove-cookie'[, match])
     ```javascript
     document.cookie = '__example=randomValue';
     ```
+
 [Scriptlet source](../src/scriptlets/remove-cookie.js)
 * * *
 
@@ -1147,6 +1190,7 @@ virustotal.com#%#//scriptlet('remove-in-shadow-dom', 'iron-pages', 'vt-virustota
 ! removes floating element
 virustotal.com#%#//scriptlet('remove-in-shadow-dom', 'vt-ui-contact-fab')
 ```
+
 [Scriptlet source](../src/scriptlets/remove-in-shadow-dom.js)
 * * *
 
@@ -1195,6 +1239,7 @@ example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc')
 ! document.third() === falseFunc  // 'third' call will return false if the method is related to checking.js
 example.org#%#//scriptlet('set-constant', 'secondConst', 'trueFunc', 'checking.js')
 ```
+
 [Scriptlet source](../src/scriptlets/set-constant.js)
 * * *
 
@@ -1224,6 +1269,7 @@ example.org#%#//scriptlet('set-cookie-reload', 'checking', 'ok')
 
 example.org#%#//scriptlet('set-cookie-reload', 'gdpr-settings-cookie', '1')
 ```
+
 [Scriptlet source](../src/scriptlets/set-cookie-reload.js)
 * * *
 
@@ -1252,6 +1298,7 @@ example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1'
 
 example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', 'true')
 ```
+
 [Scriptlet source](../src/scriptlets/set-cookie.js)
 * * *
 
@@ -1266,6 +1313,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#popads-dummyjs-
 ```
 example.org#%#//scriptlet('set-popads-dummy')
 ```
+
 [Scriptlet source](../src/scriptlets/set-popads-dummy.js)
 * * *
 

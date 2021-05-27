@@ -157,6 +157,7 @@ https://github.com/gorhill/uBlock/blob/f842ab6d3c1cf0394f95d27092bf59627262da40/
 ```
 ||amazon-adsystem.com/aax2/apstag.js$script,redirect=amazon-apstag
 ```
+
 [Redirect source](../src/redirects/amazon-apstag.js)
 * * *
 
@@ -171,6 +172,7 @@ https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/
 ```
 ||google-analytics.com/ga.js$script,redirect=google-analytics-ga
 ```
+
 [Redirect source](../src/redirects/google-analytics-ga.js)
 * * *
 
@@ -187,6 +189,7 @@ https://github.com/gorhill/uBlock/blob/8cd2a1d263a96421487b39040c1d23eb01169484/
 ||google-analytics.com/analytics.js$script,redirect=google-analytics
 ||googletagmanager.com/gtm.js$script,redirect=googletagmanager-gtm
 ```
+
 [Redirect source](../src/redirects/google-analytics.js)
 * * *
 
@@ -201,6 +204,7 @@ https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/
 ```
 ||pagead2.googlesyndication.com/pagead/js/adsbygoogle.js$script,redirect=googlesyndication-adsbygoogle
 ```
+
 [Redirect source](../src/redirects/googlesyndication-adsbygoogle.js)
 * * *
 
@@ -215,6 +219,7 @@ https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/
 ```
 ||googletagservices.com/tag/js/gpt.js$script,redirect=googletagservices-gpt
 ```
+
 [Redirect source](../src/redirects/googletagservices-gpt.js)
 * * *
 
@@ -227,6 +232,7 @@ https://yandex.ru/support/metrica/objects/method-reference.html
 ```
 ||mc.yandex.ru/metrika/tag.js$script,redirect=metrika-yandex-tag
 ```
+
 [Redirect source](../src/redirects/metrika-yandex-tag.js)
 * * *
 
@@ -239,6 +245,7 @@ https://yandex.ru/support/metrica/objects/_method-reference.html
 ```
 ||mc.yandex.ru/metrika/watch.js$script,redirect=metrika-yandex-watch
 ```
+
 [Redirect source](../src/redirects/metrika-yandex-watch.js)
 * * *
 
@@ -259,6 +266,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-silentjs-
 ```
 ||example.org/index.js$script,redirect=noeval
 ```
+
 [Redirect source](../src/redirects/noeval.js)
 * * *
 
@@ -270,6 +278,7 @@ Redirects fuckadblock script to the source js file.
 ```
 \*\/fuckadblock-$script,redirect=prevent-fab-3.2.0
 ```
+
 [Redirect source](../src/redirects/prevent-fab-3.2.0.js)
 * * *
 
@@ -281,6 +290,7 @@ Redirects request to the source which sets static properties to PopAds and popns
 ```
 ||popads.net/pop.js$script,redirect=prevent-popads-net
 ```
+
 [Redirect source](../src/redirects/prevent-popads-net.js)
 * * *
 
@@ -295,6 +305,7 @@ https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/
 ```
 ||sb.scorecardresearch.com/beacon.js$script,redirect=scorecardresearch-beacon
 ```
+
 [Redirect source](../src/redirects/scorecardresearch-beacon.js)
 * * *
 
@@ -306,6 +317,7 @@ Redirects request to the source which sets static properties to PopAds and popns
 ```
 ||popads.net^$script,redirect=set-popads-dummy,domain=example.org
 ```
+
 [Redirect source](../src/redirects/set-popads-dummy.js)
 * * *
 

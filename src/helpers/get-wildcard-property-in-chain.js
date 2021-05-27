@@ -1,3 +1,5 @@
+import { getWildcardSymbol } from './constants';
+
 /**
  * @typedef Chain
  * @property {Object} base
@@ -21,7 +23,7 @@ export function getWildcardPropertyInChain(base, chain, lookThrough = false, out
     const pos = chain.indexOf('.');
     if (pos === -1) {
         // for paths like 'a.b.*' every final nested prop should be processed
-        if (chain === '*' || chain === '[]') {
+        if (chain === getWildcardSymbol() || chain === '[]') {
             // eslint-disable-next-line no-restricted-syntax
             for (const key in base) {
                 // to process each key in base except inherited ones
@@ -39,7 +41,7 @@ export function getWildcardPropertyInChain(base, chain, lookThrough = false, out
     const prop = chain.slice(0, pos);
 
     const shouldLookThrough = (prop === '[]' && Array.isArray(base))
-        || (prop === '*' && base instanceof Object);
+        || (prop === getWildcardSymbol() && base instanceof Object);
 
     if (shouldLookThrough) {
         const nextProp = chain.slice(pos + 1);

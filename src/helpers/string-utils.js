@@ -1,3 +1,5 @@
+import { nativeIsNaN } from './number-utils';
+
 /**
  * Escapes special chars in string
  * @param {string} str
@@ -126,4 +128,46 @@ export const convertRtcConfigToString = (config) => {
         }
     }
     return str;
+};
+
+/**
+ * @typedef {Object} MatchData
+ * @property {boolean} isInvertedMatch
+ * @property {RegExp} matchRegexp
+ */
+
+/**
+ * Parses match arg with possible negation for no matching.
+ * Needed for prevent-setTimeout, prevent-setInterval,
+ * prevent-requestAnimationFrame and prevent-window-open
+ * @param {string} match
+ * @returns {MatchData}
+ */
+export const parseMatchArg = (match) => {
+    const INVERT_MARKER = '!';
+    const isInvertedMatch = startsWith(match, INVERT_MARKER);
+    const matchValue = isInvertedMatch ? match.slice(1) : match;
+    const matchRegexp = toRegExp(matchValue);
+    return { isInvertedMatch, matchRegexp };
+};
+
+/**
+ * @typedef {Object} DelayData
+ * @property {boolean} isInvertedDelayMatch
+ * @property {number|null} delayMatch
+ */
+
+/**
+ * Parses delay arg with possible negation for no matching.
+ * Needed for prevent-setTimeout and prevent-setInterval
+ * @param {string} delay
+ * @returns {DelayData}
+ */
+export const parseDelayArg = (delay) => {
+    const INVERT_MARKER = '!';
+    const isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
+    let delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
+    delayValue = parseInt(delayValue, 10);
+    const delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
+    return { isInvertedDelayMatch, delayMatch };
 };

@@ -1,8 +1,16 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.18
+ * Version 1.3.19
  */
+
+/**
+ * Returns wildcard symbol
+ * @returns {string} '*'
+ */
+var getWildcardSymbol = function getWildcardSymbol() {
+  return '*';
+};
 
 /**
  * Generate random six symbols id
@@ -94,6 +102,7 @@ function getPropertyInChain(base, chain) {
  * @param {Array} [output=[]] result acc
  * @returns {Chain[]} array of objects
  */
+
 function getWildcardPropertyInChain(base, chain) {
   var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
   var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
@@ -101,7 +110,7 @@ function getWildcardPropertyInChain(base, chain) {
 
   if (pos === -1) {
     // for paths like 'a.b.*' every final nested prop should be processed
-    if (chain === '*' || chain === '[]') {
+    if (chain === getWildcardSymbol() || chain === '[]') {
       // eslint-disable-next-line no-restricted-syntax
       for (var key in base) {
         // to process each key in base except inherited ones
@@ -123,7 +132,7 @@ function getWildcardPropertyInChain(base, chain) {
   }
 
   var prop = chain.slice(0, pos);
-  var shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === '*' && base instanceof Object;
+  var shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === getWildcardSymbol() && base instanceof Object;
 
   if (shouldLookThrough) {
     var nextProp = chain.slice(pos + 1);
@@ -147,10 +156,35 @@ function getWildcardPropertyInChain(base, chain) {
 }
 
 /**
+ * Determines whether the passed value is NaN
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isNaN
+ * @param {*} num
+ * @returns {boolean}
+ */
+var nativeIsNaN = function nativeIsNaN(num) {
+  var native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
+
+  return native(num);
+};
+/**
+ * Determines whether the passed value is a finite number
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isFinite
+ * @param {*} num
+ * @returns {boolean}
+ */
+
+var nativeIsFinite = function nativeIsFinite(num) {
+  var native = Number.isFinite || window.isFinite; // eslint-disable-line compat/compat
+
+  return native(num);
+};
+
+/**
  * Escapes special chars in string
  * @param {string} str
  * @returns {string}
  */
+
 var escapeRegExp = function escapeRegExp(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 };
@@ -277,6 +311,54 @@ var convertRtcConfigToString = function convertRtcConfigToString(config) {
   }
 
   return str;
+};
+/**
+ * @typedef {Object} MatchData
+ * @property {boolean} isInvertedMatch
+ * @property {RegExp} matchRegexp
+ */
+
+/**
+ * Parses match arg with possible negation for no matching.
+ * Needed for prevent-setTimeout, prevent-setInterval,
+ * prevent-requestAnimationFrame and prevent-window-open
+ * @param {string} match
+ * @returns {MatchData}
+ */
+
+var parseMatchArg = function parseMatchArg(match) {
+  var INVERT_MARKER = '!';
+  var isInvertedMatch = startsWith(match, INVERT_MARKER);
+  var matchValue = isInvertedMatch ? match.slice(1) : match;
+  var matchRegexp = toRegExp(matchValue);
+  return {
+    isInvertedMatch: isInvertedMatch,
+    matchRegexp: matchRegexp
+  };
+};
+/**
+ * @typedef {Object} DelayData
+ * @property {boolean} isInvertedDelayMatch
+ * @property {number|null} delayMatch
+ */
+
+/**
+ * Parses delay arg with possible negation for no matching.
+ * Needed for prevent-setTimeout and prevent-setInterval
+ * @param {string} delay
+ * @returns {DelayData}
+ */
+
+var parseDelayArg = function parseDelayArg(delay) {
+  var INVERT_MARKER = '!';
+  var isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
+  var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
+  delayValue = parseInt(delayValue, 10);
+  var delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
+  return {
+    isInvertedDelayMatch: isInvertedDelayMatch,
+    delayMatch: delayMatch
+  };
 };
 
 /**
@@ -653,30 +735,6 @@ var pierceShadowDom = function pierceShadowDom(selector, hostElements) {
 };
 
 /**
- * Determines whether the passed value is NaN
- * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isNaN
- * @param {*} num
- * @returns {boolean}
- */
-var nativeIsNaN = function nativeIsNaN(num) {
-  var native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
-
-  return native(num);
-};
-/**
- * Determines whether the passed value is a finite number
- * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isFinite
- * @param {*} num
- * @returns {boolean}
- */
-
-var nativeIsFinite = function nativeIsFinite(num) {
-  var native = Number.isFinite || window.isFinite; // eslint-disable-line compat/compat
-
-  return native(num);
-};
-
-/**
  * Prepares cookie string if given parameters are ok
  * @param {string} name cookie name to set
  * @param {string} value cookie value to set
@@ -730,8 +788,7 @@ var prepareCookie = function prepareCookie(name, value) {
 };
 
 var shouldMatchAnyDelay = function shouldMatchAnyDelay(delay) {
-  var ANY_DELAY_WILDCARD = '*';
-  return delay === ANY_DELAY_WILDCARD;
+  return delay === getWildcardSymbol();
 };
 /**
  * Handles input delay value
@@ -905,12 +962,87 @@ var convertMatchPropsToObj = function convertMatchPropsToObj(propsToMatchStr) {
   return propsObj;
 };
 
+var handleOldReplacement = function handleOldReplacement(replacement) {
+  var result; // defaults to return noopFunc instead of window.open
+
+  if (!replacement) {
+    result = noopFunc;
+  } else if (replacement === 'trueFunc') {
+    result = trueFunc;
+  } else if (replacement.indexOf('=') > -1) {
+    // We should return noopFunc instead of window.open
+    // but with some property if website checks it (examples 5, 6)
+    // https://github.com/AdguardTeam/Scriptlets/issues/71
+    var isProp = startsWith(replacement, '{') && endsWith(replacement, '}');
+
+    if (isProp) {
+      var propertyPart = replacement.slice(1, -1);
+      var propertyName = substringBefore(propertyPart, '=');
+      var propertyValue = substringAfter(propertyPart, '=');
+
+      if (propertyValue === 'noopFunc') {
+        result = {};
+        result[propertyName] = noopFunc;
+      }
+    }
+  }
+
+  return result;
+};
+var createDecoy = function createDecoy(args) {
+  var OBJECT_TAG_NAME = 'object';
+  var OBJECT_URL_PROP_NAME = 'data';
+  var IFRAME_TAG_NAME = 'iframe';
+  var IFRAME_URL_PROP_NAME = 'src';
+  var replacement = args.replacement,
+      url = args.url,
+      delay = args.delay;
+  var tag;
+  var urlProp;
+
+  if (replacement === 'obj') {
+    tag = OBJECT_TAG_NAME;
+    urlProp = OBJECT_URL_PROP_NAME;
+  } else {
+    tag = IFRAME_TAG_NAME;
+    urlProp = IFRAME_URL_PROP_NAME;
+  }
+
+  var decoy = document.createElement(tag);
+  decoy[urlProp] = url;
+  decoy.style.setProperty('height', '1px', 'important');
+  decoy.style.setProperty('position', 'fixed', 'important');
+  decoy.style.setProperty('top', '-1px', 'important');
+  decoy.style.setProperty('width', '1px', 'important');
+  document.body.appendChild(decoy);
+  setTimeout(function () {
+    return decoy.remove();
+  }, delay * 1000);
+  return decoy;
+};
+var getPreventGetter = function getPreventGetter(nativeGetter) {
+  var preventGetter = function preventGetter(target, prop) {
+    if (prop && prop === 'closed') {
+      return false;
+    }
+
+    if (typeof nativeGetter === 'function') {
+      return noopFunc;
+    }
+
+    return prop && target[prop];
+  };
+
+  return preventGetter;
+};
+
 /**
  * This file must export all used dependencies
  */
 
 var dependencies = /*#__PURE__*/Object.freeze({
     __proto__: null,
+    getWildcardSymbol: getWildcardSymbol,
     randomId: randomId,
     setPropertyAccess: setPropertyAccess,
     getPropertyInChain: getPropertyInChain,
@@ -925,6 +1057,8 @@ var dependencies = /*#__PURE__*/Object.freeze({
     wrapInSingleQuotes: wrapInSingleQuotes,
     getStringInBraces: getStringInBraces,
     convertRtcConfigToString: convertRtcConfigToString,
+    parseMatchArg: parseMatchArg,
+    parseDelayArg: parseDelayArg,
     createOnErrorHandler: createOnErrorHandler,
     noopFunc: noopFunc,
     noopNull: noopNull,
@@ -954,7 +1088,10 @@ var dependencies = /*#__PURE__*/Object.freeze({
     objectToString: objectToString,
     convertMatchPropsToObj: convertMatchPropsToObj,
     getObjectEntries: getObjectEntries,
-    getObjectFromEntries: getObjectFromEntries
+    getObjectFromEntries: getObjectFromEntries,
+    handleOldReplacement: handleOldReplacement,
+    createDecoy: createDecoy,
+    getPreventGetter: getPreventGetter
 });
 
 /**
@@ -1498,14 +1635,14 @@ function preventSetTimeout(source, match, delay) {
   // logs setTimeouts to console if no arguments have been specified
 
   var shouldLog = typeof match === 'undefined' && typeof delay === 'undefined';
-  var INVERT_MARKER = '!';
-  var isNotMatch = startsWith(match, INVERT_MARKER);
-  var matchValue = isNotMatch ? match.slice(1) : match;
-  var matchRegexp = toRegExp(matchValue);
-  var isNotDelay = startsWith(delay, INVERT_MARKER);
-  var delayValue = isNotDelay ? delay.slice(1) : delay;
-  delayValue = parseInt(delayValue, 10);
-  var delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
+
+  var _parseMatchArg = parseMatchArg(match),
+      isInvertedMatch = _parseMatchArg.isInvertedMatch,
+      matchRegexp = _parseMatchArg.matchRegexp;
+
+  var _parseDelayArg = parseDelayArg(delay),
+      isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
+      delayMatch = _parseDelayArg.delayMatch;
 
   var timeoutWrapper = function timeoutWrapper(callback, timeout) {
     var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
@@ -1516,11 +1653,11 @@ function preventSetTimeout(source, match, delay) {
       hit(source);
       log("setTimeout(".concat(cbString, ", ").concat(timeout, ")"));
     } else if (!delayMatch) {
-      shouldPrevent = matchRegexp.test(cbString) !== isNotMatch;
-    } else if (matchValue === '/.?/') {
-      shouldPrevent = timeout === delayMatch !== isNotDelay;
+      shouldPrevent = matchRegexp.test(cbString) !== isInvertedMatch;
+    } else if (!match) {
+      shouldPrevent = timeout === delayMatch !== isInvertedDelayMatch;
     } else {
-      shouldPrevent = matchRegexp.test(cbString) !== isNotMatch && timeout === delayMatch !== isNotDelay;
+      shouldPrevent = matchRegexp.test(cbString) !== isInvertedMatch && timeout === delayMatch !== isInvertedDelayMatch;
     }
 
     if (shouldPrevent) {
@@ -1544,7 +1681,7 @@ preventSetTimeout.names = ['prevent-setTimeout', // aliases are needed for match
 // should be removed eventually.
 // do not remove until other filter lists maintainers use them
 'setTimeout-defuser.js', 'ubo-setTimeout-defuser.js', 'ubo-setTimeout-defuser', 'std.js', 'ubo-std.js', 'ubo-std'];
-preventSetTimeout.injections = [hit, toRegExp, startsWith, noopFunc, nativeIsNaN];
+preventSetTimeout.injections = [hit, noopFunc, parseMatchArg, parseDelayArg, toRegExp, startsWith, nativeIsNaN];
 
 /* eslint-disable max-len */
 
@@ -1657,14 +1794,14 @@ function preventSetInterval(source, match, delay) {
   // logs setIntervals to console if no arguments have been specified
 
   var shouldLog = typeof match === 'undefined' && typeof delay === 'undefined';
-  var INVERT_MARKER = '!';
-  var isNotMatch = startsWith(match, INVERT_MARKER);
-  var matchValue = isNotMatch ? match.slice(1) : match;
-  var matchRegexp = toRegExp(matchValue);
-  var isNotDelay = startsWith(delay, INVERT_MARKER);
-  var delayValue = isNotDelay ? delay.slice(1) : delay;
-  delayValue = parseInt(delayValue, 10);
-  var delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
+
+  var _parseMatchArg = parseMatchArg(match),
+      isInvertedMatch = _parseMatchArg.isInvertedMatch,
+      matchRegexp = _parseMatchArg.matchRegexp;
+
+  var _parseDelayArg = parseDelayArg(delay),
+      isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
+      delayMatch = _parseDelayArg.delayMatch;
 
   var intervalWrapper = function intervalWrapper(callback, interval) {
     var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
@@ -1675,11 +1812,11 @@ function preventSetInterval(source, match, delay) {
       hit(source);
       log("setInterval(".concat(cbString, ", ").concat(interval, ")"));
     } else if (!delayMatch) {
-      shouldPrevent = matchRegexp.test(cbString) !== isNotMatch;
+      shouldPrevent = matchRegexp.test(cbString) !== isInvertedMatch;
     } else if (!match) {
-      shouldPrevent = interval === delayMatch !== isNotDelay;
+      shouldPrevent = interval === delayMatch !== isInvertedDelayMatch;
     } else {
-      shouldPrevent = matchRegexp.test(cbString) !== isNotMatch && interval === delayMatch !== isNotDelay;
+      shouldPrevent = matchRegexp.test(cbString) !== isInvertedMatch && interval === delayMatch !== isInvertedDelayMatch;
     }
 
     if (shouldPrevent) {
@@ -1702,7 +1839,7 @@ preventSetInterval.names = ['prevent-setInterval', // aliases are needed for mat
 'ubo-setInterval-defuser.js', 'nosiif.js', // new short name of no-setInterval-if
 'ubo-nosiif.js', 'sid.js', // old short scriptlet name
 'ubo-sid.js', 'ubo-no-setInterval-if', 'ubo-setInterval-defuser', 'ubo-nosiif', 'ubo-sid'];
-preventSetInterval.injections = [hit, toRegExp, startsWith, noopFunc, nativeIsNaN];
+preventSetInterval.injections = [hit, noopFunc, parseMatchArg, parseDelayArg, toRegExp, startsWith, nativeIsNaN];
 
 /* eslint-disable max-len */
 
@@ -1717,14 +1854,21 @@ preventSetInterval.injections = [hit, toRegExp, startsWith, noopFunc, nativeIsNa
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('prevent-window-open'[, match[, search[, replacement]]])
+ * example.org#%#//scriptlet('prevent-window-open'[, match[, delay[, replacement]]])
  * ```
  *
- * - `match` - optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
- * - `search` - optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
- * - `replacement` - optional, string to return prop value or property instead of window.open; defaults to return noopFunc
+ * - `match` - optional, string or regular expression. If not set, all window.open calls will be matched.
+ * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
+ * If do not start with `!`, the stringified callback will be matched.
+ * - `delay` - optional, number of seconds. If not set, scriptlet will return `null`,
+ * otherwise valid sham window object as injected `iframe` will be returned
+ * for accessing it's methods (blur(), focus() etc.) and will be removed after the delay.
+ * - `replacement` - optional, string; one of the predefined constants:
+ *     - `obj` - for returning an object instead of default iframe;
+ *        for cases when the page requires a valid `window` instance to be returned
+ *     - `log` - for logging window.open calls; permitted for production filter lists.
  *
- * **Example**
+ * **Examples**
  * 1. Prevent all `window.open` calls:
  * ```
  *     example.org#%#//scriptlet('prevent-window-open')
@@ -1732,45 +1876,50 @@ preventSetInterval.injections = [hit, toRegExp, startsWith, noopFunc, nativeIsNa
  *
  * 2. Prevent `window.open` for all URLs containing `example`:
  * ```
- *     example.org#%#//scriptlet('prevent-window-open', '1', 'example')
+ *     example.org#%#//scriptlet('prevent-window-open', 'example')
  * ```
  *
  * 3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
  * ```
- *     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
+ *     example.org#%#//scriptlet('prevent-window-open', '/example\./')
  * ```
  *
  * 4. Prevent `window.open` for all URLs **NOT** containing `example`:
  * ```
+ *     example.org#%#//scriptlet('prevent-window-open', '!example')
+ * ```
+ *
+ * Old syntax of prevent-window-open parameters:
+ * - `match` - optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
+ * - `search` - optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
+ * - `replacement` - optional, string to return prop value or property instead of window.open; defaults to return noopFunc.
+ * **Examples**
+ * ```
+ *     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./'
  *     example.org#%#//scriptlet('prevent-window-open', '0', 'example')
- * ```
- * 5. Prevent all `window.open` calls and return 'trueFunc' instead of it if website checks it:
- * ```
  *     example.org#%#//scriptlet('prevent-window-open', '', '', 'trueFunc')
- * ```
- * 6. Prevent all `window.open` and returns callback
- * which returns object with property 'propName'=noopFunc
- * as a property of window.open if website checks it:
- * ```
  *     example.org#%#//scriptlet('prevent-window-open', '1', '', '{propName=noopFunc}')
  * ```
+ *
+ * > For better compatibility with uBO, old syntax is not recommended to use.
  */
 
 /* eslint-enable max-len */
 
 function preventWindowOpen(source) {
-  var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
-  var search = arguments.length > 2 ? arguments[2] : undefined;
+  var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : getWildcardSymbol();
+  var delay = arguments.length > 2 ? arguments[2] : undefined;
   var replacement = arguments.length > 3 ? arguments[3] : undefined;
-  // Default value of 'match' is needed to prevent all `window.open` calls
-  // if the scriptlet is used without parameters
-  var nativeOpen = window.open; // unary plus converts 'match' to a number
-  // e.g.: +'1' -> 1; +false -> 0
+  // default match value is needed for preventing all window.open calls
+  // if scriptlet runs without args
+  var nativeOpen = window.open;
+  var isNewSyntax = match !== '0' && match !== '1';
 
-  match = +match > 0;
-  var searchRegexp = toRegExp(search); // eslint-disable-next-line consistent-return
+  var oldOpenWrapper = function oldOpenWrapper(str) {
+    match = Number(match) > 0; // 'delay' was 'search' prop for matching in old syntax
 
-  var openWrapper = function openWrapper(str) {
+    var searchRegexp = toRegExp(delay);
+
     if (match !== searchRegexp.test(str)) {
       for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
         args[_key - 1] = arguments[_key];
@@ -1780,41 +1929,76 @@ function preventWindowOpen(source) {
     }
 
     hit(source);
-    var result; // defaults to return noopFunc instead of window.open
-
-    if (!replacement) {
-      result = noopFunc;
-    } else if (replacement === 'trueFunc') {
-      result = trueFunc;
-    } else if (replacement.indexOf('=') > -1) {
-      // We should return noopFunc instead of window.open
-      // but with some property if website checks it (examples 5, 6)
-      // https://github.com/AdguardTeam/Scriptlets/issues/71
-      var isProp = startsWith(replacement, '{') && endsWith(replacement, '}');
-
-      if (isProp) {
-        var propertyPart = replacement.slice(1, -1);
-        var propertyName = substringBefore(propertyPart, '=');
-        var propertyValue = substringAfter(propertyPart, '=');
-
-        if (propertyValue === 'noopFunc') {
-          result = function result() {
-            var resObj = {};
-            resObj[propertyName] = noopFunc;
-            return resObj;
-          };
-        }
-      }
-    }
-
-    return result;
+    return handleOldReplacement(replacement);
   };
 
-  window.open = openWrapper;
+  var newOpenWrapper = function newOpenWrapper(url) {
+    var shouldLog = replacement && replacement.indexOf('log') > -1;
+
+    for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+      args[_key2 - 1] = arguments[_key2];
+    }
+
+    if (shouldLog) {
+      var argsStr = args && args.length > 0 ? ", ".concat(args.join(', ')) : '';
+      var logMessage = "log: window-open: ".concat(url).concat(argsStr);
+      hit(source, logMessage);
+    }
+
+    var shouldPrevent = false;
+
+    if (match === getWildcardSymbol()) {
+      shouldPrevent = true;
+    } else {
+      var _parseMatchArg = parseMatchArg(match),
+          isInvertedMatch = _parseMatchArg.isInvertedMatch,
+          matchRegexp = _parseMatchArg.matchRegexp;
+
+      shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
+    }
+
+    if (shouldPrevent) {
+      var parsedDelay = parseInt(delay, 10);
+      var result;
+
+      if (nativeIsNaN(parsedDelay)) {
+        result = noopNull();
+      } else {
+        var decoyArgs = {
+          replacement: replacement,
+          url: url,
+          delay: parsedDelay
+        };
+        var decoy = createDecoy(decoyArgs);
+        var popup = decoy.contentWindow;
+
+        if (typeof popup === 'object' && popup !== null) {
+          Object.defineProperty(popup, 'closed', {
+            value: false
+          });
+        } else {
+          var nativeGetter = decoy.contentWindow && decoy.contentWindow.get;
+          Object.defineProperty(decoy, 'contentWindow', {
+            get: getPreventGetter(nativeGetter)
+          });
+          popup = decoy.contentWindow;
+        }
+
+        result = popup;
+      }
+
+      hit(source);
+      return result;
+    }
+
+    return nativeOpen.apply(window, [url].concat(args));
+  };
+
+  window.open = isNewSyntax ? newOpenWrapper : oldOpenWrapper;
 }
 preventWindowOpen.names = ['prevent-window-open', // aliases are needed for matching the related scriptlet converted into our syntax
-'window.open-defuser.js', 'ubo-window.open-defuser.js', 'ubo-window.open-defuser'];
-preventWindowOpen.injections = [toRegExp, startsWith, endsWith, substringBefore, substringAfter, hit, noopFunc, trueFunc];
+'window.open-defuser.js', 'ubo-window.open-defuser.js', 'ubo-window.open-defuser', 'nowoif.js', 'ubo-nowoif.js', 'ubo-nowoif'];
+preventWindowOpen.injections = [hit, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, getWildcardSymbol, noopFunc, trueFunc, startsWith, endsWith, substringBefore, substringAfter];
 
 /* eslint-disable max-len */
 
@@ -3451,7 +3635,7 @@ function adjustSetInterval(source, match, interval, boost) {
 }
 adjustSetInterval.names = ['adjust-setInterval', // aliases are needed for matching the related scriptlet converted into our syntax
 'nano-setInterval-booster.js', 'ubo-nano-setInterval-booster.js', 'nano-sib.js', 'ubo-nano-sib.js', 'ubo-nano-setInterval-booster', 'ubo-nano-sib'];
-adjustSetInterval.injections = [hit, toRegExp, nativeIsNaN, nativeIsFinite, getBoostMultiplier, getMatchDelay, shouldMatchAnyDelay, isDelayMatched];
+adjustSetInterval.injections = [hit, toRegExp, getBoostMultiplier, isDelayMatched, nativeIsNaN, nativeIsFinite, getMatchDelay, getWildcardSymbol, shouldMatchAnyDelay];
 
 /* eslint-disable max-len */
 
@@ -3526,7 +3710,7 @@ function adjustSetTimeout(source, match, timeout, boost) {
 }
 adjustSetTimeout.names = ['adjust-setTimeout', // aliases are needed for matching the related scriptlet converted into our syntax
 'nano-setTimeout-booster.js', 'ubo-nano-setTimeout-booster.js', 'nano-stb.js', 'ubo-nano-stb.js', 'ubo-nano-setTimeout-booster', 'ubo-nano-stb'];
-adjustSetTimeout.injections = [hit, toRegExp, nativeIsNaN, nativeIsFinite, getBoostMultiplier, getMatchDelay, shouldMatchAnyDelay, isDelayMatched];
+adjustSetTimeout.injections = [hit, toRegExp, getBoostMultiplier, isDelayMatched, nativeIsNaN, nativeIsFinite, getMatchDelay, getWildcardSymbol, shouldMatchAnyDelay];
 
 /* eslint-disable max-len */
 
@@ -3771,7 +3955,7 @@ function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
 }
 jsonPrune.names = ['json-prune', // aliases are needed for matching the related scriptlet converted into our syntax
 'json-prune.js', 'ubo-json-prune.js', 'ubo-json-prune', 'abp-json-prune'];
-jsonPrune.injections = [hit, toRegExp, matchStackTrace, getWildcardPropertyInChain];
+jsonPrune.injections = [hit, matchStackTrace, getWildcardPropertyInChain, toRegExp, getWildcardSymbol];
 
 /* eslint-disable max-len */
 
@@ -3849,10 +4033,10 @@ function preventRequestAnimationFrame(source, match) {
   var nativeRequestAnimationFrame = window.requestAnimationFrame; // logs requestAnimationFrame to console if no arguments have been specified
 
   var shouldLog = typeof match === 'undefined';
-  var INVERT_MARKER = '!';
-  var doNotMatch = startsWith(match, INVERT_MARKER);
-  var matchValue = doNotMatch ? match.slice(1) : match;
-  var matchRegexp = toRegExp(matchValue);
+
+  var _parseMatchArg = parseMatchArg(match),
+      isInvertedMatch = _parseMatchArg.isInvertedMatch,
+      matchRegexp = _parseMatchArg.matchRegexp;
 
   var rafWrapper = function rafWrapper(callback) {
     var shouldPrevent = false;
@@ -3861,7 +4045,7 @@ function preventRequestAnimationFrame(source, match) {
       var logMessage = "log: requestAnimationFrame(\"".concat(callback.toString(), "\")");
       hit(source, logMessage);
     } else {
-      shouldPrevent = matchRegexp.test(callback.toString()) !== doNotMatch;
+      shouldPrevent = matchRegexp.test(callback.toString()) !== isInvertedMatch;
     }
 
     if (shouldPrevent) {
@@ -3880,7 +4064,7 @@ function preventRequestAnimationFrame(source, match) {
 }
 preventRequestAnimationFrame.names = ['prevent-requestAnimationFrame', // aliases are needed for matching the related scriptlet converted into our syntax
 'no-requestAnimationFrame-if.js', 'ubo-no-requestAnimationFrame-if.js', 'norafif.js', 'ubo-norafif.js', 'ubo-no-requestAnimationFrame-if', 'ubo-norafif'];
-preventRequestAnimationFrame.injections = [hit, startsWith, toRegExp, noopFunc];
+preventRequestAnimationFrame.injections = [hit, noopFunc, parseMatchArg, toRegExp, startsWith];
 
 /* eslint-disable max-len */
 
@@ -4234,7 +4418,7 @@ function preventFetch(source, propsToMatch) {
       // log if no propsToMatch given
       var logMessage = "log: fetch( ".concat(objectToString(fetchData), " )");
       hit(source, logMessage);
-    } else if (propsToMatch === '' || propsToMatch === '*') {
+    } else if (propsToMatch === '' || propsToMatch === getWildcardSymbol()) {
       // prevent all fetch calls
       shouldPrevent = true;
     } else {
@@ -4261,7 +4445,7 @@ function preventFetch(source, propsToMatch) {
 }
 preventFetch.names = ['prevent-fetch', // aliases are needed for matching the related scriptlet converted into our syntax
 'no-fetch-if.js', 'ubo-no-fetch-if.js', 'ubo-no-fetch-if'];
-preventFetch.injections = [hit, getFetchData, objectToString, convertMatchPropsToObj, noopPromiseResolve, toRegExp, getRequestData, getObjectEntries, getObjectFromEntries];
+preventFetch.injections = [hit, getFetchData, objectToString, convertMatchPropsToObj, noopPromiseResolve, getWildcardSymbol, toRegExp, getRequestData, getObjectEntries, getObjectFromEntries];
 
 /**
  * This file must export all scriptlets which should be accessible
@@ -4775,7 +4959,7 @@ var ADG_SET_CONSTANT_EMPTY_STRING = '';
 var UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
 var ADG_PREVENT_FETCH_NAME = 'prevent-fetch';
 var ADG_PREVENT_FETCH_EMPTY_STRING = '';
-var ADG_PREVENT_FETCH_WILDCARD = '*';
+var ADG_PREVENT_FETCH_WILDCARD = getWildcardSymbol();
 var UBO_NO_FETCH_IF_WILDCARD = '/^/';
 /**
  * Returns array of strings separated by space which not in quotes

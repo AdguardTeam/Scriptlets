@@ -1,8 +1,11 @@
 import {
     hit,
+    noopFunc,
+    parseMatchArg,
+    parseDelayArg,
+    // following helpers are needed for heplers above
     toRegExp,
     startsWith,
-    noopFunc,
     nativeIsNaN,
 } from '../helpers';
 
@@ -115,16 +118,8 @@ export function preventSetInterval(source, match, delay) {
     // logs setIntervals to console if no arguments have been specified
     const shouldLog = ((typeof match === 'undefined') && (typeof delay === 'undefined'));
 
-    const INVERT_MARKER = '!';
-
-    const isNotMatch = startsWith(match, INVERT_MARKER);
-    const matchValue = isNotMatch ? match.slice(1) : match;
-    const matchRegexp = toRegExp(matchValue);
-
-    const isNotDelay = startsWith(delay, INVERT_MARKER);
-    let delayValue = isNotDelay ? delay.slice(1) : delay;
-    delayValue = parseInt(delayValue, 10);
-    const delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
+    const { isInvertedMatch, matchRegexp } = parseMatchArg(match);
+    const { isInvertedDelayMatch, delayMatch } = parseDelayArg(delay);
 
     const intervalWrapper = (callback, interval, ...args) => {
         let shouldPrevent = false;
@@ -136,12 +131,12 @@ export function preventSetInterval(source, match, delay) {
             hit(source);
             log(`setInterval(${cbString}, ${interval})`);
         } else if (!delayMatch) {
-            shouldPrevent = matchRegexp.test(cbString) !== isNotMatch;
+            shouldPrevent = matchRegexp.test(cbString) !== isInvertedMatch;
         } else if (!match) {
-            shouldPrevent = (interval === delayMatch) !== isNotDelay;
+            shouldPrevent = (interval === delayMatch) !== isInvertedDelayMatch;
         } else {
-            shouldPrevent = matchRegexp.test(cbString) !== isNotMatch
-                && (interval === delayMatch) !== isNotDelay;
+            shouldPrevent = matchRegexp.test(cbString) !== isInvertedMatch
+                && (interval === delayMatch) !== isInvertedDelayMatch;
         }
 
         if (shouldPrevent) {
@@ -173,8 +168,10 @@ preventSetInterval.names = [
 
 preventSetInterval.injections = [
     hit,
+    noopFunc,
+    parseMatchArg,
+    parseDelayArg,
     toRegExp,
     startsWith,
-    noopFunc,
     nativeIsNaN,
 ];

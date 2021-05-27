@@ -1,6 +1,7 @@
 /**
  * This file must export all used dependencies
  */
+export * from './constants';
 export * from './random-id';
 export * from './set-property-access';
 export * from './get-property-in-chain';
@@ -18,3 +19,4 @@ export * from './number-utils';
 export * from './adjust-set-utils';
 export * from './fetch-utils';
 export * from './object-utils';
+export * from './prevent-window-open-utils';

@@ -1,12 +1,20 @@
 import {
-    toRegExp,
-    substringBefore,
-    substringAfter,
-    startsWith,
-    endsWith,
     hit,
+    toRegExp,
+    nativeIsNaN,
+    parseMatchArg,
+    handleOldReplacement,
+    createDecoy,
+    getPreventGetter,
+    noopNull,
+    getWildcardSymbol,
+    // following helpers are needed for heplers above
     noopFunc,
     trueFunc,
+    startsWith,
+    endsWith,
+    substringBefore,
+    substringAfter,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -21,14 +29,21 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('prevent-window-open'[, match[, search[, replacement]]])
+ * example.org#%#//scriptlet('prevent-window-open'[, match[, delay[, replacement]]])
  * ```
  *
- * - `match` - optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
- * - `search` - optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
- * - `replacement` - optional, string to return prop value or property instead of window.open; defaults to return noopFunc
+ * - `match` - optional, string or regular expression. If not set, all window.open calls will be matched.
+ * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
+ * If do not start with `!`, the stringified callback will be matched.
+ * - `delay` - optional, number of seconds. If not set, scriptlet will return `null`,
+ * otherwise valid sham window object as injected `iframe` will be returned
+ * for accessing it's methods (blur(), focus() etc.) and will be removed after the delay.
+ * - `replacement` - optional, string; one of the predefined constants:
+ *     - `obj` - for returning an object instead of default iframe;
+ *        for cases when the page requires a valid `window` instance to be returned
+ *     - `log` - for logging window.open calls; permitted for production filter lists.
  *
- * **Example**
+ * **Examples**
  * 1. Prevent all `window.open` calls:
  * ```
  *     example.org#%#//scriptlet('prevent-window-open')
@@ -36,79 +51,99 @@ import {
  *
  * 2. Prevent `window.open` for all URLs containing `example`:
  * ```
- *     example.org#%#//scriptlet('prevent-window-open', '1', 'example')
+ *     example.org#%#//scriptlet('prevent-window-open', 'example')
  * ```
  *
  * 3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
  * ```
- *     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
+ *     example.org#%#//scriptlet('prevent-window-open', '/example\./')
  * ```
  *
  * 4. Prevent `window.open` for all URLs **NOT** containing `example`:
  * ```
+ *     example.org#%#//scriptlet('prevent-window-open', '!example')
+ * ```
+ *
+ * Old syntax of prevent-window-open parameters:
+ * - `match` - optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
+ * - `search` - optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
+ * - `replacement` - optional, string to return prop value or property instead of window.open; defaults to return noopFunc.
+ * **Examples**
+ * ```
+ *     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./'
  *     example.org#%#//scriptlet('prevent-window-open', '0', 'example')
- * ```
- * 5. Prevent all `window.open` calls and return 'trueFunc' instead of it if website checks it:
- * ```
  *     example.org#%#//scriptlet('prevent-window-open', '', '', 'trueFunc')
- * ```
- * 6. Prevent all `window.open` and returns callback
- * which returns object with property 'propName'=noopFunc
- * as a property of window.open if website checks it:
- * ```
  *     example.org#%#//scriptlet('prevent-window-open', '1', '', '{propName=noopFunc}')
  * ```
+ *
+ * > For better compatibility with uBO, old syntax is not recommended to use.
  */
 /* eslint-enable max-len */
-export function preventWindowOpen(source, match = 1, search, replacement) {
-    // Default value of 'match' is needed to prevent all `window.open` calls
-    // if the scriptlet is used without parameters
+export function preventWindowOpen(source, match = getWildcardSymbol(), delay, replacement) {
+    // default match value is needed for preventing all window.open calls
+    // if scriptlet runs without args
     const nativeOpen = window.open;
+    const isNewSyntax = match !== '0' && match !== '1';
 
-    // unary plus converts 'match' to a number
-    // e.g.: +'1' -> 1; +false -> 0
-    match = +match > 0;
-
-    const searchRegexp = toRegExp(search);
-
-    // eslint-disable-next-line consistent-return
-    const openWrapper = (str, ...args) => {
+    const oldOpenWrapper = (str, ...args) => {
+        match = Number(match) > 0;
+        // 'delay' was 'search' prop for matching in old syntax
+        const searchRegexp = toRegExp(delay);
         if (match !== searchRegexp.test(str)) {
             return nativeOpen.apply(window, [str, ...args]);
         }
-
         hit(source);
-
-        let result;
-
-        // defaults to return noopFunc instead of window.open
-        if (!replacement) {
-            result = noopFunc;
-        } else if (replacement === 'trueFunc') {
-            result = trueFunc;
-        } else if (replacement.indexOf('=') > -1) {
-            // We should return noopFunc instead of window.open
-            // but with some property if website checks it (examples 5, 6)
-            // https://github.com/AdguardTeam/Scriptlets/issues/71
-            const isProp = startsWith(replacement, '{') && endsWith(replacement, '}');
-            if (isProp) {
-                const propertyPart = replacement.slice(1, -1);
-                const propertyName = substringBefore(propertyPart, '=');
-                const propertyValue = substringAfter(propertyPart, '=');
-                if (propertyValue === 'noopFunc') {
-                    result = () => {
-                        const resObj = { };
-                        resObj[propertyName] = noopFunc;
-                        return resObj;
-                    };
-                }
-            }
-        }
-
-        return result;
+        return handleOldReplacement(replacement);
     };
 
-    window.open = openWrapper;
+    const newOpenWrapper = (url, ...args) => {
+        const shouldLog = replacement && replacement.indexOf('log') > -1;
+        if (shouldLog) {
+            const argsStr = args && args.length > 0
+                ? `, ${args.join(', ')}`
+                : '';
+            const logMessage = `log: window-open: ${url}${argsStr}`;
+            hit(source, logMessage);
+        }
+
+        let shouldPrevent = false;
+        if (match === getWildcardSymbol()) {
+            shouldPrevent = true;
+        } else {
+            const { isInvertedMatch, matchRegexp } = parseMatchArg(match);
+            shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
+        }
+
+        if (shouldPrevent) {
+            const parsedDelay = parseInt(delay, 10);
+
+            let result;
+            if (nativeIsNaN(parsedDelay)) {
+                result = noopNull();
+            } else {
+                const decoyArgs = { replacement, url, delay: parsedDelay };
+                const decoy = createDecoy(decoyArgs);
+                let popup = decoy.contentWindow;
+                if (typeof popup === 'object' && popup !== null) {
+                    Object.defineProperty(popup, 'closed', { value: false });
+                } else {
+                    const nativeGetter = decoy.contentWindow && decoy.contentWindow.get;
+                    Object.defineProperty(decoy, 'contentWindow', {
+                        get: getPreventGetter(nativeGetter),
+                    });
+                    popup = decoy.contentWindow;
+                }
+                result = popup;
+            }
+
+            hit(source);
+            return result;
+        }
+
+        return nativeOpen.apply(window, [url, ...args]);
+    };
+
+    window.open = isNewSyntax ? newOpenWrapper : oldOpenWrapper;
 }
 
 preventWindowOpen.names = [
@@ -117,15 +152,25 @@ preventWindowOpen.names = [
     'window.open-defuser.js',
     'ubo-window.open-defuser.js',
     'ubo-window.open-defuser',
+    'nowoif.js',
+    'ubo-nowoif.js',
+    'ubo-nowoif',
 ];
 
 preventWindowOpen.injections = [
+    hit,
     toRegExp,
+    nativeIsNaN,
+    parseMatchArg,
+    handleOldReplacement,
+    createDecoy,
+    getPreventGetter,
+    noopNull,
+    getWildcardSymbol,
+    noopFunc,
+    trueFunc,
     startsWith,
     endsWith,
     substringBefore,
     substringAfter,
-    hit,
-    noopFunc,
-    trueFunc,
 ];

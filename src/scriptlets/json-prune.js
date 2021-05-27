@@ -1,5 +1,10 @@
 import {
-    hit, toRegExp, matchStackTrace, getWildcardPropertyInChain,
+    hit,
+    matchStackTrace,
+    getWildcardPropertyInChain,
+    // following helpers are needed for helpers above
+    toRegExp,
+    getWildcardSymbol,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -201,4 +206,10 @@ jsonPrune.names = [
     'abp-json-prune',
 ];
 
-jsonPrune.injections = [hit, toRegExp, matchStackTrace, getWildcardPropertyInChain];
+jsonPrune.injections = [
+    hit,
+    matchStackTrace,
+    getWildcardPropertyInChain,
+    toRegExp,
+    getWildcardSymbol,
+];

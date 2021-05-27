@@ -1,12 +1,14 @@
 import {
     hit,
     toRegExp,
+    getBoostMultiplier,
+    isDelayMatched,
+    // following helpers are needed for helpers above
     nativeIsNaN,
     nativeIsFinite,
-    getBoostMultiplier,
     getMatchDelay,
+    getWildcardSymbol,
     shouldMatchAnyDelay,
-    isDelayMatched,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -87,10 +89,11 @@ adjustSetInterval.names = [
 adjustSetInterval.injections = [
     hit,
     toRegExp,
+    getBoostMultiplier,
+    isDelayMatched,
     nativeIsNaN,
     nativeIsFinite,
-    getBoostMultiplier,
     getMatchDelay,
+    getWildcardSymbol,
     shouldMatchAnyDelay,
-    isDelayMatched,
 ];

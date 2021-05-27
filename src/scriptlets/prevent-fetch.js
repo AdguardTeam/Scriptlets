@@ -4,6 +4,7 @@ import {
     objectToString,
     convertMatchPropsToObj,
     noopPromiseResolve,
+    getWildcardSymbol,
     // following helpers should be imported and injected
     // because they are used by heplers above
     toRegExp,
@@ -74,7 +75,7 @@ export function preventFetch(source, propsToMatch) {
             // log if no propsToMatch given
             const logMessage = `log: fetch( ${objectToString(fetchData)} )`;
             hit(source, logMessage);
-        } else if (propsToMatch === '' || propsToMatch === '*') {
+        } else if (propsToMatch === '' || propsToMatch === getWildcardSymbol()) {
             // prevent all fetch calls
             shouldPrevent = true;
         } else {
@@ -117,6 +118,7 @@ preventFetch.injections = [
     objectToString,
     convertMatchPropsToObj,
     noopPromiseResolve,
+    getWildcardSymbol,
     toRegExp,
     getRequestData,
     getObjectEntries,
