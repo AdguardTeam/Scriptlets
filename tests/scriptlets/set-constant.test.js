@@ -1,10 +1,13 @@
-/* eslint-disable no-eval, no-underscore-dangle */
+/* eslint-disable no-eval, no-underscore-dangle, no-console */
 import { clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'set-constant';
 
+const nativeConsole = console.log;
+
 const afterEach = () => {
+    console.log = nativeConsole;
     clearGlobalProps('hit', '__debug', 'counter');
 };
 
@@ -222,4 +225,50 @@ test('sets values correctly + no stack match', (assert) => {
     assert.strictEqual(window[property], undefined);
     assert.strictEqual(window.counter, undefined);
     clearGlobalProps(property);
+});
+
+test('no value setting if chain is not relevant', (assert) => {
+    window.chain = { property: {} };
+    runScriptlet(['noprop.property.aaa', 'true']);
+    assert.deepEqual(window.chain.property, {}, 'predefined obj was not changed');
+    assert.strictEqual(window.noprop, undefined, '"noprop" was not set');
+    clearGlobalProps('chain');
+});
+
+test('no value setting if some property in chain is undefined while loading', (assert) => {
+    const testObj = { prop: undefined };
+    window.chain = testObj;
+    runScriptlet(['chain.prop.aaa', 'true']);
+    assert.deepEqual(window.chain, testObj, 'predefined obj was not changed');
+    clearGlobalProps('chain');
+});
+
+test('no value setting if first property in chain is null', (assert) => {
+    window.chain = null;
+    runScriptlet(['chain.property.aaa', 'true']);
+    assert.strictEqual(window.chain, null, 'predefined obj was not changed');
+    clearGlobalProps('chain');
+});
+
+// for now the scriptlet does not set the chained property if one of chain prop is null.
+// that might happen, for example, while loading the page.
+// after the needed property is loaded, the scriptlet does not check it and do not set the value
+// https://github.com/AdguardTeam/Scriptlets/issues/128
+test('set value after timeout if it was null earlier', (assert) => {
+    window.chain = null;
+    runScriptlet(['chain.property.aaa', 'true']);
+    assert.strictEqual(window.chain, null, 'predefined obj was not changed');
+
+    const done = assert.async();
+
+    setTimeout(() => {
+        window.chain = { property: {} };
+    }, 50);
+
+    setTimeout(() => {
+        assert.strictEqual(window.chain.property.aaa, undefined, 'chained prop was NOT set after delay');
+        done();
+    }, 100);
+
+    clearGlobalProps('chain');
 });

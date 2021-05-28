@@ -22,6 +22,14 @@ export function getPropertyInChain(base, chain) {
         return { base, prop: chain };
     }
     const prop = chain.slice(0, pos);
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/128
+    if (base === null) {
+        // if base is null, return 'null' as base.
+        // it's needed for triggering the reason logging while debugging
+        return { base, prop, chain };
+    }
+
     const nextBase = base[prop];
     chain = chain.slice(pos + 1);
     if (nextBase !== undefined) {

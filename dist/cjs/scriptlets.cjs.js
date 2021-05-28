@@ -65,7 +65,18 @@ function getPropertyInChain(base, chain) {
     };
   }
 
-  var prop = chain.slice(0, pos);
+  var prop = chain.slice(0, pos); // https://github.com/AdguardTeam/Scriptlets/issues/128
+
+  if (base === null) {
+    // if base is null, return 'null' as base.
+    // it's needed for triggering the reason logging while debugging
+    return {
+      base: base,
+      prop: prop,
+      chain: chain
+    };
+  }
+
   var nextBase = base[prop];
   chain = chain.slice(pos + 1);
 

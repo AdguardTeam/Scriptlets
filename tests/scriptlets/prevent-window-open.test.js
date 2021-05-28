@@ -1,4 +1,4 @@
-/* eslint-disable no-eval, no-underscore-dangle */
+/* eslint-disable no-eval, no-underscore-dangle, no-console */
 import { clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
@@ -6,6 +6,7 @@ const name = 'prevent-window-open';
 
 const nativeOpen = window.open;
 const nativeSetTimeout = window.setTimeout;
+const nativeConsole = console.log;
 
 /**
  * Runs sctiptlet with given props
@@ -31,6 +32,7 @@ const beforeEach = () => {
 
 const afterEach = () => {
     window.open = nativeOpen;
+    console.log = nativeConsole;
     clearGlobalProps('hit', '__debug');
 };
 
