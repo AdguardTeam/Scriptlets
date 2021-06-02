@@ -1,5 +1,14 @@
-/* eslint-disable no-console */
-import { hit } from '../helpers';
+import {
+    hit,
+    validateType,
+    validateListener,
+    listenerToString,
+    convertTypeToString,
+    // following helpers are needed for helpers above
+    objectToString,
+    isEmptyObject,
+    getObjectEntries,
+} from '../helpers';
 
 /**
  * @scriptlet log-addEventListener
@@ -16,20 +25,26 @@ import { hit } from '../helpers';
  * ```
  */
 export function logAddEventListener(source) {
+    // eslint-disable-next-line no-console
     const log = console.log.bind(console);
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
-    function addEventListenerWrapper(eventName, callback, ...args) {
-        hit(source);
-        // The scriptlet might cause a website broke
-        // if the website uses test addEventListener with callback = null
-        // https://github.com/AdguardTeam/Scriptlets/issues/76
-        let callbackToLog = callback;
-        if (callback && typeof callback === 'function') {
-            callbackToLog = callback.toString();
+
+    function addEventListenerWrapper(type, listener, ...args) {
+        if (validateType(type) && validateListener(listener)) {
+            const logMessage = `log: addEventListener("${type}", ${listenerToString(listener)})`;
+            hit(source, logMessage);
+        } else if (source.verbose) {
+            // logging while debugging
+            const logMessage = `Invalid event type or listener passed to addEventListener:
+type: ${convertTypeToString(type)}
+listener: ${convertTypeToString(listener)}`;
+
+            log(logMessage);
         }
-        log(`addEventListener("${eventName}", ${callbackToLog})`);
-        return nativeAddEventListener.apply(this, [eventName, callback, ...args]);
+
+        return nativeAddEventListener.apply(this, [type, listener, ...args]);
     }
+
     window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
 }
 
@@ -44,4 +59,13 @@ logAddEventListener.names = [
     'ubo-aell',
 ];
 
-logAddEventListener.injections = [hit];
+logAddEventListener.injections = [
+    hit,
+    validateType,
+    validateListener,
+    listenerToString,
+    convertTypeToString,
+    objectToString,
+    isEmptyObject,
+    getObjectEntries,
+];

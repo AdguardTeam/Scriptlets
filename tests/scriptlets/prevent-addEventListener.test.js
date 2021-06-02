@@ -54,13 +54,26 @@ test('Checking if alias name works', (assert) => {
     assert.strictEqual(codeByAdgParams, codeByAliasParams);
 });
 
-test('should not prevent addEventListener if callback = null', (assert) => {
+test('should not prevent addEventListener if listener is null', (assert) => {
     const TEST_EVENT_NAME = 'testPassive';
     const TEST_CALLBACK_MATCH = 'clicked';
     runScriptlet(TEST_EVENT_NAME, TEST_CALLBACK_MATCH);
 
     const element = document.createElement('div');
     element.addEventListener(TEST_EVENT_NAME, null);
+    element.click();
+
+    assert.strictEqual(window.hit, undefined, 'hit should not be fired');
+});
+
+test('should not prevent addEventListener if listener is invalid object', (assert) => {
+    const TEST_EVENT_NAME = 'testPassive';
+    const TEST_CALLBACK_MATCH = 'clicked';
+    runScriptlet(TEST_EVENT_NAME, TEST_CALLBACK_MATCH);
+
+    const element = document.createElement('div');
+    const invalidListener = Object.create(null);
+    element.addEventListener(TEST_EVENT_NAME, invalidListener);
     element.click();
 
     assert.strictEqual(window.hit, undefined, 'hit should not be fired');

@@ -29,3 +29,10 @@ export const getObjectFromEntries = (entries) => {
         }, {});
     return output;
 };
+
+/**
+ * Checks whether the obj is an empty object
+ * @param {Object} obj
+ * @returns {boolean}
+ */
+export const isEmptyObject = (obj) => Object.keys(obj).length === 0;

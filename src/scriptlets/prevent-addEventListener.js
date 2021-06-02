@@ -1,4 +1,10 @@
-import { hit, toRegExp } from '../helpers';
+import {
+    hit,
+    toRegExp,
+    validateType,
+    validateListener,
+    listenerToString,
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -42,23 +48,19 @@ export function preventAddEventListener(source, eventSearch, funcSearch) {
     const funcSearchRegexp = toRegExp(funcSearch);
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
-    function addEventListenerWrapper(eventName, callback, ...args) {
-        // The scriptlet might cause a website broke
-        // if the website uses test addEventListener with callback = null
-        // https://github.com/AdguardTeam/Scriptlets/issues/76
-        let funcToCheck = callback;
-        if (callback && typeof callback === 'function') {
-            funcToCheck = callback.toString();
+    function addEventListenerWrapper(type, listener, ...args) {
+        let shouldPrevent = false;
+        if (validateType(type) && validateListener(listener)) {
+            shouldPrevent = eventSearchRegexp.test(type.toString())
+                && funcSearchRegexp.test(listenerToString(listener));
         }
 
-        // https://github.com/AdguardTeam/Scriptlets/issues/125
-        if (typeof eventName !== 'undefined'
-            && eventSearchRegexp.test(eventName.toString())
-            && funcSearchRegexp.test(funcToCheck)) {
+        if (shouldPrevent) {
             hit(source);
             return undefined;
         }
-        return nativeAddEventListener.apply(this, [eventName, callback, ...args]);
+
+        return nativeAddEventListener.apply(this, [type, listener, ...args]);
     }
 
     window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
@@ -75,4 +77,10 @@ preventAddEventListener.names = [
     'ubo-aeld',
 ];
 
-preventAddEventListener.injections = [toRegExp, hit];
+preventAddEventListener.injections = [
+    hit,
+    toRegExp,
+    validateType,
+    validateListener,
+    listenerToString,
+];

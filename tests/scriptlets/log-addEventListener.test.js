@@ -10,8 +10,6 @@ const hit = () => {
 
 const changingProps = ['hit', '__debug'];
 
-const evalWrapper = eval;
-
 const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 const nativeConsole = console.log;
 
@@ -23,6 +21,19 @@ const afterEach = () => {
     console.log = nativeConsole;
     window.EventTarget.prototype.addEventListener = nativeAddEventListener;
     clearGlobalProps(...changingProps);
+};
+
+const INVALID_MESSAGE_START = 'Invalid event type or listener passed to addEventListener';
+
+const runScriptlet = () => {
+    const params = {
+        name,
+        verbose: true,
+    };
+
+    const resultString = window.scriptlets.invoke(params);
+    const evalWrapper = eval;
+    evalWrapper(resultString);
 };
 
 module(name, { beforeEach, afterEach });
@@ -59,12 +70,7 @@ test('logs events to console', (assert) => {
         assert.strictEqual(input, `addEventListener("${eventName}", ${callback.toString()})`, 'console.hit input should be equal');
     };
 
-    const params = {
-        name,
-        verbose: true,
-    };
-    const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    runScriptlet();
 
     const element = document.createElement('div');
     element.addEventListener(eventName, callback);
@@ -75,28 +81,80 @@ test('logs events to console', (assert) => {
     clearGlobalProps(agLogAddEventListenerProp);
 });
 
-test('logs events to console -- callback = null', (assert) => {
+test('logs events to console - listener is null', (assert) => {
     const eventName = 'click';
-    const callback = null;
+    const listener = null;
+
+    const INVALID_MESSAGE_PART = 'listener: null';
 
     console.log = function log(input) {
         // Ignore hit messages with "trace"
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(input, `addEventListener("${eventName}", ${null})`, 'console.hit input should be equal');
+        assert.ok(input.indexOf(INVALID_MESSAGE_START) > -1, 'passed invalid args');
+        assert.ok(input.indexOf(INVALID_MESSAGE_PART) > -1, 'passed invalid args');
     };
 
-    const params = {
-        name,
-        verbose: true,
-    };
-    const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    runScriptlet();
 
     const element = document.createElement('div');
-    element.addEventListener(eventName, callback);
+    element.addEventListener(eventName, listener);
     element.click();
 
-    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire on invalid agrs');
+});
+
+test('logs events to console - listener is not a function', (assert) => {
+    const eventName = 'click';
+    const listener = Object.create(null);
+
+    const INVALID_MESSAGE_PART = 'listener: {}';
+
+    console.log = function log(input) {
+        // Ignore hit messages with "trace"
+        if (input.indexOf('trace') > -1) {
+            return;
+        }
+        assert.ok(input.indexOf(INVALID_MESSAGE_START) > -1, 'passed invalid args');
+        assert.ok(input.indexOf(INVALID_MESSAGE_PART) > -1, 'passed invalid args');
+    };
+
+    runScriptlet();
+
+    const element = document.createElement('div');
+    element.addEventListener(eventName, listener);
+    element.click();
+
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire on invalid agrs');
+});
+
+test('logs events to console - event is undefined', (assert) => {
+    const TEST_EVENT_TYPE = window.undefinedEvent; // not defined
+
+    const testPropName = 'test';
+    window[testPropName] = 'start';
+    const listener = () => {
+        window[testPropName] = 'final';
+    };
+
+    const INVALID_MESSAGE_PART = 'type: undefined';
+
+    console.log = function log(input) {
+        // Ignore hit messages with "trace"
+        if (input.indexOf('trace') > -1) {
+            return;
+        }
+        assert.ok(input.indexOf(INVALID_MESSAGE_START) > -1, 'passed invalid args');
+        assert.ok(input.indexOf(INVALID_MESSAGE_PART) > -1, 'passed invalid args');
+    };
+
+    runScriptlet();
+
+    const element = document.createElement('div');
+    element.addEventListener(TEST_EVENT_TYPE, listener);
+    element.click();
+
+    assert.strictEqual(window[testPropName], 'start', 'property should not change');
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire on invalid agrs');
 });

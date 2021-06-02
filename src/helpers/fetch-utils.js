@@ -1,5 +1,5 @@
 import { toRegExp } from './string-utils';
-import { getObjectEntries, getObjectFromEntries } from './object-utils';
+import { getObjectFromEntries } from './object-utils';
 
 /**
  * Collects Request options to object
@@ -56,25 +56,6 @@ export const getFetchData = (args) => {
             });
     }
     return fetchPropsObj;
-};
-
-/**
- * Converts object to string for logging
- * @param {Object} obj data object
- * @returns {string}
- */
-export const objectToString = (obj) => {
-    return getObjectEntries(obj)
-        .map((pair) => {
-            const key = pair[0];
-            const value = pair[1];
-            let recordValueStr = value;
-            if (value instanceof Object) {
-                recordValueStr = `{ ${objectToString(value)} }`;
-            }
-            return `${key}:"${recordValueStr}"`;
-        })
-        .join(' ');
 };
 
 /**

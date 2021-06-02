@@ -20,3 +20,4 @@ export * from './adjust-set-utils';
 export * from './fetch-utils';
 export * from './object-utils';
 export * from './prevent-window-open-utils';
+export * from './add-event-listener-utils';

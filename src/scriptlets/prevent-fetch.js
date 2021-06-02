@@ -8,6 +8,7 @@ import {
     // following helpers should be imported and injected
     // because they are used by heplers above
     toRegExp,
+    isEmptyObject,
     getRequestData,
     getObjectEntries,
     getObjectFromEntries,
@@ -120,6 +121,7 @@ preventFetch.injections = [
     noopPromiseResolve,
     getWildcardSymbol,
     toRegExp,
+    isEmptyObject,
     getRequestData,
     getObjectEntries,
     getObjectFromEntries,

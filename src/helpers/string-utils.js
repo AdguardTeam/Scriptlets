@@ -1,4 +1,5 @@
 import { nativeIsNaN } from './number-utils';
+import { isEmptyObject, getObjectEntries } from './object-utils';
 
 /**
  * Escapes special chars in string
@@ -170,4 +171,47 @@ export const parseDelayArg = (delay) => {
     delayValue = parseInt(delayValue, 10);
     const delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
     return { isInvertedDelayMatch, delayMatch };
+};
+
+/**
+ * Converts object to string for logging
+ * @param {Object} obj data object
+ * @returns {string}
+ */
+export const objectToString = (obj) => {
+    return isEmptyObject(obj)
+        ? '{}'
+        : getObjectEntries(obj)
+            .map((pair) => {
+                const key = pair[0];
+                const value = pair[1];
+                let recordValueStr = value;
+                if (value instanceof Object) {
+                    recordValueStr = `{ ${objectToString(value)} }`;
+                }
+                return `${key}:"${recordValueStr}"`;
+            })
+            .join(' ');
+};
+
+/**
+ * Converts types into a string
+ * @param {*} value
+ * @returns {string}
+ */
+export const convertTypeToString = (value) => {
+    let output;
+    if (typeof value === 'undefined') {
+        output = 'undefined';
+    } else if (typeof value === 'object') {
+        if (value === null) {
+            output = 'null';
+        } else {
+            output = objectToString(value);
+        }
+    } else {
+        output = value.toString();
+    }
+
+    return output;
 };
