@@ -291,12 +291,12 @@ test('Test redirect rule validation for ADG -> UBO converting', (assert) => {
     adgRule = ' ||example.org^$redirect=empty,third-party';
     assert.strictEqual(validator.hasValidContentType(adgRule), true);
 
-    // only text source types for 'empty' are allowed
+    // all source types for 'empty' are allowed
     adgRule = ' ||example.org^$script,redirect=empty,third-party';
     assert.strictEqual(validator.hasValidContentType(adgRule), true);
-    // so 'media' is not valid
+    // and 'media' too
     adgRule = ' ||example.org^$stylesheet,media,redirect=empty,third-party';
-    assert.strictEqual(validator.hasValidContentType(adgRule), false);
+    assert.strictEqual(validator.hasValidContentType(adgRule), true);
 });
 
 test('Test REDIRECT converting - ADG -> UBO', (assert) => {
@@ -305,6 +305,11 @@ test('Test REDIRECT converting - ADG -> UBO', (assert) => {
 
     adgRule = '||example.com^$xmlhttprequest,redirect=nooptext';
     expectedUboRule = '||example.com^$xmlhttprequest,redirect=noop.txt';
+    assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
+
+    // image type is supported by nooptext too
+    adgRule = '||example.com^$image,redirect=nooptext';
+    expectedUboRule = '||example.com^$image,redirect=noop.txt';
     assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
 
     adgRule = '||example.com/images/*.png$image,important,redirect=1x1-transparent.gif,domain=example.com|example.org';
@@ -330,6 +335,15 @@ test('Test REDIRECT converting - ADG -> UBO', (assert) => {
     assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
 
     adgRule = '||ad.example.com^$redirect=nooptext,important';
-    expectedUboRule = '||ad.example.com^$redirect=noop.txt,important,subdocument,stylesheet,script,xmlhttprequest,other';
+    expectedUboRule = '||ad.example.com^$redirect=noop.txt,important,image,media,subdocument,stylesheet,script,xmlhttprequest,other';
     assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
+
+    assert.throws(
+        () => {
+            adgRule = '||example.com/ad/vmap/*$redirect=scorecardresearch-beacon';
+            convertAdgRedirectToUbo(adgRule);
+        },
+        new RegExp('Unable to convert for uBO'), // specific error matcher
+        'no TYPES to specify, ABSENT_SOURCE_TYPE_REPLACEMENT should be updated',
+    );
 });

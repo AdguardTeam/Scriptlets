@@ -346,6 +346,9 @@ export const convertAdgRedirectToUbo = (rule) => {
         // add missed source types as content type modifiers
         const sourceTypesData = validator.ABSENT_SOURCE_TYPE_REPLACEMENT
             .find((el) => el.NAME === adgRedirectName);
+        if (typeof sourceTypesData === 'undefined') {
+            throw new Error(`Unable to convert for uBO - no types to add for specific redirect in rule: ${rule}`);
+        }
         const additionModifiers = sourceTypesData.TYPES;
         adgModifiers.push(...additionModifiers);
     }

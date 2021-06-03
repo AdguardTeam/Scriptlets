@@ -143,14 +143,6 @@ const VALID_SOURCE_TYPES = [
     'other',
 ];
 
-const EMPTY_REDIRECT_SUPPORTED_TYPES = [
-    'subdocument',
-    'stylesheet',
-    'script',
-    'xmlhttprequest',
-    'other',
-];
-
 /**
  * Source types for redirect rules if there is no one of them.
  * Used for ADG -> UBO conversion.
@@ -158,7 +150,7 @@ const EMPTY_REDIRECT_SUPPORTED_TYPES = [
 const ABSENT_SOURCE_TYPE_REPLACEMENT = [
     {
         NAME: 'nooptext',
-        TYPES: EMPTY_REDIRECT_SUPPORTED_TYPES,
+        TYPES: VALID_SOURCE_TYPES,
     },
     {
         NAME: 'noopjs',
@@ -385,12 +377,6 @@ const hasValidContentType = (rule) => {
     const isEmptyRedirect = ruleModifiers.indexOf(`${ADG_UBO_REDIRECT_MARKER}${EMPTY_REDIRECT_MARKER}`) > -1;
 
     if (isEmptyRedirect) {
-        if (isSourceTypeSpecified) {
-            const isValidType = sourceTypes.every((sType) => {
-                return EMPTY_REDIRECT_SUPPORTED_TYPES.indexOf(sType) > -1;
-            });
-            return isValidType;
-        }
         // no source type for 'empty' is allowed
         return true;
     }
