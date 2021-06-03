@@ -378,6 +378,7 @@
             "ubo": "window.open-defuser.js"
         },
         {
+            "adg": "prevent-bab",
             "ubo": "nobab.js"
         },
         {

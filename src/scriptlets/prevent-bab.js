@@ -10,6 +10,9 @@ import { hit } from '../helpers';
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#bab-defuserjs-
  *
+ * It also can be used as `$redirect` sometimes.
+ * See [redirect description](../wiki/about-redirects.md#prevent-bab).
+ *
  * **Syntax**
  * ```
  * example.org#%#//scriptlet('prevent-bab')

@@ -192,11 +192,20 @@ test('Test redirect rule validation', (assert) => {
     inputRule = '_redirect=*://look.$popup';
     assert.strictEqual(validator.isAdgRedirectRule(inputRule), false);
 
+    // rule with 'redirect-rule=' marker should be considered as redirect rules
+    inputRule = '/blockadblock.$script,redirect=nobab.js';
+    assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);
+    // but it's ubo redirect name so it's not valid adg redirect
+    assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), false);
+
     // check is adg redirect valid for conversion to ubo
     inputRule = '||example.orf^$media,redirect=noopmp4-1s,third-party';
     assert.strictEqual(validator.isAdgRedirectCompatibleWithUbo(inputRule), true);
     // check 'empty' redirect
     inputRule = '||example.com/log$redirect=empty';
+    assert.strictEqual(validator.isAdgRedirectCompatibleWithUbo(inputRule), true);
+    // check 'prevent-bab' redirect
+    inputRule = '||example.com^$redirect=prevent-bab';
     assert.strictEqual(validator.isAdgRedirectCompatibleWithUbo(inputRule), true);
     // invalid redirect name
     inputRule = '||example.orf^$media,redirect=no-mp4';
@@ -213,6 +222,9 @@ test('Test redirect rule validation', (assert) => {
 
     // check is ubo redirect valid for conversion
     inputRule = '||example.orf^$media,redirect=noop-1s.mp4,third-party';
+    assert.strictEqual(validator.isUboRedirectCompatibleWithAdg(inputRule), true);
+    // check nobab.js
+    inputRule = '||example.org^$redirect=nobab.js,third-party';
     assert.strictEqual(validator.isUboRedirectCompatibleWithAdg(inputRule), true);
     // invalid redirect name
     inputRule = '||example.orf^$media,redirect=no-mp4';
