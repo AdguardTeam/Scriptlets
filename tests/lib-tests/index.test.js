@@ -180,6 +180,11 @@ test('Test redirect rule validation', (assert) => {
     inputRule = '||example.com/log$redirect=empty';
     assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), true);
 
+    // obsolete googletagmanager-gtm should be true as it is an alias for google-analytics
+    inputRule = '||example.org/script.js$script,redirect=googletagmanager-gtm';
+    assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);
+    assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), true);
+
     // redirect name is wrong, but this one only for checking ADG redirect marker "redirect="
     inputRule = '||example.com/banner$image,redirect=redirect.png';
     assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);
