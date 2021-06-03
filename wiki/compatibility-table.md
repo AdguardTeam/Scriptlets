@@ -96,6 +96,7 @@
 | [noopvmap-1.0](../wiki/about-redirects.md#noopvmap-1.0) | noop-vmap1.0.xml |  |
 | [noopvast-2.0](../wiki/about-redirects.md#noopvast-2.0) |  |  |
 | [noopvast-3.0](../wiki/about-redirects.md#noopvast-3.0) |  |  |
+| [prevent-bab](../wiki/about-redirects.md#prevent-bab) | nobab.js |  |
 | [prevent-fab-3.2.0](../wiki/about-redirects.md#prevent-fab-3.2.0) | nofab.js |  |
 | [prevent-popads-net](../wiki/about-redirects.md#prevent-popads-net) | popads.js |  |
 | [scorecardresearch-beacon](../wiki/about-redirects.md#scorecardresearch-beacon) | scorecardresearch_beacon.js |  |
@@ -113,6 +114,5 @@
 |  | monkeybroker.js |  |
 |  | outbrain-widget.js |  |
 |  | window.open-defuser.js |  |
-|  | nobab.js |  |
 |  | noeval.js |  |
 |  | click2load.html |  |

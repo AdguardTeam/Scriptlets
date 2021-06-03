@@ -193,6 +193,48 @@
     };
 
     /**
+     * Converts object to array of pairs.
+     * Object.entries() polyfill because it is not supported by IE
+     * https://caniuse.com/?search=Object.entries
+     * @param {Object} object
+     * @returns {Array} array of pairs
+     */
+    var getObjectEntries = function getObjectEntries(object) {
+      var keys = Object.keys(object);
+      var entries = [];
+      keys.forEach(function (key) {
+        return entries.push([key, object[key]]);
+      });
+      return entries;
+    };
+    /**
+     * Converts array of pairs to object.
+     * Object.fromEntries() polyfill because it is not supported by IE
+     * https://caniuse.com/?search=Object.fromEntries
+     * @param {Array} entries - array of pairs
+     * @returns {Object}
+     */
+
+    var getObjectFromEntries = function getObjectFromEntries(entries) {
+      var output = entries.reduce(function (acc, el) {
+        var key = el[0];
+        var value = el[1];
+        acc[key] = value;
+        return acc;
+      }, {});
+      return output;
+    };
+    /**
+     * Checks whether the obj is an empty object
+     * @param {Object} obj
+     * @returns {boolean}
+     */
+
+    var isEmptyObject = function isEmptyObject(obj) {
+      return Object.keys(obj).length === 0;
+    };
+
+    /**
      * Escapes special chars in string
      * @param {string} str
      * @returns {string}
@@ -372,6 +414,48 @@
         isInvertedDelayMatch: isInvertedDelayMatch,
         delayMatch: delayMatch
       };
+    };
+    /**
+     * Converts object to string for logging
+     * @param {Object} obj data object
+     * @returns {string}
+     */
+
+    var objectToString = function objectToString(obj) {
+      return isEmptyObject(obj) ? '{}' : getObjectEntries(obj).map(function (pair) {
+        var key = pair[0];
+        var value = pair[1];
+        var recordValueStr = value;
+
+        if (value instanceof Object) {
+          recordValueStr = "{ ".concat(objectToString(value), " }");
+        }
+
+        return "".concat(key, ":\"").concat(recordValueStr, "\"");
+      }).join(' ');
+    };
+    /**
+     * Converts types into a string
+     * @param {*} value
+     * @returns {string}
+     */
+
+    var convertTypeToString = function convertTypeToString(value) {
+      var output;
+
+      if (typeof value === 'undefined') {
+        output = 'undefined';
+      } else if (typeof value === 'object') {
+        if (value === null) {
+          output = 'null';
+        } else {
+          output = objectToString(value);
+        }
+      } else {
+        output = value.toString();
+      }
+
+      return output;
     };
 
     /**
@@ -852,39 +936,6 @@
     };
 
     /**
-     * Converts object to array of pairs.
-     * Object.entries() polyfill because it is not supported by IE
-     * https://caniuse.com/?search=Object.entries
-     * @param {Object} object
-     * @returns {Array} array of pairs
-     */
-    var getObjectEntries = function getObjectEntries(object) {
-      var keys = Object.keys(object);
-      var entries = [];
-      keys.forEach(function (key) {
-        return entries.push([key, object[key]]);
-      });
-      return entries;
-    };
-    /**
-     * Converts array of pairs to object.
-     * Object.fromEntries() polyfill because it is not supported by IE
-     * https://caniuse.com/?search=Object.fromEntries
-     * @param {Array} entries - array of pairs
-     * @returns {Object}
-     */
-
-    var getObjectFromEntries = function getObjectFromEntries(entries) {
-      var output = entries.reduce(function (acc, el) {
-        var key = el[0];
-        var value = el[1];
-        acc[key] = value;
-        return acc;
-      }, {});
-      return output;
-    };
-
-    /**
      * Collects Request options to object
      * @param {Request} request
      * @returns {Object} data object
@@ -930,25 +981,6 @@
       }
 
       return fetchPropsObj;
-    };
-    /**
-     * Converts object to string for logging
-     * @param {Object} obj data object
-     * @returns {string}
-     */
-
-    var objectToString = function objectToString(obj) {
-      return getObjectEntries(obj).map(function (pair) {
-        var key = pair[0];
-        var value = pair[1];
-        var recordValueStr = value;
-
-        if (value instanceof Object) {
-          recordValueStr = "{ ".concat(objectToString(value), " }");
-        }
-
-        return "".concat(key, ":\"").concat(recordValueStr, "\"");
-      }).join(' ');
     };
     /**
      * Converts prevent-fetch propsToMatch input string to object
@@ -1050,6 +1082,37 @@
     };
 
     /**
+     * Validates event type
+     * @param {*} type
+     * @returns {boolean}
+     */
+    var validateType = function validateType(type) {
+      // https://github.com/AdguardTeam/Scriptlets/issues/125
+      return typeof type !== 'undefined';
+    };
+    /**
+     * Validates event listener
+     * @param {*} listener
+     * @returns {boolean}
+     */
+
+    var validateListener = function validateListener(listener) {
+      // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#parameters
+      return typeof listener !== 'undefined' && (typeof listener === 'function' || typeof listener === 'object' // https://github.com/AdguardTeam/Scriptlets/issues/76
+      && listener !== null && typeof listener.handleEvent === 'function');
+    };
+    /**
+     * Serialize valid event listener
+     * https://developer.mozilla.org/en-US/docs/Web/API/EventListener
+     * @param {EventListener} listener valid listener
+     * @returns {string}
+     */
+
+    var listenerToString = function listenerToString(listener) {
+      return typeof listener === 'function' ? listener.toString() : listener.handleEvent.toString();
+    };
+
+    /**
      * This file must export all used dependencies
      */
 
@@ -1072,6 +1135,8 @@
         convertRtcConfigToString: convertRtcConfigToString,
         parseMatchArg: parseMatchArg,
         parseDelayArg: parseDelayArg,
+        objectToString: objectToString,
+        convertTypeToString: convertTypeToString,
         createOnErrorHandler: createOnErrorHandler,
         noopFunc: noopFunc,
         noopNull: noopNull,
@@ -1098,13 +1163,16 @@
         getBoostMultiplier: getBoostMultiplier,
         getRequestData: getRequestData,
         getFetchData: getFetchData,
-        objectToString: objectToString,
         convertMatchPropsToObj: convertMatchPropsToObj,
         getObjectEntries: getObjectEntries,
         getObjectFromEntries: getObjectFromEntries,
+        isEmptyObject: isEmptyObject,
         handleOldReplacement: handleOldReplacement,
         createDecoy: createDecoy,
-        getPreventGetter: getPreventGetter
+        getPreventGetter: getPreventGetter,
+        validateType: validateType,
+        validateListener: validateListener,
+        listenerToString: listenerToString
     });
 
     /**
@@ -2477,18 +2545,14 @@
       var funcSearchRegexp = toRegExp(funcSearch);
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
-      function addEventListenerWrapper(eventName, callback) {
-        // The scriptlet might cause a website broke
-        // if the website uses test addEventListener with callback = null
-        // https://github.com/AdguardTeam/Scriptlets/issues/76
-        var funcToCheck = callback;
+      function addEventListenerWrapper(type, listener) {
+        var shouldPrevent = false;
 
-        if (callback && typeof callback === 'function') {
-          funcToCheck = callback.toString();
-        } // https://github.com/AdguardTeam/Scriptlets/issues/125
+        if (validateType(type) && validateListener(listener)) {
+          shouldPrevent = eventSearchRegexp.test(type.toString()) && funcSearchRegexp.test(listenerToString(listener));
+        }
 
-
-        if (typeof eventName !== 'undefined' && eventSearchRegexp.test(eventName.toString()) && funcSearchRegexp.test(funcToCheck)) {
+        if (shouldPrevent) {
           hit(source);
           return undefined;
         }
@@ -2497,14 +2561,14 @@
           args[_key - 2] = arguments[_key];
         }
 
-        return nativeAddEventListener.apply(this, [eventName, callback].concat(args));
+        return nativeAddEventListener.apply(this, [type, listener].concat(args));
       }
 
       window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
     }
     preventAddEventListener.names = ['prevent-addEventListener', // aliases are needed for matching the related scriptlet converted into our syntax
     'addEventListener-defuser.js', 'ubo-addEventListener-defuser.js', 'aeld.js', 'ubo-aeld.js', 'ubo-addEventListener-defuser', 'ubo-aeld'];
-    preventAddEventListener.injections = [toRegExp, hit];
+    preventAddEventListener.injections = [hit, toRegExp, validateType, validateListener, listenerToString];
 
     /* eslint-disable consistent-return, no-eval */
     /**
@@ -2515,6 +2579,9 @@
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#bab-defuserjs-
+     *
+     * It also can be used as `$redirect` sometimes.
+     * See [redirect description](../wiki/about-redirects.md#prevent-bab).
      *
      * **Syntax**
      * ```
@@ -2649,7 +2716,6 @@
     'nowebrtc.js', 'ubo-nowebrtc.js', 'ubo-nowebrtc'];
     nowebrtc.injections = [hit, noopFunc, convertRtcConfigToString];
 
-    /* eslint-disable no-console */
     /**
      * @scriptlet log-addEventListener
      *
@@ -2666,34 +2732,33 @@
      */
 
     function logAddEventListener(source) {
+      // eslint-disable-next-line no-console
       var log = console.log.bind(console);
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
-      function addEventListenerWrapper(eventName, callback) {
-        hit(source); // The scriptlet might cause a website broke
-        // if the website uses test addEventListener with callback = null
-        // https://github.com/AdguardTeam/Scriptlets/issues/76
+      function addEventListenerWrapper(type, listener) {
+        if (validateType(type) && validateListener(listener)) {
+          var logMessage = "log: addEventListener(\"".concat(type, "\", ").concat(listenerToString(listener), ")");
+          hit(source, logMessage);
+        } else if (source.verbose) {
+          // logging while debugging
+          var _logMessage = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
 
-        var callbackToLog = callback;
-
-        if (callback && typeof callback === 'function') {
-          callbackToLog = callback.toString();
+          log(_logMessage);
         }
-
-        log("addEventListener(\"".concat(eventName, "\", ").concat(callbackToLog, ")"));
 
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
 
-        return nativeAddEventListener.apply(this, [eventName, callback].concat(args));
+        return nativeAddEventListener.apply(this, [type, listener].concat(args));
       }
 
       window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
     }
     logAddEventListener.names = ['log-addEventListener', // aliases are needed for matching the related scriptlet converted into our syntax
     'addEventListener-logger.js', 'ubo-addEventListener-logger.js', 'aell.js', 'ubo-aell.js', 'ubo-addEventListener-logger', 'ubo-aell'];
-    logAddEventListener.injections = [hit];
+    logAddEventListener.injections = [hit, validateType, validateListener, listenerToString, convertTypeToString, objectToString, isEmptyObject, getObjectEntries];
 
     /* eslint-disable no-console, no-eval */
     /**
@@ -4458,7 +4523,7 @@
     }
     preventFetch.names = ['prevent-fetch', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-fetch-if.js', 'ubo-no-fetch-if.js', 'ubo-no-fetch-if'];
-    preventFetch.injections = [hit, getFetchData, objectToString, convertMatchPropsToObj, noopPromiseResolve, getWildcardSymbol, toRegExp, getRequestData, getObjectEntries, getObjectFromEntries];
+    preventFetch.injections = [hit, getFetchData, objectToString, convertMatchPropsToObj, noopPromiseResolve, getWildcardSymbol, toRegExp, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries];
 
     /**
      * This file must export all scriptlets which should be accessible
@@ -4505,7 +4570,105 @@
         preventFetch: preventFetch
     });
 
-    const redirects=[{adg:"1x1-transparent.gif",ubo:"1x1.gif",abp:"1x1-transparent-gif"},{adg:"2x2-transparent.png",ubo:"2x2.png",abp:"2x2-transparent-png"},{adg:"3x2-transparent.png",ubo:"3x2.png",abp:"3x2-transparent-png"},{adg:"32x32-transparent.png",ubo:"32x32.png",abp:"32x32-transparent-png"},{adg:"amazon-apstag",ubo:"amazon_apstag.js"},{adg:"google-analytics",ubo:"google-analytics_analytics.js"},{adg:"google-analytics-ga",ubo:"google-analytics_ga.js"},{adg:"googlesyndication-adsbygoogle",ubo:"googlesyndication_adsbygoogle.js"},{adg:"googletagmanager-gtm (removed)",ubo:"googletagmanager_gtm.js (removed)"},{adg:"googletagservices-gpt",ubo:"googletagservices_gpt.js"},{adg:"metrika-yandex-watch"},{adg:"metrika-yandex-tag"},{adg:"noeval",ubo:"noeval-silent.js"},{adg:"noopcss",abp:"blank-css"},{adg:"noopframe",ubo:"noop.html",abp:"blank-html"},{adg:"noopjs",ubo:"noop.js",abp:"blank-js"},{adg:"nooptext",ubo:"noop.txt",abp:"blank-text"},{adg:"noopmp3-0.1s",ubo:"noop-0.1s.mp3",abp:"blank-mp3"},{adg:"noopmp4-1s",ubo:"noop-1s.mp4",abp:"blank-mp4"},{adg:"noopvmap-1.0",ubo:"noop-vmap1.0.xml"},{adg:"noopvast-2.0"},{adg:"noopvast-3.0"},{adg:"prevent-fab-3.2.0",ubo:"nofab.js"},{adg:"prevent-popads-net",ubo:"popads.js"},{adg:"scorecardresearch-beacon",ubo:"scorecardresearch_beacon.js"},{adg:"set-popads-dummy",ubo:"popads-dummy.js"},{ubo:"addthis_widget.js"},{ubo:"amazon_ads.js"},{ubo:"ampproject_v0.js"},{ubo:"chartbeat.js"},{ubo:"doubleclick_instream_ad_status.js"},{adg:"empty",ubo:"empty"},{ubo:"google-analytics_cx_api.js"},{ubo:"google-analytics_inpage_linkid.js"},{ubo:"hd-main.js"},{ubo:"ligatus_angular-tag.js"},{ubo:"monkeybroker.js"},{ubo:"outbrain-widget.js"},{ubo:"window.open-defuser.js"},{ubo:"nobab.js"},{ubo:"noeval.js"},{ubo:"click2load.html"}];
+    /**
+     * Store of ADG redirects names and thier analogs.
+     * As it is not a compatibility table, no need to keep in redirects array third-party redirects.
+     *
+     * Needed only for converion purposes.
+     * e.g. googletagmanager-gtm is removed and should be removed from compatibility table as well
+     * but now it works as alias for google-analytics so it should stay valid for compiler
+     */
+    var redirects = [{
+      adg: '1x1-transparent.gif',
+      ubo: '1x1.gif',
+      abp: '1x1-transparent-gif'
+    }, {
+      adg: '2x2-transparent.png',
+      ubo: '2x2.png',
+      abp: '2x2-transparent-png'
+    }, {
+      adg: '3x2-transparent.png',
+      ubo: '3x2.png',
+      abp: '3x2-transparent-png'
+    }, {
+      adg: '32x32-transparent.png',
+      ubo: '32x32.png',
+      abp: '32x32-transparent-png'
+    }, {
+      adg: 'amazon-apstag',
+      ubo: 'amazon_apstag.js'
+    }, {
+      adg: 'google-analytics',
+      ubo: 'google-analytics_analytics.js'
+    }, {
+      adg: 'google-analytics-ga',
+      ubo: 'google-analytics_ga.js'
+    }, {
+      adg: 'googlesyndication-adsbygoogle',
+      ubo: 'googlesyndication_adsbygoogle.js'
+    }, {
+      // https://github.com/AdguardTeam/Scriptlets/issues/127
+      adg: 'googletagmanager-gtm',
+      ubo: 'google-analytics_ga.js'
+    }, {
+      adg: 'googletagservices-gpt',
+      ubo: 'googletagservices_gpt.js'
+    }, {
+      adg: 'metrika-yandex-watch'
+    }, {
+      adg: 'metrika-yandex-tag'
+    }, {
+      adg: 'noeval',
+      ubo: 'noeval-silent.js'
+    }, {
+      adg: 'noopcss',
+      abp: 'blank-css'
+    }, {
+      adg: 'noopframe',
+      ubo: 'noop.html',
+      abp: 'blank-html'
+    }, {
+      adg: 'noopjs',
+      ubo: 'noop.js',
+      abp: 'blank-js'
+    }, {
+      adg: 'nooptext',
+      ubo: 'noop.txt',
+      abp: 'blank-text'
+    }, {
+      adg: 'noopmp3-0.1s',
+      ubo: 'noop-0.1s.mp3',
+      abp: 'blank-mp3'
+    }, {
+      adg: 'noopmp4-1s',
+      ubo: 'noop-1s.mp4',
+      abp: 'blank-mp4'
+    }, {
+      adg: 'noopvmap-1.0',
+      ubo: 'noop-vmap1.0.xml'
+    }, {
+      adg: 'noopvast-2.0'
+    }, {
+      adg: 'noopvast-3.0'
+    }, {
+      adg: 'prevent-bab',
+      ubo: 'nobab.js'
+    }, {
+      adg: 'prevent-fab-3.2.0',
+      ubo: 'nofab.js'
+    }, {
+      adg: 'prevent-popads-net',
+      ubo: 'popads.js'
+    }, {
+      adg: 'scorecardresearch-beacon',
+      ubo: 'scorecardresearch_beacon.js'
+    }, {
+      adg: 'set-popads-dummy',
+      ubo: 'popads-dummy.js'
+    }, {
+      adg: 'empty',
+      ubo: 'empty'
+    }];
 
     var JS_RULE_MARKER = '#%#';
     var COMMENT_MARKER = '!';
@@ -4621,7 +4784,6 @@
     var ABP_REDIRECT_MARKER = 'rewrite=abp-resource:';
     var EMPTY_REDIRECT_MARKER = 'empty';
     var VALID_SOURCE_TYPES = ['image', 'media', 'subdocument', 'stylesheet', 'script', 'xmlhttprequest', 'other'];
-    var EMPTY_REDIRECT_SUPPORTED_TYPES = ['subdocument', 'stylesheet', 'script', 'xmlhttprequest', 'other'];
     /**
      * Source types for redirect rules if there is no one of them.
      * Used for ADG -> UBO conversion.
@@ -4629,7 +4791,7 @@
 
     var ABSENT_SOURCE_TYPE_REPLACEMENT = [{
       NAME: 'nooptext',
-      TYPES: EMPTY_REDIRECT_SUPPORTED_TYPES
+      TYPES: VALID_SOURCE_TYPES
     }, {
       NAME: 'noopjs',
       TYPES: ['script']
@@ -4845,14 +5007,7 @@
       var isEmptyRedirect = ruleModifiers.indexOf("".concat(ADG_UBO_REDIRECT_MARKER).concat(EMPTY_REDIRECT_MARKER)) > -1;
 
       if (isEmptyRedirect) {
-        if (isSourceTypeSpecified) {
-          var isValidType = sourceTypes.every(function (sType) {
-            return EMPTY_REDIRECT_SUPPORTED_TYPES.indexOf(sType) > -1;
-          });
-          return isValidType;
-        } // no source type for 'empty' is allowed
-
-
+        // no source type for 'empty' is allowed
         return true;
       }
 
@@ -5283,6 +5438,11 @@
         var sourceTypesData = validator.ABSENT_SOURCE_TYPE_REPLACEMENT.find(function (el) {
           return el.NAME === adgRedirectName;
         });
+
+        if (typeof sourceTypesData === 'undefined') {
+          throw new Error("Unable to convert for uBO - no types to add for specific redirect in rule: ".concat(rule));
+        }
+
         var additionModifiers = sourceTypesData.TYPES;
         adgModifiers.push.apply(adgModifiers, toConsumableArray(additionModifiers));
       }
@@ -6015,6 +6175,7 @@
         metrikaYandexTag: metrikaYandexTag,
         metrikaYandexWatch: metrikaYandexWatch,
         preventFab: preventFab,
+        preventBab: preventBab,
         setPopadsDummy: setPopadsDummy,
         preventPopadsNet: preventPopadsNet,
         AmazonApstag: AmazonApstag

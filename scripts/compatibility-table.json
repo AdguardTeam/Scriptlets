@@ -322,6 +322,10 @@
             "adg": "noopvast-3.0"
         },
         {
+            "adg": "prevent-bab",
+            "ubo": "nobab.js"
+        },
+        {
             "adg": "prevent-fab-3.2.0",
             "ubo": "nofab.js"
         },
@@ -376,10 +380,6 @@
         },
         {
             "ubo": "window.open-defuser.js"
-        },
-        {
-            "adg": "prevent-bab",
-            "ubo": "nobab.js"
         },
         {
             "ubo": "noeval.js"

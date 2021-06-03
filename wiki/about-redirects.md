@@ -21,6 +21,7 @@
 * [metrika-yandex-tag](#metrika-yandex-tag)
 * [metrika-yandex-watch](#metrika-yandex-watch)
 * [noeval](#noeval)
+* [prevent-bab](#prevent-bab)
 * [prevent-fab-3.2.0](#prevent-fab-3.2.0)
 * [prevent-popads-net](#prevent-popads-net)
 * [scorecardresearch-beacon](#scorecardresearch-beacon)
@@ -268,6 +269,24 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-silentjs-
 ```
 
 [Redirect source](../src/redirects/noeval.js)
+* * *
+
+### <a id="prevent-bab"></a> ⚡️ prevent-bab
+
+Prevents BlockAdblock script from detecting an ad blocker.
+
+Mostly it is used as `scriptlet`.
+See [scriptlet description](../wiki/about-scriptlets.md#prevent-bab).
+
+Related UBO redirect resource:
+https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/nobab.js
+
+**Example**
+```
+/blockadblock.$script,redirect=prevent-bab
+```
+
+[Redirect source](../src/redirects/prevent-bab.js)
 * * *
 
 ### <a id="prevent-fab-3.2.0"></a> ⚡️ prevent-fab-3.2.0
