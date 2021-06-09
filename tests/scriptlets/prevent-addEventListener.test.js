@@ -1,5 +1,5 @@
-/* eslint-disable no-eval, no-underscore-dangle */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle */
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'prevent-addEventListener';
@@ -18,23 +18,6 @@ const afterEach = () => {
 };
 
 module(name, { beforeEach, afterEach });
-
-const evalWrapper = eval;
-
-/**
- * Runs scriptlet with given parameters
- * @param {*} event event name match
- * @param {*} func callback match
- */
-const runScriptlet = (event, func) => {
-    const params = {
-        name,
-        args: [event, func],
-        verbose: true,
-    };
-    const resultString = window.scriptlets.invoke(params);
-    evalWrapper(resultString);
-};
 
 test('Checking if alias name works', (assert) => {
     const adgParams = {
@@ -57,7 +40,7 @@ test('Checking if alias name works', (assert) => {
 test('should not prevent addEventListener if listener is null', (assert) => {
     const TEST_EVENT_NAME = 'testPassive';
     const TEST_CALLBACK_MATCH = 'clicked';
-    runScriptlet(TEST_EVENT_NAME, TEST_CALLBACK_MATCH);
+    runScriptlet(name, [TEST_EVENT_NAME, TEST_CALLBACK_MATCH]);
 
     const element = document.createElement('div');
     element.addEventListener(TEST_EVENT_NAME, null);
@@ -69,7 +52,7 @@ test('should not prevent addEventListener if listener is null', (assert) => {
 test('should not prevent addEventListener if listener is invalid object', (assert) => {
     const TEST_EVENT_NAME = 'testPassive';
     const TEST_CALLBACK_MATCH = 'clicked';
-    runScriptlet(TEST_EVENT_NAME, TEST_CALLBACK_MATCH);
+    runScriptlet(name, [TEST_EVENT_NAME, TEST_CALLBACK_MATCH]);
 
     const element = document.createElement('div');
     const invalidListener = Object.create(null);
@@ -83,7 +66,7 @@ test('should not prevent addEventListener if event is undefined', (assert) => {
     const TEST_EVENT_NAME = window.undefinedEvent; // not defined
     const TEST_CALLBACK_MATCH = 'clicked';
 
-    runScriptlet(TEST_EVENT_NAME, TEST_CALLBACK_MATCH);
+    runScriptlet(name, [TEST_EVENT_NAME, TEST_CALLBACK_MATCH]);
 
     const testProp = 'test';
     window[testProp] = 'start';
@@ -98,7 +81,7 @@ test('should not prevent addEventListener if event is undefined', (assert) => {
 });
 
 test('does not allow to add event listener', (assert) => {
-    runScriptlet('click', 'clicked');
+    runScriptlet(name, ['click', 'clicked']);
 
     const testProp = 'testProp';
     const element = document.createElement('div');
@@ -113,7 +96,7 @@ test('does not allow to add event listener', (assert) => {
 });
 
 test('event listeners not corresponding to scriptlet arguments should be added correctly', (assert) => {
-    runScriptlet('click', undefined);
+    runScriptlet(name, ['click', undefined]);
 
     const focusProp = 'focusProp';
     const element = document.createElement('div');
@@ -136,7 +119,7 @@ test('event listeners not corresponding to scriptlet arguments should be added c
 });
 
 test('event listeners with handlers matched with regexp not added', (assert) => {
-    runScriptlet(undefined, '/click/');
+    runScriptlet(name, [undefined, '/click/']);
 
     const element = document.createElement('div');
 

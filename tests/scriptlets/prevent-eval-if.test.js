@@ -1,5 +1,5 @@
 /* eslint-disable no-eval, no-console, no-underscore-dangle */
-import { clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'prevent-eval-if';
@@ -18,16 +18,6 @@ const afterEach = () => {
 };
 
 module(name, { beforeEach, afterEach });
-
-const runScriptlet = (name, search) => {
-    const params = {
-        name,
-        args: [search],
-        verbose: true,
-    };
-    const resultString = window.scriptlets.invoke(params);
-    nativeEval(resultString);
-};
 
 test('Checking if alias name works', (assert) => {
     const adgParams = {
@@ -48,7 +38,7 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('AG prevent-eval-if works', (assert) => {
-    runScriptlet(name, '/\\(.*test.*\\(\\)/');
+    runScriptlet(name, ['/\\(.*test.*\\(\\)/']);
 
     const agPreventEvalIf = 'agPreventEvalIf';
 

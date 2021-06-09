@@ -1,5 +1,5 @@
-/* eslint-disable no-eval, no-underscore-dangle */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle */
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'remove-cookie';
@@ -15,18 +15,6 @@ const afterEach = () => {
 };
 
 module(name, { beforeEach, afterEach });
-
-const evalWrapper = eval;
-
-const runScriptlet = (name, match) => {
-    const params = {
-        name,
-        args: [match],
-        verbose: true,
-    };
-    const resultString = window.scriptlets.invoke(params);
-    evalWrapper(resultString);
-};
 
 test('Checking if alias name works', (assert) => {
     const adgParams = {
@@ -57,7 +45,7 @@ test('Remove cookie by match', (assert) => {
     const cName1 = '__test-cookie-name__3';
     document.cookie = `${cName}=cookie`;
     document.cookie = `${cName1}=cookie`;
-    runScriptlet(name, cName);
+    runScriptlet(name, [cName]);
 
     assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
     assert.strictEqual(document.cookie.includes(cName), false, 'Cookie by match was removed');
@@ -67,7 +55,7 @@ test('Remove cookie by match', (assert) => {
 test('Remove all cookies', (assert) => {
     const cName = '__test-cookie-name__2';
     document.cookie = `${cName}=cookie`;
-    runScriptlet(name, null);
+    runScriptlet(name, [null]);
 
     assert.strictEqual(window.hit, 'FIRED');
     assert.strictEqual(document.cookie.includes(cName), false, 'If no match delete all cookies for domain');

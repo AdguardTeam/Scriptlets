@@ -1,5 +1,5 @@
-/* eslint-disable no-eval, no-console, no-underscore-dangle */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-console, no-underscore-dangle */
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'log-addEventListener';
@@ -24,17 +24,6 @@ const afterEach = () => {
 };
 
 const INVALID_MESSAGE_START = 'Invalid event type or listener passed to addEventListener';
-
-const runScriptlet = () => {
-    const params = {
-        name,
-        verbose: true,
-    };
-
-    const resultString = window.scriptlets.invoke(params);
-    const evalWrapper = eval;
-    evalWrapper(resultString);
-};
 
 module(name, { beforeEach, afterEach });
 
@@ -70,7 +59,7 @@ test('logs events to console', (assert) => {
         assert.strictEqual(input, `addEventListener("${eventName}", ${callback.toString()})`, 'console.hit input should be equal');
     };
 
-    runScriptlet();
+    runScriptlet(name);
 
     const element = document.createElement('div');
     element.addEventListener(eventName, callback);
@@ -96,7 +85,7 @@ test('logs events to console - listener is null', (assert) => {
         assert.ok(input.indexOf(INVALID_MESSAGE_PART) > -1, 'passed invalid args');
     };
 
-    runScriptlet();
+    runScriptlet(name);
 
     const element = document.createElement('div');
     element.addEventListener(eventName, listener);
@@ -120,7 +109,7 @@ test('logs events to console - listener is not a function', (assert) => {
         assert.ok(input.indexOf(INVALID_MESSAGE_PART) > -1, 'passed invalid args');
     };
 
-    runScriptlet();
+    runScriptlet(name);
 
     const element = document.createElement('div');
     element.addEventListener(eventName, listener);
@@ -149,7 +138,7 @@ test('logs events to console - event is undefined', (assert) => {
         assert.ok(input.indexOf(INVALID_MESSAGE_PART) > -1, 'passed invalid args');
     };
 
-    runScriptlet();
+    runScriptlet(name);
 
     const element = document.createElement('div');
     element.addEventListener(TEST_EVENT_TYPE, listener);

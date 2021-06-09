@@ -1,5 +1,5 @@
 /* eslint-disable no-eval, no-console, no-underscore-dangle */
-import { clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'noeval';
@@ -20,15 +20,6 @@ const afterEach = () => {
 };
 
 module(name, { beforeEach, afterEach });
-
-const runScriptlet = (name) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    const resultString = window.scriptlets.redirects.getCode(params);
-    nativeEval(resultString);
-};
 
 test('Checking if alias name works', (assert) => {
     const adgParams = {

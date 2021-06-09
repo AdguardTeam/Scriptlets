@@ -1,22 +1,20 @@
-/* eslint-disable no-eval, no-underscore-dangle, no-console */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle */
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'dir-string';
 
-const afterEach = () => {
-    clearGlobalProps('hit', '__debug');
-};
-
-module(name, { afterEach });
-
-const createHit = () => {
+const beforeEach = () => {
     window.__debug = () => {
         window.hit = 'FIRED';
     };
 };
 
-const evalWrapper = eval;
+const afterEach = () => {
+    clearGlobalProps('hit', '__debug');
+};
+
+module(name, { beforeEach, afterEach });
 
 test('Checking if alias name works', (assert) => {
     const adgParams = {
@@ -37,15 +35,10 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('Adg rule times = 2', (assert) => {
-    createHit();
-    const params = {
-        name,
-        args: [2],
-        verbose: true,
-    };
-    const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    const scriptletArgs = [2];
+    runScriptlet(name, scriptletArgs);
 
+    // eslint-disable-next-line no-console
     console.dir({});
     assert.strictEqual(window.hit, 'FIRED', 'Console dir was updated and invoked');
 });

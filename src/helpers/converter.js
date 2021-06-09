@@ -1,4 +1,5 @@
 import {
+    replaceAll,
     getBeforeRegExp,
     substringAfter,
     substringBefore,
@@ -32,6 +33,7 @@ const UBO_SCRIPTLET_TEMPLATE = '${domains}##+js(${args})';
 const UBO_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@#+js(${args})';
 
 const UBO_ALIAS_NAME_MARKER = 'ubo-';
+const UBO_SCRIPTLET_JS_ENDING = '.js';
 
 // https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#xhr
 const UBO_XHR_TYPE = 'xhr';
@@ -46,6 +48,17 @@ const ADG_PREVENT_FETCH_NAME = 'prevent-fetch';
 const ADG_PREVENT_FETCH_EMPTY_STRING = '';
 const ADG_PREVENT_FETCH_WILDCARD = getWildcardSymbol();
 const UBO_NO_FETCH_IF_WILDCARD = '/^/';
+
+const ESCAPED_COMMA_SEPARATOR = '\\,';
+const COMMA_SEPARATOR = ',';
+
+const MAX_REMOVE_ATTR_CLASS_ARGS_COUNT = 3;
+const REMOVE_ATTR_METHOD = 'removeAttr';
+const REMOVE_CLASS_METHOD = 'removeClass';
+const REMOVE_ATTR_ALIASES = scriptletList[REMOVE_ATTR_METHOD].names;
+const REMOVE_CLASS_ALIASES = scriptletList[REMOVE_CLASS_METHOD].names;
+const ADG_REMOVE_ATTR_NAME = REMOVE_ATTR_ALIASES[0];
+const ADG_REMOVE_CLASS_NAME = REMOVE_CLASS_ALIASES[0];
 
 /**
  * Returns array of strings separated by space which not in quotes
@@ -88,13 +101,35 @@ export const convertUboScriptletToAdg = (rule) => {
         // Most probably this is not correct separator, in this case we use ','
         parsedArgs = getStringInBraces(rule).split(/,/g);
     }
+
+    const scriptletName = parsedArgs[0].indexOf(UBO_SCRIPTLET_JS_ENDING) > -1
+        ? `ubo-${parsedArgs[0]}`
+        : `ubo-${parsedArgs[0]}${UBO_SCRIPTLET_JS_ENDING}`;
+
+    if (((REMOVE_ATTR_ALIASES.indexOf(scriptletName) > -1)
+        || (REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1))
+        && parsedArgs.length > MAX_REMOVE_ATTR_CLASS_ARGS_COUNT) {
+        parsedArgs = [
+            parsedArgs[0],
+            parsedArgs[1],
+            // if there are more than 3 args for remove-attr/class scriptlet,
+            // ubo rule has maltiple selector separated by comma. so we should:
+            // 1. join them into a single string
+            // 2. replace escaped commas by regular ones
+            // https://github.com/AdguardTeam/Scriptlets/issues/133
+            replaceAll(
+                parsedArgs.slice(2).join(`${COMMA_SEPARATOR} `),
+                ESCAPED_COMMA_SEPARATOR,
+                COMMA_SEPARATOR,
+            ),
+        ];
+    }
+
     const args = parsedArgs
         .map((arg, index) => {
-            let outputArg;
+            let outputArg = arg;
             if (index === 0) {
-                outputArg = (arg.indexOf('.js') > -1) ? `ubo-${arg}` : `ubo-${arg}.js`;
-            } else {
-                outputArg = arg;
+                outputArg = scriptletName;
             }
             // for example: dramaserial.xyz##+js(abort-current-inline-script, $, popup)
             if (arg === '$') {
@@ -103,7 +138,7 @@ export const convertUboScriptletToAdg = (rule) => {
             return outputArg;
         })
         .map((arg) => wrapInSingleQuotes(arg))
-        .join(', ');
+        .join(`${COMMA_SEPARATOR} `);
     const adgRule = replacePlaceholders(
         template,
         { domains, args },
@@ -133,7 +168,7 @@ export const convertAbpSnippetToAdg = (rule) => {
             .filter((arg) => arg)
             .map((arg, index) => (index === 0 ? `abp-${arg}` : arg))
             .map((arg) => wrapInSingleQuotes(arg))
-            .join(', '))
+            .join(`${COMMA_SEPARATOR} `))
         .map((args) => replacePlaceholders(template, { domains, args }));
 };
 
@@ -177,6 +212,12 @@ export const convertAdgScriptletToUbo = (rule) => {
             && (parsedParams[0] === ADG_PREVENT_FETCH_WILDCARD
                 || parsedParams[0] === ADG_PREVENT_FETCH_EMPTY_STRING)) {
             preparedParams = [UBO_NO_FETCH_IF_WILDCARD];
+        } else if ((parsedName === ADG_REMOVE_ATTR_NAME || parsedName === ADG_REMOVE_CLASS_NAME)
+            && parsedParams[1] && parsedParams[1].indexOf(COMMA_SEPARATOR) > -1) {
+            preparedParams = [
+                parsedParams[0],
+                replaceAll(parsedParams[1], COMMA_SEPARATOR, ESCAPED_COMMA_SEPARATOR),
+            ];
         } else {
             preparedParams = parsedParams;
         }
@@ -212,9 +253,11 @@ export const convertAdgScriptletToUbo = (rule) => {
                     .replace(UBO_ALIAS_NAME_MARKER, '')
                     // '.js' in the Ubo scriptlet name can be omitted
                     // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
-                    .replace('.js', '');
+                    .replace(UBO_SCRIPTLET_JS_ENDING, '');
 
-                const args = (preparedParams.length > 0) ? `${uboName}, ${preparedParams.join(', ')}` : uboName;
+                const args = (preparedParams.length > 0)
+                    ? `${uboName}, ${preparedParams.join(`${COMMA_SEPARATOR} `)}`
+                    : uboName;
 
                 const uboRule = replacePlaceholders(
                     template,
@@ -271,7 +314,7 @@ export const convertUboRedirectToAdg = (rule) => {
             }
             return el;
         })
-        .join(',');
+        .join(COMMA_SEPARATOR);
 
     return `${firstPartOfRule}$${adgModifiers}`;
 };
@@ -293,7 +336,7 @@ export const convertAbpRedirectToAdg = (rule) => {
             }
             return el;
         })
-        .join(',');
+        .join(COMMA_SEPARATOR);
 
     return `${firstPartOfRule}$${adgModifiers}`;
 };
@@ -360,7 +403,7 @@ export const convertAdgRedirectToUbo = (rule) => {
             }
             return el;
         })
-        .join(',');
+        .join(COMMA_SEPARATOR);
 
     return `${basePart}$${uboModifiers}`;
 };

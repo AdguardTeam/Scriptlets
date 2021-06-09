@@ -1,7 +1,7 @@
 /* global sinon */
-/* eslint-disable no-eval, no-underscore-dangle */
+/* eslint-disable no-underscore-dangle */
 
-import { clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'prevent-popads-net';
@@ -17,16 +17,6 @@ const afterEach = () => {
 };
 
 module(name, { beforeEach, afterEach });
-
-const runScriptlet = (name) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    const resultString = window.scriptlets.invoke(params);
-    const evalWrapper = eval;
-    evalWrapper(resultString);
-};
 
 test('Checking if alias name works', (assert) => {
     const adgParams = {

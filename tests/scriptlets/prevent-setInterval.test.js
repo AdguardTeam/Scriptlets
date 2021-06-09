@@ -1,14 +1,8 @@
-/* eslint-disable no-eval, no-underscore-dangle */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle */
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
-const {
-    test,
-    module,
-} = QUnit;
+const { test, module } = QUnit;
 const name = 'prevent-setInterval';
-
-// copy eval to prevent rollup warnings
-const evalWrap = eval;
 
 const nativeSetInterval = window.setInterval;
 const nativeConsole = console.log; // eslint-disable-line no-console
@@ -17,15 +11,14 @@ const testIntervals = [];
 
 const beforeEach = () => {
     window.__debug = () => {
-        window.hit = 'value';
+        window.hit = 'FIRED';
     };
 };
 
 const afterEach = () => {
     window.setInterval = nativeSetInterval;
-    clearGlobalProps('hit', 'aaa', '__debug');
     testIntervals.forEach((i) => (clearInterval(i)));
-    clearGlobalProps('hit', '__debug', 'one', 'two', 'three', 'four');
+    clearGlobalProps('hit', '__debug', 'aaa', 'one', 'two', 'three', 'four');
     console.log = nativeConsole; // eslint-disable-line no-console
 };
 
@@ -49,14 +42,9 @@ test('Checking if alias name works', (assert) => {
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
-test('prevent-setInterval: adg no args -- logging', (assert) => {
-    const params = {
-        name,
-        args: [],
-        verbose: true,
-    };
-    const scriptlet = window.scriptlets.invoke(params);
-    evalWrap(scriptlet);
+test('no args -- logging', (assert) => {
+    runScriptlet(name);
+
     const done = assert.async();
 
     const agLogSetInterval = 'agLogSetInterval';
@@ -78,22 +66,15 @@ test('prevent-setInterval: adg no args -- logging', (assert) => {
 
     // We need to run our assertion after all timeouts
     setTimeout(() => {
-        assert.equal(window.hit, 'value', 'Hit function was executed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         assert.strictEqual(window[agLogSetInterval], 'changed', 'property changed');
         clearGlobalProps(agLogSetInterval);
         done();
     }, 50);
 });
 
-test('prevent-setInterval: adg by setInterval callback name', (assert) => {
-    const params = {
-        name,
-        args: ['test', '50'],
-        verbose: true,
-    };
-    const scriptlet = window.scriptlets.invoke(params);
+test('setInterval callback name matching', (assert) => {
     const done = assert.async();
-
     window.one = 'value';
     window.two = 'value';
     // We need to run our assertion after all timeouts
@@ -101,12 +82,14 @@ test('prevent-setInterval: adg by setInterval callback name', (assert) => {
         assert.equal(window.one, 'value', 'Target property not changed');
         // eslint-disable-next-line max-len
         assert.equal(window.two, 'new value', 'Another property should successfully changed by another timeout');
-        assert.equal(window.hit, 'value', 'Hit function was executed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         done();
     }, 100);
 
     // run scriptlet code
-    evalWrap(scriptlet);
+    const scriptletArgs = ['test', '50'];
+    runScriptlet(name, scriptletArgs);
+
     // check if scriptlet works
     const test = () => { window.one = 'new value'; };
     const intervalId = setInterval(test, 50);
@@ -118,15 +101,8 @@ test('prevent-setInterval: adg by setInterval callback name', (assert) => {
     testIntervals.push(intervalAnother);
 });
 
-test('prevent-setInterval: adg by code matching', (assert) => {
-    const params = {
-        name,
-        args: ['one', '50'],
-        verbose: true,
-    };
-    const scriptlet = window.scriptlets.invoke(params);
+test('code matching', (assert) => {
     const done = assert.async();
-
     window.one = 'value';
     window.two = 'value';
     // We need to run our assertion after all timeouts
@@ -134,12 +110,14 @@ test('prevent-setInterval: adg by code matching', (assert) => {
         assert.equal(window.one, 'value', 'Target property not changed');
         // eslint-disable-next-line max-len
         assert.equal(window.two, 'new value', 'Another property should  be successfully changed by another timeout');
-        assert.equal(window.hit, 'value', 'Hit function was executed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         done();
     }, 100);
 
     // run scriptlet code
-    evalWrap(scriptlet);
+    const scriptletArgs = ['one', '50'];
+    runScriptlet(name, scriptletArgs);
+
     // check if scriptlet works
     const testCallback = () => { window.one = 'new value'; };
     const intervalId = setInterval(testCallback, 50);
@@ -151,15 +129,8 @@ test('prevent-setInterval: adg by code matching', (assert) => {
     testIntervals.push(intervalAnother);
 });
 
-test('prevent-setInterval: adg -- !match', (assert) => {
-    const params = {
-        name,
-        args: ['!one'],
-        verbose: true,
-    };
-    const scriptlet = window.scriptlets.invoke(params);
+test('!match', (assert) => {
     const done = assert.async();
-
     window.one = 'old one';
     window.two = 'old two';
     window.three = 'old three';
@@ -169,12 +140,13 @@ test('prevent-setInterval: adg -- !match', (assert) => {
         // eslint-disable-next-line max-len
         assert.equal(window.two, 'old two', 'Second property should be successfully changed');
         assert.equal(window.three, 'old three', 'Third property should be successfully changed');
-        assert.equal(window.hit, 'value', 'Hit function was executed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         done();
     }, 100);
 
     // run scriptlet code
-    evalWrap(scriptlet);
+    const scriptletArgs = ['!one'];
+    runScriptlet(name, scriptletArgs);
 
     // only this one should not be prevented because of match = !one
     const one = () => { window.one = 'NEW ONE'; };
@@ -190,15 +162,8 @@ test('prevent-setInterval: adg -- !match', (assert) => {
     testIntervals.push(intervalTest3);
 });
 
-test('prevent-setInterval: adg -- match + !delay', (assert) => {
-    const params = {
-        name,
-        args: ['test', '!50'],
-        verbose: true,
-    };
-    const scriptlet = window.scriptlets.invoke(params);
+test('match + !delay', (assert) => {
     const done = assert.async();
-
     window.one = 'old one';
     window.two = 'old two';
     window.three = 'old three';
@@ -207,12 +172,13 @@ test('prevent-setInterval: adg -- match + !delay', (assert) => {
         assert.equal(window.one, 'old one', 'Target property not changed');
         assert.equal(window.two, 'CHANGED2', 'Second property should be successfully changed');
         assert.equal(window.three, 'old three', 'Target property not changed');
-        assert.equal(window.hit, 'value', 'Hit function was executed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         done();
     }, 200);
 
     // run scriptlet code
-    evalWrap(scriptlet);
+    const scriptletArgs = ['test', '!50'];
+    runScriptlet(name, scriptletArgs);
 
     const test1 = () => { window.one = 'CHANGED1'; };
     const intervalTest1 = setInterval(test1, 20);
@@ -228,15 +194,8 @@ test('prevent-setInterval: adg -- match + !delay', (assert) => {
     testIntervals.push(intervalTest3);
 });
 
-test('prevent-setInterval: adg -- !match + !delay', (assert) => {
-    const params = {
-        name,
-        args: ['!first', '!50'],
-        verbose: true,
-    };
-    const scriptlet = window.scriptlets.invoke(params);
+test('!match + !delay', (assert) => {
     const done = assert.async();
-
     window.one = 'old';
     window.two = 'old';
     window.three = 'old';
@@ -247,12 +206,13 @@ test('prevent-setInterval: adg -- !match + !delay', (assert) => {
         assert.equal(window.two, 'first50', 'property should be successfully changed');
         assert.equal(window.three, 'old', 'Target property not changed');
         assert.equal(window.four, 'second50', 'property should be successfully changed');
-        assert.equal(window.hit, 'value', 'Hit function was executed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         done();
     }, 100);
 
     // run scriptlet code
-    evalWrap(scriptlet);
+    const scriptletArgs = ['!first', '!50'];
+    runScriptlet(name, scriptletArgs);
 
     const first20 = () => { window.one = 'first20'; };
     const intervalTest120 = setInterval(first20, 20);

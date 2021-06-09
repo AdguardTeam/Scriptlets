@@ -1,8 +1,10 @@
 /* eslint-disable no-eval, no-underscore-dangle */
-import { clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'prevent-bab';
+
+const testProp = 'evalProp';
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -11,21 +13,10 @@ const beforeEach = () => {
 };
 
 const afterEach = () => {
-    clearGlobalProps('hit', '__debug');
+    clearGlobalProps(testProp, 'hit', '__debug');
 };
 
 module(name, { beforeEach, afterEach });
-
-const evalWrapper = eval;
-
-const runScriptlet = (name) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    const resultString = window.scriptlets.invoke(params);
-    evalWrapper(resultString);
-};
 
 test('Checking if alias name works', (assert) => {
     const adgParams = {
@@ -46,45 +37,37 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('works eval with AdblockBlock', (assert) => {
-    runScriptlet('prevent-bab');
-
-    const evalProp = 'evalProp';
+    runScriptlet(name);
 
     const evalWrap = eval;
+    evalWrap(`(function test() { const temp = 'babasbm'; window.${testProp} = 'test';})()`);
 
-    evalWrap(`(function test() { const temp = 'babasbm'; window.${evalProp} = 'test';})()`);
-
-    assert.strictEqual(window[evalProp], undefined);
-    assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps(evalProp);
+    assert.strictEqual(window[testProp], undefined);
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
 test('sample eval script works', (assert) => {
-    runScriptlet('prevent-bab');
-
-    const evalProp = 'evalProp';
+    runScriptlet(name);
 
     const evalWrap = eval;
+    evalWrap(`(function test() { const temp = 'temp'; window.${testProp} = 'test';})()`);
 
-    evalWrap(`(function test() { const temp = 'temp'; window.${evalProp} = 'test';})()`);
-
-    assert.strictEqual(window[evalProp], 'test');
-    assert.strictEqual(window.hit, undefined);
-    clearGlobalProps(evalProp);
+    assert.strictEqual(window[testProp], 'test');
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
 });
 
 test('prevents set timeout with AdblockBlock', (assert) => {
-    runScriptlet('prevent-bab');
-    const timeoutProp = 'timeoutProp';
-    const func = `(function test(id) {window.${timeoutProp} = 'test'})(test.bab_elementid)`;
+    runScriptlet(name);
+
+    const func = `(function test(id) {window.${testProp} = 'test'})(test.bab_elementid)`;
     setTimeout(func); // eslint-disable-line no-implied-eval
 
     const done = assert.async();
 
     setTimeout(() => {
-        assert.strictEqual(window.hit, 'FIRED');
-        assert.strictEqual(window[timeoutProp], undefined);
-        clearGlobalProps(timeoutProp);
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        assert.strictEqual(window[testProp], undefined);
+        clearGlobalProps(testProp);
         done();
     }, 20);
 });

@@ -1,24 +1,26 @@
-/* eslint-disable no-eval, no-underscore-dangle */
-import { clearGlobalProps, getRandomNumber } from '../helpers';
+/* eslint-disable no-underscore-dangle */
+import {
+    runScriptlet,
+    clearGlobalProps,
+    getRandomNumber,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'adjust-setTimeout';
 const nativeSetTimeout = window.setTimeout;
+
+const beforeEach = () => {
+    window.__debug = () => {
+        window.hit = 'FIRED';
+    };
+};
 
 const afterEach = () => {
     window.setTimeout = nativeSetTimeout;
     clearGlobalProps('hit', '__debug', 'intervalValue', 'someKey');
 };
 
-module(name, { afterEach });
-
-const createHit = () => {
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
-};
-
-const evalWrapper = eval;
+module(name, { beforeEach, afterEach });
 
 test('Checking if alias name works', (assert) => {
     const adgParams = {
@@ -39,15 +41,7 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('no args', (assert) => {
-    createHit();
-    const params = {
-        name,
-        args: [],
-        verbose: true,
-    };
-
-    const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    runScriptlet(name);
 
     const done = assert.async();
 
@@ -63,15 +57,8 @@ test('no args', (assert) => {
 });
 
 test('only match param', (assert) => {
-    createHit();
-    const params = {
-        name,
-        args: ['intervalValue'],
-        verbose: true,
-    };
-
-    const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    const scriptletArgs = ['intervalValue'];
+    runScriptlet(name, scriptletArgs);
 
     const done1 = assert.async();
     const done2 = assert.async();
@@ -104,15 +91,8 @@ test('only match param', (assert) => {
 });
 
 test('match param + timeout + no boost', (assert) => {
-    createHit();
-    const params = {
-        name,
-        args: ['intervalValue', '500'],
-        verbose: true,
-    };
-
-    const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    const scriptletArgs = ['intervalValue', '500'];
+    runScriptlet(name, scriptletArgs);
 
     const done = assert.async();
 
@@ -128,15 +108,8 @@ test('match param + timeout + no boost', (assert) => {
 });
 
 test('all params, boost > 1 (slowing)', (assert) => {
-    createHit();
-    const params = {
-        name,
-        args: ['intervalValue', '100', '2'],
-        verbose: true,
-    };
-
-    const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    const scriptletArgs = ['intervalValue', '100', '2'];
+    runScriptlet(name, scriptletArgs);
 
     const done1 = assert.async();
     const done2 = assert.async();
@@ -158,15 +131,8 @@ test('all params, boost > 1 (slowing)', (assert) => {
 });
 
 test('all params, boost < 1 (boosting)', (assert) => {
-    createHit();
-    const params = {
-        name,
-        args: ['intervalValue', '500', '0.2'],
-        verbose: true,
-    };
-
-    const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    const scriptletArgs = ['intervalValue', '500', '0.2'];
+    runScriptlet(name, scriptletArgs);
 
     const done1 = assert.async();
     const done2 = assert.async();
@@ -188,15 +154,8 @@ test('all params, boost < 1 (boosting)', (assert) => {
 });
 
 test('all params, invalid boost value --> 0.05 by default', (assert) => {
-    createHit();
-    const params = {
-        name,
-        args: ['intervalValue', '1000', 'abc'],
-        verbose: true,
-    };
-
-    const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    const scriptletArgs = ['intervalValue', '1000', 'abc'];
+    runScriptlet(name, scriptletArgs);
 
     const done1 = assert.async();
     const done2 = assert.async();
@@ -218,15 +177,8 @@ test('all params, invalid boost value --> 0.05 by default', (assert) => {
 });
 
 test('match param + wildcard timeout', (assert) => {
-    createHit();
-    const params = {
-        name,
-        args: ['intervalValue', '*'],
-        verbose: true,
-    };
-
-    const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    const scriptletArgs = ['intervalValue', '*'];
+    runScriptlet(name, scriptletArgs);
 
     const done = assert.async();
 
@@ -243,15 +195,8 @@ test('match param + wildcard timeout', (assert) => {
 });
 
 test('match param + wildcard timeout + boost > 1 (slowing)', (assert) => {
-    createHit();
-    const params = {
-        name,
-        args: ['intervalValue', '*', '2'],
-        verbose: true,
-    };
-
-    const resString = window.scriptlets.invoke(params);
-    evalWrapper(resString);
+    const scriptletArgs = ['intervalValue', '*', '2'];
+    runScriptlet(name, scriptletArgs);
 
     const done1 = assert.async();
     const done2 = assert.async();

@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.19
+ * Version 1.3.20
  */
 
 /**
@@ -232,6 +232,17 @@ var isEmptyObject = function isEmptyObject(obj) {
   return Object.keys(obj).length === 0;
 };
 
+/**
+ * String.prototype.replaceAll polifill
+ * @param {string} input input string
+ * @param {string} substr to look for
+ * @param {string} newSubstr replacement
+ * @returns {string}
+ */
+
+var replaceAll = function replaceAll(input, substr, newSubstr) {
+  return input.split(substr).join(newSubstr);
+};
 /**
  * Escapes special chars in string
  * @param {string} str
@@ -1121,6 +1132,7 @@ var dependencies = /*#__PURE__*/Object.freeze({
     setPropertyAccess: setPropertyAccess,
     getPropertyInChain: getPropertyInChain,
     getWildcardPropertyInChain: getWildcardPropertyInChain,
+    replaceAll: replaceAll,
     escapeRegExp: escapeRegExp,
     toRegExp: toRegExp,
     getBeforeRegExp: getBeforeRegExp,
@@ -5116,7 +5128,8 @@ var ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@%#//scriptlet(${args})';
 var UBO_SCRIPTLET_TEMPLATE = '${domains}##+js(${args})'; // eslint-disable-next-line no-template-curly-in-string
 
 var UBO_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@#+js(${args})';
-var UBO_ALIAS_NAME_MARKER = 'ubo-'; // https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#xhr
+var UBO_ALIAS_NAME_MARKER = 'ubo-';
+var UBO_SCRIPTLET_JS_ENDING = '.js'; // https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#xhr
 
 var UBO_XHR_TYPE = 'xhr';
 var ADG_XHR_TYPE = 'xmlhttprequest';
@@ -5127,6 +5140,15 @@ var ADG_PREVENT_FETCH_NAME = 'prevent-fetch';
 var ADG_PREVENT_FETCH_EMPTY_STRING = '';
 var ADG_PREVENT_FETCH_WILDCARD = getWildcardSymbol();
 var UBO_NO_FETCH_IF_WILDCARD = '/^/';
+var ESCAPED_COMMA_SEPARATOR = '\\,';
+var COMMA_SEPARATOR = ',';
+var MAX_REMOVE_ATTR_CLASS_ARGS_COUNT = 3;
+var REMOVE_ATTR_METHOD = 'removeAttr';
+var REMOVE_CLASS_METHOD = 'removeClass';
+var REMOVE_ATTR_ALIASES = scriptletList[REMOVE_ATTR_METHOD].names;
+var REMOVE_CLASS_ALIASES = scriptletList[REMOVE_CLASS_METHOD].names;
+var ADG_REMOVE_ATTR_NAME = REMOVE_ATTR_ALIASES[0];
+var ADG_REMOVE_CLASS_NAME = REMOVE_CLASS_ALIASES[0];
 /**
  * Returns array of strings separated by space which not in quotes
  * @param {string} str
@@ -5175,13 +5197,22 @@ var convertUboScriptletToAdg = function convertUboScriptletToAdg(rule) {
     parsedArgs = getStringInBraces(rule).split(/,/g);
   }
 
+  var scriptletName = parsedArgs[0].indexOf(UBO_SCRIPTLET_JS_ENDING) > -1 ? "ubo-".concat(parsedArgs[0]) : "ubo-".concat(parsedArgs[0]).concat(UBO_SCRIPTLET_JS_ENDING);
+
+  if ((REMOVE_ATTR_ALIASES.indexOf(scriptletName) > -1 || REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1) && parsedArgs.length > MAX_REMOVE_ATTR_CLASS_ARGS_COUNT) {
+    parsedArgs = [parsedArgs[0], parsedArgs[1], // if there are more than 3 args for remove-attr/class scriptlet,
+    // ubo rule has maltiple selector separated by comma. so we should:
+    // 1. join them into a single string
+    // 2. replace escaped commas by regular ones
+    // https://github.com/AdguardTeam/Scriptlets/issues/133
+    replaceAll(parsedArgs.slice(2).join("".concat(COMMA_SEPARATOR, " ")), ESCAPED_COMMA_SEPARATOR, COMMA_SEPARATOR)];
+  }
+
   var args = parsedArgs.map(function (arg, index) {
-    var outputArg;
+    var outputArg = arg;
 
     if (index === 0) {
-      outputArg = arg.indexOf('.js') > -1 ? "ubo-".concat(arg) : "ubo-".concat(arg, ".js");
-    } else {
-      outputArg = arg;
+      outputArg = scriptletName;
     } // for example: dramaserial.xyz##+js(abort-current-inline-script, $, popup)
 
 
@@ -5192,7 +5223,7 @@ var convertUboScriptletToAdg = function convertUboScriptletToAdg(rule) {
     return outputArg;
   }).map(function (arg) {
     return wrapInSingleQuotes(arg);
-  }).join(', ');
+  }).join("".concat(COMMA_SEPARATOR, " "));
   var adgRule = replacePlaceholders(template, {
     domains: domains,
     args: args
@@ -5219,7 +5250,7 @@ var convertAbpSnippetToAdg = function convertAbpSnippetToAdg(rule) {
       return index === 0 ? "abp-".concat(arg) : arg;
     }).map(function (arg) {
       return wrapInSingleQuotes(arg);
-    }).join(', ');
+    }).join("".concat(COMMA_SEPARATOR, " "));
   }).map(function (args) {
     return replacePlaceholders(template, {
       domains: domains,
@@ -5268,6 +5299,8 @@ var convertAdgScriptletToUbo = function convertAdgScriptletToUbo(rule) {
     } else if (parsedName === ADG_PREVENT_FETCH_NAME // https://github.com/AdguardTeam/Scriptlets/issues/109
     && (parsedParams[0] === ADG_PREVENT_FETCH_WILDCARD || parsedParams[0] === ADG_PREVENT_FETCH_EMPTY_STRING)) {
       preparedParams = [UBO_NO_FETCH_IF_WILDCARD];
+    } else if ((parsedName === ADG_REMOVE_ATTR_NAME || parsedName === ADG_REMOVE_CLASS_NAME) && parsedParams[1] && parsedParams[1].indexOf(COMMA_SEPARATOR) > -1) {
+      preparedParams = [parsedParams[0], replaceAll(parsedParams[1], COMMA_SEPARATOR, ESCAPED_COMMA_SEPARATOR)];
     } else {
       preparedParams = parsedParams;
     } // object of name and aliases for the Adg-scriptlet
@@ -5308,8 +5341,8 @@ var convertAdgScriptletToUbo = function convertAdgScriptletToUbo(rule) {
         var domains = getBeforeRegExp(rule, ADGUARD_SCRIPTLET_MASK_REG);
         var uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '') // '.js' in the Ubo scriptlet name can be omitted
         // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
-        .replace('.js', '');
-        var args = preparedParams.length > 0 ? "".concat(uboName, ", ").concat(preparedParams.join(', ')) : uboName;
+        .replace(UBO_SCRIPTLET_JS_ENDING, '');
+        var args = preparedParams.length > 0 ? "".concat(uboName, ", ").concat(preparedParams.join("".concat(COMMA_SEPARATOR, " "))) : uboName;
         var uboRule = replacePlaceholders(template, {
           domains: domains,
           args: args
@@ -5363,7 +5396,7 @@ var convertUboRedirectToAdg = function convertUboRedirectToAdg(rule) {
     }
 
     return el;
-  }).join(',');
+  }).join(COMMA_SEPARATOR);
   return "".concat(firstPartOfRule, "$").concat(adgModifiers);
 };
 /**
@@ -5383,7 +5416,7 @@ var convertAbpRedirectToAdg = function convertAbpRedirectToAdg(rule) {
     }
 
     return el;
-  }).join(',');
+  }).join(COMMA_SEPARATOR);
   return "".concat(firstPartOfRule, "$").concat(adgModifiers);
 };
 /**
@@ -5451,7 +5484,7 @@ var convertAdgRedirectToUbo = function convertAdgRedirectToUbo(rule) {
     }
 
     return el;
-  }).join(',');
+  }).join(COMMA_SEPARATOR);
   return "".concat(basePart, "$").concat(uboModifiers);
 };
 

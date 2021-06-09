@@ -1,106 +1,70 @@
-/* eslint-disable no-eval, no-underscore-dangle */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle */
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'debug-on-property-write';
 const PROPERTY = 'aaa';
 const CHAIN_PROPERTY = 'aaa.bbb';
 
-// copy eval to prevent rollup warnings
-const evalWrap = eval;
-
 const changingProps = [PROPERTY, 'hit', '__debug'];
 
-module(name);
-test('debug-on-property-write: adg alias, set prop for existed prop', (assert) => {
-    const params = {
-        name,
-        args: [PROPERTY],
-        verbose: true,
-    };
+const beforeEach = () => {
     window.__debug = () => {
-        window.hit = 'value';
+        window.hit = 'FIRED';
     };
-    window[PROPERTY] = 'value';
-    const resString = window.scriptlets.invoke(params);
-    evalWrap(resString);
-    window[PROPERTY] = 'new value';
-    assert.equal(window.hit, 'value', 'Hit function was executed');
+};
+
+const afterEach = () => {
     clearGlobalProps(...changingProps);
+};
+
+module(name, { beforeEach, afterEach });
+
+test('set prop for existed prop', (assert) => {
+    window[PROPERTY] = 'value';
+    const scriptletArgs = [PROPERTY];
+    runScriptlet(name, scriptletArgs);
+
+    window[PROPERTY] = 'new value';
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
-test('debug-on-property-write dot notation', (assert) => {
-    const params = {
-        name,
-        args: [CHAIN_PROPERTY],
-        verbose: true,
-    };
-    window.__debug = () => {
-        window.hit = 'value';
-    };
+test('dot notation', (assert) => {
     window.aaa = {
         bbb: 'value',
     };
-    const resString = window.scriptlets.invoke(params);
-    evalWrap(resString);
+    const scriptletArgs = [CHAIN_PROPERTY];
+    runScriptlet(name, scriptletArgs);
+
     window.aaa.bbb = 'new value';
-    assert.equal(window.hit, 'value', 'Hit function was executed');
-    clearGlobalProps(...changingProps);
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
-test('debug-on-property-write dot notation deferred defenition', (assert) => {
-    const params = {
-        name,
-        args: [CHAIN_PROPERTY],
-        verbose: true,
-    };
-    window.__debug = () => {
-        window.hit = 'value';
-    };
-    const resString = window.scriptlets.invoke(params);
-    evalWrap(resString);
+test('dot notation deferred defenition', (assert) => {
+    const scriptletArgs = [CHAIN_PROPERTY];
+    runScriptlet(name, scriptletArgs);
+
     window.aaa = {};
     window.aaa.bbb = 'new value';
-    assert.equal(window.hit, 'value', 'Hit function was executed');
-    clearGlobalProps(...changingProps);
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
-test('debug-on-property-write: stack match', (assert) => {
-    const params = {
-        name,
-        args: [
-            [PROPERTY],
-            '/test/',
-        ],
-        verbose: true,
-    };
-    window.__debug = () => {
-        window.hit = 'value';
-    };
+test('stack match', (assert) => {
     window[PROPERTY] = 'value';
-    const resString = window.scriptlets.invoke(params);
-    evalWrap(resString);
+    const stackMatch = '/test/';
+    const scriptletArgs = [PROPERTY, stackMatch];
+    runScriptlet(name, scriptletArgs);
+
     window[PROPERTY] = 'new value';
-    assert.equal(window.hit, 'value', 'Hit function was executed');
-    clearGlobalProps(...changingProps);
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
-test('debug-on-property-write: no stack match', (assert) => {
-    const params = {
-        name,
-        args: [
-            [PROPERTY],
-            'no_match.js',
-        ],
-        verbose: true,
-    };
-    window.__debug = () => {
-        window.hit = 'value';
-    };
+test('no stack match', (assert) => {
     window[PROPERTY] = 'value';
-    const resString = window.scriptlets.invoke(params);
-    evalWrap(resString);
+    const noStackMatch = 'no_match.js';
+    const scriptletArgs = [PROPERTY, noStackMatch];
+    runScriptlet(name, scriptletArgs);
+
     window[PROPERTY] = 'new value';
-    assert.equal(window.hit, undefined, 'Hit function was NOT executed');
-    clearGlobalProps(...changingProps);
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
 });

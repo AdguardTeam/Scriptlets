@@ -2,6 +2,15 @@ import { nativeIsNaN } from './number-utils';
 import { isEmptyObject, getObjectEntries } from './object-utils';
 
 /**
+ * String.prototype.replaceAll polifill
+ * @param {string} input input string
+ * @param {string} substr to look for
+ * @param {string} newSubstr replacement
+ * @returns {string}
+ */
+export const replaceAll = (input, substr, newSubstr) => input.split(substr).join(newSubstr);
+
+/**
  * Escapes special chars in string
  * @param {string} str
  * @returns {string}

@@ -1,5 +1,5 @@
-/* eslint-disable no-eval, no-underscore-dangle, no-console */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle, no-console */
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'prevent-window-open';
@@ -7,22 +7,6 @@ const name = 'prevent-window-open';
 const nativeOpen = window.open;
 const nativeSetTimeout = window.setTimeout;
 const nativeConsole = console.log;
-
-/**
- * Runs sctiptlet with given props
- * @param {string[]|undefined} args
- */
-const runScriptlet = (args) => {
-    const params = {
-        name,
-        args,
-        verbose: true,
-    };
-    const resultString = window.scriptlets.invoke(params);
-    // copy eval to prevent rollup warnings
-    const evalWrapper = eval;
-    evalWrapper(resultString);
-};
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -58,28 +42,28 @@ test('Checking if alias name works', (assert) => {
 
 test('old syntax: string ', (assert) => {
     const scriptletArgs = ['1', 'test'];
-    runScriptlet(scriptletArgs);
+    runScriptlet(name, scriptletArgs);
     window.open('test url', 'some target');
     assert.equal(window.hit, 'value', 'Hit function was executed');
 });
 
 test('old syntax: regexp ', (assert) => {
     const scriptletArgs = ['1', '/test/'];
-    runScriptlet(scriptletArgs);
+    runScriptlet(name, scriptletArgs);
     window.open('test url', 'some target');
     assert.equal(window.hit, 'value', 'Hit function was executed');
 });
 
 test('old syntax: reverse + regexp ', (assert) => {
     const scriptletArgs = ['0', '/test/'];
-    runScriptlet(scriptletArgs);
+    runScriptlet(name, scriptletArgs);
     window.open('some url', 'some target');
     assert.equal(window.hit, 'value', 'Hit function was executed because of reverse matching');
 });
 
 test('old syntax: match all + custom replacement: trueFunc', (assert) => {
     const scriptletArgs = ['1', '', 'trueFunc'];
-    runScriptlet(scriptletArgs);
+    runScriptlet(name, scriptletArgs);
     const test = window.open('some url');
     const res = test();
     assert.equal(window.hit, 'value', 'Hit function was executed');
@@ -88,7 +72,7 @@ test('old syntax: match all + custom replacement: trueFunc', (assert) => {
 
 test('old syntax: match all + custom replacement: {aa=noopFunc}', (assert) => {
     const scriptletArgs = ['1', '', '{aa=noopFunc}'];
-    runScriptlet(scriptletArgs);
+    runScriptlet(name, scriptletArgs);
     const test = window.open('some test url');
     assert.equal(window.hit, 'value', 'Hit function was executed');
     assert.strictEqual(typeof test, 'object', 'replaced window.open returns an object');
@@ -97,42 +81,42 @@ test('old syntax: match all + custom replacement: {aa=noopFunc}', (assert) => {
 });
 
 test('new syntax: no args', (assert) => {
-    runScriptlet();
+    runScriptlet(name);
     window.open('some url');
     assert.equal(window.hit, 'value', 'Hit function was executed');
 });
 
 test('new syntax: wildcard match', (assert) => {
     const scriptletArgs = ['*'];
-    runScriptlet(scriptletArgs);
+    runScriptlet(name, scriptletArgs);
     window.open('some url');
     assert.equal(window.hit, 'value', 'Hit function was executed');
 });
 
 test('new syntax: string ', (assert) => {
     const scriptletArgs = ['test'];
-    runScriptlet(scriptletArgs);
+    runScriptlet(name, scriptletArgs);
     window.open('test url', 'some target');
     assert.equal(window.hit, 'value', 'Hit function was executed');
 });
 
 test('new syntax: regexp ', (assert) => {
     const scriptletArgs = ['/test/'];
-    runScriptlet(scriptletArgs);
+    runScriptlet(name, scriptletArgs);
     window.open('test url', 'some target');
     assert.equal(window.hit, 'value', 'Hit function was executed');
 });
 
 test('new syntax: reverse + regexp ', (assert) => {
     const scriptletArgs = ['!/test/'];
-    runScriptlet(scriptletArgs);
+    runScriptlet(name, scriptletArgs);
     window.open('some url', 'some target');
     assert.equal(window.hit, 'value', 'Hit function was executed because of reverse matching');
 });
 
 test('new syntax: iframe with delayed removing', (assert) => {
     const scriptletArgs = ['/test/', '1'];
-    runScriptlet(scriptletArgs);
+    runScriptlet(name, scriptletArgs);
     const done = assert.async();
 
     const test = window.open('some test url');
@@ -152,7 +136,7 @@ test('new syntax: iframe with delayed removing', (assert) => {
 
 test('new syntax: object with delayed removing', (assert) => {
     const scriptletArgs = ['/test/', '1', 'obj'];
-    runScriptlet(scriptletArgs);
+    runScriptlet(name, scriptletArgs);
     const done = assert.async();
 
     const test = window.open('testurl');
@@ -189,7 +173,7 @@ test('new syntax: log checking - only url', (assert) => {
     };
 
     const scriptletArgs = ['', '', 'log'];
-    runScriptlet(scriptletArgs);
+    runScriptlet(name, scriptletArgs);
 
     window.open(testUrl);
 
@@ -212,7 +196,7 @@ test('new syntax: log checking - url + args', (assert) => {
     };
 
     const scriptletArgs = ['*', '0', 'log'];
-    runScriptlet(scriptletArgs);
+    runScriptlet(name, scriptletArgs);
 
     window.open(testUrl, testWindowName, testWindowFeatures);
 

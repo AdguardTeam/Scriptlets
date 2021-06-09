@@ -1,5 +1,5 @@
-/* eslint-disable no-eval, no-underscore-dangle */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle */
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'prevent-adfly';
@@ -15,16 +15,6 @@ const afterEach = () => {
 };
 
 module(name, { beforeEach, afterEach });
-
-const runScriptlet = (name) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    const evalWrapper = eval;
-    const resultString = window.scriptlets.invoke(params);
-    evalWrapper(resultString);
-};
 
 test('Checking if alias name works', (assert) => {
     const adgParams = {

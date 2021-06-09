@@ -13,6 +13,8 @@ const afterEach = () => {
 
 module(name, { afterEach });
 
+// not a common method for running scriptlet
+// can not be imported from helpers
 const runScriptlet = (name, ...args) => {
     const params = {
         name,

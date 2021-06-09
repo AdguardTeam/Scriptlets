@@ -1,22 +1,20 @@
-/* eslint-disable no-eval, no-underscore-dangle */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle */
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'disable-newtab-links';
 
-const afterEach = () => {
-    clearGlobalProps('hit', '__debug');
-};
-
-module(name, { afterEach });
-
-const createHit = () => {
+const beforeEach = () => {
     window.__debug = () => {
         window.hit = 'FIRED';
     };
 };
 
-const evalWrapper = eval;
+const afterEach = () => {
+    clearGlobalProps('hit', '__debug');
+};
+
+module(name, { beforeEach, afterEach });
 
 const createLink = () => {
     const elem = document.createElement('a');
@@ -45,22 +43,14 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('adg works', (assert) => {
-    createHit();
-    const params = {
-        name,
-        args: [],
-        verbose: true,
-    };
+    runScriptlet(name);
 
     const elem = createLink();
-    const resString = window.scriptlets.invoke(params);
-
-    evalWrapper(resString);
     elem.click();
 
     const done = assert.async();
     setTimeout(() => {
-        assert.strictEqual(window.hit, 'FIRED');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         done();
     });
 });

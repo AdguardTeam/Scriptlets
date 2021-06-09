@@ -1,14 +1,22 @@
-/* eslint-disable no-eval, no-underscore-dangle */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle */
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'abort-current-inline-script';
 
-module(name);
-
-const evalWrapper = eval;
-
 const changingGlobals = ['hit', '__debug'];
+
+const beforeEach = () => {
+    window.__debug = () => {
+        window.hit = 'FIRED';
+    };
+};
+
+const afterEach = () => {
+    clearGlobalProps(...changingGlobals);
+};
+
+module(name, { beforeEach, afterEach });
 
 const onError = (assert) => (message) => {
     const browserErrorMessage = 'Script error.';
@@ -52,66 +60,37 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('works', (assert) => {
-    const property = '___aaa';
-    const params = {
-        name,
-        args: [property],
-        verbose: true,
-    };
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
-    const resString = window.scriptlets.invoke(params);
-
     window.onerror = onError(assert);
+    const property = '___aaa';
+    const scriptletArgs = [property];
+    runScriptlet(name, scriptletArgs);
 
-    evalWrapper(resString);
     addAndRemoveInlineScript('window.___aaa;');
 
-    assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps(...changingGlobals);
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
 test('works with chained properties', (assert) => {
-    const chainProperty = 'aaa.bbb.ccc';
-    const params = {
-        name,
-        args: [chainProperty],
-        verbose: true,
-    };
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
-    const resString = window.scriptlets.invoke(params);
-
     window.onerror = onError(assert);
+    const chainProperty = 'aaa.bbb.ccc';
+    const scriptletArgs = [chainProperty];
+    runScriptlet(name, scriptletArgs);
 
-    evalWrapper(resString);
     addAndRemoveInlineScript(`
         var aaa = {};
         aaa.bbb = {};
         aaa.bbb.ccc = 'test';
     `);
 
-    assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps(...changingGlobals);
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
 test('should not work if chained properties are undefined', (assert) => {
-    const chainProperty = 'a.b.c';
-    const params = {
-        name,
-        args: [chainProperty],
-        verbose: true,
-    };
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
-    const resString = window.scriptlets.invoke(params);
-
     window.onerror = onError(assert);
+    const chainProperty = 'a.b.c';
+    const scriptletArgs = [chainProperty];
+    runScriptlet(name, scriptletArgs);
 
-    evalWrapper(resString);
     addAndRemoveInlineScript(`
         var aa = {};
         aa.bb = {};
@@ -119,89 +98,50 @@ test('should not work if chained properties are undefined', (assert) => {
     `);
 
     assert.strictEqual(window.hit, undefined, 'should not hit');
-    clearGlobalProps(...changingGlobals);
 });
 
 test('aborts script by search', (assert) => {
+    window.onerror = onError(assert);
     const property = '___aaa';
     const search = 'const someVar';
-    const params = {
-        name,
-        args: [property, 'const someVar'],
-        verbose: true,
-    };
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
-    const resString = window.scriptlets.invoke(params);
+    const scriptletArgs = [property, search];
+    runScriptlet(name, scriptletArgs);
 
-    window.onerror = onError(assert);
-
-    evalWrapper(resString);
     addAndRemoveInlineScript(`${search} = window.${property};`);
 
-    assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps(...changingGlobals);
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
-test('doesnt aborts script which is not specified by search', (assert) => {
+test('does not abort script which is not matched by search', (assert) => {
     const property = '___aaa';
     const search = 'some search';
-    const params = {
-        name,
-        args: [property, search],
-        verbose: true,
-    };
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
-    const resString = window.scriptlets.invoke(params);
+    const scriptletArgs = [property, search];
+    runScriptlet(name, scriptletArgs);
 
-    evalWrapper(resString);
     addAndRemoveInlineScript(`window.${property};`);
 
-    assert.notStrictEqual(window.hit, undefined);
-    clearGlobalProps(...changingGlobals);
+    assert.notStrictEqual(window.hit, undefined, 'should not hit');
 });
 
 test('searches script by regexp', (assert) => {
+    window.onerror = onError(assert);
     const property = '___aaa';
     const search = '/a{3}/';
-    const params = {
-        name,
-        args: [property, search],
-        verbose: true,
-    };
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
-    const resString = window.scriptlets.invoke(params);
+    const scriptletArgs = [property, search];
+    runScriptlet(name, scriptletArgs);
 
-    window.onerror = onError(assert);
-
-    evalWrapper(resString);
     addAndRemoveInlineScript(`window.${property};`);
 
-    assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps(...changingGlobals);
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
 test('Patched textContent', (assert) => {
+    window.onerror = onError(assert);
     const property = '___aaa';
     const search = '/a{3}/';
-    const params = {
-        name,
-        args: [property, search],
-        verbose: true,
-    };
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
-    const resString = window.scriptlets.invoke(params);
+    const scriptletArgs = [property, search];
+    runScriptlet(name, scriptletArgs);
 
-    window.onerror = onError(assert);
-
-    evalWrapper(resString);
     addAndRemoveInlineScript(`
         Object.defineProperty(document.currentScript, 'textContent', {
             get: () => '',
@@ -209,26 +149,16 @@ test('Patched textContent', (assert) => {
         window.${property};
     `);
 
-    assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps(...changingGlobals);
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
 test('Patched textContent', (assert) => {
+    window.onerror = onError(assert);
     const property = 'alert';
     const search = 'test';
-    const params = {
-        name,
-        args: [property, search],
-        verbose: true,
-    };
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
-    const resString = window.scriptlets.invoke(params);
+    const scriptletArgs = [property, search];
+    runScriptlet(name, scriptletArgs);
 
-    window.onerror = onError(assert);
-
-    evalWrapper(resString);
     addAndRemoveInlineScript(`
     function generateContent() {
         return void 0 === generateContent.val && (generateContent.val = " \nwindow.${property}('blablabla');");
@@ -245,6 +175,5 @@ test('Patched textContent', (assert) => {
       })();
     `);
 
-    assert.strictEqual(window.hit, 'FIRED');
-    clearGlobalProps(...changingGlobals);
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });

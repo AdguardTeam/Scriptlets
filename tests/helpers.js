@@ -20,3 +20,21 @@ export const getRandomNumber = (min, max) => {
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min + 1)) + min;
 };
+
+// eslint-disable-next-line no-eval
+const evalWrapper = eval;
+
+/**
+ * Runs scriptlet with given args
+ * @param {string} name scriptlet name
+ * @param {Array|undefined} args array of scriptlet args
+ */
+export const runScriptlet = (name, args) => {
+    const params = {
+        name,
+        args,
+        verbose: true,
+    };
+    const resultString = window.scriptlets.invoke(params);
+    evalWrapper(resultString);
+};

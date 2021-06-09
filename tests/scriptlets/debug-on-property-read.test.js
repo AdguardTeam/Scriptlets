@@ -1,19 +1,16 @@
-/* eslint-disable no-eval, no-underscore-dangle, no-console */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle, no-console */
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'debug-on-property-read';
 const PROPERTY = 'aaa';
 const CHAIN_PROPERTY = 'aaa.bbb';
 
-// copy eval to prevent rollup warnings
-const evalWrap = eval;
-
 const changingProps = [PROPERTY, 'hit', '__debug'];
 
 const beforeEach = () => {
     window.__debug = () => {
-        window.hit = 'value';
+        window.hit = 'FIRED';
     };
 };
 
@@ -23,76 +20,52 @@ const afterEach = () => {
 
 module(name, { beforeEach, afterEach });
 
-test('debug-on-property-read simple', (assert) => {
-    const params = {
-        name,
-        args: [PROPERTY],
-        verbose: true,
-    };
+test('simple', (assert) => {
     window[PROPERTY] = 'value';
-    const resString = window.scriptlets.invoke(params);
-    evalWrap(resString);
+    const scriptletArgs = [PROPERTY];
+    runScriptlet(name, scriptletArgs);
+
     console.log(window[PROPERTY]);
-    assert.equal(window.hit, 'value', 'Hit function was executed');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
-test('debug-on-property-read dot notation', (assert) => {
-    const params = {
-        name,
-        args: [CHAIN_PROPERTY],
-        verbose: true,
-    };
+test('dot notation', (assert) => {
     window.aaa = {
         bbb: 'value',
     };
-    const resString = window.scriptlets.invoke(params);
-    evalWrap(resString);
+    const scriptletArgs = [CHAIN_PROPERTY];
+    runScriptlet(name, scriptletArgs);
+
     console.log(window.aaa.bbb);
-    assert.equal(window.hit, 'value', 'Hit function was executed');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
-test('debug-on-property-read dot notation deferred defenition', (assert) => {
-    const params = {
-        name,
-        args: [CHAIN_PROPERTY],
-        verbose: true,
-    };
-    const resString = window.scriptlets.invoke(params);
-    evalWrap(resString);
+test('dot notation deferred defenition', (assert) => {
     window.aaa = {};
     window.aaa.bbb = 'value';
+    const scriptletArgs = [CHAIN_PROPERTY];
+    runScriptlet(name, scriptletArgs);
+
     console.log(window.aaa.bbb);
-    assert.equal(window.hit, 'value', 'Hit function was executed');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
-test('debug-on-property-read: simple, matches stack', (assert) => {
-    const params = {
-        name,
-        args: [
-            [PROPERTY],
-            'tests.js',
-        ],
-        verbose: true,
-    };
+test('simple, matches stack', (assert) => {
     window[PROPERTY] = 'value';
-    const resString = window.scriptlets.invoke(params);
-    evalWrap(resString);
+    const stackMatch = 'tests.js';
+    const scriptletArgs = [PROPERTY, stackMatch];
+    runScriptlet(name, scriptletArgs);
+
     console.log(window[PROPERTY]);
-    assert.equal(window.hit, 'value', 'Hit function was executed');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
-test('debug-on-property-read: simple, does NOT match stack', (assert) => {
-    const params = {
-        name,
-        args: [
-            [PROPERTY],
-            'no_match.js',
-        ],
-        verbose: true,
-    };
+test('simple, does NOT match stack', (assert) => {
     window[PROPERTY] = 'value';
-    const resString = window.scriptlets.invoke(params);
-    evalWrap(resString);
+    const noStackMatch = 'no_match.js';
+    const scriptletArgs = [PROPERTY, noStackMatch];
+    runScriptlet(name, scriptletArgs);
+
     console.log(window[PROPERTY]);
-    assert.equal(window.hit, undefined, 'Hit function was NOT executed');
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
 });

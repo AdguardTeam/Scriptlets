@@ -1,7 +1,7 @@
 /* global sinon */
-/* eslint-disable no-eval, no-underscore-dangle */
+/* eslint-disable no-underscore-dangle */
 
-import { clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'set-popads-dummy';
@@ -18,17 +18,6 @@ const afterEach = () => {
     clearGlobalProps('hit', '__debug', popAdsProp, popnsProp);
 };
 module(name, { beforeEach, afterEach });
-
-const evalWrapper = eval;
-
-const runScriptlet = (name) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    const resultString = window.scriptlets.invoke(params);
-    evalWrapper(resultString);
-};
 
 const fillPopAdsWithValues = () => {
     window[popAdsProp] = popAdsProp;

@@ -1,5 +1,5 @@
 /* eslint-disable no-eval, no-console, no-new-func, no-underscore-dangle */
-import { clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'log-eval';
@@ -23,17 +23,6 @@ const beforeEach = () => {
 
 module(name, { afterEach, beforeEach });
 
-const evalWrapper = eval;
-
-const runScriptlet = () => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    const resultString = window.scriptlets.invoke(params);
-    evalWrapper(resultString);
-};
-
 test('logs eval calls', (assert) => {
     const agLogEval = 'agLogEval';
 
@@ -45,11 +34,11 @@ test('logs eval calls', (assert) => {
         }
         assert.strictEqual(input, `eval("${evalStr}")`, 'console.hit input should be equal');
     };
-    runScriptlet();
+    runScriptlet(name);
     const evalWrap = eval;
     evalWrap(evalStr);
     assert.strictEqual(window[agLogEval], 'changed', 'function in eval executed as expected');
-    assert.strictEqual(window.hit, 'FIRED', 'scriptlet hit applied');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 
     clearGlobalProps(agLogEval);
 });
@@ -66,11 +55,11 @@ test('logs new Function() calls', (assert) => {
         assert.strictEqual(input, `new Function(${args.join(', ')})`, 'console.hit input should be equal');
     };
 
-    runScriptlet();
+    runScriptlet(name);
     const func = new Function(...args);
     func(agLogFunction, 'changed');
 
     assert.strictEqual(window[agLogFunction], 'changed', 'function in function call executed as expected');
-    assert.strictEqual(window.hit, 'FIRED', 'scriptlet hit applied');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
     clearGlobalProps(agLogFunction);
 });

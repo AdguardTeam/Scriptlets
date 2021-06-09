@@ -1,6 +1,6 @@
-/* eslint-disable no-eval, no-underscore-dangle */
+/* eslint-disable no-underscore-dangle */
 
-import { clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps } from '../helpers';
 import { endsWith } from '../../src/helpers/string-utils';
 
 const { test, module } = QUnit;
@@ -21,17 +21,6 @@ const afterEach = () => {
 
 module(name, { beforeEach, afterEach });
 
-const evalWrapper = eval;
-
-const runScriptlet = (name) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    const resultString = window.scriptlets.invoke(params);
-    evalWrapper(resultString);
-};
-
 const TEST_URL_VALUE = 'stun:35.66.206.188:443';
 const testServerConfig = {
     urls: [TEST_URL_VALUE],
@@ -39,6 +28,15 @@ const testServerConfig = {
 const testPeerConfig = {
     iceServers: [testServerConfig],
 };
+
+// eslint-disable-next-line compat/compat
+const isSupported = typeof window.RTCPeerConnection !== 'undefined';
+if (!isSupported) {
+    // run only this one test if browser does not support it
+    test.only('not supported', (assert) => {
+        assert.ok(true, 'Browser does not support it');
+    });
+}
 
 test('Checking if alias name works', (assert) => {
     const adgParams = {
@@ -59,11 +57,6 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('RTCPeerConnection without config', (assert) => {
-    if (!window.RTCPeerConnection) {
-        assert.ok(true, 'Browser does not support RTCPeerConnection');
-        return;
-    }
-
     runScriptlet(name);
 
     const localConnection = new RTCPeerConnection(); // eslint-disable-line compat/compat
@@ -74,11 +67,6 @@ test('RTCPeerConnection without config', (assert) => {
 });
 
 test('RTCPeerConnection with config', (assert) => {
-    if (!window.RTCPeerConnection) {
-        assert.ok(true, 'Browser does not support RTCPeerConnection');
-        return;
-    }
-
     runScriptlet(name);
 
     const testPeer = new RTCPeerConnection(testPeerConfig); // eslint-disable-line compat/compat
@@ -94,11 +82,6 @@ test('RTCPeerConnection with config', (assert) => {
 });
 
 test('log checking', (assert) => {
-    if (!window.RTCPeerConnection) {
-        assert.ok(true, 'Browser does not support RTCPeerConnection');
-        return;
-    }
-
     // mock console.log function for log checking
     // eslint-disable-next-line no-console
     console.log = function log(input) {

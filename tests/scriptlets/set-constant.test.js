@@ -1,5 +1,5 @@
-/* eslint-disable no-eval, no-underscore-dangle, no-console */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle, no-console */
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'set-constant';
@@ -13,24 +13,8 @@ const afterEach = () => {
 
 module(name, { afterEach });
 
-const evalWrapper = eval;
-
-/**
- * Runs scriptlets with given args
- * @param {Array} args array of scriptlet args
- */
-const runScriptlet = (args) => {
-    const params = {
-        name,
-        args,
-        verbose: true,
-    };
-    const resultString = window.scriptlets.invoke(params);
-    evalWrapper(resultString);
-};
-
 const createScriptletRunner = (counter) => (...args) => {
-    runScriptlet(args);
+    runScriptlet(name, args);
     counter += 1;
     return counter;
 };
@@ -211,7 +195,7 @@ test('sets values correctly + no stack match', (assert) => {
     window.chained = { property: {} };
     const stackNoMatch = 'no_match.js';
 
-    runScriptlet(['chained.property.aaa', 'true', stackNoMatch]);
+    runScriptlet(name, ['chained.property.aaa', 'true', stackNoMatch]);
 
     assert.strictEqual(window.chained.property.aaa, undefined);
     assert.strictEqual(window.counter, undefined);
@@ -220,7 +204,7 @@ test('sets values correctly + no stack match', (assert) => {
     const property = 'customProp';
     const firstValue = 10;
 
-    runScriptlet([property, firstValue, stackNoMatch]);
+    runScriptlet(name, [property, firstValue, stackNoMatch]);
 
     assert.strictEqual(window[property], undefined);
     assert.strictEqual(window.counter, undefined);
@@ -229,7 +213,7 @@ test('sets values correctly + no stack match', (assert) => {
 
 test('no value setting if chain is not relevant', (assert) => {
     window.chain = { property: {} };
-    runScriptlet(['noprop.property.aaa', 'true']);
+    runScriptlet(name, ['noprop.property.aaa', 'true']);
     assert.deepEqual(window.chain.property, {}, 'predefined obj was not changed');
     assert.strictEqual(window.noprop, undefined, '"noprop" was not set');
     clearGlobalProps('chain');
@@ -238,14 +222,14 @@ test('no value setting if chain is not relevant', (assert) => {
 test('no value setting if some property in chain is undefined while loading', (assert) => {
     const testObj = { prop: undefined };
     window.chain = testObj;
-    runScriptlet(['chain.prop.aaa', 'true']);
+    runScriptlet(name, ['chain.prop.aaa', 'true']);
     assert.deepEqual(window.chain, testObj, 'predefined obj was not changed');
     clearGlobalProps('chain');
 });
 
 test('no value setting if first property in chain is null', (assert) => {
     window.chain = null;
-    runScriptlet(['chain.property.aaa', 'true']);
+    runScriptlet(name, ['chain.property.aaa', 'true']);
     assert.strictEqual(window.chain, null, 'predefined obj was not changed');
     clearGlobalProps('chain');
 });
@@ -256,7 +240,7 @@ test('no value setting if first property in chain is null', (assert) => {
 // https://github.com/AdguardTeam/Scriptlets/issues/128
 test('set value after timeout if it was null earlier', (assert) => {
     window.chain = null;
-    runScriptlet(['chain.property.aaa', 'true']);
+    runScriptlet(name, ['chain.property.aaa', 'true']);
     assert.strictEqual(window.chain, null, 'predefined obj was not changed');
 
     const done = assert.async();

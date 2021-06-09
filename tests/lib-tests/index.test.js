@@ -16,7 +16,9 @@ const name = 'scriptlets-redirects lib';
 module(name);
 
 test('Test scriptlet rule validation', (assert) => {
-    let inputRule = "example.org#%#//scriptlet('abort-on-property-read', 'I10C')";
+    let inputRule;
+
+    inputRule = "example.org#%#//scriptlet('abort-on-property-read', 'I10C')";
     assert.strictEqual(isValidScriptletRule(inputRule), true);
 
     inputRule = 'example.org##+js(setTimeout-defuser.js, [native code], 8000)';
@@ -32,6 +34,10 @@ test('Test scriptlet rule validation', (assert) => {
     // set-constant empty string
     inputRule = 'example.org##+js(set-constant, config.ads.desktopPreroll, \'\')';
     assert.strictEqual(isValidScriptletRule(inputRule), true);
+
+    // multiple selectors for remove-attr/class
+    inputRule = 'example.org##+js(ra, href|target, #image > [href][onclick]\\, #page_effect > [href][onclick]))';
+    assert.strictEqual(isValidScriptletRule(inputRule), true, 'multiple selectors for remove-attr/class - OK');
 
     // invalid scriptlet name
     inputRule = 'example.org#@%#//scriptlet("ubo-abort-scriptlet.js", "notDetected")';
@@ -67,9 +73,11 @@ test('Test Adguard scriptlet rule exception', (assert) => {
 });
 
 test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
+    let blockingRule;
+    let expBlockRule;
     // blocking rule
-    let blockingRule = 'example.org##+js(setTimeout-defuser.js, [native code], 8000)';
-    let expBlockRule = 'example.org#%#//scriptlet(\'ubo-setTimeout-defuser.js\', \'[native code]\', \'8000\')';
+    blockingRule = 'example.org##+js(setTimeout-defuser.js, [native code], 8000)';
+    expBlockRule = 'example.org#%#//scriptlet(\'ubo-setTimeout-defuser.js\', \'[native code]\', \'8000\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
 
     // no space between parameters
@@ -81,21 +89,31 @@ test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
     blockingRule = 'example.org##+js(abort-current-inline-script, $, popup)';
     expBlockRule = 'example.org#%#//scriptlet(\'ubo-abort-current-inline-script.js\', \'$\', \'popup\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
+
     // '' as set-constant parameter
     blockingRule = 'example.org##+js(set-constant, config.ads.desktopPreroll, \'\')';
     expBlockRule = 'example.org#%#//scriptlet(\'ubo-set-constant.js\', \'config.ads.desktopPreroll\', \'\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
+
+    // multiple selectors for remove-attr/class
+    blockingRule = 'ubisoft.com##+js(ra, href, area[href*="discordapp.com/"]\\, area[href*="facebook.com/"]\\, area[href*="instagram.com/"])';
+    expBlockRule = 'ubisoft.com#%#//scriptlet(\'ubo-ra.js\', \'href\', \'area[href*="discordapp.com/"], area[href*="facebook.com/"], area[href*="instagram.com/"]\')';
+    assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule, 'multiple selectors for remove-attr/class - OK');
+
     // double quotes in scriptlet parameter
     blockingRule = 'example.com#@#+js(remove-attr.js, href, a[data-st-area="Header-back"])';
     expBlockRule = 'example.com#@%#//scriptlet(\'ubo-remove-attr.js\', \'href\', \'a[data-st-area="Header-back"]\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
+
     // the same but with single quotes
     blockingRule = 'example.com#@#+js(remove-attr.js, href, a[data-st-area=\'Header-back\'])';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
+
     // name without '.js' at the end
     blockingRule = 'example.org##+js(addEventListener-defuser, load, 2000)';
     expBlockRule = 'example.org#%#//scriptlet(\'ubo-addEventListener-defuser.js\', \'load\', \'2000\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
+
     // short form of name
     blockingRule = 'example.org##+js(nano-stb, timeDown)';
     expBlockRule = 'example.org#%#//scriptlet(\'ubo-nano-stb.js\', \'timeDown\')';
@@ -138,14 +156,21 @@ test('Test SCRIPTLET converting - multiple ABP -> ADG', (assert) => {
 });
 
 test('Test SCRIPTLET converting - ADG -> UBO', (assert) => {
+    let inputAdg;
+    let expectedUbo;
     // blocking rule
-    let inputAdg = 'example.org#%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')';
-    let expectedUbo = 'example.org##+js(no-setTimeout-if, [native code], 8000)';
+    inputAdg = 'example.org#%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')';
+    expectedUbo = 'example.org##+js(no-setTimeout-if, [native code], 8000)';
     assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
 
     // '' as set-constant parameter
     inputAdg = 'example.org#%#//scriptlet(\'set-constant\', \'config.ads.desktopPreroll\', \'\')';
     expectedUbo = 'example.org##+js(set-constant, config.ads.desktopPreroll, \'\')';
+    assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
+
+    // multiple selectors parameter for remove-attr/class
+    inputAdg = 'example.org#%#//scriptlet(\'remove-class\', \'promo\', \'a.class, div#id, div > #ad > .test\')';
+    expectedUbo = 'example.org##+js(remove-class, promo, a.class\\, div#id\\, div > #ad > .test)';
     assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
 
     // scriptlet with no parameters

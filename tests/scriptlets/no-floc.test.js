@@ -1,5 +1,5 @@
-/* eslint-disable no-eval, no-underscore-dangle */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle */
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'no-floc';
@@ -23,17 +23,6 @@ const clearFlocProp = () => {
 const afterEach = () => {
     clearGlobalProps('hit', '__debug');
     clearFlocProp();
-};
-
-const evalWrapper = eval;
-
-const runScriptlet = (name) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    const resultString = window.scriptlets.invoke(params);
-    evalWrapper(resultString);
 };
 
 module(name, { beforeEach, afterEach });

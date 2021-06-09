@@ -1,5 +1,5 @@
-/* eslint-disable no-eval, no-underscore-dangle, no-console */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle, no-console */
+import { runScriptlet, clearGlobalProps } from '../helpers';
 import { startsWith } from '../../src/helpers/string-utils';
 
 const { test, module } = QUnit;
@@ -9,22 +9,6 @@ const FETCH_OBJECTS_PATH = './fetch-objects';
 const nativeFetch = fetch;
 const nativeConsole = console.log;
 const nativeResponseJson = Response.prototype.json; // eslint-disable-line compat/compat
-
-/**
- * Runs sctiptlet with given props
- * @param {string|undefined} propsToMatch
- */
-const runScriptlet = (propsToMatch) => {
-    const params = {
-        name,
-        args: [propsToMatch],
-        verbose: true,
-    };
-
-    const resultString = window.scriptlets.invoke(params);
-    const evalWrapper = eval;
-    evalWrapper(resultString);
-};
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -90,7 +74,7 @@ test('simple fetch - no args - logging', async (assert) => {
     };
 
     // no args -> just logging, no preventing
-    runScriptlet();
+    runScriptlet(name);
 
     const response = await fetch(INPUT_JSON_PATH, init);
     const actualJson = await response.json();
@@ -120,7 +104,7 @@ test('fetch request - no args - logging', async (assert) => {
     };
 
     // no args -> just logging, no preventing
-    runScriptlet();
+    runScriptlet(name);
 
     const response = await fetch(inputRequest);
     const actualJson = await response.json();
@@ -142,7 +126,7 @@ test('prevent any fetch call', async (assert) => {
     const inputRequest2 = new Request(INPUT_JSON_PATH_2, init2);
 
     // match any fetch
-    runScriptlet('*');
+    runScriptlet(name, ['*']);
     const done = assert.async(2);
 
     const response1 = await fetch(inputRequest1);
@@ -165,7 +149,7 @@ test('simple fetch - match single pair prop', async (assert) => {
         method: 'HEAD',
     };
 
-    runScriptlet('method:HEAD');
+    runScriptlet(name, ['method:HEAD']);
     const done = assert.async();
 
     const response = await fetch(INPUT_JSON_PATH, options);
@@ -181,7 +165,7 @@ test('simple fetch - match few props', async (assert) => {
         method: 'POST',
     };
 
-    runScriptlet('/test04/ method:POST');
+    runScriptlet(name, ['/test04/ method:POST']);
     const done = assert.async();
 
     const response = await fetch(INPUT_JSON_PATH, init);
@@ -198,7 +182,7 @@ test('fetch request - match few props', async (assert) => {
     };
     const inputRequest = new Request(INPUT_JSON_PATH, init); // eslint-disable-line compat/compat
 
-    runScriptlet('/02\\.json/ method:/GET|HEAD/');
+    runScriptlet(name, ['/02\\.json/ method:/GET|HEAD/']);
     const done = assert.async();
 
     const response = await fetch(inputRequest);
@@ -220,7 +204,7 @@ test('simple fetch - no match props - no prevent', async (assert) => {
     };
 
     // no url match
-    runScriptlet('/test06/ method:POST');
+    runScriptlet(name, ['/test06/ method:POST']);
     const done = assert.async();
 
     const response = await fetch(INPUT_JSON_PATH, init);
@@ -244,7 +228,7 @@ test('fetch request - no match at all', async (assert) => {
     };
 
     // no match at all
-    runScriptlet('/06\\.json/ method:/HEAD|POST/');
+    runScriptlet(name, ['/06\\.json/ method:/HEAD|POST/']);
     const done = assert.async();
 
     const response = await fetch(inputRequest);

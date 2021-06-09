@@ -1,5 +1,5 @@
 /* eslint-disable no-eval, no-console, no-underscore-dangle */
-import { clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'noeval';
@@ -20,15 +20,6 @@ const afterEach = () => {
 };
 
 module(name, { beforeEach, afterEach });
-
-const runScriptlet = (name) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    const resultString = window.scriptlets.invoke(params);
-    nativeEval(resultString);
-};
 
 test('Checking if alias name works', (assert) => {
     const adgParams = {
@@ -66,6 +57,6 @@ test('AG noeval alias', (assert) => {
     const evalWrapper = eval;
     const actual = evalWrapper(evalStr);
 
-    assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
     assert.strictEqual(actual, undefined, 'result of eval evaluation should be undefined');
 });
