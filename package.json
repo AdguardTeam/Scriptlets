@@ -1,6 +1,6 @@
 {
-    "name": "scriptlets",
-    "version": "1.3.20",
+    "name": "@adguard/scriptlets",
+    "version": "1.3.21",
     "scripts": {
         "watch": "rollup -c -w",
         "build": "rollup -c && babel-node redirects.build.js",
@@ -14,7 +14,9 @@
         "wiki:build-docs": "node scripts/build-docs.js",
         "wiki:check-updates": "node ./scripts/check-sources-updates.js",
         "wiki:update": "yarn wiki:check-updates && node ./scripts/build-compatibility-table.js",
-        "prepare-builds": "yarn corelibs && yarn build"
+        "prepare-builds": "yarn corelibs && yarn build && babel-node ./scripts/build-txt.js",
+        "prepublishOnly": "yarn prepare-builds",
+        "increment": "yarn version --patch --no-git-tag-version"
     },
     "husky": {
         "hooks": {

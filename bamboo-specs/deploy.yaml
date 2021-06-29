@@ -1,0 +1,39 @@
+---
+version: 2
+deployment:
+  name: scriptlets - deploy
+  source-plan: AJL-SCRIPTLETSBUILD
+release-naming: ${bamboo.inject.version}
+environments:
+  - npmjs
+
+npmjs:
+  docker:
+    image: adguard/node-ssh:15.14--6
+    volumes:
+      ${system.YARN_DIR}: "${bamboo.cacheYarn}"
+  triggers: [ ]
+  tasks:
+    - checkout:
+        force-clean-build: 'true'
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -e
+            set -x
+            ls -alt
+
+            export NPM_TOKEN=${bamboo.npmSecretToken}
+            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+            yarn install ${system.YARN_ARGS}
+            npm publish --access public
+  requirements:
+    - adg-docker: 'true'
+  notifications:
+    - events:
+        - deployment-started-and-finished
+      recipients:
+        - webhook:
+            name: Deploy webhook
+            url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
