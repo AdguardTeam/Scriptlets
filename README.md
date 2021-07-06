@@ -1,20 +1,22 @@
 # AdGuard Scriptlets and Redirect resources
 
+AdGuard's Scriptlets and Redirect resources library which provides extended capabilities for content blocking.
+
 * [Scriptlets](#scriptlets)
     * [Syntax](#scriptlet-syntax)
-    * [Available scriptlets](./wiki/about-scriptlets.md#scriptlets)
-    * [Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)
+    * [Available scriptlets](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#scriptlets)
+    * [Scriptlets compatibility table](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/compatibility-table.md#scriptlets)
 * [Redirect resources](#redirect-resources)
     * [Syntax](#redirect-syntax)
-    * [Available redirect resources](./wiki/about-redirects.md#redirect-resources)
-    * [Redirect resources compatibility table](./wiki/compatibility-table.md#redirects)
+    * [Available redirect resources](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-redirects.md#redirect-resources)
+    * [Redirect resources compatibility table](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/compatibility-table.md#redirects)
 * [How to build](#how-to-build)
 * [Browser compatibility](#browser-compatibility)
 
 * * *
 ## Scriptlets
 
-Scriptlet is a JavaScript function that provides extended capabilities for content blocking. These functions can be used in a declarative manner in AdGuard filtering rules.
+Scriptlet is a JavaScript function which can be used in a declarative manner in AdGuard filtering rules.
 
 AdGuard supports a lot of different scriptlets. Please note, that in order to achieve cross-blocker compatibility, we also support syntax of uBO and ABP.
 
@@ -46,8 +48,8 @@ example.org#%#//scriptlet('remove-class', 'branding', 'div[class^="inner"]')
 
 This rule applies the `abort-on-property-read` scriptlet on all pages of `example.org` and its subdomains, and passes one orgument to it (`alert`).
 
-* **[Scriptlets list](./wiki/about-scriptlets.md#scriptlets)**
-* **[Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)**
+* **[Scriptlets list](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#scriptlets)**
+* **[Scriptlets compatibility table](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/compatibility-table.md#scriptlets)**
 
 
 ## Redirect resources
@@ -70,8 +72,8 @@ The value of the `$redirect` modifier must be the name of the resource, that wil
 
 > uBlock Origin specifies additional resource name `none` that can disable other redirect rules. AdGuard does not support it, use `$badfilter` to disable specific rules.
 
-* **[Redirect resources list](./wiki/about-redirects.md#redirect-resources)**
-* **[Redirect resources compatibility table](./wiki/compatibility-table.md#redirects)**
+* **[Redirect resources list](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-redirects.md#redirect-resources)**
+* **[Redirect resources compatibility table](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/compatibility-table.md#redirects)**
 
 * * *
 

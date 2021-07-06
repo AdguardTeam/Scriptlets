@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.21
+ * Version 1.3.23
  */
 
 (function () {

@@ -1,6 +1,7 @@
 {
     "name": "@adguard/scriptlets",
-    "version": "1.3.22",
+    "version": "1.3.23",
+    "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "scripts": {
         "watch": "rollup -c -w",
         "build": "rollup -c && babel-node redirects.build.js",
@@ -23,7 +24,14 @@
             "pre-commit": "yarn lint && echo \"DO NOT FORGET ABOUT BUILDS UPDATE (yarn prepare-builds)\""
         }
     },
-    "author": "devteam@adguard.com",
+    "author": "AdGuard",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AdguardTeam/Scriptlets.git"
+    },
+    "bugs": {
+        "url": "https://github.com/AdguardTeam/Scriptlets/issues"
+    },
     "license": "LGPL-3.0",
     "main": "dist/cjs/scriptlets.cjs.js",
     "types": "dist/cjs/scriptlets.d.ts",
