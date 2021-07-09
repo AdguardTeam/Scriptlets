@@ -112,6 +112,11 @@ import {
  */
 /* eslint-enable max-len */
 export function preventSetInterval(source, match, delay) {
+    // if browser does not support Proxy (e.g. Internet Explorer),
+    // we use none-proxy "legacy" wrapper for preventing
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+    const isProxySupported = typeof Proxy !== 'undefined';
+
     const nativeInterval = window.setInterval;
     const log = console.log.bind(console); // eslint-disable-line no-console
 
@@ -121,32 +126,62 @@ export function preventSetInterval(source, match, delay) {
     const { isInvertedMatch, matchRegexp } = parseMatchArg(match);
     const { isInvertedDelayMatch, delayMatch } = parseDelayArg(delay);
 
-    const intervalWrapper = (callback, interval, ...args) => {
+    const getShouldPrevent = (callbackStr, interval) => {
         let shouldPrevent = false;
-
-        // https://github.com/AdguardTeam/Scriptlets/issues/105
-        const cbString = String(callback);
-
-        if (shouldLog) {
-            hit(source);
-            log(`setInterval(${cbString}, ${interval})`);
-        } else if (!delayMatch) {
-            shouldPrevent = matchRegexp.test(cbString) !== isInvertedMatch;
+        if (!delayMatch) {
+            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
         } else if (!match) {
             shouldPrevent = (interval === delayMatch) !== isInvertedDelayMatch;
         } else {
-            shouldPrevent = matchRegexp.test(cbString) !== isInvertedMatch
+            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch
                 && (interval === delayMatch) !== isInvertedDelayMatch;
         }
+        return shouldPrevent;
+    };
 
+    const legachyIntervalWrapper = (callback, interval, ...args) => {
+        let shouldPrevent = false;
+        // https://github.com/AdguardTeam/Scriptlets/issues/105
+        const cbString = String(callback);
+        if (shouldLog) {
+            hit(source);
+            log(`setInterval(${cbString}, ${interval})`);
+        } else {
+            shouldPrevent = getShouldPrevent(cbString, interval);
+        }
         if (shouldPrevent) {
             hit(source);
             return nativeInterval(noopFunc, interval);
         }
-
         return nativeInterval.apply(window, [callback, interval, ...args]);
     };
-    window.setInterval = intervalWrapper;
+
+    const handlerWrapper = (target, thisArg, args) => {
+        const callback = args[0];
+        const interval = args[1];
+        let shouldPrevent = false;
+        // https://github.com/AdguardTeam/Scriptlets/issues/105
+        const cbString = String(callback);
+        if (shouldLog) {
+            hit(source);
+            log(`setTimeout(${cbString}, ${interval})`);
+        } else {
+            shouldPrevent = getShouldPrevent(cbString, interval);
+        }
+        if (shouldPrevent) {
+            hit(source);
+            args[0] = noopFunc;
+        }
+        return target.apply(thisArg, args);
+    };
+
+    const setIntervalHandler = {
+        apply: handlerWrapper,
+    };
+
+    window.setInterval = isProxySupported
+        ? new Proxy(window.setInterval, setIntervalHandler)
+        : legachyIntervalWrapper;
 }
 
 preventSetInterval.names = [

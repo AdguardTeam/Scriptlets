@@ -112,6 +112,11 @@ import {
  */
 /* eslint-enable max-len */
 export function preventSetTimeout(source, match, delay) {
+    // if browser does not support Proxy (e.g. Internet Explorer),
+    // we use none-proxy "legacy" wrapper for preventing
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+    const isProxySupported = typeof Proxy !== 'undefined';
+
     const nativeTimeout = window.setTimeout;
     const log = console.log.bind(console); // eslint-disable-line no-console
 
@@ -121,32 +126,62 @@ export function preventSetTimeout(source, match, delay) {
     const { isInvertedMatch, matchRegexp } = parseMatchArg(match);
     const { isInvertedDelayMatch, delayMatch } = parseDelayArg(delay);
 
-    const timeoutWrapper = (callback, timeout, ...args) => {
+    const getShouldPrevent = (callbackStr, timeout) => {
         let shouldPrevent = false;
-
-        // https://github.com/AdguardTeam/Scriptlets/issues/105
-        const cbString = String(callback);
-
-        if (shouldLog) {
-            hit(source);
-            log(`setTimeout(${cbString}, ${timeout})`);
-        } else if (!delayMatch) {
-            shouldPrevent = matchRegexp.test(cbString) !== isInvertedMatch;
+        if (!delayMatch) {
+            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
         } else if (!match) {
             shouldPrevent = (timeout === delayMatch) !== isInvertedDelayMatch;
         } else {
-            shouldPrevent = matchRegexp.test(cbString) !== isInvertedMatch
+            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch
                 && (timeout === delayMatch) !== isInvertedDelayMatch;
         }
+        return shouldPrevent;
+    };
 
+    const legacyTimeoutWrapper = (callback, timeout, ...args) => {
+        let shouldPrevent = false;
+        // https://github.com/AdguardTeam/Scriptlets/issues/105
+        const cbString = String(callback);
+        if (shouldLog) {
+            hit(source);
+            log(`setTimeout(${cbString}, ${timeout})`);
+        } else {
+            shouldPrevent = getShouldPrevent(cbString, timeout);
+        }
         if (shouldPrevent) {
             hit(source);
             return nativeTimeout(noopFunc, timeout);
         }
-
         return nativeTimeout.apply(window, [callback, timeout, ...args]);
     };
-    window.setTimeout = timeoutWrapper;
+
+    const handlerWrapper = (target, thisArg, args) => {
+        const callback = args[0];
+        const timeout = args[1];
+        let shouldPrevent = false;
+        // https://github.com/AdguardTeam/Scriptlets/issues/105
+        const cbString = String(callback);
+        if (shouldLog) {
+            hit(source);
+            log(`setTimeout(${cbString}, ${timeout})`);
+        } else {
+            shouldPrevent = getShouldPrevent(cbString, timeout);
+        }
+        if (shouldPrevent) {
+            hit(source);
+            args[0] = noopFunc;
+        }
+        return target.apply(thisArg, args);
+    };
+
+    const setTimeoutHandler = {
+        apply: handlerWrapper,
+    };
+
+    window.setTimeout = isProxySupported
+        ? new Proxy(window.setTimeout, setTimeoutHandler)
+        : legacyTimeoutWrapper;
 }
 
 preventSetTimeout.names = [

@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.3.23
+ * Version 1.4.0
  */
 
 /**
@@ -1721,6 +1721,10 @@ abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInCha
 /* eslint-enable max-len */
 
 function preventSetTimeout(source, match, delay) {
+  // if browser does not support Proxy (e.g. Internet Explorer),
+  // we use none-proxy "legacy" wrapper for preventing
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+  var isProxySupported = typeof Proxy !== 'undefined';
   var nativeTimeout = window.setTimeout;
   var log = console.log.bind(console); // eslint-disable-line no-console
   // logs setTimeouts to console if no arguments have been specified
@@ -1735,7 +1739,21 @@ function preventSetTimeout(source, match, delay) {
       isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
       delayMatch = _parseDelayArg.delayMatch;
 
-  var timeoutWrapper = function timeoutWrapper(callback, timeout) {
+  var getShouldPrevent = function getShouldPrevent(callbackStr, timeout) {
+    var shouldPrevent = false;
+
+    if (!delayMatch) {
+      shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
+    } else if (!match) {
+      shouldPrevent = timeout === delayMatch !== isInvertedDelayMatch;
+    } else {
+      shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && timeout === delayMatch !== isInvertedDelayMatch;
+    }
+
+    return shouldPrevent;
+  };
+
+  var legacyTimeoutWrapper = function legacyTimeoutWrapper(callback, timeout) {
     var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
 
     var cbString = String(callback);
@@ -1743,12 +1761,8 @@ function preventSetTimeout(source, match, delay) {
     if (shouldLog) {
       hit(source);
       log("setTimeout(".concat(cbString, ", ").concat(timeout, ")"));
-    } else if (!delayMatch) {
-      shouldPrevent = matchRegexp.test(cbString) !== isInvertedMatch;
-    } else if (!match) {
-      shouldPrevent = timeout === delayMatch !== isInvertedDelayMatch;
     } else {
-      shouldPrevent = matchRegexp.test(cbString) !== isInvertedMatch && timeout === delayMatch !== isInvertedDelayMatch;
+      shouldPrevent = getShouldPrevent(cbString, timeout);
     }
 
     if (shouldPrevent) {
@@ -1763,7 +1777,32 @@ function preventSetTimeout(source, match, delay) {
     return nativeTimeout.apply(window, [callback, timeout].concat(args));
   };
 
-  window.setTimeout = timeoutWrapper;
+  var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+    var callback = args[0];
+    var timeout = args[1];
+    var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
+
+    var cbString = String(callback);
+
+    if (shouldLog) {
+      hit(source);
+      log("setTimeout(".concat(cbString, ", ").concat(timeout, ")"));
+    } else {
+      shouldPrevent = getShouldPrevent(cbString, timeout);
+    }
+
+    if (shouldPrevent) {
+      hit(source);
+      args[0] = noopFunc;
+    }
+
+    return target.apply(thisArg, args);
+  };
+
+  var setTimeoutHandler = {
+    apply: handlerWrapper
+  };
+  window.setTimeout = isProxySupported ? new Proxy(window.setTimeout, setTimeoutHandler) : legacyTimeoutWrapper;
 }
 preventSetTimeout.names = ['prevent-setTimeout', // aliases are needed for matching the related scriptlet converted into our syntax
 'no-setTimeout-if.js', // new implementation of setTimeout-defuser.js
@@ -1880,6 +1919,10 @@ preventSetTimeout.injections = [hit, noopFunc, parseMatchArg, parseDelayArg, toR
 /* eslint-enable max-len */
 
 function preventSetInterval(source, match, delay) {
+  // if browser does not support Proxy (e.g. Internet Explorer),
+  // we use none-proxy "legacy" wrapper for preventing
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+  var isProxySupported = typeof Proxy !== 'undefined';
   var nativeInterval = window.setInterval;
   var log = console.log.bind(console); // eslint-disable-line no-console
   // logs setIntervals to console if no arguments have been specified
@@ -1894,7 +1937,21 @@ function preventSetInterval(source, match, delay) {
       isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
       delayMatch = _parseDelayArg.delayMatch;
 
-  var intervalWrapper = function intervalWrapper(callback, interval) {
+  var getShouldPrevent = function getShouldPrevent(callbackStr, interval) {
+    var shouldPrevent = false;
+
+    if (!delayMatch) {
+      shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
+    } else if (!match) {
+      shouldPrevent = interval === delayMatch !== isInvertedDelayMatch;
+    } else {
+      shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && interval === delayMatch !== isInvertedDelayMatch;
+    }
+
+    return shouldPrevent;
+  };
+
+  var legachyIntervalWrapper = function legachyIntervalWrapper(callback, interval) {
     var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
 
     var cbString = String(callback);
@@ -1902,12 +1959,8 @@ function preventSetInterval(source, match, delay) {
     if (shouldLog) {
       hit(source);
       log("setInterval(".concat(cbString, ", ").concat(interval, ")"));
-    } else if (!delayMatch) {
-      shouldPrevent = matchRegexp.test(cbString) !== isInvertedMatch;
-    } else if (!match) {
-      shouldPrevent = interval === delayMatch !== isInvertedDelayMatch;
     } else {
-      shouldPrevent = matchRegexp.test(cbString) !== isInvertedMatch && interval === delayMatch !== isInvertedDelayMatch;
+      shouldPrevent = getShouldPrevent(cbString, interval);
     }
 
     if (shouldPrevent) {
@@ -1922,7 +1975,32 @@ function preventSetInterval(source, match, delay) {
     return nativeInterval.apply(window, [callback, interval].concat(args));
   };
 
-  window.setInterval = intervalWrapper;
+  var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+    var callback = args[0];
+    var interval = args[1];
+    var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
+
+    var cbString = String(callback);
+
+    if (shouldLog) {
+      hit(source);
+      log("setTimeout(".concat(cbString, ", ").concat(interval, ")"));
+    } else {
+      shouldPrevent = getShouldPrevent(cbString, interval);
+    }
+
+    if (shouldPrevent) {
+      hit(source);
+      args[0] = noopFunc;
+    }
+
+    return target.apply(thisArg, args);
+  };
+
+  var setIntervalHandler = {
+    apply: handlerWrapper
+  };
+  window.setInterval = isProxySupported ? new Proxy(window.setInterval, setIntervalHandler) : legachyIntervalWrapper;
 }
 preventSetInterval.names = ['prevent-setInterval', // aliases are needed for matching the related scriptlet converted into our syntax
 'no-setInterval-if.js', // new implementation of setInterval-defuser.js
