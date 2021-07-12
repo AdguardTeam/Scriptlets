@@ -31,71 +31,71 @@ const testPeerConfig = {
 
 // eslint-disable-next-line compat/compat
 const isSupported = typeof window.RTCPeerConnection !== 'undefined';
+
 if (!isSupported) {
-    // run only this one test if browser does not support it
-    test.only('not supported', (assert) => {
+    test('unsupported', (assert) => {
         assert.ok(true, 'Browser does not support it');
     });
-}
+} else {
+    test('Checking if alias name works', (assert) => {
+        const adgParams = {
+            name,
+            engine: 'test',
+            verbose: true,
+        };
+        const uboParams = {
+            name: 'ubo-nowebrtc.js',
+            engine: 'test',
+            verbose: true,
+        };
 
-test('Checking if alias name works', (assert) => {
-    const adgParams = {
-        name,
-        engine: 'test',
-        verbose: true,
-    };
-    const uboParams = {
-        name: 'ubo-nowebrtc.js',
-        engine: 'test',
-        verbose: true,
-    };
+        const codeByAdgParams = window.scriptlets.invoke(adgParams);
+        const codeByUboParams = window.scriptlets.invoke(uboParams);
 
-    const codeByAdgParams = window.scriptlets.invoke(adgParams);
-    const codeByUboParams = window.scriptlets.invoke(uboParams);
-
-    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
-});
-
-test('RTCPeerConnection without config', (assert) => {
-    runScriptlet(name);
-
-    const localConnection = new RTCPeerConnection(); // eslint-disable-line compat/compat
-    const sendChannel = localConnection.createDataChannel('sendChannel');
-
-    assert.strictEqual(window.hit, 'FIRED');
-    assert.notOk(sendChannel);
-});
-
-test('RTCPeerConnection with config', (assert) => {
-    runScriptlet(name);
-
-    const testPeer = new RTCPeerConnection(testPeerConfig); // eslint-disable-line compat/compat
-    const dataChannel = testPeer.createDataChannel('', {
-        reliable: true,
+        assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
     });
-    testPeer.createOffer((arg) => {
-        testPeer.setLocalDescription(arg);
-    }, () => {});
 
-    assert.strictEqual(window.hit, 'FIRED');
-    assert.notOk(dataChannel);
-});
+    test('RTCPeerConnection without config', (assert) => {
+        runScriptlet(name);
 
-test('log checking', (assert) => {
-    // mock console.log function for log checking
-    // eslint-disable-next-line no-console
-    console.log = function log(input) {
-        if (input.indexOf('trace') > -1) {
-            return;
-        }
-        const EXPECTED_LOG_STR = `Document tried to create an RTCPeerConnection: ${TEST_URL_VALUE}`;
-        assert.ok(endsWith(input, EXPECTED_LOG_STR), 'console.hit input');
-    };
+        const localConnection = new RTCPeerConnection(); // eslint-disable-line compat/compat
+        const sendChannel = localConnection.createDataChannel('sendChannel');
 
-    runScriptlet(name);
+        assert.strictEqual(window.hit, 'FIRED');
+        assert.notOk(sendChannel);
+    });
 
-    // eslint-disable-next-line no-unused-vars, compat/compat
-    const testPeer = new RTCPeerConnection(testPeerConfig);
+    test('RTCPeerConnection with config', (assert) => {
+        runScriptlet(name);
 
-    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-});
+        const testPeer = new RTCPeerConnection(testPeerConfig); // eslint-disable-line compat/compat
+        const dataChannel = testPeer.createDataChannel('', {
+            reliable: true,
+        });
+        testPeer.createOffer((arg) => {
+            testPeer.setLocalDescription(arg);
+        }, () => {});
+
+        assert.strictEqual(window.hit, 'FIRED');
+        assert.notOk(dataChannel);
+    });
+
+    test('log checking', (assert) => {
+        // mock console.log function for log checking
+        // eslint-disable-next-line no-console
+        console.log = function log(input) {
+            if (input.indexOf('trace') > -1) {
+                return;
+            }
+            const EXPECTED_LOG_STR = `Document tried to create an RTCPeerConnection: ${TEST_URL_VALUE}`;
+            assert.ok(endsWith(input, EXPECTED_LOG_STR), 'console.hit input');
+        };
+
+        runScriptlet(name);
+
+        // eslint-disable-next-line no-unused-vars, compat/compat
+        const testPeer = new RTCPeerConnection(testPeerConfig);
+
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    });
+}
