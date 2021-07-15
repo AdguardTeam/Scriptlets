@@ -5,14 +5,14 @@ import {
 
 /* eslint-disable max-len */
 /**
- * @scriptlet set-local-storage-item
+ * @scriptlet set-session-storage-item
  *
  * @description
- * Sets given key and value to localStorage object, or updates that key's value if it already exists.
+ * Sets given key and value to sessionStorage object, or updates that key's value if it already exists.
  *
  * **Syntax**
  * ```
- * example.com#%#//scriptlet('set-local-storage-item', 'key', 'value')
+ * example.com#%#//scriptlet('set-session-storage-item', 'key', 'value')
  * ```
  *
  * - `key` — required, key name to be set.
@@ -29,14 +29,14 @@ import {
  *
  * **Examples**
  * ```
- * example.org#%#//scriptlet('set-local-storage-item', 'player.live.current.mute', 'false')
+ * example.org#%#//scriptlet('set-session-storage-item', 'player.live.current.mute', 'false')
  *
- * example.org#%#//scriptlet('set-local-storage-item', 'exit-intent-marketing', '1')
+ * example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '1')
  * ```
  */
 /* eslint-enable max-len */
 
-export function setLocalStorageItem(source, key, value) {
+export function setsessionStorageItem(source, key, value) {
     if (!key || (!value && value !== '')) {
         return;
     }
@@ -69,15 +69,15 @@ export function setLocalStorageItem(source, key, value) {
     }
 
     const setItem = (key, value) => {
-        const { localStorage } = window;
+        const { sessionStorage } = window;
         // setItem() may throw an exception if the storage is full.
         try {
-            localStorage.setItem(key, value);
+            sessionStorage.setItem(key, value);
             hit(source);
         } catch (e) {
             if (source.verbose) {
                 // eslint-disable-next-line no-console
-                console.log(`Was unable to set localStorage item due to: ${e.message}`);
+                console.log(`Was unable to set sessionStorage item due to: ${e.message}`);
             }
         }
     };
@@ -85,11 +85,11 @@ export function setLocalStorageItem(source, key, value) {
     setItem(key, keyValue);
 }
 
-setLocalStorageItem.names = [
-    'set-local-storage-item',
+setsessionStorageItem.names = [
+    'set-session-storage-item',
 ];
 
-setLocalStorageItem.injections = [
+setsessionStorageItem.injections = [
     hit,
     nativeIsNaN,
 ];

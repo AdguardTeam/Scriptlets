@@ -39,3 +39,4 @@ export * from './remove-in-shadow-dom';
 export * from './no-floc';
 export * from './prevent-fetch';
 export * from './set-local-storage-item';
+export * from './set-session-storage-item';

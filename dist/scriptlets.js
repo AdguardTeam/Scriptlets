@@ -4621,7 +4621,7 @@
      * @scriptlet set-local-storage-item
      *
      * @description
-     * Sets given key and value to Storage object, or updates that key's value if it already exists.
+     * Sets given key and value to localStorage object, or updates that key's value if it already exists.
      *
      * **Syntax**
      * ```
@@ -4705,6 +4705,96 @@
     setLocalStorageItem.names = ['set-local-storage-item'];
     setLocalStorageItem.injections = [hit, nativeIsNaN];
 
+    /* eslint-disable max-len */
+
+    /**
+     * @scriptlet set-session-storage-item
+     *
+     * @description
+     * Sets given key and value to sessionStorage object, or updates that key's value if it already exists.
+     *
+     * **Syntax**
+     * ```
+     * example.com#%#//scriptlet('set-session-storage-item', 'key', 'value')
+     * ```
+     *
+     * - `key` — required, key name to be set.
+     * - `value` - required, key value; possible values:
+     *     - positive decimal integer `<= 32767`
+     *     - one of the predefined constants:
+     *         - `undefined`
+     *         - `false`
+     *         - `true`
+     *         - `null`
+     *         - `emptyObj` - empty object
+     *         - `emptyArr` - empty array
+     *         - `''` - empty string
+     *
+     * **Examples**
+     * ```
+     * example.org#%#//scriptlet('set-session-storage-item', 'player.live.current.mute', 'false')
+     *
+     * example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '1')
+     * ```
+     */
+
+    /* eslint-enable max-len */
+
+    function setsessionStorageItem(source, key, value) {
+      if (!key || !value && value !== '') {
+        return;
+      }
+
+      var keyValue;
+
+      if (value === 'undefined') {
+        keyValue = undefined;
+      } else if (value === 'false') {
+        keyValue = false;
+      } else if (value === 'true') {
+        keyValue = true;
+      } else if (value === 'null') {
+        keyValue = null;
+      } else if (value === 'emptyArr') {
+        keyValue = '[]';
+      } else if (value === 'emptyObj') {
+        keyValue = '{}';
+      } else if (value === '') {
+        keyValue = '';
+      } else if (/^\d+$/.test(value)) {
+        keyValue = parseFloat(value);
+
+        if (nativeIsNaN(keyValue)) {
+          return;
+        }
+
+        if (Math.abs(keyValue) > 0x7FFF) {
+          return;
+        }
+      } else {
+        return;
+      }
+
+      var setItem = function setItem(key, value) {
+        var _window = window,
+            sessionStorage = _window.sessionStorage; // setItem() may throw an exception if the storage is full.
+
+        try {
+          sessionStorage.setItem(key, value);
+          hit(source);
+        } catch (e) {
+          if (source.verbose) {
+            // eslint-disable-next-line no-console
+            console.log("Was unable to set sessionStorage item due to: ".concat(e.message));
+          }
+        }
+      };
+
+      setItem(key, keyValue);
+    }
+    setsessionStorageItem.names = ['set-session-storage-item'];
+    setsessionStorageItem.injections = [hit, nativeIsNaN];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -4748,7 +4838,8 @@
         removeInShadowDom: removeInShadowDom,
         noFloc: noFloc,
         preventFetch: preventFetch,
-        setLocalStorageItem: setLocalStorageItem
+        setLocalStorageItem: setLocalStorageItem,
+        setsessionStorageItem: setsessionStorageItem
     });
 
     /**
