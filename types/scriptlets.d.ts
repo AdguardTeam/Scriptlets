@@ -1,4 +1,4 @@
-declare module 'scriptlets' {
+declare module '@adguard/scriptlets' {
 
     /**
      * Scriptlet properties
