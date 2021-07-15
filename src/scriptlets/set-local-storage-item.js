@@ -1,7 +1,5 @@
 import {
     hit,
-    noopObject,
-    noopArray,
     nativeIsNaN,
 } from '../helpers';
 
@@ -14,10 +12,10 @@ import {
  *
  * **Syntax**
  * ```
- * example.com#%#//scriptlet('set-local-storage-item', 'name', 'value')
+ * example.com#%#//scriptlet('set-local-storage-item', 'key', 'value')
  * ```
  *
- * - `name` — required, key name to be set.
+ * - `key` — required, key name to be set.
  * - `value` - required, key value; possible values:
  *     - positive decimal integer `<= 32767`
  *     - one of the predefined constants:
@@ -38,13 +36,10 @@ import {
  */
 /* eslint-enable max-len */
 
-export function setLocalStorageItem(source, name, value) {
-    if (!name || !value) {
+export function setLocalStorageItem(source, key, value) {
+    if (!key || (!value && value !== '')) {
         return;
     }
-
-    const emptyArr = noopArray();
-    const emptyObj = noopObject();
 
     let keyValue;
     if (value === 'undefined') {
@@ -56,9 +51,9 @@ export function setLocalStorageItem(source, name, value) {
     } else if (value === 'null') {
         keyValue = null;
     } else if (value === 'emptyArr') {
-        keyValue = emptyArr;
+        keyValue = '[]';
     } else if (value === 'emptyObj') {
-        keyValue = emptyObj;
+        keyValue = '{}';
     } else if (value === '') {
         keyValue = '';
     } else if (/^\d+$/.test(value)) {
@@ -73,22 +68,21 @@ export function setLocalStorageItem(source, name, value) {
         return;
     }
 
-    const setItem = (name, value) => {
-        const { localStorage } = window.localStorage;
+    const setItem = (key, value) => {
+        const { localStorage } = window;
         // setItem() may throw an exception if the storage is full.
         try {
-            localStorage.setItem(name, value);
-            if (localStorage.getItem(name)) {
-                hit(source);
-            }
+            localStorage.setItem(key, value);
+            hit(source);
         } catch (e) {
-            // eslint-disable-next-line no-console
-            console.log(`Was unable to set localStorage item due to: ${e.message}`);
-            throw e;
+            if (source.verbose) {
+                // eslint-disable-next-line no-console
+                console.log(`Was unable to set localStorage item due to: ${e.message}`);
+            }
         }
     };
 
-    setItem(name, keyValue);
+    setItem(key, keyValue);
 }
 
 setLocalStorageItem.names = [
@@ -97,7 +91,5 @@ setLocalStorageItem.names = [
 
 setLocalStorageItem.injections = [
     hit,
-    noopObject,
-    noopArray,
     nativeIsNaN,
 ];
