@@ -4740,7 +4740,7 @@
 
     /* eslint-enable max-len */
 
-    function setsessionStorageItem(source, key, value) {
+    function setSessionStorageItem(source, key, value) {
       if (!key || !value && value !== '') {
         return;
       }
@@ -4792,8 +4792,8 @@
 
       setItem(key, keyValue);
     }
-    setsessionStorageItem.names = ['set-session-storage-item'];
-    setsessionStorageItem.injections = [hit, nativeIsNaN];
+    setSessionStorageItem.names = ['set-session-storage-item'];
+    setSessionStorageItem.injections = [hit, nativeIsNaN];
 
     /**
      * This file must export all scriptlets which should be accessible
@@ -4839,7 +4839,7 @@
         noFloc: noFloc,
         preventFetch: preventFetch,
         setLocalStorageItem: setLocalStorageItem,
-        setsessionStorageItem: setsessionStorageItem
+        setSessionStorageItem: setSessionStorageItem
     });
 
     /**

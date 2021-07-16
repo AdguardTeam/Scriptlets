@@ -36,7 +36,7 @@ import {
  */
 /* eslint-enable max-len */
 
-export function setsessionStorageItem(source, key, value) {
+export function setSessionStorageItem(source, key, value) {
     if (!key || (!value && value !== '')) {
         return;
     }
@@ -85,11 +85,11 @@ export function setsessionStorageItem(source, key, value) {
     setItem(key, keyValue);
 }
 
-setsessionStorageItem.names = [
+setSessionStorageItem.names = [
     'set-session-storage-item',
 ];
 
-setsessionStorageItem.injections = [
+setSessionStorageItem.injections = [
     hit,
     nativeIsNaN,
 ];
