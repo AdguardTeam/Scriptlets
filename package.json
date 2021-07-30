@@ -25,6 +25,7 @@
         }
     },
     "author": "AdGuard",
+    "license": "GPL-3.0",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/AdguardTeam/Scriptlets.git"
@@ -32,7 +33,7 @@
     "bugs": {
         "url": "https://github.com/AdguardTeam/Scriptlets/issues"
     },
-    "license": "LGPL-3.0",
+    "homepage": "https://github.com/AdguardTeam/Scriptlets#adguard-scriptlets-and-redirect-resources",
     "main": "dist/cjs/scriptlets.cjs.js",
     "types": "dist/cjs/scriptlets.d.ts",
     "devDependencies": {
