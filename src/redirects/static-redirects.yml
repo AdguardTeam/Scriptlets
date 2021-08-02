@@ -147,7 +147,7 @@
 
 - title: noopvast-2.0
   description: |-
-    Redirects request to an empty VAST response.
+    Redirects request to an empty VAST 2.0 response.
 
     **Example**
     ```
@@ -159,7 +159,7 @@
 
 - title: noopvast-3.0
   description: |-
-    Redirects request to an empty VAST response.
+    Redirects request to an empty VAST 3.0 response.
 
     **Example**
     ```
@@ -168,6 +168,18 @@
   file: noopvast03.xml
   contentType: text/xml
   content: <VAST version="3.0"></VAST>
+
+- title: noopvast-4.0
+  description: |-
+    Redirects request to an empty VAST 4.0 response.
+
+    **Example**
+    ```
+    ||example.org/vast04.xml^$xmlhttprequest,redirect=noopvast-4.0
+    ```
+  file: noopvast04.xml
+  contentType: text/xml
+  content: <VAST version="4.0"></VAST>
 
 - title: noopmp3-0.1s
   description: |-

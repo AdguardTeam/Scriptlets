@@ -11,6 +11,7 @@
 * [noopvmap-1.0](#noopvmap-1.0)
 * [noopvast-2.0](#noopvast-2.0)
 * [noopvast-3.0](#noopvast-3.0)
+* [noopvast-4.0](#noopvast-4.0)
 * [noopmp3-0.1s](#noopmp3-0.1s)
 * [noopmp4-1s](#noopmp4-1s)
 * [amazon-apstag](#amazon-apstag)
@@ -112,7 +113,7 @@ Redirects request to an empty VMAP response.
 * * *
 
 ### <a id="noopvast-2.0"></a> ⚡️ noopvast-2.0
-Redirects request to an empty VAST response.
+Redirects request to an empty VAST 2.0 response.
 
 **Example**
 ```
@@ -122,11 +123,21 @@ Redirects request to an empty VAST response.
 * * *
 
 ### <a id="noopvast-3.0"></a> ⚡️ noopvast-3.0
-Redirects request to an empty VAST response.
+Redirects request to an empty VAST 3.0 response.
 
 **Example**
 ```
 ||example.org/vast03.xml^$xmlhttprequest,redirect=noopvast-3.0
+```
+[Redirect source](../src/redirects/static-redirects.yml)
+* * *
+
+### <a id="noopvast-4.0"></a> ⚡️ noopvast-4.0
+Redirects request to an empty VAST 4.0 response.
+
+**Example**
+```
+||example.org/vast04.xml^$xmlhttprequest,redirect=noopvast-4.0
 ```
 [Redirect source](../src/redirects/static-redirects.yml)
 * * *
