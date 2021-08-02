@@ -35,7 +35,9 @@
 * [set-constant](#set-constant)
 * [set-cookie-reload](#set-cookie-reload)
 * [set-cookie](#set-cookie)
+* [set-local-storage-item](#set-local-storage-item)
 * [set-popads-dummy](#set-popads-dummy)
+* [set-session-storage-item](#set-session-storage-item)
 * * *
 ### <a id="abort-current-inline-script"></a> ⚡️ abort-current-inline-script
 
@@ -1305,6 +1307,37 @@ example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', 'true')
 [Scriptlet source](../src/scriptlets/set-cookie.js)
 * * *
 
+### <a id="set-local-storage-item"></a> ⚡️ set-local-storage-item
+
+Adds specified key and its value to localStorage object, or updates the value of the key if it already exists.
+
+**Syntax**
+```
+example.com#%#//scriptlet('set-local-storage-item', 'key', 'value')
+```
+
+- `key` — required, key name to be set.
+- `value` - required, key value; possible values:
+    - positive decimal integer `<= 32767`
+    - one of the predefined constants:
+        - `undefined`
+        - `false`
+        - `true`
+        - `null`
+        - `emptyObj` - empty object
+        - `emptyArr` - empty array
+        - `''` - empty string
+
+**Examples**
+```
+example.org#%#//scriptlet('set-local-storage-item', 'player.live.current.mute', 'false')
+
+example.org#%#//scriptlet('set-local-storage-item', 'exit-intent-marketing', '1')
+```
+
+[Scriptlet source](../src/scriptlets/set-local-storage-item.js)
+* * *
+
 ### <a id="set-popads-dummy"></a> ⚡️ set-popads-dummy
 
 Sets static properties PopAds and popns.
@@ -1318,5 +1351,36 @@ example.org#%#//scriptlet('set-popads-dummy')
 ```
 
 [Scriptlet source](../src/scriptlets/set-popads-dummy.js)
+* * *
+
+### <a id="set-session-storage-item"></a> ⚡️ set-session-storage-item
+
+Adds specified key and its value to sessionStorage object, or updates the value of the key if it already exists.
+
+**Syntax**
+```
+example.com#%#//scriptlet('set-session-storage-item', 'key', 'value')
+```
+
+- `key` — required, key name to be set.
+- `value` - required, key value; possible values:
+    - positive decimal integer `<= 32767`
+    - one of the predefined constants:
+        - `undefined`
+        - `false`
+        - `true`
+        - `null`
+        - `emptyObj` - empty object
+        - `emptyArr` - empty array
+        - `''` - empty string
+
+**Examples**
+```
+example.org#%#//scriptlet('set-session-storage-item', 'player.live.current.mute', 'false')
+
+example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '1')
+```
+
+[Scriptlet source](../src/scriptlets/set-session-storage-item.js)
 * * *
 

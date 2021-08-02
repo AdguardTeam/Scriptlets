@@ -35,3 +35,5 @@ import './hide-in-shadow-dom.test';
 import './remove-in-shadow-dom.test';
 import './no-floc.test';
 import './prevent-fetch.test';
+import './set-local-storage-item.test';
+import './set-session-storage-item.test';
