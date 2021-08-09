@@ -2,7 +2,7 @@
     "scriptlets": [
         {
             "adg": "abort-current-inline-script",
-            "ubo": "abort-current-inline-script.js (acis.js)",
+            "ubo": "abort-current-script.js (acs.js, abort-current-inline-script.js, acis.js)",
             "abp": "abort-current-inline-script"
         },
         {
@@ -225,6 +225,9 @@
         },
         {
             "abp": "abort-on-iframe-property-write"
+        },
+        {
+            "ubo": "abort-current-script.js (acs.js, abort-current-inline-script.js, acis.js)"
         }
     ],
     "redirects": [
@@ -386,6 +389,9 @@
         },
         {
             "ubo": "click2load.html"
+        },
+        {
+            "ubo": "mxpnl_mixpanel.js"
         }
     ]
 }

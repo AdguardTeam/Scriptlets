@@ -188,7 +188,7 @@ test('Test SCRIPTLET converting - ADG -> UBO', (assert) => {
     assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
 
     inputAdg = 'example.com#%#//scriptlet("abp-abort-current-inline-script", "console.log", "Hello")';
-    expectedUbo = 'example.com##+js(abort-current-inline-script, console.log, Hello)';
+    expectedUbo = 'example.com##+js(abort-current-script, console.log, Hello)';
     assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
 
     inputAdg = 'example.com#%#//scriptlet(\'prevent-fetch\', \'*\')';

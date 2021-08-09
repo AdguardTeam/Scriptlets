@@ -162,6 +162,14 @@ export function abortCurrentInlineScript(source, property, search) {
 abortCurrentInlineScript.names = [
     'abort-current-inline-script',
     // aliases are needed for matching the related scriptlet converted into our syntax
+    'abort-current-script.js',
+    'ubo-abort-current-script.js',
+    'acs.js',
+    'ubo-acs.js',
+    // "ubo"-aliases with no "js"-ending
+    'ubo-abort-current-script',
+    'ubo-acs',
+    // obsolete but supported aliases
     'abort-current-inline-script.js',
     'ubo-abort-current-inline-script.js',
     'acis.js',

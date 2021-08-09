@@ -2,7 +2,7 @@
 
 | AdGuard | uBO | Adblock Plus |
 |---|---|---|
-| [abort-current-inline-script](../wiki/about-scriptlets.md#abort-current-inline-script) | abort-current-inline-script.js (acis.js) | abort-current-inline-script |
+| [abort-current-inline-script](../wiki/about-scriptlets.md#abort-current-inline-script) | abort-current-script.js (acs.js, abort-current-inline-script.js, acis.js) | abort-current-inline-script |
 | [abort-on-property-read](../wiki/about-scriptlets.md#abort-on-property-read) | abort-on-property-read.js (aopr.js) | abort-on-property-read |
 | [abort-on-property-write](../wiki/about-scriptlets.md#abort-on-property-write) | abort-on-property-write.js (aopw.js) | abort-on-property-write |
 | [adjust-setInterval](../wiki/about-scriptlets.md#adjust-setInterval) | nano-setInterval-booster.js (nano-sib.js) |  |
@@ -68,6 +68,7 @@
 |  |  | commitInjection |
 |  |  | abort-on-iframe-property-read |
 |  |  | abort-on-iframe-property-write |
+|  | abort-current-script.js (acs.js, abort-current-inline-script.js, acis.js) |  |
 
 
 # <a id="redirects"></a> Redirects compatibility table
@@ -116,3 +117,4 @@
 |  | window.open-defuser.js |  |
 |  | noeval.js |  |
 |  | click2load.html |  |
+|  | mxpnl_mixpanel.js |  |
