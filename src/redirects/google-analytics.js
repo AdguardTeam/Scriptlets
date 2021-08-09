@@ -59,7 +59,8 @@ export function GoogleAnalytics(source) {
     }
 
     ga.create = () => new Tracker();
-    ga.getByName = noopNull;
+    // https://github.com/AdguardTeam/Scriptlets/issues/134
+    ga.getByName = () => new Tracker();
     ga.getAll = noopArray;
     ga.remove = noopFunc;
     ga.loaded = true;
