@@ -6,3 +6,4 @@ import './scorecardresearch-beacon.test';
 import './metrika-yandex-watch.test';
 import './metrika-yandex-tag.test';
 import './amazon-apstag.test';
+import './matomo.test';

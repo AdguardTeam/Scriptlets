@@ -1,5 +1,5 @@
 {
-    "version": "1.4.3",
+    "version": "1.4.6",
     "scriptlets": [
         {
             "names": [
@@ -78,6 +78,12 @@
         {
             "names": [
                 "abort-current-inline-script",
+                "abort-current-script.js",
+                "ubo-abort-current-script.js",
+                "acs.js",
+                "ubo-acs.js",
+                "ubo-abort-current-script",
+                "ubo-acs",
                 "abort-current-inline-script.js",
                 "ubo-abort-current-inline-script.js",
                 "acis.js",

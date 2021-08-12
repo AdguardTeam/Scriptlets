@@ -19,6 +19,7 @@
 * [google-analytics](#google-analytics)
 * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
 * [googletagservices-gpt](#googletagservices-gpt)
+* [matomo](#matomo)
 * [metrika-yandex-tag](#metrika-yandex-tag)
 * [metrika-yandex-watch](#metrika-yandex-watch)
 * [noeval](#noeval)
@@ -233,6 +234,18 @@ https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/
 ```
 
 [Redirect source](../src/redirects/googletagservices-gpt.js)
+* * *
+
+### <a id="matomo"></a> ⚡️ matomo
+
+Mocks the piwik.js file of Matomo (formerly Piwik).
+
+**Example**
+```
+||example.org/piwik.js$script,redirect=matomo
+```
+
+[Redirect source](../src/redirects/matomo.js)
 * * *
 
 ### <a id="metrika-yandex-tag"></a> ⚡️ metrika-yandex-tag

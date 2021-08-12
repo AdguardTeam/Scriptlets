@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.4.3
+ * Version 1.4.6
  */
 
 /**
@@ -2327,6 +2327,8 @@ function abortCurrentInlineScript(source, property, search) {
   window.onerror = createOnErrorHandler(rid).bind();
 }
 abortCurrentInlineScript.names = ['abort-current-inline-script', // aliases are needed for matching the related scriptlet converted into our syntax
+'abort-current-script.js', 'ubo-abort-current-script.js', 'acs.js', 'ubo-acs.js', // "ubo"-aliases with no "js"-ending
+'ubo-abort-current-script', 'ubo-acs', // obsolete but supported aliases
 'abort-current-inline-script.js', 'ubo-abort-current-inline-script.js', 'acis.js', 'ubo-acis.js', 'ubo-abort-current-inline-script', 'ubo-acis', 'abp-abort-current-inline-script'];
 abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit];
 
@@ -5804,9 +5806,13 @@ function GoogleAnalytics(source) {
 
   ga.create = function () {
     return new Tracker();
+  }; // https://github.com/AdguardTeam/Scriptlets/issues/134
+
+
+  ga.getByName = function () {
+    return new Tracker();
   };
 
-  ga.getByName = noopNull;
   ga.getAll = noopArray;
   ga.remove = noopFunc;
   ga.loaded = true;
@@ -6455,6 +6461,44 @@ function AmazonApstag(source) {
 AmazonApstag.names = ['amazon-apstag', 'ubo-amazon_apstag.js', 'amazon_apstag.js'];
 AmazonApstag.injections = [hit, noopFunc];
 
+/* eslint-disable func-names */
+/**
+ * @redirect matomo
+ *
+ * @description
+ * Mocks the piwik.js file of Matomo (formerly Piwik).
+ *
+ * **Example**
+ * ```
+ * ||example.org/piwik.js$script,redirect=matomo
+ * ```
+ */
+
+function Matomo(source) {
+  var Tracker = function Tracker() {};
+
+  Tracker.prototype.setDoNotTrack = noopFunc;
+  Tracker.prototype.setDomains = noopFunc;
+  Tracker.prototype.setCustomDimension = noopFunc;
+  Tracker.prototype.trackPageView = noopFunc;
+
+  var AsyncTracker = function AsyncTracker() {};
+
+  AsyncTracker.prototype.addListener = noopFunc;
+  var matomoWrapper = {
+    getTracker: function getTracker() {
+      return new Tracker();
+    },
+    getAsyncTracker: function getAsyncTracker() {
+      return new AsyncTracker();
+    }
+  };
+  window.Piwik = matomoWrapper;
+  hit(source);
+}
+Matomo.names = ['matomo'];
+Matomo.injections = [hit, noopFunc];
+
 var redirectsList = /*#__PURE__*/Object.freeze({
     __proto__: null,
     noeval: noeval,
@@ -6469,7 +6513,8 @@ var redirectsList = /*#__PURE__*/Object.freeze({
     preventBab: preventBab,
     setPopadsDummy: setPopadsDummy,
     preventPopadsNet: preventPopadsNet,
-    AmazonApstag: AmazonApstag
+    AmazonApstag: AmazonApstag,
+    Matomo: Matomo
 });
 
 function _classCallCheck(instance, Constructor) {

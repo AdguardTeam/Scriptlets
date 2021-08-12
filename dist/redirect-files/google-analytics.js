@@ -38,9 +38,13 @@ function GoogleAnalytics(source) {
 
     ga.create = function () {
       return new Tracker();
+    }; // https://github.com/AdguardTeam/Scriptlets/issues/134
+
+
+    ga.getByName = function () {
+      return new Tracker();
     };
 
-    ga.getByName = noopNull;
     ga.getAll = noopArray;
     ga.remove = noopFunc;
     ga.loaded = true;

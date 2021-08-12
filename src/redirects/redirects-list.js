@@ -11,3 +11,4 @@ export * from './prevent-bab';
 export * from './set-popads-dummy';
 export * from './prevent-popads-net';
 export * from './amazon-apstag';
+export * from './matomo';
