@@ -164,7 +164,7 @@ export function preventSetInterval(source, match, delay) {
         const cbString = String(callback);
         if (shouldLog) {
             hit(source);
-            log(`setTimeout(${cbString}, ${interval})`);
+            log(`setInterval(${cbString}, ${interval})`);
         } else {
             shouldPrevent = getShouldPrevent(cbString, interval);
         }
