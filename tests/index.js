@@ -4,7 +4,7 @@ const { server, port } = require('./server');
 
 const qunitArgs = {
     targetUrl: `http://localhost:${port}/`,
-    timeout: 10000,
+    timeout: 15000,
     puppeteerArgs: ['--no-sandbox', '--allow-file-access-from-files'],
 };
 

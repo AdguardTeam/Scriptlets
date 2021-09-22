@@ -33,6 +33,10 @@ import {
  *
  * ! Aborts script when it tries to access `window.Ya.videoAd` and it's error stack trace contains `test.js`
  * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya.videoAd', 'test.js')
+ *
+ * ! Aborts script when stack trace matches with any of these parameters
+ * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexFuncName')
+ * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexScriptName')
  * ```
  */
 /* eslint-enable max-len */

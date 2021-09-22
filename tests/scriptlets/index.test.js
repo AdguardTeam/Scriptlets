@@ -38,3 +38,4 @@ import './prevent-fetch.test';
 import './set-local-storage-item.test';
 import './set-session-storage-item.test';
 import './abort-on-stack-trace.test';
+import './log-on-stack-trace.test';
