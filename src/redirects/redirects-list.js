@@ -12,3 +12,4 @@ export * from './set-popads-dummy';
 export * from './prevent-popads-net';
 export * from './amazon-apstag';
 export * from './matomo';
+export * from './fingerprintjs';
