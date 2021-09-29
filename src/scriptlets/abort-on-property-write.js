@@ -4,8 +4,6 @@ import {
     getPropertyInChain,
     createOnErrorHandler,
     hit,
-    toRegExp,
-    matchStackTrace,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -23,25 +21,20 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('abort-on-property-write', property[, stack])
+ * example.org#%#//scriptlet('abort-on-property-write', property)
  * ```
  *
  * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
- * - `stack` - optional, string or regular expression that must match the current function call stack trace
  *
  * **Examples**
  * ```
  * ! Aborts script when it tries to set `window.adblock` value
  * example.org#%#//scriptlet('abort-on-property-write', 'adblock')
- *
- * ! Aborts script when it tries to set `window.adblock` value and it's error stack trace contains `checking.js`
- * example.org#%#//scriptlet('abort-on-property-write', 'adblock', 'checking.js')
  * ```
  */
 /* eslint-enable max-len */
-export function abortOnPropertyWrite(source, property, stack) {
-    if (!property
-        || !matchStackTrace(stack, new Error().stack)) {
+export function abortOnPropertyWrite(source, property) {
+    if (!property) {
         return;
     }
 
@@ -94,6 +87,4 @@ abortOnPropertyWrite.injections = [
     getPropertyInChain,
     createOnErrorHandler,
     hit,
-    toRegExp,
-    matchStackTrace,
 ];

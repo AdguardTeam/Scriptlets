@@ -49,23 +49,3 @@ test('dot notation deferred defenition', (assert) => {
     console.log(window.aaa.bbb);
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
-
-test('simple, matches stack', (assert) => {
-    window[PROPERTY] = 'value';
-    const stackMatch = 'tests.js';
-    const scriptletArgs = [PROPERTY, stackMatch];
-    runScriptlet(name, scriptletArgs);
-
-    console.log(window[PROPERTY]);
-    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-});
-
-test('simple, does NOT match stack', (assert) => {
-    window[PROPERTY] = 'value';
-    const noStackMatch = 'no_match.js';
-    const scriptletArgs = [PROPERTY, noStackMatch];
-    runScriptlet(name, scriptletArgs);
-
-    console.log(window[PROPERTY]);
-    assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
-});

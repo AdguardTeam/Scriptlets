@@ -92,37 +92,3 @@ test('dot notation deferred defenition', (assert) => {
     );
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
-
-test('matches stack', (assert) => {
-    window[PROPERTY] = 'value';
-    const stackMatch = 'tests.js';
-    const scriptletArgs = [PROPERTY, stackMatch];
-    runScriptlet(name, scriptletArgs);
-
-    assert.throws(
-        () => {
-            window[PROPERTY] = 'new value';
-        },
-        /ReferenceError/,
-        `should throw Reference error when try to access property ${PROPERTY}`,
-    );
-    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-});
-
-test('does NOT match stack', (assert) => {
-    window[PROPERTY] = 'value';
-    const noStackMatch = 'no_match.js';
-    const scriptletArgs = [PROPERTY, noStackMatch];
-    runScriptlet(name, scriptletArgs);
-
-    assert.equal(window.hit, undefined, 'hit should NOT fire');
-});
-
-test('abort-on-property-write: matches stack of our own script', (assert) => {
-    window[PROPERTY] = 'value';
-    const selfMatch = 'abortOnPropertyRead';
-    const scriptletArgs = [PROPERTY, selfMatch];
-    runScriptlet(name, scriptletArgs);
-
-    assert.equal(window.hit, undefined, 'hit should NOT fire');
-});

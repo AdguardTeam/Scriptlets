@@ -4,8 +4,6 @@ import {
     getPropertyInChain,
     createOnErrorHandler,
     hit,
-    toRegExp,
-    matchStackTrace,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -23,11 +21,10 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('abort-on-property-read', property[, stack])
+ * example.org#%#//scriptlet('abort-on-property-read', property)
  * ```
  *
  * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
- * - `stack` - optional, string or regular expression that must match the current function call stack trace
  *
  * **Examples**
  * ```
@@ -36,15 +33,11 @@ import {
  *
  * ! Aborts script when it tries to access `navigator.language`
  * example.org#%#//scriptlet('abort-on-property-read', 'navigator.language')
- *
- * ! Aborts script when it tries to access `window.adblock` and it's error stack trace contains `test.js`
- * example.org#%#//scriptlet('abort-on-property-read', 'adblock', 'test.js')
  * ```
  */
 /* eslint-enable max-len */
-export function abortOnPropertyRead(source, property, stack) {
-    if (!property
-        || !matchStackTrace(stack, new Error().stack)) {
+export function abortOnPropertyRead(source, property) {
+    if (!property) {
         return;
     }
 
@@ -97,10 +90,8 @@ abortOnPropertyRead.names = [
 ];
 abortOnPropertyRead.injections = [
     randomId,
-    toRegExp,
     setPropertyAccess,
     getPropertyInChain,
     createOnErrorHandler,
     hit,
-    matchStackTrace,
 ];
