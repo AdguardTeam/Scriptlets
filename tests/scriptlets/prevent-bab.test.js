@@ -56,6 +56,16 @@ test('sample eval script works', (assert) => {
     assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
 });
 
+test('non-string eval works', (assert) => {
+    runScriptlet(name);
+
+    const evalWrap = eval;
+
+    assert.strictEqual(evalWrap(2), 2);
+    assert.strictEqual(evalWrap(2 + 2), 4);
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+});
+
 test('prevents set timeout with AdblockBlock', (assert) => {
     runScriptlet(name);
 

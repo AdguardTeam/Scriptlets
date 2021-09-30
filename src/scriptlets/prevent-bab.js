@@ -37,6 +37,9 @@ export function preventBab(source) {
         ['getElementById', 'String.fromCharCode', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 'charAt', 'DOMContentLoaded', 'AdBlock', 'addEventListener', 'doScroll', 'fromCharCode', '<<2|r>>4', 'sessionStorage', 'clientWidth', 'localStorage', 'Math', 'random'],
     ];
     const check = (str) => {
+        if (typeof str !== 'string') {
+            return false;
+        }
         for (let i = 0; i < signatures.length; i += 1) {
             const tokens = signatures[i];
             let match = 0;
