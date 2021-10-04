@@ -202,3 +202,29 @@ test('new syntax: log checking - url + args', (assert) => {
 
     assert.equal(window.hit, 'value', 'hit fired');
 });
+
+test('new syntax: native code check', (assert) => {
+    const testUrl = 'some test url';
+
+    const scriptletArgs = [testUrl, '100'];
+    runScriptlet(name, scriptletArgs);
+
+    assert.equal(window.open.toString().includes('native code'), true, 'window.open.toString() returns native code');
+
+    assert.equal(window.hit, undefined, 'hit should not fire');
+});
+
+test('new syntax:  props mocked', (assert) => {
+    const testUrl = 'some test url';
+
+    const scriptletArgs = [testUrl, '100'];
+    runScriptlet(name, scriptletArgs);
+
+    const decoy = window.open(testUrl);
+
+    assert.strictEqual(decoy.closed, false, '.closed mocked');
+    assert.strictEqual(decoy.opener, window, '.opener mocked');
+    assert.strictEqual(decoy.frameElement, null, '.frameElement mocked');
+
+    assert.equal(window.hit, 'value', 'hit fired');
+});

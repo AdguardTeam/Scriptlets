@@ -126,6 +126,8 @@ export function preventWindowOpen(source, match = getWildcardSymbol(), delay, re
                 let popup = decoy.contentWindow;
                 if (typeof popup === 'object' && popup !== null) {
                     Object.defineProperty(popup, 'closed', { value: false });
+                    Object.defineProperty(popup, 'opener', { value: window });
+                    Object.defineProperty(popup, 'frameElement', { value: null });
                 } else {
                     const nativeGetter = decoy.contentWindow && decoy.contentWindow.get;
                     Object.defineProperty(decoy, 'contentWindow', {
@@ -133,6 +135,7 @@ export function preventWindowOpen(source, match = getWildcardSymbol(), delay, re
                     });
                     popup = decoy.contentWindow;
                 }
+
                 result = popup;
             }
 
@@ -144,6 +147,9 @@ export function preventWindowOpen(source, match = getWildcardSymbol(), delay, re
     };
 
     window.open = isNewSyntax ? newOpenWrapper : oldOpenWrapper;
+
+    // Protect window.open from native code check
+    window.open.toString = nativeOpen.toString.bind(nativeOpen);
 }
 
 preventWindowOpen.names = [
