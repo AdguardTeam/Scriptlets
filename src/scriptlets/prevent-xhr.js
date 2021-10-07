@@ -48,7 +48,7 @@ import {
  *
  * 3. Prevent XMLHttpRequests for specific url
  *     ```
- *     example.org#%#//scriptlet('prevent-xhr', 'url:example.org')
+ *     example.org#%#//scriptlet('prevent-xhr', 'example.org')
  *     ```
  *
  * 4. Prevent XMLHttpRequests for specific request method
@@ -58,7 +58,7 @@ import {
  *
  * 5. Prevent XMLHttpRequests for specific url and specified request methods
  *     ```
- *     example.org#%#//scriptlet('prevent-xhr', 'url:example.org method:/HEAD|GET/')
+ *     example.org#%#//scriptlet('prevent-xhr', 'example.org method:/HEAD|GET/')
  *     ```
  */
 /* eslint-enable max-len */

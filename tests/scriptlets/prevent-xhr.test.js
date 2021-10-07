@@ -89,7 +89,7 @@ test('Args, prevent matched', async (assert) => {
     };
     const EXPECTED_READY_STATE = 0;
 
-    runScriptlet(name, [`method:${XHR_DATA.method} url:${XHR_DATA.url}`]);
+    runScriptlet(name, [`example.org method:${XHR_DATA.method}`]);
 
     const xhr = new XMLHttpRequest();
     xhr.open(XHR_DATA.method, XHR_DATA.url);
@@ -102,7 +102,7 @@ test('Args, pass unmatched', async (assert) => {
         method: 'GET',
         url: 'http://www.example.org/',
     };
-    const MATCH_DATA = 'url:not-example.org';
+    const MATCH_DATA = 'not-example.org';
     const EXPECTED_READY_STATE = 1;
 
     runScriptlet(name, [MATCH_DATA]);
@@ -118,7 +118,7 @@ test('Args, pass partly matched', async (assert) => {
         method: 'GET',
         url: 'http://www.example.org/',
     };
-    const MATCH_DATA = 'method:GET url:not-example.org';
+    const MATCH_DATA = 'not-example.org method:GET';
     const EXPECTED_READY_STATE = 1;
 
     runScriptlet(name, [MATCH_DATA]);
