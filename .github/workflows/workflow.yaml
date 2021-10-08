@@ -27,13 +27,6 @@ jobs:
       - name: yarn test
         run: yarn test
 
-      - name: yarn browserstack
-        run: yarn browserstack
-        if:
-          ${{ github.event_name == 'push' ||
-              github.event.pull_request.head.repo.full_name == github.repository
-          }}
-
       - name: yarn corelibs
         run: yarn corelibs
 
