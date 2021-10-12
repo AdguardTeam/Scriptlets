@@ -194,3 +194,69 @@ test('multiple class names + multiple selectors', (assert) => {
         done();
     }, 150);
 });
+
+// Only 'asap' and 'asap stay' cases were tested as test suit is loaded on 'complete' page state
+// and 'loading' and 'interactive' states are unavailable.
+test('single class name for different elements + multiple selectors, asap', (assert) => {
+    createHit();
+    const classNames = ['testClass'];
+    const firstClass = 'first';
+    const secondClass = 'second';
+
+    const firstElement = createElem(firstClass, classNames);
+    const secondElement = createElem(secondClass, classNames);
+
+    const applying = 'asap';
+    const selectors = `.${firstClass}, .${secondClass}`;
+    const scriptletArgs = [classNames.join('|'), selectors, applying];
+    runScriptlet(name, scriptletArgs);
+
+    classNames.forEach((a) => {
+        assert.notOk(firstElement.classList.contains(a), `Class '${a}' removed for matched element`);
+        assert.notOk(secondElement.classList.contains(a), `Class '${a}' removed for matched element`);
+    });
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    // clean up test elements
+    firstElement.remove();
+    secondElement.remove();
+    clearGlobalProps('hit');
+});
+
+test('single class name for different elements + multiple selectors', (assert) => {
+    createHit();
+    const classNames = ['testClass'];
+    const firstClass = 'first';
+    const secondClass = 'second';
+
+    const firstElement = createElem(firstClass, classNames);
+    const secondElement = createElem(secondClass, classNames);
+
+    const applying = 'asap stay';
+    const selectors = `.${firstClass}, .${secondClass}`;
+    const scriptletArgs = [classNames.join('|'), selectors, applying];
+    runScriptlet(name, scriptletArgs);
+
+    classNames.forEach((a) => {
+        assert.notOk(firstElement.classList.contains(a), `Class '${a}' removed for matched element`);
+        assert.notOk(secondElement.classList.contains(a), `Class '${a}' removed for matched element`);
+    });
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    clearGlobalProps('hit');
+
+    const done = assert.async();
+
+    setTimeout(() => { firstElement.classList.add(classNames[0]); }, 50);
+    setTimeout(() => { secondElement.classList.add(classNames[0]); }, 80);
+
+    setTimeout(() => {
+        classNames.forEach((a) => {
+            assert.notOk(firstElement.classList.contains(a), `Class '${a}' removed for matched element`);
+            assert.notOk(secondElement.classList.contains(a), `Class '${a}' removed for matched element`);
+        });
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        // clean up test elements
+        firstElement.remove();
+        secondElement.remove();
+        done();
+    }, 150);
+});

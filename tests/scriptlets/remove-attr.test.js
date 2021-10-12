@@ -227,3 +227,64 @@ test('multiple attrs + multiple selectors', (assert) => {
         done();
     }, 100);
 });
+
+// Only 'asap' and 'asap stay' cases were tested as test suit is loaded on 'complete' page state
+// and 'loading' and 'interactive' states are unavailable.
+test('single attr + single selector, asap', (assert) => {
+    createHit();
+    const attrs = ['test'];
+    const className = 'testClass';
+
+    const elem = createElem(className, attrs);
+
+    const selector = `.${className}`;
+    const applying = 'asap';
+
+    const scriptletArgs = [attrs.join('|'), selector, applying];
+    runScriptlet(name, scriptletArgs);
+
+    attrs.forEach((a) => {
+        assert.notOk(elem.getAttribute(a), `Attr ${a} removed for "${elem}" element`);
+    });
+    assert.strictEqual(window.hit, 'FIRED');
+    // clean up test element
+    elem.remove();
+    clearGlobalProps('hit');
+});
+
+test('single attr + single selector, asap stay', (assert) => {
+    createHit();
+    const attrs = ['test'];
+    const className = 'testClass';
+
+    const elem = createElem(className, attrs);
+
+    const selector = `.${className}`;
+    const applying = 'asap stay';
+
+    const scriptletArgs = [attrs.join('|'), selector, applying];
+    runScriptlet(name, scriptletArgs);
+
+    attrs.forEach((a) => {
+        assert.notOk(elem.getAttribute(a), `Attr ${a} removed for "${elem}" element`);
+    });
+    assert.strictEqual(window.hit, 'FIRED');
+    clearGlobalProps('hit');
+
+    const done = assert.async();
+
+    setTimeout(() => {
+        addAttr(elem, attrs[0]);
+    }, 60);
+
+    setTimeout(() => {
+        attrs.forEach((a) => {
+            assert.notOk(elem.getAttribute(a), `Attr ${a} removed for "${elem}" element`);
+        });
+        assert.strictEqual(window.hit, 'FIRED');
+        // clean up test element
+        elem.remove();
+        clearGlobalProps('hit');
+        done();
+    }, 100);
+});
