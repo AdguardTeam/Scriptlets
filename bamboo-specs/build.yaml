@@ -35,6 +35,7 @@ Build:
 
             yarn install ${bamboo.varsYarn}
             yarn prepare-builds
+            rm -rf node_modules
     - inject-variables:
         file: dist/build.txt
         scope: RESULT
@@ -66,4 +67,3 @@ labels: []
 
 other:
   concurrent-build-plugin: system-default
-

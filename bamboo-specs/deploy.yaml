@@ -28,6 +28,7 @@ npmjs:
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
             yarn install ${bamboo.varsYarn}
             npm publish --access public
+            rm -rf node_modules
   requirements:
     - adg-docker: 'true'
   notifications:
