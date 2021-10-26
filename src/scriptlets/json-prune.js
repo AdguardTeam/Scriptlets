@@ -61,7 +61,7 @@ import {
  *     example.org#%#//scriptlet('json-prune', 'a.b', 'adpath.url.first')
  *     ```
  *
- * 4. Removes property `content.ad` from the results of JSON.parse call it's error stack trace contains `test.js`
+ * 4. Removes property `content.ad` from the results of JSON.parse call if its error stack trace contains `test.js`
  *     ```
  *     example.org#%#//scriptlet('json-prune', 'content.ad', '', 'test.js')
  *     ```

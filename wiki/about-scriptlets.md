@@ -426,7 +426,7 @@ e.g. 'ad.*.src' instead of 'ad.0.src ad.1.src ad.2.src ...'
     example.org#%#//scriptlet('json-prune', 'a.b', 'adpath.url.first')
     ```
 
-4. Removes property `content.ad` from the results of JSON.parse call it's error stack trace contains `test.js`
+4. Removes property `content.ad` from the results of JSON.parse call if its error stack trace contains `test.js`
     ```
     example.org#%#//scriptlet('json-prune', 'content.ad', '', 'test.js')
     ```
@@ -989,7 +989,7 @@ If starts with `!`, scriptlet will not match the stringified callback but all ot
 If do not start with `!`, the stringified callback will be matched.
 - `delay` - optional, number of seconds. If not set, scriptlet will return `null`,
 otherwise valid sham window object as injected `iframe` will be returned
-for accessing it's methods (blur(), focus() etc.) and will be removed after the delay.
+for accessing its methods (blur(), focus() etc.) and will be removed after the delay.
 - `replacement` - optional, string; one of the predefined constants:
     - `obj` - for returning an object instead of default iframe;
        for cases when the page requires a valid `window` instance to be returned
