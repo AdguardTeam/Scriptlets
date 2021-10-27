@@ -1238,22 +1238,22 @@ example.org#%#//scriptlet('set-constant', property, value[, stack])
 ! Any access to `window.first` will return `false`
 example.org#%#//scriptlet('set-constant', 'first', 'false')
 
-✔️ window.first === false
+✔ window.first === false
 ```
 
 ```
 ! Any call to `window.second()` will return `true`
 example.org#%#//scriptlet('set-constant', 'second', 'trueFunc')
 
-✔️ window.second() === true
-✔️ window.second.toString() === "function trueFunc() {return true;}"
+✔ window.second() === true
+✔ window.second.toString() === "function trueFunc() {return true;}"
 ```
 
 ```
 ! Any call to `document.third()` will return `true` if the method is related to `checking.js`
 example.org#%#//scriptlet('set-constant', 'document.third', 'trueFunc', 'checking.js')
 
-✔️ document.third() === true  // if the condition described above is met
+✔ document.third() === true  // if the condition described above is met
 ```
 
 [Scriptlet source](../src/scriptlets/set-constant.js)
