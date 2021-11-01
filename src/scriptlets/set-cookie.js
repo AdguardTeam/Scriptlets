@@ -24,7 +24,7 @@ import { hit, nativeIsNaN, prepareCookie } from '../helpers';
  *
  * **Examples**
  * ```
- * example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1'
+ * example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1')
  *
  * example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', 'true')
  * ```

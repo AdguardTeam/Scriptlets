@@ -1022,7 +1022,7 @@ Old syntax of prevent-window-open parameters:
 - `replacement` - optional, string to return prop value or property instead of window.open; defaults to return noopFunc.
 **Examples**
 ```
-    example.org#%#//scriptlet('prevent-window-open', '1', '/example\./'
+    example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
     example.org#%#//scriptlet('prevent-window-open', '0', 'example')
     example.org#%#//scriptlet('prevent-window-open', '', '', 'trueFunc')
     example.org#%#//scriptlet('prevent-window-open', '1', '', '{propName=noopFunc}')
@@ -1310,7 +1310,7 @@ example.org#%#//scriptlet('set-cookie', name, value)
 
 **Examples**
 ```
-example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1'
+example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1')
 
 example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', 'true')
 ```
