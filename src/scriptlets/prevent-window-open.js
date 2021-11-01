@@ -70,7 +70,7 @@ import {
  * - `replacement` - optional, string to return prop value or property instead of window.open; defaults to return noopFunc.
  * **Examples**
  * ```
- *     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./'
+ *     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
  *     example.org#%#//scriptlet('prevent-window-open', '0', 'example')
  *     example.org#%#//scriptlet('prevent-window-open', '', '', 'trueFunc')
  *     example.org#%#//scriptlet('prevent-window-open', '1', '', '{propName=noopFunc}')
