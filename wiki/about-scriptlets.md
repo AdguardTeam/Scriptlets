@@ -2,6 +2,7 @@
 * [abort-current-inline-script](#abort-current-inline-script)
 * [abort-on-property-read](#abort-on-property-read)
 * [abort-on-property-write](#abort-on-property-write)
+* [abort-on-stack-trace](#abort-on-stack-trace)
 * [adjust-setInterval](#adjust-setInterval)
 * [adjust-setTimeout](#adjust-setTimeout)
 * [debug-current-inline-script](#debug-current-inline-script)
@@ -13,6 +14,7 @@
 * [json-prune](#json-prune)
 * [log-addEventListener](#log-addEventListener)
 * [log-eval](#log-eval)
+* [log-on-stack-trace](#log-on-stack-trace)
 * [log](#log)
 * [no-floc](#no-floc)
 * [noeval](#noeval)
@@ -28,6 +30,7 @@
 * [prevent-setInterval](#prevent-setInterval)
 * [prevent-setTimeout](#prevent-setTimeout)
 * [prevent-window-open](#prevent-window-open)
+* [prevent-xhr](#prevent-xhr)
 * [remove-attr](#remove-attr)
 * [remove-class](#remove-class)
 * [remove-cookie](#remove-cookie)
@@ -112,11 +115,10 @@ https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f1
 
 **Syntax**
 ```
-example.org#%#//scriptlet('abort-on-property-read', property[, stack])
+example.org#%#//scriptlet('abort-on-property-read', property)
 ```
 
 - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
-- `stack` - optional, string or regular expression that must match the current function call stack trace
 
 **Examples**
 ```
@@ -125,9 +127,6 @@ example.org#%#//scriptlet('abort-on-property-read', 'alert')
 
 ! Aborts script when it tries to access `navigator.language`
 example.org#%#//scriptlet('abort-on-property-read', 'navigator.language')
-
-! Aborts script when it tries to access `window.adblock` and it's error stack trace contains `test.js`
-example.org#%#//scriptlet('abort-on-property-read', 'adblock', 'test.js')
 ```
 
 [Scriptlet source](../src/scriptlets/abort-on-property-read.js)
@@ -145,22 +144,49 @@ https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f1
 
 **Syntax**
 ```
-example.org#%#//scriptlet('abort-on-property-write', property[, stack])
+example.org#%#//scriptlet('abort-on-property-write', property)
 ```
 
 - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
-- `stack` - optional, string or regular expression that must match the current function call stack trace
 
 **Examples**
 ```
 ! Aborts script when it tries to set `window.adblock` value
 example.org#%#//scriptlet('abort-on-property-write', 'adblock')
-
-! Aborts script when it tries to set `window.adblock` value and it's error stack trace contains `checking.js`
-example.org#%#//scriptlet('abort-on-property-write', 'adblock', 'checking.js')
 ```
 
 [Scriptlet source](../src/scriptlets/abort-on-property-write.js)
+* * *
+
+### <a id="abort-on-stack-trace"></a> ⚡️ abort-on-stack-trace
+
+Aborts a script when it attempts to utilize (read or write to) the specified property and it's error stack trace contains given value.
+
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock-for-firefox-legacy/commit/7099186ae54e70b588d5e99554a05d783cabc8ff
+
+**Syntax**
+```
+example.com#%#//scriptlet('abort-on-stack-trace', property, stack)
+```
+
+- `property` - required, path to a property. The property must be attached to window.
+- `stack` - required, string that must match the current function call stack trace.
+
+**Examples**
+```
+! Aborts script when it tries to access `window.Ya` and it's error stack trace contains `test.js`
+example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'test.js')
+
+! Aborts script when it tries to access `window.Ya.videoAd` and it's error stack trace contains `test.js`
+example.org#%#//scriptlet('abort-on-stack-trace', 'Ya.videoAd', 'test.js')
+
+! Aborts script when stack trace matches with any of these parameters
+example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexFuncName')
+example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexScriptName')
+```
+
+[Scriptlet source](../src/scriptlets/abort-on-stack-trace.js)
 * * *
 
 ### <a id="adjust-setInterval"></a> ⚡️ adjust-setInterval
@@ -470,6 +496,23 @@ example.org#%#//scriptlet('log-eval')
 ```
 
 [Scriptlet source](../src/scriptlets/log-eval.js)
+* * *
+
+### <a id="log-on-stack-trace"></a> ⚡️ log-on-stack-trace
+
+This scriptlet is basically the same as [abort-on-stack-trace](#abort-on-stack-trace), but instead of aborting it logs:
+- function and source script names pairs that access the given property
+- was that get or set attempt
+- script being injected or inline
+
+**Syntax**
+```
+example.com#%#//scriptlet('log-on-stack-trace', 'property')
+```
+
+- `property` - required, path to a property. The property must be attached to window.
+
+[Scriptlet source](../src/scriptlets/log-on-stack-trace.js)
 * * *
 
 ### <a id="log"></a> ⚡️ log
@@ -1033,6 +1076,57 @@ Old syntax of prevent-window-open parameters:
 [Scriptlet source](../src/scriptlets/prevent-window-open.js)
 * * *
 
+### <a id="prevent-xhr"></a> ⚡️ prevent-xhr
+
+Prevents `xhr` calls if **all** given parameters match.
+
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/wiki/Resources-Library#no-xhr-ifjs-
+
+**Syntax**
+```
+example.org#%#//scriptlet('prevent-xhr'[, propsToMatch])
+```
+
+- propsToMatch - optional, string of space-separated properties to match; possible props:
+  - string or regular expression for matching the URL passed to `.open()` call; empty string or wildcard * for all `.open()` calls match
+  - colon-separated pairs name:value where
+    - name is XMLHttpRequest object property name
+    - value is string or regular expression for matching the value of the option passed to `.open()` call
+
+> Usage with no arguments will log XMLHttpRequest objects to browser console;
+which is usefull for debugging but permitted for production filter lists.
+
+**Examples**
+1. Log all XMLHttpRequests
+    ```
+    example.org#%#//scriptlet('prevent-xhr')
+    ```
+
+2. Prevent all XMLHttpRequests
+    ```
+    example.org#%#//scriptlet('prevent-xhr', '*')
+    example.org#%#//scriptlet('prevent-xhr', '')
+    ```
+
+3. Prevent XMLHttpRequests for specific url
+    ```
+    example.org#%#//scriptlet('prevent-xhr', 'example.org')
+    ```
+
+4. Prevent XMLHttpRequests for specific request method
+    ```
+    example.org#%#//scriptlet('prevent-xhr', 'method:HEAD')
+    ```
+
+5. Prevent XMLHttpRequests for specific url and specified request methods
+    ```
+    example.org#%#//scriptlet('prevent-xhr', 'example.org method:/HEAD|GET/')
+    ```
+
+[Scriptlet source](../src/scriptlets/prevent-xhr.js)
+* * *
+
 ### <a id="remove-attr"></a> ⚡️ remove-attr
 
 Removes the specified attributes from DOM nodes. This scriptlet runs once when the page loads
@@ -1043,11 +1137,15 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet('remove-attr', attrs[, selector])
+example.org#%#//scriptlet('remove-attr', attrs[, selector, applying])
 ```
 
 - `attrs` — required, attribute or list of attributes joined by '|'
 - `selector` — optional, CSS selector, specifies DOM nodes from which the attributes will be removed
+- `applying` — optional, one or more space-separated flags that describe the way scriptlet apply, defaults to 'asap stay'; possible flags:
+    - `asap` — runs as fast as possible **once**
+    - `complete` — runs **once** after the whole page has been loaded
+    - `stay` — as fast as possible **and** stays on the page observing possible DOM changes
 
 **Examples**
 1.  Removes by attribute
@@ -1080,6 +1178,11 @@ example.org#%#//scriptlet('remove-attr', attrs[, selector])
     </div>
     ```
 
+ 3. Using flags
+    ```
+    example.org#%#//scriptlet('remove-attr', 'example', 'html', 'asap complete')
+    ```
+
 [Scriptlet source](../src/scriptlets/remove-attr.js)
 * * *
 
@@ -1093,12 +1196,16 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-classjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet('remove-class', classes[, selector])
+example.org#%#//scriptlet('remove-class', classes[, selector, applying])
 ```
 
 - `classes` — required, class or list of classes separated by '|'
 - `selector` — optional, CSS selector, specifies DOM nodes from which the classes will be removed.
 If there is no `selector`, each class of `classes` independently will be removed from all nodes which has one
+- `applying` — optional, one or more space-separated flags that describe the way scriptlet apply, defaults to 'asap stay'; possible flags:
+    - `asap` — runs as fast as possible **once**
+    - `complete` — runs **once** after the whole page has been loaded
+    - `stay` — as fast as possible **and** stays on the page observing possible DOM changes
 
 **Examples**
 1.  Removes by classes
@@ -1133,6 +1240,11 @@ If there is no `selector`, each class of `classes` independently will be removed
     <div class="wrapper true branding">
         <div class="inner bad">Some text</div>
     </div>
+    ```
+
+ 3. Using flags
+    ```
+    example.org#%#//scriptlet('remove-class', 'branding', 'div[class^="inner"]', 'asap complete')
     ```
 
 [Scriptlet source](../src/scriptlets/remove-class.js)

@@ -34,8 +34,8 @@
         "url": "https://github.com/AdguardTeam/Scriptlets/issues"
     },
     "homepage": "https://github.com/AdguardTeam/Scriptlets#adguard-scriptlets-and-redirect-resources",
-    "main": "dist/cjs/scriptlets.cjs.js",
-    "types": "dist/cjs/scriptlets.d.ts",
+    "main": "dist/umd/scriptlets.umd.js",
+    "types": "dist/umd/scriptlets.d.ts",
     "devDependencies": {
         "@babel/cli": "^7.8.4",
         "@babel/core": "^7.9.0",

@@ -3,7 +3,7 @@ import {
     noopFunc,
     parseMatchArg,
     parseDelayArg,
-    // following helpers are needed for heplers above
+    // following helpers are needed for helpers above
     toRegExp,
     startsWith,
     nativeIsNaN,
@@ -139,7 +139,7 @@ export function preventSetInterval(source, match, delay) {
         return shouldPrevent;
     };
 
-    const legachyIntervalWrapper = (callback, interval, ...args) => {
+    const legacyIntervalWrapper = (callback, interval, ...args) => {
         let shouldPrevent = false;
         // https://github.com/AdguardTeam/Scriptlets/issues/105
         const cbString = String(callback);
@@ -181,7 +181,7 @@ export function preventSetInterval(source, match, delay) {
 
     window.setInterval = isProxySupported
         ? new Proxy(window.setInterval, setIntervalHandler)
-        : legachyIntervalWrapper;
+        : legacyIntervalWrapper;
 }
 
 preventSetInterval.names = [

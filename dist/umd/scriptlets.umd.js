@@ -4,8 +4,10 @@
  * Version 1.4.25
  */
 
-(function () {
-
+(function (factory) {
+    typeof define === 'function' && define.amd ? define(factory) :
+    factory();
+}((function () {
     /**
      * Returns wildcard symbol
      * @returns {string} '*'
@@ -11078,13 +11080,12 @@
     }();
 
     /**
-     * Expose scriptlets to global
+     * Add module exports to be used as node package
      */
-    // eslint-disable-next-line no-undef
 
-    scriptlets = scriptletsObject;
+    module.exports = scriptletsObject;
 
-}());
+})));
 
 /**
  * -------------------------------------------

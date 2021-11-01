@@ -1,34 +1,29 @@
 (function(source, args){
-function GoogleTagManagerGtm(source) {
-    window.ga = window.ga || noopFunc;
-    var _window = window,
-        dataLayer = _window.dataLayer,
-        google_optimize = _window.google_optimize; // eslint-disable-line camelcase
+function Fingerprintjs(source) {
+    var browserId = '';
 
-    if (dataLayer instanceof Object === false) {
-      return;
+    for (var i = 0; i < 8; i += 1) {
+      browserId += (Math.random() * 0x10000 + 0x1000).toString(16).slice(-4);
     }
 
-    if (dataLayer.hide instanceof Object && typeof dataLayer.hide.end === 'function') {
-      dataLayer.hide.end();
-    }
+    var Fingerprint = function Fingerprint() {};
 
-    if (typeof dataLayer.push === 'function') {
-      dataLayer.push = function (data) {
-        if (data instanceof Object && typeof data.eventCallback === 'function') {
-          setTimeout(data.eventCallback, 1);
+    Fingerprint.get = function (options, callback) {
+      if (!callback) {
+        callback = options;
+      }
+
+      setTimeout(function () {
+        if (callback) {
+          callback(browserId, []);
         }
-      };
-    } // https://github.com/AdguardTeam/Scriptlets/issues/81
+      }, 1);
+    };
 
-
-    if (google_optimize instanceof Object && typeof google_optimize.get === 'function') {
-      // eslint-disable-line camelcase
-      var googleOptimizeWrapper = {};
-      googleOptimizeWrapper.get = noopFunc;
-      window.google_optimize = googleOptimizeWrapper;
-    }
-
+    Fingerprint.prototype = {
+      get: Fingerprint.get
+    };
+    window.Fingerprint2 = Fingerprint;
     hit(source);
   }
 function hit(source, message) {
@@ -89,6 +84,6 @@ function hit(source, message) {
   }
 function noopFunc() {};
         const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        GoogleTagManagerGtm.apply(this, updatedArgs);
+        Fingerprintjs.apply(this, updatedArgs);
     
-})({"name":"googletagmanager-gtm","args":[]}, []);
+})({"name":"fingerprintjs","args":[]}, []);

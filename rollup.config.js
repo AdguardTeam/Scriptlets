@@ -58,14 +58,15 @@ const mainConfig = {
     ],
 };
 
-const cjsConfig = {
+const umdConfig = {
     input: {
-        'scriptlets.cjs': 'src/scriptlets/scriptlets-cjs-wrapper.js',
+        'scriptlets.umd': 'src/scriptlets/scriptlets-cjs-wrapper.js',
     },
     output: {
-        dir: 'dist/cjs',
+        dir: 'dist/umd',
         entryFileNames: '[name].js',
-        format: 'cjs',
+        // umd is preferred over cjs to avoid variables renaming in tsurlfilter
+        format: 'umd',
         exports: 'named',
         strict: false,
         banner,
@@ -87,7 +88,7 @@ const cjsConfig = {
         }),
         copy({
             targets: [
-                { src: 'types/scriptlets.d.ts', dest: 'dist/cjs/' },
+                { src: 'types/scriptlets.d.ts', dest: 'dist/umd/' },
             ],
         }),
     ],
@@ -204,7 +205,7 @@ let resultConfig = [];
 if (isTest) {
     resultConfig = [mainConfig, testConfig];
 } else {
-    resultConfig = [mainConfig, redirectsBuild, cjsConfig, tmpRedirectsConfig];
+    resultConfig = [mainConfig, redirectsBuild, umdConfig, tmpRedirectsConfig];
 }
 
 module.exports = resultConfig;

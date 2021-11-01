@@ -1,6 +1,6 @@
 #
 #    AdGuard Scriptlets (Redirects Source)
-#    Version 1.4.6
+#    Version 1.4.25
 #
 - title: 1x1-transparent.gif
   description: |-
@@ -383,6 +383,104 @@
     })({"name":"amazon-apstag","args":[]}, []);
   file: amazon-apstag.js
 
+- title: fingerprintjs
+  comment: Mocks FingerprintJS.
+  aliases:
+    - ubo-fingerprint2.js
+    - fingerprintjs.js
+  contentType: application/javascript
+  content: |-
+    (function(source, args){
+    function Fingerprintjs(source) {
+        var browserId = '';
+
+        for (var i = 0; i < 8; i += 1) {
+          browserId += (Math.random() * 0x10000 + 0x1000).toString(16).slice(-4);
+        }
+
+        var Fingerprint = function Fingerprint() {};
+
+        Fingerprint.get = function (options, callback) {
+          if (!callback) {
+            callback = options;
+          }
+
+          setTimeout(function () {
+            if (callback) {
+              callback(browserId, []);
+            }
+          }, 1);
+        };
+
+        Fingerprint.prototype = {
+          get: Fingerprint.get
+        };
+        window.Fingerprint2 = Fingerprint;
+        hit(source);
+      }
+    function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
+
+          var prefix = source.ruleText || '';
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = '#%#//';
+            var UBO_SCRIPTLET_MARKER = '##+js';
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            } // delete all domains from ruleText and leave just rule part
+
+
+            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
+
+            prefix = "".concat(source.domainName).concat(rulePart);
+          } // Used to check if scriptlet uses 'hit' function for logging
+
+
+          var LOG_MARKER = 'log: ';
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {// try catch for Edge 15
+          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
+          // console.log throws an error
+        } // This is necessary for unit-tests only!
+
+
+        if (typeof window.__debug === 'function') {
+          window.__debug(source);
+        }
+      }
+    function noopFunc() {};
+            const updatedArgs = args ? [].concat(source).concat(args) : [source];
+            Fingerprintjs.apply(this, updatedArgs);
+        
+    })({"name":"fingerprintjs","args":[]}, []);
+  file: fingerprintjs.js
+
 - title: google-analytics-ga
   comment: Mocks old Google Analytics API.
   aliases:
@@ -728,7 +826,7 @@
         for (var i = 0; i < adElems.length; i += 1) {
           var adElemChildNodes = adElems[i].childNodes;
           var childNodesQuantity = adElemChildNodes.length; // childNodes of .adsbygoogle can be defined if scriptlet was executed before
-          // so we should check are that childNodes exactly defined by us
+          // so we should check that childNodes are exactly defined by us
           // TODO: remake after scriptlets context developing in 1.3
 
           var areIframesDefined = false;
@@ -736,8 +834,8 @@
           if (childNodesQuantity > 0) {
             // it should be only 2 child iframes if scriptlet was executed
             areIframesDefined = childNodesQuantity === 2 // the first of child nodes should be aswift iframe
-            && adElemChildNodes[0].tagName.toLowerCase() === 'iframe' && adElemChildNodes[0].id.indexOf(ASWIFT_IFRAME_MARKER) > -1 // the second of child nodes should be google_ads iframe
-            && adElemChildNodes[1].tagName.toLowerCase() === 'iframe' && adElemChildNodes[1].id.indexOf(GOOGLE_ADS_IFRAME_MARKER) > -1;
+            && adElemChildNodes[0].nodeName.toLowerCase() === 'iframe' && adElemChildNodes[0].id.indexOf(ASWIFT_IFRAME_MARKER) > -1 // the second of child nodes should be google_ads iframe
+            && adElemChildNodes[1].nodeName.toLowerCase() === 'iframe' && adElemChildNodes[1].id.indexOf(GOOGLE_ADS_IFRAME_MARKER) > -1;
           }
 
           if (!areIframesDefined) {
@@ -1568,6 +1666,10 @@
         var signatures = [['blockadblock'], ['babasbm'], [/getItem\('babn'\)/], ['getElementById', 'String.fromCharCode', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 'charAt', 'DOMContentLoaded', 'AdBlock', 'addEventListener', 'doScroll', 'fromCharCode', '<<2|r>>4', 'sessionStorage', 'clientWidth', 'localStorage', 'Math', 'random']];
 
         var check = function check(str) {
+          if (typeof str !== 'string') {
+            return false;
+          }
+
           for (var i = 0; i < signatures.length; i += 1) {
             var tokens = signatures[i];
             var match = 0;

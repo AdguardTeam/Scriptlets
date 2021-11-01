@@ -15,6 +15,7 @@
 * [noopmp3-0.1s](#noopmp3-0.1s)
 * [noopmp4-1s](#noopmp4-1s)
 * [amazon-apstag](#amazon-apstag)
+* [fingerprintjs](#fingerprintjs)
 * [google-analytics-ga](#google-analytics-ga)
 * [google-analytics](#google-analytics)
 * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
@@ -172,6 +173,22 @@ https://github.com/gorhill/uBlock/blob/f842ab6d3c1cf0394f95d27092bf59627262da40/
 ```
 
 [Redirect source](../src/redirects/amazon-apstag.js)
+* * *
+
+### <a id="fingerprintjs"></a> ⚡️ fingerprintjs
+
+Mocks FingerprintJS.
+https://github.com/fingerprintjs
+
+Related UBO redirect resource:
+https://github.com/gorhill/uBlock/commit/33a18c3a1eb101470c43979a41d8adef3e21208d
+
+**Example**
+```
+||the-japan-news.com/modules/js/lib/fgp/fingerprint2.js$script,redirect=fingerprintjs
+```
+
+[Redirect source](../src/redirects/fingerprintjs.js)
 * * *
 
 ### <a id="google-analytics-ga"></a> ⚡️ google-analytics-ga
