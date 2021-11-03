@@ -82,6 +82,20 @@ export function GoogleAnalyticsGa(source) {
         return res;
     }, {});
     tracker._getLinkerUrl = (a) => a;
+    // https://github.com/AdguardTeam/Scriptlets/issues/154
+    tracker._link = (url) => {
+        if (typeof url === 'string') {
+            try {
+                window.location.assign(url);
+            } catch (e) {
+                // log the error only while debugging
+                if (source.verbose) {
+                    // eslint-disable-next-line no-console
+                    console.log(e);
+                }
+            }
+        }
+    };
 
     Gat.prototype._anonymizeIP = noopFunc;
     Gat.prototype._createTracker = noopFunc;
