@@ -65,7 +65,7 @@ test('prevent-requestAnimationFrame: no args -- logging', (assert) => {
         assert.strictEqual(window[logProperty], 'changed', 'property changed');
         clearGlobalProps(logProperty);
         done();
-    }, 20);
+    }, 50);
 });
 
 test('prevent-requestAnimationFrame: by callback name', (assert) => {
