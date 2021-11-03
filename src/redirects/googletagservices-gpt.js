@@ -72,6 +72,7 @@ export function GoogleTagServicesGpt(source) {
         disableInitialLoad: noopFunc,
         display: noopFunc,
         enableAsyncRendering: noopFunc,
+        enableLazyLoad: noopFunc,
         enableSingleRequest: noopFunc,
         enableSyncRendering: noopFunc,
         enableVideoAds: noopFunc,
