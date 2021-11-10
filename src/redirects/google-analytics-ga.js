@@ -36,7 +36,10 @@ export function GoogleAnalyticsGa(source) {
             return;
         }
         // https://developers.google.com/analytics/devguides/collection/gajs/methods/gaJSApiDomainDirectory#_gat.GA_Tracker_._link
-        if (data[0] === '_link' && typeof data[1] === 'string') {
+        // https://github.com/uBlockOrigin/uBlock-issues/issues/1807
+        if (typeof data[0] === 'string'
+            && /(^|\.)_link$/.test(data[0])
+            && typeof data[1] === 'string') {
             window.location.assign(data[1]);
         }
         // https://github.com/gorhill/uBlock/issues/2162
@@ -84,15 +87,16 @@ export function GoogleAnalyticsGa(source) {
     tracker._getLinkerUrl = (a) => a;
     // https://github.com/AdguardTeam/Scriptlets/issues/154
     tracker._link = (url) => {
-        if (typeof url === 'string') {
-            try {
-                window.location.assign(url);
-            } catch (e) {
-                // log the error only while debugging
-                if (source.verbose) {
-                    // eslint-disable-next-line no-console
-                    console.log(e);
-                }
+        if (typeof url !== 'string') {
+            return;
+        }
+        try {
+            window.location.assign(url);
+        } catch (e) {
+            // log the error only while debugging
+            if (source.verbose) {
+                // eslint-disable-next-line no-console
+                console.log(e);
             }
         }
     };
