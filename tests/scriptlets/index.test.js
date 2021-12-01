@@ -5,6 +5,7 @@ import './prevent-setInterval.test';
 import './prevent-window-open.test';
 import './abort-current-inline-script.test';
 import './set-constant.test';
+import './set-attr.test';
 import './prevent-addEventListener.test';
 import './prevent-bab.test';
 import './nowebrtc.test';

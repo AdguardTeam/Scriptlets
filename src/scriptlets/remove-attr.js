@@ -6,7 +6,8 @@ import { hit, observeDOMChanges } from '../helpers';
  *
  * @description
  * Removes the specified attributes from DOM nodes. This scriptlet runs once when the page loads
- * and after that periodically in order to DOM tree changes.
+ * and after that periodically in order to DOM tree changes by default,
+ * or as specified by applying argument.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
