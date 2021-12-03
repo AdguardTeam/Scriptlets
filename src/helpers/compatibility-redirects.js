@@ -44,6 +44,11 @@ const redirects = [
         ubo: 'googlesyndication_adsbygoogle.js',
     },
     {
+        // https://github.com/AdguardTeam/Scriptlets/issues/162
+        adg: 'googlesyndication-adsbygoogle',
+        ubo: 'googlesyndication.com/adsbygoogle.js',
+    },
+    {
         // https://github.com/AdguardTeam/Scriptlets/issues/127
         adg: 'googletagmanager-gtm',
         ubo: 'google-analytics_ga.js',

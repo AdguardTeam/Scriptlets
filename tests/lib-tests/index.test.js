@@ -210,6 +210,10 @@ test('Test redirect rule validation', (assert) => {
     assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);
     assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), true);
 
+    // old alias for adsbygoogle redirect should be valid
+    inputRule = '||example.org^$script,redirect=googlesyndication.com/adsbygoogle.js';
+    assert.strictEqual(validator.isAdgRedirectRule(inputRule), true, 'isAdgRedirectRule validates googlesyndication.com/adsbygoogle.js');
+
     // redirect name is wrong, but this one only for checking ADG redirect marker "redirect="
     inputRule = '||example.com/banner$image,redirect=redirect.png';
     assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);
@@ -296,6 +300,16 @@ test('Test REDIRECT converting - UBO -> ADG', (assert) => {
 
     uboRule = '||example.orf^$media,redirect=noop-1s.mp4,third-party';
     expectedAdgRule = '||example.orf^$media,redirect=noopmp4-1s,third-party';
+    assert.strictEqual(convertRedirectToAdg(uboRule), expectedAdgRule);
+
+    // old ubo adsbygoogle alias works
+    uboRule = '||googlesyndication.com^$script,redirect=googlesyndication.com/adsbygoogle.js,domain=darmowa-tv.ws';
+    expectedAdgRule = '||googlesyndication.com^$script,redirect=googlesyndication-adsbygoogle,domain=darmowa-tv.ws';
+    assert.strictEqual(convertRedirectToAdg(uboRule), expectedAdgRule);
+
+    // newer alias works as well
+    uboRule = '||googlesyndication.com^$script,redirect=googlesyndication_adsbygoogle.js,domain=darmowa-tv.ws';
+    expectedAdgRule = '||googlesyndication.com^$script,redirect=googlesyndication-adsbygoogle,domain=darmowa-tv.ws';
     assert.strictEqual(convertRedirectToAdg(uboRule), expectedAdgRule);
 });
 
