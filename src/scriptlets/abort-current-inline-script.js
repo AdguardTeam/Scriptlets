@@ -3,6 +3,7 @@ import {
     setPropertyAccess,
     getPropertyInChain,
     toRegExp,
+    startsWith,
     createOnErrorHandler,
     hit,
 } from '../helpers';
@@ -73,6 +74,8 @@ export function abortCurrentInlineScript(source, property, search) {
     const searchRegexp = toRegExp(search);
     const rid = randomId();
 
+    const SRC_DATA_MARKER = 'data:text/javascript;base64,';
+
     const getCurrentScript = () => {
         if ('currentScript' in document) {
             return document.currentScript; // eslint-disable-line compat/compat
@@ -98,6 +101,14 @@ export function abortCurrentInlineScript(source, property, search) {
             const textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
             content = textContentGetter.call(scriptEl);
         } catch (e) { } // eslint-disable-line no-empty
+
+        // https://github.com/AdguardTeam/Scriptlets/issues/130
+        if (content.length === 0
+            && typeof scriptEl.src !== 'undefined'
+            && startsWith(scriptEl.src, SRC_DATA_MARKER)) {
+            const encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
+            content = window.atob(encodedContent);
+        }
 
         if (scriptEl instanceof HTMLScriptElement
             && content.length > 0
@@ -184,6 +195,7 @@ abortCurrentInlineScript.injections = [
     setPropertyAccess,
     getPropertyInChain,
     toRegExp,
+    startsWith,
     createOnErrorHandler,
     hit,
 ];

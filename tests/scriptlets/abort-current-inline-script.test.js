@@ -34,6 +34,13 @@ const addAndRemoveInlineScript = (scriptText) => {
     scriptElement.parentNode.removeChild(scriptElement);
 };
 
+const addAndRemoveSrcDataScript = (scriptText) => {
+    const scriptElement = document.createElement('script');
+    scriptElement.src = `data:text/javascript;base64,${window.btoa(scriptText)}`;
+    document.body.appendChild(scriptElement);
+    scriptElement.parentNode.removeChild(scriptElement);
+};
+
 test('Checking if alias name works', (assert) => {
     const adgParams = {
         name,
@@ -163,17 +170,52 @@ test('Patched textContent', (assert) => {
     function generateContent() {
         return void 0 === generateContent.val && (generateContent.val = " \nwindow.${property}('blablabla');");
       }
-      
+
       (function () {
         try {
           Object.defineProperty(document.currentScript, "textContent", {
             get: generateContent
           });
         } catch (e) {}
-      
+
         ${property}("test");
       })();
     `);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
+
+test('works with src data script - simple', (assert) => {
+    window.onerror = onError(assert);
+    const property = 'alert';
+    const scriptletArgs = [property];
+    const done = assert.async();
+    runScriptlet(name, scriptletArgs);
+
+    addAndRemoveSrcDataScript(`function testFunc () {
+    ${property}('test');
+};
+testFunc();`);
+
+    setTimeout(() => {
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        done();
+    }, 100);
+});
+
+test('works with src data script - iife', (assert) => {
+    window.onerror = onError(assert);
+    const property = 'alert';
+    const scriptletArgs = [property];
+    const done = assert.async();
+    runScriptlet(name, scriptletArgs);
+
+    addAndRemoveSrcDataScript(`(function () {
+    ${property}('test');
+})()`);
+
+    setTimeout(() => {
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        done();
+    }, 50);
 });
