@@ -35,6 +35,7 @@ export function metrikaYandexWatch(source) {
     Metrika.prototype.getClientID = noopFunc;
     Metrika.prototype.setUserID = noopFunc;
     Metrika.prototype.userParams = noopFunc;
+    Metrika.prototype.params = noopFunc;
 
     // Methods with options
     // The order of arguments should be kept in according to API
