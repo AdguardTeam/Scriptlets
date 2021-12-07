@@ -222,7 +222,7 @@ test('single class name for different elements + multiple selectors, asap', (ass
     clearGlobalProps('hit');
 });
 
-test('single class name for different elements + multiple selectors', (assert) => {
+test('single class name for different elements + multiple selectors + asap stay', (assert) => {
     createHit();
     const classNames = ['testClass'];
     const firstClass = 'first';

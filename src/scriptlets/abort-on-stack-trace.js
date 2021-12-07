@@ -4,8 +4,10 @@ import {
     getPropertyInChain,
     createOnErrorHandler,
     hit,
-    toRegExp,
+    validateStrPattern,
     matchStackTrace,
+    // following helpers are needed for helpers above
+    toRegExp,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -70,6 +72,11 @@ export function abortOnStacktrace(source, property, stack) {
         }
 
         let value = base[prop];
+        if (!validateStrPattern(stack)) {
+            // eslint-disable-next-line no-console
+            console.log(`Invalid parameter: ${stack}`);
+            return;
+        }
         setPropertyAccess(base, prop, {
             get() {
                 if (matchStackTrace(stack, new Error().stack)) {
@@ -105,10 +112,11 @@ abortOnStacktrace.names = [
 ];
 abortOnStacktrace.injections = [
     randomId,
-    toRegExp,
     setPropertyAccess,
     getPropertyInChain,
     createOnErrorHandler,
     hit,
+    validateStrPattern,
     matchStackTrace,
+    toRegExp,
 ];

@@ -211,6 +211,22 @@ test('sets values correctly + no stack match', (assert) => {
     clearGlobalProps(property);
 });
 
+test('set-constant: does not work - invalid regexp pattern for stack arg', (assert) => {
+    window.__debug = () => {
+        window.counter = window.counter ? window.counter + 1 : 1;
+    };
+    const stackArg = '/\\/';
+
+    const property = 'customProp';
+    const value = 10;
+
+    runScriptlet(name, [property, value, stackArg]);
+
+    assert.strictEqual(window[property], undefined, 'property should not be set');
+    assert.strictEqual(window.counter, undefined);
+    clearGlobalProps(property);
+});
+
 test('no value setting if chain is not relevant', (assert) => {
     window.chain = { property: {} };
     runScriptlet(name, ['noprop.property.aaa', 'true']);

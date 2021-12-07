@@ -10,7 +10,7 @@ import {
  * @scriptlet nowebrtc
  *
  * @description
- * Disables WebRTC by overriding `RTCPeerConnection`. The overriden function will log every attempt to create a new connection.
+ * Disables WebRTC by overriding `RTCPeerConnection`. The overridden function will log every attempt to create a new connection.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-

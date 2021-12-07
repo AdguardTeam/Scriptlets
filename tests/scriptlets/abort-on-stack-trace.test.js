@@ -87,6 +87,20 @@ test('simple, does NOT match stack', (assert) => {
     assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
 });
 
+test('simple, does NOT work - invalid regexp pattern', (assert) => {
+    window[PROPERTY] = 'value';
+    const stackArg = '/*/';
+    const scriptletArgs = [PROPERTY, stackArg];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(window[PROPERTY], 'value', 'Property is accessible');
+
+    window[PROPERTY] = 'reassigned';
+    assert.strictEqual(window[PROPERTY], 'reassigned', 'Property is writeable');
+
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+});
+
 test('simple, matches stack of our own script', (assert) => {
     window[PROPERTY] = 'value';
     const noStackMatch = 'abortOnPropertyRead';
@@ -181,7 +195,7 @@ test('dot notation, matches stack of our own script', (assert) => {
     assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
 });
 
-test('dot notation deferred defenition, matches stack', (assert) => {
+test('dot notation deferred definition, matches stack', (assert) => {
     window.Ya = {};
     window.Ya.videoAds = 'value';
     const stackMatch = 'tests.js';
@@ -203,7 +217,7 @@ test('dot notation deferred defenition, matches stack', (assert) => {
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
-test('dot notation deferred defenition, does NOT match stack', (assert) => {
+test('dot notation deferred definition, does NOT match stack', (assert) => {
     window.Ya = {};
     window.Ya.videoAds = 'value';
     const stackMatch = 'no_match.js';
@@ -226,7 +240,7 @@ test('dot notation deferred defenition, does NOT match stack', (assert) => {
     assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
 });
 
-test('dot notation deferred defenition, matches stack of our own script', (assert) => {
+test('dot notation deferred definition, matches stack of our own script', (assert) => {
     window.Ya = {};
     window.Ya.videoAds = 'value';
     const stackMatch = 'abortOnPropertyRead';

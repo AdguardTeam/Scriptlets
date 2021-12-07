@@ -2,7 +2,7 @@ import { toRegExp } from './string-utils';
 
 /**
  * Checks if the stackTrace contains stackRegexp
- * // https://github.com/AdguardTeam/Scriptlets/issues/82
+ * https://github.com/AdguardTeam/Scriptlets/issues/82
  * @param {string|undefined} stackMatch - input stack value to match
  * @param {string} stackTrace - script error stack trace
  * @returns {boolean}

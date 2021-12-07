@@ -2,10 +2,13 @@ import {
     hit,
     objectToString,
     getWildcardSymbol,
-    convertMatchPropsToObj,
+    parseMatchProps,
+    validateParsedData,
+    getMatchPropsData,
     // following helpers should be imported and injected
-    // because they are used by heplers above
+    // because they are used by helpers above
     toRegExp,
+    validateStrPattern,
     isEmptyObject,
     getObjectEntries,
 } from '../helpers';
@@ -32,7 +35,7 @@ import {
  *     - value is string or regular expression for matching the value of the option passed to `.open()` call
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
- * which is usefull for debugging but permitted for production filter lists.
+ * which is useful for debugging but permitted for production filter lists.
  *
  * **Examples**
  * 1. Log all XMLHttpRequests
@@ -84,14 +87,21 @@ export function preventXHR(source, propsToMatch) {
             // Prevent all fetch calls
             shouldPrevent = true;
         } else {
-            const matchData = convertMatchPropsToObj(propsToMatch);
-            // prevent only if all props match
-            shouldPrevent = Object.keys(matchData)
-                .every((matchKey) => {
-                    const matchValue = matchData[matchKey];
-                    return Object.prototype.hasOwnProperty.call(xhrData, matchKey)
-                    && matchValue.test(xhrData[matchKey]);
-                });
+            const parsedData = parseMatchProps(propsToMatch);
+            if (!validateParsedData(parsedData)) {
+                // eslint-disable-next-line no-console
+                console.log(`Invalid parameter: ${propsToMatch}`);
+                shouldPrevent = false;
+            } else {
+                const matchData = getMatchPropsData(parsedData);
+                // prevent only if all props match
+                shouldPrevent = Object.keys(matchData)
+                    .every((matchKey) => {
+                        const matchValue = matchData[matchKey];
+                        return Object.prototype.hasOwnProperty.call(xhrData, matchKey)
+                        && matchValue.test(xhrData[matchKey]);
+                    });
+            }
         }
 
         if (shouldPrevent) {
@@ -121,8 +131,11 @@ preventXHR.injections = [
     hit,
     objectToString,
     getWildcardSymbol,
-    convertMatchPropsToObj,
+    parseMatchProps,
+    validateParsedData,
+    getMatchPropsData,
     toRegExp,
+    validateStrPattern,
     isEmptyObject,
     getObjectEntries,
 ];

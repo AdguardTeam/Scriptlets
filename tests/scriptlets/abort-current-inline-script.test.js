@@ -68,11 +68,11 @@ test('Checking if alias name works', (assert) => {
 
 test('works', (assert) => {
     window.onerror = onError(assert);
-    const property = '___aaa';
+    const property = '___aaa1';
     const scriptletArgs = [property];
     runScriptlet(name, scriptletArgs);
 
-    addAndRemoveInlineScript('window.___aaa;');
+    addAndRemoveInlineScript('window.___aaa1;');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
@@ -109,7 +109,7 @@ test('should not work if chained properties are undefined', (assert) => {
 
 test('aborts script by search', (assert) => {
     window.onerror = onError(assert);
-    const property = '___aaa';
+    const property = '___aaa2';
     const search = 'const someVar';
     const scriptletArgs = [property, search];
     runScriptlet(name, scriptletArgs);
@@ -120,19 +120,19 @@ test('aborts script by search', (assert) => {
 });
 
 test('does not abort script which is not matched by search', (assert) => {
-    const property = '___aaa';
+    const property = '___aaa3';
     const search = 'some search';
     const scriptletArgs = [property, search];
     runScriptlet(name, scriptletArgs);
 
     addAndRemoveInlineScript(`window.${property};`);
 
-    assert.notStrictEqual(window.hit, undefined, 'should not hit');
+    assert.strictEqual(window.hit, undefined, 'should not hit');
 });
 
 test('searches script by regexp', (assert) => {
     window.onerror = onError(assert);
-    const property = '___aaa';
+    const property = '___aaa4';
     const search = '/a{3}/';
     const scriptletArgs = [property, search];
     runScriptlet(name, scriptletArgs);
@@ -144,7 +144,7 @@ test('searches script by regexp', (assert) => {
 
 test('Patched textContent', (assert) => {
     window.onerror = onError(assert);
-    const property = '___aaa';
+    const property = '___aaa5';
     const search = '/a{3}/';
     const scriptletArgs = [property, search];
     runScriptlet(name, scriptletArgs);
@@ -185,6 +185,18 @@ test('Patched textContent', (assert) => {
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
+test('does not abort script -- invalid regexp pattern', (assert) => {
+    window.onerror = onError(assert);
+    const property = '___aaa6';
+    const search = '/\\/';
+    const scriptletArgs = [property, search];
+    runScriptlet(name, scriptletArgs, false);
+
+    addAndRemoveInlineScript(`window.${property};`);
+
+    assert.strictEqual(window.hit, undefined, 'should not hit');
+});
+
 test('works with src data script - simple', (assert) => {
     window.onerror = onError(assert);
     const property = 'alert';
@@ -200,7 +212,7 @@ testFunc();`);
     setTimeout(() => {
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         done();
-    }, 100);
+    }, 150);
 });
 
 test('works with src data script - iife', (assert) => {

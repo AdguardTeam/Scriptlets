@@ -1,5 +1,7 @@
 import {
     hit,
+    validateStrPattern,
+    validateMatchStr,
     toRegExp,
     nativeIsNaN,
     parseMatchArg,
@@ -8,7 +10,7 @@ import {
     getPreventGetter,
     noopNull,
     getWildcardSymbol,
-    // following helpers are needed for heplers above
+    // following helpers are needed for helpers above
     noopFunc,
     trueFunc,
     startsWith,
@@ -32,7 +34,7 @@ import {
  * example.org#%#//scriptlet('prevent-window-open'[, match[, delay[, replacement]]])
  * ```
  *
- * - `match` - optional, string or regular expression. If not set, all window.open calls will be matched.
+ * - `match` - optional, string or regular expression. If not set or regular expression is invalid, all window.open calls will be matched.
  * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
  * If do not start with `!`, the stringified callback will be matched.
  * - `delay` - optional, number of seconds. If not set, scriptlet will return `null`,
@@ -88,6 +90,11 @@ export function preventWindowOpen(source, match = getWildcardSymbol(), delay, re
     const oldOpenWrapper = (str, ...args) => {
         match = Number(match) > 0;
         // 'delay' was 'search' prop for matching in old syntax
+        if (!validateStrPattern(delay)) {
+            // eslint-disable-next-line no-console
+            console.log(`Invalid parameter: ${delay}`);
+            return nativeOpen.apply(window, [str, ...args]);
+        }
         const searchRegexp = toRegExp(delay);
         if (match !== searchRegexp.test(str)) {
             return nativeOpen.apply(window, [str, ...args]);
@@ -109,9 +116,13 @@ export function preventWindowOpen(source, match = getWildcardSymbol(), delay, re
         let shouldPrevent = false;
         if (match === getWildcardSymbol()) {
             shouldPrevent = true;
-        } else {
+        } else if (validateMatchStr(match)) {
             const { isInvertedMatch, matchRegexp } = parseMatchArg(match);
             shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
+        } else {
+            // eslint-disable-next-line no-console
+            console.log(`Invalid parameter: ${match}`);
+            shouldPrevent = false;
         }
 
         if (shouldPrevent) {
@@ -165,6 +176,8 @@ preventWindowOpen.names = [
 
 preventWindowOpen.injections = [
     hit,
+    validateStrPattern,
+    validateMatchStr,
     toRegExp,
     nativeIsNaN,
     parseMatchArg,

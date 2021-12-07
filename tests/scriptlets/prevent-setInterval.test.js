@@ -231,3 +231,23 @@ test('!match + !delay', (assert) => {
     const intervalTest250 = setInterval(second50, 50);
     testIntervals.push(intervalTest250);
 });
+
+test('prevent-setInterval: does not work - invalid regexp pattern', (assert) => {
+    const done = assert.async();
+    window.one = 'value';
+    // We need to run our assertion after all timeouts
+    setTimeout(() => {
+        assert.equal(window.one, 'changed', 'property should be changed');
+        assert.strictEqual(window.hit, undefined, 'hit fired');
+        done();
+    }, 100);
+
+    // run scriptlet code
+    const scriptletArgs = ['/\\/', '50'];
+    runScriptlet(name, scriptletArgs);
+
+    // check if scriptlet doesn't affect on others timeouts
+    const anotherTimeout = () => { window.one = 'changed'; };
+    const testInterval = setInterval(anotherTimeout);
+    testIntervals.push(testInterval);
+});

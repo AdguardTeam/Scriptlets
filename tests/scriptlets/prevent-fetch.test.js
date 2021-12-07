@@ -239,4 +239,29 @@ if (!isSupported) {
         assert.strictEqual(window.hit, undefined, 'hit should not fire');
         done();
     });
+
+    test('fetch request - no match - invalid regexp pattern', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const init = {
+            method: 'GET',
+        };
+        // eslint-disable-line compat/compat
+        const inputRequest = new Request(INPUT_JSON_PATH, init);
+        const expectedJson = {
+            a1: 1,
+            b2: 'test',
+            c3: 3,
+        };
+
+        // no match at all
+        runScriptlet(name, ['/\\/ method:/*/']);
+        const done = assert.async();
+
+        const response = await fetch(inputRequest);
+        const actualJson = await response.json();
+
+        assert.deepEqual(actualJson, expectedJson);
+        assert.strictEqual(window.hit, undefined, 'hit should not fire');
+        done();
+    });
 }

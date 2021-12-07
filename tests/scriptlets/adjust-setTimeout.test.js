@@ -217,3 +217,53 @@ test('match param + wildcard timeout + boost > 1 (slowing)', (assert) => {
         done2();
     }, 250);
 });
+
+test('no match', (assert) => {
+    const scriptletArgs = ['no_match'];
+    runScriptlet(name, scriptletArgs);
+
+    const done1 = assert.async();
+    const done2 = assert.async();
+
+    const testValue = 'value';
+
+    const testTimeout = setTimeout(() => {
+        window.someKey = testValue;
+    }, 100);
+
+    setTimeout(() => {
+        assert.strictEqual(window.someKey, undefined, 'Should not be defined yet');
+        done1();
+    }, 50);
+
+    setTimeout(() => {
+        assert.strictEqual(window.someKey, testValue, 'Should not be matched and work fine');
+        clearInterval(testTimeout);
+        done2();
+    }, 150);
+});
+
+test('no match -- invalid regexp pattern', (assert) => {
+    const scriptletArgs = ['/[0-9]++/'];
+    runScriptlet(name, scriptletArgs, false);
+
+    const done1 = assert.async();
+    const done2 = assert.async();
+
+    const testValue = 'value';
+
+    const testTimeout = setTimeout(() => {
+        window.someKey = testValue;
+    }, 100);
+
+    setTimeout(() => {
+        assert.strictEqual(window.someKey, undefined, 'Should not be defined yet');
+        done1();
+    }, 50);
+
+    setTimeout(() => {
+        assert.strictEqual(window.someKey, testValue, 'Should not be matched and work fine');
+        clearInterval(testTimeout);
+        done2();
+    }, 150);
+});

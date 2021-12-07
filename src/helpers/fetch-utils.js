@@ -1,4 +1,4 @@
-import { toRegExp } from './string-utils';
+import { toRegExp, validateStrPattern } from './string-utils';
 import { getObjectFromEntries } from './object-utils';
 
 /**
@@ -59,11 +59,12 @@ export const getFetchData = (args) => {
 };
 
 /**
- * Converts prevent-fetch propsToMatch input string to object
+ * Parse propsToMatch input string into object;
+ * used for prevent-fetch and prevent-xhr
  * @param {string} propsToMatchStr
  * @returns {Object} object where 'key' is prop name and 'value' is prop value
  */
-export const convertMatchPropsToObj = (propsToMatchStr) => {
+export const parseMatchProps = (propsToMatchStr) => {
     const PROPS_DIVIDER = ' ';
     const PAIRS_MARKER = ':';
 
@@ -73,13 +74,37 @@ export const convertMatchPropsToObj = (propsToMatchStr) => {
     props.forEach((prop) => {
         const dividerInd = prop.indexOf(PAIRS_MARKER);
         if (dividerInd === -1) {
-            propsObj.url = toRegExp(prop);
+            propsObj.url = prop;
         } else {
             const key = prop.slice(0, dividerInd);
             const value = prop.slice(dividerInd + 1);
-            propsObj[key] = toRegExp(value);
+            propsObj[key] = value;
         }
     });
 
     return propsObj;
+};
+
+/**
+ * Validates parsed data values
+ * @param {Object} data
+ * @returns {boolean}
+ */
+export const validateParsedData = (data) => {
+    return Object.values(data)
+        .every((value) => validateStrPattern(value));
+};
+
+/**
+ * Converts valid parsed data to data obj for further matching
+ * @param {Object} data
+ * @returns {Object}
+ */
+export const getMatchPropsData = (data) => {
+    const matchData = {};
+    Object.keys(data)
+        .forEach((key) => {
+            matchData[key] = toRegExp(data[key]);
+        });
+    return matchData;
 };

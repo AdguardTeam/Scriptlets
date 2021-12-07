@@ -1,10 +1,7 @@
 import {
-    randomId,
-    setPropertyAccess,
     getPropertyInChain,
-    createOnErrorHandler,
+    setPropertyAccess,
     hit,
-    toRegExp,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -38,11 +35,11 @@ export function logOnStacktrace(source, property) {
         const logInfoArray = stackSteps.map((line) => {
             let funcName;
             let funcFullPath;
-            /* eslint-disable-next-line  no-useless-escape */
+            /* eslint-disable-next-line no-useless-escape */
             const reg = /\(([^\)]+)\)/;
             if (line.match(reg)) {
                 funcName = line.split(' ').slice(0, -1).join(' ');
-                /* eslint-disable-next-line  prefer-destructuring, no-useless-escape */
+                /* eslint-disable-next-line prefer-destructuring, no-useless-escape */
                 funcFullPath = line.match(reg)[1];
             } else {
                 // For when func name is not available
@@ -54,7 +51,7 @@ export function logOnStacktrace(source, property) {
         // Convert array into object for better display using console.table
         const logInfoObject = {};
         logInfoArray.forEach((pair) => {
-            /* eslint-disable-next-line  prefer-destructuring */
+            /* eslint-disable-next-line prefer-destructuring */
             logInfoObject[pair[0]] = pair[1];
         });
         return logInfoObject;
@@ -104,10 +101,7 @@ logOnStacktrace.names = [
     'log-on-stack-trace',
 ];
 logOnStacktrace.injections = [
-    randomId,
-    toRegExp,
-    setPropertyAccess,
     getPropertyInChain,
-    createOnErrorHandler,
+    setPropertyAccess,
     hit,
 ];

@@ -81,7 +81,8 @@ test('should not prevent addEventListener if event is undefined', (assert) => {
 });
 
 test('does not allow to add event listener', (assert) => {
-    runScriptlet(name, ['click', 'clicked']);
+    const scriptletArgs = ['click', 'clicked'];
+    runScriptlet(name, scriptletArgs);
 
     const testProp = 'testProp';
     const element = document.createElement('div');
@@ -96,7 +97,8 @@ test('does not allow to add event listener', (assert) => {
 });
 
 test('event listeners not corresponding to scriptlet arguments should be added correctly', (assert) => {
-    runScriptlet(name, ['click', undefined]);
+    const scriptletArgs = ['click', undefined];
+    runScriptlet(name, scriptletArgs);
 
     const focusProp = 'focusProp';
     const element = document.createElement('div');
@@ -119,7 +121,8 @@ test('event listeners not corresponding to scriptlet arguments should be added c
 });
 
 test('event listeners with handlers matched with regexp not added', (assert) => {
-    runScriptlet(name, [undefined, '/click/']);
+    const scriptletArgs = [undefined, '/click/'];
+    runScriptlet(name, scriptletArgs);
 
     const element = document.createElement('div');
 
@@ -150,4 +153,34 @@ test('event listeners with handlers matched with regexp not added', (assert) => 
     assert.strictEqual(window[focusProp], 'focus', 'property should change');
 
     clearGlobalProps(clickProp, focusProp);
+});
+
+test('event listeners should be added correctly -- invalid event regexp pattern', (assert) => {
+    const scriptletArgs = ['/*/', undefined];
+    runScriptlet(name, scriptletArgs, false);
+
+    const focusProp = 'focusProp';
+    const element = document.createElement('div');
+    element.addEventListener('focus', () => {
+        window[focusProp] = 'focused';
+    });
+
+    element.dispatchEvent(new Event('focus'));
+    assert.strictEqual(window.hit, undefined, 'hit function not fired');
+    assert.strictEqual(window[focusProp], 'focused', 'property should change');
+});
+
+test('event listeners should be added correctly -- invalid func regexp pattern', (assert) => {
+    const scriptletArgs = ['focus', '/\\/'];
+    runScriptlet(name, scriptletArgs, false);
+
+    const focusProp = 'focusProp';
+    const element = document.createElement('div');
+    element.addEventListener('focus', () => {
+        window[focusProp] = 'focused';
+    });
+
+    element.dispatchEvent(new Event('focus'));
+    assert.strictEqual(window.hit, undefined, 'hit function not fired');
+    assert.strictEqual(window[focusProp], 'focused', 'property should change');
 });

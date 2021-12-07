@@ -26,7 +26,8 @@ import {
  * example.org#%#//scriptlet('adjust-setInterval'[, match [, interval[, boost]]])
  * ```
  *
- * - `match` - optional, string/regular expression, matching in stringified callback function
+ * - `match` - optional, string or regular expression for stringified callback matching;
+ * defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
  * - `interval` - optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
  * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), interval multiplier
  *
@@ -36,12 +37,12 @@ import {
  *     example.org#%#//scriptlet('adjust-setInterval')
  *     ```
  *
- * 2. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 1000ms
+ * 2. Adjust all setInterval() x20 times where callback matched with `example` and interval equal 1000ms
  *     ```
  *     example.org#%#//scriptlet('adjust-setInterval', 'example')
  *     ```
  *
- * 3. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 400ms
+ * 3. Adjust all setInterval() x20 times where callback matched with `example` and interval equal 400ms
  *     ```
  *     example.org#%#//scriptlet('adjust-setInterval', 'example', '400')
  *     ```

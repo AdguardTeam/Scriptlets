@@ -51,3 +51,14 @@ test('AG prevent-eval-if works', (assert) => {
     assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
     assert.strictEqual(secondActual, undefined, 'result of eval evaluation should be undefined');
 });
+
+test('does not work -- invalid regexp pattern', (assert) => {
+    runScriptlet(name, ['/\\/']);
+
+    const agPreventEvalIf = 'agPreventEvalIf';
+
+    const evalWrapper = eval;
+    const firstActual = evalWrapper(`(function () {return '${agPreventEvalIf}'})()`);
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    assert.strictEqual(firstActual, agPreventEvalIf, 'result of eval evaluation should exist');
+});

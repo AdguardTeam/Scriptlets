@@ -55,8 +55,18 @@ test('Remove cookie by match', (assert) => {
 test('Remove all cookies', (assert) => {
     const cName = '__test-cookie-name__2';
     document.cookie = `${cName}=cookie`;
-    runScriptlet(name, [null]);
+    runScriptlet(name);
 
     assert.strictEqual(window.hit, 'FIRED');
     assert.strictEqual(document.cookie.includes(cName), false, 'If no match delete all cookies for domain');
+});
+
+test('Do not remove cookie - invalid regexp pattern', (assert) => {
+    const cName = '__test-cookie-name__1';
+    document.cookie = `${cName}=cookie`;
+
+    runScriptlet(name, ['/\\/']);
+
+    assert.strictEqual(window.hit, undefined, 'Hit should not be fired');
+    assert.strictEqual(document.cookie.includes(cName), true, 'Cookie was not removed');
 });

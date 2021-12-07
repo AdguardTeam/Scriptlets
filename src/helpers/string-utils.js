@@ -2,7 +2,7 @@ import { nativeIsNaN } from './number-utils';
 import { isEmptyObject, getObjectEntries } from './object-utils';
 
 /**
- * String.prototype.replaceAll polifill
+ * String.prototype.replaceAll polyfill
  * @param {string} input input string
  * @param {string} substr to look for
  * @param {string} newSubstr replacement
@@ -18,21 +18,51 @@ export const replaceAll = (input, substr, newSubstr) => input.split(substr).join
 export const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
- * Converts search string to the regexp
- * TODO think about nested dependencies, but be careful with dependency loops
- * @param {string} str search string
- * @returns {RegExp}
+ * A literal string or regexp pattern wrapped in forward slashes.
+ * For example, 'simpleStr' or '/adblock|_0x/'.
+ * @typedef {string} RawStrPattern
  */
-export const toRegExp = (str) => {
-    if (!str || str === '') {
-        const DEFAULT_VALUE = '.?';
+
+/**
+ * Converts string to the regexp
+ * TODO think about nested dependencies, but be careful with dependency loops
+ * @param {RawStrPattern} [input=''] literal string or regexp pattern; defaults to '' (empty string)
+ * @returns {RegExp} regular expression; defaults to /.?/
+ * @throws {SyntaxError} Throw an error for invalid regex pattern
+ */
+export const toRegExp = (input = '') => {
+    const DEFAULT_VALUE = '.?';
+    const FORWARD_SLASH = '/';
+    if (input === '') {
         return new RegExp(DEFAULT_VALUE);
     }
-    if (str[0] === '/' && str[str.length - 1] === '/') {
-        return new RegExp(str.slice(1, -1));
+    if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+        return new RegExp(input.slice(1, -1));
     }
-    const escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     return new RegExp(escaped);
+};
+
+/**
+ * Checks whether the input string can be converted to regexp
+ * @param {RawStrPattern} input literal string or regexp pattern
+ * @returns {boolean}
+ */
+export const validateStrPattern = (input) => {
+    const FORWARD_SLASH = '/';
+    let str = input;
+    if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+        str = input.slice(1, -1);
+    }
+
+    let isValid;
+    try {
+        isValid = new RegExp(str);
+        isValid = true;
+    } catch (e) {
+        isValid = false;
+    }
+    return isValid;
 };
 
 /**
@@ -86,7 +116,7 @@ export const substringBefore = (str, separator) => {
 };
 
 /**
- * Wrap str in single qoutes and replaces single quotes to doudle one
+ * Wrap str in single quotes and replaces single quotes to double one
  * @param {string} str
  */
 export const wrapInSingleQuotes = (str) => {
@@ -141,6 +171,21 @@ export const convertRtcConfigToString = (config) => {
 };
 
 /**
+ * Checks whether the match input string can be converted to regexp,
+ * used for match inputs with possible negation
+ * @param {string} match literal string or regexp pattern
+ * @returns {boolean}
+ */
+export const validateMatchStr = (match) => {
+    const INVERT_MARKER = '!';
+    let str = match;
+    if (startsWith(match, INVERT_MARKER)) {
+        str = match.slice(1);
+    }
+    return validateStrPattern(str);
+};
+
+/**
  * @typedef {Object} MatchData
  * @property {boolean} isInvertedMatch
  * @property {RegExp} matchRegexp
@@ -151,7 +196,7 @@ export const convertRtcConfigToString = (config) => {
  * Needed for prevent-setTimeout, prevent-setInterval,
  * prevent-requestAnimationFrame and prevent-window-open
  * @param {string} match
- * @returns {MatchData}
+ * @returns {MatchData|null} data obj or null for invalid regexp pattern
  */
 export const parseMatchArg = (match) => {
     const INVERT_MARKER = '!';

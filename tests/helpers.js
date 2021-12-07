@@ -28,12 +28,13 @@ const evalWrapper = eval;
  * Runs scriptlet with given args
  * @param {string} name scriptlet name
  * @param {Array|undefined} args array of scriptlet args
+ * @param {boolean} [verbose=true]
  */
-export const runScriptlet = (name, args) => {
+export const runScriptlet = (name, args, verbose = true) => {
     const params = {
         name,
         args,
-        verbose: true,
+        verbose,
     };
     const resultString = window.scriptlets.invoke(params);
     evalWrapper(resultString);

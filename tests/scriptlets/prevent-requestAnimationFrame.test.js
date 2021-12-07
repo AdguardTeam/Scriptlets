@@ -46,17 +46,17 @@ test('prevent-requestAnimationFrame: no args -- logging', (assert) => {
 
     const logProperty = 'logRequestAnimationFrame';
 
-    function change() {
+    function testFunction() {
         window[logProperty] = 'changed';
     }
-    window.requestAnimationFrame(change);
+    window.requestAnimationFrame(testFunction);
 
     // eslint-disable-next-line no-console
     console.log = function log(input) {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(input, `requestAnimationFrame("${change.toString()}")`, 'console.hit input');
+        assert.strictEqual(input, `requestAnimationFrame("${testFunction.toString()}")`, 'console.hit input');
     };
 
     // do test checking after scriptlet's execution end
@@ -139,4 +139,27 @@ test('prevent-requestAnimationFrame: !match', (assert) => {
         clearGlobalProps('one', 'two');
         done();
     }, 50);
+});
+
+test('prevent-requestAnimationFrame: does not work - invalid regexp pattern', (assert) => {
+    const scriptletArgs = ['/*/'];
+    runScriptlet(name, scriptletArgs);
+
+    const done = assert.async();
+
+    const property = 'prop';
+    window[property] = 'value';
+
+    function testMethod() {
+        window[property] = 'changed';
+    }
+    window.requestAnimationFrame(testMethod);
+
+    // do test checking after scriptlet's execution end
+    setTimeout(() => {
+        assert.equal(window[property], 'changed', 'property should be changed');
+        assert.strictEqual(window.hit, undefined, 'hit should not fire');
+        clearGlobalProps(property);
+        done();
+    }, 30);
 });

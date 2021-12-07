@@ -60,7 +60,8 @@ example.org#%#//scriptlet('abort-current-inline-script', property[, search])
 ```
 
 - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
-- `search` - optional, string or regular expression that must match the inline script contents. If not set, abort all inline scripts which are trying to access the specified property
+- `search` - optional, string or regular expression that must match the inline script contents.
+If not set or regular expression is invalid, abort all inline scripts which are trying to access the specified property
 
 > Note please that for inline script with addEventListener in it
 `property` should be set as `EventTarget.prototype.addEventListener`,
@@ -418,7 +419,8 @@ example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, sta
 
 - `propsToRemove` - optional, string of space-separated properties to remove
 - `obligatoryProps` - optional, string of space-separated properties which must be all present for the pruning to occur
-- `stack` - optional, string or regular expression that must match the current function call stack trace
+- `stack` - optional, string or regular expression that must match the current function call stack trace;
+if regular expression is invalid it will be skipped
 
 > Note please that you can use wildcard `*` for chain property name.
 e.g. 'ad.*.src' instead of 'ad.0.src ad.1.src ad.2.src ...'
@@ -698,10 +700,10 @@ example.org#%#//scriptlet('prevent-fetch'[, propsToMatch])
 ```
 
 - `propsToMatch` - optional, string of space-separated properties to match; possible props:
-  - string or regular expression for matching the URL passed to fetch call; empty string or wildcard `*` for all fetch calls match
+  - string or regular expression for matching the URL passed to fetch call; empty string, wildcard `*` or invalid regular expression will match all fetch calls
   - colon-separated pairs `name:value` where
     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
-    - `value` is string or regular expression for matching the value of the option passed to fetch call
+    - `value` is string or regular expression for matching the value of the option passed to fetch call; invalid regular expression will cause any value matching
 
 > Usage with no arguments will log fetch calls to browser console;
 which is usefull for debugging but permitted for production filter lists.
@@ -759,7 +761,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#no-requestanimationfram
 example.org#%#//scriptlet('prevent-requestAnimationFrame'[, search])
 ```
 
-- `search` - optional, string or regular expression.
+- `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
 If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
 If do not start with `!`, the stringified callback will be matched.
 
@@ -830,7 +832,7 @@ example.org#%#//scriptlet('prevent-setInterval'[, search[, delay]])
 
 Call with no arguments will log calls to setInterval while debugging (`log-setInterval` superseding),
 so production filter lists' rules definitely require at least one of the parameters:
-- `search` - optional, string or regular expression.
+- `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
 If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
 If do not start with `!`, the stringified callback will be matched.
 If not set, prevents all `setInterval` calls due to specified `delay`.
@@ -931,7 +933,7 @@ example.org#%#//scriptlet('prevent-setTimeout'[, search[, delay]])
 
 Call with no arguments will log calls to setTimeout while debugging (`log-setTimeout` superseding),
 so production filter lists' rules definitely require at least one of the parameters:
-- `search` - optional, string or regular expression.
+- `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
 If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
 If do not start with `!`, the stringified callback will be matched.
 If not set, prevents all `setTimeout` calls due to specified `delay`.
@@ -1027,7 +1029,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#windowopen-defuserjs-
 example.org#%#//scriptlet('prevent-window-open'[, match[, delay[, replacement]]])
 ```
 
-- `match` - optional, string or regular expression. If not set, all window.open calls will be matched.
+- `match` - optional, string or regular expression. If not set or regular expression is invalid, all window.open calls will be matched.
 If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
 If do not start with `!`, the stringified callback will be matched.
 - `delay` - optional, number of seconds. If not set, scriptlet will return `null`,
@@ -1343,7 +1345,8 @@ example.org#%#//scriptlet('set-constant', property, value[, stack])
         - `falseFunc` - function returning false
         - `''` - empty string
         - `-1` - number value `-1`
-- `stack` - optional, string or regular expression that must match the current function call stack trace
+- `stack` - optional, string or regular expression that must match the current function call stack trace;
+if regular expression is invalid it will be skipped
 
 **Examples**
 ```
@@ -1506,4 +1509,3 @@ example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '
 
 [Scriptlet source](../src/scriptlets/set-session-storage-item.js)
 * * *
-

@@ -128,3 +128,19 @@ test('Args, pass partly matched', async (assert) => {
     assert.strictEqual(xhr.readyState, EXPECTED_READY_STATE, 'Request passed');
     assert.strictEqual(window.hit, undefined, 'hit should not fire');
 });
+
+test('Args, pass unmatched - invalid regexp', async (assert) => {
+    const XHR_DATA = {
+        method: 'GET',
+        url: 'http://www.example.org/',
+    };
+    const MATCH_DATA = '/\\/';
+    const EXPECTED_READY_STATE = 1;
+
+    runScriptlet(name, [MATCH_DATA]);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open(XHR_DATA.method, XHR_DATA.url);
+    assert.strictEqual(xhr.readyState, EXPECTED_READY_STATE, 'Request passed');
+    assert.strictEqual(window.hit, undefined, 'hit should not fire');
+});

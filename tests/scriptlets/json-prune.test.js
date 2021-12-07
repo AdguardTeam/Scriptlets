@@ -344,3 +344,9 @@ test('can NOT remove propsToRemove because of no stack match', (assert) => {
     runScriptlet('json-prune', 'nested.c nested.b', '', stackNoMatch);
     assert.deepEqual(JSON.parse('{"nested":{"a":1,"b":2,"c":3}}'), { nested: { a: 1, b: 2, c: 3 } }, 'should NOT remove multiple nested propsToRemove if there in no stack match');
 });
+
+test('does not remove propsToRemove - invalid regexp pattern for stack match', (assert) => {
+    const stackArg = '/\\/';
+    runScriptlet('json-prune', 'x', '', stackArg);
+    assert.deepEqual(JSON.parse('{"x":1}'), { x: 1 }, 'should NOT remove propsToRemove');
+});

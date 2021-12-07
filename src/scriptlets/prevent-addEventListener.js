@@ -18,11 +18,13 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('prevent-addEventListener'[, eventSearch[, functionSearch]])
+ * example.org#%#//scriptlet('prevent-addEventListener'[, typeSearch[, listenerSearch]])
  * ```
  *
- * - `eventSearch` - optional, string or regex matching the event name. If not specified, the scriptlets prevents all event listeners
- * - `functionSearch` - optional, string or regex matching the event listener function body. If not set, the scriptlet prevents all event listeners with event name matching `eventSearch`
+ * - `typeSearch` - optional, string or regular expression matching the type (event name);
+ * defaults to match all types; invalid regular expression will cause exit and rule will not work
+ * - `listenerSearch` - optional, string or regular expression matching the listener function body;
+ * defaults to match all listeners; invalid regular expression will cause exit and rule will not work
  *
  * **Examples**
  * 1. Prevent all `click` listeners:
@@ -43,16 +45,17 @@ import {
  * ```
  */
 /* eslint-enable max-len */
-export function preventAddEventListener(source, eventSearch, funcSearch) {
-    const eventSearchRegexp = toRegExp(eventSearch);
-    const funcSearchRegexp = toRegExp(funcSearch);
+export function preventAddEventListener(source, typeSearch, listenerSearch) {
+    const typeSearchRegexp = toRegExp(typeSearch);
+    const listenerSearchRegexp = toRegExp(listenerSearch);
+
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
     function addEventListenerWrapper(type, listener, ...args) {
         let shouldPrevent = false;
         if (validateType(type) && validateListener(listener)) {
-            shouldPrevent = eventSearchRegexp.test(type.toString())
-                && funcSearchRegexp.test(listenerToString(listener));
+            shouldPrevent = typeSearchRegexp.test(type.toString())
+                && listenerSearchRegexp.test(listenerToString(listener));
         }
 
         if (shouldPrevent) {

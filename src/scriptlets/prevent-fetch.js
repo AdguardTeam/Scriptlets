@@ -2,12 +2,15 @@ import {
     hit,
     getFetchData,
     objectToString,
-    convertMatchPropsToObj,
+    parseMatchProps,
+    validateParsedData,
+    getMatchPropsData,
     noopPromiseResolve,
     getWildcardSymbol,
     // following helpers should be imported and injected
-    // because they are used by heplers above
+    // because they are used by helpers above
     toRegExp,
+    validateStrPattern,
     isEmptyObject,
     getRequestData,
     getObjectEntries,
@@ -30,13 +33,13 @@ import {
  * ```
  *
  * - `propsToMatch` - optional, string of space-separated properties to match; possible props:
- *   - string or regular expression for matching the URL passed to fetch call; empty string or wildcard `*` for all fetch calls match
+ *   - string or regular expression for matching the URL passed to fetch call; empty string, wildcard `*` or invalid regular expression will match all fetch calls
  *   - colon-separated pairs `name:value` where
  *     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
- *     - `value` is string or regular expression for matching the value of the option passed to fetch call
+ *     - `value` is string or regular expression for matching the value of the option passed to fetch call; invalid regular expression will cause any value matching
  *
  * > Usage with no arguments will log fetch calls to browser console;
- * which is usefull for debugging but permitted for production filter lists.
+ * which is useful for debugging but permitted for production filter lists.
  *
  * **Examples**
  * 1. Prevent all fetch calls
@@ -80,14 +83,21 @@ export function preventFetch(source, propsToMatch) {
             // prevent all fetch calls
             shouldPrevent = true;
         } else {
-            const matchData = convertMatchPropsToObj(propsToMatch);
-            // prevent only if all props match
-            shouldPrevent = Object.keys(matchData)
-                .every((matchKey) => {
-                    const matchValue = matchData[matchKey];
-                    return Object.prototype.hasOwnProperty.call(fetchData, matchKey)
+            const parsedData = parseMatchProps(propsToMatch);
+            if (!validateParsedData(parsedData)) {
+                // eslint-disable-next-line no-console
+                console.log(`Invalid parameter: ${propsToMatch}`);
+                shouldPrevent = false;
+            } else {
+                const matchData = getMatchPropsData(parsedData);
+                // prevent only if all props match
+                shouldPrevent = Object.keys(matchData)
+                    .every((matchKey) => {
+                        const matchValue = matchData[matchKey];
+                        return Object.prototype.hasOwnProperty.call(fetchData, matchKey)
                         && matchValue.test(fetchData[matchKey]);
-                });
+                    });
+            }
         }
 
         if (shouldPrevent) {
@@ -117,10 +127,13 @@ preventFetch.injections = [
     hit,
     getFetchData,
     objectToString,
-    convertMatchPropsToObj,
+    parseMatchProps,
+    validateParsedData,
+    getMatchPropsData,
     noopPromiseResolve,
     getWildcardSymbol,
     toRegExp,
+    validateStrPattern,
     isEmptyObject,
     getRequestData,
     getObjectEntries,

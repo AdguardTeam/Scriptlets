@@ -8,16 +8,23 @@ const nativeOpen = window.open;
 const nativeSetTimeout = window.setTimeout;
 const nativeConsole = console.log;
 
+const CHECK_PROP = 'openedCheck';
+
+const mockedWindowOpen = () => {
+    window[CHECK_PROP] = true;
+};
+
 const beforeEach = () => {
     window.__debug = () => {
         window.hit = 'value';
     };
+    window.open = mockedWindowOpen;
 };
 
 const afterEach = () => {
     window.open = nativeOpen;
     console.log = nativeConsole;
-    clearGlobalProps('hit', '__debug');
+    clearGlobalProps('hit', '__debug', CHECK_PROP);
 };
 
 module(name, { beforeEach, afterEach });
@@ -80,6 +87,15 @@ test('old syntax: match all + custom replacement: {aa=noopFunc}', (assert) => {
     assert.strictEqual(typeof test.aa(), 'undefined', 'which is noopFunc');
 });
 
+test('old syntax: does not work - invalid regexp pattern', (assert) => {
+    const scriptletArgs = ['1', '/*/'];
+
+    runScriptlet(name, scriptletArgs);
+    window.open('test_url', 'some target');
+    assert.equal(window.hit, undefined, 'hit should not fire');
+    assert.ok(window[CHECK_PROP], 'window.open has been executed');
+});
+
 test('new syntax: no args', (assert) => {
     runScriptlet(name);
     window.open('some url');
@@ -119,7 +135,7 @@ test('new syntax: iframe with delayed removing', (assert) => {
     runScriptlet(name, scriptletArgs);
     const done = assert.async();
 
-    const test = window.open('some test url');
+    const test = window.open('test_url_for_iframe');
     let iframeEl = document.querySelector('body > iframe');
     assert.strictEqual(typeof test, 'object', 'mocked window.open returns an iframe');
     assert.strictEqual(typeof test.focus, 'function', 'and iframe\'s focus property is a function');
@@ -139,7 +155,7 @@ test('new syntax: object with delayed removing', (assert) => {
     runScriptlet(name, scriptletArgs);
     const done = assert.async();
 
-    const test = window.open('testurl');
+    const test = window.open('test_url_for_obj');
     const iframeEl = document.querySelector('body > iframe');
     let objEl = document.querySelector('body > object');
     // window.open returns 'undefined' in Edge 15
@@ -160,7 +176,7 @@ test('new syntax: object with delayed removing', (assert) => {
 });
 
 test('new syntax: log checking - only url', (assert) => {
-    const testUrl = 'some test url';
+    const testUrl = 'test_url_for_logging_url';
 
     // mock console.log function for log checking
     // eslint-disable-next-line no-console
@@ -181,8 +197,8 @@ test('new syntax: log checking - only url', (assert) => {
 });
 
 test('new syntax: log checking - url + args', (assert) => {
-    const testUrl = 'some test url';
-    const testWindowName = 'oaoaa';
+    const testUrl = 'test_url_for_logging_all_args';
+    const testWindowName = 'testName';
     const testWindowFeatures = 'menubar=yes, status=yes';
 
     // mock console.log function for log checking
@@ -204,6 +220,7 @@ test('new syntax: log checking - url + args', (assert) => {
 });
 
 test('new syntax: native code check', (assert) => {
+    window.open = nativeOpen;
     const testUrl = 'some test url';
 
     const scriptletArgs = [testUrl, '100'];
@@ -214,8 +231,8 @@ test('new syntax: native code check', (assert) => {
     assert.equal(window.hit, undefined, 'hit should not fire');
 });
 
-test('new syntax:  props mocked', (assert) => {
-    const testUrl = 'some test url';
+test('new syntax: props mocked', (assert) => {
+    const testUrl = 'test_url_for_props';
 
     const scriptletArgs = [testUrl, '100'];
     runScriptlet(name, scriptletArgs);
@@ -227,4 +244,11 @@ test('new syntax:  props mocked', (assert) => {
     assert.strictEqual(decoy.frameElement, null, '.frameElement mocked');
 
     assert.equal(window.hit, 'value', 'hit fired');
+});
+
+test('new syntax: invalid regexp', (assert) => {
+    const scriptletArgs = ['/*/'];
+    runScriptlet(name, scriptletArgs);
+    window.open('test url', 'some target');
+    assert.equal(window.hit, undefined, 'Hit function was executed');
 });

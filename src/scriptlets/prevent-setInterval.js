@@ -29,7 +29,7 @@ import {
  *
  * Call with no arguments will log calls to setInterval while debugging (`log-setInterval` superseding),
  * so production filter lists' rules definitely require at least one of the parameters:
- * - `search` - optional, string or regular expression.
+ * - `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
  * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
  * If do not start with `!`, the stringified callback will be matched.
  * If not set, prevents all `setInterval` calls due to specified `delay`.

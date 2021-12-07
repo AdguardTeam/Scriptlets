@@ -2,7 +2,8 @@ import {
     hit,
     noopFunc,
     parseMatchArg,
-    // following helpers are needed for heplers above
+    validateStrPattern,
+    // following helpers are needed for helpers above
     toRegExp,
     startsWith,
 } from '../helpers';
@@ -24,7 +25,7 @@ import {
  * example.org#%#//scriptlet('prevent-requestAnimationFrame'[, search])
  * ```
  *
- * - `search` - optional, string or regular expression.
+ * - `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
  * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
  * If do not start with `!`, the stringified callback will be matched.
  *
@@ -90,7 +91,7 @@ export function preventRequestAnimationFrame(source, match) {
         if (shouldLog) {
             const logMessage = `log: requestAnimationFrame("${callback.toString()}")`;
             hit(source, logMessage);
-        } else {
+        } else if (validateStrPattern(match)) {
             shouldPrevent = matchRegexp.test(callback.toString()) !== isInvertedMatch;
         }
 
@@ -120,6 +121,7 @@ preventRequestAnimationFrame.injections = [
     hit,
     noopFunc,
     parseMatchArg,
+    validateStrPattern,
     toRegExp,
     startsWith,
 ];
