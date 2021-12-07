@@ -67,6 +67,9 @@ export function preventAddEventListener(source, typeSearch, listenerSearch) {
     }
 
     window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
+    // https://github.com/AdguardTeam/Scriptlets/issues/143
+    window.addEventListener = addEventListenerWrapper;
+    document.addEventListener = addEventListenerWrapper;
 }
 
 preventAddEventListener.names = [
