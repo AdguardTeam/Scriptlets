@@ -84,6 +84,10 @@ function hit(source, message) {
   }
 function noopFunc() {};
         const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        Fingerprintjs.apply(this, updatedArgs);
+        try {
+            Fingerprintjs.apply(this, updatedArgs);
+        } catch (e) {
+            console.log(e);
+        }
     
 })({"name":"fingerprintjs","args":[]}, []);

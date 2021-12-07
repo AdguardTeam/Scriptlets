@@ -64,6 +64,7 @@ function GoogleTagServicesGpt(source) {
       disableInitialLoad: noopFunc,
       display: noopFunc,
       enableAsyncRendering: noopFunc,
+      enableLazyLoad: noopFunc,
       enableSingleRequest: noopFunc,
       enableSyncRendering: noopFunc,
       enableVideoAds: noopFunc,
@@ -214,6 +215,10 @@ function noopStr() {
     return '';
   };
         const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        GoogleTagServicesGpt.apply(this, updatedArgs);
+        try {
+            GoogleTagServicesGpt.apply(this, updatedArgs);
+        } catch (e) {
+            console.log(e);
+        }
     
 })({"name":"googletagservices-gpt","args":[]}, []);

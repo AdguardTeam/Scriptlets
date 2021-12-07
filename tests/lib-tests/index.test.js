@@ -226,6 +226,11 @@ test('Test redirect rule validation', (assert) => {
     inputRule = '_redirect=*://look.$popup';
     assert.strictEqual(validator.isAdgRedirectRule(inputRule), false);
 
+    // rule with click2load redirect should be considered as valid redirect rule
+    inputRule = '||youtube.com/embed/$redirect=click2load.html,domain=example.org';
+    assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);
+    assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), true);
+
     // rule with 'redirect-rule=' marker should be considered as redirect rules
     inputRule = '/blockadblock.$script,redirect=nobab.js';
     assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);

@@ -5,6 +5,7 @@ import cleanup from 'rollup-plugin-cleanup';
 import copy from 'rollup-plugin-copy';
 import clear from 'rollup-plugin-clear';
 import json from '@rollup/plugin-json';
+import generateHtml from 'rollup-plugin-generate-html';
 
 import project from './package.json';
 
@@ -28,6 +29,7 @@ const footer = `
 
 const TESTS_DIST = 'tests/dist';
 const TMP_DIR = 'tmp';
+const DIST_REDIRECT_FILES = 'dist/redirect-files';
 
 const mainConfig = {
     input: {
@@ -192,6 +194,46 @@ const tmpRedirectsConfig = {
     ],
 };
 
+const clickToLoadConfig = {
+    input: 'src/redirects/blocking-redirects/click2load.js',
+    output: {
+        dir: DIST_REDIRECT_FILES,
+        name: 'click2load',
+        format: 'iife',
+    },
+    plugins: [
+        resolve(),
+        babel({ babelHelpers: 'runtime' }),
+        cleanup(),
+        generateHtml({
+            filename: `${DIST_REDIRECT_FILES}/click2load.html`,
+            template: 'src/redirects/blocking-redirects/click2load.html',
+            selector: 'body',
+            inline: true,
+        }),
+    ],
+};
+
+/**
+ * We need extra script file to calculate sha256 for extension.
+ * Since using generateHtml will bundle and inline script code to html webpage
+ * but no dist file will be created, clickToLoadScriptConfig is needed separately.
+ * The extra script file will be removed from dist/redirect-files later while redirects.build.js run
+ */
+const clickToLoadScriptConfig = {
+    input: 'src/redirects/blocking-redirects/click2load.js',
+    output: {
+        dir: DIST_REDIRECT_FILES,
+        name: 'click2load',
+        format: 'iife',
+    },
+    plugins: [
+        resolve(),
+        babel({ babelHelpers: 'runtime' }),
+        cleanup(),
+    ],
+};
+
 const isCleanBuild = process.env.CLEAN === 'true'; // strip comments
 if (isCleanBuild) {
     mainConfig.plugins.push(cleanup());
@@ -205,7 +247,15 @@ let resultConfig = [];
 if (isTest) {
     resultConfig = [mainConfig, testConfig];
 } else {
-    resultConfig = [mainConfig, redirectsBuild, umdConfig, tmpRedirectsConfig];
+    resultConfig = [
+        // bundle click2load redirect first
+        clickToLoadScriptConfig,
+        clickToLoadConfig,
+        mainConfig,
+        redirectsBuild,
+        umdConfig,
+        tmpRedirectsConfig,
+    ];
 }
 
 module.exports = resultConfig;

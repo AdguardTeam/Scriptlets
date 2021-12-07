@@ -4,6 +4,7 @@
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "scripts": {
         "watch": "rollup -c -w",
+        "bundle:click2load": "rollup -c --environment CLICK2LOAD",
         "build": "rollup -c && babel-node redirects.build.js",
         "corelibs": "rollup -c --environment CLEAN && babel-node corelibs.build.js && REDIRECTS=CORELIBS babel-node redirects.build.js",
         "build-test": "rollup -c --environment UI_TEST",
@@ -49,6 +50,7 @@
         "@rollup/plugin-node-resolve": "^8.1.0",
         "axios": "^0.21.1",
         "browserstack-runner": "^0.9.2",
+        "crypto-js": "^4.1.1",
         "dotenv": "^8.2.0",
         "dox": "^0.9.0",
         "eslint": "^7.25.0",
@@ -62,6 +64,7 @@
         "rollup-plugin-cleanup": "^3.1.1",
         "rollup-plugin-clear": "^2.0.7",
         "rollup-plugin-copy": "^3.1.0",
+        "rollup-plugin-generate-html": "^0.2.0",
         "sinon": "^7.5.0"
     },
     "dependencies": {

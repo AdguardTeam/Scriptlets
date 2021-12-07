@@ -161,6 +161,10 @@ function hit(source, message) {
   }
 function noopFunc() {};
         const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        metrikaYandexTag.apply(this, updatedArgs);
+        try {
+            metrikaYandexTag.apply(this, updatedArgs);
+        } catch (e) {
+            console.log(e);
+        }
     
 })({"name":"metrika-yandex-tag","args":[]}, []);

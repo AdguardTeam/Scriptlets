@@ -14,6 +14,8 @@ import jsYaml from 'js-yaml';
  * @property {string} comment
  * @property {string} content
  * @property {string} contentType
+ * @property {boolean} [isBlocking]
+ * @property {string} [sha]
  */
 
 class Redirects {

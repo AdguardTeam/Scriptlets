@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.4.25
+ * Version 1.4.36
  */
 
 var Redirects = (function () {
@@ -3944,6 +3944,8 @@ var Redirects = (function () {
    * @property {string} comment
    * @property {string} content
    * @property {string} contentType
+   * @property {boolean} [isBlocking]
+   * @property {string} [sha]
    */
 
   var Redirects = /*#__PURE__*/function () {

@@ -79,6 +79,10 @@ function hit(source, message) {
   }
 function noopFunc() {};
         const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        Matomo.apply(this, updatedArgs);
+        try {
+            Matomo.apply(this, updatedArgs);
+        } catch (e) {
+            console.log(e);
+        }
     
 })({"name":"matomo","args":[]}, []);

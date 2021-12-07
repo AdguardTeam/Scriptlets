@@ -124,6 +124,10 @@ function hit(source, message) {
     }
   };
         const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        preventBab.apply(this, updatedArgs);
+        try {
+            preventBab.apply(this, updatedArgs);
+        } catch (e) {
+            console.log(e);
+        }
     
 })({"name":"prevent-bab","args":[]}, []);

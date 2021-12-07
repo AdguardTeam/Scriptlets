@@ -143,6 +143,10 @@ function noopArray() {
     return [];
   };
         const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        GoogleAnalytics.apply(this, updatedArgs);
+        try {
+            GoogleAnalytics.apply(this, updatedArgs);
+        } catch (e) {
+            console.log(e);
+        }
     
 })({"name":"google-analytics","args":[]}, []);

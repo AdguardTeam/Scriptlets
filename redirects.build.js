@@ -1,3 +1,5 @@
+import sha256 from 'crypto-js/sha256';
+import Base64 from 'crypto-js/enc-base64';
 import yaml from 'js-yaml';
 import * as redirectsList from './src/redirects/redirects-list';
 import { version } from './package.json';
@@ -23,6 +25,7 @@ const CORELIBS_RESULT_PATH = path.resolve(PATH_TO_DIST, CORELIBS_FILE_NAME);
 
 const REDIRECTS_DIRECTORY = '../src/redirects';
 const STATIC_REDIRECTS_PATH = './src/redirects/static-redirects.yml';
+const BLOCKING_REDIRECTS_PATH = './src/redirects/blocking-redirects.yml';
 const banner = `#
 #    AdGuard Scriptlets (Redirects Source)
 #    Version ${version}
@@ -32,6 +35,32 @@ const banner = `#
 let staticRedirects;
 try {
     staticRedirects = yaml.safeLoad(fs.readFileSync(STATIC_REDIRECTS_PATH, 'utf8'));
+} catch (e) {
+    // eslint-disable-next-line no-console
+    console.log(`Unable to load yaml because of: ${e}`);
+    throw e;
+}
+
+let blockingRedirects;
+try {
+    const rawBlockingRedirects = yaml.safeLoad(fs.readFileSync(BLOCKING_REDIRECTS_PATH, 'utf8'));
+    blockingRedirects = rawBlockingRedirects.map((raw) => {
+        // get bundled html file as content for redirect
+        const content = fs.readFileSync(path.resolve(REDIRECT_FILES_PATH, raw.title), 'utf8');
+        // get babelized script content
+        const scriptPath = path.resolve(REDIRECT_FILES_PATH, raw.scriptPath);
+        const scriptContent = fs.readFileSync(scriptPath, 'utf8');
+        // needed for CSP in browser extension
+        const sha = `sha256-${Base64.stringify(sha256(scriptContent))}`;
+        // remove not needed dist script file
+        fs.unlinkSync(scriptPath);
+        return {
+            ...raw,
+            isBlocking: true,
+            content,
+            sha,
+        };
+    });
 } catch (e) {
     // eslint-disable-next-line no-console
     console.log(`Unable to load yaml because of: ${e}`);
@@ -56,9 +85,9 @@ const redirectsDescriptions = getDataFromFiles(redirectsFilesList, REDIRECTS_DIR
  */
 const getComment = (rrName) => {
     const { description } = redirectsDescriptions.find((rr) => rr.name === rrName);
-    const descrArr = description.split('\n');
+    const descArr = description.split('\n');
 
-    return descrArr.find((str) => str !== '');
+    return descArr.find((str) => str !== '');
 };
 
 /**
@@ -66,7 +95,7 @@ const getComment = (rrName) => {
  *
  * @param redirectsData
  */
-const prepareNonStaticRedirectFiles = (redirectsData) => {
+const prepareJsRedirectFiles = (redirectsData) => {
     Object.values(redirectsData).forEach((redirect) => {
         const redirectPath = `${REDIRECT_FILES_PATH}/${redirect.file}`;
         fs.writeFileSync(redirectPath, redirect.content, 'utf8');
@@ -99,7 +128,7 @@ const prepareStaticRedirectFiles = (redirectsData) => {
     });
 };
 
-const nonStaticRedirects = redirectsFilesList.map((fileName) => {
+const jsRedirects = redirectsFilesList.map((fileName) => {
     const rrName = fileName.replace(/\.js/, '');
     const complement = redirectsObject.find((obj) => obj.name === rrName);
     const comment = getComment(rrName);
@@ -117,7 +146,11 @@ const nonStaticRedirects = redirectsFilesList.map((fileName) => {
     throw new Error(`Couldn't find source for non-static redirect: ${fileName}`);
 });
 
-const mergedRedirects = [...staticRedirects, ...nonStaticRedirects];
+const mergedRedirects = [
+    ...staticRedirects,
+    ...blockingRedirects,
+    ...jsRedirects,
+];
 
 if (process.env.REDIRECTS !== 'CORELIBS') {
     try {
@@ -137,7 +170,8 @@ if (process.env.REDIRECTS !== 'CORELIBS') {
         }
 
         prepareStaticRedirectFiles(staticRedirects);
-        prepareNonStaticRedirectFiles(nonStaticRedirects);
+        prepareJsRedirectFiles(jsRedirects);
+        // blocking redirects have already been bundled to dist by rollup
     } catch (e) {
         // eslint-disable-next-line no-console
         console.log(`Couldn't save to ${RESULT_PATH}, because of: ${e.message}`);
@@ -149,7 +183,7 @@ if (process.env.REDIRECTS === 'CORELIBS') {
     // Build scriptlets.json. It is used in the corelibs
     const base64Redirects = Object.values(mergedRedirects).map((redirect) => {
         const {
-            contentType, content, title, aliases,
+            contentType, content, title, aliases, isBlocking = false,
         } = redirect;
         let base64Content;
         let bas64ContentType = contentType;
@@ -164,6 +198,7 @@ if (process.env.REDIRECTS === 'CORELIBS') {
         return {
             title,
             aliases,
+            isBlocking,
             contentType: bas64ContentType,
             content: base64Content.trim(),
         };

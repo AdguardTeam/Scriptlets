@@ -113,6 +113,10 @@ function hit(source, message) {
     }
   };
         const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        GoogleSyndicationAdsByGoogle.apply(this, updatedArgs);
+        try {
+            GoogleSyndicationAdsByGoogle.apply(this, updatedArgs);
+        } catch (e) {
+            console.log(e);
+        }
     
 })({"name":"googlesyndication-adsbygoogle","args":[]}, []);

@@ -63,6 +63,16 @@ declare module '@adguard/scriptlets' {
          * Type of content
          */
         contentType: string;
+
+        /**
+         * If it's new type of redirects, i.e. click2load
+         */
+        isBlocking?: boolean;
+
+        /**
+         * base64 encoded hash for script needed for extension csp, i.e. for click2load
+         */
+        sha?: string;
     }
 
     /**

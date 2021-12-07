@@ -1,0 +1,24 @@
+# used for new type of redirects, like click2load.html
+#
+# use "|-" in order to keep indentation
+# use ">" if property contains long string
+
+- title: click2load.html
+  description: |-
+    Redirects resource and replaces supposed content by decoy frame with button for original content recovering
+
+    Related UBO redirect resource:
+    https://github.com/gorhill/uBlock/blob/1.31.0/src/web_accessible_resources/click2load.html
+
+    **Example**
+    ```
+    ||youtube.com/embed/$frame,third-party,redirect=click2load.html
+    ```
+  aliases:
+    - click2load.html
+    - ubo-click2load.html
+  file: click2load.html
+  contentType: text/html
+  scriptPath: ./click2load.js
+# 'content' will be bundled later
+# 'isBlocking' and 'sha' will be added later as well

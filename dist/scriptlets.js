@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.4.25
+ * Version 1.4.36
  */
 
 (function () {
@@ -235,7 +235,7 @@
     };
 
     /**
-     * String.prototype.replaceAll polifill
+     * String.prototype.replaceAll polyfill
      * @param {string} input input string
      * @param {string} substr to look for
      * @param {string} newSubstr replacement
@@ -255,24 +255,59 @@
       return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     };
     /**
-     * Converts search string to the regexp
-     * TODO think about nested dependencies, but be careful with dependency loops
-     * @param {string} str search string
-     * @returns {RegExp}
+     * A literal string or regexp pattern wrapped in forward slashes.
+     * For example, 'simpleStr' or '/adblock|_0x/'.
+     * @typedef {string} RawStrPattern
      */
 
-    var toRegExp = function toRegExp(str) {
-      if (!str || str === '') {
-        var DEFAULT_VALUE = '.?';
+    /**
+     * Converts string to the regexp
+     * TODO think about nested dependencies, but be careful with dependency loops
+     * @param {RawStrPattern} [input=''] literal string or regexp pattern; defaults to '' (empty string)
+     * @returns {RegExp} regular expression; defaults to /.?/
+     * @throws {SyntaxError} Throw an error for invalid regex pattern
+     */
+
+    var toRegExp = function toRegExp() {
+      var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+      var DEFAULT_VALUE = '.?';
+      var FORWARD_SLASH = '/';
+
+      if (input === '') {
         return new RegExp(DEFAULT_VALUE);
       }
 
-      if (str[0] === '/' && str[str.length - 1] === '/') {
-        return new RegExp(str.slice(1, -1));
+      if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+        return new RegExp(input.slice(1, -1));
       }
 
-      var escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       return new RegExp(escaped);
+    };
+    /**
+     * Checks whether the input string can be converted to regexp
+     * @param {RawStrPattern} input literal string or regexp pattern
+     * @returns {boolean}
+     */
+
+    var validateStrPattern = function validateStrPattern(input) {
+      var FORWARD_SLASH = '/';
+      var str = input;
+
+      if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+        str = input.slice(1, -1);
+      }
+
+      var isValid;
+
+      try {
+        isValid = new RegExp(str);
+        isValid = true;
+      } catch (e) {
+        isValid = false;
+      }
+
+      return isValid;
     };
     /**
      * Get string before regexp first match
@@ -325,7 +360,7 @@
       return index < 0 ? str : str.substring(0, index);
     };
     /**
-     * Wrap str in single qoutes and replaces single quotes to doudle one
+     * Wrap str in single quotes and replaces single quotes to double one
      * @param {string} str
      */
 
@@ -379,6 +414,23 @@
       return str;
     };
     /**
+     * Checks whether the match input string can be converted to regexp,
+     * used for match inputs with possible negation
+     * @param {string} match literal string or regexp pattern
+     * @returns {boolean}
+     */
+
+    var validateMatchStr = function validateMatchStr(match) {
+      var INVERT_MARKER = '!';
+      var str = match;
+
+      if (startsWith(match, INVERT_MARKER)) {
+        str = match.slice(1);
+      }
+
+      return validateStrPattern(str);
+    };
+    /**
      * @typedef {Object} MatchData
      * @property {boolean} isInvertedMatch
      * @property {RegExp} matchRegexp
@@ -389,7 +441,7 @@
      * Needed for prevent-setTimeout, prevent-setInterval,
      * prevent-requestAnimationFrame and prevent-window-open
      * @param {string} match
-     * @returns {MatchData}
+     * @returns {MatchData|null} data obj or null for invalid regexp pattern
      */
 
     var parseMatchArg = function parseMatchArg(match) {
@@ -726,7 +778,7 @@
 
     /**
      * Checks if the stackTrace contains stackRegexp
-     * // https://github.com/AdguardTeam/Scriptlets/issues/82
+     * https://github.com/AdguardTeam/Scriptlets/issues/82
      * @param {string|undefined} stackMatch - input stack value to match
      * @param {string} stackTrace - script error stack trace
      * @returns {boolean}
@@ -994,12 +1046,13 @@
       return fetchPropsObj;
     };
     /**
-     * Converts prevent-fetch propsToMatch input string to object
+     * Parse propsToMatch input string into object;
+     * used for prevent-fetch and prevent-xhr
      * @param {string} propsToMatchStr
      * @returns {Object} object where 'key' is prop name and 'value' is prop value
      */
 
-    var convertMatchPropsToObj = function convertMatchPropsToObj(propsToMatchStr) {
+    var parseMatchProps = function parseMatchProps(propsToMatchStr) {
       var PROPS_DIVIDER = ' ';
       var PAIRS_MARKER = ':';
       var propsObj = {};
@@ -1008,14 +1061,38 @@
         var dividerInd = prop.indexOf(PAIRS_MARKER);
 
         if (dividerInd === -1) {
-          propsObj.url = toRegExp(prop);
+          propsObj.url = prop;
         } else {
           var key = prop.slice(0, dividerInd);
           var value = prop.slice(dividerInd + 1);
-          propsObj[key] = toRegExp(value);
+          propsObj[key] = value;
         }
       });
       return propsObj;
+    };
+    /**
+     * Validates parsed data values
+     * @param {Object} data
+     * @returns {boolean}
+     */
+
+    var validateParsedData = function validateParsedData(data) {
+      return Object.values(data).every(function (value) {
+        return validateStrPattern(value);
+      });
+    };
+    /**
+     * Converts valid parsed data to data obj for further matching
+     * @param {Object} data
+     * @returns {Object}
+     */
+
+    var getMatchPropsData = function getMatchPropsData(data) {
+      var matchData = {};
+      Object.keys(data).forEach(function (key) {
+        matchData[key] = toRegExp(data[key]);
+      });
+      return matchData;
     };
 
     var handleOldReplacement = function handleOldReplacement(replacement) {
@@ -1137,6 +1214,7 @@
         replaceAll: replaceAll,
         escapeRegExp: escapeRegExp,
         toRegExp: toRegExp,
+        validateStrPattern: validateStrPattern,
         getBeforeRegExp: getBeforeRegExp,
         startsWith: startsWith,
         endsWith: endsWith,
@@ -1145,6 +1223,7 @@
         wrapInSingleQuotes: wrapInSingleQuotes,
         getStringInBraces: getStringInBraces,
         convertRtcConfigToString: convertRtcConfigToString,
+        validateMatchStr: validateMatchStr,
         parseMatchArg: parseMatchArg,
         parseDelayArg: parseDelayArg,
         objectToString: objectToString,
@@ -1175,7 +1254,9 @@
         getBoostMultiplier: getBoostMultiplier,
         getRequestData: getRequestData,
         getFetchData: getFetchData,
-        convertMatchPropsToObj: convertMatchPropsToObj,
+        parseMatchProps: parseMatchProps,
+        validateParsedData: validateParsedData,
+        getMatchPropsData: getMatchPropsData,
         getObjectEntries: getObjectEntries,
         getObjectFromEntries: getObjectFromEntries,
         isEmptyObject: isEmptyObject,
@@ -1206,7 +1287,7 @@
      */
 
     function addCall(scriptlet, code) {
-      return "".concat(code, ";\n        const updatedArgs = args ? [].concat(source).concat(args) : [source];\n        ").concat(scriptlet.name, ".apply(this, updatedArgs);\n    ");
+      return "".concat(code, ";\n        const updatedArgs = args ? [].concat(source).concat(args) : [source];\n        try {\n            ").concat(scriptlet.name, ".apply(this, updatedArgs);\n        } catch (e) {\n            console.log(e);\n        }\n    ");
     }
     /**
      * Wrap function into IIFE (Immediately invoked function expression)
@@ -1630,7 +1711,7 @@
      *
      * Call with no arguments will log calls to setTimeout while debugging (`log-setTimeout` superseding),
      * so production filter lists' rules definitely require at least one of the parameters:
-     * - `search` - optional, string or regular expression.
+     * - `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
      * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
      * If do not start with `!`, the stringified callback will be matched.
      * If not set, prevents all `setTimeout` calls due to specified `delay`.
@@ -1828,7 +1909,7 @@
      *
      * Call with no arguments will log calls to setInterval while debugging (`log-setInterval` superseding),
      * so production filter lists' rules definitely require at least one of the parameters:
-     * - `search` - optional, string or regular expression.
+     * - `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
      * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
      * If do not start with `!`, the stringified callback will be matched.
      * If not set, prevents all `setInterval` calls due to specified `delay`.
@@ -2020,7 +2101,7 @@
      * example.org#%#//scriptlet('prevent-window-open'[, match[, delay[, replacement]]])
      * ```
      *
-     * - `match` - optional, string or regular expression. If not set, all window.open calls will be matched.
+     * - `match` - optional, string or regular expression. If not set or regular expression is invalid, all window.open calls will be matched.
      * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
      * If do not start with `!`, the stringified callback will be matched.
      * - `delay` - optional, number of seconds. If not set, scriptlet will return `null`,
@@ -2081,13 +2162,19 @@
       var oldOpenWrapper = function oldOpenWrapper(str) {
         match = Number(match) > 0; // 'delay' was 'search' prop for matching in old syntax
 
+        for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+          args[_key - 1] = arguments[_key];
+        }
+
+        if (!validateStrPattern(delay)) {
+          // eslint-disable-next-line no-console
+          console.log("Invalid parameter: ".concat(delay));
+          return nativeOpen.apply(window, [str].concat(args));
+        }
+
         var searchRegexp = toRegExp(delay);
 
         if (match !== searchRegexp.test(str)) {
-          for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-            args[_key - 1] = arguments[_key];
-          }
-
           return nativeOpen.apply(window, [str].concat(args));
         }
 
@@ -2112,12 +2199,16 @@
 
         if (match === getWildcardSymbol()) {
           shouldPrevent = true;
-        } else {
+        } else if (validateMatchStr(match)) {
           var _parseMatchArg = parseMatchArg(match),
               isInvertedMatch = _parseMatchArg.isInvertedMatch,
               matchRegexp = _parseMatchArg.matchRegexp;
 
           shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
+        } else {
+          // eslint-disable-next-line no-console
+          console.log("Invalid parameter: ".concat(match));
+          shouldPrevent = false;
         }
 
         if (shouldPrevent) {
@@ -2169,7 +2260,7 @@
     }
     preventWindowOpen.names = ['prevent-window-open', // aliases are needed for matching the related scriptlet converted into our syntax
     'window.open-defuser.js', 'ubo-window.open-defuser.js', 'ubo-window.open-defuser', 'nowoif.js', 'ubo-nowoif.js', 'ubo-nowoif'];
-    preventWindowOpen.injections = [hit, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, getWildcardSymbol, noopFunc, trueFunc, startsWith, endsWith, substringBefore, substringAfter];
+    preventWindowOpen.injections = [hit, validateStrPattern, validateMatchStr, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, getWildcardSymbol, noopFunc, trueFunc, startsWith, endsWith, substringBefore, substringAfter];
 
     /* eslint-disable max-len */
 
@@ -2177,7 +2268,7 @@
      * @scriptlet abort-current-inline-script
      *
      * @description
-     * Aborts an inline script when it attempts to **read** the specified property
+     * Aborts an inline script when it attempts to **read** or **write to** the specified property
      * AND when the contents of the `<script>` element contains the specified
      * text or matches the regular expression.
      *
@@ -2193,7 +2284,9 @@
      * ```
      *
      * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
-     * - `search` - optional, string or regular expression that must match the inline script contents. If not set, abort all inline scripts which are trying to access the specified property
+     * - `search` - optional, string or regular expression that must match the inline script content.
+     * Defaults to abort all scripts which are trying to access the specified property.
+     * Invalid regular expression will cause exit and rule will not work.
      *
      * > Note please that for inline script with addEventListener in it
      * `property` should be set as `EventTarget.prototype.addEventListener`,
@@ -2239,6 +2332,7 @@
     function abortCurrentInlineScript(source, property, search) {
       var searchRegexp = toRegExp(search);
       var rid = randomId();
+      var SRC_DATA_MARKER = 'data:text/javascript;base64,';
 
       var getCurrentScript = function getCurrentScript() {
         if ('currentScript' in document) {
@@ -2267,7 +2361,13 @@
           var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
           content = textContentGetter.call(scriptEl);
         } catch (e) {} // eslint-disable-line no-empty
+        // https://github.com/AdguardTeam/Scriptlets/issues/130
 
+
+        if (content.length === 0 && typeof scriptEl.src !== 'undefined' && startsWith(scriptEl.src, SRC_DATA_MARKER)) {
+          var encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
+          content = window.atob(encodedContent);
+        }
 
         if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && searchRegexp.test(content)) {
           hit(source);
@@ -2332,7 +2432,7 @@
     'abort-current-script.js', 'ubo-abort-current-script.js', 'acs.js', 'ubo-acs.js', // "ubo"-aliases with no "js"-ending
     'ubo-abort-current-script', 'ubo-acs', // obsolete but supported aliases
     'abort-current-inline-script.js', 'ubo-abort-current-inline-script.js', 'acis.js', 'ubo-acis.js', 'ubo-abort-current-inline-script', 'ubo-acis', 'abp-abort-current-inline-script'];
-    abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit];
+    abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, startsWith, createOnErrorHandler, hit];
 
     /* eslint-disable max-len */
 
@@ -2370,7 +2470,8 @@
      *         - `falseFunc` - function returning false
      *         - `''` - empty string
      *         - `-1` - number value `-1`
-     * - `stack` - optional, string or regular expression that must match the current function call stack trace
+     * - `stack` - optional, string or regular expression that must match the current function call stack trace;
+     * if regular expression is invalid it will be skipped
      *
      * **Examples**
      * ```
@@ -2616,11 +2717,13 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('prevent-addEventListener'[, eventSearch[, functionSearch]])
+     * example.org#%#//scriptlet('prevent-addEventListener'[, typeSearch[, listenerSearch]])
      * ```
      *
-     * - `eventSearch` - optional, string or regex matching the event name. If not specified, the scriptlets prevents all event listeners
-     * - `functionSearch` - optional, string or regex matching the event listener function body. If not set, the scriptlet prevents all event listeners with event name matching `eventSearch`
+     * - `typeSearch` - optional, string or regular expression matching the type (event name);
+     * defaults to match all types; invalid regular expression will cause exit and rule will not work
+     * - `listenerSearch` - optional, string or regular expression matching the listener function body;
+     * defaults to match all listeners; invalid regular expression will cause exit and rule will not work
      *
      * **Examples**
      * 1. Prevent all `click` listeners:
@@ -2643,16 +2746,16 @@
 
     /* eslint-enable max-len */
 
-    function preventAddEventListener(source, eventSearch, funcSearch) {
-      var eventSearchRegexp = toRegExp(eventSearch);
-      var funcSearchRegexp = toRegExp(funcSearch);
+    function preventAddEventListener(source, typeSearch, listenerSearch) {
+      var typeSearchRegexp = toRegExp(typeSearch);
+      var listenerSearchRegexp = toRegExp(listenerSearch);
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
       function addEventListenerWrapper(type, listener) {
         var shouldPrevent = false;
 
         if (validateType(type) && validateListener(listener)) {
-          shouldPrevent = eventSearchRegexp.test(type.toString()) && funcSearchRegexp.test(listenerToString(listener));
+          shouldPrevent = typeSearchRegexp.test(type.toString()) && listenerSearchRegexp.test(listenerToString(listener));
         }
 
         if (shouldPrevent) {
@@ -2771,7 +2874,7 @@
      * @scriptlet nowebrtc
      *
      * @description
-     * Disables WebRTC by overriding `RTCPeerConnection`. The overriden function will log every attempt to create a new connection.
+     * Disables WebRTC by overriding `RTCPeerConnection`. The overridden function will log every attempt to create a new connection.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-
@@ -2978,16 +3081,15 @@
      * example.org#%#//scriptlet('prevent-eval-if'[, search])
      * ```
      *
-     * - `search` - optional, string or regexp for matching stringified eval payload.
-     * If 'search is not specified — all stringified eval payload will be matched
+     * - `search` - optional, string or regular expression matching the stringified eval payload;
+     * defaults to match all stringified eval payloads;
+     * invalid regular expression will cause exit and rule will not work
      *
      * **Examples**
      * ```
      * ! Prevents eval if it matches 'test'
      * example.org#%#//scriptlet('prevent-eval-if', 'test')
      * ```
-     *
-     * @param {string|RegExp} [search] string or regexp matching stringified eval payload
      */
 
     function preventEvalIf(source, search) {
@@ -3439,8 +3541,7 @@
 
     /* eslint-enable max-len */
 
-    function debugCurrentInlineScript(source, property) {
-      var search = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+    function debugCurrentInlineScript(source, property, search) {
       var searchRegexp = toRegExp(search);
       var rid = randomId();
 
@@ -3458,7 +3559,22 @@
       var abort = function abort() {
         var scriptEl = getCurrentScript();
 
-        if (scriptEl instanceof HTMLScriptElement && scriptEl.textContent.length > 0 && scriptEl !== ourScript && (!search || searchRegexp.test(scriptEl.textContent))) {
+        if (!scriptEl) {
+          return;
+        }
+
+        var content = scriptEl.textContent; // We are using Node.prototype.textContent property descriptor
+        // to get the real script content
+        // even when document.currentScript.textContent is replaced.
+        // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
+
+        try {
+          var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
+          content = textContentGetter.call(scriptEl);
+        } catch (e) {} // eslint-disable-line no-empty
+
+
+        if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && searchRegexp.test(content)) {
           hit(source);
           debugger; // eslint-disable-line no-debugger
         }
@@ -3468,7 +3584,20 @@
         var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
-            chain = chainInfo.chain;
+            chain = chainInfo.chain; // The scriptlet might be executed before the chain property has been created
+        // (for instance, document.body before the HTML body was loaded).
+        // In this case we're checking whether the base element exists or not
+        // and if not, we simply exit without overriding anything.
+        // e.g. https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
+
+        if (base instanceof Object === false && base === null) {
+          var props = property.split('.');
+          var propIndex = props.indexOf(prop);
+          var baseName = props[propIndex - 1];
+          console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded.")); // eslint-disable-line no-console
+
+          return;
+        }
 
         if (chain) {
           var setter = function setter(a) {
@@ -3514,7 +3643,8 @@
      *
      * @description
      * Removes the specified attributes from DOM nodes. This scriptlet runs once when the page loads
-     * and after that periodically in order to DOM tree changes.
+     * and after that periodically in order to DOM tree changes by default,
+     * or as specified by applying argument.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
@@ -3641,6 +3771,86 @@
     removeAttr.names = ['remove-attr', // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-attr.js', 'ubo-remove-attr.js', 'ra.js', 'ubo-ra.js', 'ubo-remove-attr', 'ubo-ra'];
     removeAttr.injections = [hit, observeDOMChanges];
+
+    /* eslint-disable max-len */
+
+    /**
+     * @scriptlet set-attr
+     *
+     * @description
+     * Sets the specified attribute on the specified elements. This scriptlet runs once when the page loads
+     * and after that and after that on DOM tree changes.
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('set-attr', selector, attr[, value])
+     * ```
+     *
+     * - `selector` — required, CSS selector, specifies DOM nodes to set attributes on
+     * - `attr` — required, attribute to be set
+     * - `value` — the value to assign to the attribute, defaults to ''. Possible values:
+     *     - `''` - empty string
+     *     - positive decimal integer `<= 32767`
+     *
+     * **Examples**
+     * 1.  Set attribute by selector
+     *     ```
+     *     example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', '0')
+     *     ```
+     *
+     *     ```html
+     *     <!-- before  -->
+     *     <a class="class">Some text</div>
+     *
+     *     <!-- after -->
+     *     <a class="class" test-attribute="0">Some text</div>
+     *     ```
+     * 2.  Set attribute without value
+     *     ```
+     *     example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute')
+     *     ```
+     *
+     *     ```html
+     *     <!-- before  -->
+     *     <a class="class">Some text</div>
+     *
+     *     <!-- after -->
+     *     <a class="class" test-attribute>Some text</div>
+     *     ```
+     */
+
+    /* eslint-enable max-len */
+
+    function setAttr(source, selector, attr) {
+      var value = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+
+      if (!selector || !attr) {
+        return;
+      } // Drop strings that cant be parsed into number, negative numbers and numbers below 32767
+
+
+      if (value.length !== 0 && (nativeIsNaN(parseInt(value, 10)) || parseInt(value, 10) < 0 || parseInt(value, 10) > 0x7FFF)) {
+        return;
+      }
+
+      var setAttr = function setAttr() {
+        var nodes = [].slice.call(document.querySelectorAll(selector));
+        var set = false;
+        nodes.forEach(function (node) {
+          node.setAttribute(attr, value);
+          set = true;
+        });
+
+        if (set) {
+          hit(source);
+        }
+      };
+
+      setAttr();
+      observeDOMChanges(setAttr, true);
+    }
+    setAttr.names = ['set-attr'];
+    setAttr.injections = [hit, observeDOMChanges, nativeIsNaN];
 
     /* eslint-disable max-len */
 
@@ -3858,7 +4068,8 @@
      * example.org#%#//scriptlet('adjust-setInterval'[, match [, interval[, boost]]])
      * ```
      *
-     * - `match` - optional, string/regular expression, matching in stringified callback function
+     * - `match` - optional, string or regular expression for stringified callback matching;
+     * defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
      * - `interval` - optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
      * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), interval multiplier
      *
@@ -3868,12 +4079,12 @@
      *     example.org#%#//scriptlet('adjust-setInterval')
      *     ```
      *
-     * 2. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 1000ms
+     * 2. Adjust all setInterval() x20 times where callback matched with `example` and interval equal 1000ms
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval', 'example')
      *     ```
      *
-     * 3. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 400ms
+     * 3. Adjust all setInterval() x20 times where callback matched with `example` and interval equal 400ms
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval', 'example', '400')
      *     ```
@@ -3923,7 +4134,7 @@
      * @scriptlet adjust-setTimeout
      *
      * @description
-     * Adjusts timeout for specified setTimout() callbacks.
+     * Adjusts timeout for specified setTimeout() callbacks.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-settimeout-boosterjs-
@@ -3933,8 +4144,9 @@
      * example.org#%#//scriptlet('adjust-setTimeout'[, match [, timeout[, boost]]])
      * ```
      *
-     * - `match` - optional, string/regular expression, matching in stringified callback function
-     * - `timeout` - optional, defaults to 1000, matching setTimout delay; decimal integer OR '*' for any delay
+     * - `match` - optional, string or regular expression for stringified callback matching;
+     * defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
+     * - `timeout` - optional, defaults to 1000, matching setTimeout delay; decimal integer OR '*' for any delay
      * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), timeout multiplier
      *
      * **Examples**
@@ -3943,12 +4155,12 @@
      *     example.org#%#//scriptlet('adjust-setTimeout')
      *     ```
      *
-     * 2. Adjust all setTimeout() x20 times where callback mathed with `example` and timeout equal 1000ms
+     * 2. Adjust all setTimeout() x20 times where callback matched with `example` and timeout equal 1000ms
      *     ```
      *     example.org#%#//scriptlet('adjust-setTimeout', 'example')
      *     ```
      *
-     * 3. Adjust all setTimeout() x20 times where callback mathed with `example` and timeout equal 400ms
+     * 3. Adjust all setTimeout() x20 times where callback matched with `example` and timeout equal 400ms
      *     ```
      *     example.org#%#//scriptlet('adjust-setTimeout', 'example', '400')
      *     ```
@@ -3961,7 +4173,7 @@
      *     ```
      *     example.org#%#//scriptlet('adjust-setTimeout', '', '2000', '0.02')
      *     ```
-     * 6. Adjust all setTimeout() x20 times where callback mathed with `test` and timeout is randomized
+     * 6. Adjust all setTimeout() x20 times where callback matched with `test` and timeout is randomized
      *     ```
      *     example.org#%#//scriptlet('adjust-setTimeout', 'test', '*')
      *     ```
@@ -4001,7 +4213,7 @@
      * Wraps the `console.dir` API to call the `toString` method of the argument.
      * There are several adblock circumvention systems that detect browser devtools
      * and hide themselves. Therefore, if we force them to think
-     * that devtools are open (using this scrciptlet),
+     * that devtools are open (using this scriptlet),
      * it will automatically disable the adblock circumvention script.
      *
      * Related ABP source:
@@ -4070,7 +4282,8 @@
      *
      * - `propsToRemove` - optional, string of space-separated properties to remove
      * - `obligatoryProps` - optional, string of space-separated properties which must be all present for the pruning to occur
-     * - `stack` - optional, string or regular expression that must match the current function call stack trace
+     * - `stack` - optional, string or regular expression that must match the current function call stack trace;
+     * if regular expression is invalid it will be skipped
      *
      * > Note please that you can use wildcard `*` for chain property name.
      * e.g. 'ad.*.src' instead of 'ad.0.src ad.1.src ad.2.src ...'
@@ -4255,7 +4468,7 @@
      * example.org#%#//scriptlet('prevent-requestAnimationFrame'[, search])
      * ```
      *
-     * - `search` - optional, string or regular expression.
+     * - `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
      * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
      * If do not start with `!`, the stringified callback will be matched.
      *
@@ -4324,7 +4537,7 @@
         if (shouldLog) {
           var logMessage = "log: requestAnimationFrame(\"".concat(callback.toString(), "\")");
           hit(source, logMessage);
-        } else {
+        } else if (validateStrPattern(match)) {
           shouldPrevent = matchRegexp.test(callback.toString()) !== isInvertedMatch;
         }
 
@@ -4344,7 +4557,7 @@
     }
     preventRequestAnimationFrame.names = ['prevent-requestAnimationFrame', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-requestAnimationFrame-if.js', 'ubo-no-requestAnimationFrame-if.js', 'norafif.js', 'ubo-norafif.js', 'ubo-no-requestAnimationFrame-if', 'ubo-norafif'];
-    preventRequestAnimationFrame.injections = [hit, noopFunc, parseMatchArg, toRegExp, startsWith];
+    preventRequestAnimationFrame.injections = [hit, noopFunc, parseMatchArg, validateStrPattern, toRegExp, startsWith];
 
     /* eslint-disable max-len */
 
@@ -4650,13 +4863,13 @@
      * ```
      *
      * - `propsToMatch` - optional, string of space-separated properties to match; possible props:
-     *   - string or regular expression for matching the URL passed to fetch call; empty string or wildcard `*` for all fetch calls match
+     *   - string or regular expression for matching the URL passed to fetch call; empty string, wildcard `*` or invalid regular expression will match all fetch calls
      *   - colon-separated pairs `name:value` where
      *     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
-     *     - `value` is string or regular expression for matching the value of the option passed to fetch call
+     *     - `value` is string or regular expression for matching the value of the option passed to fetch call; invalid regular expression will cause any value matching
      *
      * > Usage with no arguments will log fetch calls to browser console;
-     * which is usefull for debugging but permitted for production filter lists.
+     * which is useful for debugging but permitted for production filter lists.
      *
      * **Examples**
      * 1. Prevent all fetch calls
@@ -4702,12 +4915,20 @@
           // prevent all fetch calls
           shouldPrevent = true;
         } else {
-          var matchData = convertMatchPropsToObj(propsToMatch); // prevent only if all props match
+          var parsedData = parseMatchProps(propsToMatch);
 
-          shouldPrevent = Object.keys(matchData).every(function (matchKey) {
-            var matchValue = matchData[matchKey];
-            return Object.prototype.hasOwnProperty.call(fetchData, matchKey) && matchValue.test(fetchData[matchKey]);
-          });
+          if (!validateParsedData(parsedData)) {
+            // eslint-disable-next-line no-console
+            console.log("Invalid parameter: ".concat(propsToMatch));
+            shouldPrevent = false;
+          } else {
+            var matchData = getMatchPropsData(parsedData); // prevent only if all props match
+
+            shouldPrevent = Object.keys(matchData).every(function (matchKey) {
+              var matchValue = matchData[matchKey];
+              return Object.prototype.hasOwnProperty.call(fetchData, matchKey) && matchValue.test(fetchData[matchKey]);
+            });
+          }
         }
 
         if (shouldPrevent) {
@@ -4725,7 +4946,7 @@
     }
     preventFetch.names = ['prevent-fetch', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-fetch-if.js', 'ubo-no-fetch-if.js', 'ubo-no-fetch-if'];
-    preventFetch.injections = [hit, getFetchData, objectToString, convertMatchPropsToObj, noopPromiseResolve, getWildcardSymbol, toRegExp, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries];
+    preventFetch.injections = [hit, getFetchData, objectToString, parseMatchProps, validateParsedData, getMatchPropsData, noopPromiseResolve, getWildcardSymbol, toRegExp, validateStrPattern, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries];
 
     /* eslint-disable max-len */
 
@@ -4979,6 +5200,13 @@
         }
 
         var value = base[prop];
+
+        if (!validateStrPattern(stack)) {
+          // eslint-disable-next-line no-console
+          console.log("Invalid parameter: ".concat(stack));
+          return;
+        }
+
         setPropertyAccess(base, prop, {
           get: function get() {
             if (matchStackTrace(stack, new Error().stack)) {
@@ -5002,7 +5230,7 @@
     }
     abortOnStacktrace.names = ['abort-on-stack-trace', // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-stack-trace.js', 'ubo-abort-on-stack-trace.js', 'aost.js', 'ubo-aost.js', 'ubo-abort-on-stack-trace', 'ubo-aost', 'abp-abort-on-stack-trace'];
-    abortOnStacktrace.injections = [randomId, toRegExp, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, matchStackTrace];
+    abortOnStacktrace.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, validateStrPattern, matchStackTrace, toRegExp];
 
     /* eslint-disable max-len */
 
@@ -5040,13 +5268,13 @@
         var logInfoArray = stackSteps.map(function (line) {
           var funcName;
           var funcFullPath;
-          /* eslint-disable-next-line  no-useless-escape */
+          /* eslint-disable-next-line no-useless-escape */
 
           var reg = /\(([^\)]+)\)/;
 
           if (line.match(reg)) {
             funcName = line.split(' ').slice(0, -1).join(' ');
-            /* eslint-disable-next-line  prefer-destructuring, no-useless-escape */
+            /* eslint-disable-next-line prefer-destructuring, no-useless-escape */
 
             funcFullPath = line.match(reg)[1];
           } else {
@@ -5060,7 +5288,7 @@
 
         var logInfoObject = {};
         logInfoArray.forEach(function (pair) {
-          /* eslint-disable-next-line  prefer-destructuring */
+          /* eslint-disable-next-line prefer-destructuring */
           logInfoObject[pair[0]] = pair[1];
         });
         return logInfoObject;
@@ -5113,7 +5341,7 @@
       setChainPropAccess(window, property);
     }
     logOnStacktrace.names = ['log-on-stack-trace'];
-    logOnStacktrace.injections = [randomId, toRegExp, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
+    logOnStacktrace.injections = [getPropertyInChain, setPropertyAccess, hit];
 
     /* eslint-disable max-len */
 
@@ -5138,7 +5366,7 @@
      *     - value is string or regular expression for matching the value of the option passed to `.open()` call
      *
      * > Usage with no arguments will log XMLHttpRequest objects to browser console;
-     * which is usefull for debugging but permitted for production filter lists.
+     * which is useful for debugging but permitted for production filter lists.
      *
      * **Examples**
      * 1. Log all XMLHttpRequests
@@ -5193,12 +5421,20 @@
           // Prevent all fetch calls
           shouldPrevent = true;
         } else {
-          var matchData = convertMatchPropsToObj(propsToMatch); // prevent only if all props match
+          var parsedData = parseMatchProps(propsToMatch);
 
-          shouldPrevent = Object.keys(matchData).every(function (matchKey) {
-            var matchValue = matchData[matchKey];
-            return Object.prototype.hasOwnProperty.call(xhrData, matchKey) && matchValue.test(xhrData[matchKey]);
-          });
+          if (!validateParsedData(parsedData)) {
+            // eslint-disable-next-line no-console
+            console.log("Invalid parameter: ".concat(propsToMatch));
+            shouldPrevent = false;
+          } else {
+            var matchData = getMatchPropsData(parsedData); // prevent only if all props match
+
+            shouldPrevent = Object.keys(matchData).every(function (matchKey) {
+              var matchValue = matchData[matchKey];
+              return Object.prototype.hasOwnProperty.call(xhrData, matchKey) && matchValue.test(xhrData[matchKey]);
+            });
+          }
         }
 
         if (shouldPrevent) {
@@ -5216,7 +5452,7 @@
     }
     preventXHR.names = ['prevent-xhr', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-xhr-if.js', 'ubo-no-xhr-if.js', 'ubo-no-xhr-if'];
-    preventXHR.injections = [hit, objectToString, getWildcardSymbol, convertMatchPropsToObj, toRegExp, isEmptyObject, getObjectEntries];
+    preventXHR.injections = [hit, objectToString, getWildcardSymbol, parseMatchProps, validateParsedData, getMatchPropsData, toRegExp, validateStrPattern, isEmptyObject, getObjectEntries];
 
     /**
      * This file must export all scriptlets which should be accessible
@@ -5248,6 +5484,7 @@
         debugOnPropertyWrite: debugOnPropertyWrite,
         debugCurrentInlineScript: debugCurrentInlineScript,
         removeAttr: removeAttr,
+        setAttr: setAttr,
         removeClass: removeClass,
         disableNewtabLinks: disableNewtabLinks,
         adjustSetInterval: adjustSetInterval,
@@ -5296,6 +5533,9 @@
       adg: 'amazon-apstag',
       ubo: 'amazon_apstag.js'
     }, {
+      adg: 'click2load.html',
+      ubo: 'click2load.html'
+    }, {
       adg: 'google-analytics',
       ubo: 'google-analytics_analytics.js'
     }, {
@@ -5304,6 +5544,10 @@
     }, {
       adg: 'googlesyndication-adsbygoogle',
       ubo: 'googlesyndication_adsbygoogle.js'
+    }, {
+      // https://github.com/AdguardTeam/Scriptlets/issues/162
+      adg: 'googlesyndication-adsbygoogle',
+      ubo: 'googlesyndication.com/adsbygoogle.js'
     }, {
       // https://github.com/AdguardTeam/Scriptlets/issues/127
       adg: 'googletagmanager-gtm',
@@ -6315,9 +6559,10 @@
         if (Array.isArray(data) === false) {
           return;
         } // https://developers.google.com/analytics/devguides/collection/gajs/methods/gaJSApiDomainDirectory#_gat.GA_Tracker_._link
+        // https://github.com/uBlockOrigin/uBlock-issues/issues/1807
 
 
-        if (data[0] === '_link' && typeof data[1] === 'string') {
+        if (typeof data[0] === 'string' && /(^|\.)_link$/.test(data[0]) && typeof data[1] === 'string') {
           window.location.assign(data[1]);
         } // https://github.com/gorhill/uBlock/issues/2162
 
@@ -6350,6 +6595,23 @@
 
       tracker._getLinkerUrl = function (a) {
         return a;
+      }; // https://github.com/AdguardTeam/Scriptlets/issues/154
+
+
+      tracker._link = function (url) {
+        if (typeof url !== 'string') {
+          return;
+        }
+
+        try {
+          window.location.assign(url);
+        } catch (e) {
+          // log the error only while debugging
+          if (source.verbose) {
+            // eslint-disable-next-line no-console
+            console.log(e);
+          }
+        }
       };
 
       Gat.prototype._anonymizeIP = noopFunc;
@@ -6539,6 +6801,7 @@
         disableInitialLoad: noopFunc,
         display: noopFunc,
         enableAsyncRendering: noopFunc,
+        enableLazyLoad: noopFunc,
         enableSingleRequest: noopFunc,
         enableSyncRendering: noopFunc,
         enableVideoAds: noopFunc,
@@ -6810,7 +7073,8 @@
       Metrika.prototype.addFileExtension = noopFunc;
       Metrika.prototype.getClientID = noopFunc;
       Metrika.prototype.setUserID = noopFunc;
-      Metrika.prototype.userParams = noopFunc; // Methods with options
+      Metrika.prototype.userParams = noopFunc;
+      Metrika.prototype.params = noopFunc; // Methods with options
       // The order of arguments should be kept in according to API
 
       Metrika.prototype.extLink = function (url, options) {
@@ -10912,6 +11176,8 @@
      * @property {string} comment
      * @property {string} content
      * @property {string} contentType
+     * @property {boolean} [isBlocking]
+     * @property {string} [sha]
      */
 
     var Redirects = /*#__PURE__*/function () {

@@ -32,6 +32,10 @@ const redirects = [
         ubo: 'amazon_apstag.js',
     },
     {
+        adg: 'click2load.html',
+        ubo: 'click2load.html',
+    },
+    {
         adg: 'google-analytics',
         ubo: 'google-analytics_analytics.js',
     },

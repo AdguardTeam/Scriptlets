@@ -35,6 +35,7 @@
 * [remove-class](#remove-class)
 * [remove-cookie](#remove-cookie)
 * [remove-in-shadow-dom](#remove-in-shadow-dom)
+* [set-attr](#set-attr)
 * [set-constant](#set-constant)
 * [set-cookie-reload](#set-cookie-reload)
 * [set-cookie](#set-cookie)
@@ -44,7 +45,7 @@
 * * *
 ### <a id="abort-current-inline-script"></a> ⚡️ abort-current-inline-script
 
-Aborts an inline script when it attempts to **read** the specified property
+Aborts an inline script when it attempts to **read** or **write to** the specified property
 AND when the contents of the `<script>` element contains the specified
 text or matches the regular expression.
 
@@ -60,8 +61,9 @@ example.org#%#//scriptlet('abort-current-inline-script', property[, search])
 ```
 
 - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
-- `search` - optional, string or regular expression that must match the inline script contents.
-If not set or regular expression is invalid, abort all inline scripts which are trying to access the specified property
+- `search` - optional, string or regular expression that must match the inline script content.
+Defaults to abort all scripts which are trying to access the specified property.
+Invalid regular expression will cause exit and rule will not work.
 
 > Note please that for inline script with addEventListener in it
 `property` should be set as `EventTarget.prototype.addEventListener`,
@@ -202,7 +204,8 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-setinterval-booste
 example.org#%#//scriptlet('adjust-setInterval'[, match [, interval[, boost]]])
 ```
 
-- `match` - optional, string/regular expression, matching in stringified callback function
+- `match` - optional, string or regular expression for stringified callback matching;
+defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
 - `interval` - optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
 - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), interval multiplier
 
@@ -212,12 +215,12 @@ example.org#%#//scriptlet('adjust-setInterval'[, match [, interval[, boost]]])
     example.org#%#//scriptlet('adjust-setInterval')
     ```
 
-2. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 1000ms
+2. Adjust all setInterval() x20 times where callback matched with `example` and interval equal 1000ms
     ```
     example.org#%#//scriptlet('adjust-setInterval', 'example')
     ```
 
-3. Adjust all setInterval() x20 times where callback mathed with `example` and interval equal 400ms
+3. Adjust all setInterval() x20 times where callback matched with `example` and interval equal 400ms
     ```
     example.org#%#//scriptlet('adjust-setInterval', 'example', '400')
     ```
@@ -240,7 +243,7 @@ example.org#%#//scriptlet('adjust-setInterval'[, match [, interval[, boost]]])
 
 ### <a id="adjust-setTimeout"></a> ⚡️ adjust-setTimeout
 
-Adjusts timeout for specified setTimout() callbacks.
+Adjusts timeout for specified setTimeout() callbacks.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-settimeout-boosterjs-
@@ -250,8 +253,9 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-settimeout-booster
 example.org#%#//scriptlet('adjust-setTimeout'[, match [, timeout[, boost]]])
 ```
 
-- `match` - optional, string/regular expression, matching in stringified callback function
-- `timeout` - optional, defaults to 1000, matching setTimout delay; decimal integer OR '*' for any delay
+- `match` - optional, string or regular expression for stringified callback matching;
+defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
+- `timeout` - optional, defaults to 1000, matching setTimeout delay; decimal integer OR '*' for any delay
 - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), timeout multiplier
 
 **Examples**
@@ -260,12 +264,12 @@ example.org#%#//scriptlet('adjust-setTimeout'[, match [, timeout[, boost]]])
     example.org#%#//scriptlet('adjust-setTimeout')
     ```
 
-2. Adjust all setTimeout() x20 times where callback mathed with `example` and timeout equal 1000ms
+2. Adjust all setTimeout() x20 times where callback matched with `example` and timeout equal 1000ms
     ```
     example.org#%#//scriptlet('adjust-setTimeout', 'example')
     ```
 
-3. Adjust all setTimeout() x20 times where callback mathed with `example` and timeout equal 400ms
+3. Adjust all setTimeout() x20 times where callback matched with `example` and timeout equal 400ms
     ```
     example.org#%#//scriptlet('adjust-setTimeout', 'example', '400')
     ```
@@ -278,7 +282,7 @@ example.org#%#//scriptlet('adjust-setTimeout'[, match [, timeout[, boost]]])
     ```
     example.org#%#//scriptlet('adjust-setTimeout', '', '2000', '0.02')
     ```
-6. Adjust all setTimeout() x20 times where callback mathed with `test` and timeout is randomized
+6. Adjust all setTimeout() x20 times where callback matched with `test` and timeout is randomized
     ```
     example.org#%#//scriptlet('adjust-setTimeout', 'test', '*')
     ```
@@ -338,7 +342,7 @@ example.org#%#//scriptlet('debug-on-property-write', 'test')
 Wraps the `console.dir` API to call the `toString` method of the argument.
 There are several adblock circumvention systems that detect browser devtools
 and hide themselves. Therefore, if we force them to think
-that devtools are open (using this scrciptlet),
+that devtools are open (using this scriptlet),
 it will automatically disable the adblock circumvention script.
 
 Related ABP source:
@@ -566,7 +570,7 @@ example.org#%#//scriptlet('noeval')
 
 ### <a id="nowebrtc"></a> ⚡️ nowebrtc
 
-Disables WebRTC by overriding `RTCPeerConnection`. The overriden function will log every attempt to create a new connection.
+Disables WebRTC by overriding `RTCPeerConnection`. The overridden function will log every attempt to create a new connection.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-
@@ -588,11 +592,13 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-defuse
 
 **Syntax**
 ```
-example.org#%#//scriptlet('prevent-addEventListener'[, eventSearch[, functionSearch]])
+example.org#%#//scriptlet('prevent-addEventListener'[, typeSearch[, listenerSearch]])
 ```
 
-- `eventSearch` - optional, string or regex matching the event name. If not specified, the scriptlets prevents all event listeners
-- `functionSearch` - optional, string or regex matching the event listener function body. If not set, the scriptlet prevents all event listeners with event name matching `eventSearch`
+- `typeSearch` - optional, string or regular expression matching the type (event name);
+defaults to match all types; invalid regular expression will cause exit and rule will not work
+- `listenerSearch` - optional, string or regular expression matching the listener function body;
+defaults to match all listeners; invalid regular expression will cause exit and rule will not work
 
 **Examples**
 1. Prevent all `click` listeners:
@@ -660,8 +666,9 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
 example.org#%#//scriptlet('prevent-eval-if'[, search])
 ```
 
-- `search` - optional, string or regexp for matching stringified eval payload.
-If 'search is not specified — all stringified eval payload will be matched
+- `search` - optional, string or regular expression matching the stringified eval payload;
+defaults to match all stringified eval payloads;
+invalid regular expression will cause exit and rule will not work
 
 **Examples**
 ```
@@ -706,7 +713,7 @@ example.org#%#//scriptlet('prevent-fetch'[, propsToMatch])
     - `value` is string or regular expression for matching the value of the option passed to fetch call; invalid regular expression will cause any value matching
 
 > Usage with no arguments will log fetch calls to browser console;
-which is usefull for debugging but permitted for production filter lists.
+which is useful for debugging but permitted for production filter lists.
 
 **Examples**
 1. Prevent all fetch calls
@@ -1097,7 +1104,7 @@ example.org#%#//scriptlet('prevent-xhr'[, propsToMatch])
     - value is string or regular expression for matching the value of the option passed to `.open()` call
 
 > Usage with no arguments will log XMLHttpRequest objects to browser console;
-which is usefull for debugging but permitted for production filter lists.
+which is useful for debugging but permitted for production filter lists.
 
 **Examples**
 1. Log all XMLHttpRequests
@@ -1132,7 +1139,8 @@ which is usefull for debugging but permitted for production filter lists.
 ### <a id="remove-attr"></a> ⚡️ remove-attr
 
 Removes the specified attributes from DOM nodes. This scriptlet runs once when the page loads
-and after that periodically in order to DOM tree changes.
+and after that periodically in order to DOM tree changes by default,
+or as specified by applying argument.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
@@ -1311,6 +1319,51 @@ virustotal.com#%#//scriptlet('remove-in-shadow-dom', 'vt-ui-contact-fab')
 ```
 
 [Scriptlet source](../src/scriptlets/remove-in-shadow-dom.js)
+* * *
+
+### <a id="set-attr"></a> ⚡️ set-attr
+
+Sets the specified attribute on the specified elements. This scriptlet runs once when the page loads
+and after that and after that on DOM tree changes.
+
+**Syntax**
+```
+example.org#%#//scriptlet('set-attr', selector, attr[, value])
+```
+
+- `selector` — required, CSS selector, specifies DOM nodes to set attributes on
+- `attr` — required, attribute to be set
+- `value` — the value to assign to the attribute, defaults to ''. Possible values:
+    - `''` - empty string
+    - positive decimal integer `<= 32767`
+
+**Examples**
+1.  Set attribute by selector
+    ```
+    example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', '0')
+    ```
+
+    ```html
+    <!-- before  -->
+    <a class="class">Some text</div>
+
+    <!-- after -->
+    <a class="class" test-attribute="0">Some text</div>
+    ```
+2.  Set attribute without value
+    ```
+    example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute')
+    ```
+
+    ```html
+    <!-- before  -->
+    <a class="class">Some text</div>
+
+    <!-- after -->
+    <a class="class" test-attribute>Some text</div>
+    ```
+
+[Scriptlet source](../src/scriptlets/set-attr.js)
 * * *
 
 ### <a id="set-constant"></a> ⚡️ set-constant
@@ -1509,3 +1562,4 @@ example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '
 
 [Scriptlet source](../src/scriptlets/set-session-storage-item.js)
 * * *
+
