@@ -13,7 +13,7 @@ import { hit, noopFunc } from '../helpers';
  * ```
  */
 export function metrikaYandexTag(source) {
-    const asyncCallbackFromOptions = (param, options = {}) => {
+    const asyncCallbackFromOptions = (id, param, options = {}) => {
         let { callback } = options;
         const { ctx } = options;
         if (typeof callback === 'function') {
@@ -21,8 +21,6 @@ export function metrikaYandexTag(source) {
             setTimeout(() => callback());
         }
     };
-
-    const init = noopFunc;
 
     /**
      * https://yandex.ru/support/metrica/objects/addfileextension.html
@@ -43,7 +41,10 @@ export function metrikaYandexTag(source) {
      * https://yandex.ru/support/metrica/objects/get-client-id.html
      * @param {Function} cb
      */
-    const getClientID = (cb) => {
+    const getClientID = (id, cb) => {
+        if (!cb) {
+            return;
+        }
         setTimeout(cb(null));
     };
 
@@ -69,8 +70,8 @@ export function metrikaYandexTag(source) {
      * @param {Function} callback
      * @param {any} ctx
      */
-    const reachGoal = (target, params, callback, ctx) => {
-        asyncCallbackFromOptions(null, { callback, ctx });
+    const reachGoal = (id, target, params, callback, ctx) => {
+        asyncCallbackFromOptions(null, null, { callback, ctx });
     };
 
     /**
@@ -84,7 +85,6 @@ export function metrikaYandexTag(source) {
     const userParams = noopFunc;
 
     const api = {
-        init,
         addFileExtension,
         extLink,
         file,
@@ -98,10 +98,25 @@ export function metrikaYandexTag(source) {
     };
 
     function ym(id, funcName, ...args) {
-        return api[funcName] && api[funcName](...args);
+        return api[funcName] && api[funcName](id, ...args);
+    }
+    ym.a = [];
+
+    function init(id) {
+        // yaCounter object should provide api
+        window[`yaCounter${id}`] = api;
     }
 
-    window.ym = ym;
+    if (typeof window.ym === 'undefined') {
+        window.ym = ym;
+    } else if (window.ym && window.ym.a) {
+        // Get id for yaCounter object
+        window.ym.a.forEach((params) => {
+            const id = params[0];
+            init(id);
+        });
+        window.ym = ym;
+    }
 
     hit(source);
 }
