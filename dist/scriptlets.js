@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.4.36
+ * Version 1.4.41
  */
 
 (function () {
@@ -2770,7 +2770,10 @@
         return nativeAddEventListener.apply(this, [type, listener].concat(args));
       }
 
-      window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
+      window.EventTarget.prototype.addEventListener = addEventListenerWrapper; // https://github.com/AdguardTeam/Scriptlets/issues/143
+
+      window.addEventListener = addEventListenerWrapper;
+      document.addEventListener = addEventListenerWrapper;
     }
     preventAddEventListener.names = ['prevent-addEventListener', // aliases are needed for matching the related scriptlet converted into our syntax
     'addEventListener-defuser.js', 'ubo-addEventListener-defuser.js', 'aeld.js', 'ubo-aeld.js', 'ubo-addEventListener-defuser', 'ubo-aeld'];
@@ -5506,10 +5509,10 @@
     });
 
     /**
-     * Store of ADG redirects names and thier analogs.
+     * Store of ADG redirects names and their analogs.
      * As it is not a compatibility table, no need to keep in redirects array third-party redirects.
      *
-     * Needed only for converion purposes.
+     * Needed only for conversion purposes.
      * e.g. googletagmanager-gtm is removed and should be removed from compatibility table as well
      * but now it works as alias for google-analytics so it should stay valid for compiler
      */
@@ -5533,8 +5536,13 @@
       adg: 'amazon-apstag',
       ubo: 'amazon_apstag.js'
     }, {
+      adg: 'ati-smarttag'
+    }, {
       adg: 'click2load.html',
       ubo: 'click2load.html'
+    }, {
+      adg: 'fingerprintjs',
+      ubo: 'fingerprintjs.js'
     }, {
       adg: 'google-analytics',
       ubo: 'google-analytics_analytics.js'
@@ -5555,6 +5563,8 @@
     }, {
       adg: 'googletagservices-gpt',
       ubo: 'googletagservices_gpt.js'
+    }, {
+      adg: 'matomo'
     }, {
       adg: 'metrika-yandex-watch'
     }, {
@@ -6498,20 +6508,46 @@
       if (dataLayer.hide instanceof Object && typeof dataLayer.hide.end === 'function') {
         dataLayer.hide.end();
       }
+      /**
+       * checks data object and delays callback
+       * @param {Object|Array} data gtag payload
+       * @param {string} funcName callback prop name
+       * @returns
+       */
+
+
+      var handleCallback = function handleCallback(dataObj, funcName) {
+        if (typeof dataObj[funcName] === 'function') {
+          setTimeout(dataObj[funcName]);
+        }
+      };
 
       if (typeof dataLayer.push === 'function') {
         dataLayer.push = function (data) {
-          if (data instanceof Object && typeof data.eventCallback === 'function') {
-            setTimeout(data.eventCallback, 1);
+          if (data instanceof Object) {
+            handleCallback(data, 'eventCallback'); // eslint-disable-next-line no-restricted-syntax, guard-for-in
+
+            for (var key in data) {
+              handleCallback(data[key], 'event_callback');
+            }
           }
+
+          if (Array.isArray(data)) {
+            data.forEach(function (arg) {
+              handleCallback(arg, 'callback');
+            });
+          }
+
+          return noopFunc;
         };
       } // https://github.com/AdguardTeam/Scriptlets/issues/81
 
 
       if (google_optimize instanceof Object && typeof google_optimize.get === 'function') {
         // eslint-disable-line camelcase
-        var googleOptimizeWrapper = {};
-        googleOptimizeWrapper.get = noopFunc;
+        var googleOptimizeWrapper = {
+          get: noopFunc
+        };
         window.google_optimize = googleOptimizeWrapper;
       }
 
@@ -6927,8 +6963,8 @@
      */
 
     function metrikaYandexTag(source) {
-      var asyncCallbackFromOptions = function asyncCallbackFromOptions(param) {
-        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+      var asyncCallbackFromOptions = function asyncCallbackFromOptions(id, param) {
+        var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
         var callback = options.callback;
         var ctx = options.ctx;
 
@@ -6939,11 +6975,10 @@
           });
         }
       };
-
-      var init = noopFunc;
       /**
        * https://yandex.ru/support/metrica/objects/addfileextension.html
        */
+
 
       var addFileExtension = noopFunc;
       /**
@@ -6961,7 +6996,11 @@
        * @param {Function} cb
        */
 
-      var getClientID = function getClientID(cb) {
+      var getClientID = function getClientID(id, cb) {
+        if (!cb) {
+          return;
+        }
+
         setTimeout(cb(null));
       };
       /**
@@ -6988,8 +7027,8 @@
        * @param {any} ctx
        */
 
-      var reachGoal = function reachGoal(target, params, callback, ctx) {
-        asyncCallbackFromOptions(null, {
+      var reachGoal = function reachGoal(id, target, params, callback, ctx) {
+        asyncCallbackFromOptions(null, null, {
           callback: callback,
           ctx: ctx
         });
@@ -7006,7 +7045,6 @@
 
       var userParams = noopFunc;
       var api = {
-        init: init,
         addFileExtension: addFileExtension,
         extLink: extLink,
         file: file,
@@ -7024,10 +7062,27 @@
           args[_key - 2] = arguments[_key];
         }
 
-        return api[funcName] && api[funcName].apply(api, args);
+        return api[funcName] && api[funcName].apply(api, [id].concat(args));
       }
 
-      window.ym = ym;
+      ym.a = [];
+
+      function init(id) {
+        // yaCounter object should provide api
+        window["yaCounter".concat(id)] = api;
+      }
+
+      if (typeof window.ym === 'undefined') {
+        window.ym = ym;
+      } else if (window.ym && window.ym.a) {
+        // Get id for yaCounter object
+        window.ym.a.forEach(function (params) {
+          var id = params[0];
+          init(id);
+        });
+        window.ym = ym;
+      }
+
       hit(source);
     }
     metrikaYandexTag.names = ['metrika-yandex-tag'];
@@ -7236,6 +7291,97 @@
     Fingerprintjs.names = ['fingerprintjs', 'ubo-fingerprint2.js', 'fingerprintjs.js'];
     Fingerprintjs.injections = [hit, noopFunc];
 
+    /**
+     * @redirect ati-smarttag
+     *
+     * @description
+     * Mocks AT Internat SmartTag.
+     * https://developers.atinternet-solutions.com/as2-tagging-en/javascript-en/getting-started-javascript-en/tracker-initialisation-javascript-en/
+     *
+     * **Example**
+     * ```
+     * ||bloctel.gouv.fr/assets/scripts/smarttag.js$script,redirect=ati-smarttag
+     * ```
+     */
+
+    function ATInternetSmartTag(source) {
+      var setNoopFuncWrapper = {
+        set: noopFunc
+      };
+      var sendNoopFuncWrapper = {
+        send: noopFunc
+      };
+      var ecommerceWrapper = {
+        displayCart: {
+          products: setNoopFuncWrapper,
+          cart: setNoopFuncWrapper
+        },
+        updateCart: {
+          cart: setNoopFuncWrapper
+        },
+        displayProduct: {
+          products: setNoopFuncWrapper
+        },
+        displayPageProduct: {
+          products: setNoopFuncWrapper
+        },
+        addProduct: {
+          products: setNoopFuncWrapper
+        },
+        removeProduct: {
+          products: setNoopFuncWrapper
+        }
+      }; // eslint-disable-next-line new-cap, func-names
+
+      var tag = function tag() {};
+
+      tag.prototype = {
+        setConfig: noopFunc,
+        setParam: noopFunc,
+        dispatch: noopFunc,
+        customVars: setNoopFuncWrapper,
+        publisher: setNoopFuncWrapper,
+        order: setNoopFuncWrapper,
+        click: sendNoopFuncWrapper,
+        clickListener: sendNoopFuncWrapper,
+        internalSearch: sendNoopFuncWrapper,
+        ecommerce: ecommerceWrapper,
+        identifiedVisitor: {
+          unset: noopFunc
+        },
+        page: {
+          set: noopFunc,
+          send: noopFunc
+        },
+        selfPromotion: {
+          add: noopFunc,
+          send: noopFunc
+        },
+        privacy: {
+          setVisitorMode: noopFunc,
+          getVisitorMode: noopFunc,
+          hit: noopFunc
+        },
+        richMedia: {
+          add: noopFunc,
+          send: noopFunc,
+          remove: noopFunc,
+          removeAll: noopFunc
+        }
+      };
+      var smartTagWrapper = {
+        Tracker: {
+          Tag: function Tag() {
+            return new tag(); // eslint-disable-line new-cap
+          }
+        }
+      };
+      window.ATInternet = smartTagWrapper;
+      hit(source);
+    }
+    ATInternetSmartTag.names = ['ati-smarttag'];
+    ATInternetSmartTag.injections = [hit, noopFunc];
+
     var redirectsList = /*#__PURE__*/Object.freeze({
         __proto__: null,
         noeval: noeval,
@@ -7252,7 +7398,8 @@
         preventPopadsNet: preventPopadsNet,
         AmazonApstag: AmazonApstag,
         Matomo: Matomo,
-        Fingerprintjs: Fingerprintjs
+        Fingerprintjs: Fingerprintjs,
+        ATInternetSmartTag: ATInternetSmartTag
     });
 
     function _classCallCheck(instance, Constructor) {
