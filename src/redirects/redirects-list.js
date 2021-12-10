@@ -13,3 +13,4 @@ export * from './prevent-popads-net';
 export * from './amazon-apstag';
 export * from './matomo';
 export * from './fingerprintjs';
+export * from './ati-smarttag';

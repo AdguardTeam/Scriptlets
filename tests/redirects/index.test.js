@@ -8,3 +8,4 @@ import './metrika-yandex-tag.test';
 import './amazon-apstag.test';
 import './matomo.test';
 import './fingerprintjs.test';
+import './ati-smarttag.test';

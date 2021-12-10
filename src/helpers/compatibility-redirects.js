@@ -1,8 +1,8 @@
 /**
- * Store of ADG redirects names and thier analogs.
+ * Store of ADG redirects names and their analogs.
  * As it is not a compatibility table, no need to keep in redirects array third-party redirects.
  *
- * Needed only for converion purposes.
+ * Needed only for conversion purposes.
  * e.g. googletagmanager-gtm is removed and should be removed from compatibility table as well
  * but now it works as alias for google-analytics so it should stay valid for compiler
  */
@@ -32,8 +32,15 @@ const redirects = [
         ubo: 'amazon_apstag.js',
     },
     {
+        adg: 'ati-smarttag',
+    },
+    {
         adg: 'click2load.html',
         ubo: 'click2load.html',
+    },
+    {
+        adg: 'fingerprintjs',
+        ubo: 'fingerprintjs.js',
     },
     {
         adg: 'google-analytics',
@@ -60,6 +67,9 @@ const redirects = [
     {
         adg: 'googletagservices-gpt',
         ubo: 'googletagservices_gpt.js',
+    },
+    {
+        adg: 'matomo',
     },
     {
         adg: 'metrika-yandex-watch',
