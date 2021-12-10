@@ -15,7 +15,7 @@ const mockGoogleDataLayer = (endCallback) => {
                 endCallback();
             },
         },
-        push() {},
+        push() { },
     };
 
     return window.dataLayer;
@@ -76,6 +76,7 @@ test('Check ga api', (assert) => {
     const endCallback = () => {
         assert.ok(true, 'hide.end() was executed');
     };
+
     // emulate DataLayer
     mockGoogleDataLayer(endCallback);
 
@@ -129,27 +130,128 @@ test('Test google tag manager mocking', (assert) => {
     };
     window.__debug = () => { window.hit = 'FIRED'; };
 
-    assert.expect(4);
+    assert.expect(3);
+
+    const endCallback = () => {
+        assert.ok(true, 'hide.end() was executed');
+    };
+    // emulate API
+    mockGoogleTagManagerApi(endCallback);
+
+    // run scriptlet
+    const resString = window.scriptlets.redirects.getCode(params);
+    evalWrapper(resString);
+
+    assert.strictEqual(window.google_optimize.get(), undefined, 'google_optimize.get has been mocked');
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
+
+    clearGlobalProps('__debug', 'hit');
+});
+
+test('Test eventCallback mocking', (assert) => {
+    const params = {
+        name,
+        verbose: true,
+    };
+    window.__debug = () => { window.hit = 'FIRED'; };
+
+    assert.expect(3);
 
     const endCallback = () => {
         assert.ok(true, 'hide.end() was executed');
     };
     // emulate API
     const dataLayer = mockGoogleTagManagerApi(endCallback);
-
+    const gtag = (data) => {
+        dataLayer.push(data);
+    };
     // run scriptlet
     const resString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resString);
 
     const done = assert.async();
-    dataLayer.push({
+    const data = {
         eventCallback() {
             assert.ok(true, 'Event callback was executed');
             done();
         },
-    });
+    };
+    gtag(data);
 
-    assert.strictEqual(window.google_optimize.get(), undefined, 'google_optimize.get has been mocked');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
+
+    clearGlobalProps('__debug', 'hit');
+});
+
+test('Test event_callback mocking', (assert) => {
+    const params = {
+        name,
+        verbose: true,
+    };
+    window.__debug = () => { window.hit = 'FIRED'; };
+
+    assert.expect(3);
+
+    const endCallback = () => {
+        assert.ok(true, 'hide.end() was executed');
+    };
+    // emulate API
+    const dataLayer = mockGoogleTagManagerApi(endCallback);
+    const gtag = (data) => {
+        dataLayer.push(data);
+    };
+    // run scriptlet
+    const resString = window.scriptlets.redirects.getCode(params);
+    evalWrapper(resString);
+
+    const done = assert.async();
+    const data = {
+        event_callback: () => {
+            assert.ok(true, 'Event callback was executed');
+            done();
+        },
+    };
+    gtag({ data });
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
+
+    clearGlobalProps('__debug', 'hit');
+});
+
+test('Test callback mocking', (assert) => {
+    const params = {
+        name,
+        verbose: true,
+    };
+    window.__debug = () => { window.hit = 'FIRED'; };
+
+    assert.expect(3);
+
+    const endCallback = () => {
+        assert.ok(true, 'hide.end() was executed');
+    };
+    // emulate API
+    const dataLayer = mockGoogleTagManagerApi(endCallback);
+    const gtag = (data) => {
+        dataLayer.push(data);
+    };
+    // run scriptlet
+    const resString = window.scriptlets.redirects.getCode(params);
+    evalWrapper(resString);
+
+    const done = assert.async();
+    const data = [
+        'zero',
+        'one',
+        {
+            callback() {
+                assert.ok(true, 'Event callback was executed');
+                done();
+            },
+        },
+    ];
+    gtag(data);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 
