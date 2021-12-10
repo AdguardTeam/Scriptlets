@@ -3,8 +3,10 @@ const { runQunitPuppeteer, printFailedTests, printResultSummary } = require('nod
 const { server, port } = require('./server');
 
 const qunitArgs = {
-    targetUrl: `http://localhost:${port}/`,
+    targetUrl: `http://localhost:${port}?test`,
     timeout: 15000,
+    // needed for logging to console while testing run via `yarn test`
+    // redirectConsole: true,
     puppeteerArgs: ['--no-sandbox', '--allow-file-access-from-files'],
 };
 

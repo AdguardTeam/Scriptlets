@@ -13,6 +13,7 @@
         "browserstack": "yarn build-test && node browserstack.js",
         "gui-test": "yarn build-test && open http://localhost:8585 && node ./tests/server.js",
         "lint": "eslint .",
+        "lint-staged": "lint-staged",
         "wiki:build-docs": "node scripts/build-docs.js",
         "wiki:check-updates": "node ./scripts/check-sources-updates.js",
         "wiki:update": "yarn wiki:check-updates && node ./scripts/build-compatibility-table.js",
@@ -20,9 +21,14 @@
         "prepublishOnly": "yarn prepare-builds",
         "increment": "yarn version --patch --no-git-tag-version"
     },
+    "lint-staged": {
+        "*.js": [
+            "eslint"
+        ]
+    },
     "husky": {
         "hooks": {
-            "pre-commit": "yarn lint && echo \"DO NOT FORGET ABOUT BUILDS UPDATE (yarn prepare-builds)\""
+            "pre-commit": "lint-staged && echo \"DO NOT FORGET ABOUT BUILDS UPDATE (yarn prepare-builds)\""
         }
     },
     "author": "AdGuard",
@@ -58,6 +64,7 @@
         "eslint-plugin-compat": "^3.9.0",
         "eslint-plugin-import": "^2.22.1",
         "husky": "^3.1.0",
+        "lint-staged": "^12.1.2",
         "node-qunit-puppeteer": "^2.0.3",
         "qunit": "^2.9.3",
         "rollup": "^2.21.0",
