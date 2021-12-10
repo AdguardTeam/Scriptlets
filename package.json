@@ -1,6 +1,6 @@
 {
     "name": "@adguard/scriptlets",
-    "version": "1.4.43",
+    "version": "1.4.44",
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "scripts": {
         "watch": "rollup -c -w",
