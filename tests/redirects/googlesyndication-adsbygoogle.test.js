@@ -1,12 +1,22 @@
-/* eslint-disable no-underscore-dangle, no-eval */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle */
+import { runRedirect, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'googlesyndication-adsbygoogle';
 
-module(name);
+const changingProps = ['hit', '__debug', 'adsbygoogle'];
 
-const evalWrapper = eval;
+const beforeEach = () => {
+    window.__debug = () => {
+        window.hit = 'FIRED';
+    };
+};
+
+const afterEach = () => {
+    clearGlobalProps(...changingProps);
+};
+
+module(name, { beforeEach, afterEach });
 
 // Create advertisement section
 const createAdElement = () => {
@@ -39,17 +49,9 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('Redirect testing', (assert) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    window.__debug = () => { window.hit = 'FIRED'; };
-
     const ad = createAdElement();
 
-    // run scriptlet
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
+    runRedirect(name);
 
     // check if iframes were created by scriptlet
     const adsbygoogleElems = document.getElementsByClassName('adsbygoogle');
@@ -72,6 +74,5 @@ test('Redirect testing', (assert) => {
     window.adsbygoogle.push('somedata');
     assert.strictEqual(window.adsbygoogle.length, 1, 'API was mocked');
 
-    clearGlobalProps('__debug', 'hit', 'adsbygoogle');
     removeBodyElement(ad);
 });

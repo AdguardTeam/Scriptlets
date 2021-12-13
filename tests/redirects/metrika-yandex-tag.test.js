@@ -1,26 +1,28 @@
 /* eslint-disable eqeqeq, no-underscore-dangle, no-eval */
-import { clearGlobalProps } from '../helpers';
+import { runRedirect, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'metrika-yandex-tag';
 
-module(name);
+const changingProps = ['hit', '__debug', 'ym'];
 
-const evalWrapper = eval;
+const beforeEach = () => {
+    window.__debug = () => {
+        window.hit = 'FIRED';
+    };
+};
+
+const afterEach = () => {
+    clearGlobalProps(...changingProps);
+};
+
+module(name, { beforeEach, afterEach });
 
 test('API mocking test', (assert) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    window.__debug = () => { window.hit = 'FIRED'; };
-
     assert.expect(6);
 
-    const resString = window.scriptlets.redirects.getCode(params);
-
     // Mock case: window.ym === 'undefined'
-    evalWrapper(resString);
+    runRedirect(name);
 
     assert.ok(window.ym, 'Metrika function was created');
 
@@ -33,27 +35,20 @@ test('API mocking test', (assert) => {
     window.ym = () => {};
     window.ym.a = [[counterId1], [counterId2]];
 
-    evalWrapper(resString);
+    runRedirect(name);
 
     assert.ok(window.ym, 'Metrika function was created');
     assert.ok(typeof window[`yaCounter${counterId1}`] === 'object', 'yaCounter1 was created');
     assert.ok(typeof window[`yaCounter${counterId1}`] === 'object', 'yaCounter2 was created');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    clearGlobalProps('__debug', 'hit', 'ym', `yaCounter${counterId1}`, `yaCounter${counterId1}`);
+    clearGlobalProps(`yaCounter${counterId1}`, `yaCounter${counterId1}`);
 });
 
 test('ym: API methods test', (assert) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    window.__debug = () => { window.hit = 'FIRED'; };
-
     assert.expect(5);
 
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
+    runRedirect(name);
 
     assert.ok(window.ym, 'Metrika function was created');
 
@@ -86,25 +81,16 @@ test('ym: API methods test', (assert) => {
     window.ym(1, 'reachGoal', 'target', 'params', reachGoalCb, 123);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    clearGlobalProps('__debug', 'hit', 'ym');
 });
 
 test('yaCounter: API methods test', (assert) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    window.__debug = () => { window.hit = 'FIRED'; };
-
     assert.expect(6);
-
-    const resString = window.scriptlets.redirects.getCode(params);
 
     const id = 111;
     window.ym = () => {};
     window.ym.a = [[id]];
 
-    evalWrapper(resString);
+    runRedirect(name);
 
     assert.ok(window.ym, 'Metrika function was created');
     assert.ok(typeof window[`yaCounter${id}`] === 'object', 'yaCounter1 was created');
@@ -139,5 +125,5 @@ test('yaCounter: API methods test', (assert) => {
     yaCounter.reachGoal(1, 'target', 'params', reachGoalCb, 123);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    clearGlobalProps('__debug', 'hit', 'ym', `yaCounter${id}`);
+    clearGlobalProps(`yaCounter${id}`);
 });

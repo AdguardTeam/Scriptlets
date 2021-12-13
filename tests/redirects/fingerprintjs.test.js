@@ -1,12 +1,22 @@
-/* eslint-disable no-underscore-dangle, no-eval */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle */
+import { runRedirect, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'fingerprintjs';
 
-module(name);
+const changingProps = ['hit', '__debug'];
 
-const evalWrapper = eval;
+const beforeEach = () => {
+    window.__debug = () => {
+        window.hit = 'FIRED';
+    };
+};
+
+const afterEach = () => {
+    clearGlobalProps(...changingProps);
+};
+
+module(name, { beforeEach, afterEach });
 
 test('Checking if alias name works', (assert) => {
     const adgParams = {
@@ -27,15 +37,7 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('Fingerprint2 works', (assert) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    window.__debug = () => { window.hit = 'FIRED'; };
-
-    // run scriptlet
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
+    runRedirect(name);
 
     const done = assert.async();
 
@@ -49,5 +51,4 @@ test('Fingerprint2 works', (assert) => {
     window.Fingerprint2.get([], cb);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    clearGlobalProps('__debug', 'hit');
 });

@@ -1,23 +1,25 @@
-/* eslint-disable no-underscore-dangle, no-eval */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle */
+import { runRedirect, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'ati-smarttag';
 
-module(name);
+const changingProps = ['hit', '__debug'];
 
-const evalWrapper = eval;
+const beforeEach = () => {
+    window.__debug = () => {
+        window.hit = 'FIRED';
+    };
+};
+
+const afterEach = () => {
+    clearGlobalProps(...changingProps);
+};
+
+module(name, { beforeEach, afterEach });
 
 test('ati-smarttag: works', (assert) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    window.__debug = () => { window.hit = 'FIRED'; };
-
-    // run redirect
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
+    runRedirect(name);
 
     const { ATInternet } = window;
 
@@ -133,5 +135,4 @@ test('ati-smarttag: works', (assert) => {
     assert.strictEqual(tag.richMedia.removeAll(), undefined, 'tag.richMedia.removeAll() is mocked');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    clearGlobalProps('__debug', 'hit');
 });

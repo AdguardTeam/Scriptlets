@@ -1,12 +1,22 @@
-/* eslint-disable no-underscore-dangle, no-eval */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle */
+import { runRedirect, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'google-analytics';
 
-module(name);
+const changingProps = ['hit', '__debug', 'dataLayer', 'ga'];
 
-const evalWrapper = eval;
+const beforeEach = () => {
+    window.__debug = () => {
+        window.hit = 'FIRED';
+    };
+};
+
+const afterEach = () => {
+    clearGlobalProps(...changingProps);
+};
+
+module(name, { beforeEach, afterEach });
 
 const mockGoogleDataLayer = (endCallback) => {
     window.dataLayer = {
@@ -67,12 +77,6 @@ test('Check whether googletagmanager-gtm works as alias', (assert) => {
 });
 
 test('Check ga api', (assert) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    window.__debug = () => { window.hit = 'FIRED'; };
-
     const endCallback = () => {
         assert.ok(true, 'hide.end() was executed');
     };
@@ -80,9 +84,7 @@ test('Check ga api', (assert) => {
     // emulate DataLayer
     mockGoogleDataLayer(endCallback);
 
-    // run scriptlet
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
+    runRedirect(name);
 
     // check ga api
     assert.ok(window.ga, 'ga object was created');
@@ -93,20 +95,11 @@ test('Check ga api', (assert) => {
     assert.notOk(window.ga.remove(), 'remove returns undefined');
     assert.strictEqual(window.ga.loaded, true, 'loaded returns true');
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-
-    clearGlobalProps('__debug', 'hit', 'dataLayer', 'ga');
 });
 
 test('Function as lastArg', (assert) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    window.__debug = () => { window.hit = 'FIRED'; };
+    runRedirect(name);
 
-    // run scriptlet
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
     const done = assert.async();
 
     const testMethod = () => {
@@ -118,18 +111,11 @@ test('Function as lastArg', (assert) => {
     assert.notEqual(window.ga.length, 0, 'ga.length was mocked');
     setTimeout(() => {
         assert.equal(window.test, true, 'lastArg-function has run');
-        clearGlobalProps('__debug', 'hit', 'ga');
         done();
     }, 20);
 });
 
 test('Test google tag manager mocking', (assert) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    window.__debug = () => { window.hit = 'FIRED'; };
-
     assert.expect(3);
 
     const endCallback = () => {
@@ -138,24 +124,14 @@ test('Test google tag manager mocking', (assert) => {
     // emulate API
     mockGoogleTagManagerApi(endCallback);
 
-    // run scriptlet
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
+    runRedirect(name);
 
     assert.strictEqual(window.google_optimize.get(), undefined, 'google_optimize.get has been mocked');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-
-    clearGlobalProps('__debug', 'hit');
 });
 
 test('Test eventCallback mocking', (assert) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    window.__debug = () => { window.hit = 'FIRED'; };
-
     assert.expect(3);
 
     const endCallback = () => {
@@ -166,9 +142,8 @@ test('Test eventCallback mocking', (assert) => {
     const gtag = (data) => {
         dataLayer.push(data);
     };
-    // run scriptlet
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
+
+    runRedirect(name);
 
     const done = assert.async();
     const data = {
@@ -180,17 +155,9 @@ test('Test eventCallback mocking', (assert) => {
     gtag(data);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-
-    clearGlobalProps('__debug', 'hit');
 });
 
 test('Test event_callback mocking', (assert) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    window.__debug = () => { window.hit = 'FIRED'; };
-
     assert.expect(3);
 
     const endCallback = () => {
@@ -201,9 +168,8 @@ test('Test event_callback mocking', (assert) => {
     const gtag = (data) => {
         dataLayer.push(data);
     };
-    // run scriptlet
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
+
+    runRedirect(name);
 
     const done = assert.async();
     const data = {
@@ -215,17 +181,9 @@ test('Test event_callback mocking', (assert) => {
     gtag({ data });
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-
-    clearGlobalProps('__debug', 'hit');
 });
 
 test('Test callback mocking', (assert) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    window.__debug = () => { window.hit = 'FIRED'; };
-
     assert.expect(3);
 
     const endCallback = () => {
@@ -236,9 +194,8 @@ test('Test callback mocking', (assert) => {
     const gtag = (data) => {
         dataLayer.push(data);
     };
-    // run scriptlet
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
+
+    runRedirect(name);
 
     const done = assert.async();
     const data = [
@@ -254,6 +211,4 @@ test('Test callback mocking', (assert) => {
     gtag(data);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-
-    clearGlobalProps('__debug', 'hit');
 });

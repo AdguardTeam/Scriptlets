@@ -1,12 +1,22 @@
-/* eslint-disable no-underscore-dangle, no-eval */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle */
+import { runRedirect, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'googletagservices-gpt';
 
-module(name);
+const changingProps = ['hit', '__debug'];
 
-const evalWrapper = eval;
+const beforeEach = () => {
+    window.__debug = () => {
+        window.hit = 'FIRED';
+    };
+};
+
+const afterEach = () => {
+    clearGlobalProps(...changingProps);
+};
+
+module(name, { beforeEach, afterEach });
 
 const companionAdsService = {
     addEventListener: null,
@@ -37,15 +47,7 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('AdGuard Syntax', (assert) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    window.__debug = () => { window.hit = 'FIRED'; };
-
-    // run scriptlet
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
+    runRedirect(name);
 
     assert.ok(window.googletag, 'window.googletag have been created');
     assert.equal(window.googletag.apiReady, true, 'apiReady');
@@ -59,5 +61,4 @@ test('AdGuard Syntax', (assert) => {
     assert.strictEqual(mockedPubads.enableLazyLoad(), undefined, 'pubads().enableLazyLoad() is mocked');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    clearGlobalProps('__debug', 'hit');
 });

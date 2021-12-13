@@ -1,12 +1,22 @@
-/* eslint-disable no-underscore-dangle, no-eval */
-import { clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle */
+import { runRedirect, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'google-analytics-ga';
 
-module(name);
+const changingProps = ['hit', '__debug', '_gat', '_gaq'];
 
-const evalWrapper = eval;
+const beforeEach = () => {
+    window.__debug = () => {
+        window.hit = 'FIRED';
+    };
+};
+
+const afterEach = () => {
+    clearGlobalProps(...changingProps);
+};
+
+module(name, { beforeEach, afterEach });
 
 test('Checking if alias name works', (assert) => {
     const adgParams = {
@@ -27,15 +37,7 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('AdGuard Syntax _gat', (assert) => {
-    const params = {
-        name,
-        verbose: true,
-    };
-    window.__debug = () => { window.hit = 'FIRED'; };
-
-    // run scriptlet
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
+    runRedirect(name);
 
     assert.ok(window._gat, '_gat object was created');
     assert.notOk(window._gat._createTracker(), '_createTracker returns nothing');
@@ -47,20 +49,12 @@ test('AdGuard Syntax _gat', (assert) => {
 
     // hit checking
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-
-    clearGlobalProps('__debug', 'hit', '_gat');
 });
 
 test('AdGuard Syntax _gaq', (assert) => {
-    const params = {
-        name,
-        verbose: true,
-    };
     window.__debug = () => { window.hit = 'FIRED'; };
 
-    // run scriptlet
-    const resString = window.scriptlets.redirects.getCode(params);
-    evalWrapper(resString);
+    runRedirect(name);
 
     assert.expect(6);
 
@@ -75,6 +69,4 @@ test('AdGuard Syntax _gaq', (assert) => {
 
     // hit checking
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-
-    clearGlobalProps('__debug', 'hit', '_gaq');
 });

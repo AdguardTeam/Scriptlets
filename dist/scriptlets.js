@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.4.41
+ * Version 1.4.43
  */
 
 (function () {
@@ -5564,6 +5564,8 @@
       adg: 'googletagservices-gpt',
       ubo: 'googletagservices_gpt.js'
     }, {
+      adg: 'gemius'
+    }, {
       adg: 'matomo'
     }, {
       adg: 'metrika-yandex-watch'
@@ -7291,6 +7293,36 @@
     Fingerprintjs.names = ['fingerprintjs', 'ubo-fingerprint2.js', 'fingerprintjs.js'];
     Fingerprintjs.injections = [hit, noopFunc];
 
+    /* eslint-disable func-names */
+    /**
+     * @redirect gemius
+     *
+     * @description
+     * Mocks Gemius Analytics.
+     * https://flowplayer.com/developers/plugins/gemius
+     *
+     * **Example**
+     * ```
+     * ||gapt.hit.gemius.pl/gplayer.js$script,redirect=gemius
+     * ```
+     */
+
+    function Gemius(source) {
+      var GemiusPlayer = function GemiusPlayer() {};
+
+      GemiusPlayer.prototype = {
+        setVideoObject: noopFunc,
+        newProgram: noopFunc,
+        programEvent: noopFunc,
+        newAd: noopFunc,
+        adEvent: noopFunc
+      };
+      window.GemiusPlayer = GemiusPlayer;
+      hit(source);
+    }
+    Gemius.names = ['gemius'];
+    Gemius.injections = [hit, noopFunc];
+
     /**
      * @redirect ati-smarttag
      *
@@ -7399,6 +7431,7 @@
         AmazonApstag: AmazonApstag,
         Matomo: Matomo,
         Fingerprintjs: Fingerprintjs,
+        Gemius: Gemius,
         ATInternetSmartTag: ATInternetSmartTag
     });
 

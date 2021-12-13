@@ -39,3 +39,17 @@ export const runScriptlet = (name, args, verbose = true) => {
     const resultString = window.scriptlets.invoke(params);
     evalWrapper(resultString);
 };
+
+/**
+ * Runs redirect
+ * @param {string} name redirect name
+ * @param {boolean} [verbose=true]
+ */
+export const runRedirect = (name, verbose = true) => {
+    const params = {
+        name,
+        verbose,
+    };
+    const resultString = window.scriptlets.redirects.getCode(params);
+    evalWrapper(resultString);
+};
