@@ -5,7 +5,7 @@ import { startsWith } from '../../src/helpers/string-utils';
 const { test, module } = QUnit;
 const name = 'prevent-fetch';
 
-const FETCH_OBJECTS_PATH = './fetch-objects';
+const FETCH_OBJECTS_PATH = './test-files';
 const nativeFetch = fetch;
 const nativeConsole = console.log;
 const nativeResponseJson = Response.prototype.json; // eslint-disable-line compat/compat

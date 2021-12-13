@@ -5,7 +5,7 @@ const name = 'json-prune';
 const nativeParse = JSON.parse;
 const nativeConsole = console.log;
 
-const FETCH_OBJECTS_PATH = './fetch-objects';
+const FETCH_OBJECTS_PATH = './test-files';
 
 const afterEach = () => {
     console.log = nativeConsole;

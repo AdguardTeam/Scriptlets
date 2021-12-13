@@ -155,7 +155,7 @@ const testConfig = {
                 src: [
                     'tests/tests.html',
                     'tests/styles.css',
-                    'tests/scriptlets/fetch-objects',
+                    'tests/scriptlets/test-files',
                     'node_modules/qunit/qunit/qunit.js',
                     'node_modules/sinon/pkg/sinon.js',
                     'dist/scriptlets.js',

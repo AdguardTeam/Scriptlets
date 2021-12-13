@@ -135,7 +135,7 @@ test('new syntax: iframe with delayed removing', (assert) => {
     runScriptlet(name, scriptletArgs);
     const done = assert.async();
 
-    const test = window.open('test_url_for_iframe');
+    const test = window.open('test-files/empty.html');
     let iframeEl = document.querySelector('body > iframe');
     assert.strictEqual(typeof test, 'object', 'mocked window.open returns an iframe');
     assert.strictEqual(typeof test.focus, 'function', 'and iframe\'s focus property is a function');
@@ -155,7 +155,7 @@ test('new syntax: object with delayed removing', (assert) => {
     runScriptlet(name, scriptletArgs);
     const done = assert.async();
 
-    const test = window.open('test_url_for_obj');
+    const test = window.open('test-files/empty.html');
     const iframeEl = document.querySelector('body > iframe');
     let objEl = document.querySelector('body > object');
     // window.open returns 'undefined' in Edge 15
@@ -197,7 +197,7 @@ test('new syntax: log checking - only url', (assert) => {
 });
 
 test('new syntax: log checking - url + args', (assert) => {
-    const testUrl = 'test_url_for_logging_all_args';
+    const testUrl = 'test-files/empty.html';
     const testWindowName = 'testName';
     const testWindowFeatures = 'menubar=yes, status=yes';
 
@@ -232,7 +232,7 @@ test('new syntax: native code check', (assert) => {
 });
 
 test('new syntax: props mocked', (assert) => {
-    const testUrl = 'test_url_for_props';
+    const testUrl = 'test-files/empty.html';
 
     const scriptletArgs = [testUrl, '100'];
     runScriptlet(name, scriptletArgs);
