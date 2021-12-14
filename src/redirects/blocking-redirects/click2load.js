@@ -201,9 +201,9 @@ function clickToLoad() {
             extRun();
         } else if (clUnblockToken) {
             clRun();
+            e.stopPropagation();
+            e.preventDefault();
         }
-
-        e.stopPropagation();
     });
 
     // custom listener for corelibs force click without e.isTrusted checking

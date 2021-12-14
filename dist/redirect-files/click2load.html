@@ -221,8 +221,9 @@
           extRun();
         } else if (clUnblockToken) {
           clRun();
+          e.stopPropagation();
+          e.preventDefault();
         }
-        e.stopPropagation();
       });
       clickButtonElem.addEventListener(CL_FORCE_EVENT, function () {
         clRun();

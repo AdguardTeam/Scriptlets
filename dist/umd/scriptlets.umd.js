@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.4.41
+ * Version 1.4.46
  */
 
 (function (factory) {
@@ -5460,6 +5460,58 @@
     preventXHR.injections = [hit, objectToString, getWildcardSymbol, parseMatchProps, validateParsedData, getMatchPropsData, toRegExp, validateStrPattern, isEmptyObject, getObjectEntries];
 
     /**
+     * @scriptlet close-window
+     *
+     * @description
+     * Closes the browser tab immediately.
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('close-window'[, path])
+     *
+     * - `path` — optional, string or regular expression
+     * matching the current location's path: `window.location.pathname` + `window.location.search`.
+     * Defaults to execute on every page.
+     *
+     * **Examples**
+     * ```
+     * ! closes any example.org tab
+     * example.org#%#//scriptlet('close-window')
+     *
+     * ! closes specific example.org tab
+     * example.org#%#//scriptlet('close-window', '/example-page.html')
+     * ```
+     */
+
+    function forceWindowClose(source) {
+      var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+
+      var closeImmediately = function closeImmediately() {
+        try {
+          hit(source);
+          window.close();
+        } catch (e) {
+          // log the error if window closing is impossible
+          // https://developer.mozilla.org/en-US/docs/Web/API/Window/close
+          console.log(e); // eslint-disable-line no-console
+        }
+      };
+
+      if (path === '') {
+        closeImmediately();
+      } else {
+        var pathRegexp = toRegExp(path);
+        var currentPath = "".concat(window.location.pathname).concat(window.location.search);
+
+        if (pathRegexp.test(currentPath)) {
+          closeImmediately();
+        }
+      }
+    }
+    forceWindowClose.names = ['close-window'];
+    forceWindowClose.injections = [hit, toRegExp];
+
+    /**
      * This file must export all scriptlets which should be accessible
      */
 
@@ -5507,7 +5559,8 @@
         setSessionStorageItem: setSessionStorageItem,
         abortOnStacktrace: abortOnStacktrace,
         logOnStacktrace: logOnStacktrace,
-        preventXHR: preventXHR
+        preventXHR: preventXHR,
+        forceWindowClose: forceWindowClose
     });
 
     /**
@@ -5565,6 +5618,8 @@
     }, {
       adg: 'googletagservices-gpt',
       ubo: 'googletagservices_gpt.js'
+    }, {
+      adg: 'gemius'
     }, {
       adg: 'matomo'
     }, {
@@ -7293,6 +7348,36 @@
     Fingerprintjs.names = ['fingerprintjs', 'ubo-fingerprint2.js', 'fingerprintjs.js'];
     Fingerprintjs.injections = [hit, noopFunc];
 
+    /* eslint-disable func-names */
+    /**
+     * @redirect gemius
+     *
+     * @description
+     * Mocks Gemius Analytics.
+     * https://flowplayer.com/developers/plugins/gemius
+     *
+     * **Example**
+     * ```
+     * ||gapt.hit.gemius.pl/gplayer.js$script,redirect=gemius
+     * ```
+     */
+
+    function Gemius(source) {
+      var GemiusPlayer = function GemiusPlayer() {};
+
+      GemiusPlayer.prototype = {
+        setVideoObject: noopFunc,
+        newProgram: noopFunc,
+        programEvent: noopFunc,
+        newAd: noopFunc,
+        adEvent: noopFunc
+      };
+      window.GemiusPlayer = GemiusPlayer;
+      hit(source);
+    }
+    Gemius.names = ['gemius'];
+    Gemius.injections = [hit, noopFunc];
+
     /**
      * @redirect ati-smarttag
      *
@@ -7401,6 +7486,7 @@
         AmazonApstag: AmazonApstag,
         Matomo: Matomo,
         Fingerprintjs: Fingerprintjs,
+        Gemius: Gemius,
         ATInternetSmartTag: ATInternetSmartTag
     });
 
