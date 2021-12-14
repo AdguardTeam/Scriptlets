@@ -194,6 +194,10 @@ test('Test SCRIPTLET converting - ADG -> UBO', (assert) => {
     inputAdg = 'example.com#%#//scriptlet(\'prevent-fetch\', \'*\')';
     expectedUbo = 'example.com##+js(no-fetch-if, /^/)';
     assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
+
+    inputAdg = 'example.com#%#//scriptlet(\'close-window\')';
+    expectedUbo = 'example.com##+js(window-close-if)';
+    assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
 });
 
 test('Test redirect rule validation', (assert) => {

@@ -49,6 +49,20 @@ test('works: string path', (assert) => {
     assert.strictEqual(window[TEST_PROP], true, 'mocked window.close() has been called');
 });
 
+test('does not work: window.close is not a function', (assert) => {
+    assert.equal(window.hit, undefined, 'Hit function not executed yet');
+
+    window.close = {
+        isFunction: false,
+    };
+
+    const scriptletArgs = [''];
+    runScriptlet(name, scriptletArgs);
+
+    assert.equal(window.hit, undefined, 'Hit should not be executed');
+    assert.strictEqual(window[TEST_PROP], false, 'mockedWindowClose() was not called');
+});
+
 test('does not work: invalid regexp pattern', (assert) => {
     assert.equal(window.hit, undefined, 'Hit function not executed yet');
 

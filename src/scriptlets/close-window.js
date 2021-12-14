@@ -24,6 +24,17 @@ import { hit, toRegExp } from '../helpers';
  * ```
  */
 export function forceWindowClose(source, path = '') {
+    // eslint-disable-next-line no-console
+    const log = console.log.bind(console);
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/158#issuecomment-993423036
+    if (typeof window.close !== 'function') {
+        if (source.verbose) {
+            log('window.close() is not a function so \'close-window\' scriptlet is unavailable');
+        }
+        return;
+    }
+
     const closeImmediately = () => {
         try {
             hit(source);
@@ -31,7 +42,7 @@ export function forceWindowClose(source, path = '') {
         } catch (e) {
             // log the error if window closing is impossible
             // https://developer.mozilla.org/en-US/docs/Web/API/Window/close
-            console.log(e); // eslint-disable-line no-console
+            log(e);
         }
     };
 
@@ -49,6 +60,9 @@ export function forceWindowClose(source, path = '') {
 
 forceWindowClose.names = [
     'close-window',
+    'window-close-if.js',
+    'ubo-window-close-if.js',
+    'ubo-window-close-if',
 ];
 
 forceWindowClose.injections = [hit, toRegExp];
