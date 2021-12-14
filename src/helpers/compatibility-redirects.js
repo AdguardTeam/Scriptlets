@@ -128,6 +128,10 @@ const redirects = [
         ubo: 'nobab.js',
     },
     {
+        adg: 'prevent-bab2',
+        ubo: 'nobab2.js',
+    },
+    {
         adg: 'prevent-fab-3.2.0',
         ubo: 'nofab.js',
     },

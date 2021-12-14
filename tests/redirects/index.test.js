@@ -10,3 +10,4 @@ import './amazon-apstag.test';
 import './matomo.test';
 import './fingerprintjs.test';
 import './ati-smarttag.test';
+import './prevent-bab2.test';
