@@ -91,7 +91,8 @@ test('Check ga api', (assert) => {
     assert.notEqual(window.ga.length, 0, 'ga.length was mocked');
     assert.ok(window.ga.create(), 'Tracker was created');
     assert.ok(window.ga.getByName(), 'getByName returns Tracker too');
-    assert.strictEqual(window.ga.getAll().length, 0, 'getAll returns empty array');
+    assert.strictEqual(window.ga.getAll().length, 1, 'getAll returns empty array');
+    assert.notOk(window.ga.getAll()[0].get(), 'Tracker doesnt return anything');
     assert.notOk(window.ga.remove(), 'remove returns undefined');
     assert.strictEqual(window.ga.loaded, true, 'loaded returns true');
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
