@@ -165,6 +165,7 @@ function clickToLoad() {
             // no divider needed for url with question mark && without search params
             divider = '';
         }
+        // eslint-disable-next-line max-len
         return `${originUrl}${divider}${unblockTokenName}${SEARCH_PARAMS_DIVIDER}${unblockTokenValue}`;
     };
 

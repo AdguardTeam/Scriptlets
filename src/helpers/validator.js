@@ -374,6 +374,7 @@ const hasValidContentType = (rule) => {
         .filter((el) => VALID_SOURCE_TYPES.indexOf(el) > -1);
 
     const isSourceTypeSpecified = sourceTypes.length > 0;
+    // eslint-disable-next-line max-len
     const isEmptyRedirect = ruleModifiers.indexOf(`${ADG_UBO_REDIRECT_MARKER}${EMPTY_REDIRECT_MARKER}`) > -1;
 
     if (isEmptyRedirect) {

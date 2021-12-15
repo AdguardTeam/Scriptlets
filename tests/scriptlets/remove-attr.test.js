@@ -127,7 +127,7 @@ test('single attr + single selector', (assert) => {
 
     attrs.forEach((a) => {
         assert.notOk(matchElem.getAttribute(a), `Attr ${a} removed for selector-matched element`);
-        assert.ok(mismatchElem.getAttribute(a), `Attr ${a} should not be removed for mismatched elements`);
+        assert.ok(mismatchElem.getAttribute(a), `Attr ${a} not removed for mismatched elements`);
     });
     assert.strictEqual(window.hit, 'FIRED');
     clearGlobalProps('hit');

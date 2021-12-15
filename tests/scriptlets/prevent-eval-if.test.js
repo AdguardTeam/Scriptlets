@@ -46,7 +46,7 @@ test('AG prevent-eval-if works', (assert) => {
     const firstActual = evalWrapper(`(function () {return '${agPreventEvalIf}'})()`);
     assert.strictEqual(window.hit, undefined, 'hit function should not fire for not matched function');
     assert.strictEqual(firstActual, agPreventEvalIf, 'result of eval evaluation should exist');
-
+    // eslint-disable-next-line max-len
     const secondActual = evalWrapper(`(function () {const test = 0; return '${agPreventEvalIf}'})()`);
     assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
     assert.strictEqual(secondActual, undefined, 'result of eval evaluation should be undefined');

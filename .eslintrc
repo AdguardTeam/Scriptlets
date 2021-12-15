@@ -11,5 +11,6 @@
   "env": {
     "browser": true,
     "qunit": true
-  }
+  },
+  "parser": "@babel/eslint-parser"
 }

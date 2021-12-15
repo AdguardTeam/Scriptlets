@@ -143,7 +143,7 @@ export function setConstant(source, property, value, stack) {
                 const props = property.split('.');
                 const propIndex = props.indexOf(prop);
                 const baseName = props[propIndex - 1];
-                console.log(`set-constant failed because the property '${baseName}' does not exist`); // eslint-disable-line no-console
+                console.log(`set-constant failed because the property '${baseName}' does not exist`); // eslint-disable-line no-console, max-len
             }
             return;
         }

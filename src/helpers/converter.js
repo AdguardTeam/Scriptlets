@@ -390,6 +390,7 @@ export const convertAdgRedirectToUbo = (rule) => {
         const sourceTypesData = validator.ABSENT_SOURCE_TYPE_REPLACEMENT
             .find((el) => el.NAME === adgRedirectName);
         if (typeof sourceTypesData === 'undefined') {
+            // eslint-disable-next-line max-len
             throw new Error(`Unable to convert for uBO - no types to add for specific redirect in rule: ${rule}`);
         }
         const additionModifiers = sourceTypesData.TYPES;

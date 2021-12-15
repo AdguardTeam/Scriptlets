@@ -6,6 +6,7 @@ import * as dependencies from '.';
  */
 export function attachDependencies(scriptlet) {
     const { injections = [] } = scriptlet;
+    // eslint-disable-next-line max-len
     return injections.reduce((accum, dep) => `${accum}\n${dependencies[dep.name]}`, scriptlet.toString());
 }
 

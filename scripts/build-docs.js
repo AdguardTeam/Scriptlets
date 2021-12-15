@@ -182,9 +182,10 @@ function init() {
         const redirectsMarkdownData = generateMD(manageDataFromFiles().redirectsData);
         const staticRedirectsMarkdownData = mdForStaticRedirects();
 
+        // eslint-disable-next-line max-len
         const scriptletsAbout = `## <a id="scriptlets"></a> Available Scriptlets\n${scriptletsMarkdownData.list}* * *\n${scriptletsMarkdownData.body}`;
         fs.writeFileSync(path.resolve(__dirname, ABOUT_SCRIPTLETS_PATH), scriptletsAbout);
-
+        // eslint-disable-next-line max-len
         const redirectsAbout = `## <a id="redirect-resources"></a> Available Redirect resources\n${staticRedirectsMarkdownData.list}${redirectsMarkdownData.list}* * *\n${staticRedirectsMarkdownData.body}${redirectsMarkdownData.body}`;
         fs.writeFileSync(path.resolve(__dirname, ABOUT_REDIRECTS_PATH), redirectsAbout);
     } catch (e) {

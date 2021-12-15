@@ -1,4 +1,4 @@
-/* eslint-disable no-underscore-dangle */
+/* eslint-disable no-underscore-dangle, max-len */
 import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;

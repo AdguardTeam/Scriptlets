@@ -53,7 +53,7 @@ test('selector + attr + eligible number', (assert) => {
 
     changeAttr(matchElem, attr);
     setTimeout(() => {
-        assert.ok(matchElem.getAttribute(attr) === value, `New attr value ${value} is still correct`);
+        assert.ok(matchElem.getAttribute(attr) === value, `New attr val ${value} is still correct`);
         assert.strictEqual(window.hit, 'FIRED');
         // Clean up test elements
         matchElem.remove();

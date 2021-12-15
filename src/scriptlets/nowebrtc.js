@@ -34,6 +34,7 @@ export function nowebrtc(source) {
     }
 
     const rtcReplacement = (config) => {
+        // eslint-disable-next-line max-len
         hit(source, `Document tried to create an RTCPeerConnection: ${convertRtcConfigToString(config)}`);
     };
     rtcReplacement.prototype = {

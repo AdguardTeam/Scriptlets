@@ -76,7 +76,7 @@ export function debugCurrentInlineScript(source, property, search) {
             const props = property.split('.');
             const propIndex = props.indexOf(prop);
             const baseName = props[propIndex - 1];
-            console.log(`The scriptlet had been executed before the ${baseName} was loaded.`); // eslint-disable-line no-console
+            console.log(`The scriptlet had been executed before the ${baseName} was loaded.`); // eslint-disable-line no-console, max-len
             return;
         }
 

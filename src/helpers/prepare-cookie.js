@@ -44,6 +44,7 @@ export const prepareCookie = (name, value) => {
     }
 
     const pathToSet = 'path=/;';
+    // eslint-disable-next-line max-len
     const cookieData = `${encodeURIComponent(name)}=${encodeURIComponent(valueToSet)}; ${pathToSet}`;
 
     return cookieData;
