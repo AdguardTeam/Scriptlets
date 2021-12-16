@@ -65,7 +65,7 @@ test('prevent-requestAnimationFrame: no args -- logging', (assert) => {
         assert.strictEqual(window[logProperty], 'changed', 'property changed');
         clearGlobalProps(logProperty);
         done();
-    }, 50);
+    }, 100);
 });
 
 test('prevent-requestAnimationFrame: by callback name', (assert) => {
@@ -87,7 +87,7 @@ test('prevent-requestAnimationFrame: by callback name', (assert) => {
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         clearGlobalProps('one');
         done();
-    }, 10);
+    }, 100);
 });
 
 test('prevent-requestAnimationFrame: by regex match', (assert) => {
@@ -109,7 +109,7 @@ test('prevent-requestAnimationFrame: by regex match', (assert) => {
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         clearGlobalProps('aaa');
         done();
-    }, 10);
+    }, 100);
 });
 
 test('prevent-requestAnimationFrame: !match', (assert) => {
@@ -138,7 +138,7 @@ test('prevent-requestAnimationFrame: !match', (assert) => {
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         clearGlobalProps('one', 'two');
         done();
-    }, 50);
+    }, 200);
 });
 
 test('prevent-requestAnimationFrame: does not work - invalid regexp pattern', (assert) => {
@@ -161,5 +161,5 @@ test('prevent-requestAnimationFrame: does not work - invalid regexp pattern', (a
         assert.strictEqual(window.hit, undefined, 'hit should not fire');
         clearGlobalProps(property);
         done();
-    }, 30);
+    }, 200);
 });

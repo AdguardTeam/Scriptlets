@@ -148,6 +148,7 @@ test('Test eventCallback mocking', (assert) => {
 
     const done = assert.async();
     const data = {
+        checkHandler: undefined,
         eventCallback() {
             assert.ok(true, 'Event callback was executed');
             done();
@@ -174,6 +175,7 @@ test('Test event_callback mocking', (assert) => {
 
     const done = assert.async();
     const data = {
+        checkHandler: undefined,
         event_callback: () => {
             assert.ok(true, 'Event callback was executed');
             done();

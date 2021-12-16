@@ -83,7 +83,7 @@ export function GoogleAnalytics(source) {
      * @returns
      */
     const handleCallback = (dataObj, funcName) => {
-        if (typeof dataObj[funcName] === 'function') {
+        if (dataObj && typeof dataObj[funcName] === 'function') {
             setTimeout(dataObj[funcName]);
         }
     };
