@@ -31,14 +31,14 @@ export function logAddEventListener(source) {
 
     function addEventListenerWrapper(type, listener, ...args) {
         if (validateType(type) && validateListener(listener)) {
-            const logMessage = `log: addEventListener("${type}", ${listenerToString(listener)})`;
-            hit(source, logMessage);
+            const logMessage = `addEventListener("${type}", ${listenerToString(listener)})`;
+            log(logMessage);
+            hit(source);
         } else if (source.verbose) {
             // logging while debugging
             const logMessage = `Invalid event type or listener passed to addEventListener:
 type: ${convertTypeToString(type)}
 listener: ${convertTypeToString(listener)}`;
-
             log(logMessage);
         }
 
