@@ -46,7 +46,7 @@ export function GoogleTagServicesGpt(source) {
     Slot.prototype.clearTargeting = noopThis;
     Slot.prototype.defineSizeMapping = noopThis;
     Slot.prototype.get = noopNull;
-    Slot.prototype.getAdUnitPath = noopArray;
+    Slot.prototype.getAdUnitPath = noopStr;
     Slot.prototype.getAttributeKeys = noopArray;
     Slot.prototype.getCategoryExclusions = noopArray;
     Slot.prototype.getDomId = noopStr;

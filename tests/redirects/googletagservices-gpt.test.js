@@ -62,3 +62,18 @@ test('AdGuard Syntax', (assert) => {
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 });
+
+test('Test Slot', (assert) => {
+    runRedirect(name);
+
+    assert.ok(window.googletag, 'window.googletag have been created');
+    assert.strictEqual(typeof window.googletag.defineSlot(), 'object', 'Slot has been mocked');
+
+    const slot = window.googletag.defineSlot();
+    assert.strictEqual(slot.getAdUnitPath(), '', '.getAdUnitPath() has been mocked.');
+    assert.strictEqual(slot.get(), null, '.get() has been mocked.');
+    assert.strictEqual(slot.getAttributeKeys().length, 0, '.getAttributeKeys() has been mocked.');
+    assert.strictEqual(typeof slot.addService(), 'object', '.addService() has been mocked.');
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
+});
