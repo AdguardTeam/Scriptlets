@@ -44,7 +44,7 @@ test('sets values correctly', (assert) => {
     const runSetConstantScriptlet = createScriptletRunner(0);
     let counter;
     // settings constant to true;
-    const trueProp = 'trueProp';
+    const trueProp = 'trueProp01';
     counter = runSetConstantScriptlet(trueProp, 'true');
     assert.strictEqual(window[trueProp], true);
     assert.strictEqual(window.counter, counter);
@@ -171,19 +171,19 @@ test('sets values correctly + stack match', (assert) => {
     window.__debug = () => {
         window.counter = window.counter ? window.counter + 1 : 1;
     };
-    const stackMatch = 'tests.js';
+    const stackMatch = 'set-constant';
     const runSetConstantScriptlet = createScriptletRunner(0);
     let counter;
 
-    const trueProp = 'trueProp';
+    const trueProp = 'trueProp02';
     counter = runSetConstantScriptlet(trueProp, 'true', stackMatch);
-    assert.strictEqual(window[trueProp], true);
+    assert.strictEqual(window[trueProp], true, 'stack match: trueProp - ok');
     assert.strictEqual(window.counter, counter);
     clearGlobalProps(trueProp);
 
     const numProp = 'numProp';
     counter = runSetConstantScriptlet(numProp, 123, stackMatch);
-    assert.strictEqual(window[numProp], 123);
+    assert.strictEqual(window[numProp], 123, 'stack match: numProp - ok');
     assert.strictEqual(window.counter, counter);
     clearGlobalProps(numProp);
 });

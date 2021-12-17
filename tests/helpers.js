@@ -3,8 +3,13 @@ export const clearGlobalProps = (...props) => {
         try {
             delete window[prop];
         } catch (e) {
-            // Safari does not allow to delete property
-            window[prop] = null;
+            try {
+                // Safari does not allow to delete property
+                window[prop] = null;
+            } catch (e) {
+                // some tests can not set property of window which has only a getter.
+                // e.g. 'popAdsProp' and 'popns' for set-popads-dummy scriptlet
+            }
         }
     });
 };

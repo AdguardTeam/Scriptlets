@@ -1,5 +1,5 @@
 /* eslint-disable func-names */
-import { hit, noopFunc } from '../helpers';
+import { hit } from '../helpers';
 
 /**
  * @redirect fingerprintjs
@@ -50,4 +50,4 @@ Fingerprintjs.names = [
     'fingerprintjs.js',
 ];
 
-Fingerprintjs.injections = [hit, noopFunc];
+Fingerprintjs.injections = [hit];

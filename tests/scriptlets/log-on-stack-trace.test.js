@@ -51,7 +51,6 @@ test('can set property', (assert) => {
 });
 
 test('logs specific message', (assert) => {
-    assert.expect(2);
     const scriptletArgs = [PROPERTY];
     const setProp = (prop) => {
         window[prop] = 'init';
