@@ -72,6 +72,9 @@ const redirects = [
         adg: 'gemius',
     },
     {
+        adg: 'google-ima3',
+    },
+    {
         adg: 'matomo',
     },
     {
