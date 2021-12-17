@@ -35,8 +35,6 @@ Build:
             yarn test
             yarn build
             rm -rf node_modules
-        environment: BROWSERSTACK_USER="${bamboo.browserstackUser}" \
-          BROWSERSTACK_KEY="${bamboo.browserstackPassword}"
   final-tasks:
     - clean
   requirements:
