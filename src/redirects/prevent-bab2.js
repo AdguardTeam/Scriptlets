@@ -2,7 +2,7 @@
 import { hit } from '../helpers';
 
 /**
- * @scriptlet prevent-bab2
+ * @redirect prevent-bab2
  *
  * @description
  * Prevents BlockAdblock script from detecting an ad blocker.

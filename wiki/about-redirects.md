@@ -15,7 +15,9 @@
 * [noopmp3-0.1s](#noopmp3-0.1s)
 * [noopmp4-1s](#noopmp4-1s)
 * [amazon-apstag](#amazon-apstag)
+* [ati-smarttag](#ati-smarttag)
 * [fingerprintjs](#fingerprintjs)
+* [gemius](#gemius)
 * [google-analytics-ga](#google-analytics-ga)
 * [google-analytics](#google-analytics)
 * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
@@ -25,6 +27,7 @@
 * [metrika-yandex-watch](#metrika-yandex-watch)
 * [noeval](#noeval)
 * [prevent-bab](#prevent-bab)
+* [prevent-bab2](#prevent-bab2)
 * [prevent-fab-3.2.0](#prevent-fab-3.2.0)
 * [prevent-popads-net](#prevent-popads-net)
 * [scorecardresearch-beacon](#scorecardresearch-beacon)
@@ -175,6 +178,19 @@ https://github.com/gorhill/uBlock/blob/f842ab6d3c1cf0394f95d27092bf59627262da40/
 [Redirect source](../src/redirects/amazon-apstag.js)
 * * *
 
+### <a id="ati-smarttag"></a> ⚡️ ati-smarttag
+
+Mocks AT Internat SmartTag.
+https://developers.atinternet-solutions.com/as2-tagging-en/javascript-en/getting-started-javascript-en/tracker-initialisation-javascript-en/
+
+**Example**
+```
+||bloctel.gouv.fr/assets/scripts/smarttag.js$script,redirect=ati-smarttag
+```
+
+[Redirect source](../src/redirects/ati-smarttag.js)
+* * *
+
 ### <a id="fingerprintjs"></a> ⚡️ fingerprintjs
 
 Mocks FingerprintJS.
@@ -189,6 +205,19 @@ https://github.com/gorhill/uBlock/commit/33a18c3a1eb101470c43979a41d8adef3e21208
 ```
 
 [Redirect source](../src/redirects/fingerprintjs.js)
+* * *
+
+### <a id="gemius"></a> ⚡️ gemius
+
+Mocks Gemius Analytics.
+https://flowplayer.com/developers/plugins/gemius
+
+**Example**
+```
+||gapt.hit.gemius.pl/gplayer.js$script,redirect=gemius
+```
+
+[Redirect source](../src/redirects/gemius.js)
 * * *
 
 ### <a id="google-analytics-ga"></a> ⚡️ google-analytics-ga
@@ -328,6 +357,23 @@ https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/
 ```
 
 [Redirect source](../src/redirects/prevent-bab.js)
+* * *
+
+### <a id="prevent-bab2"></a> ⚡️ prevent-bab2
+
+Prevents BlockAdblock script from detecting an ad blocker.
+
+Related UBO redirect:
+https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/nobab2.js
+
+See [redirect description](../wiki/about-redirects.md#prevent-bab2).
+
+**Syntax**
+```
+/blockadblock.$script,redirect=prevent-bab2
+```
+
+[Redirect source](../src/redirects/prevent-bab2.js)
 * * *
 
 ### <a id="prevent-fab-3.2.0"></a> ⚡️ prevent-fab-3.2.0

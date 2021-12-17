@@ -5,6 +5,7 @@
 * [abort-on-stack-trace](#abort-on-stack-trace)
 * [adjust-setInterval](#adjust-setInterval)
 * [adjust-setTimeout](#adjust-setTimeout)
+* [close-window](#close-window)
 * [debug-current-inline-script](#debug-current-inline-script)
 * [debug-on-property-read](#debug-on-property-read)
 * [debug-on-property-write](#debug-on-property-write)
@@ -288,6 +289,30 @@ defaults to match all callbacks; invalid regular expression will cause exit and 
     ```
 
 [Scriptlet source](../src/scriptlets/adjust-setTimeout.js)
+* * *
+
+### <a id="close-window"></a> ⚡️ close-window
+
+Closes the browser tab immediately.
+
+**Syntax**
+```
+example.org#%#//scriptlet('close-window'[, path])
+
+- `path` — optional, string or regular expression
+matching the current location's path: `window.location.pathname` + `window.location.search`.
+Defaults to execute on every page.
+
+**Examples**
+```
+! closes any example.org tab
+example.org#%#//scriptlet('close-window')
+
+! closes specific example.org tab
+example.org#%#//scriptlet('close-window', '/example-page.html')
+```
+
+[Scriptlet source](../src/scriptlets/close-window.js)
 * * *
 
 ### <a id="debug-current-inline-script"></a> ⚡️ debug-current-inline-script

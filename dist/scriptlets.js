@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.4.46
+ * Version 1.5.0
  */
 
 (function () {
@@ -693,11 +693,11 @@
     /**
      * DOM tree changes observer. Used for 'remove-attr' and 'remove-class' scriptlets
      * @param {Function} callback
-     * @param {Boolean} observeAttrs - optional parameter - should observer check attibutes changes
+     * @param {Boolean} observeAttrs - optional parameter - should observer check attributes changes
      */
     var observeDOMChanges = function observeDOMChanges(callback) {
       var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-      var attrsToObserv = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+      var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
 
       /**
        * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
@@ -747,12 +747,12 @@
       var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
 
       var connect = function connect() {
-        if (attrsToObserv.length > 0) {
+        if (attrsToObserve.length > 0) {
           observer.observe(document.documentElement, {
             childList: true,
             subtree: true,
             attributes: observeAttrs,
-            attributeFilter: attrsToObserv
+            attributeFilter: attrsToObserve
           });
         } else {
           observer.observe(document.documentElement, {
@@ -942,7 +942,8 @@
         return null;
       }
 
-      var pathToSet = 'path=/;';
+      var pathToSet = 'path=/;'; // eslint-disable-next-line max-len
+
       var cookieData = "".concat(encodeURIComponent(name), "=").concat(encodeURIComponent(valueToSet), "; ").concat(pathToSet);
       return cookieData;
     };
@@ -1275,7 +1276,8 @@
 
     function attachDependencies(scriptlet) {
       var _scriptlet$injections = scriptlet.injections,
-          injections = _scriptlet$injections === void 0 ? [] : _scriptlet$injections;
+          injections = _scriptlet$injections === void 0 ? [] : _scriptlet$injections; // eslint-disable-next-line max-len
+
       return injections.reduce(function (accum, dep) {
         return "".concat(accum, "\n").concat(dependencies[dep.name]);
       }, scriptlet.toString());
@@ -2389,7 +2391,7 @@
           var props = property.split('.');
           var propIndex = props.indexOf(prop);
           var baseName = props[propIndex - 1];
-          console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded.")); // eslint-disable-line no-console
+          console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded.")); // eslint-disable-line no-console, max-len
 
           return;
         }
@@ -2413,13 +2415,24 @@
         }
 
         var currentValue = base[prop];
+        var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
         setPropertyAccess(base, prop, {
           set: function set(value) {
             abort();
-            currentValue = value;
+
+            if (origDescriptor instanceof Object) {
+              origDescriptor.set.call(base, value);
+            } else {
+              currentValue = value;
+            }
           },
           get: function get() {
             abort();
+
+            if (origDescriptor instanceof Object) {
+              return origDescriptor.get.call(base);
+            }
+
             return currentValue;
           }
         });
@@ -2569,7 +2582,7 @@
             var props = property.split('.');
             var propIndex = props.indexOf(prop);
             var baseName = props[propIndex - 1];
-            console.log("set-constant failed because the property '".concat(baseName, "' does not exist")); // eslint-disable-line no-console
+            console.log("set-constant failed because the property '".concat(baseName, "' does not exist")); // eslint-disable-line no-console, max-len
           }
 
           return;
@@ -2904,6 +2917,7 @@
       }
 
       var rtcReplacement = function rtcReplacement(config) {
+        // eslint-disable-next-line max-len
         hit(source, "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config)));
       };
 
@@ -2951,8 +2965,9 @@
 
       function addEventListenerWrapper(type, listener) {
         if (validateType(type) && validateListener(listener)) {
-          var logMessage = "log: addEventListener(\"".concat(type, "\", ").concat(listenerToString(listener), ")");
-          hit(source, logMessage);
+          var logMessage = "addEventListener(\"".concat(type, "\", ").concat(listenerToString(listener), ")");
+          log(logMessage);
+          hit(source);
         } else if (source.verbose) {
           // logging while debugging
           var _logMessage = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
@@ -3597,7 +3612,7 @@
           var props = property.split('.');
           var propIndex = props.indexOf(prop);
           var baseName = props[propIndex - 1];
-          console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded.")); // eslint-disable-line no-console
+          console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded.")); // eslint-disable-line no-console, max-len
 
           return;
         }
@@ -5166,7 +5181,7 @@
 
     /* eslint-enable max-len */
 
-    function abortOnStacktrace(source, property, stack) {
+    function abortOnStackTrace(source, property, stack) {
       if (!property || !stack) {
         return;
       }
@@ -5231,9 +5246,9 @@
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
-    abortOnStacktrace.names = ['abort-on-stack-trace', // aliases are needed for matching the related scriptlet converted into our syntax
+    abortOnStackTrace.names = ['abort-on-stack-trace', // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-stack-trace.js', 'ubo-abort-on-stack-trace.js', 'aost.js', 'ubo-aost.js', 'ubo-abort-on-stack-trace', 'ubo-aost', 'abp-abort-on-stack-trace'];
-    abortOnStacktrace.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, validateStrPattern, matchStackTrace, toRegExp];
+    abortOnStackTrace.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, validateStrPattern, matchStackTrace, toRegExp];
 
     /* eslint-disable max-len */
 
@@ -5483,6 +5498,16 @@
 
     function forceWindowClose(source) {
       var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+      // eslint-disable-next-line no-console
+      var log = console.log.bind(console); // https://github.com/AdguardTeam/Scriptlets/issues/158#issuecomment-993423036
+
+      if (typeof window.close !== 'function') {
+        if (source.verbose) {
+          log('window.close() is not a function so \'close-window\' scriptlet is unavailable');
+        }
+
+        return;
+      }
 
       var closeImmediately = function closeImmediately() {
         try {
@@ -5491,7 +5516,7 @@
         } catch (e) {
           // log the error if window closing is impossible
           // https://developer.mozilla.org/en-US/docs/Web/API/Window/close
-          console.log(e); // eslint-disable-line no-console
+          log(e);
         }
       };
 
@@ -5506,7 +5531,7 @@
         }
       }
     }
-    forceWindowClose.names = ['close-window'];
+    forceWindowClose.names = ['close-window', 'window-close-if.js', 'ubo-window-close-if.js', 'ubo-window-close-if'];
     forceWindowClose.injections = [hit, toRegExp];
 
     /**
@@ -5555,7 +5580,7 @@
         preventFetch: preventFetch,
         setLocalStorageItem: setLocalStorageItem,
         setSessionStorageItem: setSessionStorageItem,
-        abortOnStacktrace: abortOnStacktrace,
+        abortOnStackTrace: abortOnStackTrace,
         logOnStacktrace: logOnStacktrace,
         preventXHR: preventXHR,
         forceWindowClose: forceWindowClose
@@ -5595,7 +5620,7 @@
       ubo: 'click2load.html'
     }, {
       adg: 'fingerprintjs',
-      ubo: 'fingerprintjs.js'
+      ubo: 'fingerprintjs2.js'
     }, {
       adg: 'google-analytics',
       ubo: 'google-analytics_analytics.js'
@@ -5660,6 +5685,9 @@
     }, {
       adg: 'prevent-bab',
       ubo: 'nobab.js'
+    }, {
+      adg: 'prevent-bab2',
+      ubo: 'nobab2.js'
     }, {
       adg: 'prevent-fab-3.2.0',
       ubo: 'nofab.js'
@@ -6010,7 +6038,8 @@
       var sourceTypes = ruleModifiers.filter(function (el) {
         return VALID_SOURCE_TYPES.indexOf(el) > -1;
       });
-      var isSourceTypeSpecified = sourceTypes.length > 0;
+      var isSourceTypeSpecified = sourceTypes.length > 0; // eslint-disable-next-line max-len
+
       var isEmptyRedirect = ruleModifiers.indexOf("".concat(ADG_UBO_REDIRECT_MARKER).concat(EMPTY_REDIRECT_MARKER)) > -1;
 
       if (isEmptyRedirect) {
@@ -6468,6 +6497,7 @@
         });
 
         if (typeof sourceTypesData === 'undefined') {
+          // eslint-disable-next-line max-len
           throw new Error("Unable to convert for uBO - no types to add for specific redirect in rule: ".concat(rule));
         }
 
@@ -6548,7 +6578,10 @@
         return new Tracker();
       };
 
-      ga.getAll = noopArray;
+      ga.getAll = function () {
+        return [new Tracker()];
+      };
+
       ga.remove = noopFunc;
       ga.loaded = true;
       window[googleAnalyticsName] = ga;
@@ -6572,7 +6605,7 @@
 
 
       var handleCallback = function handleCallback(dataObj, funcName) {
-        if (typeof dataObj[funcName] === 'function') {
+        if (dataObj && typeof dataObj[funcName] === 'function') {
           setTimeout(dataObj[funcName]);
         }
       };
@@ -6863,7 +6896,7 @@
       Slot.prototype.clearTargeting = noopThis;
       Slot.prototype.defineSizeMapping = noopThis;
       Slot.prototype.get = noopNull;
-      Slot.prototype.getAdUnitPath = noopArray;
+      Slot.prototype.getAdUnitPath = noopStr;
       Slot.prototype.getAttributeKeys = noopArray;
       Slot.prototype.getCategoryExclusions = noopArray;
       Slot.prototype.getDomId = noopStr;
@@ -7344,7 +7377,7 @@
       hit(source);
     }
     Fingerprintjs.names = ['fingerprintjs', 'ubo-fingerprint2.js', 'fingerprintjs.js'];
-    Fingerprintjs.injections = [hit, noopFunc];
+    Fingerprintjs.injections = [hit];
 
     /* eslint-disable func-names */
     /**
@@ -7467,6 +7500,53 @@
     ATInternetSmartTag.names = ['ati-smarttag'];
     ATInternetSmartTag.injections = [hit, noopFunc];
 
+    /* eslint-disable consistent-return, no-eval */
+    /**
+     * @redirect prevent-bab2
+     *
+     * @description
+     * Prevents BlockAdblock script from detecting an ad blocker.
+     *
+     * Related UBO redirect:
+     * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/nobab2.js
+     *
+     * See [redirect description](../wiki/about-redirects.md#prevent-bab2).
+     *
+     * **Syntax**
+     * ```
+     * /blockadblock.$script,redirect=prevent-bab2
+     * ```
+     */
+
+    function preventBab2(source) {
+      // eslint-disable-next-line compat/compat
+      var script = document.currentScript;
+
+      if (script === null) {
+        return;
+      }
+
+      var url = script.src;
+
+      if (typeof url !== 'string') {
+        return;
+      }
+
+      var domainsStr = ['adclixx\\.net', 'adnetasia\\.com', 'adtrackers\\.net', 'bannertrack\\.net'].join('|');
+      var matchStr = "^https?://[\\w-]+\\.(".concat(domainsStr, ")/.");
+      var domainsRegex = new RegExp(matchStr);
+
+      if (domainsRegex.test(url) === false) {
+        return;
+      }
+
+      window.nH7eXzOsG = 858;
+      hit(source);
+    }
+    preventBab2.names = ['prevent-bab2', // aliases are needed for matching the related scriptlet converted into our syntax
+    'nobab2.js'];
+    preventBab2.injections = [hit];
+
     var redirectsList = /*#__PURE__*/Object.freeze({
         __proto__: null,
         noeval: noeval,
@@ -7485,7 +7565,8 @@
         Matomo: Matomo,
         Fingerprintjs: Fingerprintjs,
         Gemius: Gemius,
-        ATInternetSmartTag: ATInternetSmartTag
+        ATInternetSmartTag: ATInternetSmartTag,
+        preventBab2: preventBab2
     });
 
     function _classCallCheck(instance, Constructor) {

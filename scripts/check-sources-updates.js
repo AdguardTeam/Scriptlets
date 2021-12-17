@@ -249,7 +249,7 @@ const ABP_SNIPPETS_FILE = 'https://raw.githubusercontent.com/adblockplus/adblock
 /**
  * Checks for snippets updates
  */
-async function getCurrentABPSnippets() {
+async function getCurrentABPSnippets() { // eslint-disable-line no-unused-vars
     console.log('Downloading ABP file...');
     const { data } = await axios.get(ABP_SNIPPETS_FILE);
     console.log('ABP done.');
@@ -272,7 +272,11 @@ async function getCurrentABPSnippets() {
  */
 async function checkForABPScriptletssUpdates() {
     const oldList = getScriptletsFromTable('abp');
-    const newList = await getCurrentABPSnippets();
+    // ABP_SNIPPETS_FILE is unavailable
+    // TODO: fix later, AG-11891
+    // const newList = await getCurrentABPSnippets();
+    const newList = oldList;
+
     const isEqual = areArraysOfStringsEqual(oldList, newList);
     const diff = isEqual ? null : getDiff(oldList, newList);
 

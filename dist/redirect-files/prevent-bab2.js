@@ -1,29 +1,27 @@
 (function(source, args){
-function Fingerprintjs(source) {
-    var browserId = '';
+function preventBab2(source) {
+    // eslint-disable-next-line compat/compat
+    var script = document.currentScript;
 
-    for (var i = 0; i < 8; i += 1) {
-      browserId += (Math.random() * 0x10000 + 0x1000).toString(16).slice(-4);
+    if (script === null) {
+      return;
     }
 
-    var Fingerprint = function Fingerprint() {};
+    var url = script.src;
 
-    Fingerprint.get = function (options, callback) {
-      if (!callback) {
-        callback = options;
-      }
+    if (typeof url !== 'string') {
+      return;
+    }
 
-      setTimeout(function () {
-        if (callback) {
-          callback(browserId, []);
-        }
-      }, 1);
-    };
+    var domainsStr = ['adclixx\\.net', 'adnetasia\\.com', 'adtrackers\\.net', 'bannertrack\\.net'].join('|');
+    var matchStr = "^https?://[\\w-]+\\.(".concat(domainsStr, ")/.");
+    var domainsRegex = new RegExp(matchStr);
 
-    Fingerprint.prototype = {
-      get: Fingerprint.get
-    };
-    window.Fingerprint2 = Fingerprint;
+    if (domainsRegex.test(url) === false) {
+      return;
+    }
+
+    window.nH7eXzOsG = 858;
     hit(source);
   }
 function hit(source, message) {
@@ -84,9 +82,9 @@ function hit(source, message) {
   };
         const updatedArgs = args ? [].concat(source).concat(args) : [source];
         try {
-            Fingerprintjs.apply(this, updatedArgs);
+            preventBab2.apply(this, updatedArgs);
         } catch (e) {
             console.log(e);
         }
     
-})({"name":"fingerprintjs","args":[]}, []);
+})({"name":"prevent-bab2","args":[]}, []);

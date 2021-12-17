@@ -65,7 +65,7 @@ const mainConfig = {
 
 const umdConfig = {
     input: {
-        'scriptlets.umd': 'src/scriptlets/scriptlets-cjs-wrapper.js',
+        'scriptlets.umd': 'src/scriptlets/scriptlets-umd-wrapper.js',
     },
     output: {
         dir: 'dist/umd',
