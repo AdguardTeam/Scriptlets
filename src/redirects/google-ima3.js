@@ -1,4 +1,4 @@
-/* eslint-disable func-names, class-methods-use-this, max-classes-per-file */
+/* eslint-disable func-names, class-methods-use-this, max-classes-per-file, no-underscore-dangle */
 import { hit, noopFunc } from '../helpers';
 
 /**
@@ -18,500 +18,279 @@ export function GoogleIma3(source) {
 
     const ima = {};
 
-    class AdDisplayContainer {
-        destroy() { }
+    const AdDisplayContainer = function () { };
+    AdDisplayContainer.prototype.destroy = noopFunc;
+    AdDisplayContainer.prototype.initialize = noopFunc;
 
-        initialize() { }
-    }
-
-    class ImaSdkSettings {
-            #c = true;
-
-            #f = {};
-
-            #i = false;
-
-            #l = '';
-
-            #p = '';
-
-            #r = 0;
-
-            #t = '';
-
-            #v = '';
-
-            getCompanionBackfill() { }
-
-            getDisableCustomPlaybackForIOS10Plus() {
-                return this.#i;
-            }
-
-            getFeatureFlags() {
-                return this.#f;
-            }
-
-            getLocale() {
-                return this.#l;
-            }
-
-            getNumRedirects() {
-                return this.#r;
-            }
-
-            getPlayerType() {
-                return this.#t;
-            }
-
-            getPlayerVersion() {
-                return this.#v;
-            }
-
-            getPpid() {
-                return this.#p;
-            }
-
-            isCookiesEnabled() {
-                return this.#c;
-            }
-
-            setAutoPlayAdBreaks() { }
-
-            setCompanionBackfill() { }
-
-            setCookiesEnabled(c) {
-                this.#c = !!c;
-            }
-
-            setDisableCustomPlaybackForIOS10Plus(i) {
-                this.#i = !!i;
-            }
-
-            setFeatureFlags(f) {
-                this.#f = f;
-            }
-
-            setLocale(l) {
-                this.#l = l;
-            }
-
-            setNumRedirects(r) {
-                this.#r = r;
-            }
-
-            setPlayerType(t) {
-                this.#t = t;
-            }
-
-            setPlayerVersion(v) {
-                this.#v = v;
-            }
-
-            setPpid(p) {
-                this.#p = p;
-            }
-
-            setSessionId(s) { }
-
-            setVpaidAllowed(a) { }
-
-            setVpaidMode(m) { }
-    }
-    ImaSdkSettings.CompanionBackfillMode = {
-        ALWAYS: 'always',
-        ON_MASTER_AD: 'on_master_ad',
-    };
-    ImaSdkSettings.VpaidMode = {
-        DISABLED: 0,
-        ENABLED: 1,
-        INSECURE: 2,
+    const ImaSdkSettings = function () { };
+    ImaSdkSettings.prototype = {
+        с: true,
+        f: {},
+        i: false,
+        l: '',
+        p: '',
+        r: 0,
+        t: '',
+        v: '',
+        getCompanionBackfill: noopFunc,
+        getDisableCustomPlaybackForIOS10Plus: () => this.i,
+        getFeatureFlags: () => this.f,
+        getLocale: () => this.l,
+        getNumRedirects: () => this.r,
+        getPlayerType: () => this.t,
+        getPlayerVersion: () => this.v,
+        getPpid: () => this.p,
+        isCookiesEnabled: () => this.c,
+        setAutoPlayAdBreaks: noopFunc,
+        setCompanionBackfill: noopFunc,
+        setCookiesEnabled: (c) => {
+            this.c = !!c;
+        },
+        setDisableCustomPlaybackForIOS10Plus: (i) => {
+            this.i = !!i;
+        },
+        setFeatureFlags: (f) => {
+            this.f = !!f;
+        },
+        setLocale: (l) => {
+            this.l = !!l;
+        },
+        setNumRedirects: (r) => {
+            this.r = !!r;
+        },
+        setPlayerType: (t) => {
+            this.t = !!t;
+        },
+        setPlayerVersion: (v) => {
+            this.v = !!v;
+        },
+        setPpid: (p) => {
+            this.p = !!p;
+        },
+        setSessionId: noopFunc,
+        setVpaidAllowed: noopFunc,
+        setVpaidMode: noopFunc,
+        CompanionBackfillMode: {
+            ALWAYS: 'always',
+            ON_MASTER_AD: 'on_master_ad',
+        },
+        VpaidMode: {
+            DISABLED: 0,
+            ENABLED: 1,
+            INSECURE: 2,
+        },
     };
 
     let managerLoaded = false;
 
-    class EventHandler {
-            #listeners = new Map();
-
-            _dispatch(e) {
-                const listeners = this.#listeners.get(e.type) || [];
-                for (const listener of Array.from(listeners)) {
-                    try {
-                        listener(e);
-                    } catch (r) {
-                        console.error(r);
-                    }
+    const EventHandler = function () { };
+    EventHandler.prototype = {
+        listeners: new Map(),
+        _dispatch: (e) => {
+            const listeners = this.listeners.get(e.type) || [];
+            // eslint-disable-next-line no-restricted-syntax
+            for (const listener of Array.from(listeners)) {
+                try {
+                    listener(e);
+                } catch (r) {
+                    // eslint-disable-next-line no-console
+                    console.error(r);
                 }
             }
+        },
+        addEventListener: (t, c) => {
+            if (!this.listeners.has(t)) {
+                this.listeners.set(t, new Set());
+            }
+            this.listeners.get(t).add(c);
+        },
+        removeEventListener: (t, c) => {
+            this.listeners.get(t)?.delete(c);
+        },
+    };
 
-            addEventListener(t, c) {
-                if (!this.#listeners.has(t)) {
-                    this.#listeners.set(t, new Set());
+    const AdsManager = new EventHandler();
+    AdsManager.prototype = {
+        /* eslint-disable no-use-before-define */
+        volume: 1,
+        collapse: noopFunc,
+        configureAdsManager: noopFunc,
+        destroy: noopFunc,
+        discardAdBreak: noopFunc,
+        expand: noopFunc,
+        focus: noopFunc,
+        getAdSkippableState: () => false,
+        getCuePoints: () => [0],
+        getCurrentAd: () => currentAd,
+        getCurrentAdCuePoints: () => [],
+        getRemainingTime: () => 0,
+        getVolume: () => this.volume,
+        init: noopFunc,
+        isCustomClickTrackingUsed: () => false,
+        isCustomPlaybackUsed: () => false,
+        pause: noopFunc,
+        requestNextAdBreak: noopFunc,
+        resize: noopFunc,
+        resume: noopFunc,
+        setVolume: (v) => {
+            this.volume = v;
+        },
+        skip: noopFunc,
+        start: () => {
+            // eslint-disable-next-line no-restricted-syntax
+            for (const type of [
+                AdEvent.Type.LOADED,
+                AdEvent.Type.STARTED,
+                AdEvent.Type.AD_BUFFERING,
+                AdEvent.Type.FIRST_QUARTILE,
+                AdEvent.Type.MIDPOINT,
+                AdEvent.Type.THIRD_QUARTILE,
+                AdEvent.Type.COMPLETE,
+                AdEvent.Type.ALL_ADS_COMPLETED,
+            ]) {
+                try {
+                    this._dispatch(new ima.AdEvent(type));
+                } catch (e) {
+                    // eslint-disable-next-line no-console
+                    console.error(e);
                 }
-                this.#listeners.get(t).add(c);
             }
+        },
+        stop: noopFunc,
+        updateAdsRenderingSettings: noopFunc,
+        /* eslint-disable no-use-before-define */
+    };
 
-            removeEventListener(t, c) {
-                this.#listeners.get(t)?.delete(c);
-            }
-    }
+    const manager = new AdsManager();
 
-    class AdsLoader extends EventHandler {
-            #settings = new ImaSdkSettings();
+    const AdsManagerLoadedEvent = function () { };
+    AdsManagerLoadedEvent.prototype = {
+        constructor: (type) => {
+            this.type = type;
+        },
+        getAdsManager: () => manager,
+        getUserRequestContext: noopFunc,
+    };
+    AdsManagerLoadedEvent.Type = {
+        ADS_MANAGER_LOADED: 'adsManagerLoaded',
+    };
 
-            contentComplete() { }
-
-            destroy() { }
-
-            getSettings() {
-                return this.#settings;
-            }
-
-            getVersion() {
-                return VERSION;
-            }
-
-            requestAds(r, c) {
-                if (!managerLoaded) {
-                    managerLoaded = true;
-                    requestAnimationFrame(() => {
-                        const { ADS_MANAGER_LOADED } = AdsManagerLoadedEvent.Type;
-                        this._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED));
-                    });
-                }
-            }
-    }
-
-    class AdsManager extends EventHandler {
-            #volume = 1;
-
-            collapse() { }
-
-            configureAdsManager() { }
-
-            destroy() { }
-
-            discardAdBreak() { }
-
-            expand() { }
-
-            focus() { }
-
-            getAdSkippableState() {
-                return false;
-            }
-
-            getCuePoints() {
-                return [0];
-            }
-
-            getCurrentAd() {
-                return currentAd;
-            }
-
-            getCurrentAdCuePoints() {
-                return [];
-            }
-
-            getRemainingTime() {
-                return 0;
-            }
-
-            getVolume() {
-                return this.#volume;
-            }
-
-            init(w, h, m, e) { }
-
-            isCustomClickTrackingUsed() {
-                return false;
-            }
-
-            isCustomPlaybackUsed() {
-                return false;
-            }
-
-            pause() { }
-
-            requestNextAdBreak() { }
-
-            resize(w, h, m) { }
-
-            resume() { }
-
-            setVolume(v) {
-                this.#volume = v;
-            }
-
-            skip() { }
-
-            start() {
+    const AdsLoader = new EventHandler();
+    AdsLoader.prototype = {
+        settings: new ImaSdkSettings(),
+        contentComplete: noopFunc,
+        destroy: noopFunc,
+        getSettings: () => this.settings,
+        getVersion: () => VERSION,
+        requestAds: () => {
+            if (!managerLoaded) {
+                managerLoaded = true;
                 requestAnimationFrame(() => {
-                    for (const type of [
-                        AdEvent.Type.LOADED,
-                        AdEvent.Type.STARTED,
-                        AdEvent.Type.AD_BUFFERING,
-                        AdEvent.Type.FIRST_QUARTILE,
-                        AdEvent.Type.MIDPOINT,
-                        AdEvent.Type.THIRD_QUARTILE,
-                        AdEvent.Type.COMPLETE,
-                        AdEvent.Type.ALL_ADS_COMPLETED,
-                    ]) {
-                        try {
-                            this._dispatch(new ima.AdEvent(type));
-                        } catch (e) {
-                            console.error(e);
-                        }
-                    }
+                    const { ADS_MANAGER_LOADED } = AdsManagerLoadedEvent.Type;
+                    this._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED));
                 });
             }
+        },
+    };
 
-            stop() { }
+    const AdsRenderingSettings = noopFunc;
 
-            updateAdsRenderingSettings(s) { }
-    }
+    const AdsRequest = function () { };
+    AdsRequest.prototype = {
+        setAdWillAutoPlay: noopFunc,
+        setAdWillPlayMuted: noopFunc,
+        setContinuousPlayback: noopFunc,
+    };
 
-    class AdsRenderingSettings { }
+    const AdPodInfo = function () { };
+    AdPodInfo.prototype = {
+        getAdPosition: () => 1,
+        getIsBumper: () => false,
+        getMaxDuration: () => -1,
+        getPodIndex: () => 1,
+        getTimeOffset: () => 0,
+        getTotalAds: () => 1,
+    };
 
-    class AdsRequest {
-        setAdWillAutoPlay() { }
+    const Ad = function () { };
+    Ad.prototype = {
+        pi: new AdPodInfo(),
+        getAdId: () => '',
+        getAdPodInfo: () => this.pi,
+        getAdSystem: () => '',
+        getAdvertiserName: () => '',
+        getApiFramework: () => null,
+        getCompanionAds: () => [],
+        getContentType: () => '',
+        getCreativeAdId: () => '',
+        getDealId: () => '',
+        getDescription: () => '',
+        getDuration: () => 8.5,
+        getHeight: () => 0,
+        getMediaUrl: () => null,
+        getMinSuggestedDuration: () => -2,
+        getSkipTimeOffset: () => -1,
+        getSurveyUrl: () => null,
+        getTitle: () => '',
+        getTraffickingParametersString: () => '',
+        getUiElements: () => [''],
+        getUniversalAdIdRegistry: () => 'unknown',
+        getUniversalAdIds: () => [''],
+        getUniversalAdIdValue: () => 'unknown',
+        getVastMediaBitrate: () => 0,
+        getVastMediaHeight: () => 0,
+        getVastMediaWidth: () => 0,
+        getWidth: () => 0,
+        getWrapperAdIds: () => [''],
+        getWrapperAdSystems: () => [''],
+        getWrapperCreativeIds: () => [''],
+        isLinear: () => true,
+    };
 
-        setAdWillPlayMuted() { }
+    const CompanionAd = function () { };
+    CompanionAd.prototype = {
+        getAdSlotId: () => '',
+        getContent: () => '',
+        getContentType: () => '',
+        getHeight: () => 1,
+        getWidth: () => 1,
+    };
 
-        setContinuousPlayback() { }
-    }
-
-    class AdPodInfo {
-        getAdPosition() {
-            return 1;
-        }
-
-        getIsBumper() {
-            return false;
-        }
-
-        getMaxDuration() {
-            return -1;
-        }
-
-        getPodIndex() {
-            return 1;
-        }
-
-        getTimeOffset() {
-            return 0;
-        }
-
-        getTotalAds() {
-            return 1;
-        }
-    }
-
-    class Ad {
-            _pi = new AdPodInfo();
-
-            getAdId() {
-                return '';
-            }
-
-            getAdPodInfo() {
-                return this._pi;
-            }
-
-            getAdSystem() {
-                return '';
-            }
-
-            getAdvertiserName() {
-                return '';
-            }
-
-            getApiFramework() {
-                return null;
-            }
-
-            getCompanionAds() {
-                return [];
-            }
-
-            getContentType() {
-                return '';
-            }
-
-            getCreativeAdId() {
-                return '';
-            }
-
-            getCreativeId() {
-                return '';
-            }
-
-            getDealId() {
-                return '';
-            }
-
-            getDescription() {
-                return '';
-            }
-
-            getDuration() {
-                return 8.5;
-            }
-
-            getHeight() {
-                return 0;
-            }
-
-            getMediaUrl() {
-                return null;
-            }
-
-            getMinSuggestedDuration() {
-                return -2;
-            }
-
-            getSkipTimeOffset() {
-                return -1;
-            }
-
-            getSurveyUrl() {
-                return null;
-            }
-
-            getTitle() {
-                return '';
-            }
-
-            getTraffickingParameters() {
-                return {};
-            }
-
-            getTraffickingParametersString() {
-                return '';
-            }
-
-            getUiElements() {
-                return [''];
-            }
-
-            getUniversalAdIdRegistry() {
-                return 'unknown';
-            }
-
-            getUniversalAdIds() {
-                return [''];
-            }
-
-            getUniversalAdIdValue() {
-                return 'unknown';
-            }
-
-            getVastMediaBitrate() {
-                return 0;
-            }
-
-            getVastMediaHeight() {
-                return 0;
-            }
-
-            getVastMediaWidth() {
-                return 0;
-            }
-
-            getWidth() {
-                return 0;
-            }
-
-            getWrapperAdIds() {
-                return [''];
-            }
-
-            getWrapperAdSystems() {
-                return [''];
-            }
-
-            getWrapperCreativeIds() {
-                return [''];
-            }
-
-            isLinear() {
-                return true;
-            }
-    }
-
-    class CompanionAd {
-        getAdSlotId() {
-            return '';
-        }
-
-        getContent() {
-            return '';
-        }
-
-        getContentType() {
-            return '';
-        }
-
-        getHeight() {
-            return 1;
-        }
-
-        getWidth() {
-            return 1;
-        }
-    }
-
-    class AdError {
-        getErrorCode() {
-            return 0;
-        }
-
-        getInnerError() { }
-
-        getMessage() {
-            return '';
-        }
-
-        getType() {
-            return '';
-        }
-
-        getVastErrorCode() {
-            return 0;
-        }
-
-        toString() {
-            return '';
-        }
-    }
+    const AdError = function () { };
+    AdError.prototype = {
+        getErrorCode: () => 0,
+        getInnerError: noopFunc,
+        getMessage: () => '',
+        getType: () => 1,
+        getVastErrorCode: () => 0,
+        toString: () => '',
+    };
     AdError.ErrorCode = {};
     AdError.Type = {};
 
     const isEngadget = () => {
         try {
+            // eslint-disable-next-line no-restricted-syntax
             for (const ctx of Object.values(window.vidible._getContexts())) {
+                // eslint-disable-next-line no-restricted-properties
                 if (ctx.getPlayer()?.div?.innerHTML.includes('www.engadget.com')) {
                     return true;
                 }
             }
-        } catch (_) { }
+        } catch (e) { } // eslint-disable-line no-empty
         return false;
     };
 
     const currentAd = isEngadget() ? undefined : new Ad();
 
-    class AdEvent {
-        constructor(type) {
+    const AdEvent = function () { };
+    AdEvent.prototype = {
+        constructor: (type) => {
             this.type = type;
-        }
-
-        getAd() {
-            return currentAd;
-        }
-
-        getAdData() {
-            return {};
-        }
-    }
+        },
+        getAd: () => currentAd,
+        getAdData: () => { },
+    };
     AdEvent.Type = {
         AD_BREAK_READY: 'adBreakReady',
         AD_BUFFERING: 'adBuffering',
@@ -547,42 +326,21 @@ export function GoogleIma3(source) {
         VOLUME_MUTED: 'mute',
     };
 
-    class AdErrorEvent {
-        getError() { }
-
-        getUserRequestContext() {
-            return {};
-        }
-    }
+    const AdErrorEvent = function () { };
+    AdErrorEvent.prototype = {
+        getError: noopFunc,
+        getUserRequestContext: () => { },
+    };
     AdErrorEvent.Type = {
         AD_ERROR: 'adError',
     };
 
-    const manager = new AdsManager();
-
-    class AdsManagerLoadedEvent {
-        constructor(type) {
-            this.type = type;
-        }
-
-        getAdsManager() {
-            return manager;
-        }
-
-        getUserRequestContext() {
-            return {};
-        }
-    }
-    AdsManagerLoadedEvent.Type = {
-        ADS_MANAGER_LOADED: 'adsManagerLoaded',
-    };
-
-    class CustomContentLoadedEvent { }
+    const CustomContentLoadedEvent = function () { };
     CustomContentLoadedEvent.Type = {
         CUSTOM_CONTENT_LOADED: 'deprecated-event',
     };
 
-    class CompanionAdSelectionSettings { }
+    const CompanionAdSelectionSettings = function () { };
     CompanionAdSelectionSettings.CreativeType = {
         ALL: 'All',
         FLASH: 'Flash',
@@ -600,23 +358,16 @@ export function GoogleIma3(source) {
         SELECT_NEAR_MATCH: 'SelectNearMatch',
     };
 
-    class AdCuePoints {
-        getCuePoints() {
-            return [];
-        }
-    }
+    const AdCuePoints = function () {};
+    AdCuePoints.prototype.getCuePoints = () => [];
 
-    class AdProgressData { }
+    const AdProgressData = noopFunc;
 
-    class UniversalAdIdInfo {
-        getAdIdRegistry() {
-            return '';
-        }
-
-        getAdIsValue() {
-            return '';
-        }
-    }
+    const UniversalAdIdInfo = function () {};
+    AdCuePoints.prototype = {
+        getAdIdRegistry: () => '',
+        getAdIsValue: () => '',
+    };
 
     Object.assign(ima, {
         AdCuePoints,
