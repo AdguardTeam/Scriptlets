@@ -109,7 +109,7 @@ export function GoogleIma3(source) {
         },
     };
 
-    const AdsManager = new EventHandler();
+    const AdsManager = EventHandler;
     AdsManager.prototype = {
         /* eslint-disable no-use-before-define */
         volume: 1,
@@ -175,7 +175,7 @@ export function GoogleIma3(source) {
         ADS_MANAGER_LOADED: 'adsManagerLoaded',
     };
 
-    const AdsLoader = new EventHandler();
+    const AdsLoader = EventHandler;
     AdsLoader.prototype = {
         settings: new ImaSdkSettings(),
         contentComplete: noopFunc,
