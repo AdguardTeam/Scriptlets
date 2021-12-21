@@ -86,7 +86,7 @@ export function GoogleIma3(source) {
     const EventHandler = function () { };
     EventHandler.prototype = {
         listeners: new Map(),
-        _dispatch: (e) => {
+        _dispatch(e) {
             const listeners = this.listeners.get(e.type) || [];
             // eslint-disable-next-line no-restricted-syntax
             for (const listener of Array.from(listeners)) {
@@ -98,43 +98,19 @@ export function GoogleIma3(source) {
                 }
             }
         },
-        addEventListener: (t, c) => {
+        addEventListener(t, c) {
             if (!this.listeners.has(t)) {
                 this.listeners.set(t, new Set());
             }
             this.listeners.get(t).add(c);
         },
-        removeEventListener: (t, c) => {
+        removeEventListener(t, c) {
             this.listeners.get(t)?.delete(c);
         },
     };
 
-    const AdsManager = function () { };
-    // EventHandler props start
+    const AdsManager = EventHandler;
     /* eslint-disable no-use-before-define */
-    AdsManager.prototype.listeners = new Map();
-    AdsManager.prototype._dispatch = (e) => {
-        const listeners = this.listeners.get(e.type) || [];
-        // eslint-disable-next-line no-restricted-syntax
-        for (const listener of Array.from(listeners)) {
-            try {
-                listener(e);
-            } catch (r) {
-                // eslint-disable-next-line no-console
-                console.error(r);
-            }
-        }
-    };
-    AdsManager.prototype.addEventListener = (t, c) => {
-        if (!this.listeners.has(t)) {
-            this.listeners.set(t, new Set());
-        }
-        this.listeners.get(t).add(c);
-    };
-    AdsManager.prototype.removeEventListener = (t, c) => {
-        this.listeners.get(t)?.delete(c);
-    };
-    // Own props start
     AdsManager.prototype.volume = 1;
     AdsManager.prototype.collapse = noopFunc;
     AdsManager.prototype.configureAdsManager = noopFunc;
@@ -183,7 +159,7 @@ export function GoogleIma3(source) {
     AdsManager.prototype.updateAdsRenderingSettings = noopFunc;
     /* eslint-enable no-use-before-define */
 
-    const manager = new AdsManager();
+    const manager = Object.create(AdsManager);
 
     const AdsManagerLoadedEvent = function () { };
     AdsManagerLoadedEvent.prototype = {
@@ -203,7 +179,7 @@ export function GoogleIma3(source) {
     AdsLoader.prototype.destroy = noopFunc;
     AdsLoader.prototype.getSettings = () => this.settings;
     AdsLoader.prototype.getVersion = () => VERSION;
-    AdsLoader.prototype.requestAds = () => {
+    AdsLoader.prototype.requestAds = function () {
         if (!managerLoaded) {
             managerLoaded = true;
             requestAnimationFrame(() => {
