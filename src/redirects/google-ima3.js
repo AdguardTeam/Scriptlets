@@ -1,4 +1,4 @@
-/* eslint-disable func-names, class-methods-use-this, max-classes-per-file, no-underscore-dangle */
+/* eslint-disable func-names, no-underscore-dangle */
 import { hit, noopFunc } from '../helpers';
 
 /**
@@ -24,7 +24,7 @@ export function GoogleIma3(source) {
 
     const ImaSdkSettings = function () { };
     ImaSdkSettings.prototype = {
-        с: true,
+        c: true,
         f: {},
         i: false,
         l: '',
@@ -109,57 +109,79 @@ export function GoogleIma3(source) {
         },
     };
 
-    const AdsManager = EventHandler;
-    AdsManager.prototype = {
-        /* eslint-disable no-use-before-define */
-        volume: 1,
-        collapse: noopFunc,
-        configureAdsManager: noopFunc,
-        destroy: noopFunc,
-        discardAdBreak: noopFunc,
-        expand: noopFunc,
-        focus: noopFunc,
-        getAdSkippableState: () => false,
-        getCuePoints: () => [0],
-        getCurrentAd: () => currentAd,
-        getCurrentAdCuePoints: () => [],
-        getRemainingTime: () => 0,
-        getVolume: () => this.volume,
-        init: noopFunc,
-        isCustomClickTrackingUsed: () => false,
-        isCustomPlaybackUsed: () => false,
-        pause: noopFunc,
-        requestNextAdBreak: noopFunc,
-        resize: noopFunc,
-        resume: noopFunc,
-        setVolume: (v) => {
-            this.volume = v;
-        },
-        skip: noopFunc,
-        start: () => {
-            // eslint-disable-next-line no-restricted-syntax
-            for (const type of [
-                AdEvent.Type.LOADED,
-                AdEvent.Type.STARTED,
-                AdEvent.Type.AD_BUFFERING,
-                AdEvent.Type.FIRST_QUARTILE,
-                AdEvent.Type.MIDPOINT,
-                AdEvent.Type.THIRD_QUARTILE,
-                AdEvent.Type.COMPLETE,
-                AdEvent.Type.ALL_ADS_COMPLETED,
-            ]) {
-                try {
-                    this._dispatch(new ima.AdEvent(type));
-                } catch (e) {
-                    // eslint-disable-next-line no-console
-                    console.error(e);
-                }
+    const AdsManager = function () { };
+    // EventHandler props start
+    /* eslint-disable no-use-before-define */
+    AdsManager.prototype.listeners = new Map();
+    AdsManager.prototype._dispatch = (e) => {
+        const listeners = this.listeners.get(e.type) || [];
+        // eslint-disable-next-line no-restricted-syntax
+        for (const listener of Array.from(listeners)) {
+            try {
+                listener(e);
+            } catch (r) {
+                // eslint-disable-next-line no-console
+                console.error(r);
             }
-        },
-        stop: noopFunc,
-        updateAdsRenderingSettings: noopFunc,
-        /* eslint-disable no-use-before-define */
+        }
     };
+    AdsManager.prototype.addEventListener = (t, c) => {
+        if (!this.listeners.has(t)) {
+            this.listeners.set(t, new Set());
+        }
+        this.listeners.get(t).add(c);
+    };
+    AdsManager.prototype.removeEventListener = (t, c) => {
+        this.listeners.get(t)?.delete(c);
+    };
+    // Own props start
+    AdsManager.prototype.volume = 1;
+    AdsManager.prototype.collapse = noopFunc;
+    AdsManager.prototype.configureAdsManager = noopFunc;
+    AdsManager.prototype.destroy = noopFunc;
+    AdsManager.prototype.discardAdBreak = noopFunc;
+    AdsManager.prototype.expand = noopFunc;
+    AdsManager.prototype.focus = noopFunc;
+    AdsManager.prototype.getAdSkippableState = () => false;
+    AdsManager.prototype.getCuePoints = () => [0];
+    AdsManager.prototype.getCurrentAd = () => currentAd;
+    AdsManager.prototype.getCurrentAdCuePoints = () => [];
+    AdsManager.prototype.getRemainingTime = () => 0;
+    AdsManager.prototype.getVolume = () => this.volume;
+    AdsManager.prototype.init = noopFunc;
+    AdsManager.prototype.isCustomClickTrackingUsed = () => false;
+    AdsManager.prototype.isCustomPlaybackUsed = () => false;
+    AdsManager.prototype.pause = noopFunc;
+    AdsManager.prototype.requestNextAdBreak = noopFunc;
+    AdsManager.prototype.resize = noopFunc;
+    AdsManager.prototype.resume = noopFunc;
+    AdsManager.prototype.setVolume = (v) => {
+        this.volume = v;
+    };
+    AdsManager.prototype.skip = noopFunc;
+    AdsManager.prototype.start = () => {
+        // eslint-disable-next-line no-restricted-syntax
+        for (const type of [
+            AdEvent.Type.LOADED,
+            AdEvent.Type.STARTED,
+            AdEvent.Type.AD_BUFFERING,
+            AdEvent.Type.FIRST_QUARTILE,
+            AdEvent.Type.MIDPOINT,
+            AdEvent.Type.THIRD_QUARTILE,
+            AdEvent.Type.COMPLETE,
+            AdEvent.Type.ALL_ADS_COMPLETED,
+        ]) {
+            try {
+                this._dispatch(new ima.AdEvent(type));
+            } catch (e) {
+                // eslint-disable-next-line no-console
+                console.error(e);
+            }
+        }
+    };
+    AdsManager.prototype.stop = noopFunc;
+    AdsManager.prototype.updateAdsRenderingSettings = noopFunc;
+    /* eslint-enable no-use-before-define */
 
     const manager = new AdsManager();
 
@@ -176,21 +198,19 @@ export function GoogleIma3(source) {
     };
 
     const AdsLoader = EventHandler;
-    AdsLoader.prototype = {
-        settings: new ImaSdkSettings(),
-        contentComplete: noopFunc,
-        destroy: noopFunc,
-        getSettings: () => this.settings,
-        getVersion: () => VERSION,
-        requestAds: () => {
-            if (!managerLoaded) {
-                managerLoaded = true;
-                requestAnimationFrame(() => {
-                    const { ADS_MANAGER_LOADED } = AdsManagerLoadedEvent.Type;
-                    this._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED));
-                });
-            }
-        },
+    AdsLoader.prototype.settings = new ImaSdkSettings();
+    AdsLoader.prototype.contentComplete = noopFunc;
+    AdsLoader.prototype.destroy = noopFunc;
+    AdsLoader.prototype.getSettings = () => this.settings;
+    AdsLoader.prototype.getVersion = () => VERSION;
+    AdsLoader.prototype.requestAds = () => {
+        if (!managerLoaded) {
+            managerLoaded = true;
+            requestAnimationFrame(() => {
+                const { ADS_MANAGER_LOADED } = AdsManagerLoadedEvent.Type;
+                this._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED));
+            });
+        }
     };
 
     const AdsRenderingSettings = noopFunc;
@@ -358,12 +378,12 @@ export function GoogleIma3(source) {
         SELECT_NEAR_MATCH: 'SelectNearMatch',
     };
 
-    const AdCuePoints = function () {};
+    const AdCuePoints = function () { };
     AdCuePoints.prototype.getCuePoints = () => [];
 
     const AdProgressData = noopFunc;
 
-    const UniversalAdIdInfo = function () {};
+    const UniversalAdIdInfo = function () { };
     AdCuePoints.prototype = {
         getAdIdRegistry: () => '',
         getAdIsValue: () => '',
