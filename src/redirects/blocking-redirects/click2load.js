@@ -59,7 +59,7 @@ function clickToLoad() {
         // corelibs redirects to origin url with extra params
         // and do not pass origin url in '__origin' param
         ? window.location.href
-        : getParamByKey(ORIGIN_URL_PARAM);
+        : decodeURIComponent(getParamByKey(ORIGIN_URL_PARAM));
 
     const clickTitleElem = document.getElementById('clickToLoadTitle');
     const clickSubtitleElem = document.getElementById('clickToLoadSubtitle');
@@ -202,9 +202,10 @@ function clickToLoad() {
             extRun();
         } else if (clUnblockToken) {
             clRun();
-            e.stopPropagation();
-            e.preventDefault();
         }
+
+        e.preventDefault();
+        e.stopPropagation();
     });
 
     // custom listener for corelibs force click without e.isTrusted checking
