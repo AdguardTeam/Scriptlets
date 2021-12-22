@@ -15,5 +15,5 @@ export * from './matomo';
 export * from './fingerprintjs';
 export * from './gemius';
 export * from './ati-smarttag';
-export * from './prevent-bab2.js';
+export * from './prevent-bab2';
 export * from './google-ima3';
