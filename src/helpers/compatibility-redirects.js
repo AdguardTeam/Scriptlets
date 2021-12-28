@@ -40,7 +40,7 @@ const redirects = [
     },
     {
         adg: 'fingerprintjs',
-        ubo: 'fingerprintjs.js',
+        ubo: 'fingerprintjs2.js',
     },
     {
         adg: 'google-analytics',

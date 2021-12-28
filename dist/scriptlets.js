@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.4.54
+ * Version 1.5.0
  */
 
 (function () {
@@ -693,11 +693,11 @@
     /**
      * DOM tree changes observer. Used for 'remove-attr' and 'remove-class' scriptlets
      * @param {Function} callback
-     * @param {Boolean} observeAttrs - optional parameter - should observer check attibutes changes
+     * @param {Boolean} observeAttrs - optional parameter - should observer check attributes changes
      */
     var observeDOMChanges = function observeDOMChanges(callback) {
       var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-      var attrsToObserv = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+      var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
 
       /**
        * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
@@ -747,12 +747,12 @@
       var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
 
       var connect = function connect() {
-        if (attrsToObserv.length > 0) {
+        if (attrsToObserve.length > 0) {
           observer.observe(document.documentElement, {
             childList: true,
             subtree: true,
             attributes: observeAttrs,
-            attributeFilter: attrsToObserv
+            attributeFilter: attrsToObserve
           });
         } else {
           observer.observe(document.documentElement, {
@@ -2415,13 +2415,24 @@
         }
 
         var currentValue = base[prop];
+        var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
         setPropertyAccess(base, prop, {
           set: function set(value) {
             abort();
-            currentValue = value;
+
+            if (origDescriptor instanceof Object) {
+              origDescriptor.set.call(base, value);
+            } else {
+              currentValue = value;
+            }
           },
           get: function get() {
             abort();
+
+            if (origDescriptor instanceof Object) {
+              return origDescriptor.get.call(base);
+            }
+
             return currentValue;
           }
         });
@@ -5170,7 +5181,7 @@
 
     /* eslint-enable max-len */
 
-    function abortOnStacktrace(source, property, stack) {
+    function abortOnStackTrace(source, property, stack) {
       if (!property || !stack) {
         return;
       }
@@ -5235,9 +5246,9 @@
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
-    abortOnStacktrace.names = ['abort-on-stack-trace', // aliases are needed for matching the related scriptlet converted into our syntax
+    abortOnStackTrace.names = ['abort-on-stack-trace', // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-stack-trace.js', 'ubo-abort-on-stack-trace.js', 'aost.js', 'ubo-aost.js', 'ubo-abort-on-stack-trace', 'ubo-aost', 'abp-abort-on-stack-trace'];
-    abortOnStacktrace.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, validateStrPattern, matchStackTrace, toRegExp];
+    abortOnStackTrace.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, validateStrPattern, matchStackTrace, toRegExp];
 
     /* eslint-disable max-len */
 
@@ -5569,7 +5580,7 @@
         preventFetch: preventFetch,
         setLocalStorageItem: setLocalStorageItem,
         setSessionStorageItem: setSessionStorageItem,
-        abortOnStacktrace: abortOnStacktrace,
+        abortOnStackTrace: abortOnStackTrace,
         logOnStacktrace: logOnStacktrace,
         preventXHR: preventXHR,
         forceWindowClose: forceWindowClose
@@ -5609,7 +5620,7 @@
       ubo: 'click2load.html'
     }, {
       adg: 'fingerprintjs',
-      ubo: 'fingerprintjs.js'
+      ubo: 'fingerprintjs2.js'
     }, {
       adg: 'google-analytics',
       ubo: 'google-analytics_analytics.js'
@@ -7368,7 +7379,7 @@
       hit(source);
     }
     Fingerprintjs.names = ['fingerprintjs', 'ubo-fingerprint2.js', 'fingerprintjs.js'];
-    Fingerprintjs.injections = [hit, noopFunc];
+    Fingerprintjs.injections = [hit];
 
     /* eslint-disable func-names */
     /**

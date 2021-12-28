@@ -81,8 +81,7 @@ function hit(source, message) {
     if (typeof window.__debug === 'function') {
       window.__debug(source);
     }
-  }
-function noopFunc() {};
+  };
         const updatedArgs = args ? [].concat(source).concat(args) : [source];
         try {
             Fingerprintjs.apply(this, updatedArgs);

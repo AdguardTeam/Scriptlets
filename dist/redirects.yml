@@ -1,6 +1,6 @@
 #
 #    AdGuard Scriptlets (Redirects Source)
-#    Version 1.4.54
+#    Version 1.5.0
 #
 - title: 1x1-transparent.gif
   description: |-
@@ -906,8 +906,7 @@
         if (typeof window.__debug === 'function') {
           window.__debug(source);
         }
-      }
-    function noopFunc() {};
+      };
             const updatedArgs = args ? [].concat(source).concat(args) : [source];
             try {
                 Fingerprintjs.apply(this, updatedArgs);

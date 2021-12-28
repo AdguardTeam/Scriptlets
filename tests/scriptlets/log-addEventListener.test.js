@@ -91,10 +91,19 @@ test('logs events to console - listener is null', (assert) => {
     element.addEventListener(eventName, listener);
     element.click();
 
-    assert.strictEqual(window.hit, undefined, 'hit should NOT fire on invalid agrs');
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire on invalid args');
 });
 
 test('logs events to console - listener is not a function', (assert) => {
+    let isCalled = false;
+
+    // Firefox 52 can not call handleEvent of empty object listener
+    // and fails with error "TypeError: Property 'handleEvent' is not callable."
+    // so we have to mock addEventListener to avoid browserstack tests run fail
+    window.EventTarget.prototype.addEventListener = () => {
+        isCalled = true;
+    };
+
     const eventName = 'click';
     const listener = Object.create(null);
 
@@ -115,7 +124,8 @@ test('logs events to console - listener is not a function', (assert) => {
     element.addEventListener(eventName, listener);
     element.click();
 
-    assert.strictEqual(window.hit, undefined, 'hit should NOT fire on invalid agrs');
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire on invalid args');
+    assert.strictEqual(isCalled, true, 'mocked addEventListener was called eventually');
 });
 
 test('logs events to console - event is undefined', (assert) => {
@@ -145,5 +155,5 @@ test('logs events to console - event is undefined', (assert) => {
     element.click();
 
     assert.strictEqual(window[testPropName], 'start', 'property should not change');
-    assert.strictEqual(window.hit, undefined, 'hit should NOT fire on invalid agrs');
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire on invalid args');
 });

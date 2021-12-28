@@ -322,16 +322,16 @@ test('does NOT remove propsToRemove if invoked without parameter propsToRemove a
 });
 
 test('removes propsToRemove + stack match', (assert) => {
-    const stackMatch = 'tests.js';
+    const stackMatch = 'json-prune';
 
     runScriptlet('json-prune', 'c', '', stackMatch);
-    assert.deepEqual(JSON.parse('{"a":1,"b":2,"c":3}'), { a: 1, b: 2 }, 'should remove single propsToRemove');
+    assert.deepEqual(JSON.parse('{"a":1,"b":2,"c":3}'), { a: 1, b: 2 }, 'stack match: should remove single propsToRemove');
     runScriptlet('json-prune', 'b c', '', stackMatch);
-    assert.deepEqual(JSON.parse('{"a":1,"b":2,"c":3}'), { a: 1 }, 'should remove multiple propsToRemove');
+    assert.deepEqual(JSON.parse('{"a":1,"b":2,"c":3}'), { a: 1 }, 'stack match: should remove few propsToRemove');
     runScriptlet('json-prune', 'x.b', 'x.a', stackMatch);
-    assert.deepEqual(JSON.parse('{"x": {"a":1, "b":2}}'), { x: { a: 1 } }, 'should remove propsToRemove if single nested requiredInitialProps is specified');
+    assert.deepEqual(JSON.parse('{"x": {"a":1, "b":2}}'), { x: { a: 1 } }, 'stack match: should remove propsToRemove if single nested requiredInitialProps is specified');
     runScriptlet('json-prune', 'nested.c nested.b', '', stackMatch);
-    assert.deepEqual(JSON.parse('{"nested":{"a":1,"b":2,"c":3}}'), { nested: { a: 1 } }, 'should remove multiple nested propsToRemove');
+    assert.deepEqual(JSON.parse('{"nested":{"a":1,"b":2,"c":3}}'), { nested: { a: 1 } }, 'stack match: should remove multiple nested propsToRemove');
 });
 
 test('can NOT remove propsToRemove because of no stack match', (assert) => {

@@ -5,7 +5,7 @@ plan:
   key: SCRIPTLETSBUILD
   name: scriptlets - build
 variables:
-  dockerContainer: adguard/node-ssh:15.14--6
+  dockerContainer: adguard/puppeteer-runner:8.0--1
 
 stages:
   - Build:
@@ -34,8 +34,11 @@ Build:
             ls -alt
 
             yarn install ${bamboo.varsYarn}
+            yarn browserstack
             yarn prepare-builds
             rm -rf node_modules
+        environment: BROWSERSTACK_USER="${bamboo.browserstackUser}" \
+          BROWSERSTACK_KEY="${bamboo.browserstackPassword}"
     - inject-variables:
         file: dist/build.txt
         scope: RESULT

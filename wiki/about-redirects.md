@@ -28,6 +28,7 @@
 * [metrika-yandex-watch](#metrika-yandex-watch)
 * [noeval](#noeval)
 * [prevent-bab](#prevent-bab)
+* [prevent-bab2](#prevent-bab2)
 * [prevent-fab-3.2.0](#prevent-fab-3.2.0)
 * [prevent-popads-net](#prevent-popads-net)
 * [scorecardresearch-beacon](#scorecardresearch-beacon)
@@ -369,6 +370,23 @@ https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/
 ```
 
 [Redirect source](../src/redirects/prevent-bab.js)
+* * *
+
+### <a id="prevent-bab2"></a> ⚡️ prevent-bab2
+
+Prevents BlockAdblock script from detecting an ad blocker.
+
+Related UBO redirect:
+https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/nobab2.js
+
+See [redirect description](../wiki/about-redirects.md#prevent-bab2).
+
+**Syntax**
+```
+/blockadblock.$script,redirect=prevent-bab2
+```
+
+[Redirect source](../src/redirects/prevent-bab2.js)
 * * *
 
 ### <a id="prevent-fab-3.2.0"></a> ⚡️ prevent-fab-3.2.0

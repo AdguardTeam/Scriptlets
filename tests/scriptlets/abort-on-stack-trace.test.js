@@ -47,7 +47,7 @@ test('Checking if alias name works', (assert) => {
 
 test('simple, matches stack', (assert) => {
     window[PROPERTY] = 'value';
-    const stackMatch = 'tests.js';
+    const stackMatch = 'abort-on-stack';
     const scriptletArgs = [PROPERTY, stackMatch];
     runScriptlet(name, scriptletArgs);
 
@@ -103,7 +103,7 @@ test('simple, does NOT work - invalid regexp pattern', (assert) => {
 
 test('simple, matches stack of our own script', (assert) => {
     window[PROPERTY] = 'value';
-    const noStackMatch = 'abortOnPropertyRead';
+    const noStackMatch = 'abortOnStackTrace';
     const scriptletArgs = [PROPERTY, noStackMatch];
     runScriptlet(name, scriptletArgs);
 
@@ -127,7 +127,7 @@ test('dot notation, matches stack', (assert) => {
     window.Ya = {
         videoAds: 'value',
     };
-    const stackMatch = 'tests.js';
+    const stackMatch = 'abort-on-stack';
     const scriptletArgs = [CHAIN_PROPERTY, stackMatch];
     runScriptlet(name, scriptletArgs);
 
@@ -175,7 +175,7 @@ test('dot notation, matches stack of our own script', (assert) => {
     window.Ya = {
         videoAds: 'value',
     };
-    const stackMatch = 'abortOnPropertyRead';
+    const stackMatch = 'abortOnStackTrace';
     const scriptletArgs = [CHAIN_PROPERTY, stackMatch];
     runScriptlet(name, scriptletArgs);
 
@@ -198,7 +198,7 @@ test('dot notation, matches stack of our own script', (assert) => {
 test('dot notation deferred definition, matches stack', (assert) => {
     window.Ya = {};
     window.Ya.videoAds = 'value';
-    const stackMatch = 'tests.js';
+    const stackMatch = 'abort-on-stack';
     const scriptletArgs = [CHAIN_PROPERTY, stackMatch];
     runScriptlet(name, scriptletArgs);
 
@@ -243,7 +243,7 @@ test('dot notation deferred definition, does NOT match stack', (assert) => {
 test('dot notation deferred definition, matches stack of our own script', (assert) => {
     window.Ya = {};
     window.Ya.videoAds = 'value';
-    const stackMatch = 'abortOnPropertyRead';
+    const stackMatch = 'abortOnStackTrace';
     const scriptletArgs = [CHAIN_PROPERTY, stackMatch];
     runScriptlet(name, scriptletArgs);
 

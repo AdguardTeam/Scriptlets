@@ -42,7 +42,7 @@ import {
  * ```
  */
 /* eslint-enable max-len */
-export function abortOnStacktrace(source, property, stack) {
+export function abortOnStackTrace(source, property, stack) {
     if (!property || !stack) {
         return;
     }
@@ -99,7 +99,7 @@ export function abortOnStacktrace(source, property, stack) {
         .bind();
 }
 
-abortOnStacktrace.names = [
+abortOnStackTrace.names = [
     'abort-on-stack-trace',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-stack-trace.js',
@@ -110,7 +110,7 @@ abortOnStacktrace.names = [
     'ubo-aost',
     'abp-abort-on-stack-trace',
 ];
-abortOnStacktrace.injections = [
+abortOnStackTrace.injections = [
     randomId,
     setPropertyAccess,
     getPropertyInChain,

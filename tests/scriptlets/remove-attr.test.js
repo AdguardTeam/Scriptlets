@@ -47,7 +47,7 @@ test('Checking if alias name works', (assert) => {
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
-test('no selector + multiple attrs', (assert) => {
+test('no selector + multiple attrs for one element', (assert) => {
     createHit();
     const attrs = ['test1', 'test2'];
 
@@ -57,7 +57,7 @@ test('no selector + multiple attrs', (assert) => {
     runScriptlet(name, scriptletArgs);
 
     attrs.forEach((a) => {
-        assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
+        assert.notOk(elem.getAttribute(a), `Attr ${a} removed - first time`);
     });
     assert.strictEqual(window.hit, 'FIRED');
     clearGlobalProps('hit');
@@ -69,13 +69,13 @@ test('no selector + multiple attrs', (assert) => {
 
     setTimeout(() => {
         attrs.forEach((a) => {
-            assert.notOk(elem.getAttribute(a), `Attr ${a} removed`);
+            assert.notOk(elem.getAttribute(a), `Attr ${a} removed - again after timeout`);
         });
         assert.strictEqual(window.hit, 'FIRED');
         // clean up test element
         elem.remove();
         done();
-    }, 150);
+    }, 250);
 });
 
 test('no selector + multiple attrs for different elements', (assert) => {

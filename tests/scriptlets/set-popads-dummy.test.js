@@ -44,7 +44,8 @@ test('Checking if alias name works', (assert) => {
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
-test('works', (assert) => {
+test('set-popads-dummy: works', (assert) => {
+    assert.expect(5);
     fillPopAdsWithValues();
     assert.strictEqual(window[popAdsProp], popAdsProp);
     assert.strictEqual(window[popnsProp], popnsProp);
@@ -54,7 +55,8 @@ test('works', (assert) => {
     assert.strictEqual(window.hit, 'FIRED');
 });
 
-test('ag works', (assert) => {
+test('set-popads-dummy: ag works', (assert) => {
+    assert.expect(2);
     const stub = sinon.stub(Object, 'defineProperties').callsFake((obj, props) => props);
     runScriptlet(name);
 
