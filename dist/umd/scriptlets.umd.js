@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.4.46
+ * Version 1.4.54
  */
 
 (function (factory) {
@@ -944,7 +944,8 @@
         return null;
       }
 
-      var pathToSet = 'path=/;';
+      var pathToSet = 'path=/;'; // eslint-disable-next-line max-len
+
       var cookieData = "".concat(encodeURIComponent(name), "=").concat(encodeURIComponent(valueToSet), "; ").concat(pathToSet);
       return cookieData;
     };
@@ -1277,7 +1278,8 @@
 
     function attachDependencies(scriptlet) {
       var _scriptlet$injections = scriptlet.injections,
-          injections = _scriptlet$injections === void 0 ? [] : _scriptlet$injections;
+          injections = _scriptlet$injections === void 0 ? [] : _scriptlet$injections; // eslint-disable-next-line max-len
+
       return injections.reduce(function (accum, dep) {
         return "".concat(accum, "\n").concat(dependencies[dep.name]);
       }, scriptlet.toString());
@@ -2391,7 +2393,7 @@
           var props = property.split('.');
           var propIndex = props.indexOf(prop);
           var baseName = props[propIndex - 1];
-          console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded.")); // eslint-disable-line no-console
+          console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded.")); // eslint-disable-line no-console, max-len
 
           return;
         }
@@ -2571,7 +2573,7 @@
             var props = property.split('.');
             var propIndex = props.indexOf(prop);
             var baseName = props[propIndex - 1];
-            console.log("set-constant failed because the property '".concat(baseName, "' does not exist")); // eslint-disable-line no-console
+            console.log("set-constant failed because the property '".concat(baseName, "' does not exist")); // eslint-disable-line no-console, max-len
           }
 
           return;
@@ -2906,6 +2908,7 @@
       }
 
       var rtcReplacement = function rtcReplacement(config) {
+        // eslint-disable-next-line max-len
         hit(source, "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config)));
       };
 
@@ -2953,8 +2956,9 @@
 
       function addEventListenerWrapper(type, listener) {
         if (validateType(type) && validateListener(listener)) {
-          var logMessage = "log: addEventListener(\"".concat(type, "\", ").concat(listenerToString(listener), ")");
-          hit(source, logMessage);
+          var logMessage = "addEventListener(\"".concat(type, "\", ").concat(listenerToString(listener), ")");
+          log(logMessage);
+          hit(source);
         } else if (source.verbose) {
           // logging while debugging
           var _logMessage = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
@@ -3599,7 +3603,7 @@
           var props = property.split('.');
           var propIndex = props.indexOf(prop);
           var baseName = props[propIndex - 1];
-          console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded.")); // eslint-disable-line no-console
+          console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded.")); // eslint-disable-line no-console, max-len
 
           return;
         }
@@ -5485,6 +5489,16 @@
 
     function forceWindowClose(source) {
       var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+      // eslint-disable-next-line no-console
+      var log = console.log.bind(console); // https://github.com/AdguardTeam/Scriptlets/issues/158#issuecomment-993423036
+
+      if (typeof window.close !== 'function') {
+        if (source.verbose) {
+          log('window.close() is not a function so \'close-window\' scriptlet is unavailable');
+        }
+
+        return;
+      }
 
       var closeImmediately = function closeImmediately() {
         try {
@@ -5493,7 +5507,7 @@
         } catch (e) {
           // log the error if window closing is impossible
           // https://developer.mozilla.org/en-US/docs/Web/API/Window/close
-          console.log(e); // eslint-disable-line no-console
+          log(e);
         }
       };
 
@@ -5508,7 +5522,7 @@
         }
       }
     }
-    forceWindowClose.names = ['close-window'];
+    forceWindowClose.names = ['close-window', 'window-close-if.js', 'ubo-window-close-if.js', 'ubo-window-close-if'];
     forceWindowClose.injections = [hit, toRegExp];
 
     /**
@@ -5621,6 +5635,8 @@
     }, {
       adg: 'gemius'
     }, {
+      adg: 'google-ima3'
+    }, {
       adg: 'matomo'
     }, {
       adg: 'metrika-yandex-watch'
@@ -5662,6 +5678,9 @@
     }, {
       adg: 'prevent-bab',
       ubo: 'nobab.js'
+    }, {
+      adg: 'prevent-bab2',
+      ubo: 'nobab2.js'
     }, {
       adg: 'prevent-fab-3.2.0',
       ubo: 'nofab.js'
@@ -6012,7 +6031,8 @@
       var sourceTypes = ruleModifiers.filter(function (el) {
         return VALID_SOURCE_TYPES.indexOf(el) > -1;
       });
-      var isSourceTypeSpecified = sourceTypes.length > 0;
+      var isSourceTypeSpecified = sourceTypes.length > 0; // eslint-disable-next-line max-len
+
       var isEmptyRedirect = ruleModifiers.indexOf("".concat(ADG_UBO_REDIRECT_MARKER).concat(EMPTY_REDIRECT_MARKER)) > -1;
 
       if (isEmptyRedirect) {
@@ -6470,6 +6490,7 @@
         });
 
         if (typeof sourceTypesData === 'undefined') {
+          // eslint-disable-next-line max-len
           throw new Error("Unable to convert for uBO - no types to add for specific redirect in rule: ".concat(rule));
         }
 
@@ -6550,7 +6571,10 @@
         return new Tracker();
       };
 
-      ga.getAll = noopArray;
+      ga.getAll = function () {
+        return [new Tracker()];
+      };
+
       ga.remove = noopFunc;
       ga.loaded = true;
       window[googleAnalyticsName] = ga;
@@ -6574,7 +6598,7 @@
 
 
       var handleCallback = function handleCallback(dataObj, funcName) {
-        if (typeof dataObj[funcName] === 'function') {
+        if (dataObj && typeof dataObj[funcName] === 'function') {
           setTimeout(dataObj[funcName]);
         }
       };
@@ -6865,7 +6889,7 @@
       Slot.prototype.clearTargeting = noopThis;
       Slot.prototype.defineSizeMapping = noopThis;
       Slot.prototype.get = noopNull;
-      Slot.prototype.getAdUnitPath = noopArray;
+      Slot.prototype.getAdUnitPath = noopStr;
       Slot.prototype.getAttributeKeys = noopArray;
       Slot.prototype.getCategoryExclusions = noopArray;
       Slot.prototype.getDomId = noopStr;
@@ -7469,6 +7493,639 @@
     ATInternetSmartTag.names = ['ati-smarttag'];
     ATInternetSmartTag.injections = [hit, noopFunc];
 
+    /* eslint-disable consistent-return, no-eval */
+    /**
+     * @scriptlet prevent-bab2
+     *
+     * @description
+     * Prevents BlockAdblock script from detecting an ad blocker.
+     *
+     * Related UBO redirect:
+     * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/nobab2.js
+     *
+     * See [redirect description](../wiki/about-redirects.md#prevent-bab2).
+     *
+     * **Syntax**
+     * ```
+     * /blockadblock.$script,redirect=prevent-bab2
+     * ```
+     */
+
+    function preventBab2(source) {
+      // eslint-disable-next-line compat/compat
+      var script = document.currentScript;
+
+      if (script === null) {
+        return;
+      }
+
+      var url = script.src;
+
+      if (typeof url !== 'string') {
+        return;
+      }
+
+      var domainsStr = ['adclixx\\.net', 'adnetasia\\.com', 'adtrackers\\.net', 'bannertrack\\.net'].join('|');
+      var matchStr = "^https?://[\\w-]+\\.(".concat(domainsStr, ")/.");
+      var domainsRegex = new RegExp(matchStr);
+
+      if (domainsRegex.test(url) === false) {
+        return;
+      }
+
+      window.nH7eXzOsG = 858;
+      hit(source);
+    }
+    preventBab2.names = ['prevent-bab2', // aliases are needed for matching the related scriptlet converted into our syntax
+    'nobab2.js'];
+    preventBab2.injections = [hit];
+
+    /* eslint-disable func-names, no-underscore-dangle */
+    /**
+     * @redirect google-ima3
+     *
+     * @description
+     * Mocks the IMA SDK of Google.
+     *
+     * **Example**
+     * ```
+     * ||imasdk.googleapis.com/js/sdkloader/ima3.js$script,redirect=google-ima3
+     * ```
+     */
+
+    function GoogleIma3(source) {
+      var _this = this;
+
+      var VERSION = '3.453.0';
+      var ima = {};
+
+      var AdDisplayContainer = function AdDisplayContainer() {};
+
+      AdDisplayContainer.prototype.destroy = noopFunc;
+      AdDisplayContainer.prototype.initialize = noopFunc;
+
+      var ImaSdkSettings = function ImaSdkSettings() {};
+
+      ImaSdkSettings.prototype = {
+        c: true,
+        f: {},
+        i: false,
+        l: '',
+        p: '',
+        r: 0,
+        t: '',
+        v: '',
+        getCompanionBackfill: noopFunc,
+        getDisableCustomPlaybackForIOS10Plus: function getDisableCustomPlaybackForIOS10Plus() {
+          return _this.i;
+        },
+        getFeatureFlags: function getFeatureFlags() {
+          return _this.f;
+        },
+        getLocale: function getLocale() {
+          return _this.l;
+        },
+        getNumRedirects: function getNumRedirects() {
+          return _this.r;
+        },
+        getPlayerType: function getPlayerType() {
+          return _this.t;
+        },
+        getPlayerVersion: function getPlayerVersion() {
+          return _this.v;
+        },
+        getPpid: function getPpid() {
+          return _this.p;
+        },
+        isCookiesEnabled: function isCookiesEnabled() {
+          return _this.c;
+        },
+        setAutoPlayAdBreaks: noopFunc,
+        setCompanionBackfill: noopFunc,
+        setCookiesEnabled: function setCookiesEnabled(c) {
+          _this.c = !!c;
+        },
+        setDisableCustomPlaybackForIOS10Plus: function setDisableCustomPlaybackForIOS10Plus(i) {
+          _this.i = !!i;
+        },
+        setFeatureFlags: function setFeatureFlags(f) {
+          _this.f = !!f;
+        },
+        setLocale: function setLocale(l) {
+          _this.l = !!l;
+        },
+        setNumRedirects: function setNumRedirects(r) {
+          _this.r = !!r;
+        },
+        setPlayerType: function setPlayerType(t) {
+          _this.t = !!t;
+        },
+        setPlayerVersion: function setPlayerVersion(v) {
+          _this.v = !!v;
+        },
+        setPpid: function setPpid(p) {
+          _this.p = !!p;
+        },
+        setSessionId: noopFunc,
+        setVpaidAllowed: noopFunc,
+        setVpaidMode: noopFunc,
+        CompanionBackfillMode: {
+          ALWAYS: 'always',
+          ON_MASTER_AD: 'on_master_ad'
+        },
+        VpaidMode: {
+          DISABLED: 0,
+          ENABLED: 1,
+          INSECURE: 2
+        }
+      };
+      var managerLoaded = false;
+
+      var EventHandler = function EventHandler() {};
+
+      EventHandler.prototype = {
+        listeners: new Map(),
+        _dispatch: function _dispatch(e) {
+          var listeners = this.listeners.get(e.type) || []; // eslint-disable-next-line no-restricted-syntax
+
+          for (var _i = 0, _Array$from = Array.from(listeners); _i < _Array$from.length; _i++) {
+            var listener = _Array$from[_i];
+
+            try {
+              listener(e);
+            } catch (r) {
+              // eslint-disable-next-line no-console
+              console.error(r);
+            }
+          }
+        },
+        addEventListener: function addEventListener(t, c) {
+          if (!this.listeners.has(t)) {
+            this.listeners.set(t, new Set());
+          }
+
+          this.listeners.get(t).add(c);
+        },
+        removeEventListener: function removeEventListener(t, c) {
+          var _this$listeners$get;
+
+          (_this$listeners$get = this.listeners.get(t)) === null || _this$listeners$get === void 0 ? void 0 : _this$listeners$get.delete(c);
+        }
+      };
+      var AdsManager = EventHandler;
+      /* eslint-disable no-use-before-define */
+
+      AdsManager.prototype.volume = 1;
+      AdsManager.prototype.collapse = noopFunc;
+      AdsManager.prototype.configureAdsManager = noopFunc;
+      AdsManager.prototype.destroy = noopFunc;
+      AdsManager.prototype.discardAdBreak = noopFunc;
+      AdsManager.prototype.expand = noopFunc;
+      AdsManager.prototype.focus = noopFunc;
+
+      AdsManager.prototype.getAdSkippableState = function () {
+        return false;
+      };
+
+      AdsManager.prototype.getCuePoints = function () {
+        return [0];
+      };
+
+      AdsManager.prototype.getCurrentAd = function () {
+        return currentAd;
+      };
+
+      AdsManager.prototype.getCurrentAdCuePoints = function () {
+        return [];
+      };
+
+      AdsManager.prototype.getRemainingTime = function () {
+        return 0;
+      };
+
+      AdsManager.prototype.getVolume = function () {
+        return _this.volume;
+      };
+
+      AdsManager.prototype.init = noopFunc;
+
+      AdsManager.prototype.isCustomClickTrackingUsed = function () {
+        return false;
+      };
+
+      AdsManager.prototype.isCustomPlaybackUsed = function () {
+        return false;
+      };
+
+      AdsManager.prototype.pause = noopFunc;
+      AdsManager.prototype.requestNextAdBreak = noopFunc;
+      AdsManager.prototype.resize = noopFunc;
+      AdsManager.prototype.resume = noopFunc;
+
+      AdsManager.prototype.setVolume = function (v) {
+        _this.volume = v;
+      };
+
+      AdsManager.prototype.skip = noopFunc;
+
+      AdsManager.prototype.start = function () {
+        // eslint-disable-next-line no-restricted-syntax
+        for (var _i2 = 0, _arr = [AdEvent.Type.LOADED, AdEvent.Type.STARTED, AdEvent.Type.AD_BUFFERING, AdEvent.Type.FIRST_QUARTILE, AdEvent.Type.MIDPOINT, AdEvent.Type.THIRD_QUARTILE, AdEvent.Type.COMPLETE, AdEvent.Type.ALL_ADS_COMPLETED]; _i2 < _arr.length; _i2++) {
+          var type = _arr[_i2];
+
+          try {
+            _this._dispatch(new ima.AdEvent(type));
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.error(e);
+          }
+        }
+      };
+
+      AdsManager.prototype.stop = noopFunc;
+      AdsManager.prototype.updateAdsRenderingSettings = noopFunc;
+      /* eslint-enable no-use-before-define */
+
+      var manager = Object.create(AdsManager);
+
+      var AdsManagerLoadedEvent = function AdsManagerLoadedEvent() {};
+
+      AdsManagerLoadedEvent.prototype = {
+        constructor: function constructor(type) {
+          _this.type = type;
+        },
+        getAdsManager: function getAdsManager() {
+          return manager;
+        },
+        getUserRequestContext: noopFunc
+      };
+      AdsManagerLoadedEvent.Type = {
+        ADS_MANAGER_LOADED: 'adsManagerLoaded'
+      };
+      var AdsLoader = EventHandler;
+      AdsLoader.prototype.settings = new ImaSdkSettings();
+      AdsLoader.prototype.contentComplete = noopFunc;
+      AdsLoader.prototype.destroy = noopFunc;
+
+      AdsLoader.prototype.getSettings = function () {
+        return this.settings;
+      };
+
+      AdsLoader.prototype.getVersion = function () {
+        return VERSION;
+      };
+
+      AdsLoader.prototype.requestAds = function () {
+        var _this2 = this;
+
+        if (!managerLoaded) {
+          managerLoaded = true;
+          requestAnimationFrame(function () {
+            var ADS_MANAGER_LOADED = AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED;
+
+            _this2._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED));
+          });
+        }
+      };
+
+      var AdsRenderingSettings = noopFunc;
+
+      var AdsRequest = function AdsRequest() {};
+
+      AdsRequest.prototype = {
+        setAdWillAutoPlay: noopFunc,
+        setAdWillPlayMuted: noopFunc,
+        setContinuousPlayback: noopFunc
+      };
+
+      var AdPodInfo = function AdPodInfo() {};
+
+      AdPodInfo.prototype = {
+        getAdPosition: function getAdPosition() {
+          return 1;
+        },
+        getIsBumper: function getIsBumper() {
+          return false;
+        },
+        getMaxDuration: function getMaxDuration() {
+          return -1;
+        },
+        getPodIndex: function getPodIndex() {
+          return 1;
+        },
+        getTimeOffset: function getTimeOffset() {
+          return 0;
+        },
+        getTotalAds: function getTotalAds() {
+          return 1;
+        }
+      };
+
+      var Ad = function Ad() {};
+
+      Ad.prototype = {
+        pi: new AdPodInfo(),
+        getAdId: function getAdId() {
+          return '';
+        },
+        getAdPodInfo: function getAdPodInfo() {
+          return _this.pi;
+        },
+        getAdSystem: function getAdSystem() {
+          return '';
+        },
+        getAdvertiserName: function getAdvertiserName() {
+          return '';
+        },
+        getApiFramework: function getApiFramework() {
+          return null;
+        },
+        getCompanionAds: function getCompanionAds() {
+          return [];
+        },
+        getContentType: function getContentType() {
+          return '';
+        },
+        getCreativeAdId: function getCreativeAdId() {
+          return '';
+        },
+        getDealId: function getDealId() {
+          return '';
+        },
+        getDescription: function getDescription() {
+          return '';
+        },
+        getDuration: function getDuration() {
+          return 8.5;
+        },
+        getHeight: function getHeight() {
+          return 0;
+        },
+        getMediaUrl: function getMediaUrl() {
+          return null;
+        },
+        getMinSuggestedDuration: function getMinSuggestedDuration() {
+          return -2;
+        },
+        getSkipTimeOffset: function getSkipTimeOffset() {
+          return -1;
+        },
+        getSurveyUrl: function getSurveyUrl() {
+          return null;
+        },
+        getTitle: function getTitle() {
+          return '';
+        },
+        getTraffickingParametersString: function getTraffickingParametersString() {
+          return '';
+        },
+        getUiElements: function getUiElements() {
+          return [''];
+        },
+        getUniversalAdIdRegistry: function getUniversalAdIdRegistry() {
+          return 'unknown';
+        },
+        getUniversalAdIds: function getUniversalAdIds() {
+          return [''];
+        },
+        getUniversalAdIdValue: function getUniversalAdIdValue() {
+          return 'unknown';
+        },
+        getVastMediaBitrate: function getVastMediaBitrate() {
+          return 0;
+        },
+        getVastMediaHeight: function getVastMediaHeight() {
+          return 0;
+        },
+        getVastMediaWidth: function getVastMediaWidth() {
+          return 0;
+        },
+        getWidth: function getWidth() {
+          return 0;
+        },
+        getWrapperAdIds: function getWrapperAdIds() {
+          return [''];
+        },
+        getWrapperAdSystems: function getWrapperAdSystems() {
+          return [''];
+        },
+        getWrapperCreativeIds: function getWrapperCreativeIds() {
+          return [''];
+        },
+        isLinear: function isLinear() {
+          return true;
+        }
+      };
+
+      var CompanionAd = function CompanionAd() {};
+
+      CompanionAd.prototype = {
+        getAdSlotId: function getAdSlotId() {
+          return '';
+        },
+        getContent: function getContent() {
+          return '';
+        },
+        getContentType: function getContentType() {
+          return '';
+        },
+        getHeight: function getHeight() {
+          return 1;
+        },
+        getWidth: function getWidth() {
+          return 1;
+        }
+      };
+
+      var AdError = function AdError() {};
+
+      AdError.prototype = {
+        getErrorCode: function getErrorCode() {
+          return 0;
+        },
+        getInnerError: noopFunc,
+        getMessage: function getMessage() {
+          return '';
+        },
+        getType: function getType() {
+          return 1;
+        },
+        getVastErrorCode: function getVastErrorCode() {
+          return 0;
+        },
+        toString: function toString() {
+          return '';
+        }
+      };
+      AdError.ErrorCode = {};
+      AdError.Type = {};
+
+      var isEngadget = function isEngadget() {
+        try {
+          // eslint-disable-next-line no-restricted-syntax
+          for (var _i3 = 0, _Object$values = Object.values(window.vidible._getContexts()); _i3 < _Object$values.length; _i3++) {
+            var _ctx$getPlayer, _ctx$getPlayer$div;
+
+            var ctx = _Object$values[_i3];
+
+            // eslint-disable-next-line no-restricted-properties
+            if ((_ctx$getPlayer = ctx.getPlayer()) !== null && _ctx$getPlayer !== void 0 && (_ctx$getPlayer$div = _ctx$getPlayer.div) !== null && _ctx$getPlayer$div !== void 0 && _ctx$getPlayer$div.innerHTML.includes('www.engadget.com')) {
+              return true;
+            }
+          }
+        } catch (e) {} // eslint-disable-line no-empty
+
+
+        return false;
+      };
+
+      var currentAd = isEngadget() ? undefined : new Ad();
+
+      var AdEvent = function AdEvent() {};
+
+      AdEvent.prototype = {
+        constructor: function constructor(type) {
+          _this.type = type;
+        },
+        getAd: function getAd() {
+          return currentAd;
+        },
+        getAdData: function getAdData() {}
+      };
+      AdEvent.Type = {
+        AD_BREAK_READY: 'adBreakReady',
+        AD_BUFFERING: 'adBuffering',
+        AD_CAN_PLAY: 'adCanPlay',
+        AD_METADATA: 'adMetadata',
+        AD_PROGRESS: 'adProgress',
+        ALL_ADS_COMPLETED: 'allAdsCompleted',
+        CLICK: 'click',
+        COMPLETE: 'complete',
+        CONTENT_PAUSE_REQUESTED: 'contentPauseRequested',
+        CONTENT_RESUME_REQUESTED: 'contentResumeRequested',
+        DURATION_CHANGE: 'durationChange',
+        EXPANDED_CHANGED: 'expandedChanged',
+        FIRST_QUARTILE: 'firstQuartile',
+        IMPRESSION: 'impression',
+        INTERACTION: 'interaction',
+        LINEAR_CHANGE: 'linearChange',
+        LINEAR_CHANGED: 'linearChanged',
+        LOADED: 'loaded',
+        LOG: 'log',
+        MIDPOINT: 'midpoint',
+        PAUSED: 'pause',
+        RESUMED: 'resume',
+        SKIPPABLE_STATE_CHANGED: 'skippableStateChanged',
+        SKIPPED: 'skip',
+        STARTED: 'start',
+        THIRD_QUARTILE: 'thirdQuartile',
+        USER_CLOSE: 'userClose',
+        VIDEO_CLICKED: 'videoClicked',
+        VIDEO_ICON_CLICKED: 'videoIconClicked',
+        VIEWABLE_IMPRESSION: 'viewable_impression',
+        VOLUME_CHANGED: 'volumeChange',
+        VOLUME_MUTED: 'mute'
+      };
+
+      var AdErrorEvent = function AdErrorEvent() {};
+
+      AdErrorEvent.prototype = {
+        getError: noopFunc,
+        getUserRequestContext: function getUserRequestContext() {}
+      };
+      AdErrorEvent.Type = {
+        AD_ERROR: 'adError'
+      };
+
+      var CustomContentLoadedEvent = function CustomContentLoadedEvent() {};
+
+      CustomContentLoadedEvent.Type = {
+        CUSTOM_CONTENT_LOADED: 'deprecated-event'
+      };
+
+      var CompanionAdSelectionSettings = function CompanionAdSelectionSettings() {};
+
+      CompanionAdSelectionSettings.CreativeType = {
+        ALL: 'All',
+        FLASH: 'Flash',
+        IMAGE: 'Image'
+      };
+      CompanionAdSelectionSettings.ResourceType = {
+        ALL: 'All',
+        HTML: 'Html',
+        IFRAME: 'IFrame',
+        STATIC: 'Static'
+      };
+      CompanionAdSelectionSettings.SizeCriteria = {
+        IGNORE: 'IgnoreSize',
+        SELECT_EXACT_MATCH: 'SelectExactMatch',
+        SELECT_NEAR_MATCH: 'SelectNearMatch'
+      };
+
+      var AdCuePoints = function AdCuePoints() {};
+
+      AdCuePoints.prototype.getCuePoints = function () {
+        return [];
+      };
+
+      var AdProgressData = noopFunc;
+
+      var UniversalAdIdInfo = function UniversalAdIdInfo() {};
+
+      AdCuePoints.prototype = {
+        getAdIdRegistry: function getAdIdRegistry() {
+          return '';
+        },
+        getAdIsValue: function getAdIsValue() {
+          return '';
+        }
+      };
+      Object.assign(ima, {
+        AdCuePoints: AdCuePoints,
+        AdDisplayContainer: AdDisplayContainer,
+        AdError: AdError,
+        AdErrorEvent: AdErrorEvent,
+        AdEvent: AdEvent,
+        AdPodInfo: AdPodInfo,
+        AdProgressData: AdProgressData,
+        AdsLoader: AdsLoader,
+        AdsManager: manager,
+        AdsManagerLoadedEvent: AdsManagerLoadedEvent,
+        AdsRenderingSettings: AdsRenderingSettings,
+        AdsRequest: AdsRequest,
+        CompanionAd: CompanionAd,
+        CompanionAdSelectionSettings: CompanionAdSelectionSettings,
+        CustomContentLoadedEvent: CustomContentLoadedEvent,
+        gptProxyInstance: {},
+        ImaSdkSettings: ImaSdkSettings,
+        OmidAccessMode: {
+          DOMAIN: 'domain',
+          FULL: 'full',
+          LIMITED: 'limited'
+        },
+        settings: new ImaSdkSettings(),
+        UiElements: {
+          AD_ATTRIBUTION: 'adAttribution',
+          COUNTDOWN: 'countdown'
+        },
+        UniversalAdIdInfo: UniversalAdIdInfo,
+        VERSION: VERSION,
+        ViewMode: {
+          FULLSCREEN: 'fullscreen',
+          NORMAL: 'normal'
+        }
+      });
+
+      if (!window.google) {
+        window.google = {};
+      }
+
+      window.google.ima = ima;
+      hit(source);
+    }
+    GoogleIma3.names = ['google-ima3'];
+    GoogleIma3.injections = [hit, noopFunc];
+
     var redirectsList = /*#__PURE__*/Object.freeze({
         __proto__: null,
         noeval: noeval,
@@ -7487,7 +8144,9 @@
         Matomo: Matomo,
         Fingerprintjs: Fingerprintjs,
         Gemius: Gemius,
-        ATInternetSmartTag: ATInternetSmartTag
+        ATInternetSmartTag: ATInternetSmartTag,
+        preventBab2: preventBab2,
+        GoogleIma3: GoogleIma3
     });
 
     function _classCallCheck(instance, Constructor) {

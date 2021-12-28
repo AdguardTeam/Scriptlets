@@ -45,7 +45,10 @@ function GoogleAnalytics(source) {
       return new Tracker();
     };
 
-    ga.getAll = noopArray;
+    ga.getAll = function () {
+      return [new Tracker()];
+    };
+
     ga.remove = noopFunc;
     ga.loaded = true;
     window[googleAnalyticsName] = ga;
@@ -69,7 +72,7 @@ function GoogleAnalytics(source) {
 
 
     var handleCallback = function handleCallback(dataObj, funcName) {
-      if (typeof dataObj[funcName] === 'function') {
+      if (dataObj && typeof dataObj[funcName] === 'function') {
         setTimeout(dataObj[funcName]);
       }
     };

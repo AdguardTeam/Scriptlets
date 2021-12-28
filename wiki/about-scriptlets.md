@@ -5,6 +5,7 @@
 * [abort-on-stack-trace](#abort-on-stack-trace)
 * [adjust-setInterval](#adjust-setInterval)
 * [adjust-setTimeout](#adjust-setTimeout)
+* [close-window](#close-window)
 * [debug-current-inline-script](#debug-current-inline-script)
 * [debug-on-property-read](#debug-on-property-read)
 * [debug-on-property-write](#debug-on-property-write)
@@ -42,6 +43,7 @@
 * [set-local-storage-item](#set-local-storage-item)
 * [set-popads-dummy](#set-popads-dummy)
 * [set-session-storage-item](#set-session-storage-item)
+* [prevent-bab2](#prevent-bab2)
 * * *
 ### <a id="abort-current-inline-script"></a> ⚡️ abort-current-inline-script
 
@@ -288,6 +290,30 @@ defaults to match all callbacks; invalid regular expression will cause exit and 
     ```
 
 [Scriptlet source](../src/scriptlets/adjust-setTimeout.js)
+* * *
+
+### <a id="close-window"></a> ⚡️ close-window
+
+Closes the browser tab immediately.
+
+**Syntax**
+```
+example.org#%#//scriptlet('close-window'[, path])
+
+- `path` — optional, string or regular expression
+matching the current location's path: `window.location.pathname` + `window.location.search`.
+Defaults to execute on every page.
+
+**Examples**
+```
+! closes any example.org tab
+example.org#%#//scriptlet('close-window')
+
+! closes specific example.org tab
+example.org#%#//scriptlet('close-window', '/example-page.html')
+```
+
+[Scriptlet source](../src/scriptlets/close-window.js)
 * * *
 
 ### <a id="debug-current-inline-script"></a> ⚡️ debug-current-inline-script
@@ -1561,5 +1587,22 @@ example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '
 ```
 
 [Scriptlet source](../src/scriptlets/set-session-storage-item.js)
+* * *
+
+### <a id="prevent-bab2"></a> ⚡️ prevent-bab2
+
+Prevents BlockAdblock script from detecting an ad blocker.
+
+Related UBO redirect:
+https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/nobab2.js
+
+See [redirect description](../wiki/about-redirects.md#prevent-bab2).
+
+**Syntax**
+```
+/blockadblock.$script,redirect=prevent-bab2
+```
+
+[Scriptlet source](../src/redirects/prevent-bab2.js)
 * * *
 

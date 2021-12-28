@@ -177,7 +177,9 @@ export function GoogleIma3(source) {
     AdsLoader.prototype.settings = new ImaSdkSettings();
     AdsLoader.prototype.contentComplete = noopFunc;
     AdsLoader.prototype.destroy = noopFunc;
-    AdsLoader.prototype.getSettings = () => this.settings;
+    AdsLoader.prototype.getSettings = function () {
+        return this.settings;
+    };
     AdsLoader.prototype.getVersion = () => VERSION;
     AdsLoader.prototype.requestAds = function () {
         if (!managerLoaded) {
