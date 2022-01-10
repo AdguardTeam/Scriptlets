@@ -32,6 +32,7 @@
 * [prevent-popads-net](#prevent-popads-net)
 * [scorecardresearch-beacon](#scorecardresearch-beacon)
 * [set-popads-dummy](#set-popads-dummy)
+* [click2load.html](#click2load.html)
 * * *
 ### <a id="1x1-transparent.gif"></a> ⚡️ 1x1-transparent.gif
 **Example**
@@ -425,5 +426,18 @@ Redirects request to the source which sets static properties to PopAds and popns
 ```
 
 [Redirect source](../src/redirects/set-popads-dummy.js)
+* * *
+
+### <a id="click2load.html"></a> ⚡️ click2load.html
+Redirects resource and replaces supposed content by decoy frame with button for original content recovering
+
+Related UBO redirect resource:
+https://github.com/gorhill/uBlock/blob/1.31.0/src/web_accessible_resources/click2load.html
+
+**Example**
+```
+||youtube.com/embed/$frame,third-party,redirect=click2load.html
+```
+[Redirect source](../src/redirects/blocking-redirects/click2load.html)
 * * *
 

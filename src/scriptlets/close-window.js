@@ -9,6 +9,7 @@ import { hit, toRegExp } from '../helpers';
  * **Syntax**
  * ```
  * example.org#%#//scriptlet('close-window'[, path])
+ * ```
  *
  * - `path` — optional, string or regular expression
  * matching the current location's path: `window.location.pathname` + `window.location.search`.

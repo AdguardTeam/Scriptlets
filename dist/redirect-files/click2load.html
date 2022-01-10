@@ -122,7 +122,7 @@
       var clUnblockToken = getParamByKey(CL_UNBLOCK_PARAM);
       var blockingRule = getParamByKey(BLOCKING_RULE_PARAM);
       var originUrl = clUnblockToken
-      ? window.location.href : getParamByKey(ORIGIN_URL_PARAM);
+      ? window.location.href : decodeURIComponent(getParamByKey(ORIGIN_URL_PARAM));
       var clickTitleElem = document.getElementById('clickToLoadTitle');
       var clickSubtitleElem = document.getElementById('clickToLoadSubtitle');
       var clickButtonElem = document.getElementById('clickToLoadLink');
@@ -221,9 +221,9 @@
           extRun();
         } else if (clUnblockToken) {
           clRun();
-          e.stopPropagation();
-          e.preventDefault();
         }
+        e.preventDefault();
+        e.stopPropagation();
       });
       clickButtonElem.addEventListener(CL_FORCE_EVENT, function () {
         clRun();

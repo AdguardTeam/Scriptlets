@@ -154,7 +154,12 @@ export function abortCurrentInlineScript(source, property, search) {
         }
 
         let currentValue = base[prop];
-        const origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+        let origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+        if (origDescriptor instanceof Object === false
+            || origDescriptor.get instanceof Function === false) {
+            currentValue = base[prop];
+            origDescriptor = undefined;
+        }
         setPropertyAccess(base, prop, {
             set: (value) => {
                 abort();
