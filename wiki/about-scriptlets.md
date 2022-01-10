@@ -43,7 +43,6 @@
 * [set-local-storage-item](#set-local-storage-item)
 * [set-popads-dummy](#set-popads-dummy)
 * [set-session-storage-item](#set-session-storage-item)
-* [prevent-bab2](#prevent-bab2)
 * * *
 ### <a id="abort-current-inline-script"></a> ⚡️ abort-current-inline-script
 
@@ -1588,22 +1587,5 @@ example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '
 ```
 
 [Scriptlet source](../src/scriptlets/set-session-storage-item.js)
-* * *
-
-### <a id="prevent-bab2"></a> ⚡️ prevent-bab2
-
-Prevents BlockAdblock script from detecting an ad blocker.
-
-Related UBO redirect:
-https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/nobab2.js
-
-See [redirect description](../wiki/about-redirects.md#prevent-bab2).
-
-**Syntax**
-```
-/blockadblock.$script,redirect=prevent-bab2
-```
-
-[Scriptlet source](../src/redirects/prevent-bab2.js)
 * * *
 

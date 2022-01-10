@@ -19,8 +19,10 @@ import {
 export function GoogleTagServicesGpt(source) {
     const companionAdsService = {
         addEventListener: noopThis,
+        removeEventListener: noopThis,
         enableSyncLoading: noopFunc,
         setRefreshUnfilledSlots: noopFunc,
+        getSlots: noopArray,
     };
     const contentService = {
         addEventListener: noopThis,

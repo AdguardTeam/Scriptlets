@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.5.0
+ * Version 1.5.11
  */
 
 (function () {
@@ -2416,6 +2416,12 @@
 
         var currentValue = base[prop];
         var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+
+        if (origDescriptor instanceof Object === false || origDescriptor.get instanceof Function === false) {
+          currentValue = base[prop];
+          origDescriptor = undefined;
+        }
+
         setPropertyAccess(base, prop, {
           set: function set(value) {
             abort();
@@ -5481,6 +5487,7 @@
      * **Syntax**
      * ```
      * example.org#%#//scriptlet('close-window'[, path])
+     * ```
      *
      * - `path` — optional, string or regular expression
      * matching the current location's path: `window.location.pathname` + `window.location.search`.
@@ -6865,8 +6872,10 @@
     function GoogleTagServicesGpt(source) {
       var companionAdsService = {
         addEventListener: noopThis,
+        removeEventListener: noopThis,
         enableSyncLoading: noopFunc,
-        setRefreshUnfilledSlots: noopFunc
+        setRefreshUnfilledSlots: noopFunc,
+        getSlots: noopArray
       };
       var contentService = {
         addEventListener: noopThis,
@@ -7504,7 +7513,7 @@
 
     /* eslint-disable consistent-return, no-eval */
     /**
-     * @scriptlet prevent-bab2
+     * @redirect prevent-bab2
      *
      * @description
      * Prevents BlockAdblock script from detecting an ad blocker.
