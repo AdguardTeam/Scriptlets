@@ -20,7 +20,6 @@
 * [gemius](#gemius)
 * [google-analytics-ga](#google-analytics-ga)
 * [google-analytics](#google-analytics)
-* [google-ima3](#google-ima3)
 * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
 * [googletagservices-gpt](#googletagservices-gpt)
 * [matomo](#matomo)
@@ -254,18 +253,6 @@ https://github.com/gorhill/uBlock/blob/8cd2a1d263a96421487b39040c1d23eb01169484/
 [Redirect source](../src/redirects/google-analytics.js)
 * * *
 
-### <a id="google-ima3"></a> ⚡️ google-ima3
-
-Mocks the IMA SDK of Google.
-
-**Example**
-```
-||imasdk.googleapis.com/js/sdkloader/ima3.js$script,redirect=google-ima3
-```
-
-[Redirect source](../src/redirects/google-ima3.js)
-* * *
-
 ### <a id="googlesyndication-adsbygoogle"></a> ⚡️ googlesyndication-adsbygoogle
 
 Mocks Google AdSense API.
@@ -453,4 +440,3 @@ https://github.com/gorhill/uBlock/blob/1.31.0/src/web_accessible_resources/click
 ```
 [Redirect source](../src/redirects/blocking-redirects/click2load.html)
 * * *
-
