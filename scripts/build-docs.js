@@ -7,6 +7,7 @@ const yaml = require('js-yaml');
 const SCRIPTLETS_FILES_DIRECTORY = '../src/scriptlets';
 const REDIRECTS_FILES_DIRECTORY = '../src/redirects';
 const STATIC_REDIRECTS = '../src/redirects/static-redirects.yml';
+const BLOCKING_REDIRECTS = '../src/redirects/blocking-redirects.yml';
 
 const ABOUT_SCRIPTLETS_PATH = path.resolve(__dirname, '../wiki/about-scriptlets.md');
 const ABOUT_REDIRECTS_PATH = path.resolve(__dirname, '../wiki/about-redirects.md');
@@ -149,15 +150,46 @@ ${el.description}\n
  */
 const mdForStaticRedirects = () => {
     const staticRedirects = fs.readFileSync(path.resolve(__dirname, STATIC_REDIRECTS), { encoding: 'utf8' });
-    const parsedSR = yaml.safeLoad(staticRedirects);
+    const parsedStaticRedirects = yaml.safeLoad(staticRedirects);
 
-    const output = parsedSR.reduce((acc, el) => {
+    const output = parsedStaticRedirects.reduce((acc, el) => {
         if (el.description) {
             acc.list.push(`* [${el.title}](#${el.title})\n`);
 
             const body = `### <a id="${el.title}"></a> ⚡️ ${el.title}
 ${el.description}
 [Redirect source](${STATIC_REDIRECTS})
+* * *\n\n`;
+            acc.body.push(body);
+        } else {
+            throw new Error(`No description for ${el.title}`);
+        }
+
+        return acc;
+    }, { list: [], body: [] });
+
+    const list = output.list.join('');
+    const body = output.body.join('');
+
+    return { list, body };
+};
+
+/**
+ * Generates markdown list and describing text for blocking redirect resources, i.e click2load.html
+ */
+const mdForBlockingRedirects = () => {
+    const BLOCKING_REDIRECTS_SOURCE_DIR = '../src/redirects/blocking-redirects';
+
+    const blockingRedirects = fs.readFileSync(path.resolve(__dirname, BLOCKING_REDIRECTS), { encoding: 'utf8' });
+    const parsedBlockingRedirects = yaml.safeLoad(blockingRedirects);
+
+    const output = parsedBlockingRedirects.reduce((acc, el) => {
+        if (el.description) {
+            acc.list.push(`* [${el.title}](#${el.title})\n`);
+
+            const body = `### <a id="${el.title}"></a> ⚡️ ${el.title}
+${el.description}
+[Redirect source](${BLOCKING_REDIRECTS_SOURCE_DIR}/${el.title})
 * * *\n\n`;
             acc.body.push(body);
         } else {
@@ -181,12 +213,16 @@ function init() {
         const scriptletsMarkdownData = generateMD(manageDataFromFiles().scriptletsData);
         const redirectsMarkdownData = generateMD(manageDataFromFiles().redirectsData);
         const staticRedirectsMarkdownData = mdForStaticRedirects();
+        const blockingRedirectsMarkdownData = mdForBlockingRedirects();
 
-        // eslint-disable-next-line max-len
+        /* eslint-disable max-len */
         const scriptletsAbout = `## <a id="scriptlets"></a> Available Scriptlets\n${scriptletsMarkdownData.list}* * *\n${scriptletsMarkdownData.body}`;
         fs.writeFileSync(path.resolve(__dirname, ABOUT_SCRIPTLETS_PATH), scriptletsAbout);
-        // eslint-disable-next-line max-len
-        const redirectsAbout = `## <a id="redirect-resources"></a> Available Redirect resources\n${staticRedirectsMarkdownData.list}${redirectsMarkdownData.list}* * *\n${staticRedirectsMarkdownData.body}${redirectsMarkdownData.body}`;
+
+        const redirectsAbout = `## <a id="redirect-resources"></a> Available Redirect resources
+${staticRedirectsMarkdownData.list}${redirectsMarkdownData.list}${blockingRedirectsMarkdownData.list}* * *
+${staticRedirectsMarkdownData.body}${redirectsMarkdownData.body}${blockingRedirectsMarkdownData.body}`;
+        /* eslint-enable max-len */
         fs.writeFileSync(path.resolve(__dirname, ABOUT_REDIRECTS_PATH), redirectsAbout);
     } catch (e) {
         // eslint-disable-next-line no-console
