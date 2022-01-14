@@ -80,7 +80,7 @@ export function GoogleTagServicesGpt(source) {
         enableVideoAds: noopFunc,
         get: noopNull,
         getAttributeKeys: noopArray,
-        getTargeting: noopFunc,
+        getTargeting: noopArray,
         getTargetingKeys: noopArray,
         getSlots: noopArray,
         refresh: noopFunc,

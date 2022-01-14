@@ -59,6 +59,9 @@ test('AdGuard Syntax', (assert) => {
     assert.strictEqual(mockedPubads.display(), undefined, 'pubads().display() is mocked');
     assert.strictEqual(typeof mockedPubads.enableLazyLoad, 'function', 'pubads().enableLazyLoad() is function');
     assert.strictEqual(mockedPubads.enableLazyLoad(), undefined, 'pubads().enableLazyLoad() is mocked');
+    assert.strictEqual(typeof mockedPubads.getTargeting, 'function', 'pubads().getTargeting() is function');
+    assert.ok(mockedPubads.getTargeting() instanceof Array, 'pubads().getTargeting() returns array');
+    assert.strictEqual(mockedPubads.getTargeting().length, 0, 'pubads().getTargeting() is mocked');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 });
