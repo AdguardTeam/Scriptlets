@@ -66,19 +66,21 @@ import {
  */
 /* eslint-enable max-len */
 export function preventXHR(source, propsToMatch) {
-    // do nothing if browser does not support or Proxy (e.g. Internet Explorer)
+    // do nothing if browser does not support Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
     if (typeof Proxy === 'undefined') {
         return;
     }
 
-    const handlerWrapper = (target, thisArg, args) => {
-        let shouldPrevent = false;
+    let shouldPrevent = false;
+    let responseUrl;
+    const openWrapper = (target, thisArg, args) => {
         // Get method and url from .open()
         const xhrData = {
             method: args[0],
             url: args[1],
         };
+        responseUrl = xhrData.url;
         if (typeof propsToMatch === 'undefined') {
             // Log if no propsToMatch given
             const logMessage = `log: xhr( ${objectToString(xhrData)} )`;
@@ -99,24 +101,52 @@ export function preventXHR(source, propsToMatch) {
                     .every((matchKey) => {
                         const matchValue = matchData[matchKey];
                         return Object.prototype.hasOwnProperty.call(xhrData, matchKey)
-                        && matchValue.test(xhrData[matchKey]);
+                            && matchValue.test(xhrData[matchKey]);
                     });
             }
-        }
-
-        if (shouldPrevent) {
-            hit(source);
-            return undefined;
         }
 
         return Reflect.apply(target, thisArg, args);
     };
 
-    const xhrHandler = {
-        apply: handlerWrapper,
+    const sendWrapper = (target, thisArg, args) => {
+        if (!shouldPrevent) {
+            return Reflect.apply(target, thisArg, args);
+        }
+
+        // Mock response object
+        Object.defineProperties(thisArg, {
+            readyState: { value: 4, writable: false },
+            response: { value: '', writable: false },
+            responseText: { value: '', writable: false },
+            responseURL: { value: responseUrl, writable: false },
+            responseXML: { value: '', writable: false },
+            status: { value: 200, writable: false },
+            statusText: { value: 'OK', writable: false },
+        });
+        // Mock events
+        setTimeout(() => {
+            const stateEvent = new Event('readystatechange');
+            thisArg.dispatchEvent(stateEvent);
+
+            const loadEvent = new Event('load');
+            thisArg.dispatchEvent(loadEvent);
+        }, 1);
+
+        hit(source);
+        return undefined;
     };
 
-    XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, xhrHandler);
+    const openHandler = {
+        apply: openWrapper,
+    };
+
+    const sendHandler = {
+        apply: sendWrapper,
+    };
+
+    XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
+    XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
 }
 
 preventXHR.names = [
