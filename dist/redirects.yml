@@ -1,6 +1,6 @@
 #
 #    AdGuard Scriptlets (Redirects Source)
-#    Version 1.5.9
+#    Version 1.5.13
 #
 - title: 1x1-transparent.gif
   description: |-
@@ -1585,7 +1585,7 @@
           enableVideoAds: noopFunc,
           get: noopNull,
           getAttributeKeys: noopArray,
-          getTargeting: noopFunc,
+          getTargeting: noopArray,
           getTargetingKeys: noopArray,
           getSlots: noopArray,
           refresh: noopFunc,

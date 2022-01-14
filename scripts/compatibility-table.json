@@ -87,8 +87,7 @@
             "ubo": "adfly-defuser.js"
         },
         {
-            "adg": "prevent-bab",
-            "ubo": "nobab.js (removed)"
+            "adg": "prevent-bab"
         },
         {
             "adg": "prevent-eval-if",
@@ -147,12 +146,6 @@
             "adg": "set-popads-dummy"
         },
         {
-            "ubo": "setInterval-defuser.js (sid.js) (removed)"
-        },
-        {
-            "ubo": "requestAnimationFrame-if.js (raf-if.js) (removed)"
-        },
-        {
             "ubo": "webrtc-if.js"
         },
         {
@@ -180,13 +173,7 @@
             "ubo": "twitch-videoad.js"
         },
         {
-            "ubo": "fingerprint2.js (removed)"
-        },
-        {
             "abp": "trace"
-        },
-        {
-            "abp": "uabinject-defuser (removed)"
         },
         {
             "abp": "hide-if-shadow-contains"
@@ -296,10 +283,6 @@
         {
             "adg": "googlesyndication-adsbygoogle",
             "ubo": "googlesyndication_adsbygoogle.js"
-        },
-        {
-            "adg": "googletagmanager-gtm (removed)",
-            "ubo": "googletagmanager_gtm.js (removed)"
         },
         {
             "adg": "googletagservices-gpt",

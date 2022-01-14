@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.5.9
+ * Version 1.5.13
  */
 
 (function () {
@@ -5423,19 +5423,22 @@
     /* eslint-enable max-len */
 
     function preventXHR(source, propsToMatch) {
-      // do nothing if browser does not support or Proxy (e.g. Internet Explorer)
+      // do nothing if browser does not support Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
       if (typeof Proxy === 'undefined') {
         return;
       }
 
-      var handlerWrapper = function handlerWrapper(target, thisArg, args) {
-        var shouldPrevent = false; // Get method and url from .open()
+      var shouldPrevent = false;
+      var responseUrl;
 
+      var openWrapper = function openWrapper(target, thisArg, args) {
+        // Get method and url from .open()
         var xhrData = {
           method: args[0],
           url: args[1]
         };
+        responseUrl = xhrData.url;
 
         if (typeof propsToMatch === 'undefined') {
           // Log if no propsToMatch given
@@ -5461,18 +5464,64 @@
           }
         }
 
-        if (shouldPrevent) {
-          hit(source);
-          return undefined;
-        }
-
         return Reflect.apply(target, thisArg, args);
       };
 
-      var xhrHandler = {
-        apply: handlerWrapper
+      var sendWrapper = function sendWrapper(target, thisArg, args) {
+        if (!shouldPrevent) {
+          return Reflect.apply(target, thisArg, args);
+        } // Mock response object
+
+
+        Object.defineProperties(thisArg, {
+          readyState: {
+            value: 4,
+            writable: false
+          },
+          response: {
+            value: '',
+            writable: false
+          },
+          responseText: {
+            value: '',
+            writable: false
+          },
+          responseURL: {
+            value: responseUrl,
+            writable: false
+          },
+          responseXML: {
+            value: '',
+            writable: false
+          },
+          status: {
+            value: 200,
+            writable: false
+          },
+          statusText: {
+            value: 'OK',
+            writable: false
+          }
+        }); // Mock events
+
+        setTimeout(function () {
+          var stateEvent = new Event('readystatechange');
+          thisArg.dispatchEvent(stateEvent);
+          var loadEvent = new Event('load');
+          thisArg.dispatchEvent(loadEvent);
+        }, 1);
+        hit(source);
+        return undefined;
       };
-      XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, xhrHandler);
+
+      var openHandler = {
+        apply: openWrapper
+      };
+      var sendHandler = {
+        apply: sendWrapper
+      };
+      XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
+      XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
     }
     preventXHR.names = ['prevent-xhr', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-xhr-if.js', 'ubo-no-xhr-if.js', 'ubo-no-xhr-if'];
@@ -6940,7 +6989,7 @@
         enableVideoAds: noopFunc,
         get: noopNull,
         getAttributeKeys: noopArray,
-        getTargeting: noopFunc,
+        getTargeting: noopArray,
         getTargetingKeys: noopArray,
         getSlots: noopArray,
         refresh: noopFunc,
