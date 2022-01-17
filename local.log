@@ -1,0 +1,7 @@
+
+
+Mon Jan 17 2022 20:03:54 GMT+0300 (Moscow Standard Time) -- Setting output as verbose
+Mon Jan 17 2022 20:03:54 GMT+0300 (Moscow Standard Time) -- [ERROR] Another instance of BrowserStack Binary is running with on your system with PID: 33455
+Mon Jan 17 2022 20:03:54 GMT+0300 (Moscow Standard Time) -- [ERROR] Please close it and try again
+Mon Jan 17 2022 20:03:54 GMT+0300 (Moscow Standard Time) -- [ERROR] SYS_CONFLICT:1001 https://browserstack.com/docs/local-testing/binary/errors/1001
+Mon Jan 17 2022 20:03:54 GMT+0300 (Moscow Standard Time) -- You can learn more about BrowserStack Binary flags by running ./BrowserStackLocal --help
