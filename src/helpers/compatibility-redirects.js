@@ -151,6 +151,9 @@ const redirects = [
         adg: 'empty',
         ubo: 'empty',
     },
+    {
+        adg: 'tagcommander-tc',
+    },
 ];
 
 export default redirects;
