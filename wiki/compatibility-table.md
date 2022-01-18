@@ -24,7 +24,7 @@
 | [nowebrtc](../wiki/about-scriptlets.md#nowebrtc) | nowebrtc.js |  |
 | [prevent-addEventListener](../wiki/about-scriptlets.md#prevent-addEventListener) | addEventListener-defuser.js (aeld.js) |  |
 | [prevent-adfly](../wiki/about-scriptlets.md#prevent-adfly) | adfly-defuser.js |  |
-| [prevent-bab](../wiki/about-scriptlets.md#prevent-bab) | nobab.js (removed) |  |
+| [prevent-bab](../wiki/about-scriptlets.md#prevent-bab) |  |  |
 | [prevent-eval-if](../wiki/about-scriptlets.md#prevent-eval-if) | noeval-if.js |  |
 | [prevent-fab-3.2.0](../wiki/about-scriptlets.md#prevent-fab-3.2.0) |  |  |
 | [prevent-fetch](../wiki/about-scriptlets.md#prevent-fetch) | no-fetch-if.js |  |
@@ -40,8 +40,6 @@
 | [set-attr](../wiki/about-scriptlets.md#set-attr) |  |  |
 | [set-constant](../wiki/about-scriptlets.md#set-constant) | set-constant.js (set.js) | override-property-read |
 | [set-popads-dummy](../wiki/about-scriptlets.md#set-popads-dummy) |  |  |
-|  | setInterval-defuser.js (sid.js) (removed) |  |
-|  | requestAnimationFrame-if.js (raf-if.js) (removed) |  |
 |  | webrtc-if.js |  |
 |  | overlay-buster.js |  |
 |  | alert-buster.js |  |
@@ -51,9 +49,7 @@
 |  | smartadserver.com.js |  |
 |  | damoh-defuser.js |  |
 |  | twitch-videoad.js |  |
-|  | fingerprint2.js (removed) |  |
 |  |  | trace |
-|  |  | uabinject-defuser (removed) |
 |  |  | hide-if-shadow-contains |
 |  |  | hide-if-contains |
 |  |  | hide-if-contains-visible-text |
@@ -91,7 +87,6 @@
 | [google-analytics](../wiki/about-redirects.md#google-analytics) | google-analytics_analytics.js |  |
 | [google-analytics-ga](../wiki/about-redirects.md#google-analytics-ga) | google-analytics_ga.js |  |
 | [googlesyndication-adsbygoogle](../wiki/about-redirects.md#googlesyndication-adsbygoogle) | googlesyndication_adsbygoogle.js |  |
-| googletagmanager-gtm (removed) | googletagmanager_gtm.js (removed) |  |
 | [googletagservices-gpt](../wiki/about-redirects.md#googletagservices-gpt) | googletagservices_gpt.js |  |
 | [gemius](../wiki/about-redirects.md#gemius) |  |  |
 | [matomo](../wiki/about-redirects.md#matomo) |  |  |
