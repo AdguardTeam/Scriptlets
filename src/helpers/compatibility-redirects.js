@@ -69,6 +69,9 @@ const redirects = [
         ubo: 'googletagservices_gpt.js',
     },
     {
+        adg: 'google-ima3',
+    },
+    {
         adg: 'gemius',
     },
     {
