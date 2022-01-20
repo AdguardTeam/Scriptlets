@@ -80,6 +80,11 @@ export function GoogleIma3(source) {
             INSECURE: 2,
         },
     };
+    ImaSdkSettings.VpaidMode = {
+        DISABLED: 0,
+        ENABLED: 1,
+        INSECURE: 2,
+    };
 
     let managerLoaded = false;
 
