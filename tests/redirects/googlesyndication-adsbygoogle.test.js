@@ -69,6 +69,7 @@ test('Redirect testing', (assert) => {
     assert.strictEqual(createdIframes.length, 2, '2 iframes was created as a child of .adsbygoogle');
 
     assert.strictEqual(window.adsbygoogle.length, undefined, 'adsbygoogle.length check');
+    assert.strictEqual(window.adsbygoogle.push.length, 1, 'push.length check');
 
     // check if API was mocked
     window.adsbygoogle.push('somedata');

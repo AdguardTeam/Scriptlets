@@ -21,7 +21,8 @@ export function GoogleSyndicationAdsByGoogle(source) {
         // https://github.com/AdguardTeam/Scriptlets/issues/113
         // length: 0,
         loaded: true,
-        push() {
+        // https://github.com/AdguardTeam/Scriptlets/issues/184
+        push(arg) { // eslint-disable-line no-unused-vars
             if (typeof this.length === 'undefined') {
                 this.length = 0;
                 this.length += 1;
