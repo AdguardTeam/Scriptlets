@@ -108,6 +108,22 @@ test('sets values correctly', (assert) => {
     assert.strictEqual(window.counter, counter);
     clearGlobalProps(falseFuncProp);
 
+    // setting constant to noopPromiseReject;
+    const noopPromiseRejectProp = 'noopPromiseRejectProp';
+    counter = runSetConstantScriptlet(noopPromiseRejectProp, 'noopPromiseReject');
+    assert.rejects(window[noopPromiseRejectProp]());
+    assert.strictEqual(window.counter, counter);
+    clearGlobalProps(noopPromiseRejectProp);
+
+    // setting constant to noopPromiseResolve;
+    const noopPromiseResolveProp = 'noopPromiseResolveProp';
+    counter = runSetConstantScriptlet(noopPromiseResolveProp, 'noopPromiseResolve');
+    window[noopPromiseResolveProp]().then((response) => {
+        assert.ok(response);
+    });
+    assert.strictEqual(window.counter, counter);
+    clearGlobalProps(noopPromiseResolveProp);
+
     // setting constant to number;
     const numberProp = 'numberProp';
     counter = runSetConstantScriptlet(numberProp, 111);

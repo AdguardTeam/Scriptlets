@@ -5,6 +5,8 @@ import {
     noopFunc,
     trueFunc,
     falseFunc,
+    noopPromiseReject,
+    noopPromiseResolve,
     getPropertyInChain,
     setPropertyAccess,
     toRegExp,
@@ -45,6 +47,8 @@ import {
  *         - `noopFunc` - function with empty body
  *         - `trueFunc` - function returning true
  *         - `falseFunc` - function returning false
+ *         - `noopPromiseResolve` - function returning Promise object that is resolved with an empty response
+ *         - `noopPromiseReject` - function returning Promise.reject()
  *         - `''` - empty string
  *         - `-1` - number value `-1`
  * - `stack` - optional, string or regular expression that must match the current function call stack trace;
@@ -102,6 +106,10 @@ export function setConstant(source, property, value, stack) {
         constantValue = trueFunc;
     } else if (value === 'falseFunc') {
         constantValue = falseFunc;
+    } else if (value === 'noopPromiseResolve') {
+        constantValue = noopPromiseResolve;
+    } else if (value === 'noopPromiseReject') {
+        constantValue = noopPromiseReject;
     } else if (/^\d+$/.test(value)) {
         constantValue = parseFloat(value);
         if (nativeIsNaN(constantValue)) {
@@ -196,6 +204,8 @@ setConstant.injections = [
     noopFunc,
     trueFunc,
     falseFunc,
+    noopPromiseReject,
+    noopPromiseResolve,
     getPropertyInChain,
     setPropertyAccess,
     toRegExp,
