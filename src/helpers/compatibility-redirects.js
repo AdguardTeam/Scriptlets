@@ -127,6 +127,9 @@ const redirects = [
         adg: 'noopvast-3.0',
     },
     {
+        adg: 'prebid',
+    },
+    {
         adg: 'prevent-bab',
         ubo: 'nobab.js',
     },

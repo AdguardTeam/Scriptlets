@@ -18,3 +18,4 @@ export * from './ati-smarttag';
 export * from './prevent-bab2.js';
 export * from './google-ima3';
 export * from './tagcommander-tc.js';
+export * from './prebid.js';
