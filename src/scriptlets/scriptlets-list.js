@@ -45,3 +45,4 @@ export * from './abort-on-stack-trace';
 export * from './log-on-stack-trace';
 export * from './prevent-xhr';
 export * from './close-window';
+export * from './prevent-refresh';
