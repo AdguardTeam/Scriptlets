@@ -2,7 +2,7 @@
 import { runRedirect, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
-const name = 'fingerprintjs';
+const name = 'fingerprintjs2';
 
 const changingProps = ['hit', '__debug'];
 

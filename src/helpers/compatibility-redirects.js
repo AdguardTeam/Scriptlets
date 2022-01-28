@@ -39,8 +39,12 @@ const redirects = [
         ubo: 'click2load.html',
     },
     {
-        adg: 'fingerprintjs',
-        ubo: 'fingerprintjs2.js',
+        adg: 'fingerprintjs2',
+        ubo: 'fingerprint2.js',
+    },
+    {
+        adg: 'fingerprintjs3',
+        ubo: 'fingerprint3.js',
     },
     {
         adg: 'google-analytics',
