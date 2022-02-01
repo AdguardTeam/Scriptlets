@@ -50,14 +50,11 @@ export function Fingerprintjs3(source) {
 
 Fingerprintjs3.names = [
     'fingerprintjs3',
-    // Aliases are needed for matching the related scriptlet converted into our syntax
-    // These are used by UBO rules syntax
-    // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
-    'fingerprint3',
-    'fingerprint3.js',
-    // Prefix 'ubo-' is required to run converted rules
-    'ubo-fingerprint3',
+    // redirect aliases are needed for conversion:
+    // prefixed for us
     'ubo-fingerprint3.js',
+    // original ubo name
+    'fingerprint3.js',
 ];
 
 Fingerprintjs3.injections = [hit, noopStr];

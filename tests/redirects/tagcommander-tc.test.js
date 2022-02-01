@@ -2,7 +2,7 @@
 import { runRedirect, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
-const name = 'tagcommander';
+const name = 'tagcommander-tc';
 
 const changingProps = ['hit', '__debug'];
 

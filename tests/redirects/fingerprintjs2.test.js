@@ -25,7 +25,8 @@ test('Checking if alias name works', (assert) => {
         verbose: true,
     };
     const uboParams = {
-        name: 'ubo-fingerprint2.js',
+        // original ubo name
+        name: 'fingerprint2.js',
         engine: 'test',
         verbose: true,
     };
