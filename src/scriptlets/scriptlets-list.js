@@ -46,3 +46,4 @@ export * from './log-on-stack-trace';
 export * from './prevent-xhr';
 export * from './close-window';
 export * from './prevent-refresh';
+export * from './prevent-src';
