@@ -50,12 +50,12 @@ export function preventSrc(source, search, tagName) {
         const isTargetElement = tagName.toLowerCase() === nodeName;
         const isMatch = searchRegexp.test(value);
         // Pass all calls if attribute is not src or the element or value isn't matched
-        if (attr !== 'src' || !isMatch || !isTargetElement) {
+        if (attr !== 'src' || !isMatch || !isTargetElement || !srcMockData[nodeName]) {
             return Reflect.apply(target, thisArg, args);
         }
 
-        // Forward the URI that corresponds with element's MIME type
         hit(source);
+        // Forward the URI that corresponds with element's MIME type
         return Reflect.apply(target, thisArg, [attr, srcMockData[nodeName]]);
     };
 
@@ -63,6 +63,50 @@ export function preventSrc(source, search, tagName) {
         apply: setAttributeWrapper,
     };
     Element.prototype.setAttribute = new Proxy(Element.prototype.setAttribute, setAttributeHandler);
+
+    let instance;
+    if (tagName === 'script') {
+        instance = HTMLScriptElement;
+    } else if (tagName === 'img') {
+        instance = HTMLImageElement;
+    } else if (tagName === 'iframe') {
+        instance = HTMLIFrameElement;
+    } else {
+        return;
+    }
+
+    Object.defineProperty(instance.prototype, 'src', {
+        enumerable: true,
+        configurable: true,
+        get() {
+            if (this.getAttribute('src')) {
+                return this.getAttribute('src');
+            }
+            return '';
+        },
+        set(src) {
+            const nodeName = this.nodeName.toLowerCase();
+            const isTargetElement = tagName.toLowerCase() === nodeName;
+            const isMatch = searchRegexp.test(src);
+            if (!isMatch || !isTargetElement || !srcMockData[nodeName]) {
+                this.setAttribute('src', src);
+                return;
+            }
+            // For websites that use Trusted Types
+            // https://w3c.github.io/webappsec-trusted-types/dist/spec/
+            const hasTrustedTypes = !(window.trustedTypes && window.trustedTypes.createPolicy);
+            // eslint-disable-next-line no-undef
+            if (hasTrustedTypes && src instanceof TrustedScriptURL) {
+                const policy = window.trustedTypes.createPolicy('mock', {
+                    createScriptURL: (arg) => arg,
+                });
+                this.setAttribute('src', policy.createScriptURL(src));
+                return;
+            }
+            hit(source);
+            this.setAttribute('src', srcMockData[nodeName]);
+        },
+    });
 }
 
 preventSrc.names = [
