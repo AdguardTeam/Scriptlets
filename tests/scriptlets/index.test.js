@@ -43,3 +43,4 @@ import './abort-on-stack-trace.test';
 import './log-on-stack-trace.test';
 import './close-window.test';
 import './prevent-refresh.test';
+import './prevent-src.test';
