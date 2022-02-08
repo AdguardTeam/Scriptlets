@@ -2,7 +2,7 @@
 import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
-const name = 'prevent-src';
+const name = 'prevent-element-src-loading';
 
 const beforeEach = () => {
     window.__debug = () => {

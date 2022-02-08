@@ -6,14 +6,14 @@ import {
 
 /* eslint-disable max-len, consistent-return */
 /**
- * @scriptlet prevent-src
+ * @scriptlet prevent-element-src-loading
  *
  * @description
  * Blocks loading of script, img and iframe tags preventing 'onerror' listeners and not breaking 'onload' ones.
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('prevent-src', search, tagName)
+ * example.org#%#//scriptlet('prevent-element-src-loading', search, tagName)
  * ```
  *
  * - `search` - optional, string or regular expression for matching the element's URL;
@@ -23,11 +23,11 @@ import {
  * **Examples**
  * 1. Prevent script source from loading:
  * ```
- *     example.org#%#//scriptlet('prevent-src', 'adsbygoogle', 'script')
+ *     example.org#%#//scriptlet('prevent-element-src-loading', 'adsbygoogle', 'script')
  * ```
  */
 /* eslint-enable max-len */
-export function preventSrc(source, search, tagName) {
+export function preventElementSrcLoading(source, search, tagName) {
     // do nothing if browser does not support Proxy or Reflect
     if (typeof Proxy === 'undefined' || typeof Reflect === 'undefined') {
         return;
@@ -120,11 +120,11 @@ export function preventSrc(source, search, tagName) {
     });
 }
 
-preventSrc.names = [
-    'prevent-src',
+preventElementSrcLoading.names = [
+    'prevent-element-src-loading',
 ];
 
-preventSrc.injections = [
+preventElementSrcLoading.injections = [
     hit,
     toRegExp,
     safeGetDescriptor,
