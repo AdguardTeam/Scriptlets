@@ -11,7 +11,10 @@ const beforeEach = () => {
 };
 
 const afterEach = () => {
-    clearGlobalProps('hit', '__debug');
+    if (window.elem) {
+        window.elem.remove();
+    }
+    clearGlobalProps('hit', '__debug', 'elem');
 };
 
 const createTagWithSetAttr = (src, nodeName, assert) => {
@@ -50,64 +53,70 @@ const createTagWithSrcProp = (src, nodeName, assert) => {
     return node;
 };
 
+const srcMockData = {
+    script: 'data:text/javascript;base64,KCk9Pnt9',
+    img: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
+    iframe: 'data:text/html;base64, PGRpdj48L2Rpdj4=',
+};
+
 module(name, { beforeEach, afterEach });
 
 test('setAttribute, matching script element', (assert) => {
-    const scriptletArgs = ['adsbygoogle', 'script'];
+    const targetNode = 'script';
+    const scriptletArgs = ['test-script.js', targetNode];
     runScriptlet(name, scriptletArgs);
 
-    const elem = createTagWithSetAttr('adsbygoogle.js', 'script', assert);
-    assert.ok(elem.src.indexOf('data:') > -1, 'src was mocked');
+    window.elem = createTagWithSetAttr('./test-files/test-script.js', targetNode, assert);
+    assert.strictEqual(window.elem.src, srcMockData[targetNode], 'src was mocked');
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-    elem.remove();
 });
 
 test('setAttribute, matching image element', (assert) => {
-    const scriptletArgs = ['adsbygoogle', 'img'];
+    const targetNode = 'img';
+    const scriptletArgs = ['test-image', targetNode];
     runScriptlet(name, scriptletArgs);
 
-    const elem = createTagWithSetAttr('adsbygoogle.js', 'img', assert);
-    assert.ok(elem.src.indexOf('data:') > -1, 'src was mocked');
+    window.elem = createTagWithSetAttr('./test-files/test-image.jpeg', targetNode, assert);
+    assert.strictEqual(window.elem.src, srcMockData[targetNode], 'src was mocked');
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-    elem.remove();
 });
 
-// test('setAttribute, matching iframe element', (assert) => {
-//     const scriptletArgs = ['adsbygoogle', 'iframe'];
-//     runScriptlet(name, scriptletArgs);
-
-//     const elem = createTagWithSetAttr('adsbygoogle.js', 'iframe', assert);
-//     assert.ok(elem.src.indexOf('data:') > -1, 'src was mocked');
-//     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-//     elem.remove();
-// });
-
-test('src prop, matching script element', (assert) => {
-    const scriptletArgs = ['adsbygoogle', 'script'];
+test('setAttribute, matching iframe element', (assert) => {
+    const targetNode = 'iframe';
+    const scriptletArgs = ['empty.html', targetNode];
     runScriptlet(name, scriptletArgs);
 
-    const elem = createTagWithSrcProp('adsbygoogle.js', 'script', assert);
-    assert.ok(elem.src.indexOf('data:') > -1, 'src was mocked');
+    window.elem = createTagWithSetAttr('./test-files/empty.html', targetNode, assert);
+    assert.strictEqual(window.elem.src, srcMockData[targetNode], 'src was mocked');
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-    elem.remove();
+});
+
+test('src prop, matching script element', (assert) => {
+    const targetNode = 'script';
+    const scriptletArgs = ['test-script.js', targetNode];
+    runScriptlet(name, scriptletArgs);
+
+    window.elem = createTagWithSrcProp('./test-files/test-script.js', targetNode, assert);
+    assert.strictEqual(window.elem.src, srcMockData[targetNode], 'src was mocked');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
 test('src prop, matching image element', (assert) => {
-    const scriptletArgs = ['adsbygoogle', 'img'];
+    const targetNode = 'img';
+    const scriptletArgs = ['test-image', targetNode];
     runScriptlet(name, scriptletArgs);
 
-    const elem = createTagWithSrcProp('adsbygoogle.js', 'img', assert);
-    assert.ok(elem.src.indexOf('data:') > -1, 'src was mocked');
+    window.elem = createTagWithSrcProp('./test-files/test-image.jpeg', targetNode, assert);
+    assert.strictEqual(window.elem.src, srcMockData[targetNode], 'src was mocked');
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-    elem.remove();
 });
 
-// test('src prop, matching iframe element', (assert) => {
-//     const scriptletArgs = ['adsbygoogle', 'iframe'];
-//     runScriptlet(name, scriptletArgs);
+test('src prop, matching iframe element', (assert) => {
+    const targetNode = 'iframe';
+    const scriptletArgs = ['empty.html', targetNode];
+    runScriptlet(name, scriptletArgs);
 
-//     const elem = createTagWithSrcProp('adsbygoogle.js', 'iframe', assert);
-//     assert.ok(elem.src.indexOf('data:') > -1, 'src was mocked');
-//     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-//     elem.remove();
-// });
+    window.elem = createTagWithSrcProp('./test-files/empty.html', targetNode, assert);
+    assert.strictEqual(window.elem.src, srcMockData[targetNode], 'src was mocked');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
