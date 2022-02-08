@@ -16,26 +16,22 @@
 * [noopmp4-1s](#noopmp4-1s)
 * [amazon-apstag](#amazon-apstag)
 * [ati-smarttag](#ati-smarttag)
-* [fingerprintjs2](#fingerprintjs2)
-* [fingerprintjs3](#fingerprintjs3)
+* [fingerprintjs](#fingerprintjs)
 * [gemius](#gemius)
 * [google-analytics-ga](#google-analytics-ga)
 * [google-analytics](#google-analytics)
-* [google-ima3](#google-ima3)
 * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
 * [googletagservices-gpt](#googletagservices-gpt)
 * [matomo](#matomo)
 * [metrika-yandex-tag](#metrika-yandex-tag)
 * [metrika-yandex-watch](#metrika-yandex-watch)
 * [noeval](#noeval)
-* [prebid](#prebid)
 * [prevent-bab](#prevent-bab)
 * [prevent-bab2](#prevent-bab2)
 * [prevent-fab-3.2.0](#prevent-fab-3.2.0)
 * [prevent-popads-net](#prevent-popads-net)
 * [scorecardresearch-beacon](#scorecardresearch-beacon)
 * [set-popads-dummy](#set-popads-dummy)
-* [tagcommander-tc](#tagcommander-tc)
 * [click2load.html](#click2load.html)
 * * *
 ### <a id="1x1-transparent.gif"></a> ⚡️ 1x1-transparent.gif
@@ -196,36 +192,20 @@ https://developers.atinternet-solutions.com/as2-tagging-en/javascript-en/getting
 [Redirect source](../src/redirects/ati-smarttag.js)
 * * *
 
-### <a id="fingerprintjs2"></a> ⚡️ fingerprintjs2
+### <a id="fingerprintjs"></a> ⚡️ fingerprintjs
 
-Mocks FingerprintJS v2
+Mocks FingerprintJS.
 https://github.com/fingerprintjs
 
 Related UBO redirect resource:
-https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/fingerprint2.js
+https://github.com/gorhill/uBlock/commit/33a18c3a1eb101470c43979a41d8adef3e21208d
 
 **Example**
 ```
-||the-japan-news.com/modules/js/lib/fgp/fingerprint2.js$script,redirect=fingerprintjs2
+||the-japan-news.com/modules/js/lib/fgp/fingerprint2.js$script,redirect=fingerprintjs
 ```
 
-[Redirect source](../src/redirects/fingerprintjs2.js)
-* * *
-
-### <a id="fingerprintjs3"></a> ⚡️ fingerprintjs3
-
-Mocks FingerprintJS v3
-https://github.com/fingerprintjs
-
-Related UBO redirect resource:
-https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/fingerprint3.js
-
-**Example**
-```
-||sephora.com/js/ufe/isomorphic/thirdparty/fp.min.js$script,redirect=fingerprintjs3
-```
-
-[Redirect source](../src/redirects/fingerprintjs3.js)
+[Redirect source](../src/redirects/fingerprintjs.js)
 * * *
 
 ### <a id="gemius"></a> ⚡️ gemius
@@ -271,18 +251,6 @@ https://github.com/gorhill/uBlock/blob/8cd2a1d263a96421487b39040c1d23eb01169484/
 ```
 
 [Redirect source](../src/redirects/google-analytics.js)
-* * *
-
-### <a id="google-ima3"></a> ⚡️ google-ima3
-
-Mocks the IMA SDK of Google.
-
-**Example**
-```
-||imasdk.googleapis.com/js/sdkloader/ima3.js$script,redirect=google-ima3
-```
-
-[Redirect source](../src/redirects/google-ima3.js)
 * * *
 
 ### <a id="googlesyndication-adsbygoogle"></a> ⚡️ googlesyndication-adsbygoogle
@@ -374,19 +342,6 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-silentjs-
 [Redirect source](../src/redirects/noeval.js)
 * * *
 
-### <a id="prebid"></a> ⚡️ prebid
-
-Mocks the prebid.js header bidding suit.
-https://docs.prebid.org/
-
-**Example**
-```
-||tmgrup.com.tr/bd/hb/prebid.js$script,redirect=prebid
-```
-
-[Redirect source](../src/redirects/prebid.js)
-* * *
-
 ### <a id="prevent-bab"></a> ⚡️ prevent-bab
 
 Prevents BlockAdblock script from detecting an ad blocker.
@@ -473,19 +428,6 @@ Redirects request to the source which sets static properties to PopAds and popns
 [Redirect source](../src/redirects/set-popads-dummy.js)
 * * *
 
-### <a id="tagcommander-tc"></a> ⚡️ tagcommander-tc
-
-Mocks TagCommander analytics.
-https://www.commandersact.com/en/solutions/tagcommander/
-
-**Example**
-```
-||cdn.tagcommander.com/4183/tc_TF1_26.js$script,redirect=tagcommander-tc
-```
-
-[Redirect source](../src/redirects/tagcommander-tc.js)
-* * *
-
 ### <a id="click2load.html"></a> ⚡️ click2load.html
 Redirects resource and replaces supposed content by decoy frame with button for original content recovering
 
@@ -498,4 +440,3 @@ https://github.com/gorhill/uBlock/blob/1.31.0/src/web_accessible_resources/click
 ```
 [Redirect source](../src/redirects/blocking-redirects/click2load.html)
 * * *
-
