@@ -19,17 +19,12 @@ const afterEach = () => {
 
 const createTagWithSetAttr = (src, nodeName, assert) => {
     const done1 = assert.async();
-    const done2 = assert.async();
 
     const node = document.createElement(nodeName);
     node.onload = () => {
         assert.ok(true, '.onload triggered');
         done1();
     };
-    node.addEventListener('load', () => {
-        assert.ok(true, 'eventListener on "load" triggered');
-        done2();
-    });
     node.setAttribute('src', src);
     document.body.append(node);
     return node;
@@ -37,17 +32,12 @@ const createTagWithSetAttr = (src, nodeName, assert) => {
 
 const createTagWithSrcProp = (src, nodeName, assert) => {
     const done1 = assert.async();
-    const done2 = assert.async();
 
     const node = document.createElement(nodeName);
     node.onload = () => {
         assert.ok(true, '.onload triggered');
         done1();
     };
-    node.addEventListener('load', () => {
-        assert.ok(true, 'eventListener on "load" triggered');
-        done2();
-    });
     node.src = src;
     document.body.append(node);
     return node;
