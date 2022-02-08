@@ -49,7 +49,7 @@ export function preventSrc(source, search, tagName) {
     }
     // For websites that use Trusted Types
     // https://w3c.github.io/webappsec-trusted-types/dist/spec/
-    const hasTrustedTypes = !(window.trustedTypes && window.trustedTypes.createPolicy);
+    const hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === 'function';
     let policy;
     if (hasTrustedTypes) {
         policy = window.trustedTypes.createPolicy('mock', {
