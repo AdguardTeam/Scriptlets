@@ -48,14 +48,14 @@ export function preventSrc(source, search, tagName) {
     }
 
     const setAttributeWrapper = (target, thisArg, args) => {
+        // Check if arguments are present
+        if (!args[0] || !args[1]) {
+            return Reflect.apply(target, thisArg, args);
+        }
         const element = thisArg;
         const nodeName = element.nodeName.toLowerCase();
         const attr = args[0].toLowerCase();
         const value = args[1];
-        // Check if arguments are present
-        if (!attr || !value) {
-            return;
-        }
 
         const isTargetElement = tagName.toLowerCase() === nodeName;
         const isMatch = searchRegexp.test(value);
