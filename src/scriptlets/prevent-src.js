@@ -1,6 +1,7 @@
 import {
     hit,
     toRegExp,
+    safeGetDescriptor,
 } from '../helpers';
 
 /* eslint-disable max-len, consistent-return */
@@ -46,6 +47,15 @@ export function preventSrc(source, search, tagName) {
     } else {
         return;
     }
+    // For websites that use Trusted Types
+    // https://w3c.github.io/webappsec-trusted-types/dist/spec/
+    const hasTrustedTypes = !(window.trustedTypes && window.trustedTypes.createPolicy);
+    let policy;
+    if (hasTrustedTypes) {
+        policy = window.trustedTypes.createPolicy('mock', {
+            createScriptURL: (arg) => arg,
+        });
+    }
 
     const setAttributeWrapper = (target, thisArg, args) => {
         // Check if arguments are present
@@ -75,36 +85,33 @@ export function preventSrc(source, search, tagName) {
     // eslint-disable-next-line max-len
     instance.prototype.setAttribute = new Proxy(Element.prototype.setAttribute, setAttributeHandler);
 
+    const origDescriptor = safeGetDescriptor(instance.prototype, 'src');
+    if (!origDescriptor) {
+        return;
+    }
     Object.defineProperty(instance.prototype, 'src', {
         enumerable: true,
         configurable: true,
         get() {
-            if (this.getAttribute('src')) {
-                return this.getAttribute('src');
-            }
-            return '';
+            return origDescriptor.get.call(this);
         },
         set(src) {
             const nodeName = this.nodeName.toLowerCase();
             const isTargetElement = tagName.toLowerCase() === nodeName;
             const isMatch = searchRegexp.test(src);
             if (!isMatch || !isTargetElement || !srcMockData[nodeName]) {
-                this.setAttribute('src', src);
-                return;
+                origDescriptor.set.call(this, src);
             }
-            // For websites that use Trusted Types
-            // https://w3c.github.io/webappsec-trusted-types/dist/spec/
-            const hasTrustedTypes = !(window.trustedTypes && window.trustedTypes.createPolicy);
+
             // eslint-disable-next-line no-undef
-            if (hasTrustedTypes && src instanceof TrustedScriptURL) {
-                const policy = window.trustedTypes.createPolicy('mock', {
-                    createScriptURL: (arg) => arg,
-                });
-                this.setAttribute('src', policy.createScriptURL(src));
+            if (policy && src instanceof TrustedScriptURL) {
+                const trustedSrc = policy.createScriptURL(src);
+                origDescriptor.set.call(this, trustedSrc);
+                hit(source);
                 return;
             }
+            origDescriptor.set.call(this, srcMockData[nodeName]);
             hit(source);
-            this.setAttribute('src', srcMockData[nodeName]);
         },
     });
 }
@@ -116,4 +123,5 @@ preventSrc.names = [
 preventSrc.injections = [
     hit,
     toRegExp,
+    safeGetDescriptor,
 ];
