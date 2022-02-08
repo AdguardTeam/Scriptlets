@@ -34,7 +34,6 @@ export function preventElementSrcLoading(source, tagName, match) {
     if (typeof Proxy === 'undefined' || typeof Reflect === 'undefined') {
         return;
     }
-    const searchRegexp = toRegExp(match);
     const srcMockData = {
         // "KCk9Pnt9" = "()=>{}"
         script: 'data:text/javascript;base64,KCk9Pnt9',
@@ -62,6 +61,7 @@ export function preventElementSrcLoading(source, tagName, match) {
             createScriptURL: (arg) => arg,
         });
     }
+    const searchRegexp = toRegExp(match);
 
     const setAttributeWrapper = (target, thisArg, args) => {
         // Check if arguments are present
