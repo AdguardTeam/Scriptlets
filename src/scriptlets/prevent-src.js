@@ -36,6 +36,16 @@ export function preventSrc(source, search, tagName) {
         // Empty h1 tag
         iframe: 'data:text/html;base64, PGRpdj48L2Rpdj4=',
     };
+    let instance;
+    if (tagName === 'script') {
+        instance = HTMLScriptElement;
+    } else if (tagName === 'img') {
+        instance = HTMLImageElement;
+    } else if (tagName === 'iframe') {
+        instance = HTMLIFrameElement;
+    } else {
+        return;
+    }
 
     const setAttributeWrapper = (target, thisArg, args) => {
         const element = thisArg;
@@ -62,18 +72,8 @@ export function preventSrc(source, search, tagName) {
     const setAttributeHandler = {
         apply: setAttributeWrapper,
     };
-    Element.prototype.setAttribute = new Proxy(Element.prototype.setAttribute, setAttributeHandler);
-
-    let instance;
-    if (tagName === 'script') {
-        instance = HTMLScriptElement;
-    } else if (tagName === 'img') {
-        instance = HTMLImageElement;
-    } else if (tagName === 'iframe') {
-        instance = HTMLIFrameElement;
-    } else {
-        return;
-    }
+    // eslint-disable-next-line max-len
+    instance.prototype.setAttribute = new Proxy(Element.prototype.setAttribute, setAttributeHandler);
 
     Object.defineProperty(instance.prototype, 'src', {
         enumerable: true,
