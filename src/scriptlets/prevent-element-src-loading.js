@@ -65,7 +65,7 @@ export function preventElementSrcLoading(source, tagName, match) {
 
     const setAttributeWrapper = (target, thisArg, args) => {
         // Check if arguments are present
-        if (!args[0] || !args[1]) {
+        if (args.length !== 2) {
             return Reflect.apply(target, thisArg, args);
         }
         const nodeName = thisArg.nodeName.toLowerCase();
