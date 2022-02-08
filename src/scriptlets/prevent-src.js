@@ -28,6 +28,10 @@ import {
  */
 /* eslint-enable max-len */
 export function preventSrc(source, search, tagName) {
+    // do nothing if browser does not support Proxy or Reflect
+    if (typeof Proxy === 'undefined' || typeof Reflect === 'undefined') {
+        return;
+    }
     const searchRegexp = toRegExp(search);
     const srcMockData = {
         // "KCk9Pnt9" = "()=>{}"
