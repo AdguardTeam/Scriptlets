@@ -16,11 +16,11 @@ import {
  * example.org#%#//scriptlet('prevent-src', tagName, match)
  * ```
  *
- * - `match` - optional, string or regular expression for matching the element's URL;
  * - `tagName` - required, case-insensitive target element tagName which `src` property resource loading will be silently prevented; possible values:
  *     - `script`
  *     - `img`
  *     - `iframe`
+ * - `match` - required, string or regular expression for matching the element's URL;
  *
  * **Examples**
  * 1. Prevent script source loading:
@@ -68,21 +68,21 @@ export function preventElementSrcLoading(source, tagName, match) {
         if (!args[0] || !args[1]) {
             return Reflect.apply(target, thisArg, args);
         }
-        const element = thisArg;
-        const nodeName = element.nodeName.toLowerCase();
-        const attr = args[0].toLowerCase();
-        const value = args[1];
+        const nodeName = thisArg.nodeName.toLowerCase();
+        const attrName = args[0].toLowerCase();
+        const attrValue = args[1];
+        const isMatched = attrName === 'src'
+            && tagName.toLowerCase() === nodeName
+            && srcMockData[nodeName]
+            && searchRegexp.test(attrValue);
 
-        const isTargetElement = tagName.toLowerCase() === nodeName;
-        const isMatch = searchRegexp.test(value);
-        // Pass all calls if attribute is not src or the element or value isn't matched
-        if (attr !== 'src' || !isMatch || !isTargetElement || !srcMockData[nodeName]) {
+        if (!isMatched) {
             return Reflect.apply(target, thisArg, args);
         }
 
         hit(source);
         // Forward the URI that corresponds with element's MIME type
-        return Reflect.apply(target, thisArg, [attr, srcMockData[nodeName]]);
+        return Reflect.apply(target, thisArg, [attrName, srcMockData[nodeName]]);
     };
 
     const setAttributeHandler = {
@@ -101,17 +101,19 @@ export function preventElementSrcLoading(source, tagName, match) {
         get() {
             return origDescriptor.get.call(this);
         },
-        set(src) {
+        set(urlValue) {
             const nodeName = this.nodeName.toLowerCase();
-            const isTargetElement = tagName.toLowerCase() === nodeName;
-            const isMatch = searchRegexp.test(src);
-            if (!isMatch || !isTargetElement || !srcMockData[nodeName]) {
-                origDescriptor.set.call(this, src);
+            const isMatched = tagName.toLowerCase() === nodeName
+                && srcMockData[nodeName]
+                && searchRegexp.test(urlValue);
+
+            if (!isMatched) {
+                origDescriptor.set.call(this, urlValue);
             }
 
             // eslint-disable-next-line no-undef
-            if (policy && src instanceof TrustedScriptURL) {
-                const trustedSrc = policy.createScriptURL(src);
+            if (policy && urlValue instanceof TrustedScriptURL) {
+                const trustedSrc = policy.createScriptURL(urlValue);
                 origDescriptor.set.call(this, trustedSrc);
                 hit(source);
                 return;
