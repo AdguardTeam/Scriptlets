@@ -9,30 +9,32 @@ import {
  * @scriptlet prevent-element-src-loading
  *
  * @description
- * Blocks loading of script, img and iframe tags preventing 'onerror' listeners and not breaking 'onload' ones.
+ * Prevents target element source loading without triggering 'onerror' listeners and not breaking 'onload' ones.
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('prevent-element-src-loading', search, tagName)
+ * example.org#%#//scriptlet('prevent-src', tagName, match)
  * ```
  *
- * - `search` - optional, string or regular expression for matching the element's URL;
- * - `tagName` - string, nodeName of target element, src of which should be silently blocked, case-insensitive.
- *
+ * - `match` - optional, string or regular expression for matching the element's URL;
+ * - `tagName` - required, case-insensitive target element tagName which `src` property resource loading will be silently prevented; possible values:
+ *     - `script`
+ *     - `img`
+ *     - `iframe`
  *
  * **Examples**
- * 1. Prevent script source from loading:
+ * 1. Prevent script source loading:
  * ```
- *     example.org#%#//scriptlet('prevent-element-src-loading', 'adsbygoogle', 'script')
+ *     example.org#%#//scriptlet('prevent-element-src-loading', 'script' ,'adsbygoogle')
  * ```
  */
 /* eslint-enable max-len */
-export function preventElementSrcLoading(source, search, tagName) {
+export function preventElementSrcLoading(source, tagName, match) {
     // do nothing if browser does not support Proxy or Reflect
     if (typeof Proxy === 'undefined' || typeof Reflect === 'undefined') {
         return;
     }
-    const searchRegexp = toRegExp(search);
+    const searchRegexp = toRegExp(match);
     const srcMockData = {
         // "KCk9Pnt9" = "()=>{}"
         script: 'data:text/javascript;base64,KCk9Pnt9',
