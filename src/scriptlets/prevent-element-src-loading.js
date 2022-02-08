@@ -61,6 +61,7 @@ export function preventElementSrcLoading(source, tagName, match) {
             createScriptURL: (arg) => arg,
         });
     }
+    const SOURCE_PROPERTY_NAME = 'src';
     const searchRegexp = toRegExp(match);
 
     const setAttributeWrapper = (target, thisArg, args) => {
@@ -71,7 +72,7 @@ export function preventElementSrcLoading(source, tagName, match) {
         const nodeName = thisArg.nodeName.toLowerCase();
         const attrName = args[0].toLowerCase();
         const attrValue = args[1];
-        const isMatched = attrName === 'src'
+        const isMatched = attrName === SOURCE_PROPERTY_NAME
             && tagName.toLowerCase() === nodeName
             && srcMockData[nodeName]
             && searchRegexp.test(attrValue);
@@ -91,11 +92,11 @@ export function preventElementSrcLoading(source, tagName, match) {
     // eslint-disable-next-line max-len
     instance.prototype.setAttribute = new Proxy(Element.prototype.setAttribute, setAttributeHandler);
 
-    const origDescriptor = safeGetDescriptor(instance.prototype, 'src');
+    const origDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
     if (!origDescriptor) {
         return;
     }
-    Object.defineProperty(instance.prototype, 'src', {
+    Object.defineProperty(instance.prototype, SOURCE_PROPERTY_NAME, {
         enumerable: true,
         configurable: true,
         get() {
