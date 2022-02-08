@@ -53,7 +53,7 @@ module(name, { beforeEach, afterEach });
 
 test('setAttribute, matching script element', (assert) => {
     const targetNode = 'script';
-    const scriptletArgs = ['test-script.js', targetNode];
+    const scriptletArgs = [targetNode, 'test-script.js'];
     runScriptlet(name, scriptletArgs);
 
     window.elem = createTagWithSetAttr('./test-files/test-script.js', targetNode, assert);
@@ -63,7 +63,7 @@ test('setAttribute, matching script element', (assert) => {
 
 test('setAttribute, matching image element', (assert) => {
     const targetNode = 'img';
-    const scriptletArgs = ['test-image', targetNode];
+    const scriptletArgs = [targetNode, 'test-image.jpeg'];
     runScriptlet(name, scriptletArgs);
 
     window.elem = createTagWithSetAttr('./test-files/test-image.jpeg', targetNode, assert);
@@ -73,7 +73,7 @@ test('setAttribute, matching image element', (assert) => {
 
 test('setAttribute, matching iframe element', (assert) => {
     const targetNode = 'iframe';
-    const scriptletArgs = ['empty.html', targetNode];
+    const scriptletArgs = [targetNode, 'empty.html'];
     runScriptlet(name, scriptletArgs);
 
     window.elem = createTagWithSetAttr('./test-files/empty.html', targetNode, assert);
@@ -83,7 +83,7 @@ test('setAttribute, matching iframe element', (assert) => {
 
 test('src prop, matching script element', (assert) => {
     const targetNode = 'script';
-    const scriptletArgs = ['test-script.js', targetNode];
+    const scriptletArgs = [targetNode, 'test-script.js'];
     runScriptlet(name, scriptletArgs);
 
     window.elem = createTagWithSrcProp('./test-files/test-script.js', targetNode, assert);
@@ -93,7 +93,7 @@ test('src prop, matching script element', (assert) => {
 
 test('src prop, matching image element', (assert) => {
     const targetNode = 'img';
-    const scriptletArgs = ['test-image', targetNode];
+    const scriptletArgs = [targetNode, 'test-image.jpeg'];
     runScriptlet(name, scriptletArgs);
 
     window.elem = createTagWithSrcProp('./test-files/test-image.jpeg', targetNode, assert);
@@ -103,7 +103,7 @@ test('src prop, matching image element', (assert) => {
 
 test('src prop, matching iframe element', (assert) => {
     const targetNode = 'iframe';
-    const scriptletArgs = ['empty.html', targetNode];
+    const scriptletArgs = [targetNode, 'empty.html'];
     runScriptlet(name, scriptletArgs);
 
     window.elem = createTagWithSrcProp('./test-files/empty.html', targetNode, assert);
