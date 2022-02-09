@@ -50,7 +50,6 @@ test('Checking if alias name works', (assert) => {
 
 test('Redirect testing', (assert) => {
     const ad = createAdElement();
-
     runRedirect(name);
 
     // check if iframes were created by scriptlet
@@ -70,10 +69,14 @@ test('Redirect testing', (assert) => {
 
     assert.strictEqual(window.adsbygoogle.length, undefined, 'adsbygoogle.length check');
     assert.strictEqual(window.adsbygoogle.push.length, 1, 'push.length check');
-
-    // check if API was mocked
-    window.adsbygoogle.push('somedata');
-    assert.strictEqual(window.adsbygoogle.length, 1, 'API was mocked');
+    const pushCallback = () => {
+        assert.ok(true, 'callback was called');
+    };
+    const pushArg = {
+        test: 'test',
+        callback: pushCallback,
+    };
+    window.adsbygoogle.push(pushArg);
 
     removeBodyElement(ad);
 });
