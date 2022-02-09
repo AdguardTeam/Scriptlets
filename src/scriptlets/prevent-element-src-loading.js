@@ -66,7 +66,7 @@ export function preventElementSrcLoading(source, tagName, match) {
 
     const setAttributeWrapper = (target, thisArg, args) => {
         // Check if arguments are present
-        if (args.length !== 2) {
+        if (!args[0] || !args[1]) {
             return Reflect.apply(target, thisArg, args);
         }
         const nodeName = thisArg.nodeName.toLowerCase();
@@ -110,6 +110,7 @@ export function preventElementSrcLoading(source, tagName, match) {
 
             if (!isMatched) {
                 origDescriptor.set.call(this, urlValue);
+                return;
             }
 
             // eslint-disable-next-line no-undef
