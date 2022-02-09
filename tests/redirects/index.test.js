@@ -15,3 +15,4 @@ import './ati-smarttag.test';
 import './prevent-bab2.test';
 import './tagcommander-tc.test';
 import './prebid.test';
+import './didomi-loader.test';

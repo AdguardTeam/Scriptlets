@@ -35,6 +35,9 @@ const redirects = [
         adg: 'ati-smarttag',
     },
     {
+        adg: 'didomi-loader',
+    },
+    {
         adg: 'click2load.html',
         ubo: 'click2load.html',
     },
