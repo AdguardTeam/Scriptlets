@@ -55,101 +55,108 @@ const srcMockData = {
     img: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
     iframe: 'data:text/html;base64, PGRpdj48L2Rpdj4=',
 };
+const TEST_FILES_DIR = './test-files/';
+const TEST_SCRIPT01_FILENAME = 'test-script01.js';
+const TEST_SCRIPT02_FILENAME = 'test-script02.js';
+const TEST_IMAGE_FILENAME = 'test-image.jpeg';
+const TEST_IFRAME_FILENAME = 'empty.html';
+const SCRIPT_TARGET_NODE = 'script';
+const IMG_TARGET_NODE = 'img';
+const IFRAME_TARGET_NODE = 'iframe';
 
 module(name, { beforeEach, afterEach });
 
 test('setAttribute, matching script element', (assert) => {
-    const targetNode = 'script';
-    const scriptletArgs = [targetNode, 'test-script01.js'];
+    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_SCRIPT01_FILENAME}`;
+    const scriptletArgs = [SCRIPT_TARGET_NODE, TEST_SCRIPT01_FILENAME];
     runScriptlet(name, scriptletArgs);
 
-    var elem = createTagWithSetAttr(assert, targetNode, './test-files/test-script01.js');
-    assert.strictEqual(elem.src, srcMockData[targetNode], 'src was mocked');
+    var elem = createTagWithSetAttr(assert, SCRIPT_TARGET_NODE, SOURCE_PATH);
+    assert.strictEqual(elem.src, srcMockData[SCRIPT_TARGET_NODE], 'src was mocked');
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
 test('setAttribute, matching image element', (assert) => {
-    const targetNode = 'img';
-    const scriptletArgs = [targetNode, 'test-image.jpeg'];
+    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_IMAGE_FILENAME}`;
+    const scriptletArgs = [IMG_TARGET_NODE, TEST_IMAGE_FILENAME];
     runScriptlet(name, scriptletArgs);
 
-    window.elem = createTagWithSetAttr(assert, targetNode, './test-files/test-image.jpeg');
-    assert.strictEqual(window.elem.src, srcMockData[targetNode], 'src was mocked');
+    window.elem = createTagWithSetAttr(assert, IMG_TARGET_NODE, SOURCE_PATH);
+    assert.strictEqual(window.elem.src, srcMockData[IMG_TARGET_NODE], 'src was mocked');
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
 test('setAttribute, matching iframe element', (assert) => {
-    const targetNode = 'iframe';
-    const scriptletArgs = [targetNode, 'empty.html'];
+    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_IFRAME_FILENAME}`;
+    const scriptletArgs = [IFRAME_TARGET_NODE, 'empty.html'];
     runScriptlet(name, scriptletArgs);
 
-    window.elem = createTagWithSetAttr(assert, targetNode, './test-files/empty.html');
-    assert.strictEqual(window.elem.src, srcMockData[targetNode], 'src was mocked');
+    window.elem = createTagWithSetAttr(assert, IFRAME_TARGET_NODE, SOURCE_PATH);
+    assert.strictEqual(window.elem.src, srcMockData[IFRAME_TARGET_NODE], 'src was mocked');
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
 test('src prop, matching script element', (assert) => {
-    const targetNode = 'script';
-    const scriptletArgs = [targetNode, 'test-script01.js'];
+    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_SCRIPT01_FILENAME}`;
+    const scriptletArgs = [SCRIPT_TARGET_NODE, TEST_SCRIPT01_FILENAME];
     runScriptlet(name, scriptletArgs);
 
-    window.elem = createTagWithSrcProp(assert, targetNode, './test-files/test-script01.js');
-    assert.strictEqual(window.elem.src, srcMockData[targetNode], 'src was mocked');
+    var elem = createTagWithSrcProp(assert, SCRIPT_TARGET_NODE, SOURCE_PATH);
+    assert.strictEqual(elem.src, srcMockData[SCRIPT_TARGET_NODE], 'src was mocked');
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
 test('src prop, matching image element', (assert) => {
-    const targetNode = 'img';
-    const scriptletArgs = [targetNode, 'test-image.jpeg'];
+    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_IMAGE_FILENAME}`;
+    const scriptletArgs = [IMG_TARGET_NODE, TEST_IMAGE_FILENAME];
     runScriptlet(name, scriptletArgs);
 
-    window.elem = createTagWithSrcProp(assert, targetNode, './test-files/test-image.jpeg');
-    assert.strictEqual(window.elem.src, srcMockData[targetNode], 'src was mocked');
+    window.elem = createTagWithSrcProp(assert, IMG_TARGET_NODE, SOURCE_PATH);
+    assert.strictEqual(window.elem.src, srcMockData[IMG_TARGET_NODE], 'src was mocked');
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
 test('src prop, matching iframe element', (assert) => {
-    const targetNode = 'iframe';
-    const scriptletArgs = [targetNode, 'empty.html'];
+    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_IFRAME_FILENAME}`;
+    const scriptletArgs = [IFRAME_TARGET_NODE, 'empty.html'];
     runScriptlet(name, scriptletArgs);
 
-    window.elem = createTagWithSrcProp(assert, targetNode, './test-files/empty.html');
-    assert.strictEqual(window.elem.src, srcMockData[targetNode], 'src was mocked');
+    window.elem = createTagWithSrcProp(assert, IFRAME_TARGET_NODE, SOURCE_PATH);
+    assert.strictEqual(window.elem.src, srcMockData[IFRAME_TARGET_NODE], 'src was mocked');
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
 test('setAttribute, mismatching element', (assert) => {
-    const targetNode = 'script';
-    const scriptletArgs = [targetNode, 'not-test-script.js'];
+    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_SCRIPT02_FILENAME}`;
+    const scriptletArgs = [SCRIPT_TARGET_NODE, 'not-test-script.js'];
     runScriptlet(name, scriptletArgs);
 
-    window.elem = createTagWithSetAttr(assert, targetNode, './test-files/test-script02.js');
-    assert.ok(window.elem.src.indexOf('test-script02.js') !== -1, 'src was NOT mocked');
+    window.elem = createTagWithSetAttr(assert, SCRIPT_TARGET_NODE, SOURCE_PATH);
+    assert.ok(window.elem.src.indexOf(TEST_SCRIPT02_FILENAME) !== -1, 'src was NOT mocked');
     assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
 });
 
 test('src prop, mismatching element', (assert) => {
-    const targetNode = 'script';
-    const scriptletArgs = [targetNode, 'not-test-script.js'];
+    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_SCRIPT02_FILENAME}`;
+    const scriptletArgs = [SCRIPT_TARGET_NODE, 'not-test-script.js'];
     runScriptlet(name, scriptletArgs);
 
-    window.elem = createTagWithSrcProp(assert, targetNode, './test-files/test-script02.js');
-    assert.ok(window.elem.src.indexOf('test-script02.js') !== -1, 'src was NOT mocked');
+    window.elem = createTagWithSrcProp(assert, SCRIPT_TARGET_NODE, SOURCE_PATH);
+    assert.ok(window.elem.src.indexOf(TEST_SCRIPT02_FILENAME) !== -1, 'src was NOT mocked');
     assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
 });
 
 test('setAttribute, falsy arguments', (assert) => {
-    const targetNode = 'script';
-    const scriptletArgs = [targetNode, 'test-script.js'];
+    const scriptletArgs = [SCRIPT_TARGET_NODE, 'test-string'];
     runScriptlet(name, scriptletArgs);
 
-    const node = document.createElement(targetNode);
+    const node = document.createElement(SCRIPT_TARGET_NODE);
     node.setAttribute(null, undefined);
     document.body.append(node);
     assert.strictEqual(node.getAttribute('null'), 'undefined', 'falsy attr value passed');
     node.remove();
 
-    const node2 = document.createElement(targetNode);
+    const node2 = document.createElement(SCRIPT_TARGET_NODE);
     node2.setAttribute(null, 0);
     document.body.append(node2);
     assert.strictEqual(node2.getAttribute('null'), '0', 'falsy attr value passed');
