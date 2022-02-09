@@ -146,7 +146,14 @@ test('setAttribute, falsy arguments', (assert) => {
     const node = document.createElement(targetNode);
     node.setAttribute(null, undefined);
     document.body.append(node);
-
     assert.strictEqual(node.getAttribute('null'), 'undefined', 'falsy attr value passed');
+    node.remove();
+
+    const node2 = document.createElement(targetNode);
+    node2.setAttribute(null, 0);
+    document.body.append(node2);
+    assert.strictEqual(node2.getAttribute('null'), '0', 'falsy attr value passed');
+    node2.remove();
+
     assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
 });
