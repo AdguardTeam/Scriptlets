@@ -40,7 +40,7 @@ export const isEmptyObject = (obj) => Object.keys(obj).length === 0;
 /**
  * Checks whether the obj is an empty object
  * @param {Object} obj
- * @param {String} prop
+ * @param {string} prop
  * @returns {Object|null}
  */
 export const safeGetDescriptor = (obj, prop) => {
