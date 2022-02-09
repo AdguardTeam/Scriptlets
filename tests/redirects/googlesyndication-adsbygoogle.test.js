@@ -77,6 +77,7 @@ test('Redirect testing', (assert) => {
         callback: pushCallback,
     };
     window.adsbygoogle.push(pushArg);
+    assert.strictEqual(window.adsbygoogle.length, 1, 'API was mocked');
 
     removeBodyElement(ad);
 });
