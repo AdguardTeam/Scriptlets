@@ -440,4 +440,3 @@ https://github.com/gorhill/uBlock/blob/1.31.0/src/web_accessible_resources/click
 ```
 [Redirect source](../src/redirects/blocking-redirects/click2load.html)
 * * *
-

@@ -36,3 +36,17 @@ export const getObjectFromEntries = (entries) => {
  * @returns {boolean}
  */
 export const isEmptyObject = (obj) => Object.keys(obj).length === 0;
+
+/**
+ * Checks whether the obj is an empty object
+ * @param {Object} obj
+ * @param {string} prop
+ * @returns {Object|null}
+ */
+export const safeGetDescriptor = (obj, prop) => {
+    const descriptor = Object.getOwnPropertyDescriptor(obj, prop);
+    if (descriptor && descriptor.configurable) {
+        return descriptor;
+    }
+    return null;
+};
