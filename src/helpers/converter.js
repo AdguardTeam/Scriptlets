@@ -82,8 +82,24 @@ const replacePlaceholders = (str, data) => {
     }, str);
 };
 
+const splitArgs = (str) => {
+    const args = [];
+    let prevArgStart = 0;
+    for (let i = 0; i < str.length; i += 1) {
+        // do not split args by escaped comma
+        // https://github.com/AdguardTeam/Scriptlets/issues/133
+        if (str[i] === COMMA_SEPARATOR && str[i - 1] !== '\\') {
+            args.push(str.slice(prevArgStart, i).trim());
+            prevArgStart = i + 1;
+        }
+    }
+    // collect arg after last comma
+    args.push(str.slice(prevArgStart, str.length).trim());
+    return args;
+};
+
 /**
- * Converts string of UBO scriptlet rule to AdGuard scritlet rule
+ * Converts string of UBO scriptlet rule to AdGuard scriptlet rule
  * @param {string} rule - UBO scriptlet rule
  * @returns {Array} - array with one AdGuard scriptlet rule
  */
@@ -96,14 +112,8 @@ export const convertUboScriptletToAdg = (rule) => {
     } else {
         template = ADGUARD_SCRIPTLET_TEMPLATE;
     }
-    // do not split args by escaped comma
-    // https://github.com/AdguardTeam/Scriptlets/issues/133
-    let parsedArgs = getStringInBraces(rule).split(/(?<!\\),\s/g);
-    if (parsedArgs.length === 1) {
-        // Most probably this is not correct separator, in this case we use ','
-        parsedArgs = getStringInBraces(rule).split(/,/g);
-    }
-
+    const argsStr = getStringInBraces(rule);
+    let parsedArgs = splitArgs(argsStr);
     const scriptletName = parsedArgs[0].indexOf(UBO_SCRIPTLET_JS_ENDING) > -1
         ? `ubo-${parsedArgs[0]}`
         : `ubo-${parsedArgs[0]}${UBO_SCRIPTLET_JS_ENDING}`;
