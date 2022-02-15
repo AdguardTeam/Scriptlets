@@ -288,3 +288,23 @@ test('single attr + single selector, asap stay', (assert) => {
         done();
     }, 100);
 });
+
+test('invalid selector — no match', (assert) => {
+    createHit();
+    const attrs = ['testAttr'];
+    const selector = '..test';
+    const scriptletArgs = [attrs.join('|'), `${selector}`];
+    runScriptlet(name, scriptletArgs);
+
+    // eslint-disable-next-line no-console
+    console.log = function log(input) {
+        if (input.indexOf('trace') > -1) {
+            return;
+        }
+        assert.strictEqual(input, `Invalid remove-attr selector arg: '${selector}'`, 'logged error for invalid remove-attr selector');
+    };
+
+    assert.strictEqual(window.hit, undefined, 'hit SHOULD NOT fire');
+
+    clearGlobalProps('hit');
+});

@@ -52,7 +52,7 @@ const UBO_NO_FETCH_IF_WILDCARD = '/^/';
 const ESCAPED_COMMA_SEPARATOR = '\\,';
 const COMMA_SEPARATOR = ',';
 
-const MAX_REMOVE_ATTR_CLASS_ARGS_COUNT = 3;
+const MAX_REMOVE_ATTR_CLASS_ARGS_COUNT = 4;
 const REMOVE_ATTR_METHOD = 'removeAttr';
 const REMOVE_CLASS_METHOD = 'removeClass';
 const REMOVE_ATTR_ALIASES = scriptletList[REMOVE_ATTR_METHOD].names;
@@ -96,7 +96,9 @@ export const convertUboScriptletToAdg = (rule) => {
     } else {
         template = ADGUARD_SCRIPTLET_TEMPLATE;
     }
-    let parsedArgs = getStringInBraces(rule).split(/,\s/g);
+    // do not split args by escaped comma
+    // https://github.com/AdguardTeam/Scriptlets/issues/133
+    let parsedArgs = getStringInBraces(rule).split(/(?<!\\),\s/g);
     if (parsedArgs.length === 1) {
         // Most probably this is not correct separator, in this case we use ','
         parsedArgs = getStringInBraces(rule).split(/,/g);
@@ -113,7 +115,7 @@ export const convertUboScriptletToAdg = (rule) => {
             parsedArgs[0],
             parsedArgs[1],
             // if there are more than 3 args for remove-attr/class scriptlet,
-            // ubo rule has maltiple selector separated by comma. so we should:
+            // ubo rule has multiple selector separated by comma. so we should:
             // 1. join them into a single string
             // 2. replace escaped commas by regular ones
             // https://github.com/AdguardTeam/Scriptlets/issues/133

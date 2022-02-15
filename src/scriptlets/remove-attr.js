@@ -71,7 +71,13 @@ export function removeAttr(source, attrs, selector, applying = 'asap stay') {
     }
 
     const rmattr = () => {
-        const nodes = [].slice.call(document.querySelectorAll(selector));
+        let nodes = [];
+        try {
+            nodes = [].slice.call(document.querySelectorAll(selector));
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.log(`Invalid remove-attr selector arg: '${selector}'`);
+        }
         let removed = false;
         nodes.forEach((node) => {
             attrs.forEach((attr) => {

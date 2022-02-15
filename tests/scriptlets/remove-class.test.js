@@ -4,8 +4,11 @@ import { runScriptlet, clearGlobalProps } from '../helpers';
 const { test, module } = QUnit;
 const name = 'remove-class';
 
+const nativeConsole = console.log; // eslint-disable-line no-console
+
 const afterEach = () => {
     clearGlobalProps('hit', '__debug');
+    console.log = nativeConsole; // eslint-disable-line no-console
 };
 
 module(name, { afterEach });
@@ -259,4 +262,24 @@ test('single class name for different elements + multiple selectors + asap stay'
         secondElement.remove();
         done();
     }, 150);
+});
+
+test('invalid selector — no match', (assert) => {
+    createHit();
+    const classNames = ['testClass'];
+    const selectors = ', stay';
+    const scriptletArgs = [classNames.join('|'), selectors];
+    runScriptlet(name, scriptletArgs);
+
+    // eslint-disable-next-line no-console
+    console.log = function log(input) {
+        if (input.indexOf('trace') > -1) {
+            return;
+        }
+        assert.strictEqual(input, `Invalid remove-class selector arg: '${selectors}'`, 'logged error for invalid remove-class selector');
+    };
+
+    assert.strictEqual(window.hit, undefined, 'hit SHOULD NOT fire');
+
+    clearGlobalProps('hit');
 });

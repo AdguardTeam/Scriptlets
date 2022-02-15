@@ -96,9 +96,15 @@ test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
 
     // multiple selectors for remove-attr/class
-    blockingRule = 'ubisoft.com##+js(ra, href, area[href*="discordapp.com/"]\\, area[href*="facebook.com/"]\\, area[href*="instagram.com/"])';
+    // eslint-disable-next-line no-useless-escape
+    blockingRule = 'ubisoft.com##+js(ra, href, area[href*="discordapp.com/"]\, area[href*="facebook.com/"]\, area[href*="instagram.com/"])';
     expBlockRule = 'ubisoft.com#%#//scriptlet(\'ubo-ra.js\', \'href\', \'area[href*="discordapp.com/"], area[href*="facebook.com/"], area[href*="instagram.com/"]\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule, 'multiple selectors for remove-attr/class - OK');
+
+    // empty selector and specified applying for remove-attr/class
+    blockingRule = 'foxracingshox.de##+js(rc, cookie--not-set, , stay)';
+    expBlockRule = 'foxracingshox.de#%#//scriptlet(\'ubo-rc.js\', \'cookie--not-set\', \'\', \'stay\')';
+    assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule, 'empty selector and specified applying - OK');
 
     // double quotes in scriptlet parameter
     blockingRule = 'example.com#@#+js(remove-attr.js, href, a[data-st-area="Header-back"])';
