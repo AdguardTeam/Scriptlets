@@ -147,6 +147,11 @@ test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
     whitelistRule = 'example.org#@#+js(aopw, notDetected)';
     expectedResult = 'example.org#@%#//scriptlet(\'ubo-aopw.js\', \'notDetected\')';
     assert.strictEqual(convertScriptletToAdg(whitelistRule)[0], expectedResult);
+
+    // wildcard tld
+    blockingRule = 'example.*##+js(abort-on-stack-trace, Object.prototype.parallax, window.onload)';
+    expBlockRule = 'example.*#%#//scriptlet(\'ubo-abort-on-stack-trace.js\', \'Object.prototype.parallax\', \'window.onload\')';
+    assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
 });
 
 test('Test SCRIPTLET converting - ABP -> ADG', (assert) => {
