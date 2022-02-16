@@ -106,6 +106,12 @@ test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
     expBlockRule = 'foxracingshox.de#%#//scriptlet(\'ubo-rc.js\', \'cookie--not-set\', \'\', \'stay\')';
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule, 'empty selector and specified applying - OK');
 
+    // specified selectors and applying for remove-attr/class
+    // eslint-disable-next-line no-useless-escape
+    blockingRule = 'memo-book.pl##+js(rc, .rodo-locked, body\, html, stay)';
+    expBlockRule = 'memo-book.pl#%#//scriptlet(\'ubo-rc.js\', \'.rodo-locked\', \'body, html\', \'stay\')';
+    assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule, 'specified selectors and applying - OK');
+
     // double quotes in scriptlet parameter
     blockingRule = 'example.com#@#+js(remove-attr.js, href, a[data-st-area="Header-back"])';
     expBlockRule = 'example.com#@%#//scriptlet(\'ubo-remove-attr.js\', \'href\', \'a[data-st-area="Header-back"]\')';

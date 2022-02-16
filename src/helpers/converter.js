@@ -59,6 +59,7 @@ const REMOVE_ATTR_ALIASES = scriptletList[REMOVE_ATTR_METHOD].names;
 const REMOVE_CLASS_ALIASES = scriptletList[REMOVE_CLASS_METHOD].names;
 const ADG_REMOVE_ATTR_NAME = REMOVE_ATTR_ALIASES[0];
 const ADG_REMOVE_CLASS_NAME = REMOVE_CLASS_ALIASES[0];
+const REMOVE_ATTR_CLASS_APPLYING = ['asap', 'stay', 'complete'];
 
 /**
  * Returns array of strings separated by space which not in quotes
@@ -121,20 +122,25 @@ export const convertUboScriptletToAdg = (rule) => {
     if (((REMOVE_ATTR_ALIASES.indexOf(scriptletName) > -1)
         || (REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1))
         && parsedArgs.length > MAX_REMOVE_ATTR_CLASS_ARGS_COUNT) {
-        parsedArgs = [
-            parsedArgs[0],
-            parsedArgs[1],
-            // if there are more than 3 args for remove-attr/class scriptlet,
-            // ubo rule has multiple selector separated by comma. so we should:
-            // 1. join them into a single string
-            // 2. replace escaped commas by regular ones
-            // https://github.com/AdguardTeam/Scriptlets/issues/133
-            replaceAll(
-                parsedArgs.slice(2).join(`${COMMA_SEPARATOR} `),
-                ESCAPED_COMMA_SEPARATOR,
-                COMMA_SEPARATOR,
-            ),
-        ];
+        // if there are more than 4 args for remove-attr/class scriptlet,
+        // ubo rule has multiple selector separated by comma. so we should:
+        // 1. check if last arg is 'applying' parameter
+        // 2. join 'selector' into one arg
+        // 3. combine all args
+        // https://github.com/AdguardTeam/Scriptlets/issues/133
+        const lastArg = parsedArgs.pop();
+        const [name, value, ...restArgs] = parsedArgs;
+        let applying;
+        // check the last parsed arg for matching possible 'applying' vale
+        if (REMOVE_ATTR_CLASS_APPLYING.some((el) => lastArg.indexOf(el) > -1)) {
+            applying = lastArg;
+        } else {
+            restArgs.push(lastArg);
+        }
+        const selector = restArgs.join(', ');
+        parsedArgs = applying
+            ? [name, value, selector, applying]
+            : [name, value, selector];
     }
 
     const args = parsedArgs
