@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.5.13
+ * Version 1.5.17
  */
 
 (function () {
@@ -3738,7 +3738,15 @@
       }
 
       var rmattr = function rmattr() {
-        var nodes = [].slice.call(document.querySelectorAll(selector));
+        var nodes = [];
+
+        try {
+          nodes = [].slice.call(document.querySelectorAll(selector));
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.log("Invalid remove-attr selector arg: '".concat(selector, "'"));
+        }
+
         var removed = false;
         nodes.forEach(function (node) {
           attrs.forEach(function (attr) {
@@ -3964,8 +3972,16 @@
         var nodes = new Set();
 
         if (selector) {
-          var foundedNodes = [].slice.call(document.querySelectorAll(selector));
-          foundedNodes.forEach(function (n) {
+          var foundNodes = [];
+
+          try {
+            foundNodes = [].slice.call(document.querySelectorAll(selector));
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.log("Invalid remove-class selector arg: '".concat(selector, "'"));
+          }
+
+          foundNodes.forEach(function (n) {
             return nodes.add(n);
           });
         } else if (selectors.length > 0) {
@@ -6224,13 +6240,13 @@
     var UBO_NO_FETCH_IF_WILDCARD = '/^/';
     var ESCAPED_COMMA_SEPARATOR = '\\,';
     var COMMA_SEPARATOR = ',';
-    var MAX_REMOVE_ATTR_CLASS_ARGS_COUNT = 3;
     var REMOVE_ATTR_METHOD = 'removeAttr';
     var REMOVE_CLASS_METHOD = 'removeClass';
     var REMOVE_ATTR_ALIASES = scriptletList[REMOVE_ATTR_METHOD].names;
     var REMOVE_CLASS_ALIASES = scriptletList[REMOVE_CLASS_METHOD].names;
     var ADG_REMOVE_ATTR_NAME = REMOVE_ATTR_ALIASES[0];
     var ADG_REMOVE_CLASS_NAME = REMOVE_CLASS_ALIASES[0];
+    var REMOVE_ATTR_CLASS_APPLYING = ['asap', 'stay', 'complete'];
     /**
      * Returns array of strings separated by space which not in quotes
      * @param {string} str
@@ -6254,8 +6270,26 @@
         return acc;
       }, str);
     };
+
+    var splitArgs = function splitArgs(str) {
+      var args = [];
+      var prevArgStart = 0;
+
+      for (var i = 0; i < str.length; i += 1) {
+        // do not split args by escaped comma
+        // https://github.com/AdguardTeam/Scriptlets/issues/133
+        if (str[i] === COMMA_SEPARATOR && str[i - 1] !== '\\') {
+          args.push(str.slice(prevArgStart, i).trim());
+          prevArgStart = i + 1;
+        }
+      } // collect arg after last comma
+
+
+      args.push(str.slice(prevArgStart, str.length).trim());
+      return args;
+    };
     /**
-     * Converts string of UBO scriptlet rule to AdGuard scritlet rule
+     * Converts string of UBO scriptlet rule to AdGuard scriptlet rule
      * @param {string} rule - UBO scriptlet rule
      * @returns {Array} - array with one AdGuard scriptlet rule
      */
@@ -6272,22 +6306,37 @@
         template = ADGUARD_SCRIPTLET_TEMPLATE;
       }
 
-      var parsedArgs = getStringInBraces(rule).split(/,\s/g);
-
-      if (parsedArgs.length === 1) {
-        // Most probably this is not correct separator, in this case we use ','
-        parsedArgs = getStringInBraces(rule).split(/,/g);
-      }
-
+      var argsStr = getStringInBraces(rule);
+      var parsedArgs = splitArgs(argsStr);
       var scriptletName = parsedArgs[0].indexOf(UBO_SCRIPTLET_JS_ENDING) > -1 ? "ubo-".concat(parsedArgs[0]) : "ubo-".concat(parsedArgs[0]).concat(UBO_SCRIPTLET_JS_ENDING);
 
-      if ((REMOVE_ATTR_ALIASES.indexOf(scriptletName) > -1 || REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1) && parsedArgs.length > MAX_REMOVE_ATTR_CLASS_ARGS_COUNT) {
-        parsedArgs = [parsedArgs[0], parsedArgs[1], // if there are more than 3 args for remove-attr/class scriptlet,
-        // ubo rule has maltiple selector separated by comma. so we should:
-        // 1. join them into a single string
-        // 2. replace escaped commas by regular ones
+      if (REMOVE_ATTR_ALIASES.indexOf(scriptletName) > -1 || REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1) {
+        // if there are more than 4 args for remove-attr/class scriptlet,
+        // ubo rule has multiple selector separated by comma. so we should:
+        // 1. check if last arg is 'applying' parameter
+        // 2. join 'selector' into one arg
+        // 3. combine all args
         // https://github.com/AdguardTeam/Scriptlets/issues/133
-        replaceAll(parsedArgs.slice(2).join("".concat(COMMA_SEPARATOR, " ")), ESCAPED_COMMA_SEPARATOR, COMMA_SEPARATOR)];
+        var lastArg = parsedArgs.pop();
+
+        var _parsedArgs = parsedArgs,
+            _parsedArgs2 = toArray(_parsedArgs),
+            name = _parsedArgs2[0],
+            value = _parsedArgs2[1],
+            restArgs = _parsedArgs2.slice(2);
+
+        var applying; // check the last parsed arg for matching possible 'applying' vale
+
+        if (REMOVE_ATTR_CLASS_APPLYING.some(function (el) {
+          return lastArg.indexOf(el) > -1;
+        })) {
+          applying = lastArg;
+        } else {
+          restArgs.push(lastArg);
+        }
+
+        var selector = replaceAll(restArgs.join(', '), ESCAPED_COMMA_SEPARATOR, COMMA_SEPARATOR);
+        parsedArgs = applying ? [name, value, selector, applying] : [name, value, selector];
       }
 
       var args = parsedArgs.map(function (arg, index) {

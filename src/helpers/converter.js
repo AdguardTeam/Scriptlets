@@ -52,13 +52,13 @@ const UBO_NO_FETCH_IF_WILDCARD = '/^/';
 const ESCAPED_COMMA_SEPARATOR = '\\,';
 const COMMA_SEPARATOR = ',';
 
-const MAX_REMOVE_ATTR_CLASS_ARGS_COUNT = 3;
 const REMOVE_ATTR_METHOD = 'removeAttr';
 const REMOVE_CLASS_METHOD = 'removeClass';
 const REMOVE_ATTR_ALIASES = scriptletList[REMOVE_ATTR_METHOD].names;
 const REMOVE_CLASS_ALIASES = scriptletList[REMOVE_CLASS_METHOD].names;
 const ADG_REMOVE_ATTR_NAME = REMOVE_ATTR_ALIASES[0];
 const ADG_REMOVE_CLASS_NAME = REMOVE_CLASS_ALIASES[0];
+const REMOVE_ATTR_CLASS_APPLYING = ['asap', 'stay', 'complete'];
 
 /**
  * Returns array of strings separated by space which not in quotes
@@ -82,8 +82,24 @@ const replacePlaceholders = (str, data) => {
     }, str);
 };
 
+const splitArgs = (str) => {
+    const args = [];
+    let prevArgStart = 0;
+    for (let i = 0; i < str.length; i += 1) {
+        // do not split args by escaped comma
+        // https://github.com/AdguardTeam/Scriptlets/issues/133
+        if (str[i] === COMMA_SEPARATOR && str[i - 1] !== '\\') {
+            args.push(str.slice(prevArgStart, i).trim());
+            prevArgStart = i + 1;
+        }
+    }
+    // collect arg after last comma
+    args.push(str.slice(prevArgStart, str.length).trim());
+    return args;
+};
+
 /**
- * Converts string of UBO scriptlet rule to AdGuard scritlet rule
+ * Converts string of UBO scriptlet rule to AdGuard scriptlet rule
  * @param {string} rule - UBO scriptlet rule
  * @returns {Array} - array with one AdGuard scriptlet rule
  */
@@ -96,33 +112,37 @@ export const convertUboScriptletToAdg = (rule) => {
     } else {
         template = ADGUARD_SCRIPTLET_TEMPLATE;
     }
-    let parsedArgs = getStringInBraces(rule).split(/,\s/g);
-    if (parsedArgs.length === 1) {
-        // Most probably this is not correct separator, in this case we use ','
-        parsedArgs = getStringInBraces(rule).split(/,/g);
-    }
-
+    const argsStr = getStringInBraces(rule);
+    let parsedArgs = splitArgs(argsStr);
     const scriptletName = parsedArgs[0].indexOf(UBO_SCRIPTLET_JS_ENDING) > -1
         ? `ubo-${parsedArgs[0]}`
         : `ubo-${parsedArgs[0]}${UBO_SCRIPTLET_JS_ENDING}`;
 
     if (((REMOVE_ATTR_ALIASES.indexOf(scriptletName) > -1)
-        || (REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1))
-        && parsedArgs.length > MAX_REMOVE_ATTR_CLASS_ARGS_COUNT) {
-        parsedArgs = [
-            parsedArgs[0],
-            parsedArgs[1],
-            // if there are more than 3 args for remove-attr/class scriptlet,
-            // ubo rule has maltiple selector separated by comma. so we should:
-            // 1. join them into a single string
-            // 2. replace escaped commas by regular ones
-            // https://github.com/AdguardTeam/Scriptlets/issues/133
-            replaceAll(
-                parsedArgs.slice(2).join(`${COMMA_SEPARATOR} `),
-                ESCAPED_COMMA_SEPARATOR,
-                COMMA_SEPARATOR,
-            ),
-        ];
+        || (REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1))) {
+        // if there are more than 4 args for remove-attr/class scriptlet,
+        // ubo rule has multiple selector separated by comma. so we should:
+        // 1. check if last arg is 'applying' parameter
+        // 2. join 'selector' into one arg
+        // 3. combine all args
+        // https://github.com/AdguardTeam/Scriptlets/issues/133
+        const lastArg = parsedArgs.pop();
+        const [name, value, ...restArgs] = parsedArgs;
+        let applying;
+        // check the last parsed arg for matching possible 'applying' vale
+        if (REMOVE_ATTR_CLASS_APPLYING.some((el) => lastArg.indexOf(el) > -1)) {
+            applying = lastArg;
+        } else {
+            restArgs.push(lastArg);
+        }
+        const selector = replaceAll(
+            restArgs.join(', '),
+            ESCAPED_COMMA_SEPARATOR,
+            COMMA_SEPARATOR,
+        );
+        parsedArgs = applying
+            ? [name, value, selector, applying]
+            : [name, value, selector];
     }
 
     const args = parsedArgs
