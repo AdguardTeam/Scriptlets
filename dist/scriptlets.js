@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.5.17
+ * Version 1.5.16
  */
 
 (function () {
@@ -6240,6 +6240,7 @@
     var UBO_NO_FETCH_IF_WILDCARD = '/^/';
     var ESCAPED_COMMA_SEPARATOR = '\\,';
     var COMMA_SEPARATOR = ',';
+    var MAX_REMOVE_ATTR_CLASS_ARGS_COUNT = 4;
     var REMOVE_ATTR_METHOD = 'removeAttr';
     var REMOVE_CLASS_METHOD = 'removeClass';
     var REMOVE_ATTR_ALIASES = scriptletList[REMOVE_ATTR_METHOD].names;
@@ -6310,7 +6311,7 @@
       var parsedArgs = splitArgs(argsStr);
       var scriptletName = parsedArgs[0].indexOf(UBO_SCRIPTLET_JS_ENDING) > -1 ? "ubo-".concat(parsedArgs[0]) : "ubo-".concat(parsedArgs[0]).concat(UBO_SCRIPTLET_JS_ENDING);
 
-      if (REMOVE_ATTR_ALIASES.indexOf(scriptletName) > -1 || REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1) {
+      if ((REMOVE_ATTR_ALIASES.indexOf(scriptletName) > -1 || REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1) && parsedArgs.length > MAX_REMOVE_ATTR_CLASS_ARGS_COUNT) {
         // if there are more than 4 args for remove-attr/class scriptlet,
         // ubo rule has multiple selector separated by comma. so we should:
         // 1. check if last arg is 'applying' parameter
@@ -6335,7 +6336,7 @@
           restArgs.push(lastArg);
         }
 
-        var selector = replaceAll(restArgs.join(', '), ESCAPED_COMMA_SEPARATOR, COMMA_SEPARATOR);
+        var selector = restArgs.join(', ');
         parsedArgs = applying ? [name, value, selector, applying] : [name, value, selector];
       }
 
