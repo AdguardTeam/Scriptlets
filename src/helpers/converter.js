@@ -52,7 +52,6 @@ const UBO_NO_FETCH_IF_WILDCARD = '/^/';
 const ESCAPED_COMMA_SEPARATOR = '\\,';
 const COMMA_SEPARATOR = ',';
 
-const MAX_REMOVE_ATTR_CLASS_ARGS_COUNT = 4;
 const REMOVE_ATTR_METHOD = 'removeAttr';
 const REMOVE_CLASS_METHOD = 'removeClass';
 const REMOVE_ATTR_ALIASES = scriptletList[REMOVE_ATTR_METHOD].names;
@@ -120,8 +119,7 @@ export const convertUboScriptletToAdg = (rule) => {
         : `ubo-${parsedArgs[0]}${UBO_SCRIPTLET_JS_ENDING}`;
 
     if (((REMOVE_ATTR_ALIASES.indexOf(scriptletName) > -1)
-        || (REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1))
-        && parsedArgs.length > MAX_REMOVE_ATTR_CLASS_ARGS_COUNT) {
+        || (REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1))) {
         // if there are more than 4 args for remove-attr/class scriptlet,
         // ubo rule has multiple selector separated by comma. so we should:
         // 1. check if last arg is 'applying' parameter
@@ -137,7 +135,11 @@ export const convertUboScriptletToAdg = (rule) => {
         } else {
             restArgs.push(lastArg);
         }
-        const selector = restArgs.join(', ');
+        const selector = replaceAll(
+            restArgs.join(', '),
+            ESCAPED_COMMA_SEPARATOR,
+            COMMA_SEPARATOR,
+        );
         parsedArgs = applying
             ? [name, value, selector, applying]
             : [name, value, selector];
