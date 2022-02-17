@@ -16,3 +16,4 @@ import './prevent-bab2.test';
 import './tagcommander-tc.test';
 import './prebid.test';
 import './didomi-loader.test';
+import './constant-detection-stubs.test';
