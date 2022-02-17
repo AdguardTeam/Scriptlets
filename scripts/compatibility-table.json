@@ -68,10 +68,6 @@
             "adg": "log-on-stack-trace"
         },
         {
-            "adg": "no-floc",
-            "ubo": "no-floc.js"
-        },
-        {
             "adg": "noeval"
         },
         {
