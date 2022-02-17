@@ -81,8 +81,14 @@ export function removeClass(source, classNames, selector, applying = 'asap stay'
     const removeClassHandler = () => {
         const nodes = new Set();
         if (selector) {
-            const foundedNodes = [].slice.call(document.querySelectorAll(selector));
-            foundedNodes.forEach((n) => nodes.add(n));
+            let foundNodes = [];
+            try {
+                foundNodes = [].slice.call(document.querySelectorAll(selector));
+            } catch (e) {
+                // eslint-disable-next-line no-console
+                console.log(`Invalid remove-class selector arg: '${selector}'`);
+            }
+            foundNodes.forEach((n) => nodes.add(n));
         } else if (selectors.length > 0) {
             selectors.forEach((s) => {
                 const elements = document.querySelectorAll(s);
