@@ -2,7 +2,7 @@
 import { runRedirect, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
-const name = 'constant-detection-stubs';
+const name = 'prebid-ads';
 
 const changingProps = ['hit', '__debug'];
 
@@ -21,8 +21,8 @@ module(name, { beforeEach, afterEach });
 test('constants are set', (assert) => {
     runRedirect(name);
 
-    assert.true(window.canRunAds, 'window.Piwik exists');
-    assert.false(window.isAdBlockActive, 'Piwik.getTracker exists');
+    assert.true(window.canRunAds, 'window.canRunAds created');
+    assert.false(window.isAdBlockActive, 'Piwik.isAdBlockActive created');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 });

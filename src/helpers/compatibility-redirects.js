@@ -168,7 +168,7 @@ const redirects = [
         adg: 'tagcommander-tc',
     },
     {
-        adg: 'constant-detection-stubs',
+        adg: 'prebid-ads',
         ubo: 'prebid-ads.js',
     },
 ];

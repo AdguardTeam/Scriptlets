@@ -21,4 +21,4 @@ export * from './google-ima3';
 export * from './tagcommander-tc.js';
 export * from './didomi-loader.js';
 export * from './prebid.js';
-export * from './constant-detection-stubs.js';
+export * from './prebid-ads.js';

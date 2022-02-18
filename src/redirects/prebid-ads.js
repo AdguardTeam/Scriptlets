@@ -2,7 +2,7 @@
 import { hit } from '../helpers';
 
 /**
- * @redirect constant-detection-stubs
+ * @redirect prebid-ads
  *
  * @description
  * Sets predefined constants on a page.
@@ -15,17 +15,17 @@ import { hit } from '../helpers';
  * ||gapt.hit.gemius.pl/gplayer.js$script,redirect=gemius
  * ```
  */
-export function constantDetectionStubs(source) {
+export function prebidAds(source) {
     window.canRunAds = true;
     window.isAdBlockActive = false;
 
     hit(source);
 }
 
-constantDetectionStubs.names = [
-    'constant-detection-stubs',
+prebidAds.names = [
+    'prebid-ads',
     'ubo-prebid-ads.js',
     'prebid-ads.js',
 ];
 
-constantDetectionStubs.injections = [hit];
+prebidAds.injections = [hit];
