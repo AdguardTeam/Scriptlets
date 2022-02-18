@@ -344,6 +344,10 @@
             "adg": "noopvast-3.0"
         },
         {
+            "adg": "prebid-ads",
+            "ubo": "prebid-ads.js"
+        },
+        {
             "adg": "prevent-bab",
             "ubo": "nobab.js"
         },
