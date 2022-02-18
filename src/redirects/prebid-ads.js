@@ -5,14 +5,13 @@ import { hit } from '../helpers';
  * @redirect prebid-ads
  *
  * @description
- * Sets predefined constants on a page.
- *
- * - `canRunAds` : `true`
- * - `isAdBlockActive` : `false`
+ * Sets predefined constants on a page:
+ * - `canRunAds`: `true`
+ * - `isAdBlockActive`: `false`
  *
  * **Example**
  * ```
- * ||gapt.hit.gemius.pl/gplayer.js$script,redirect=gemius
+ * ||playerdrive.me/assets/js/prebid-ads.js$script,redirect=prebid-ads
  * ```
  */
 export function prebidAds(source) {
