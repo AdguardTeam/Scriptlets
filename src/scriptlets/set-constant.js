@@ -78,8 +78,8 @@ import {
  * ```
  */
 /* eslint-enable max-len */
-export function setConstant(source, property, value, stack) {
-    if (!property
+export function setConstant(source, chain, value, stack) {
+    if (!chain
         || !matchStackTrace(stack, new Error().stack)) {
         return;
     }
@@ -137,53 +137,72 @@ export function setConstant(source, property, value, stack) {
         return canceled;
     };
 
-    const setChainPropAccess = (owner, property) => {
-        const chainInfo = getPropertyInChain(owner, property);
-        let { base } = chainInfo;
-        const { prop, chain } = chainInfo;
-
-        // The scriptlet might be executed before the chain property has been created.
-        // In this case we're checking whether the base element exists or not
-        // and if not, we simply exit without overriding anything
-        if (base instanceof Object === false && base === null) {
-            // log the reason only while debugging
-            if (source.verbose) {
-                const props = property.split('.');
-                const propIndex = props.indexOf(prop);
-                const baseName = props[propIndex - 1];
-                console.log(`set-constant failed because the property '${baseName}' does not exist`); // eslint-disable-line no-console, max-len
-            }
-            return;
-        }
-
-        if (chain) {
-            const setter = (a) => {
-                base = a;
-                if (a instanceof Object) {
-                    setChainPropAccess(a, chain);
+    const ourScript = document.currentScript;
+    const trapProperty = (base, prop, chainLeftover, stage) => {
+        debugger;
+        let value = base[prop];
+        Object.defineProperty(base, prop, {
+            configurable: true,
+            get() {
+                switch (stage) {
+                    case 'endProp':
+                        return document.currentScript === ourScript
+                            ? value
+                            : constantValue;
+                    case 'inChain':
+                        return undefined;
                 }
-            };
-            Object.defineProperty(owner, prop, {
-                get: () => base,
-                set: setter,
-            });
-            return;
-        }
-
-        if (mustCancel(base[prop])) { return; }
-
-        hit(source);
-        setPropertyAccess(base, prop, {
-            get: () => constantValue,
-            set: (a) => {
-                if (mustCancel(a)) {
-                    constantValue = a;
+            },
+            set(v) {
+                switch (stage) {
+                    case 'endProp':
+                        break;
+                    case 'inChain':
+                        if (v instanceof Object) {
+                            trapChain(v, chainLeftover);
+                        }
+                        constantValue = v;
+                        break;
                 }
             },
         });
     };
 
-    setChainPropAccess(window, property);
+    const trapChain = (base, chain) => {
+        let stage;
+        let newBase;
+        let newChain;
+        let targetProperty;
+        const chainArr = chain.split('.');
+        if (chainArr.length === 1) {
+            stage = 'endProp';
+            targetProperty = chainArr[0];
+            trapProperty(base, targetProperty, newChain, stage);
+        }
+        // Get index of first undefined property in chain
+        const stopIndex = chainArr.findIndex((prop, index, array) => {
+            let currentPropValue = array.slice(0, index + 1).reduce((previous, current) => previous[current], base);
+            return typeof currentPropValue === 'undefined';
+        });
+        // Trap target property if all chain (target prop state is irrelevant, checks in trapProperty)
+        if (stopIndex === -1 || stopIndex === chainArr.length - 1) {
+            stage = 'endProp';
+            targetProperty = chainArr.pop(); // get target prop and remove it from array
+            newBase = chainArr.reduce((previous, current) => previous[current], base); // get new base value from last item
+            trapProperty(newBase, targetProperty, newChain, stage);
+        }
+        // Some key on chain is undefined
+        if (stopIndex !== -1) {
+            stage = 'inChain';
+            targetProperty = chainArr[stopIndex];
+            newChain = chainArr.slice(stopIndex + 1).join('.'); // get chain leftover after unefined element
+            // get element that preceeds undefined as new base
+            newBase = chainArr.slice(0, stopIndex).reduce((previous, current) => previous[current], base);
+            trapProperty(newBase, targetProperty, newChain, stage);
+        };
+    };
+
+    trapChain(window, chain);
 }
 
 setConstant.names = [
