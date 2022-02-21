@@ -167,6 +167,10 @@ const redirects = [
     {
         adg: 'tagcommander-tc',
     },
+    {
+        adg: 'prebid-ads',
+        ubo: 'prebid-ads.js',
+    },
 ];
 
 export default redirects;

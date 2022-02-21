@@ -68,10 +68,6 @@
             "adg": "log-on-stack-trace"
         },
         {
-            "adg": "no-floc",
-            "ubo": "no-floc.js"
-        },
-        {
             "adg": "noeval"
         },
         {
@@ -234,6 +230,9 @@
         },
         {
             "ubo": "refresh-defuser.js"
+        },
+        {
+            "ubo": "no-floc.js"
         }
     ],
     "redirects": [
@@ -342,6 +341,10 @@
         },
         {
             "adg": "noopvast-3.0"
+        },
+        {
+            "adg": "prebid-ads",
+            "ubo": "prebid-ads.js"
         },
         {
             "adg": "prevent-bab",
