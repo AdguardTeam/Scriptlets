@@ -6,7 +6,7 @@ const config = require('./browserstack.json');
 
 const TESTS_DIST = './tests/dist';
 const TEST_FILE_NAME_MARKER = '.html';
-const WORKER_TIMEOUT_LIMIT = 25 * 60; // in seconds, 25 minutes per each browserstack worker
+const WORKER_TIMEOUT_LIMIT = 10 * 60; // in seconds, 10 minutes per each browserstack worker
 
 if (!process.env.TRAVIS) {
     // eslint-disable-next-line global-require
