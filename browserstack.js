@@ -29,7 +29,8 @@ config.timeout = WORKER_TIMEOUT_LIMIT;
 
 browserstackRunner.run(config, (error) => {
     if (error) {
-        throw error;
+        console.log(`Error: ${error}`);
+        return;
     }
     console.log('Test Finished');
 });
