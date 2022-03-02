@@ -34,7 +34,7 @@ Build:
             ls -alt
 
             yarn install ${bamboo.varsYarn}
-            yarn test
+            yarn browserstack
             yarn prepare-builds
             rm -rf node_modules
         environment: BROWSERSTACK_USER="${bamboo.browserstackUser}" \
