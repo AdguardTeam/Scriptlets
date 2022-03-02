@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.5.17
+ * Version 1.5.20
  */
 
 (function (factory) {
@@ -5890,6 +5890,7 @@
 
 
     var ADG_UBO_REDIRECT_MARKER = 'redirect=';
+    var ADG_UBO_REDIRECT_RULE_MARKER = 'redirect-rule=';
     var ABP_REDIRECT_MARKER = 'rewrite=abp-resource:';
     var EMPTY_REDIRECT_MARKER = 'empty';
     var VALID_SOURCE_TYPES = ['image', 'media', 'subdocument', 'stylesheet', 'script', 'xmlhttprequest', 'other'];
@@ -5969,19 +5970,22 @@
     }));
     var REDIRECT_RULE_TYPES = {
       VALID_ADG: {
-        marker: ADG_UBO_REDIRECT_MARKER,
+        redirectMarker: ADG_UBO_REDIRECT_MARKER,
+        redirectRuleMarker: ADG_UBO_REDIRECT_RULE_MARKER,
         compatibility: validAdgCompatibility
       },
       ADG: {
-        marker: ADG_UBO_REDIRECT_MARKER,
+        redirectMarker: ADG_UBO_REDIRECT_MARKER,
+        redirectRuleMarker: ADG_UBO_REDIRECT_RULE_MARKER,
         compatibility: adgToUboCompatibility
       },
       UBO: {
-        marker: ADG_UBO_REDIRECT_MARKER,
+        redirectMarker: ADG_UBO_REDIRECT_MARKER,
+        redirectRuleMarker: ADG_UBO_REDIRECT_RULE_MARKER,
         compatibility: uboToAdgCompatibility
       },
       ABP: {
-        marker: ABP_REDIRECT_MARKER,
+        redirectMarker: ABP_REDIRECT_MARKER,
         compatibility: abpToAdgCompatibility
       }
     };
@@ -6017,11 +6021,12 @@
 
 
     var isAdgRedirectRule = function isAdgRedirectRule(rule) {
-      var MARKER_IN_BASE_PART_MASK = '/((?!\\$|\\,).{1})redirect=(.{0,}?)\\$(popup)?/';
-      return !isComment(rule) && rule.indexOf(REDIRECT_RULE_TYPES.ADG.marker) > -1 // some js rules may have 'redirect=' in it, so we should get rid of them
+      var MARKER_IN_BASE_PART_MASK = '/((?!\\$|\\,).{1})redirect((-rule)?)=(.{0,}?)\\$(popup)?/';
+      return !isComment(rule) && (rule.indexOf(REDIRECT_RULE_TYPES.ADG.redirectMarker) > -1 || rule.indexOf(REDIRECT_RULE_TYPES.ADG.redirectRuleMarker) > -1) // some js rules may have 'redirect=' in it, so we should get rid of them
       && rule.indexOf(JS_RULE_MARKER) === -1 // get rid of rules like '_redirect=*://look.$popup'
       && !toRegExp(MARKER_IN_BASE_PART_MASK).test(rule);
-    };
+    }; // const getRedirectResourceMarkerData = ()
+
     /**
      * Checks if the `rule` satisfies the `type`
      * @param {string} rule - rule text
@@ -6031,10 +6036,28 @@
 
     var isRedirectRuleByType = function isRedirectRuleByType(rule, type) {
       var _REDIRECT_RULE_TYPES$ = REDIRECT_RULE_TYPES[type],
-          marker = _REDIRECT_RULE_TYPES$.marker,
+          redirectMarker = _REDIRECT_RULE_TYPES$.redirectMarker,
+          redirectRuleMarker = _REDIRECT_RULE_TYPES$.redirectRuleMarker,
           compatibility = _REDIRECT_RULE_TYPES$.compatibility;
 
-      if (rule && !isComment(rule) && rule.indexOf(marker) > -1) {
+      if (rule && !isComment(rule)) {
+        var marker; // check if there $redirect-rule modifier in rule
+
+        var markerIndex = rule.indexOf(redirectRuleMarker);
+
+        if (markerIndex > -1) {
+          marker = redirectRuleMarker;
+        } else {
+          // check if there $redirect modifier in rule
+          markerIndex = rule.indexOf(redirectMarker);
+
+          if (markerIndex > -1) {
+            marker = redirectMarker;
+          } else {
+            return false;
+          }
+        }
+
         var redirectName = getRedirectName(rule, marker);
 
         if (!redirectName) {
@@ -6114,7 +6137,7 @@
       });
       var isSourceTypeSpecified = sourceTypes.length > 0; // eslint-disable-next-line max-len
 
-      var isEmptyRedirect = ruleModifiers.indexOf("".concat(ADG_UBO_REDIRECT_MARKER).concat(EMPTY_REDIRECT_MARKER)) > -1;
+      var isEmptyRedirect = ruleModifiers.indexOf("".concat(ADG_UBO_REDIRECT_MARKER).concat(EMPTY_REDIRECT_MARKER)) > -1 || ruleModifiers.indexOf("".concat(ADG_UBO_REDIRECT_RULE_MARKER).concat(EMPTY_REDIRECT_MARKER)) > -1;
 
       if (isEmptyRedirect) {
         // no source type for 'empty' is allowed
@@ -6134,6 +6157,7 @@
       isAbpSnippetRule: isAbpSnippetRule,
       getScriptletByName: getScriptletByName,
       isValidScriptletName: isValidScriptletName,
+      ADG_UBO_REDIRECT_RULE_MARKER: ADG_UBO_REDIRECT_RULE_MARKER,
       REDIRECT_RULE_TYPES: REDIRECT_RULE_TYPES,
       ABSENT_SOURCE_TYPE_REPLACEMENT: ABSENT_SOURCE_TYPE_REPLACEMENT,
       isAdgRedirectRule: isAdgRedirectRule,
@@ -6291,9 +6315,53 @@
       return args;
     };
     /**
+     * Validates remove-attr/class scriptlet args
+     * @param {string[]} parsedArgs
+     * @returns {string[]|Error} valid args OR error for invalid selector
+     */
+
+
+    var validateRemoveAttrClassArgs = function validateRemoveAttrClassArgs(parsedArgs) {
+      // remove-attr/class scriptlet might have multiple selectors separated by comma. so we should:
+      // 1. check if last arg is 'applying' parameter
+      // 2. join 'selector' into one arg
+      // 3. combine all args
+      // https://github.com/AdguardTeam/Scriptlets/issues/133
+      var lastArg = parsedArgs.pop();
+
+      var _parsedArgs = toArray(parsedArgs),
+          name = _parsedArgs[0],
+          value = _parsedArgs[1],
+          restArgs = _parsedArgs.slice(2);
+
+      var applying; // check the last parsed arg for matching possible 'applying' vale
+
+      if (REMOVE_ATTR_CLASS_APPLYING.some(function (el) {
+        return lastArg.indexOf(el) > -1;
+      })) {
+        applying = lastArg;
+      } else {
+        restArgs.push(lastArg);
+      }
+
+      var selector = replaceAll(restArgs.join(', '), ESCAPED_COMMA_SEPARATOR, COMMA_SEPARATOR);
+
+      if (selector.length > 0) {
+        // empty selector is valid for these scriptlets as it applies to all elements,
+        // all other selectors should be validated
+        // e.g. #%#//scriptlet('ubo-remove-class.js', 'blur', ', html')
+        if (document) {
+          document.querySelectorAll(selector);
+        }
+      }
+
+      var validArgs = applying ? [name, value, selector, applying] : [name, value, selector];
+      return validArgs;
+    };
+    /**
      * Converts string of UBO scriptlet rule to AdGuard scriptlet rule
      * @param {string} rule - UBO scriptlet rule
-     * @returns {Array} - array with one AdGuard scriptlet rule
+     * @returns {string[]} - array with one AdGuard scriptlet rule
      */
 
 
@@ -6313,32 +6381,7 @@
       var scriptletName = parsedArgs[0].indexOf(UBO_SCRIPTLET_JS_ENDING) > -1 ? "ubo-".concat(parsedArgs[0]) : "ubo-".concat(parsedArgs[0]).concat(UBO_SCRIPTLET_JS_ENDING);
 
       if (REMOVE_ATTR_ALIASES.indexOf(scriptletName) > -1 || REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1) {
-        // if there are more than 4 args for remove-attr/class scriptlet,
-        // ubo rule has multiple selector separated by comma. so we should:
-        // 1. check if last arg is 'applying' parameter
-        // 2. join 'selector' into one arg
-        // 3. combine all args
-        // https://github.com/AdguardTeam/Scriptlets/issues/133
-        var lastArg = parsedArgs.pop();
-
-        var _parsedArgs = parsedArgs,
-            _parsedArgs2 = toArray(_parsedArgs),
-            name = _parsedArgs2[0],
-            value = _parsedArgs2[1],
-            restArgs = _parsedArgs2.slice(2);
-
-        var applying; // check the last parsed arg for matching possible 'applying' vale
-
-        if (REMOVE_ATTR_CLASS_APPLYING.some(function (el) {
-          return lastArg.indexOf(el) > -1;
-        })) {
-          applying = lastArg;
-        } else {
-          restArgs.push(lastArg);
-        }
-
-        var selector = replaceAll(restArgs.join(', '), ESCAPED_COMMA_SEPARATOR, COMMA_SEPARATOR);
-        parsedArgs = applying ? [name, value, selector, applying] : [name, value, selector];
+        parsedArgs = validateRemoveAttrClassArgs(parsedArgs);
       }
 
       var args = parsedArgs.map(function (arg, index) {
@@ -6346,7 +6389,7 @@
 
         if (index === 0) {
           outputArg = scriptletName;
-        } // for example: dramaserial.xyz##+js(abort-current-inline-script, $, popup)
+        } // for example: example.org##+js(abort-current-inline-script, $, popup)
 
 
         if (arg === '$') {
@@ -6364,7 +6407,7 @@
       return [adgRule];
     };
     /**
-     * Convert string of ABP snippet rule to AdGuard scritlet rule
+     * Convert string of ABP snippet rule to AdGuard scriptlet rule
      * @param {string} rule - ABP snippet rule
      * @returns {Array} - array of AdGuard scriptlet rules -
      * one or few items depends on Abp-rule
@@ -6509,26 +6552,62 @@
       return isValid;
     };
     /**
+     * Gets index and redirect resource marker from UBO/ADG modifiers array
+     * @param {string[]} modifiers
+     * @param {Object} redirectsData validator.REDIRECT_RULE_TYPES.(UBO|ADG)
+     * @param {string} rule
+     * @returns {Object} { index, marker }
+     */
+
+    var getMarkerData = function getMarkerData(modifiers, redirectsData, rule) {
+      var marker;
+      var index = modifiers.findIndex(function (m) {
+        return m.indexOf(redirectsData.redirectRuleMarker) > -1;
+      });
+
+      if (index > -1) {
+        marker = redirectsData.redirectRuleMarker;
+      } else {
+        index = modifiers.findIndex(function (m) {
+          return m.indexOf(redirectsData.redirectMarker) > -1;
+        });
+
+        if (index > -1) {
+          marker = redirectsData.redirectMarker;
+        } else {
+          throw new Error("No redirect resource modifier found in rule: ".concat(rule));
+        }
+      }
+
+      return {
+        index: index,
+        marker: marker
+      };
+    };
+    /**
      * Converts Ubo redirect rule to Adg one
      * @param {string} rule
      * @returns {string}
      */
 
+
     var convertUboRedirectToAdg = function convertUboRedirectToAdg(rule) {
       var firstPartOfRule = substringBefore(rule, '$');
       var uboModifiers = validator.parseModifiers(rule);
-      var adgModifiers = uboModifiers.map(function (el) {
-        if (el.indexOf(validator.REDIRECT_RULE_TYPES.UBO.marker) > -1) {
-          var uboName = substringAfter(el, validator.REDIRECT_RULE_TYPES.UBO.marker);
+      var uboMarkerData = getMarkerData(uboModifiers, validator.REDIRECT_RULE_TYPES.UBO, rule);
+      var adgModifiers = uboModifiers.map(function (modifier, index) {
+        if (index === uboMarkerData.index) {
+          var uboName = substringAfter(modifier, uboMarkerData.marker);
           var adgName = validator.REDIRECT_RULE_TYPES.UBO.compatibility[uboName];
-          return "".concat(validator.REDIRECT_RULE_TYPES.ADG.marker).concat(adgName);
+          var adgMarker = uboMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER ? validator.REDIRECT_RULE_TYPES.ADG.redirectRuleMarker : validator.REDIRECT_RULE_TYPES.ADG.redirectMarker;
+          return "".concat(adgMarker).concat(adgName);
         }
 
-        if (el === UBO_XHR_TYPE) {
+        if (modifier === UBO_XHR_TYPE) {
           return ADG_XHR_TYPE;
         }
 
-        return el;
+        return modifier;
       }).join(COMMA_SEPARATOR);
       return "".concat(firstPartOfRule, "$").concat(adgModifiers);
     };
@@ -6541,14 +6620,14 @@
     var convertAbpRedirectToAdg = function convertAbpRedirectToAdg(rule) {
       var firstPartOfRule = substringBefore(rule, '$');
       var abpModifiers = validator.parseModifiers(rule);
-      var adgModifiers = abpModifiers.map(function (el) {
-        if (el.indexOf(validator.REDIRECT_RULE_TYPES.ABP.marker) > -1) {
-          var abpName = substringAfter(el, validator.REDIRECT_RULE_TYPES.ABP.marker);
+      var adgModifiers = abpModifiers.map(function (modifier) {
+        if (modifier.indexOf(validator.REDIRECT_RULE_TYPES.ABP.redirectMarker) > -1) {
+          var abpName = substringAfter(modifier, validator.REDIRECT_RULE_TYPES.ABP.redirectMarker);
           var adgName = validator.REDIRECT_RULE_TYPES.ABP.compatibility[abpName];
-          return "".concat(validator.REDIRECT_RULE_TYPES.ADG.marker).concat(adgName);
+          return "".concat(validator.REDIRECT_RULE_TYPES.ADG.redirectMarker).concat(adgName);
         }
 
-        return el;
+        return modifier;
       }).join(COMMA_SEPARATOR);
       return "".concat(firstPartOfRule, "$").concat(adgModifiers);
     };
@@ -6574,7 +6653,7 @@
     /**
      * Converts Adg redirect rule to Ubo one
      * 1. Checks if there is Ubo analog for Adg rule
-     * 2. Parses the rule and chechs if there are any source type modifiers which are required by Ubo
+     * 2. Parses the rule and checks if there are any source type modifiers which are required by Ubo
      *    and if there are no one we add it manually to the end.
      *    Source types are chosen according to redirect name
      *    e.g. ||ad.com^$redirect=<name>,important  ->>  ||ad.com^$redirect=<name>,important,script
@@ -6590,12 +6669,8 @@
 
       var basePart = substringBefore(rule, '$');
       var adgModifiers = validator.parseModifiers(rule);
-      var adgRedirectModifier = adgModifiers.find(function (el) {
-        return el.indexOf(validator.REDIRECT_RULE_TYPES.ADG.marker) > -1;
-      });
-      var adgRedirectName = adgRedirectModifier.slice(validator.REDIRECT_RULE_TYPES.ADG.marker.length);
-      var uboRedirectName = validator.REDIRECT_RULE_TYPES.ADG.compatibility[adgRedirectName];
-      var uboRedirectModifier = "".concat(validator.REDIRECT_RULE_TYPES.UBO.marker).concat(uboRedirectName);
+      var adgMarkerData = getMarkerData(adgModifiers, validator.REDIRECT_RULE_TYPES.ADG, rule);
+      var adgRedirectName = adgModifiers[adgMarkerData.index].slice(adgMarkerData.marker.length);
 
       if (!validator.hasValidContentType(rule)) {
         // add missed source types as content type modifiers
@@ -6612,9 +6687,12 @@
         adgModifiers.push.apply(adgModifiers, toConsumableArray(additionModifiers));
       }
 
-      var uboModifiers = adgModifiers.map(function (el) {
-        if (el === adgRedirectModifier) {
-          return uboRedirectModifier;
+      var uboModifiers = adgModifiers.map(function (el, index) {
+        if (index === adgMarkerData.index) {
+          var uboMarker = adgMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER ? validator.REDIRECT_RULE_TYPES.UBO.redirectRuleMarker : validator.REDIRECT_RULE_TYPES.UBO.redirectMarker; // eslint-disable-next-line max-len
+
+          var uboRedirectName = validator.REDIRECT_RULE_TYPES.ADG.compatibility[adgRedirectName];
+          return "".concat(uboMarker).concat(uboRedirectName);
         }
 
         return el;
