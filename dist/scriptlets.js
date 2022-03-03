@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.5.20
+ * Version 1.5.22
  */
 
 (function () {
@@ -6344,13 +6344,11 @@
 
       var selector = replaceAll(restArgs.join(', '), ESCAPED_COMMA_SEPARATOR, COMMA_SEPARATOR);
 
-      if (selector.length > 0) {
+      if (selector.length > 0 && typeof document !== 'undefined') {
         // empty selector is valid for these scriptlets as it applies to all elements,
         // all other selectors should be validated
         // e.g. #%#//scriptlet('ubo-remove-class.js', 'blur', ', html')
-        if (document) {
-          document.querySelectorAll(selector);
-        }
+        document.querySelectorAll(selector);
       }
 
       var validArgs = applying ? [name, value, selector, applying] : [name, value, selector];
