@@ -317,6 +317,18 @@ test('Test $redirect validation', (assert) => {
     assert.strictEqual(validator.isUboRedirectCompatibleWithAdg(inputRule), false);
 });
 
+test('Test $redirect validator with unsupported rules', (assert) => {
+    // do not break on cosmetic rules
+    let inputRule = 'ferra.ru##div[data-render-state] + div[class^="jsx-"][class$=" undefined"]';
+    assert.strictEqual(validator.isUboRedirectCompatibleWithAdg(inputRule), false);
+    assert.strictEqual(validator.isAbpRedirectCompatibleWithAdg(inputRule), false);
+
+    // do not break on JS rules
+    inputRule = 'example.org#%#var str = /[class$=" undefined"]/; console.log(str);';
+    assert.strictEqual(validator.isUboRedirectCompatibleWithAdg(inputRule), false);
+    assert.strictEqual(validator.isAbpRedirectCompatibleWithAdg(inputRule), false);
+});
+
 test('Test Adguard $redirect', (assert) => {
     const rule = '||example.com/banner$image,redirect=32x32-transparent.png';
     const exp = '||example.com/banner$image,redirect=32x32-transparent.png';

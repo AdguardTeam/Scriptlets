@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.5.22
+ * Version 1.5.23
  */
 
 (function (factory) {
@@ -6041,9 +6041,9 @@
           compatibility = _REDIRECT_RULE_TYPES$.compatibility;
 
       if (rule && !isComment(rule)) {
-        var marker; // check if there $redirect-rule modifier in rule
+        var marker; // check if there is a $redirect-rule modifier in rule
 
-        var markerIndex = rule.indexOf(redirectRuleMarker);
+        var markerIndex = redirectRuleMarker ? rule.indexOf(redirectRuleMarker) : -1;
 
         if (markerIndex > -1) {
           marker = redirectRuleMarker;
