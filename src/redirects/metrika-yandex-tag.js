@@ -84,6 +84,9 @@ export function metrikaYandexTag(source) {
      */
     const userParams = noopFunc;
 
+    // https://github.com/AdguardTeam/Scriptlets/issues/198
+    const destruct = noopFunc;
+
     const api = {
         addFileExtension,
         extLink,
@@ -95,6 +98,7 @@ export function metrikaYandexTag(source) {
         reachGoal,
         setUserID,
         userParams,
+        destruct,
     };
 
     function ym(id, funcName, ...args) {
