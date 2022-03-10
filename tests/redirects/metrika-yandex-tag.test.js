@@ -84,11 +84,15 @@ test('ym: API methods test', (assert) => {
 });
 
 test('yaCounter: API methods test', (assert) => {
-    assert.expect(6);
+    assert.expect(7);
 
     const id = 111;
     window.ym = () => {};
     window.ym.a = [[id]];
+    const eventHandler = () => {
+        assert.ok(true, 'Counter event dispatched');
+    };
+    document.addEventListener(`yacounter${id}inited`, eventHandler);
 
     runRedirect(name);
 
@@ -125,5 +129,7 @@ test('yaCounter: API methods test', (assert) => {
     yaCounter.reachGoal(1, 'target', 'params', reachGoalCb, 123);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
+
+    document.removeEventListener(`yacounter${id}inited`, eventHandler);
     clearGlobalProps(`yaCounter${id}`);
 });
