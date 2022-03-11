@@ -77,13 +77,17 @@ import {
  *     ```
  *     example.org#%#//scriptlet('json-prune')
  *     ```
+ *
+ * 7. Call with only second argument will log the current hostname and matched json payload at the console
+ *     ```
+ *     example.org#%#//scriptlet('json-prune', '', '"id":"117458"')
+ *     ```
  */
 /* eslint-enable max-len */
 export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
     if (!!stack && !matchStackTrace(stack, new Error().stack)) {
         return;
     }
-
     // eslint-disable-next-line no-console
     const log = console.log.bind(console);
     const prunePaths = propsToRemove !== undefined && propsToRemove !== ''
@@ -99,6 +103,18 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
         }
 
         let shouldProcess;
+
+        if (prunePaths.length === 0 && requiredPaths.length > 0) {
+            const rootString = JSON.stringify(root);
+            const matchRegex = toRegExp(requiredPaths.join(''));
+            const shouldLog = matchRegex.test(rootString);
+            if (shouldLog) {
+                log(window.location.hostname, root);
+                shouldProcess = false;
+                return shouldProcess;
+            }
+        }
+
         for (let i = 0; i < requiredPaths.length; i += 1) {
             const requiredPath = requiredPaths[i];
             const lastNestedPropName = requiredPath.split('.').pop();
@@ -138,7 +154,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
      * @param {Object} root
      */
     const jsonPruner = (root) => {
-        if (prunePaths.length === 0) {
+        if (prunePaths.length === 0 && requiredPaths.length === 0) {
             log(window.location.hostname, root);
             return root;
         }
