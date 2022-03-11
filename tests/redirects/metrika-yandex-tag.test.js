@@ -84,7 +84,7 @@ test('ym: API methods test', (assert) => {
 });
 
 test('yaCounter: API methods test', (assert) => {
-    assert.expect(6);
+    assert.expect(11);
 
     const id = 111;
     window.ym = () => {};
@@ -123,6 +123,13 @@ test('yaCounter: API methods test', (assert) => {
         done2();
     }
     yaCounter.reachGoal(1, 'target', 'params', reachGoalCb, 123);
+
+    // noop methods
+    assert.ok(typeof yaCounter.addFileExtension === 'function', 'addFileExtension mocked');
+    assert.ok(typeof yaCounter.params === 'function', 'params mocked');
+    assert.ok(typeof yaCounter.setUserID === 'function', 'setUserID mocked');
+    assert.ok(typeof yaCounter.userParams === 'function', 'userParams mocked');
+    assert.ok(typeof yaCounter.destruct === 'function', 'destruct mocked');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
     clearGlobalProps(`yaCounter${id}`);
