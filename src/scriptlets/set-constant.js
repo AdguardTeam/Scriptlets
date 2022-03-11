@@ -106,6 +106,10 @@ export function setConstant(source, property, value, stack) {
         constantValue = trueFunc;
     } else if (value === 'falseFunc') {
         constantValue = falseFunc;
+    } else if (value === 'noopPromiseResolve') {
+        constantValue = noopPromiseResolve;
+    } else if (value === 'noopPromiseReject') {
+        constantValue = noopPromiseReject;
     } else if (/^\d+$/.test(value)) {
         constantValue = parseFloat(value);
         if (nativeIsNaN(constantValue)) {
@@ -181,6 +185,8 @@ export function setConstant(source, property, value, stack) {
         const { base } = chainInfo;
         const { prop, chain } = chainInfo;
 
+        // Handler method init is used to keep track of factual value
+        // and apply mustCancel() check only on end prop
         const undefPropHandler = {
             factValue: undefined,
             init(a) {
@@ -207,6 +213,7 @@ export function setConstant(source, property, value, stack) {
                 return true;
             },
             get() {
+                // .currrentSript script check so we won't trap other scriptlets on the same chain
                 // eslint-disable-next-line compat/compat
                 return document.currentScript === ourScript ? this.factValue : constantValue;
             },
