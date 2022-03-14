@@ -84,7 +84,7 @@ test('ym: API methods test', (assert) => {
 });
 
 test('yaCounter: API methods test', (assert) => {
-    assert.expect(7);
+    assert.expect(12);
 
     const id = 111;
     window.ym = () => {};
@@ -127,6 +127,13 @@ test('yaCounter: API methods test', (assert) => {
         done2();
     }
     yaCounter.reachGoal(1, 'target', 'params', reachGoalCb, 123);
+
+    // noop methods
+    assert.strictEqual(yaCounter.destruct(), undefined, 'api destruct() is mocked');
+    assert.strictEqual(yaCounter.addFileExtension(), undefined, 'api addFileExtension() is mocked');
+    assert.strictEqual(yaCounter.params(), undefined, 'api params() is mocked');
+    assert.strictEqual(yaCounter.setUserID(), undefined, 'api setUserID() is mocked');
+    assert.strictEqual(yaCounter.userParams(), undefined, 'api userParams() is mocked');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 
