@@ -310,11 +310,10 @@ const isRedirectRuleByType = (rule, type) => {
         compatibility,
     } = REDIRECT_RULE_TYPES[type];
 
-    if (rule
-        && (!isComment(rule))) {
+    if (rule && !isComment(rule)) {
         let marker;
-        // check if there $redirect-rule modifier in rule
-        let markerIndex = rule.indexOf(redirectRuleMarker);
+        // check if there is a $redirect-rule modifier in rule
+        let markerIndex = redirectRuleMarker ? rule.indexOf(redirectRuleMarker) : -1;
         if (markerIndex > -1) {
             marker = redirectRuleMarker;
         } else {
