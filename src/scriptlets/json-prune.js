@@ -104,6 +104,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
 
         let shouldProcess;
 
+        // Only log hostname and matched JSON payload if only second argument is present
         if (prunePaths.length === 0 && requiredPaths.length > 0) {
             const rootString = JSON.stringify(root);
             const matchRegex = toRegExp(requiredPaths.join(''));
