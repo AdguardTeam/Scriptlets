@@ -99,9 +99,46 @@ const splitArgs = (str) => {
 };
 
 /**
+ * Validates remove-attr/class scriptlet args
+ * @param {string[]} parsedArgs
+ * @returns {string[]|Error} valid args OR error for invalid selector
+ */
+const validateRemoveAttrClassArgs = (parsedArgs) => {
+    // remove-attr/class scriptlet might have multiple selectors separated by comma. so we should:
+    // 1. check if last arg is 'applying' parameter
+    // 2. join 'selector' into one arg
+    // 3. combine all args
+    // https://github.com/AdguardTeam/Scriptlets/issues/133
+    const lastArg = parsedArgs.pop();
+    const [name, value, ...restArgs] = parsedArgs;
+    let applying;
+    // check the last parsed arg for matching possible 'applying' vale
+    if (REMOVE_ATTR_CLASS_APPLYING.some((el) => lastArg.indexOf(el) > -1)) {
+        applying = lastArg;
+    } else {
+        restArgs.push(lastArg);
+    }
+    const selector = replaceAll(
+        restArgs.join(', '),
+        ESCAPED_COMMA_SEPARATOR,
+        COMMA_SEPARATOR,
+    );
+    if (selector.length > 0 && typeof document !== 'undefined') {
+        // empty selector is valid for these scriptlets as it applies to all elements,
+        // all other selectors should be validated
+        // e.g. #%#//scriptlet('ubo-remove-class.js', 'blur', ', html')
+        document.querySelectorAll(selector);
+    }
+    const validArgs = applying
+        ? [name, value, selector, applying]
+        : [name, value, selector];
+    return validArgs;
+};
+
+/**
  * Converts string of UBO scriptlet rule to AdGuard scriptlet rule
  * @param {string} rule - UBO scriptlet rule
- * @returns {Array} - array with one AdGuard scriptlet rule
+ * @returns {string[]} - array with one AdGuard scriptlet rule
  */
 export const convertUboScriptletToAdg = (rule) => {
     const domains = getBeforeRegExp(rule, validator.UBO_SCRIPTLET_MASK_REG);
@@ -120,29 +157,7 @@ export const convertUboScriptletToAdg = (rule) => {
 
     if (((REMOVE_ATTR_ALIASES.indexOf(scriptletName) > -1)
         || (REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1))) {
-        // if there are more than 4 args for remove-attr/class scriptlet,
-        // ubo rule has multiple selector separated by comma. so we should:
-        // 1. check if last arg is 'applying' parameter
-        // 2. join 'selector' into one arg
-        // 3. combine all args
-        // https://github.com/AdguardTeam/Scriptlets/issues/133
-        const lastArg = parsedArgs.pop();
-        const [name, value, ...restArgs] = parsedArgs;
-        let applying;
-        // check the last parsed arg for matching possible 'applying' vale
-        if (REMOVE_ATTR_CLASS_APPLYING.some((el) => lastArg.indexOf(el) > -1)) {
-            applying = lastArg;
-        } else {
-            restArgs.push(lastArg);
-        }
-        const selector = replaceAll(
-            restArgs.join(', '),
-            ESCAPED_COMMA_SEPARATOR,
-            COMMA_SEPARATOR,
-        );
-        parsedArgs = applying
-            ? [name, value, selector, applying]
-            : [name, value, selector];
+        parsedArgs = validateRemoveAttrClassArgs(parsedArgs);
     }
 
     const args = parsedArgs

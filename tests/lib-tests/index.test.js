@@ -36,7 +36,7 @@ test('Test scriptlet rule validation', (assert) => {
     assert.strictEqual(isValidScriptletRule(inputRule), true);
 
     // multiple selectors for remove-attr/class
-    inputRule = 'example.org##+js(ra, href|target, #image > [href][onclick]\\, #page_effect > [href][onclick]))';
+    inputRule = 'example.org##+js(ra, href|target, #image > [href][onclick]\\, #page_effect > [href][onclick])';
     assert.strictEqual(isValidScriptletRule(inputRule), true, 'multiple selectors for remove-attr/class - OK');
 
     // invalid scriptlet name
@@ -104,6 +104,12 @@ test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
     blockingRule = 'foxracingshox.de##+js(rc, cookie--not-set, , stay)';
     expBlockRule = "foxracingshox.de#%#//scriptlet('ubo-rc.js', 'cookie--not-set', '', 'stay')";
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule, 'empty selector and specified applying - OK');
+
+    // empty selector and invalid applying for remove-attr/class
+    assert.throws(() => {
+        blockingRule = 'northernpowergrid.com##+js(remove-class, blur, , html)';
+        convertScriptletToAdg(blockingRule);
+    }, 'unable to convert -- invalid parameters');
 
     // specified selectors and applying for remove-attr/class
     blockingRule = 'memo-book.pl##+js(rc, .locked, body\\, html, stay)';
@@ -321,6 +327,18 @@ test('Test $redirect validation', (assert) => {
 
     inputRule = '@@||popsci.com/gdpr.html?redirect=';
     assert.strictEqual(validator.isUboRedirectCompatibleWithAdg(inputRule), false);
+});
+
+test('Test $redirect validator with unsupported rules', (assert) => {
+    // do not break on cosmetic rules
+    let inputRule = 'ferra.ru##div[data-render-state] + div[class^="jsx-"][class$=" undefined"]';
+    assert.strictEqual(validator.isUboRedirectCompatibleWithAdg(inputRule), false);
+    assert.strictEqual(validator.isAbpRedirectCompatibleWithAdg(inputRule), false);
+
+    // do not break on JS rules
+    inputRule = 'example.org#%#var str = /[class$=" undefined"]/; console.log(str);';
+    assert.strictEqual(validator.isUboRedirectCompatibleWithAdg(inputRule), false);
+    assert.strictEqual(validator.isAbpRedirectCompatibleWithAdg(inputRule), false);
 });
 
 test('Test Adguard $redirect', (assert) => {
