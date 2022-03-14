@@ -17,3 +17,4 @@ import './tagcommander-tc.test';
 import './prebid.test';
 import './didomi-loader.test';
 import './prebid-ads.test';
+import './wcslog.test';

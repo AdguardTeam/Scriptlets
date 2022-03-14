@@ -171,6 +171,9 @@ const redirects = [
         adg: 'prebid-ads',
         ubo: 'prebid-ads.js',
     },
+    {
+        adg: 'wcslog',
+    },
 ];
 
 export default redirects;
