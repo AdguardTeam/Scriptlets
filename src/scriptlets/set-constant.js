@@ -147,7 +147,7 @@ export function setConstant(source, property, value, stack) {
         return canceled;
     };
 
-    const trapProp = (base, prop, handler) => {
+    const trapProp = (base, prop, configurable, handler) => {
         if (!handler.init(base[prop])) {
             return;
         }
@@ -165,6 +165,7 @@ export function setConstant(source, property, value, stack) {
             }
         }
         Object.defineProperty(base, prop, {
+            configurable,
             get() {
                 if (prevGetter !== undefined) {
                     prevGetter();
@@ -218,7 +219,7 @@ export function setConstant(source, property, value, stack) {
                 return document.currentScript === ourScript ? this.factValue : constantValue;
             },
             set(a) {
-                if (mustCancel(a)) {
+                if (!mustCancel(a)) {
                     return;
                 }
                 constantValue = a;
@@ -227,7 +228,7 @@ export function setConstant(source, property, value, stack) {
 
         // End prop case
         if (!chain) {
-            trapProp(base, prop, endPropHandler);
+            trapProp(base, prop, false, endPropHandler);
             hit(source);
             return;
         }
@@ -239,7 +240,7 @@ export function setConstant(source, property, value, stack) {
         }
 
         // Undefined prop in chain
-        trapProp(owner, prop, undefPropHandler);
+        trapProp(owner, prop, true, undefPropHandler);
     };
 
     setChainPropAccess(window, property);
