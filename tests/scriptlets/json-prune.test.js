@@ -321,6 +321,18 @@ test('does NOT remove propsToRemove if invoked without parameter propsToRemove a
     JSON.parse('{"a":1, "b":2}');
 });
 
+test('logs matched object and hostname if invoked with only second arg', (assert) => {
+    assert.expect(2);
+    console.log = (host, params) => {
+        // eslint-disable-next-line compat/compat
+        assert.strictEqual(host, window.location.hostname, 'should log hostname in console');
+        assert.deepEqual(params, { a: 1 }, 'should log parameters in console');
+    };
+    runScriptlet('json-prune', '', '"a":1');
+    JSON.parse('{"a":1}');
+    JSON.parse('{"b":2}');
+});
+
 test('removes propsToRemove + stack match', (assert) => {
     const stackMatch = 'json-prune';
 

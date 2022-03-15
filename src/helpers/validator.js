@@ -130,6 +130,7 @@ const isValidScriptletName = (name) => {
  * Redirect resources markers
  */
 const ADG_UBO_REDIRECT_MARKER = 'redirect=';
+const ADG_UBO_REDIRECT_RULE_MARKER = 'redirect-rule=';
 const ABP_REDIRECT_MARKER = 'rewrite=abp-resource:';
 const EMPTY_REDIRECT_MARKER = 'empty';
 
@@ -237,19 +238,22 @@ const validAdgCompatibility = getObjectFromEntries(
 
 const REDIRECT_RULE_TYPES = {
     VALID_ADG: {
-        marker: ADG_UBO_REDIRECT_MARKER,
+        redirectMarker: ADG_UBO_REDIRECT_MARKER,
+        redirectRuleMarker: ADG_UBO_REDIRECT_RULE_MARKER,
         compatibility: validAdgCompatibility,
     },
     ADG: {
-        marker: ADG_UBO_REDIRECT_MARKER,
+        redirectMarker: ADG_UBO_REDIRECT_MARKER,
+        redirectRuleMarker: ADG_UBO_REDIRECT_RULE_MARKER,
         compatibility: adgToUboCompatibility,
     },
     UBO: {
-        marker: ADG_UBO_REDIRECT_MARKER,
+        redirectMarker: ADG_UBO_REDIRECT_MARKER,
+        redirectRuleMarker: ADG_UBO_REDIRECT_RULE_MARKER,
         compatibility: uboToAdgCompatibility,
     },
     ABP: {
-        marker: ABP_REDIRECT_MARKER,
+        redirectMarker: ABP_REDIRECT_MARKER,
         compatibility: abpToAdgCompatibility,
     },
 };
@@ -280,10 +284,11 @@ const getRedirectName = (rule, marker) => {
  * @param {string} rule - rule text
  */
 const isAdgRedirectRule = (rule) => {
-    const MARKER_IN_BASE_PART_MASK = '/((?!\\$|\\,).{1})redirect=(.{0,}?)\\$(popup)?/';
+    const MARKER_IN_BASE_PART_MASK = '/((?!\\$|\\,).{1})redirect((-rule)?)=(.{0,}?)\\$(popup)?/';
     return (
         !isComment(rule)
-        && rule.indexOf(REDIRECT_RULE_TYPES.ADG.marker) > -1
+        && (rule.indexOf(REDIRECT_RULE_TYPES.ADG.redirectMarker) > -1
+            || rule.indexOf(REDIRECT_RULE_TYPES.ADG.redirectRuleMarker) > -1)
         // some js rules may have 'redirect=' in it, so we should get rid of them
         && rule.indexOf(JS_RULE_MARKER) === -1
         // get rid of rules like '_redirect=*://look.$popup'
@@ -291,17 +296,36 @@ const isAdgRedirectRule = (rule) => {
     );
 };
 
+// const getRedirectResourceMarkerData = ()
+
 /**
  * Checks if the `rule` satisfies the `type`
  * @param {string} rule - rule text
  * @param {'VALID_ADG'|'ADG'|'UBO'|'ABP'} type - type of a redirect rule
  */
 const isRedirectRuleByType = (rule, type) => {
-    const { marker, compatibility } = REDIRECT_RULE_TYPES[type];
+    const {
+        redirectMarker,
+        redirectRuleMarker,
+        compatibility,
+    } = REDIRECT_RULE_TYPES[type];
 
-    if (rule
-        && (!isComment(rule))
-        && (rule.indexOf(marker) > -1)) {
+    if (rule && !isComment(rule)) {
+        let marker;
+        // check if there is a $redirect-rule modifier in rule
+        let markerIndex = redirectRuleMarker ? rule.indexOf(redirectRuleMarker) : -1;
+        if (markerIndex > -1) {
+            marker = redirectRuleMarker;
+        } else {
+            // check if there $redirect modifier in rule
+            markerIndex = rule.indexOf(redirectMarker);
+            if (markerIndex > -1) {
+                marker = redirectMarker;
+            } else {
+                return false;
+            }
+        }
+
         const redirectName = getRedirectName(rule, marker);
 
         if (!redirectName) {
@@ -375,7 +399,8 @@ const hasValidContentType = (rule) => {
 
     const isSourceTypeSpecified = sourceTypes.length > 0;
     // eslint-disable-next-line max-len
-    const isEmptyRedirect = ruleModifiers.indexOf(`${ADG_UBO_REDIRECT_MARKER}${EMPTY_REDIRECT_MARKER}`) > -1;
+    const isEmptyRedirect = ruleModifiers.indexOf(`${ADG_UBO_REDIRECT_MARKER}${EMPTY_REDIRECT_MARKER}`) > -1
+        || ruleModifiers.indexOf(`${ADG_UBO_REDIRECT_RULE_MARKER}${EMPTY_REDIRECT_MARKER}`) > -1;
 
     if (isEmptyRedirect) {
         // no source type for 'empty' is allowed
@@ -395,6 +420,7 @@ const validator = {
     isAbpSnippetRule,
     getScriptletByName,
     isValidScriptletName,
+    ADG_UBO_REDIRECT_RULE_MARKER,
     REDIRECT_RULE_TYPES,
     ABSENT_SOURCE_TYPE_REPLACEMENT,
     isAdgRedirectRule,

@@ -13,38 +13,6 @@
             "os": "Windows",
             "os_version": "10",
             "cli_key": 1
-        },
-        {
-            "browser": "Edge",
-            "browser_version": "15",
-            "device": null,
-            "os": "Windows",
-            "os_version": "10",
-            "cli_key": 2
-        },
-        {
-            "browser": "Firefox",
-            "browser_version": "52",
-            "device": null,
-            "os": "Windows",
-            "os_version": "10",
-            "cli_key": 3
-        },
-        {
-            "browser": "Opera",
-            "browser_version": "42",
-            "device": null,
-            "os": "Windows",
-            "os_version": "10",
-            "cli_key": 4
-        },
-        {
-            "browser": "Safari",
-            "browser_version": "10",
-            "device": null,
-            "os": "OS X",
-            "os_version": "Sierra",
-            "cli_key": 5
         }
     ]
 }

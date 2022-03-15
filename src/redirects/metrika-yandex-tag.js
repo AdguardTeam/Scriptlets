@@ -84,6 +84,9 @@ export function metrikaYandexTag(source) {
      */
     const userParams = noopFunc;
 
+    // https://github.com/AdguardTeam/Scriptlets/issues/198
+    const destruct = noopFunc;
+
     const api = {
         addFileExtension,
         extLink,
@@ -95,6 +98,7 @@ export function metrikaYandexTag(source) {
         reachGoal,
         setUserID,
         userParams,
+        destruct,
     };
 
     function ym(id, funcName, ...args) {
@@ -105,19 +109,21 @@ export function metrikaYandexTag(source) {
     function init(id) {
         // yaCounter object should provide api
         window[`yaCounter${id}`] = api;
+        document.dispatchEvent(new Event(`yacounter${id}inited`));
     }
 
     if (typeof window.ym === 'undefined') {
         window.ym = ym;
     } else if (window.ym && window.ym.a) {
         // Get id for yaCounter object
-        window.ym.a.forEach((params) => {
+        const counters = window.ym.a;
+
+        window.ym = ym;
+        counters.forEach((params) => {
             const id = params[0];
             init(id);
         });
-        window.ym = ym;
     }
-
     hit(source);
 }
 

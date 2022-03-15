@@ -134,40 +134,40 @@ And also there is a module at `dist/scriptlets.js` which has been exported to a 
 
 ```javascript
 /**
-* Returns scriptlet code
-* @param {Source} source
-* @returns {string}
-*/
+ * Returns scriptlet code
+ * @param {Source} source
+ * @returns {string}
+ */
 scriptlets.invoke(source);
 ```
 
 ```javascript
 /**
-* Checks if the scriptlet name is valid
-* @param {string} name - scriptlet name
-* @returns {boolean}
-*/
+ * Checks whether the `name` is valid scriptlet name
+ * @param {string} name
+ * @returns {boolean}
+ */
 scriptlets.isValidScriptletName(name);
 ```
 
 ```javascript
 /**
-* Checks whether the ADG scriptlet exists or UBO/ABP scriptlet is compatible to ADG
-*
-* ADG or UBO rule is single-scriptlet, but ABP rule may contain more than one snippet
-* so if at least one of them is not valid - whole 'input' rule is not valid too.
-* @param {string} input - can be Adguard or Ubo or Abp scriptlet rule
-* @returns {boolean}
-*/
+ * Checks whether the ADG scriptlet exists or UBO/ABP scriptlet is compatible to ADG
+ *
+ * ADG or UBO rules are "single-scriptlet", but ABP rule may contain more than one snippet
+ * so if at least one of them is not valid — whole 'input' rule is not valid too.
+ * @param {string} input — any scriptlet rule
+ * @returns {boolean}
+ */
 scriptlets.isValidScriptletRule(input);
 ```
 
 ```javascript
 /**
-* Checks if the `rule` is AdGuard / Ubo / Abp scriptlet rule
-* @param {string} rule - rule text
-* @returns {boolean}
-*/
+ * Checks if the `rule` is AdGuard / Ubo / Abp scriptlet rule
+ * @param {string} rule — any rule
+ * @returns {boolean}
+ */
 scriptlets.isAdgScriptletRule(rule);
 scriptlets.isUboScriptletRule(rule);
 scriptlets.isAbpSnippetRule(rule);
@@ -175,37 +175,37 @@ scriptlets.isAbpSnippetRule(rule);
 
 ```javascript
 /**
-* Converts Ubo scriptlet rule to AdGuard
-* @param {string} rule - rule text
-* @returns {Array} - array with one item - AdGuard scriptlet rule
-*/
+ * Converts Ubo scriptlet rule to AdGuard
+ * @param {string} rule — Ubo rule
+ * @returns {string[]} — array with single AdGuard scriptlet rule
+ */
 scriptlets.convertUboToAdg(rule);
 ```
 > Note that parameters in UBO rule should be separated by comma + space. Otherwise, the rule is not valid.
 
 ```javascript
 /**
-* Converts Abp snippet rule to AdGuard
-* @param {string} rule - rule text
-* @returns {Array} - array with AdGuard scriptlet rule or rules if Abp-rule has few snippets in one line
-*/
+ * Converts Abp snippet rule to AdGuard
+ * @param {string} rule — Abp rule
+ * @returns {string[]} — array with AdGuard scriptlet rule or rules if Abp-rule has few snippets in one line
+ */
 scriptlets.convertAbpToAdg(rule);
 ```
 
 ```javascript
 /**
-* Checks if the `rule` is any scriptlet rule and converts it to AdGuard
-* @param {string} rule - rule text
-* @returns {Array} - array of AdGuard scriptlet rules - one item for Adg and Ubo or few items for Abp
-*/
+ * Checks whether the `rule` is any scriptlet rule and converts it to AdGuard syntax
+ * @param {string} rule — any scriptlet rule
+ * @returns {string[]} — array of AdGuard scriptlet rules: one item for Adg and Ubo or few items for Abp
+ */
 scriptlets.convertScriptletToAdg(rule);
 ```
 
 ```javascript
 /**
  * Converts AdGuard scriptlet rule to UBO one
- * @param {string} rule - AdGuard scriptlet rule
- * @returns {string} - UBO scriptlet rule
+ * @param {string} rule — AdGuard scriptlet rule
+ * @returns {string} — UBO scriptlet rule
  */
 scriptlets.convertAdgToUbo(rule);
 ```
@@ -215,90 +215,96 @@ scriptlets.convertAdgToUbo(rule);
 
 ```javascript
 /**
-* Returns redirects code
-* @param {Source} source
-* @returns {string}
-*/
+ * Returns redirects code
+ * @param {Source} source
+ * @returns {string}
+ */
 redirects.getCode(source);
 ```
 
 ```javascript
 /**
- * Checks if the `rule` is AdGuard redirect rule.
- * Discards comments and JS rules and checks if the `rule` has 'redirect' modifier.
- * @param {string} rule - rule text
+ * Checks whether the `rule` is AdGuard redirect resource rule.
+ * Discards comments and JS rules and checks whether the `rule` has $redirect or $redirect-rule modifier
+ * @param {string} rule
  */
 redirects.isAdgRedirectRule(rule)
 ```
 
 ```javascript
 /**
-* Checks if the `rule` is **valid** AdGuard redirect rule
-* @param {string} rule - redirect rule text
-* @returns {boolean}
-*/
+ * Checks whether the `rule` is **valid** AdGuard redirect resource rule.
+ * No matter $redirect or $redirect-rule
+ * @param {string} rule
+ * @returns {boolean}
+ */
 redirects.isValidAdgRedirectRule(rule);
 ```
 
 ```javascript
 /**
-* Checks if the AdGuard redirect `rule` has Ubo analog. Needed for Adg->Ubo conversion
-* @param {string} rule - AdGuard rule text
-* @returns {boolean} - true if the rule can be converted to Ubo
-*/
+ * Checks whether the AdGuard redirect `rule` has Ubo analog.
+ * Needed for Adg->Ubo conversion. No matter $redirect or $redirect-rule modifier is used
+ * @param {string} rule — AdGuard rule
+ * @returns {boolean} — true if the rule can be converted to Ubo syntax
+ */
 redirects.isAdgRedirectCompatibleWithUbo(rule);
 ```
 
 ```javascript
 /**
-* Checks if the Ubo redirect `rule` has AdGuard analog. Needed for Ubo->Adg conversion
-* @param {string} rule - Ubo rule text
-* @returns {boolean} - true if the rule can be converted to AdGuard
-*/
+ * Checks if the Ubo redirect `rule` has AdGuard analog.
+ * Needed for Ubo->Adg conversion. No matter $redirect or $redirect-rule modifier is used
+ * @param {string} rule — Ubo rule
+ * @returns {boolean} — true if the rule can be converted to AdGuard syntax
+ */
 redirects.isUboRedirectCompatibleWithAdg(rule);
 ```
 
 ```javascript
 /**
-* Checks if the Abp redirect `rule` has AdGuard analog. Needed for Abp->Adg conversion
-* @param {string} rule - Abp rule text
-* @returns {boolean} - true if the rule can be converted to AdGuard
-*/
+ * Checks whether the Abp redirect `rule` has AdGuard analog. Needed for Abp->Adg conversion
+ * @param {string} rule — Abp rule
+ * @returns {boolean} — true if the rule can be converted to AdGuard syntax
+ */
 redirects.isAbpRedirectCompatibleWithAdg(rule);
 ```
 
 ```javascript
 /**
-* Converts Ubo redirect rule to AdGuard
-* @param {string} rule - rule text
-* @returns {string}
-*/
+ * Converts Ubo redirect resource rule to AdGuard syntax.
+ * No matter $redirect or $redirect-rule modifier is used
+ * @param {string} rule — Ubo rule
+ * @returns {string} — Adg rule
+ */
 redirects.convertUboRedirectToAdg(rule);
 ```
 
 ```javascript
 /**
-* Converts Abp redirect rule to AdGuard
-* @param {string} rule - rule text
-* @returns {string}
-*/
+ * Converts Abp redirect resource rule to AdGuard syntax
+ * @param {string} rule — Abp rule
+ * @returns {string} — Adg rule
+ */
 redirects.convertAbpRedirectToAdg(rule);
 ```
 
 ```javascript
 /**
-* Checks if the `rule` is any redirect rule and converts it to AdGuard
-* @param {string} rule - rule text
-* @returns {string} - converted to Adguard redirect rule OR `rule` if it is valid Adguard rule
-*/
+ * Checks whether the `rule` is any redirect rule and converts it to AdGuard syntax.
+ * No matter $redirect or $redirect-rule modifier is used
+ * @param {string} rule — any resource rule
+ * @returns {string} — valid Adguard redirect resource rule
+ */
 redirects.convertRedirectToAdg(rule);
 ```
 
 ```javascript
 /**
- * Converts Adg redirect rule to Ubo one
- * @param {string} rule
- * @returns {string}
+ * Converts Adg redirect rule to Ubo syntax.
+ * No matter $redirect or $redirect-rule modifier is used
+ * @param {string} rule — Adg rule
+ * @returns {string} — Ubo rule
  */
 redirects.convertAdgRedirectToUbo(rule);
 ```

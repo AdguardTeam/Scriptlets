@@ -99,9 +99,46 @@ const splitArgs = (str) => {
 };
 
 /**
+ * Validates remove-attr/class scriptlet args
+ * @param {string[]} parsedArgs
+ * @returns {string[]|Error} valid args OR error for invalid selector
+ */
+const validateRemoveAttrClassArgs = (parsedArgs) => {
+    // remove-attr/class scriptlet might have multiple selectors separated by comma. so we should:
+    // 1. check if last arg is 'applying' parameter
+    // 2. join 'selector' into one arg
+    // 3. combine all args
+    // https://github.com/AdguardTeam/Scriptlets/issues/133
+    const lastArg = parsedArgs.pop();
+    const [name, value, ...restArgs] = parsedArgs;
+    let applying;
+    // check the last parsed arg for matching possible 'applying' vale
+    if (REMOVE_ATTR_CLASS_APPLYING.some((el) => lastArg.indexOf(el) > -1)) {
+        applying = lastArg;
+    } else {
+        restArgs.push(lastArg);
+    }
+    const selector = replaceAll(
+        restArgs.join(', '),
+        ESCAPED_COMMA_SEPARATOR,
+        COMMA_SEPARATOR,
+    );
+    if (selector.length > 0 && typeof document !== 'undefined') {
+        // empty selector is valid for these scriptlets as it applies to all elements,
+        // all other selectors should be validated
+        // e.g. #%#//scriptlet('ubo-remove-class.js', 'blur', ', html')
+        document.querySelectorAll(selector);
+    }
+    const validArgs = applying
+        ? [name, value, selector, applying]
+        : [name, value, selector];
+    return validArgs;
+};
+
+/**
  * Converts string of UBO scriptlet rule to AdGuard scriptlet rule
  * @param {string} rule - UBO scriptlet rule
- * @returns {Array} - array with one AdGuard scriptlet rule
+ * @returns {string[]} - array with one AdGuard scriptlet rule
  */
 export const convertUboScriptletToAdg = (rule) => {
     const domains = getBeforeRegExp(rule, validator.UBO_SCRIPTLET_MASK_REG);
@@ -120,29 +157,7 @@ export const convertUboScriptletToAdg = (rule) => {
 
     if (((REMOVE_ATTR_ALIASES.indexOf(scriptletName) > -1)
         || (REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1))) {
-        // if there are more than 4 args for remove-attr/class scriptlet,
-        // ubo rule has multiple selector separated by comma. so we should:
-        // 1. check if last arg is 'applying' parameter
-        // 2. join 'selector' into one arg
-        // 3. combine all args
-        // https://github.com/AdguardTeam/Scriptlets/issues/133
-        const lastArg = parsedArgs.pop();
-        const [name, value, ...restArgs] = parsedArgs;
-        let applying;
-        // check the last parsed arg for matching possible 'applying' vale
-        if (REMOVE_ATTR_CLASS_APPLYING.some((el) => lastArg.indexOf(el) > -1)) {
-            applying = lastArg;
-        } else {
-            restArgs.push(lastArg);
-        }
-        const selector = replaceAll(
-            restArgs.join(', '),
-            ESCAPED_COMMA_SEPARATOR,
-            COMMA_SEPARATOR,
-        );
-        parsedArgs = applying
-            ? [name, value, selector, applying]
-            : [name, value, selector];
+        parsedArgs = validateRemoveAttrClassArgs(parsedArgs);
     }
 
     const args = parsedArgs
@@ -151,7 +166,7 @@ export const convertUboScriptletToAdg = (rule) => {
             if (index === 0) {
                 outputArg = scriptletName;
             }
-            // for example: dramaserial.xyz##+js(abort-current-inline-script, $, popup)
+            // for example: example.org##+js(abort-current-inline-script, $, popup)
             if (arg === '$') {
                 outputArg = '$$';
             }
@@ -167,7 +182,7 @@ export const convertUboScriptletToAdg = (rule) => {
 };
 
 /**
- * Convert string of ABP snippet rule to AdGuard scritlet rule
+ * Convert string of ABP snippet rule to AdGuard scriptlet rule
  * @param {string} rule - ABP snippet rule
  * @returns {Array} - array of AdGuard scriptlet rules -
  * one or few items depends on Abp-rule
@@ -315,6 +330,29 @@ export const isValidScriptletRule = (input) => {
 };
 
 /**
+ * Gets index and redirect resource marker from UBO/ADG modifiers array
+ * @param {string[]} modifiers
+ * @param {Object} redirectsData validator.REDIRECT_RULE_TYPES.(UBO|ADG)
+ * @param {string} rule
+ * @returns {Object} { index, marker }
+ */
+const getMarkerData = (modifiers, redirectsData, rule) => {
+    let marker;
+    let index = modifiers.findIndex((m) => m.indexOf(redirectsData.redirectRuleMarker) > -1);
+    if (index > -1) {
+        marker = redirectsData.redirectRuleMarker;
+    } else {
+        index = modifiers.findIndex((m) => m.indexOf(redirectsData.redirectMarker) > -1);
+        if (index > -1) {
+            marker = redirectsData.redirectMarker;
+        } else {
+            throw new Error(`No redirect resource modifier found in rule: ${rule}`);
+        }
+    }
+    return { index, marker };
+};
+
+/**
  * Converts Ubo redirect rule to Adg one
  * @param {string} rule
  * @returns {string}
@@ -322,17 +360,22 @@ export const isValidScriptletRule = (input) => {
 export const convertUboRedirectToAdg = (rule) => {
     const firstPartOfRule = substringBefore(rule, '$');
     const uboModifiers = validator.parseModifiers(rule);
+    const uboMarkerData = getMarkerData(uboModifiers, validator.REDIRECT_RULE_TYPES.UBO, rule);
+
     const adgModifiers = uboModifiers
-        .map((el) => {
-            if (el.indexOf(validator.REDIRECT_RULE_TYPES.UBO.marker) > -1) {
-                const uboName = substringAfter(el, validator.REDIRECT_RULE_TYPES.UBO.marker);
+        .map((modifier, index) => {
+            if (index === uboMarkerData.index) {
+                const uboName = substringAfter(modifier, uboMarkerData.marker);
                 const adgName = validator.REDIRECT_RULE_TYPES.UBO.compatibility[uboName];
-                return `${validator.REDIRECT_RULE_TYPES.ADG.marker}${adgName}`;
+                const adgMarker = uboMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER
+                    ? validator.REDIRECT_RULE_TYPES.ADG.redirectRuleMarker
+                    : validator.REDIRECT_RULE_TYPES.ADG.redirectMarker;
+                return `${adgMarker}${adgName}`;
             }
-            if (el === UBO_XHR_TYPE) {
+            if (modifier === UBO_XHR_TYPE) {
                 return ADG_XHR_TYPE;
             }
-            return el;
+            return modifier;
         })
         .join(COMMA_SEPARATOR);
 
@@ -348,13 +391,16 @@ export const convertAbpRedirectToAdg = (rule) => {
     const firstPartOfRule = substringBefore(rule, '$');
     const abpModifiers = validator.parseModifiers(rule);
     const adgModifiers = abpModifiers
-        .map((el) => {
-            if (el.indexOf(validator.REDIRECT_RULE_TYPES.ABP.marker) > -1) {
-                const abpName = substringAfter(el, validator.REDIRECT_RULE_TYPES.ABP.marker);
+        .map((modifier) => {
+            if (modifier.indexOf(validator.REDIRECT_RULE_TYPES.ABP.redirectMarker) > -1) {
+                const abpName = substringAfter(
+                    modifier,
+                    validator.REDIRECT_RULE_TYPES.ABP.redirectMarker,
+                );
                 const adgName = validator.REDIRECT_RULE_TYPES.ABP.compatibility[abpName];
-                return `${validator.REDIRECT_RULE_TYPES.ADG.marker}${adgName}`;
+                return `${validator.REDIRECT_RULE_TYPES.ADG.redirectMarker}${adgName}`;
             }
-            return el;
+            return modifier;
         })
         .join(COMMA_SEPARATOR);
 
@@ -382,7 +428,7 @@ export const convertRedirectToAdg = (rule) => {
 /**
  * Converts Adg redirect rule to Ubo one
  * 1. Checks if there is Ubo analog for Adg rule
- * 2. Parses the rule and chechs if there are any source type modifiers which are required by Ubo
+ * 2. Parses the rule and checks if there are any source type modifiers which are required by Ubo
  *    and if there are no one we add it manually to the end.
  *    Source types are chosen according to redirect name
  *    e.g. ||ad.com^$redirect=<name>,important  ->>  ||ad.com^$redirect=<name>,important,script
@@ -398,12 +444,9 @@ export const convertAdgRedirectToUbo = (rule) => {
     const basePart = substringBefore(rule, '$');
     const adgModifiers = validator.parseModifiers(rule);
 
-    const adgRedirectModifier = adgModifiers
-        .find((el) => el.indexOf(validator.REDIRECT_RULE_TYPES.ADG.marker) > -1);
-    const adgRedirectName = adgRedirectModifier
-        .slice(validator.REDIRECT_RULE_TYPES.ADG.marker.length);
-    const uboRedirectName = validator.REDIRECT_RULE_TYPES.ADG.compatibility[adgRedirectName];
-    const uboRedirectModifier = `${validator.REDIRECT_RULE_TYPES.UBO.marker}${uboRedirectName}`;
+    const adgMarkerData = getMarkerData(adgModifiers, validator.REDIRECT_RULE_TYPES.ADG, rule);
+
+    const adgRedirectName = adgModifiers[adgMarkerData.index].slice(adgMarkerData.marker.length);
 
     if (!validator.hasValidContentType(rule)) {
         // add missed source types as content type modifiers
@@ -418,9 +461,14 @@ export const convertAdgRedirectToUbo = (rule) => {
     }
 
     const uboModifiers = adgModifiers
-        .map((el) => {
-            if (el === adgRedirectModifier) {
-                return uboRedirectModifier;
+        .map((el, index) => {
+            if (index === adgMarkerData.index) {
+                const uboMarker = adgMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER
+                    ? validator.REDIRECT_RULE_TYPES.UBO.redirectRuleMarker
+                    : validator.REDIRECT_RULE_TYPES.UBO.redirectMarker;
+                // eslint-disable-next-line max-len
+                const uboRedirectName = validator.REDIRECT_RULE_TYPES.ADG.compatibility[adgRedirectName];
+                return `${uboMarker}${uboRedirectName}`;
             }
             return el;
         })
