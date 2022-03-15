@@ -91,6 +91,9 @@ const redirects = [
         adg: 'metrika-yandex-tag',
     },
     {
+        adg: 'naver-wcslog',
+    },
+    {
         adg: 'noeval',
         ubo: 'noeval-silent.js',
     },
