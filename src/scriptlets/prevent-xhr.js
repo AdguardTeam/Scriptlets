@@ -25,7 +25,7 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('prevent-xhr'[, propsToMatch, randomize])
+ * example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
  * ```
  *
  * - propsToMatch - optional, string of space-separated properties to match; possible props:
