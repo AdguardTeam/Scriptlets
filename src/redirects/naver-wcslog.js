@@ -9,7 +9,7 @@ import { hit, noopFunc } from '../helpers';
  *
  * **Example**
  * ```
- * ||wcs.naver.net/wcslog.js$script,redirect=naverr-wcslog
+ * ||wcs.naver.net/wcslog.js$script,redirect=naver-wcslog
  * ```
  */
 
