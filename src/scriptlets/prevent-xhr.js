@@ -65,7 +65,7 @@ import {
  *     example.org#%#//scriptlet('prevent-xhr', 'example.org method:/HEAD|GET/')
  *     ```
  *
- *  * 5. Prevent XMLHttpRequests for specific url and randomize it's response text
+ * 6. Prevent XMLHttpRequests for specific url and randomize it's response text
  *     ```
  *     example.org#%#//scriptlet('prevent-xhr', 'example.org', 'true')
  *     ```
