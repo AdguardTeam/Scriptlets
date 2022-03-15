@@ -60,6 +60,8 @@ test('ati-smarttag: works', (assert) => {
     assert.strictEqual(tag.clickListener.send(), undefined, 'tag.clickListener.send() is mocked');
 
     assert.ok(tag.internalSearch instanceof Object, 'tag.internalSearch is object');
+    assert.ok(tag.internalSearch.set instanceof Function, 'tag.internalSearch.set is function');
+    assert.strictEqual(tag.internalSearch.set(), undefined, 'tag.internalSearch.set() is mocked');
     assert.ok(tag.internalSearch.send instanceof Function, 'tag.internalSearch.send is function');
     assert.strictEqual(tag.internalSearch.send(), undefined, 'tag.internalSearch.send() is mocked');
 

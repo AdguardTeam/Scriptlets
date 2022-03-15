@@ -55,7 +55,10 @@ export function ATInternetSmartTag(source) {
 
         click: sendNoopFuncWrapper,
         clickListener: sendNoopFuncWrapper,
-        internalSearch: sendNoopFuncWrapper,
+        internalSearch: {
+            set: noopFunc,
+            send: noopFunc,
+        },
 
         ecommerce: ecommerceWrapper,
 
