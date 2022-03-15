@@ -22,3 +22,4 @@ export * from './tagcommander-tc.js';
 export * from './didomi-loader.js';
 export * from './prebid.js';
 export * from './prebid-ads.js';
+export * from './naver-wcslog.js';

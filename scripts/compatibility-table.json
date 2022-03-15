@@ -68,6 +68,9 @@
             "adg": "log-on-stack-trace"
         },
         {
+            "adg": "naver-wcslog"
+        },
+        {
             "adg": "noeval"
         },
         {
