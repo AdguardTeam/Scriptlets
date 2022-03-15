@@ -2,18 +2,18 @@
 import { hit, noopFunc } from '../helpers';
 
 /**
- * @redirect wcslog
+ * @redirect naver-wcslog
  *
  * @description
  * Mocks wcslog.js of Naver Analytics.
  *
  * **Example**
  * ```
- * ||wcs.naver.net/wcslog.js$script,redirect=wcslog
+ * ||wcs.naver.net/wcslog.js$script,redirect=naverr-wcslog
  * ```
  */
 
-export function Wcslog(source) {
+export function NaverWcslog(source) {
     window.wcs_add = {};
     window.wcs_do = noopFunc;
     window.wcs = {
@@ -23,6 +23,6 @@ export function Wcslog(source) {
     hit(source);
 }
 
-Wcslog.names = ['wcslog'];
+NaverWcslog.names = ['naver-wcslog'];
 
-Wcslog.injections = [hit, noopFunc];
+NaverWcslog.injections = [hit, noopFunc];

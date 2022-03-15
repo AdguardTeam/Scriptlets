@@ -3,7 +3,7 @@ import { runRedirect, clearGlobalProps } from '../helpers';
 import { isEmptyObject } from '../../src/helpers';
 
 const { test, module } = QUnit;
-const name = 'wcslog';
+const name = 'naver-wcslog';
 
 const changingProps = ['hit', '__debug'];
 
