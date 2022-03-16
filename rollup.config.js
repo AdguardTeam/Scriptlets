@@ -177,6 +177,7 @@ const getTestConfig = (fileName, dirPath, subDir) => {
                         'node_modules/qunit/qunit/qunit.js',
                         'node_modules/sinon/pkg/sinon.js',
                         'dist/scriptlets.js',
+                        'node_modules/js-reporters/dist/js-reporters.js',
                     ],
                     dest: TESTS_DIST,
                 }],
