@@ -37,9 +37,8 @@ Build:
             rm -rf node_modules
   artifacts:
     - name: scriptlets.js
-      location: dist
+      location: ./dist
       pattern: scriptlets.js
-      shared: true
       required: true
   final-tasks:
     - clean
