@@ -33,7 +33,7 @@ Build:
 
             yarn install
             yarn test
-            yarn build
+            yarn prepare-builds
             rm -rf node_modules
   artifacts:
     - name: scriptlets.corelibs.json
