@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <title>Scriptlets tests</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="./styles.css">
 </head>
 
@@ -13,6 +14,14 @@
     <script src="./qunit.js"></script>
     <script src="./scriptlets.js"></script>
     <script src="./sinon.js"></script>
+    <script src="./js-reporters.js"></script>
+    <script>
+        jsReporter = new JsReporters.QUnitAdapter(QUnit);
+        jsReporter.testsFinished = false;
+        jsReporter.on('runEnd', () => {
+            jsReporter.testsFinished = true;
+        });
+    </script>
     <!-- test script injection -->
 </body>
 

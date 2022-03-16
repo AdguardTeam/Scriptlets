@@ -5,7 +5,7 @@ const path = require('path');
 
 const TEST_QUERY_MARKER = '?test';
 
-const PORT = 8585;
+const PORT = 9961;
 
 const server = {
     init() {
