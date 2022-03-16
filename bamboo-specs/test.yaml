@@ -41,9 +41,9 @@ Build:
       pattern: scriptlets.js
       shared: true
       required: true
-    - name: test.yaml
+    - name: redirects.yml
       location: dist
-      pattern: test.yaml
+      pattern: redirects.yml
       shared: true
       required: true
   requirements:
