@@ -36,13 +36,13 @@ Build:
             yarn build
             rm -rf node_modules
   artifacts:
-    - name: scriptlets.js
+    - name: scriptlets.corelibs.json
       location: dist
-      pattern: scriptlets.js
+      pattern: scriptlets.corelibs.json
       required: true
-    - name: redirects.yml
+    - name: redirects.json
       location: dist
-      pattern: redirects.yml
+      pattern: redirects.json
       required: true
   requirements:
     - adg-docker: 'true'
