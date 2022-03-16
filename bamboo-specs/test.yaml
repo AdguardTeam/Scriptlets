@@ -39,12 +39,10 @@ Build:
     - name: scriptlets.js
       location: dist
       pattern: scriptlets.js
-      shared: true
       required: true
     - name: redirects.yml
       location: dist
       pattern: redirects.yml
-      shared: true
       required: true
   requirements:
     - adg-docker: 'true'
