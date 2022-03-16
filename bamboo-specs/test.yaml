@@ -41,6 +41,11 @@ Build:
       pattern: scriptlets.js
       shared: true
       required: true
+    - name: test.yaml
+      location: dist
+      pattern: test.yaml
+      shared: true
+      required: true
   requirements:
     - adg-docker: 'true'
 
