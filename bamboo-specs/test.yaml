@@ -9,8 +9,8 @@ variables:
 
 stages:
   - Build:
-      manual: 'false'
-      final: 'false'
+      manual: "false"
+      final: "false"
       jobs:
         - Build
 
@@ -22,7 +22,7 @@ Build:
       ${system.YARN_DIR}: "${bamboo.cacheYarn}"
   tasks:
     - checkout:
-        force-clean-build: 'true'
+        force-clean-build: "true"
     - script:
         interpreter: SHELL
         scripts:
@@ -35,22 +35,23 @@ Build:
             yarn test
             yarn build
             rm -rf node_modules
-  final-tasks:
-    - clean
   artifacts:
     - name: scriptlets.js
       location: dist
       pattern: scriptlets.js
+      shared: true
       required: true
+  final-tasks:
+    - clean
   requirements:
-    - adg-docker: 'true'
+    - adg-docker: "true"
 
 branches:
   create: for-pull-request
   delete:
-    after-deleted-days: '1'
-    after-inactive-days: '5'
-  link-to-jira: 'true'
+    after-deleted-days: "1"
+    after-inactive-days: "5"
+  link-to-jira: "true"
 
 notifications:
   - events:
@@ -60,6 +61,6 @@ notifications:
           name: Build webhook
           url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
 
-labels: [ ]
+labels: []
 other:
   concurrent-build-plugin: system-default
