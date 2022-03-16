@@ -37,6 +37,11 @@ Build:
             rm -rf node_modules
   final-tasks:
     - clean
+  artifacts:
+    - name: scriptlets.js
+      location: dist
+      pattern: scriptlets.js
+      required: true
   requirements:
     - adg-docker: 'true'
 
