@@ -2,20 +2,17 @@
 
 AdGuard's Scriptlets and Redirect resources library which provides extended capabilities for content blocking.
 
-- [AdGuard Scriptlets and Redirect resources](#adguard-scriptlets-and-redirect-resources)
-  - [Scriptlets](#scriptlets)
-    - [<a id="scriptlet-syntax"></a> Syntax](#-syntax)
-  - [Redirect resources](#redirect-resources)
-    - [<a id="redirect-syntax"></a> Syntax](#-syntax-1)
-  - [<a id="how-to-build"></a> How to build](#-how-to-build)
-    - [Build output](#build-output)
-      - [Scriptlets library](#scriptlets-library)
-        - [<a id="redirects_api-methods"></a> Imported `redirects` has such methods:](#-imported-redirects-has-such-methods)
-      - [Corelibs library](#corelibs-library)
-      - [Redirects library](#redirects-library)
-  - [<a id="how-to-test"></a> How to test](#-how-to-test)
-  - [<a id="how-to-debug"></a> How to debug](#-how-to-debug)
-  - [<a id="browser-compatibility"> Browser Compatibility](#a-idbrowser-compatibility-browser-compatibility)
+* [Scriptlets](#scriptlets)
+    * [Syntax](#scriptlet-syntax)
+    * [Available scriptlets](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#scriptlets)
+    * [Scriptlets compatibility table](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/compatibility-table.md#scriptlets)
+* [Redirect resources](#redirect-resources)
+    * [Syntax](#redirect-syntax)
+    * [Available redirect resources](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-redirects.md#redirect-resources)
+    * [Redirect resources compatibility table](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/compatibility-table.md#redirects)
+* [How to build](#how-to-build)
+* [How to test](#how-to-test)
+* [Browser compatibility](#browser-compatibility)
 
 * * *
 ## Scriptlets
@@ -434,7 +431,7 @@ Run next command
 yarn browserstack
 ```
 
-## <a id="how-to-debug"></a> How to debug
+### Debugging
 
 Use `debugger;` statement where you need it, run
 ```
