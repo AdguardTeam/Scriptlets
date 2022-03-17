@@ -437,7 +437,7 @@ Use `debugger;` statement where you need it, run
 ```
 yarn test
 ```
-and open needed HTML file from `tests/dist` in your browser in your browser with devtools
+and open needed HTML file from `tests/dist` in your browser with devtools
 
 ## <a id="browser-compatibility"> Browser Compatibility
 | Chrome | Edge | Firefox | IE  | Opera | Safari |
