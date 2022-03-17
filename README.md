@@ -423,7 +423,7 @@ Run specific scriptlet or redirect test by editing `rollup.config.js`
 });
 ```
 
-To run browserstack tests create `.env` file or rename `.env-example`.
+To run browserstack tests create `.env` file or copy and rename `.env-example`.
 
 Fill in <username> and <key> with data from your Browserstack profile.
 Run next command
