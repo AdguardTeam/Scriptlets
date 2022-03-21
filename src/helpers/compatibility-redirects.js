@@ -168,9 +168,6 @@ const redirects = [
         ubo: 'empty',
     },
     {
-        adg: 'tagcommander-tc',
-    },
-    {
         adg: 'prebid-ads',
         ubo: 'prebid-ads.js',
     },
