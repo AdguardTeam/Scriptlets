@@ -271,8 +271,12 @@
             "ubo": "click2load.html"
         },
         {
-            "adg": "fingerprintjs",
+            "adg": "fingerprintjs2",
             "ubo": "fingerprint2.js"
+        },
+        {
+            "adg": "fingerprint3js",
+            "ubo": "fingerprint3.js"
         },
         {
             "adg": "google-analytics",
@@ -319,6 +323,9 @@
             "adg": "noopjs",
             "ubo": "noop.js",
             "abp": "blank-js"
+        },
+        {
+            "adg": "noopjson"
         },
         {
             "adg": "nooptext",

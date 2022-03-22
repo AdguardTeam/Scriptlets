@@ -6,6 +6,7 @@
 * [noopframe](#noopframe)
 * [noopcss](#noopcss)
 * [noopjs](#noopjs)
+* [noopjson](#noopjson)
 * [nooptext](#nooptext)
 * [empty](#empty)
 * [noopvmap-1.0](#noopvmap-1.0)
@@ -16,16 +17,22 @@
 * [noopmp4-1s](#noopmp4-1s)
 * [amazon-apstag](#amazon-apstag)
 * [ati-smarttag](#ati-smarttag)
-* [fingerprintjs](#fingerprintjs)
+* [didomi-loader](#didomi-loader)
+* [fingerprintjs2](#fingerprintjs2)
+* [fingerprintjs3](#fingerprintjs3)
 * [gemius](#gemius)
 * [google-analytics-ga](#google-analytics-ga)
 * [google-analytics](#google-analytics)
+* [google-ima3](#google-ima3)
 * [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
 * [googletagservices-gpt](#googletagservices-gpt)
 * [matomo](#matomo)
 * [metrika-yandex-tag](#metrika-yandex-tag)
 * [metrika-yandex-watch](#metrika-yandex-watch)
+* [naver-wcslog](#naver-wcslog)
 * [noeval](#noeval)
+* [prebid-ads](#prebid-ads)
+* [prebid](#prebid)
 * [prevent-bab](#prevent-bab)
 * [prevent-bab2](#prevent-bab2)
 * [prevent-fab-3.2.0](#prevent-fab-3.2.0)
@@ -86,6 +93,14 @@
 **Example**
 ```
 ||example.org/advert.js$script,redirect=noopjs
+```
+[Redirect source](../src/redirects/static-redirects.yml)
+* * *
+
+### <a id="noopjson"></a> ⚡️ noopjson
+**Example**
+```
+||example.org/geo/location$xmlhttprequest,redirect=noopjson
 ```
 [Redirect source](../src/redirects/static-redirects.yml)
 * * *
@@ -192,20 +207,49 @@ https://developers.atinternet-solutions.com/as2-tagging-en/javascript-en/getting
 [Redirect source](../src/redirects/ati-smarttag.js)
 * * *
 
-### <a id="fingerprintjs"></a> ⚡️ fingerprintjs
+### <a id="didomi-loader"></a> ⚡️ didomi-loader
 
-Mocks FingerprintJS.
-https://github.com/fingerprintjs
-
-Related UBO redirect resource:
-https://github.com/gorhill/uBlock/commit/33a18c3a1eb101470c43979a41d8adef3e21208d
+Mocks Didomi's CMP loader script.
+https://developers.didomi.io/
 
 **Example**
 ```
-||the-japan-news.com/modules/js/lib/fgp/fingerprint2.js$script,redirect=fingerprintjs
+||sdk.privacy-center.org/fbf86806f86e/loader.js$script,redirect=didomi-loader
 ```
 
-[Redirect source](../src/redirects/fingerprintjs.js)
+[Redirect source](../src/redirects/didomi-loader.js)
+* * *
+
+### <a id="fingerprintjs2"></a> ⚡️ fingerprintjs2
+
+Mocks FingerprintJS v2
+https://github.com/fingerprintjs
+
+Related UBO redirect resource:
+https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/fingerprint2.js
+
+**Example**
+```
+||the-japan-news.com/modules/js/lib/fgp/fingerprint2.js$script,redirect=fingerprintjs2
+```
+
+[Redirect source](../src/redirects/fingerprintjs2.js)
+* * *
+
+### <a id="fingerprintjs3"></a> ⚡️ fingerprintjs3
+
+Mocks FingerprintJS v3
+https://github.com/fingerprintjs
+
+Related UBO redirect resource:
+https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/fingerprint3.js
+
+**Example**
+```
+||sephora.com/js/ufe/isomorphic/thirdparty/fp.min.js$script,redirect=fingerprintjs3
+```
+
+[Redirect source](../src/redirects/fingerprintjs3.js)
 * * *
 
 ### <a id="gemius"></a> ⚡️ gemius
@@ -251,6 +295,18 @@ https://github.com/gorhill/uBlock/blob/8cd2a1d263a96421487b39040c1d23eb01169484/
 ```
 
 [Redirect source](../src/redirects/google-analytics.js)
+* * *
+
+### <a id="google-ima3"></a> ⚡️ google-ima3
+
+Mocks the IMA SDK of Google.
+
+**Example**
+```
+||imasdk.googleapis.com/js/sdkloader/ima3.js$script,redirect=google-ima3
+```
+
+[Redirect source](../src/redirects/google-ima3.js)
 * * *
 
 ### <a id="googlesyndication-adsbygoogle"></a> ⚡️ googlesyndication-adsbygoogle
@@ -321,6 +377,18 @@ https://yandex.ru/support/metrica/objects/_method-reference.html
 [Redirect source](../src/redirects/metrika-yandex-watch.js)
 * * *
 
+### <a id="naver-wcslog"></a> ⚡️ naver-wcslog
+
+Mocks wcslog.js of Naver Analytics.
+
+**Example**
+```
+||wcs.naver.net/wcslog.js$script,redirect=naver-wcslog
+```
+
+[Redirect source](../src/redirects/naver-wcslog.js)
+* * *
+
 ### <a id="noeval"></a> ⚡️ noeval
 
 Redirects request to the source which sets static properties to PopAds and popns objects.
@@ -340,6 +408,33 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-silentjs-
 ```
 
 [Redirect source](../src/redirects/noeval.js)
+* * *
+
+### <a id="prebid-ads"></a> ⚡️ prebid-ads
+
+Sets predefined constants on a page:
+- `canRunAds`: `true`
+- `isAdBlockActive`: `false`
+
+**Example**
+```
+||playerdrive.me/assets/js/prebid-ads.js$script,redirect=prebid-ads
+```
+
+[Redirect source](../src/redirects/prebid-ads.js)
+* * *
+
+### <a id="prebid"></a> ⚡️ prebid
+
+Mocks the prebid.js header bidding suit.
+https://docs.prebid.org/
+
+**Example**
+```
+||tmgrup.com.tr/bd/hb/prebid.js$script,redirect=prebid
+```
+
+[Redirect source](../src/redirects/prebid.js)
 * * *
 
 ### <a id="prevent-bab"></a> ⚡️ prevent-bab
@@ -440,3 +535,4 @@ https://github.com/gorhill/uBlock/blob/1.31.0/src/web_accessible_resources/click
 ```
 [Redirect source](../src/redirects/blocking-redirects/click2load.html)
 * * *
+

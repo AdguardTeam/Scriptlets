@@ -112,6 +112,9 @@ const redirects = [
         abp: 'blank-js',
     },
     {
+        adg: 'noopjson',
+    },
+    {
         adg: 'nooptext',
         ubo: 'noop.txt',
         abp: 'blank-text',

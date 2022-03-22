@@ -17,16 +17,17 @@
 * [log-eval](#log-eval)
 * [log-on-stack-trace](#log-on-stack-trace)
 * [log](#log)
-* [no-floc](#no-floc)
 * [noeval](#noeval)
 * [nowebrtc](#nowebrtc)
 * [prevent-addEventListener](#prevent-addEventListener)
 * [prevent-adfly](#prevent-adfly)
 * [prevent-bab](#prevent-bab)
+* [prevent-element-src-loading](#prevent-element-src-loading)
 * [prevent-eval-if](#prevent-eval-if)
 * [prevent-fab-3.2.0](#prevent-fab-3.2.0)
 * [prevent-fetch](#prevent-fetch)
 * [prevent-popads-net](#prevent-popads-net)
+* [prevent-refresh](#prevent-refresh)
 * [prevent-requestAnimationFrame](#prevent-requestAnimationFrame)
 * [prevent-setInterval](#prevent-setInterval)
 * [prevent-setTimeout](#prevent-setTimeout)
@@ -500,6 +501,11 @@ e.g. 'ad.*.src' instead of 'ad.0.src ad.1.src ad.2.src ...'
     example.org#%#//scriptlet('json-prune')
     ```
 
+7. Call with only second argument will log the current hostname and matched json payload at the console
+    ```
+    example.org#%#//scriptlet('json-prune', '', '"id":"117458"')
+    ```
+
 [Scriptlet source](../src/scriptlets/json-prune.js)
 * * *
 
@@ -558,21 +564,6 @@ example.org#%#//scriptlet('log', 'arg1', 'arg2')
 ```
 
 [Scriptlet source](../src/scriptlets/log.js)
-* * *
-
-### <a id="no-floc"></a> ⚡️ no-floc
-
-Prevents using Google Chrome tracking feature called Federated Learning of Cohorts (aka "FLoC")
-
-Related UBO scriptlet:
-https://github.com/gorhill/uBlock/wiki/Resources-Library#no-flocjs-
-
-**Syntax**
-```
-example.org#%#//scriptlet('no-floc')
-```
-
-[Scriptlet source](../src/scriptlets/no-floc.js)
 * * *
 
 ### <a id="noeval"></a> ⚡️ noeval
@@ -680,6 +671,30 @@ example.org#%#//scriptlet('prevent-bab')
 [Scriptlet source](../src/scriptlets/prevent-bab.js)
 * * *
 
+### <a id="prevent-element-src-loading"></a> ⚡️ prevent-element-src-loading
+
+Prevents target element source loading without triggering 'onerror' listeners and not breaking 'onload' ones.
+
+**Syntax**
+```
+example.org#%#//scriptlet('prevent-src', tagName, match)
+```
+
+- `tagName` - required, case-insensitive target element tagName which `src` property resource loading will be silently prevented; possible values:
+    - `script`
+    - `img`
+    - `iframe`
+- `match` - required, string or regular expression for matching the element's URL;
+
+**Examples**
+1. Prevent script source loading:
+```
+    example.org#%#//scriptlet('prevent-element-src-loading', 'script' ,'adsbygoogle')
+```
+
+[Scriptlet source](../src/scriptlets/prevent-element-src-loading.js)
+* * *
+
 ### <a id="prevent-eval-if"></a> ⚡️ prevent-eval-if
 
 Prevents page to use eval matching payload.
@@ -778,6 +793,34 @@ example.org#%#//scriptlet('prevent-popads-net')
 ```
 
 [Scriptlet source](../src/scriptlets/prevent-popads-net.js)
+* * *
+
+### <a id="prevent-refresh"></a> ⚡️ prevent-refresh
+
+Prevents reloading of a document through a meta "refresh" tag.
+
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/wiki/Resources-Library#refresh-defuserjs-
+
+**Syntax**
+```
+example.org#%#//scriptlet('prevent-refresh'[, delay])
+```
+
+- `delay` - optional, number of seconds for delay that indicates when scriptlet should run. If not set, source tag value will be applied.
+
+**Examples**
+1. Prevent reloading of a document through a meta "refresh" tag.
+```
+    enrt.eu#%#//scriptlet('prevent-refresh')
+```
+
+2. Prevent reloading of a document with delay.
+```
+    cryptodirectories.com#%#//scriptlet('prevent-refresh', 3)
+```
+
+[Scriptlet source](../src/scriptlets/prevent-refresh.js)
 * * *
 
 ### <a id="prevent-requestAnimationFrame"></a> ⚡️ prevent-requestAnimationFrame
@@ -1120,7 +1163,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#no-xhr-ifjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet('prevent-xhr'[, propsToMatch])
+example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
 ```
 
 - propsToMatch - optional, string of space-separated properties to match; possible props:
@@ -1128,6 +1171,7 @@ example.org#%#//scriptlet('prevent-xhr'[, propsToMatch])
   - colon-separated pairs name:value where
     - name is XMLHttpRequest object property name
     - value is string or regular expression for matching the value of the option passed to `.open()` call
+- randomize - optional, defaults to `false`, boolean to randomize responseText of matched XMLHttpRequest's response,
 
 > Usage with no arguments will log XMLHttpRequest objects to browser console;
 which is useful for debugging but permitted for production filter lists.
@@ -1157,6 +1201,11 @@ which is useful for debugging but permitted for production filter lists.
 5. Prevent XMLHttpRequests for specific url and specified request methods
     ```
     example.org#%#//scriptlet('prevent-xhr', 'example.org method:/HEAD|GET/')
+    ```
+
+6. Prevent XMLHttpRequests for specific url and randomize it's response text
+    ```
+    example.org#%#//scriptlet('prevent-xhr', 'example.org', 'true')
     ```
 
 [Scriptlet source](../src/scriptlets/prevent-xhr.js)
@@ -1422,6 +1471,8 @@ example.org#%#//scriptlet('set-constant', property, value[, stack])
         - `noopFunc` - function with empty body
         - `trueFunc` - function returning true
         - `falseFunc` - function returning false
+        - `noopPromiseResolve` - function returning Promise object that is resolved with an empty response
+        - `noopPromiseReject` - function returning Promise.reject()
         - `''` - empty string
         - `-1` - number value `-1`
 - `stack` - optional, string or regular expression that must match the current function call stack trace;

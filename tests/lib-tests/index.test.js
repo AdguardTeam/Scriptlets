@@ -262,6 +262,11 @@ test('Test $redirect validation', (assert) => {
     assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);
     assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), true);
 
+    // new noopjson
+    inputRule = '||example.org^$xmlhttprequest,redirect=noopjson';
+    assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);
+    assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), true);
+
     // check fingerprint redirect
     inputRule = '||cloudflare.com/ajax/libs/fingerprintjs2/$script,redirect=fingerprint2.js,important';
     assert.strictEqual(validator.isAdgRedirectRule(inputRule), true, 'fingerprint2.js -- isAdgRedirectRule returns true');
