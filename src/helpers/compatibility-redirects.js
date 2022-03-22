@@ -148,6 +148,9 @@ const redirects = [
         ubo: 'popads-dummy.js',
     },
     {
+        adg: 'tagcommander-tc',
+    },
+    {
         adg: 'empty',
         ubo: 'empty',
     },
