@@ -35,12 +35,19 @@ const redirects = [
         adg: 'ati-smarttag',
     },
     {
+        adg: 'didomi-loader',
+    },
+    {
         adg: 'click2load.html',
         ubo: 'click2load.html',
     },
     {
-        adg: 'fingerprintjs',
-        ubo: 'fingerprintjs2.js',
+        adg: 'fingerprintjs2',
+        ubo: 'fingerprint2.js',
+    },
+    {
+        adg: 'fingerprintjs3',
+        ubo: 'fingerprint3.js',
     },
     {
         adg: 'google-analytics',
@@ -69,6 +76,9 @@ const redirects = [
         ubo: 'googletagservices_gpt.js',
     },
     {
+        adg: 'google-ima3',
+    },
+    {
         adg: 'gemius',
     },
     {
@@ -79,6 +89,9 @@ const redirects = [
     },
     {
         adg: 'metrika-yandex-tag',
+    },
+    {
+        adg: 'naver-wcslog',
     },
     {
         adg: 'noeval',
@@ -97,6 +110,9 @@ const redirects = [
         adg: 'noopjs',
         ubo: 'noop.js',
         abp: 'blank-js',
+    },
+    {
+        adg: 'noopjson',
     },
     {
         adg: 'nooptext',
@@ -122,6 +138,9 @@ const redirects = [
     },
     {
         adg: 'noopvast-3.0',
+    },
+    {
+        adg: 'prebid',
     },
     {
         adg: 'prevent-bab',
@@ -150,6 +169,10 @@ const redirects = [
     {
         adg: 'empty',
         ubo: 'empty',
+    },
+    {
+        adg: 'prebid-ads',
+        ubo: 'prebid-ads.js',
     },
 ];
 

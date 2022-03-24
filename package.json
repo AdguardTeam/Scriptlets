@@ -1,6 +1,6 @@
 {
     "name": "@adguard/scriptlets",
-    "version": "1.5.25",
+    "version": "1.6.0",
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "scripts": {
         "watch": "rollup -c -w",
@@ -28,7 +28,7 @@
     },
     "husky": {
         "hooks": {
-            "pre-commit": "lint-staged && echo \"DO NOT FORGET ABOUT BUILDS UPDATE (yarn prepare-builds)\""
+            "pre-commit": "lint-staged"
         }
     },
     "author": "AdGuard",

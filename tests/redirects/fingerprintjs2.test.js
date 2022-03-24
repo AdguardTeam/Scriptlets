@@ -2,7 +2,7 @@
 import { runRedirect, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
-const name = 'fingerprintjs';
+const name = 'fingerprintjs2';
 
 const changingProps = ['hit', '__debug'];
 
@@ -25,7 +25,8 @@ test('Checking if alias name works', (assert) => {
         verbose: true,
     };
     const uboParams = {
-        name: 'ubo-fingerprint2.js',
+        // original ubo name
+        name: 'fingerprint2.js',
         engine: 'test',
         verbose: true,
     };

@@ -19,3 +19,16 @@ export const nativeIsFinite = (num) => {
     const native = Number.isFinite || window.isFinite; // eslint-disable-line compat/compat
     return native(num);
 };
+
+/**
+ * Parses string for a number, if possible, otherwise returns null.
+ * @param {*} rawDelay
+ * @returns {number|null}
+ */
+export const getNumberFromString = (rawString) => {
+    const parsedDelay = parseInt(rawString, 10);
+    const validDelay = nativeIsNaN(parsedDelay)
+        ? null
+        : parsedDelay;
+    return validDelay;
+};
