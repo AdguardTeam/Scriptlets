@@ -38,13 +38,16 @@ export function preventRefresh(source, delaySec) {
     const getMetaElements = () => {
         let metaNodes = [];
         try {
-            metaNodes = document.querySelectorAll('meta[http-equiv="refresh" i][content]')
-                // 'i' attr flag is problematic in Edge 15
-                || document.querySelectorAll('meta[http-equiv="refresh"][content]');
+            metaNodes = document.querySelectorAll('meta[http-equiv="refresh" i][content]');
         } catch (e) {
-            if (source.verbose) {
-                // eslint-disable-next-line no-console
-                console.log(e);
+            // 'i' attribute flag is problematic in Edge 15
+            try {
+                metaNodes = document.querySelectorAll('meta[http-equiv="refresh"][content]');
+            } catch (e) {
+                if (source.verbose) {
+                    // eslint-disable-next-line no-console
+                    console.log(e);
+                }
             }
         }
         return Array.from(metaNodes);
