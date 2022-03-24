@@ -66,6 +66,10 @@ const IFRAME_TARGET_NODE = 'iframe';
 
 module(name, { beforeEach, afterEach });
 
+/**
+ * document.body.append does not work in Edge 15
+ * https://caniuse.com/mdn-api_element_append
+ */
 const isSupported = (() => typeof document.body.append !== 'undefined')();
 
 if (!isSupported) {
