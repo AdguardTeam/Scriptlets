@@ -28,7 +28,7 @@
     },
     "husky": {
         "hooks": {
-            "pre-commit": "lint-staged && echo \"DO NOT FORGET ABOUT BUILDS UPDATE (yarn prepare-builds)\""
+            "pre-commit": "lint-staged"
         }
     },
     "author": "AdGuard",

@@ -21,10 +21,23 @@ export function GoogleSyndicationAdsByGoogle(source) {
         // https://github.com/AdguardTeam/Scriptlets/issues/113
         // length: 0,
         loaded: true,
-        push() {
+        // https://github.com/AdguardTeam/Scriptlets/issues/184
+        push(arg) {
             if (typeof this.length === 'undefined') {
                 this.length = 0;
                 this.length += 1;
+            }
+            if (arg !== null && arg instanceof Object && arg.constructor.name === 'Object') {
+                // eslint-disable-next-line no-restricted-syntax
+                for (const key of Object.keys(arg)) {
+                    if (typeof arg[key] === 'function') {
+                        try {
+                            arg[key].call();
+                        } catch {
+                            /* empty */
+                        }
+                    }
+                }
             }
         },
     };

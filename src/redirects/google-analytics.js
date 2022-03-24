@@ -96,6 +96,10 @@ export function GoogleAnalytics(source) {
                 for (const key in data) {
                     handleCallback(data[key], 'event_callback');
                 }
+                // eslint-disable-next-line no-prototype-builtins
+                if (!data.hasOwnProperty('eventCallback') && !data.hasOwnProperty('eventCallback')) {
+                    [].push.call(window.dataLayer, data);
+                }
             }
             if (Array.isArray(data)) {
                 data.forEach((arg) => {

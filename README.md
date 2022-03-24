@@ -11,6 +11,7 @@ AdGuard's Scriptlets and Redirect resources library which provides extended capa
     * [Available redirect resources](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-redirects.md#redirect-resources)
     * [Redirect resources compatibility table](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/compatibility-table.md#redirects)
 * [How to build](#how-to-build)
+* [How to test](#how-to-test)
 * [Browser compatibility](#browser-compatibility)
 
 * * *
@@ -97,25 +98,6 @@ yarn build
 Build dev (rebuild js files on every change)
 ```
 yarn watch
-```
-
-Run node testing
-```
-yarn test
-```
-
-Run tests gui
-```
-yarn gui-test
-```
-
-
-To run browserstack tests create `.env` file or rename `.env-example`.
-
-Fill in <username> and <key> with data from your Browserstack profile.
-Run next command
-```
-yarn browserstack
 ```
 
 ### Build output
@@ -392,7 +374,72 @@ const redirect = redirect.getRedirect('noopjs');
  */
 ```
 
+## <a id="how-to-test"></a> How to test
+
+Run node testing
+```
+yarn test
+```
+
+Run tests gui
+```
+yarn gui-test
+```
+
+Watcher is available
+```
+yarn test-watch
+```
+
+Limit testing by commenting out corresponding values in `rollup.config.js`
+```
+const MULTIPLE_TEST_FILES_DIRS = [
+// 'scriptlets',
+// 'redirects',
+];
+const ONE_TEST_FILE_DIRS = [
+'lib-tests',
+// 'helpers',
+];
+```
+
+or `index.test.js`
+```
+// import './scriptlets/index.test';
+import './redirects/index.test';
+// import './lib-tests/index.test';
+// import './helpers/index.test';
+```
+
+> It is also possible to exclude libtests in `tests/lib-tests/index.test.js`
+
+Run specific scriptlet or redirect test by editing `rollup.config.js`
+```
+.filter((el) => {
+    return el !== 'index.test.js'
+        // Uncomment next line and use required scriptlet/redirect name
+        // && el === 'gemius.test.js'
+        && el.includes(TEST_FILE_NAME_MARKER);
+});
+```
+
+To run browserstack tests create `.env` file or copy and rename `.env-example`.
+
+Fill in <username> and <key> with data from your Browserstack profile.
+Run next command
+```
+yarn browserstack
+```
+
+### Debugging
+
+Use `debugger;` statement where you need it, run
+```
+yarn test
+```
+and open needed HTML file from `tests/dist` in your browser with devtools
+
 ## <a id="browser-compatibility"> Browser Compatibility
-| Chrome | Edge | Firefox | IE | Opera | Safari |
-|--|--|--|--|--|--|
-| 55 | 15 | 52 | 11 | 42 | 10 |
+| Chrome | Edge | Firefox | IE  | Opera | Safari |
+| ------ | ---- | ------- | --- | ----- | ------ |
+| 55     | 15   | 52      | 11  | 42    | 10     |

@@ -153,6 +153,11 @@ test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
     whitelistRule = 'example.org#@#+js(aopw, notDetected)';
     expectedResult = 'example.org#@%#//scriptlet(\'ubo-aopw.js\', \'notDetected\')';
     assert.strictEqual(convertScriptletToAdg(whitelistRule)[0], expectedResult);
+
+    // wildcard tld
+    blockingRule = 'example.*##+js(abort-on-stack-trace, Object.prototype.parallax, window.onload)';
+    expBlockRule = 'example.*#%#//scriptlet(\'ubo-abort-on-stack-trace.js\', \'Object.prototype.parallax\', \'window.onload\')';
+    assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
 });
 
 test('Test SCRIPTLET converting - ABP -> ADG', (assert) => {
@@ -256,6 +261,18 @@ test('Test $redirect validation', (assert) => {
     inputRule = '||youtube.com/embed/$redirect=click2load.html,domain=example.org';
     assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);
     assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), true);
+
+    // new noopjson
+    inputRule = '||example.org^$xmlhttprequest,redirect=noopjson';
+    assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);
+    assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), true);
+
+    // check fingerprint redirect
+    inputRule = '||cloudflare.com/ajax/libs/fingerprintjs2/$script,redirect=fingerprint2.js,important';
+    assert.strictEqual(validator.isAdgRedirectRule(inputRule), true, 'fingerprint2.js -- isAdgRedirectRule returns true');
+    assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), false, 'fingerprint2.js is not AdGuard redirect name');
+    inputRule = '||cloudflare.com/ajax/libs/fingerprintjs2/$script,redirect=fingerprintjs2,important';
+    assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), true, 'fingerprintjs2 is valid AdGuard redirect name');
 
     // rule with 'redirect-rule=' marker should be considered as redirect rules
     inputRule = '/blockadblock.$script,redirect=nobab.js';

@@ -25,7 +25,7 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('prevent-xhr'[, propsToMatch])
+ * example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
  * ```
  *
  * - propsToMatch - optional, string of space-separated properties to match; possible props:
@@ -33,6 +33,7 @@ import {
  *   - colon-separated pairs name:value where
  *     - name is XMLHttpRequest object property name
  *     - value is string or regular expression for matching the value of the option passed to `.open()` call
+ * - randomize - optional, defaults to `false`, boolean to randomize responseText of matched XMLHttpRequest's response,
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
  * which is useful for debugging but permitted for production filter lists.
@@ -63,9 +64,14 @@ import {
  *     ```
  *     example.org#%#//scriptlet('prevent-xhr', 'example.org method:/HEAD|GET/')
  *     ```
+ *
+ * 6. Prevent XMLHttpRequests for specific url and randomize it's response text
+ *     ```
+ *     example.org#%#//scriptlet('prevent-xhr', 'example.org', 'true')
+ *     ```
  */
 /* eslint-enable max-len */
-export function preventXHR(source, propsToMatch) {
+export function preventXHR(source, propsToMatch, randomize) {
     // do nothing if browser does not support Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
     if (typeof Proxy === 'undefined') {
@@ -73,6 +79,7 @@ export function preventXHR(source, propsToMatch) {
     }
 
     let shouldPrevent = false;
+    let responseText = '';
     let responseUrl;
     const openWrapper = (target, thisArg, args) => {
         // Get method and url from .open()
@@ -114,11 +121,15 @@ export function preventXHR(source, propsToMatch) {
             return Reflect.apply(target, thisArg, args);
         }
 
+        if (randomize === 'true') {
+            // Generate random alphanumeric string of 10 symbols
+            responseText = Math.random().toString(36).slice(-10);
+        }
         // Mock response object
         Object.defineProperties(thisArg, {
             readyState: { value: 4, writable: false },
             response: { value: '', writable: false },
-            responseText: { value: '', writable: false },
+            responseText: { value: responseText, writable: false },
             responseURL: { value: responseUrl, writable: false },
             responseXML: { value: '', writable: false },
             status: { value: 200, writable: false },
@@ -131,6 +142,9 @@ export function preventXHR(source, propsToMatch) {
 
             const loadEvent = new Event('load');
             thisArg.dispatchEvent(loadEvent);
+
+            const loadEndEvent = new Event('loadend');
+            thisArg.dispatchEvent(loadEndEvent);
         }, 1);
 
         hit(source);

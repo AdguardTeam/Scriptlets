@@ -159,6 +159,25 @@ test('Test eventCallback mocking', (assert) => {
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 });
 
+test('Test .push(data) mocking', (assert) => {
+    // emulate API
+    window.dataLayer = [];
+    window.dataLayer.push = () => {};
+    const gtag = (data) => {
+        window.dataLayer.push(data);
+    };
+
+    runRedirect(name);
+
+    const data = {
+        noCallback: true,
+    };
+    gtag(data);
+
+    assert.deepEqual(data, window.dataLayer[0], 'data is added to dataLayer');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
+});
+
 test('Test event_callback mocking', (assert) => {
     assert.expect(3);
 

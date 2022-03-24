@@ -104,6 +104,16 @@
   contentType: application/javascript
   content: (function() {})()
 
+- title: noopjson
+  description: |-
+    **Example**
+    ```
+    ||example.org/geo/location$xmlhttprequest,redirect=noopjson
+    ```
+  file: noopjson.json
+  contentType: application/json
+  content: '{}'
+
 - title: nooptext
   description: |-
     **Example**
@@ -289,4 +299,3 @@
     AATYAAAE9AAABRAAAAUjAAAFPwAABVIAAAVuAAAFgQAABZ0AAAWwAAAFzAAABegAAAX7AAAGFwAAAGJ1
     ZHRhAAAAWm1ldGEAAAAAAAAAIWhkbHIAAAAAAAAAAG1kaXJhcHBsAAAAAAAAAAAAAAAALWlsc3QAAAAl
     qXRvbwAAAB1kYXRhAAAAAQAAAABMYXZmNTUuMzMuMTAw
-

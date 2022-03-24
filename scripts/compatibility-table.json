@@ -68,8 +68,7 @@
             "adg": "log-on-stack-trace"
         },
         {
-            "adg": "no-floc",
-            "ubo": "no-floc.js"
+            "adg": "naver-wcslog"
         },
         {
             "adg": "noeval"
@@ -234,6 +233,9 @@
         },
         {
             "ubo": "refresh-defuser.js"
+        },
+        {
+            "ubo": "no-floc.js"
         }
     ],
     "redirects": [
@@ -269,8 +271,12 @@
             "ubo": "click2load.html"
         },
         {
-            "adg": "fingerprintjs",
+            "adg": "fingerprintjs2",
             "ubo": "fingerprint2.js"
+        },
+        {
+            "adg": "fingerprint3js",
+            "ubo": "fingerprint3.js"
         },
         {
             "adg": "google-analytics",
@@ -319,6 +325,9 @@
             "abp": "blank-js"
         },
         {
+            "adg": "noopjson"
+        },
+        {
             "adg": "nooptext",
             "ubo": "noop.txt",
             "abp": "blank-text"
@@ -342,6 +351,10 @@
         },
         {
             "adg": "noopvast-3.0"
+        },
+        {
+            "adg": "prebid-ads",
+            "ubo": "prebid-ads.js"
         },
         {
             "adg": "prevent-bab",

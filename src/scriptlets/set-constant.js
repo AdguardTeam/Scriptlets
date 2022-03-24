@@ -5,6 +5,8 @@ import {
     noopFunc,
     trueFunc,
     falseFunc,
+    noopPromiseReject,
+    noopPromiseResolve,
     getPropertyInChain,
     setPropertyAccess,
     toRegExp,
@@ -45,6 +47,8 @@ import {
  *         - `noopFunc` - function with empty body
  *         - `trueFunc` - function returning true
  *         - `falseFunc` - function returning false
+ *         - `noopPromiseResolve` - function returning Promise object that is resolved with an empty response
+ *         - `noopPromiseReject` - function returning Promise.reject()
  *         - `''` - empty string
  *         - `-1` - number value `-1`
  * - `stack` - optional, string or regular expression that must match the current function call stack trace;
@@ -102,6 +106,10 @@ export function setConstant(source, property, value, stack) {
         constantValue = trueFunc;
     } else if (value === 'falseFunc') {
         constantValue = falseFunc;
+    } else if (value === 'noopPromiseResolve') {
+        constantValue = noopPromiseResolve;
+    } else if (value === 'noopPromiseReject') {
+        constantValue = noopPromiseReject;
     } else if (/^\d+$/.test(value)) {
         constantValue = parseFloat(value);
         if (nativeIsNaN(constantValue)) {
@@ -118,6 +126,16 @@ export function setConstant(source, property, value, stack) {
         return;
     }
 
+    const getCurrentScript = () => {
+        if ('currentScript' in document) {
+            return document.currentScript; // eslint-disable-line compat/compat
+        }
+        const scripts = document.getElementsByTagName('script');
+        return scripts[scripts.length - 1];
+    };
+
+    const ourScript = getCurrentScript();
+
     let canceled = false;
     const mustCancel = (value) => {
         if (canceled) {
@@ -129,50 +147,100 @@ export function setConstant(source, property, value, stack) {
         return canceled;
     };
 
-    const setChainPropAccess = (owner, property) => {
-        const chainInfo = getPropertyInChain(owner, property);
-        let { base } = chainInfo;
-        const { prop, chain } = chainInfo;
-
-        // The scriptlet might be executed before the chain property has been created.
-        // In this case we're checking whether the base element exists or not
-        // and if not, we simply exit without overriding anything
-        if (base instanceof Object === false && base === null) {
-            // log the reason only while debugging
-            if (source.verbose) {
-                const props = property.split('.');
-                const propIndex = props.indexOf(prop);
-                const baseName = props[propIndex - 1];
-                console.log(`set-constant failed because the property '${baseName}' does not exist`); // eslint-disable-line no-console, max-len
-            }
+    const trapProp = (base, prop, configurable, handler) => {
+        if (!handler.init(base[prop])) {
             return;
         }
+        const origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+        let prevGetter;
+        let prevSetter;
+        // This is required to prevent scriptlets overwrite each over
+        if (origDescriptor instanceof Object) {
+            base[prop] = constantValue;
+            if (origDescriptor.get instanceof Function) {
+                prevGetter = origDescriptor.get;
+            }
+            if (origDescriptor.set instanceof Function) {
+                prevSetter = origDescriptor.set;
+            }
+        }
+        Object.defineProperty(base, prop, {
+            configurable,
+            get() {
+                if (prevGetter !== undefined) {
+                    prevGetter();
+                }
+                return handler.get();
+            },
+            set(a) {
+                if (prevSetter !== undefined) {
+                    prevSetter(a);
+                }
+                handler.set(a);
+            },
+        });
+    };
 
-        if (chain) {
-            const setter = (a) => {
-                base = a;
+    const setChainPropAccess = (owner, property) => {
+        const chainInfo = getPropertyInChain(owner, property);
+        const { base } = chainInfo;
+        const { prop, chain } = chainInfo;
+
+        // Handler method init is used to keep track of factual value
+        // and apply mustCancel() check only on end prop
+        const undefPropHandler = {
+            factValue: undefined,
+            init(a) {
+                this.factValue = a;
+                return true;
+            },
+            get() {
+                return this.factValue;
+            },
+            set(a) {
+                this.factValue = a;
                 if (a instanceof Object) {
                     setChainPropAccess(a, chain);
                 }
-            };
-            Object.defineProperty(owner, prop, {
-                get: () => base,
-                set: setter,
-            });
+            },
+        };
+        const endPropHandler = {
+            factValue: undefined,
+            init(a) {
+                if (mustCancel(a)) {
+                    return false;
+                }
+                this.factValue = a;
+                return true;
+            },
+            get() {
+                // .currrentSript script check so we won't trap other scriptlets on the same chain
+                // eslint-disable-next-line compat/compat
+                return document.currentScript === ourScript ? this.factValue : constantValue;
+            },
+            set(a) {
+                if (!mustCancel(a)) {
+                    return;
+                }
+                constantValue = a;
+            },
+        };
+
+        // End prop case
+        if (!chain) {
+            trapProp(base, prop, false, endPropHandler);
+            hit(source);
             return;
         }
 
-        if (mustCancel(base[prop])) { return; }
+        // Defined prop in chain
+        const propValue = owner[prop];
+        if (propValue instanceof Object || (typeof propValue === 'object' && propValue !== null)) {
+            setChainPropAccess(propValue, chain);
+        }
 
-        hit(source);
-        setPropertyAccess(base, prop, {
-            get: () => constantValue,
-            set: (a) => {
-                if (mustCancel(a)) {
-                    constantValue = a;
-                }
-            },
-        });
+        // Undefined prop in chain
+        trapProp(owner, prop, true, undefPropHandler);
     };
 
     setChainPropAccess(window, property);
@@ -196,6 +264,8 @@ setConstant.injections = [
     noopFunc,
     trueFunc,
     falseFunc,
+    noopPromiseReject,
+    noopPromiseResolve,
     getPropertyInChain,
     setPropertyAccess,
     toRegExp,

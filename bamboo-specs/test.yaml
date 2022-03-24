@@ -33,10 +33,17 @@ Build:
 
             yarn install
             yarn test
-            yarn build
+            yarn prepare-builds
             rm -rf node_modules
-  final-tasks:
-    - clean
+  artifacts:
+    - name: scriptlets.corelibs.json
+      location: dist
+      pattern: scriptlets.corelibs.json
+      required: true
+    - name: redirects.json
+      location: dist
+      pattern: redirects.json
+      required: true
   requirements:
     - adg-docker: 'true'
 
