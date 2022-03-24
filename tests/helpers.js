@@ -58,3 +58,5 @@ export const runRedirect = (name, verbose = true) => {
     const resultString = window.scriptlets.redirects.getCode(params);
     evalWrapper(resultString);
 };
+
+export const isSafariBrowser = () => navigator.vendor === 'Apple Computer, Inc.';

@@ -36,7 +36,20 @@ import {
 /* eslint-enable max-len */
 export function preventRefresh(source, delaySec) {
     const getMetaElements = () => {
-        const metaNodes = document.querySelectorAll('meta[http-equiv="refresh" i][content]');
+        let metaNodes = [];
+        try {
+            metaNodes = document.querySelectorAll('meta[http-equiv="refresh" i][content]');
+        } catch (e) {
+            // 'i' attribute flag is problematic in Edge 15
+            try {
+                metaNodes = document.querySelectorAll('meta[http-equiv="refresh"][content]');
+            } catch (e) {
+                if (source.verbose) {
+                    // eslint-disable-next-line no-console
+                    console.log(e);
+                }
+            }
+        }
         return Array.from(metaNodes);
     };
     const getMetaContentDelay = (metaElements) => {

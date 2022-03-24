@@ -66,101 +66,123 @@ const IFRAME_TARGET_NODE = 'iframe';
 
 module(name, { beforeEach, afterEach });
 
-test('setAttribute, matching script element', (assert) => {
-    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_SCRIPT01_FILENAME}`;
-    const scriptletArgs = [SCRIPT_TARGET_NODE, TEST_SCRIPT01_FILENAME];
-    runScriptlet(name, scriptletArgs);
+/**
+ * document.body.append does not work in Edge 15
+ * https://caniuse.com/mdn-api_element_append
+ */
+const isSupported = (() => typeof document.body.append !== 'undefined')();
 
-    var elem = createTagWithSetAttr(assert, SCRIPT_TARGET_NODE, SOURCE_PATH);
-    assert.strictEqual(elem.src, srcMockData[SCRIPT_TARGET_NODE], 'src was mocked');
-    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-});
+if (!isSupported) {
+    test('unsupported', (assert) => {
+        assert.ok(true, 'Browser does not support it');
+    });
+} else {
+    test('setAttribute, matching script element', (assert) => {
+        const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_SCRIPT01_FILENAME}`;
+        const scriptletArgs = [SCRIPT_TARGET_NODE, TEST_SCRIPT01_FILENAME];
+        runScriptlet(name, scriptletArgs);
 
-test('setAttribute, matching image element', (assert) => {
-    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_IMAGE_FILENAME}`;
-    const scriptletArgs = [IMG_TARGET_NODE, TEST_IMAGE_FILENAME];
-    runScriptlet(name, scriptletArgs);
+        var elem = createTagWithSetAttr(assert, SCRIPT_TARGET_NODE, SOURCE_PATH);
+        assert.strictEqual(elem.src, srcMockData[SCRIPT_TARGET_NODE], 'src was mocked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    });
 
-    window.elem = createTagWithSetAttr(assert, IMG_TARGET_NODE, SOURCE_PATH);
-    assert.strictEqual(window.elem.src, srcMockData[IMG_TARGET_NODE], 'src was mocked');
-    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-});
+    test('setAttribute, matching image element', (assert) => {
+        const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_IMAGE_FILENAME}`;
+        const scriptletArgs = [IMG_TARGET_NODE, TEST_IMAGE_FILENAME];
+        runScriptlet(name, scriptletArgs);
 
-test('setAttribute, matching iframe element', (assert) => {
-    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_IFRAME_FILENAME}`;
-    const scriptletArgs = [IFRAME_TARGET_NODE, 'empty.html'];
-    runScriptlet(name, scriptletArgs);
+        window.elem = createTagWithSetAttr(assert, IMG_TARGET_NODE, SOURCE_PATH);
+        assert.strictEqual(window.elem.src, srcMockData[IMG_TARGET_NODE], 'src was mocked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    });
 
-    window.elem = createTagWithSetAttr(assert, IFRAME_TARGET_NODE, SOURCE_PATH);
-    assert.strictEqual(window.elem.src, srcMockData[IFRAME_TARGET_NODE], 'src was mocked');
-    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-});
+    test('setAttribute, matching iframe element', (assert) => {
+        const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_IFRAME_FILENAME}`;
+        const scriptletArgs = [IFRAME_TARGET_NODE, 'empty.html'];
+        runScriptlet(name, scriptletArgs);
 
-test('src prop, matching script element', (assert) => {
-    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_SCRIPT01_FILENAME}`;
-    const scriptletArgs = [SCRIPT_TARGET_NODE, TEST_SCRIPT01_FILENAME];
-    runScriptlet(name, scriptletArgs);
+        window.elem = createTagWithSetAttr(assert, IFRAME_TARGET_NODE, SOURCE_PATH);
+        assert.ok(
+            window.elem.src === srcMockData[IFRAME_TARGET_NODE]
+                // there is no space in Firefox 52
+                || window.elem.src === srcMockData[IFRAME_TARGET_NODE].split(' ').join(''),
+            'src was mocked',
+        );
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    });
 
-    var elem = createTagWithSrcProp(assert, SCRIPT_TARGET_NODE, SOURCE_PATH);
-    assert.strictEqual(elem.src, srcMockData[SCRIPT_TARGET_NODE], 'src was mocked');
-    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-});
+    test('src prop, matching script element', (assert) => {
+        const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_SCRIPT01_FILENAME}`;
+        const scriptletArgs = [SCRIPT_TARGET_NODE, TEST_SCRIPT01_FILENAME];
+        runScriptlet(name, scriptletArgs);
 
-test('src prop, matching image element', (assert) => {
-    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_IMAGE_FILENAME}`;
-    const scriptletArgs = [IMG_TARGET_NODE, TEST_IMAGE_FILENAME];
-    runScriptlet(name, scriptletArgs);
+        var elem = createTagWithSrcProp(assert, SCRIPT_TARGET_NODE, SOURCE_PATH);
+        assert.strictEqual(elem.src, srcMockData[SCRIPT_TARGET_NODE], 'src was mocked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    });
 
-    window.elem = createTagWithSrcProp(assert, IMG_TARGET_NODE, SOURCE_PATH);
-    assert.strictEqual(window.elem.src, srcMockData[IMG_TARGET_NODE], 'src was mocked');
-    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-});
+    test('src prop, matching image element', (assert) => {
+        const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_IMAGE_FILENAME}`;
+        const scriptletArgs = [IMG_TARGET_NODE, TEST_IMAGE_FILENAME];
+        runScriptlet(name, scriptletArgs);
 
-test('src prop, matching iframe element', (assert) => {
-    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_IFRAME_FILENAME}`;
-    const scriptletArgs = [IFRAME_TARGET_NODE, 'empty.html'];
-    runScriptlet(name, scriptletArgs);
+        window.elem = createTagWithSrcProp(assert, IMG_TARGET_NODE, SOURCE_PATH);
+        assert.strictEqual(window.elem.src, srcMockData[IMG_TARGET_NODE], 'src was mocked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    });
 
-    window.elem = createTagWithSrcProp(assert, IFRAME_TARGET_NODE, SOURCE_PATH);
-    assert.strictEqual(window.elem.src, srcMockData[IFRAME_TARGET_NODE], 'src was mocked');
-    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-});
+    test('src prop, matching iframe element', (assert) => {
+        const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_IFRAME_FILENAME}`;
+        const scriptletArgs = [IFRAME_TARGET_NODE, 'empty.html'];
+        runScriptlet(name, scriptletArgs);
 
-test('setAttribute, mismatching element', (assert) => {
-    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_SCRIPT02_FILENAME}`;
-    const scriptletArgs = [SCRIPT_TARGET_NODE, 'not-test-script.js'];
-    runScriptlet(name, scriptletArgs);
+        window.elem = createTagWithSrcProp(assert, IFRAME_TARGET_NODE, SOURCE_PATH);
+        assert.ok(
+            window.elem.src === srcMockData[IFRAME_TARGET_NODE]
+                // there is no space in Firefox 52
+                || window.elem.src === srcMockData[IFRAME_TARGET_NODE].split(' ').join(''),
+            'src was mocked',
+        );
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    });
 
-    window.elem = createTagWithSetAttr(assert, SCRIPT_TARGET_NODE, SOURCE_PATH);
-    assert.ok(window.elem.src.indexOf(TEST_SCRIPT02_FILENAME) !== -1, 'src was NOT mocked');
-    assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
-});
+    test('setAttribute, mismatching element', (assert) => {
+        const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_SCRIPT02_FILENAME}`;
+        const scriptletArgs = [SCRIPT_TARGET_NODE, 'not-test-script.js'];
+        runScriptlet(name, scriptletArgs);
 
-test('src prop, mismatching element', (assert) => {
-    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_SCRIPT02_FILENAME}`;
-    const scriptletArgs = [SCRIPT_TARGET_NODE, 'not-test-script.js'];
-    runScriptlet(name, scriptletArgs);
+        window.elem = createTagWithSetAttr(assert, SCRIPT_TARGET_NODE, SOURCE_PATH);
+        assert.ok(window.elem.src.indexOf(TEST_SCRIPT02_FILENAME) !== -1, 'src was NOT mocked');
+        assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+    });
 
-    window.elem = createTagWithSrcProp(assert, SCRIPT_TARGET_NODE, SOURCE_PATH);
-    assert.ok(window.elem.src.indexOf(TEST_SCRIPT02_FILENAME) !== -1, 'src was NOT mocked');
-    assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
-});
+    test('src prop, mismatching element', (assert) => {
+        const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_SCRIPT02_FILENAME}`;
+        const scriptletArgs = [SCRIPT_TARGET_NODE, 'not-test-script.js'];
+        runScriptlet(name, scriptletArgs);
 
-test('setAttribute, falsy arguments', (assert) => {
-    const scriptletArgs = [SCRIPT_TARGET_NODE, 'test-string'];
-    runScriptlet(name, scriptletArgs);
+        window.elem = createTagWithSrcProp(assert, SCRIPT_TARGET_NODE, SOURCE_PATH);
+        assert.ok(window.elem.src.indexOf(TEST_SCRIPT02_FILENAME) !== -1, 'src was NOT mocked');
+        assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+    });
 
-    const node = document.createElement(SCRIPT_TARGET_NODE);
-    node.setAttribute(null, undefined);
-    document.body.append(node);
-    assert.strictEqual(node.getAttribute('null'), 'undefined', 'falsy attr value passed');
-    node.remove();
+    test('setAttribute, falsy arguments', (assert) => {
+        const scriptletArgs = [SCRIPT_TARGET_NODE, 'test-string'];
+        runScriptlet(name, scriptletArgs);
 
-    const node2 = document.createElement(SCRIPT_TARGET_NODE);
-    node2.setAttribute(null, 0);
-    document.body.append(node2);
-    assert.strictEqual(node2.getAttribute('null'), '0', 'falsy attr value passed');
-    node2.remove();
+        const node = document.createElement(SCRIPT_TARGET_NODE);
+        node.setAttribute(null, undefined);
+        document.body.append(node);
+        assert.strictEqual(node.getAttribute('null'), 'undefined', 'falsy attr value passed');
+        node.remove();
 
-    assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
-});
+        const node2 = document.createElement(SCRIPT_TARGET_NODE);
+        node2.setAttribute(null, 0);
+        document.body.append(node2);
+        assert.strictEqual(node2.getAttribute('null'), '0', 'falsy attr value passed');
+        node2.remove();
+
+        assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+    });
+}
