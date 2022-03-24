@@ -30,6 +30,12 @@ const addSetPropTag = (property, value) => {
     document.body.append(script);
 };
 
+/**
+ * document.body.append does not work in Edge 15
+ * https://caniuse.com/mdn-api_element_append
+ */
+const isSupported = (() => typeof document.body.append !== 'undefined')();
+
 test('Checking if alias name works', (assert) => {
     const adgParams = {
         name,
@@ -48,234 +54,240 @@ test('Checking if alias name works', (assert) => {
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
-test('sets values correctly', (assert) => {
-    // settings constant to true;
-    const trueProp = 'trueProp01';
-    runScriptletFromTag(trueProp, 'true');
-    assert.strictEqual(window[trueProp], true);
-    clearGlobalProps(trueProp);
-
-    // setting constant to false;
-    const falseProp = 'falseProp';
-    runScriptletFromTag(falseProp, 'false');
-    assert.strictEqual(window[falseProp], false);
-    clearGlobalProps(falseProp);
-
-    // setting constant to undefined;
-    const undefinedProp = 'undefinedProp';
-    runScriptletFromTag(undefinedProp, 'undefined');
-    assert.strictEqual(window[undefinedProp], undefined);
-    clearGlobalProps(undefinedProp);
-
-    // setting constant to null;
-    const nullProp = 'nullProp';
-    runScriptletFromTag(nullProp, 'null');
-    assert.strictEqual(window[nullProp], null);
-    clearGlobalProps(nullProp);
-
-    // setting constant to empty array
-    const emptyArr = 'emptyArr';
-    runScriptletFromTag(emptyArr, 'emptyArr');
-    assert.ok(window[emptyArr] instanceof Array);
-    assert.strictEqual(window[emptyArr].length, 0);
-    clearGlobalProps(emptyArr);
-
-    // setting constant to empty object
-    const emptyObj = 'emptyObj';
-    runScriptletFromTag(emptyObj, 'emptyObj');
-    assert.ok(window[emptyObj] instanceof Object);
-    assert.strictEqual(Object.keys(window[emptyObj]).length, 0);
-    clearGlobalProps(emptyObj);
-
-    // setting constant to noopFunc;
-    const noopFuncProp = 'noopFuncProp';
-    runScriptletFromTag(noopFuncProp, 'noopFunc');
-    assert.strictEqual(window[noopFuncProp](), undefined);
-    clearGlobalProps(noopFuncProp);
-
-    // setting constant to trueFunc;
-    const trueFuncProp = 'trueFuncProp';
-    runScriptletFromTag(trueFuncProp, 'trueFunc');
-    assert.strictEqual(window[trueFuncProp](), true);
-    clearGlobalProps(trueFuncProp);
-
-    // setting constant to falseFunc;
-    const falseFuncProp = 'falseFuncProp';
-    runScriptletFromTag(falseFuncProp, 'falseFunc');
-    assert.strictEqual(window[falseFuncProp](), false);
-    clearGlobalProps(falseFuncProp);
-
-    // setting constant to noopPromiseReject;
-    const noopPromiseRejectProp = 'noopPromiseRejectProp';
-    runScriptletFromTag(noopPromiseRejectProp, 'noopPromiseReject');
-    assert.rejects(window[noopPromiseRejectProp]());
-    clearGlobalProps(noopPromiseRejectProp);
-
-    // setting constant to noopPromiseResolve;
-    const noopPromiseResolveProp = 'noopPromiseResolveProp';
-    runScriptletFromTag(noopPromiseResolveProp, 'noopPromiseResolve');
-    window[noopPromiseResolveProp]().then((response) => {
-        assert.ok(response);
+if (!isSupported) {
+    test('unsupported', (assert) => {
+        assert.ok(true, 'Browser does not support it');
     });
-    clearGlobalProps(noopPromiseResolveProp);
+} else {
+    test('sets values correctly', (assert) => {
+        // settings constant to true;
+        const trueProp = 'trueProp01';
+        runScriptletFromTag(trueProp, 'true');
+        assert.strictEqual(window[trueProp], true);
+        clearGlobalProps(trueProp);
 
-    // setting constant to number;
-    const numberProp = 'numberProp';
-    runScriptletFromTag(numberProp, 111);
-    assert.strictEqual(window[numberProp], 111);
-    clearGlobalProps(numberProp);
+        // setting constant to false;
+        const falseProp = 'falseProp';
+        runScriptletFromTag(falseProp, 'false');
+        assert.strictEqual(window[falseProp], false);
+        clearGlobalProps(falseProp);
 
-    // setting constant to -1;
-    const minusOneProp = 'minusOneProp';
-    runScriptletFromTag(minusOneProp, '-1');
-    assert.strictEqual(window[minusOneProp], -1);
-    clearGlobalProps(minusOneProp);
+        // setting constant to undefined;
+        const undefinedProp = 'undefinedProp';
+        runScriptletFromTag(undefinedProp, 'undefined');
+        assert.strictEqual(window[undefinedProp], undefined);
+        clearGlobalProps(undefinedProp);
 
-    // setting constant to empty string;
-    const emptyStringProp = 'emptyStringProp';
-    runScriptletFromTag(emptyStringProp, '');
-    assert.strictEqual(window[emptyStringProp], '');
-    clearGlobalProps(emptyStringProp);
+        // setting constant to null;
+        const nullProp = 'nullProp';
+        runScriptletFromTag(nullProp, 'null');
+        assert.strictEqual(window[nullProp], null);
+        clearGlobalProps(nullProp);
 
-    // setting constant to illegalNumber doesn't works;
-    const illegalNumberProp = 'illegalNumberProp';
-    runScriptletFromTag(illegalNumberProp, 32768);
-    assert.strictEqual(window[illegalNumberProp], undefined);
-});
+        // setting constant to empty array
+        const emptyArr = 'emptyArr';
+        runScriptletFromTag(emptyArr, 'emptyArr');
+        assert.ok(window[emptyArr] instanceof Array);
+        assert.strictEqual(window[emptyArr].length, 0);
+        clearGlobalProps(emptyArr);
 
-test('sets values to the chained properties', (assert) => {
-    window.chained = { property: {} };
-    runScriptletFromTag('chained.property.aaa', 'true');
-    assert.strictEqual(window.chained.property.aaa, true);
-    clearGlobalProps('chained');
-});
+        // setting constant to empty object
+        const emptyObj = 'emptyObj';
+        runScriptletFromTag(emptyObj, 'emptyObj');
+        assert.ok(window[emptyObj] instanceof Object);
+        assert.strictEqual(Object.keys(window[emptyObj]).length, 0);
+        clearGlobalProps(emptyObj);
 
-test('sets values on the same chain (defined)', (assert) => {
-    window.chained = { property: {} };
-    runScriptletFromTag('chained.property.aaa', 'true');
-    runScriptletFromTag('chained.property.bbb', 10);
+        // setting constant to noopFunc;
+        const noopFuncProp = 'noopFuncProp';
+        runScriptletFromTag(noopFuncProp, 'noopFunc');
+        assert.strictEqual(window[noopFuncProp](), undefined);
+        clearGlobalProps(noopFuncProp);
 
-    assert.strictEqual(window.chained.property.aaa, true);
-    assert.strictEqual(window.chained.property.bbb, 10);
+        // setting constant to trueFunc;
+        const trueFuncProp = 'trueFuncProp';
+        runScriptletFromTag(trueFuncProp, 'trueFunc');
+        assert.strictEqual(window[trueFuncProp](), true);
+        clearGlobalProps(trueFuncProp);
 
-    clearGlobalProps('chained');
-});
+        // setting constant to falseFunc;
+        const falseFuncProp = 'falseFuncProp';
+        runScriptletFromTag(falseFuncProp, 'falseFunc');
+        assert.strictEqual(window[falseFuncProp](), false);
+        clearGlobalProps(falseFuncProp);
 
-test('sets values on the same chain (undefined)', (assert) => {
-    runScriptletFromTag('chained.property.aaa', 'true');
-    runScriptletFromTag('chained.property.bbb', 10);
-    window.chained = { property: {} };
+        // setting constant to noopPromiseReject;
+        const noopPromiseRejectProp = 'noopPromiseRejectProp';
+        runScriptletFromTag(noopPromiseRejectProp, 'noopPromiseReject');
+        assert.rejects(window[noopPromiseRejectProp]());
+        clearGlobalProps(noopPromiseRejectProp);
 
-    assert.strictEqual(window.chained.property.aaa, true);
-    assert.strictEqual(window.chained.property.bbb, 10);
+        // setting constant to noopPromiseResolve;
+        const noopPromiseResolveProp = 'noopPromiseResolveProp';
+        runScriptletFromTag(noopPromiseResolveProp, 'noopPromiseResolve');
+        window[noopPromiseResolveProp]().then((response) => {
+            assert.ok(response);
+        });
+        clearGlobalProps(noopPromiseResolveProp);
 
-    clearGlobalProps('chained');
-});
+        // setting constant to number;
+        const numberProp = 'numberProp';
+        runScriptletFromTag(numberProp, 111);
+        assert.strictEqual(window[numberProp], 111);
+        clearGlobalProps(numberProp);
 
-test('values with same types are not overwritten, values with different types are overwritten', (assert) => {
-    const property = 'customProperty';
-    const firstValue = 10;
-    const anotherValue = 100;
-    const anotherTypeValue = true;
+        // setting constant to -1;
+        const minusOneProp = 'minusOneProp';
+        runScriptletFromTag(minusOneProp, '-1');
+        assert.strictEqual(window[minusOneProp], -1);
+        clearGlobalProps(minusOneProp);
 
-    runScriptletFromTag(property, firstValue);
-    assert.strictEqual(window[property], firstValue);
+        // setting constant to empty string;
+        const emptyStringProp = 'emptyStringProp';
+        runScriptletFromTag(emptyStringProp, '');
+        assert.strictEqual(window[emptyStringProp], '');
+        clearGlobalProps(emptyStringProp);
 
-    addSetPropTag(property, anotherValue);
-    assert.strictEqual(window[property], firstValue, 'values with same types are not overwritten');
+        // setting constant to illegalNumber doesn't works;
+        const illegalNumberProp = 'illegalNumberProp';
+        runScriptletFromTag(illegalNumberProp, 32768);
+        assert.strictEqual(window[illegalNumberProp], undefined);
+    });
 
-    addSetPropTag(property, anotherTypeValue);
-    assert.strictEqual(window[property], anotherTypeValue, 'values with different types are overwritten');
+    test('sets values to the chained properties', (assert) => {
+        window.chained = { property: {} };
+        runScriptletFromTag('chained.property.aaa', 'true');
+        assert.strictEqual(window.chained.property.aaa, true);
+        clearGlobalProps('chained');
+    });
 
-    clearGlobalProps(property);
-});
+    test('sets values on the same chain (defined)', (assert) => {
+        window.chained = { property: {} };
+        runScriptletFromTag('chained.property.aaa', 'true');
+        runScriptletFromTag('chained.property.bbb', 10);
 
-test('sets values correctly + stack match', (assert) => {
-    const stackMatch = 'set-constant';
+        assert.strictEqual(window.chained.property.aaa, true);
+        assert.strictEqual(window.chained.property.bbb, 10);
 
-    const trueProp = 'trueProp02';
-    runScriptletFromTag(trueProp, 'true', stackMatch);
-    assert.strictEqual(window[trueProp], true, 'stack match: trueProp - ok');
-    clearGlobalProps(trueProp);
+        clearGlobalProps('chained');
+    });
 
-    const numProp = 'numProp';
-    runScriptletFromTag(numProp, 123, stackMatch);
-    assert.strictEqual(window[numProp], 123, 'stack match: numProp - ok');
-    clearGlobalProps(numProp);
-});
+    test('sets values on the same chain (undefined)', (assert) => {
+        runScriptletFromTag('chained.property.aaa', 'true');
+        runScriptletFromTag('chained.property.bbb', 10);
+        window.chained = { property: {} };
 
-test('sets values correctly + no stack match', (assert) => {
-    window.chained = { property: {} };
-    const stackNoMatch = 'no_match.js';
+        assert.strictEqual(window.chained.property.aaa, true);
+        assert.strictEqual(window.chained.property.bbb, 10);
 
-    runScriptletFromTag('chained.property.aaa', 'true', stackNoMatch);
+        clearGlobalProps('chained');
+    });
 
-    assert.strictEqual(window.chained.property.aaa, undefined);
-    clearGlobalProps('chained');
+    test('values with same types are not overwritten, values with different types are overwritten', (assert) => {
+        const property = 'customProperty';
+        const firstValue = 10;
+        const anotherValue = 100;
+        const anotherTypeValue = true;
 
-    const property = 'customProp';
-    const firstValue = 10;
+        runScriptletFromTag(property, firstValue);
+        assert.strictEqual(window[property], firstValue);
 
-    runScriptletFromTag(property, firstValue, stackNoMatch);
+        addSetPropTag(property, anotherValue);
+        assert.strictEqual(window[property], firstValue, 'values with same types are not overwritten');
 
-    assert.strictEqual(window[property], undefined);
-    clearGlobalProps(property);
-});
+        addSetPropTag(property, anotherTypeValue);
+        assert.strictEqual(window[property], anotherTypeValue, 'values with different types are overwritten');
 
-test('set-constant: does not work - invalid regexp pattern for stack arg', (assert) => {
-    const stackArg = '/\\/';
+        clearGlobalProps(property);
+    });
 
-    const property = 'customProp';
-    const value = 10;
+    test('sets values correctly + stack match', (assert) => {
+        const stackMatch = 'set-constant';
 
-    runScriptletFromTag(property, value, stackArg);
+        const trueProp = 'trueProp02';
+        runScriptletFromTag(trueProp, 'true', stackMatch);
+        assert.strictEqual(window[trueProp], true, 'stack match: trueProp - ok');
+        clearGlobalProps(trueProp);
 
-    assert.strictEqual(window[property], undefined, 'property should not be set');
-    clearGlobalProps(property);
-});
+        const numProp = 'numProp';
+        runScriptletFromTag(numProp, 123, stackMatch);
+        assert.strictEqual(window[numProp], 123, 'stack match: numProp - ok');
+        clearGlobalProps(numProp);
+    });
 
-test('no value setting if chain is not relevant', (assert) => {
-    window.chain = { property: {} };
-    runScriptletFromTag('noprop.property.aaa', 'true');
-    assert.deepEqual(window.chain.property, {}, 'predefined obj was not changed');
-    assert.strictEqual(window.noprop, undefined, '"noprop" was not set');
-    clearGlobalProps('chain');
-});
+    test('sets values correctly + no stack match', (assert) => {
+        window.chained = { property: {} };
+        const stackNoMatch = 'no_match.js';
 
-test('no value setting if some property in chain is undefined while loading', (assert) => {
-    const testObj = { prop: undefined };
-    window.chain = testObj;
-    runScriptletFromTag('chain.prop.aaa', 'true');
-    assert.deepEqual(window.chain, testObj, 'predefined obj was not changed');
-    clearGlobalProps('chain');
-});
+        runScriptletFromTag('chained.property.aaa', 'true', stackNoMatch);
 
-test('no value setting if first property in chain is null', (assert) => {
-    window.chain = null;
-    runScriptletFromTag('chain.property.aaa', 'true');
-    assert.strictEqual(window.chain, null, 'predefined obj was not changed');
-    clearGlobalProps('chain');
-});
+        assert.strictEqual(window.chained.property.aaa, undefined);
+        clearGlobalProps('chained');
 
-// for now the scriptlet does not set the chained property if one of chain prop is null.
-// that might happen, for example, while loading the page.
-// after the needed property is loaded, the scriptlet does not check it and do not set the value
-// https://github.com/AdguardTeam/Scriptlets/issues/128
-test('set value after timeout if it was null earlier', (assert) => {
-    window.chain = null;
-    runScriptletFromTag('chain.property.aaa', 'true');
-    assert.strictEqual(window.chain, null, 'predefined obj was not changed');
+        const property = 'customProp';
+        const firstValue = 10;
 
-    const done = assert.async();
+        runScriptletFromTag(property, firstValue, stackNoMatch);
 
-    setTimeout(() => {
+        assert.strictEqual(window[property], undefined);
+        clearGlobalProps(property);
+    });
+
+    test('set-constant: does not work - invalid regexp pattern for stack arg', (assert) => {
+        const stackArg = '/\\/';
+
+        const property = 'customProp';
+        const value = 10;
+
+        runScriptletFromTag(property, value, stackArg);
+
+        assert.strictEqual(window[property], undefined, 'property should not be set');
+        clearGlobalProps(property);
+    });
+
+    test('no value setting if chain is not relevant', (assert) => {
         window.chain = { property: {} };
-    }, 50);
+        runScriptletFromTag('noprop.property.aaa', 'true');
+        assert.deepEqual(window.chain.property, {}, 'predefined obj was not changed');
+        assert.strictEqual(window.noprop, undefined, '"noprop" was not set');
+        clearGlobalProps('chain');
+    });
 
-    setTimeout(() => {
-        assert.strictEqual(window.chain.property.aaa, undefined, 'chained prop was NOT set after delay');
-        done();
-    }, 100);
+    test('no value setting if some property in chain is undefined while loading', (assert) => {
+        const testObj = { prop: undefined };
+        window.chain = testObj;
+        runScriptletFromTag('chain.prop.aaa', 'true');
+        assert.deepEqual(window.chain, testObj, 'predefined obj was not changed');
+        clearGlobalProps('chain');
+    });
 
-    clearGlobalProps('chain');
-});
+    test('no value setting if first property in chain is null', (assert) => {
+        window.chain = null;
+        runScriptletFromTag('chain.property.aaa', 'true');
+        assert.strictEqual(window.chain, null, 'predefined obj was not changed');
+        clearGlobalProps('chain');
+    });
+
+    // for now the scriptlet does not set the chained property if one of chain prop is null.
+    // that might happen, for example, while loading the page.
+    // after the needed property is loaded, the scriptlet does not check it and do not set the value
+    // https://github.com/AdguardTeam/Scriptlets/issues/128
+    test('set value after timeout if it was null earlier', (assert) => {
+        window.chain = null;
+        runScriptletFromTag('chain.property.aaa', 'true');
+        assert.strictEqual(window.chain, null, 'predefined obj was not changed');
+
+        const done = assert.async();
+
+        setTimeout(() => {
+            window.chain = { property: {} };
+        }, 50);
+
+        setTimeout(() => {
+            assert.strictEqual(window.chain.property.aaa, undefined, 'chained prop was NOT set after delay');
+            done();
+        }, 100);
+
+        clearGlobalProps('chain');
+    });
+}
