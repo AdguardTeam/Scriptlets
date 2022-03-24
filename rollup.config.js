@@ -190,11 +190,11 @@ const testConfigs = (() => {
     const TESTS_DIR = 'tests';
     const MULTIPLE_TEST_FILES_DIRS = [
         'scriptlets',
-        'redirects',
+        // 'redirects',
     ];
     const ONE_TEST_FILE_DIRS = [
-        'lib-tests',
-        'helpers',
+        // 'lib-tests',
+        // 'helpers',
     ];
 
     const multipleFilesConfigs = MULTIPLE_TEST_FILES_DIRS
@@ -206,7 +206,7 @@ const testConfigs = (() => {
                     return el !== 'index.test.js'
                         // for testing specific scriptlet or redirect you should filter by its name
                         //  or just uncomment next line and fix test name
-                        // && el === 'gemius.test.js'
+                        && el === 'prevent-refresh.test.js'
                         // please note that oneFileConfigs will still be run
                         && el.includes(TEST_FILE_NAME_MARKER);
                 });
