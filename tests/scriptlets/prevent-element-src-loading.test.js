@@ -92,7 +92,12 @@ test('setAttribute, matching iframe element', (assert) => {
     runScriptlet(name, scriptletArgs);
 
     window.elem = createTagWithSetAttr(assert, IFRAME_TARGET_NODE, SOURCE_PATH);
-    assert.strictEqual(window.elem.src, srcMockData[IFRAME_TARGET_NODE], 'src was mocked');
+    assert.ok(
+        window.elem.src === srcMockData[IFRAME_TARGET_NODE]
+            // there is no space in Firefox 52
+            || window.elem.src === srcMockData[IFRAME_TARGET_NODE].split(' ').join(''),
+        'src was mocked',
+    );
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
@@ -122,7 +127,12 @@ test('src prop, matching iframe element', (assert) => {
     runScriptlet(name, scriptletArgs);
 
     window.elem = createTagWithSrcProp(assert, IFRAME_TARGET_NODE, SOURCE_PATH);
-    assert.strictEqual(window.elem.src, srcMockData[IFRAME_TARGET_NODE], 'src was mocked');
+    assert.ok(
+        window.elem.src === srcMockData[IFRAME_TARGET_NODE]
+            // there is no space in Firefox 52
+            || window.elem.src === srcMockData[IFRAME_TARGET_NODE].split(' ').join(''),
+        'src was mocked',
+    );
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
