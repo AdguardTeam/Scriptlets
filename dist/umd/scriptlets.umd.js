@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.5.23
+ * Version 1.6.3
  */
 
 (function (factory) {
@@ -193,6 +193,17 @@
 
       return native(num);
     };
+    /**
+     * Parses string for a number, if possible, otherwise returns null.
+     * @param {*} rawDelay
+     * @returns {number|null}
+     */
+
+    var getNumberFromString = function getNumberFromString(rawString) {
+      var parsedDelay = parseInt(rawString, 10);
+      var validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
+      return validDelay;
+    };
 
     /**
      * Converts object to array of pairs.
@@ -234,6 +245,22 @@
 
     var isEmptyObject = function isEmptyObject(obj) {
       return Object.keys(obj).length === 0;
+    };
+    /**
+     * Checks whether the obj is an empty object
+     * @param {Object} obj
+     * @param {string} prop
+     * @returns {Object|null}
+     */
+
+    var safeGetDescriptor = function safeGetDescriptor(obj, prop) {
+      var descriptor = Object.getOwnPropertyDescriptor(obj, prop);
+
+      if (descriptor && descriptor.configurable) {
+        return descriptor;
+      }
+
+      return null;
     };
 
     /**
@@ -1251,6 +1278,7 @@
         prepareCookie: prepareCookie,
         nativeIsNaN: nativeIsNaN,
         nativeIsFinite: nativeIsFinite,
+        getNumberFromString: getNumberFromString,
         shouldMatchAnyDelay: shouldMatchAnyDelay,
         getMatchDelay: getMatchDelay,
         isDelayMatched: isDelayMatched,
@@ -1263,6 +1291,7 @@
         getObjectEntries: getObjectEntries,
         getObjectFromEntries: getObjectFromEntries,
         isEmptyObject: isEmptyObject,
+        safeGetDescriptor: safeGetDescriptor,
         handleOldReplacement: handleOldReplacement,
         createDecoy: createDecoy,
         getPreventGetter: getPreventGetter,
@@ -2489,6 +2518,8 @@
      *         - `noopFunc` - function with empty body
      *         - `trueFunc` - function returning true
      *         - `falseFunc` - function returning false
+     *         - `noopPromiseResolve` - function returning Promise object that is resolved with an empty response
+     *         - `noopPromiseReject` - function returning Promise.reject()
      *         - `''` - empty string
      *         - `-1` - number value `-1`
      * - `stack` - optional, string or regular expression that must match the current function call stack trace;
@@ -2547,6 +2578,10 @@
         constantValue = trueFunc;
       } else if (value === 'falseFunc') {
         constantValue = falseFunc;
+      } else if (value === 'noopPromiseResolve') {
+        constantValue = noopPromiseResolve;
+      } else if (value === 'noopPromiseReject') {
+        constantValue = noopPromiseReject;
       } else if (/^\d+$/.test(value)) {
         constantValue = parseFloat(value);
 
@@ -2565,6 +2600,16 @@
         return;
       }
 
+      var getCurrentScript = function getCurrentScript() {
+        if ('currentScript' in document) {
+          return document.currentScript; // eslint-disable-line compat/compat
+        }
+
+        var scripts = document.getElementsByTagName('script');
+        return scripts[scripts.length - 1];
+      };
+
+      var ourScript = getCurrentScript();
       var canceled = false;
 
       var mustCancel = function mustCancel(value) {
@@ -2576,66 +2621,116 @@
         return canceled;
       };
 
+      var trapProp = function trapProp(base, prop, configurable, handler) {
+        if (!handler.init(base[prop])) {
+          return;
+        }
+
+        var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+        var prevGetter;
+        var prevSetter; // This is required to prevent scriptlets overwrite each over
+
+        if (origDescriptor instanceof Object) {
+          base[prop] = constantValue;
+
+          if (origDescriptor.get instanceof Function) {
+            prevGetter = origDescriptor.get;
+          }
+
+          if (origDescriptor.set instanceof Function) {
+            prevSetter = origDescriptor.set;
+          }
+        }
+
+        Object.defineProperty(base, prop, {
+          configurable: configurable,
+          get: function get() {
+            if (prevGetter !== undefined) {
+              prevGetter();
+            }
+
+            return handler.get();
+          },
+          set: function set(a) {
+            if (prevSetter !== undefined) {
+              prevSetter(a);
+            }
+
+            handler.set(a);
+          }
+        });
+      };
+
       var setChainPropAccess = function setChainPropAccess(owner, property) {
         var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
-            chain = chainInfo.chain; // The scriptlet might be executed before the chain property has been created.
-        // In this case we're checking whether the base element exists or not
-        // and if not, we simply exit without overriding anything
+            chain = chainInfo.chain; // Handler method init is used to keep track of factual value
+        // and apply mustCancel() check only on end prop
 
-        if (base instanceof Object === false && base === null) {
-          // log the reason only while debugging
-          if (source.verbose) {
-            var props = property.split('.');
-            var propIndex = props.indexOf(prop);
-            var baseName = props[propIndex - 1];
-            console.log("set-constant failed because the property '".concat(baseName, "' does not exist")); // eslint-disable-line no-console, max-len
-          }
-
-          return;
-        }
-
-        if (chain) {
-          var setter = function setter(a) {
-            base = a;
+        var undefPropHandler = {
+          factValue: undefined,
+          init: function init(a) {
+            this.factValue = a;
+            return true;
+          },
+          get: function get() {
+            return this.factValue;
+          },
+          set: function set(a) {
+            this.factValue = a;
 
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
             }
-          };
+          }
+        };
+        var endPropHandler = {
+          factValue: undefined,
+          init: function init(a) {
+            if (mustCancel(a)) {
+              return false;
+            }
 
-          Object.defineProperty(owner, prop, {
-            get: function get() {
-              return base;
-            },
-            set: setter
-          });
-          return;
-        }
-
-        if (mustCancel(base[prop])) {
-          return;
-        }
-
-        hit(source);
-        setPropertyAccess(base, prop, {
+            this.factValue = a;
+            return true;
+          },
           get: function get() {
-            return constantValue;
+            // .currrentSript script check so we won't trap other scriptlets on the same chain
+            // eslint-disable-next-line compat/compat
+            return document.currentScript === ourScript ? this.factValue : constantValue;
           },
           set: function set(a) {
-            if (mustCancel(a)) {
-              constantValue = a;
+            if (!mustCancel(a)) {
+              return;
             }
+
+            constantValue = a;
           }
-        });
+        }; // End prop case
+
+        if (!chain) {
+          trapProp(base, prop, false, endPropHandler);
+          hit(source);
+          return;
+        } // Defined prop in chain
+
+
+        var propValue = owner[prop];
+
+        if (propValue instanceof Object || typeof propValue === 'object' && propValue !== null) {
+          setChainPropAccess(propValue, chain);
+        } // Undefined prop in chain
+
+
+        trapProp(owner, prop, true, undefPropHandler);
       };
 
       setChainPropAccess(window, property);
     }
     setConstant.names = ['set-constant', // aliases are needed for matching the related scriptlet converted into our syntax
     'set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js', 'ubo-set-constant', 'ubo-set', 'abp-override-property-read'];
-    setConstant.injections = [hit, noopArray, noopObject, noopFunc, trueFunc, falseFunc, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, nativeIsNaN];
+    setConstant.injections = [hit, noopArray, noopObject, noopFunc, trueFunc, falseFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, nativeIsNaN];
 
     /* eslint-disable max-len */
 
@@ -4374,6 +4469,11 @@
      *     ```
      *     example.org#%#//scriptlet('json-prune')
      *     ```
+     *
+     * 7. Call with only second argument will log the current hostname and matched json payload at the console
+     *     ```
+     *     example.org#%#//scriptlet('json-prune', '', '"id":"117458"')
+     *     ```
      */
 
     /* eslint-enable max-len */
@@ -4393,7 +4493,19 @@
           return false;
         }
 
-        var shouldProcess;
+        var shouldProcess; // Only log hostname and matched JSON payload if only second argument is present
+
+        if (prunePaths.length === 0 && requiredPaths.length > 0) {
+          var rootString = JSON.stringify(root);
+          var matchRegex = toRegExp(requiredPaths.join(''));
+          var shouldLog = matchRegex.test(rootString);
+
+          if (shouldLog) {
+            log(window.location.hostname, root);
+            shouldProcess = false;
+            return shouldProcess;
+          }
+        }
 
         for (var i = 0; i < requiredPaths.length; i += 1) {
           var requiredPath = requiredPaths[i];
@@ -4425,7 +4537,7 @@
 
 
       var jsonPruner = function jsonPruner(root) {
-        if (prunePaths.length === 0) {
+        if (prunePaths.length === 0 && requiredPaths.length === 0) {
           log(window.location.hostname, root);
           return root;
         }
@@ -4852,41 +4964,6 @@
     }
     removeInShadowDom.names = ['remove-in-shadow-dom'];
     removeInShadowDom.injections = [hit, observeDOMChanges, flatten, findHostElements, pierceShadowDom];
-
-    /**
-     * @scriptlet no-floc
-     *
-     * @description
-     * Prevents using Google Chrome tracking feature called Federated Learning of Cohorts (aka "FLoC")
-     *
-     * Related UBO scriptlet:
-     * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-flocjs-
-     *
-     * **Syntax**
-     * ```
-     * example.org#%#//scriptlet('no-floc')
-     * ```
-     */
-
-    function noFloc(source) {
-      var FLOC_PROPERTY_NAME = 'interestCohort';
-
-      if (Document instanceof Object === false) {
-        return;
-      }
-
-      if (!Object.prototype.hasOwnProperty.call(Document.prototype, FLOC_PROPERTY_NAME) || Document.prototype[FLOC_PROPERTY_NAME] instanceof Function === false) {
-        return;
-      } // document.interestCohort() is async function so it's better to return Promise.reject()
-      // https://github.com/WICG/floc/blob/dcd4c042fa6a81b048e04a78b184ea4203a75219/README.md
-
-
-      Document.prototype[FLOC_PROPERTY_NAME] = noopPromiseReject;
-      hit(source);
-    }
-    noFloc.names = ['no-floc', // aliases are needed for matching the related scriptlet converted into our syntax
-    'no-floc.js', 'ubo-no-floc.js', 'ubo-no-floc'];
-    noFloc.injections = [hit, noopPromiseReject];
 
     /* eslint-disable max-len */
 
@@ -5398,7 +5475,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('prevent-xhr'[, propsToMatch])
+     * example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
      * ```
      *
      * - propsToMatch - optional, string of space-separated properties to match; possible props:
@@ -5406,6 +5483,7 @@
      *   - colon-separated pairs name:value where
      *     - name is XMLHttpRequest object property name
      *     - value is string or regular expression for matching the value of the option passed to `.open()` call
+     * - randomize - optional, defaults to `false`, boolean to randomize responseText of matched XMLHttpRequest's response,
      *
      * > Usage with no arguments will log XMLHttpRequest objects to browser console;
      * which is useful for debugging but permitted for production filter lists.
@@ -5436,11 +5514,16 @@
      *     ```
      *     example.org#%#//scriptlet('prevent-xhr', 'example.org method:/HEAD|GET/')
      *     ```
+     *
+     * 6. Prevent XMLHttpRequests for specific url and randomize it's response text
+     *     ```
+     *     example.org#%#//scriptlet('prevent-xhr', 'example.org', 'true')
+     *     ```
      */
 
     /* eslint-enable max-len */
 
-    function preventXHR(source, propsToMatch) {
+    function preventXHR(source, propsToMatch, randomize) {
       // do nothing if browser does not support Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
       if (typeof Proxy === 'undefined') {
@@ -5448,6 +5531,7 @@
       }
 
       var shouldPrevent = false;
+      var responseText = '';
       var responseUrl;
 
       var openWrapper = function openWrapper(target, thisArg, args) {
@@ -5488,6 +5572,11 @@
       var sendWrapper = function sendWrapper(target, thisArg, args) {
         if (!shouldPrevent) {
           return Reflect.apply(target, thisArg, args);
+        }
+
+        if (randomize === 'true') {
+          // Generate random alphanumeric string of 10 symbols
+          responseText = Math.random().toString(36).slice(-10);
         } // Mock response object
 
 
@@ -5501,7 +5590,7 @@
             writable: false
           },
           responseText: {
-            value: '',
+            value: responseText,
             writable: false
           },
           responseURL: {
@@ -5527,6 +5616,8 @@
           thisArg.dispatchEvent(stateEvent);
           var loadEvent = new Event('load');
           thisArg.dispatchEvent(loadEvent);
+          var loadEndEvent = new Event('loadend');
+          thisArg.dispatchEvent(loadEndEvent);
         }, 1);
         hit(source);
         return undefined;
@@ -5608,6 +5699,262 @@
     forceWindowClose.names = ['close-window', 'window-close-if.js', 'ubo-window-close-if.js', 'ubo-window-close-if'];
     forceWindowClose.injections = [hit, toRegExp];
 
+    /* eslint-disable max-len */
+
+    /**
+     * @scriptlet prevent-refresh
+     *
+     * @description
+     * Prevents reloading of a document through a meta "refresh" tag.
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#refresh-defuserjs-
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('prevent-refresh'[, delay])
+     * ```
+     *
+     * - `delay` - optional, number of seconds for delay that indicates when scriptlet should run. If not set, source tag value will be applied.
+     *
+     * **Examples**
+     * 1. Prevent reloading of a document through a meta "refresh" tag.
+     * ```
+     *     enrt.eu#%#//scriptlet('prevent-refresh')
+     * ```
+     *
+     * 2. Prevent reloading of a document with delay.
+     * ```
+     *     cryptodirectories.com#%#//scriptlet('prevent-refresh', 3)
+     * ```
+     */
+
+    /* eslint-enable max-len */
+
+    function preventRefresh(source, delaySec) {
+      var getMetaElements = function getMetaElements() {
+        var metaNodes = [];
+
+        try {
+          metaNodes = document.querySelectorAll('meta[http-equiv="refresh" i][content]');
+        } catch (e) {
+          // 'i' attribute flag is problematic in Edge 15
+          try {
+            metaNodes = document.querySelectorAll('meta[http-equiv="refresh"][content]');
+          } catch (e) {
+            if (source.verbose) {
+              // eslint-disable-next-line no-console
+              console.log(e);
+            }
+          }
+        }
+
+        return Array.from(metaNodes);
+      };
+
+      var getMetaContentDelay = function getMetaContentDelay(metaElements) {
+        var delays = metaElements.map(function (meta) {
+          var contentString = meta.getAttribute('content');
+
+          if (contentString.length === 0) {
+            return null;
+          }
+
+          var contentDelay; // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#attr-http-equiv
+
+          var limiterIndex = contentString.indexOf(';');
+
+          if (limiterIndex !== -1) {
+            var delaySubstring = contentString.substring(0, limiterIndex);
+            contentDelay = getNumberFromString(delaySubstring);
+          } else {
+            contentDelay = getNumberFromString(contentString);
+          }
+
+          return contentDelay;
+        }).filter(function (delay) {
+          return delay !== null;
+        }); // Get smallest delay of all metas on the page
+
+        var minDelay = delays.reduce(function (a, b) {
+          return Math.min(a, b);
+        }); // eslint-disable-next-line consistent-return
+
+        return minDelay;
+      };
+
+      var stop = function stop() {
+        var metaElements = getMetaElements();
+
+        if (metaElements.length === 0) {
+          return;
+        }
+
+        var secondsToRun = getNumberFromString(delaySec); // Check if argument is provided
+
+        if (!secondsToRun) {
+          secondsToRun = getMetaContentDelay(metaElements);
+        } // Check if meta tag has delay
+
+
+        if (!secondsToRun) {
+          return;
+        }
+
+        var delayMs = secondsToRun * 1000;
+        setTimeout(function () {
+          window.stop();
+          hit(source);
+        }, delayMs);
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', stop, {
+          once: true
+        });
+      } else {
+        stop();
+      }
+    }
+    preventRefresh.names = ['prevent-refresh', // Aliases are needed for matching the related scriptlet converted into our syntax
+    // These are used by UBO rules syntax
+    // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
+    'refresh-defuser.js', 'refresh-defuser', // Prefix 'ubo-' is required to run converted rules
+    'ubo-refresh-defuser.js', 'ubo-refresh-defuser'];
+    preventRefresh.injections = [hit, getNumberFromString, nativeIsNaN];
+
+    /* eslint-disable max-len, consistent-return */
+
+    /**
+     * @scriptlet prevent-element-src-loading
+     *
+     * @description
+     * Prevents target element source loading without triggering 'onerror' listeners and not breaking 'onload' ones.
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('prevent-src', tagName, match)
+     * ```
+     *
+     * - `tagName` - required, case-insensitive target element tagName which `src` property resource loading will be silently prevented; possible values:
+     *     - `script`
+     *     - `img`
+     *     - `iframe`
+     * - `match` - required, string or regular expression for matching the element's URL;
+     *
+     * **Examples**
+     * 1. Prevent script source loading:
+     * ```
+     *     example.org#%#//scriptlet('prevent-element-src-loading', 'script' ,'adsbygoogle')
+     * ```
+     */
+
+    /* eslint-enable max-len */
+
+    function preventElementSrcLoading(source, tagName, match) {
+      // do nothing if browser does not support Proxy or Reflect
+      if (typeof Proxy === 'undefined' || typeof Reflect === 'undefined') {
+        return;
+      }
+
+      var srcMockData = {
+        // "KCk9Pnt9" = "()=>{}"
+        script: 'data:text/javascript;base64,KCk9Pnt9',
+        // Empty 1x1 image
+        img: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
+        // Empty h1 tag
+        iframe: 'data:text/html;base64, PGRpdj48L2Rpdj4='
+      };
+      var instance;
+
+      if (tagName === 'script') {
+        instance = HTMLScriptElement;
+      } else if (tagName === 'img') {
+        instance = HTMLImageElement;
+      } else if (tagName === 'iframe') {
+        instance = HTMLIFrameElement;
+      } else {
+        return;
+      } // For websites that use Trusted Types
+      // https://w3c.github.io/webappsec-trusted-types/dist/spec/
+
+
+      var hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === 'function';
+      var policy;
+
+      if (hasTrustedTypes) {
+        policy = window.trustedTypes.createPolicy('mock', {
+          createScriptURL: function createScriptURL(arg) {
+            return arg;
+          }
+        });
+      }
+
+      var SOURCE_PROPERTY_NAME = 'src';
+      var searchRegexp = toRegExp(match);
+
+      var setAttributeWrapper = function setAttributeWrapper(target, thisArg, args) {
+        // Check if arguments are present
+        if (!args[0] || !args[1]) {
+          return Reflect.apply(target, thisArg, args);
+        }
+
+        var nodeName = thisArg.nodeName.toLowerCase();
+        var attrName = args[0].toLowerCase();
+        var attrValue = args[1];
+        var isMatched = attrName === SOURCE_PROPERTY_NAME && tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(attrValue);
+
+        if (!isMatched) {
+          return Reflect.apply(target, thisArg, args);
+        }
+
+        hit(source); // Forward the URI that corresponds with element's MIME type
+
+        return Reflect.apply(target, thisArg, [attrName, srcMockData[nodeName]]);
+      };
+
+      var setAttributeHandler = {
+        apply: setAttributeWrapper
+      }; // eslint-disable-next-line max-len
+
+      instance.prototype.setAttribute = new Proxy(Element.prototype.setAttribute, setAttributeHandler);
+      var origDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
+
+      if (!origDescriptor) {
+        return;
+      }
+
+      Object.defineProperty(instance.prototype, SOURCE_PROPERTY_NAME, {
+        enumerable: true,
+        configurable: true,
+        get: function get() {
+          return origDescriptor.get.call(this);
+        },
+        set: function set(urlValue) {
+          var nodeName = this.nodeName.toLowerCase();
+          var isMatched = tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(urlValue);
+
+          if (!isMatched) {
+            origDescriptor.set.call(this, urlValue);
+            return;
+          } // eslint-disable-next-line no-undef
+
+
+          if (policy && urlValue instanceof TrustedScriptURL) {
+            var trustedSrc = policy.createScriptURL(urlValue);
+            origDescriptor.set.call(this, trustedSrc);
+            hit(source);
+            return;
+          }
+
+          origDescriptor.set.call(this, srcMockData[nodeName]);
+          hit(source);
+        }
+      });
+    }
+    preventElementSrcLoading.names = ['prevent-element-src-loading'];
+    preventElementSrcLoading.injections = [hit, toRegExp, safeGetDescriptor];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
@@ -5650,14 +5997,15 @@
         setCookieReload: setCookieReload,
         hideInShadowDom: hideInShadowDom,
         removeInShadowDom: removeInShadowDom,
-        noFloc: noFloc,
         preventFetch: preventFetch,
         setLocalStorageItem: setLocalStorageItem,
         setSessionStorageItem: setSessionStorageItem,
         abortOnStackTrace: abortOnStackTrace,
         logOnStacktrace: logOnStacktrace,
         preventXHR: preventXHR,
-        forceWindowClose: forceWindowClose
+        forceWindowClose: forceWindowClose,
+        preventRefresh: preventRefresh,
+        preventElementSrcLoading: preventElementSrcLoading
     });
 
     /**
@@ -5690,11 +6038,16 @@
     }, {
       adg: 'ati-smarttag'
     }, {
+      adg: 'didomi-loader'
+    }, {
       adg: 'click2load.html',
       ubo: 'click2load.html'
     }, {
-      adg: 'fingerprintjs',
-      ubo: 'fingerprintjs2.js'
+      adg: 'fingerprintjs2',
+      ubo: 'fingerprint2.js'
+    }, {
+      adg: 'fingerprintjs3',
+      ubo: 'fingerprint3.js'
     }, {
       adg: 'google-analytics',
       ubo: 'google-analytics_analytics.js'
@@ -5716,6 +6069,8 @@
       adg: 'googletagservices-gpt',
       ubo: 'googletagservices_gpt.js'
     }, {
+      adg: 'google-ima3'
+    }, {
       adg: 'gemius'
     }, {
       adg: 'matomo'
@@ -5723,6 +6078,8 @@
       adg: 'metrika-yandex-watch'
     }, {
       adg: 'metrika-yandex-tag'
+    }, {
+      adg: 'naver-wcslog'
     }, {
       adg: 'noeval',
       ubo: 'noeval-silent.js'
@@ -5737,6 +6094,8 @@
       adg: 'noopjs',
       ubo: 'noop.js',
       abp: 'blank-js'
+    }, {
+      adg: 'noopjson'
     }, {
       adg: 'nooptext',
       ubo: 'noop.txt',
@@ -5756,6 +6115,8 @@
       adg: 'noopvast-2.0'
     }, {
       adg: 'noopvast-3.0'
+    }, {
+      adg: 'prebid'
     }, {
       adg: 'prevent-bab',
       ubo: 'nobab.js'
@@ -5777,6 +6138,9 @@
     }, {
       adg: 'empty',
       ubo: 'empty'
+    }, {
+      adg: 'prebid-ads',
+      ubo: 'prebid-ads.js'
     }];
 
     var JS_RULE_MARKER = '#%#';
@@ -6800,6 +7164,11 @@
 
             for (var key in data) {
               handleCallback(data[key], 'event_callback');
+            } // eslint-disable-next-line no-prototype-builtins
+
+
+            if (!data.hasOwnProperty('eventCallback') && !data.hasOwnProperty('eventCallback')) {
+              [].push.call(window.dataLayer, data);
             }
           }
 
@@ -6973,10 +7342,26 @@
         // https://github.com/AdguardTeam/Scriptlets/issues/113
         // length: 0,
         loaded: true,
-        push: function push() {
+        // https://github.com/AdguardTeam/Scriptlets/issues/184
+        push: function push(arg) {
           if (typeof this.length === 'undefined') {
             this.length = 0;
             this.length += 1;
+          }
+
+          if (arg !== null && arg instanceof Object && arg.constructor.name === 'Object') {
+            // eslint-disable-next-line no-restricted-syntax
+            for (var _i = 0, _Object$keys = Object.keys(arg); _i < _Object$keys.length; _i++) {
+              var key = _Object$keys[_i];
+
+              if (typeof arg[key] === 'function') {
+                try {
+                  arg[key].call();
+                } catch (_unused) {
+                  /* empty */
+                }
+              }
+            }
           }
         }
       };
@@ -7096,6 +7481,7 @@
       Slot.prototype.setTargeting = noopThis;
       var pubAdsService = {
         addEventListener: noopThis,
+        removeEventListener: noopThis,
         clear: noopFunc,
         clearCategoryExclusions: noopThis,
         clearTagForChildDirectedTreatment: noopThis,
@@ -7316,7 +7702,9 @@
        * https://yandex.ru/support/metrica/objects/user-params.html
        */
 
-      var userParams = noopFunc;
+      var userParams = noopFunc; // https://github.com/AdguardTeam/Scriptlets/issues/198
+
+      var destruct = noopFunc;
       var api = {
         addFileExtension: addFileExtension,
         extLink: extLink,
@@ -7327,7 +7715,8 @@
         params: params,
         reachGoal: reachGoal,
         setUserID: setUserID,
-        userParams: userParams
+        userParams: userParams,
+        destruct: destruct
       };
 
       function ym(id, funcName) {
@@ -7343,17 +7732,19 @@
       function init(id) {
         // yaCounter object should provide api
         window["yaCounter".concat(id)] = api;
+        document.dispatchEvent(new Event("yacounter".concat(id, "inited")));
       }
 
       if (typeof window.ym === 'undefined') {
         window.ym = ym;
       } else if (window.ym && window.ym.a) {
         // Get id for yaCounter object
-        window.ym.a.forEach(function (params) {
+        var counters = window.ym.a;
+        window.ym = ym;
+        counters.forEach(function (params) {
           var id = params[0];
           init(id);
         });
-        window.ym = ym;
       }
 
       hit(source);
@@ -7519,31 +7910,31 @@
 
     /* eslint-disable func-names */
     /**
-     * @redirect fingerprintjs
+     * @redirect fingerprintjs2
      *
      * @description
-     * Mocks FingerprintJS.
+     * Mocks FingerprintJS v2
      * https://github.com/fingerprintjs
      *
      * Related UBO redirect resource:
-     * https://github.com/gorhill/uBlock/commit/33a18c3a1eb101470c43979a41d8adef3e21208d
+     * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/fingerprint2.js
      *
      * **Example**
      * ```
-     * ||the-japan-news.com/modules/js/lib/fgp/fingerprint2.js$script,redirect=fingerprintjs
+     * ||the-japan-news.com/modules/js/lib/fgp/fingerprint2.js$script,redirect=fingerprintjs2
      * ```
      */
 
-    function Fingerprintjs(source) {
+    function Fingerprintjs2(source) {
       var browserId = '';
 
       for (var i = 0; i < 8; i += 1) {
         browserId += (Math.random() * 0x10000 + 0x1000).toString(16).slice(-4);
       }
 
-      var Fingerprint = function Fingerprint() {};
+      var Fingerprint2 = function Fingerprint2() {};
 
-      Fingerprint.get = function (options, callback) {
+      Fingerprint2.get = function (options, callback) {
         if (!callback) {
           callback = options;
         }
@@ -7555,14 +7946,69 @@
         }, 1);
       };
 
-      Fingerprint.prototype = {
-        get: Fingerprint.get
+      Fingerprint2.prototype = {
+        get: Fingerprint2.get
       };
-      window.Fingerprint2 = Fingerprint;
+      window.Fingerprint2 = Fingerprint2;
       hit(source);
     }
-    Fingerprintjs.names = ['fingerprintjs', 'ubo-fingerprint2.js', 'fingerprintjs.js'];
-    Fingerprintjs.injections = [hit];
+    Fingerprintjs2.names = ['fingerprintjs2', // redirect aliases are needed for conversion:
+    // prefixed for us
+    'ubo-fingerprint2.js', // original ubo name
+    'fingerprint2.js'];
+    Fingerprintjs2.injections = [hit];
+
+    /* eslint-disable func-names */
+    /**
+     * @redirect fingerprintjs3
+     *
+     * @description
+     * Mocks FingerprintJS v3
+     * https://github.com/fingerprintjs
+     *
+     * Related UBO redirect resource:
+     * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/fingerprint3.js
+     *
+     * **Example**
+     * ```
+     * ||sephora.com/js/ufe/isomorphic/thirdparty/fp.min.js$script,redirect=fingerprintjs3
+     * ```
+     */
+
+    function Fingerprintjs3(source) {
+      var visitorId = function () {
+        var id = '';
+
+        for (var i = 0; i < 8; i += 1) {
+          id += (Math.random() * 0x10000 + 0x1000).toString(16).slice(-4);
+        }
+
+        return id;
+      }();
+
+      var FingerprintJS = function FingerprintJS() {};
+
+      FingerprintJS.prototype = {
+        load: function load() {
+          // eslint-disable-next-line compat/compat
+          return Promise.resolve(new FingerprintJS());
+        },
+        get: function get() {
+          // eslint-disable-next-line compat/compat
+          return Promise.resolve({
+            visitorId: visitorId
+          });
+        },
+        hashComponents: noopStr
+      };
+      window.FingerprintJS = new FingerprintJS();
+      hit(source);
+    }
+    Fingerprintjs3.names = ['fingerprintjs3', // redirect aliases are needed for conversion:
+    // prefixed for us
+    'ubo-fingerprint3.js', // original ubo name
+    'fingerprint3.js'];
+    Fingerprintjs3.injections = [hit, noopStr];
 
     /* eslint-disable func-names */
     /**
@@ -7647,7 +8093,10 @@
         order: setNoopFuncWrapper,
         click: sendNoopFuncWrapper,
         clickListener: sendNoopFuncWrapper,
-        internalSearch: sendNoopFuncWrapper,
+        internalSearch: {
+          set: noopFunc,
+          send: noopFunc
+        },
         ecommerce: ecommerceWrapper,
         identifiedVisitor: {
           unset: noopFunc
@@ -7732,6 +8181,886 @@
     'nobab2.js'];
     preventBab2.injections = [hit];
 
+    /* eslint-disable func-names, no-underscore-dangle */
+    /**
+     * @redirect google-ima3
+     *
+     * @description
+     * Mocks the IMA SDK of Google.
+     *
+     * **Example**
+     * ```
+     * ||imasdk.googleapis.com/js/sdkloader/ima3.js$script,redirect=google-ima3
+     * ```
+     */
+
+    function GoogleIma3(source) {
+      var _this = this;
+
+      var VERSION = '3.453.0';
+      var ima = {};
+
+      var AdDisplayContainer = function AdDisplayContainer() {};
+
+      AdDisplayContainer.prototype.destroy = noopFunc;
+      AdDisplayContainer.prototype.initialize = noopFunc;
+
+      var ImaSdkSettings = function ImaSdkSettings() {};
+
+      ImaSdkSettings.CompanionBackfillMode = {
+        ALWAYS: 'always',
+        ON_MASTER_AD: 'on_master_ad'
+      };
+      ImaSdkSettings.VpaidMode = {
+        DISABLED: 0,
+        ENABLED: 1,
+        INSECURE: 2
+      };
+      ImaSdkSettings.prototype = {
+        c: true,
+        f: {},
+        i: false,
+        l: '',
+        p: '',
+        r: 0,
+        t: '',
+        v: '',
+        getCompanionBackfill: noopFunc,
+        getDisableCustomPlaybackForIOS10Plus: function getDisableCustomPlaybackForIOS10Plus() {
+          return _this.i;
+        },
+        getDisabledFlashAds: function getDisabledFlashAds() {
+          return true;
+        },
+        getFeatureFlags: function getFeatureFlags() {
+          return _this.f;
+        },
+        getLocale: function getLocale() {
+          return _this.l;
+        },
+        getNumRedirects: function getNumRedirects() {
+          return _this.r;
+        },
+        getPlayerType: function getPlayerType() {
+          return _this.t;
+        },
+        getPlayerVersion: function getPlayerVersion() {
+          return _this.v;
+        },
+        getPpid: function getPpid() {
+          return _this.p;
+        },
+        getVpaidMode: function getVpaidMode() {
+          return _this.C;
+        },
+        isCookiesEnabled: function isCookiesEnabled() {
+          return _this.c;
+        },
+        isVpaidAdapter: function isVpaidAdapter() {
+          return _this.M;
+        },
+        setCompanionBackfill: noopFunc,
+        setAutoPlayAdBreaks: function setAutoPlayAdBreaks(a) {
+          _this.K = a;
+        },
+        setCookiesEnabled: function setCookiesEnabled(c) {
+          _this.c = !!c;
+        },
+        setDisableCustomPlaybackForIOS10Plus: function setDisableCustomPlaybackForIOS10Plus(i) {
+          _this.i = !!i;
+        },
+        setDisableFlashAds: noopFunc,
+        setFeatureFlags: function setFeatureFlags(f) {
+          _this.f = !!f;
+        },
+        setIsVpaidAdapter: function setIsVpaidAdapter(a) {
+          _this.M = a;
+        },
+        setLocale: function setLocale(l) {
+          _this.l = !!l;
+        },
+        setNumRedirects: function setNumRedirects(r) {
+          _this.r = !!r;
+        },
+        setPageCorrelator: function setPageCorrelator(a) {
+          _this.R = a;
+        },
+        setPlayerType: function setPlayerType(t) {
+          _this.t = !!t;
+        },
+        setPlayerVersion: function setPlayerVersion(v) {
+          _this.v = !!v;
+        },
+        setPpid: function setPpid(p) {
+          _this.p = !!p;
+        },
+        setVpaidMode: function setVpaidMode(a) {
+          _this.C = a;
+        },
+        setSessionId: noopFunc,
+        setStreamCorrelator: noopFunc,
+        setVpaidAllowed: noopFunc,
+        CompanionBackfillMode: {
+          ALWAYS: 'always',
+          ON_MASTER_AD: 'on_master_ad'
+        },
+        VpaidMode: {
+          DISABLED: 0,
+          ENABLED: 1,
+          INSECURE: 2
+        }
+      };
+      var managerLoaded = false;
+
+      var EventHandler = function EventHandler() {};
+
+      EventHandler.prototype = {
+        listeners: new Map(),
+        _dispatch: function _dispatch(e) {
+          var listeners = this.listeners.get(e.type) || []; // eslint-disable-next-line no-restricted-syntax
+
+          for (var _i = 0, _Array$from = Array.from(listeners); _i < _Array$from.length; _i++) {
+            var listener = _Array$from[_i];
+
+            try {
+              listener(e);
+            } catch (r) {
+              // eslint-disable-next-line no-console
+              console.error(r);
+            }
+          }
+        },
+        addEventListener: function addEventListener(t, c) {
+          if (!this.listeners.has(t)) {
+            this.listeners.set(t, new Set());
+          }
+
+          this.listeners.get(t).add(c);
+        },
+        removeEventListener: function removeEventListener(t, c) {
+          var _this$listeners$get;
+
+          (_this$listeners$get = this.listeners.get(t)) === null || _this$listeners$get === void 0 ? void 0 : _this$listeners$get.delete(c);
+        }
+      };
+      var AdsManager = EventHandler;
+      /* eslint-disable no-use-before-define */
+
+      AdsManager.prototype.volume = 1;
+      AdsManager.prototype.collapse = noopFunc;
+      AdsManager.prototype.configureAdsManager = noopFunc;
+      AdsManager.prototype.destroy = noopFunc;
+      AdsManager.prototype.discardAdBreak = noopFunc;
+      AdsManager.prototype.expand = noopFunc;
+      AdsManager.prototype.focus = noopFunc;
+
+      AdsManager.prototype.getAdSkippableState = function () {
+        return false;
+      };
+
+      AdsManager.prototype.getCuePoints = function () {
+        return [0];
+      };
+
+      AdsManager.prototype.getCurrentAd = function () {
+        return currentAd;
+      };
+
+      AdsManager.prototype.getCurrentAdCuePoints = function () {
+        return [];
+      };
+
+      AdsManager.prototype.getRemainingTime = function () {
+        return 0;
+      };
+
+      AdsManager.prototype.getVolume = function () {
+        return _this.volume;
+      };
+
+      AdsManager.prototype.init = noopFunc;
+
+      AdsManager.prototype.isCustomClickTrackingUsed = function () {
+        return false;
+      };
+
+      AdsManager.prototype.isCustomPlaybackUsed = function () {
+        return false;
+      };
+
+      AdsManager.prototype.pause = noopFunc;
+      AdsManager.prototype.requestNextAdBreak = noopFunc;
+      AdsManager.prototype.resize = noopFunc;
+      AdsManager.prototype.resume = noopFunc;
+
+      AdsManager.prototype.setVolume = function (v) {
+        _this.volume = v;
+      };
+
+      AdsManager.prototype.skip = noopFunc;
+
+      AdsManager.prototype.start = function () {
+        // eslint-disable-next-line no-restricted-syntax
+        for (var _i2 = 0, _arr = [AdEvent.Type.LOADED, AdEvent.Type.STARTED, AdEvent.Type.AD_BUFFERING, AdEvent.Type.FIRST_QUARTILE, AdEvent.Type.MIDPOINT, AdEvent.Type.THIRD_QUARTILE, AdEvent.Type.COMPLETE, AdEvent.Type.ALL_ADS_COMPLETED]; _i2 < _arr.length; _i2++) {
+          var type = _arr[_i2];
+
+          try {
+            _this._dispatch(new ima.AdEvent(type));
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.error(e);
+          }
+        }
+      };
+
+      AdsManager.prototype.stop = noopFunc;
+      AdsManager.prototype.updateAdsRenderingSettings = noopFunc;
+      /* eslint-enable no-use-before-define */
+
+      var manager = Object.create(AdsManager);
+
+      var AdsManagerLoadedEvent = function AdsManagerLoadedEvent() {};
+
+      AdsManagerLoadedEvent.prototype = {
+        constructor: function constructor(type) {
+          _this.type = type;
+        },
+        getAdsManager: function getAdsManager() {
+          return manager;
+        },
+        getUserRequestContext: noopFunc
+      };
+      AdsManagerLoadedEvent.Type = {
+        ADS_MANAGER_LOADED: 'adsManagerLoaded'
+      };
+      var AdsLoader = EventHandler;
+      AdsLoader.prototype.settings = new ImaSdkSettings();
+      AdsLoader.prototype.contentComplete = noopFunc;
+      AdsLoader.prototype.destroy = noopFunc;
+
+      AdsLoader.prototype.getSettings = function () {
+        return this.settings;
+      };
+
+      AdsLoader.prototype.getVersion = function () {
+        return VERSION;
+      };
+
+      AdsLoader.prototype.requestAds = function () {
+        var _this2 = this;
+
+        if (!managerLoaded) {
+          managerLoaded = true;
+          requestAnimationFrame(function () {
+            var ADS_MANAGER_LOADED = AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED;
+
+            _this2._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED));
+          });
+        }
+      };
+
+      var AdsRenderingSettings = noopFunc;
+
+      var AdsRequest = function AdsRequest() {};
+
+      AdsRequest.prototype = {
+        setAdWillAutoPlay: noopFunc,
+        setAdWillPlayMuted: noopFunc,
+        setContinuousPlayback: noopFunc
+      };
+
+      var AdPodInfo = function AdPodInfo() {};
+
+      AdPodInfo.prototype = {
+        getAdPosition: function getAdPosition() {
+          return 1;
+        },
+        getIsBumper: function getIsBumper() {
+          return false;
+        },
+        getMaxDuration: function getMaxDuration() {
+          return -1;
+        },
+        getPodIndex: function getPodIndex() {
+          return 1;
+        },
+        getTimeOffset: function getTimeOffset() {
+          return 0;
+        },
+        getTotalAds: function getTotalAds() {
+          return 1;
+        }
+      };
+
+      var Ad = function Ad() {};
+
+      Ad.prototype = {
+        pi: new AdPodInfo(),
+        getAdId: function getAdId() {
+          return '';
+        },
+        getAdPodInfo: function getAdPodInfo() {
+          return _this.pi;
+        },
+        getAdSystem: function getAdSystem() {
+          return '';
+        },
+        getAdvertiserName: function getAdvertiserName() {
+          return '';
+        },
+        getApiFramework: function getApiFramework() {
+          return null;
+        },
+        getCompanionAds: function getCompanionAds() {
+          return [];
+        },
+        getContentType: function getContentType() {
+          return '';
+        },
+        getCreativeAdId: function getCreativeAdId() {
+          return '';
+        },
+        getDealId: function getDealId() {
+          return '';
+        },
+        getDescription: function getDescription() {
+          return '';
+        },
+        getDuration: function getDuration() {
+          return 8.5;
+        },
+        getHeight: function getHeight() {
+          return 0;
+        },
+        getMediaUrl: function getMediaUrl() {
+          return null;
+        },
+        getMinSuggestedDuration: function getMinSuggestedDuration() {
+          return -2;
+        },
+        getSkipTimeOffset: function getSkipTimeOffset() {
+          return -1;
+        },
+        getSurveyUrl: function getSurveyUrl() {
+          return null;
+        },
+        getTitle: function getTitle() {
+          return '';
+        },
+        getTraffickingParametersString: function getTraffickingParametersString() {
+          return '';
+        },
+        getUiElements: function getUiElements() {
+          return [''];
+        },
+        getUniversalAdIdRegistry: function getUniversalAdIdRegistry() {
+          return 'unknown';
+        },
+        getUniversalAdIds: function getUniversalAdIds() {
+          return [''];
+        },
+        getUniversalAdIdValue: function getUniversalAdIdValue() {
+          return 'unknown';
+        },
+        getVastMediaBitrate: function getVastMediaBitrate() {
+          return 0;
+        },
+        getVastMediaHeight: function getVastMediaHeight() {
+          return 0;
+        },
+        getVastMediaWidth: function getVastMediaWidth() {
+          return 0;
+        },
+        getWidth: function getWidth() {
+          return 0;
+        },
+        getWrapperAdIds: function getWrapperAdIds() {
+          return [''];
+        },
+        getWrapperAdSystems: function getWrapperAdSystems() {
+          return [''];
+        },
+        getWrapperCreativeIds: function getWrapperCreativeIds() {
+          return [''];
+        },
+        isLinear: function isLinear() {
+          return true;
+        }
+      };
+
+      var CompanionAd = function CompanionAd() {};
+
+      CompanionAd.prototype = {
+        getAdSlotId: function getAdSlotId() {
+          return '';
+        },
+        getContent: function getContent() {
+          return '';
+        },
+        getContentType: function getContentType() {
+          return '';
+        },
+        getHeight: function getHeight() {
+          return 1;
+        },
+        getWidth: function getWidth() {
+          return 1;
+        }
+      };
+
+      var AdError = function AdError() {};
+
+      AdError.prototype = {
+        getErrorCode: function getErrorCode() {
+          return 0;
+        },
+        getInnerError: noopFunc,
+        getMessage: function getMessage() {
+          return '';
+        },
+        getType: function getType() {
+          return 1;
+        },
+        getVastErrorCode: function getVastErrorCode() {
+          return 0;
+        },
+        toString: function toString() {
+          return '';
+        }
+      };
+      AdError.ErrorCode = {};
+      AdError.Type = {};
+
+      var isEngadget = function isEngadget() {
+        try {
+          // eslint-disable-next-line no-restricted-syntax
+          for (var _i3 = 0, _Object$values = Object.values(window.vidible._getContexts()); _i3 < _Object$values.length; _i3++) {
+            var _ctx$getPlayer, _ctx$getPlayer$div;
+
+            var ctx = _Object$values[_i3];
+
+            // eslint-disable-next-line no-restricted-properties
+            if ((_ctx$getPlayer = ctx.getPlayer()) !== null && _ctx$getPlayer !== void 0 && (_ctx$getPlayer$div = _ctx$getPlayer.div) !== null && _ctx$getPlayer$div !== void 0 && _ctx$getPlayer$div.innerHTML.includes('www.engadget.com')) {
+              return true;
+            }
+          }
+        } catch (e) {} // eslint-disable-line no-empty
+
+
+        return false;
+      };
+
+      var currentAd = isEngadget() ? undefined : new Ad();
+
+      var AdEvent = function AdEvent() {};
+
+      AdEvent.prototype = {
+        constructor: function constructor(type) {
+          _this.type = type;
+        },
+        getAd: function getAd() {
+          return currentAd;
+        },
+        getAdData: function getAdData() {}
+      };
+      AdEvent.Type = {
+        AD_BREAK_READY: 'adBreakReady',
+        AD_BUFFERING: 'adBuffering',
+        AD_CAN_PLAY: 'adCanPlay',
+        AD_METADATA: 'adMetadata',
+        AD_PROGRESS: 'adProgress',
+        ALL_ADS_COMPLETED: 'allAdsCompleted',
+        CLICK: 'click',
+        COMPLETE: 'complete',
+        CONTENT_PAUSE_REQUESTED: 'contentPauseRequested',
+        CONTENT_RESUME_REQUESTED: 'contentResumeRequested',
+        DURATION_CHANGE: 'durationChange',
+        EXPANDED_CHANGED: 'expandedChanged',
+        FIRST_QUARTILE: 'firstQuartile',
+        IMPRESSION: 'impression',
+        INTERACTION: 'interaction',
+        LINEAR_CHANGE: 'linearChange',
+        LINEAR_CHANGED: 'linearChanged',
+        LOADED: 'loaded',
+        LOG: 'log',
+        MIDPOINT: 'midpoint',
+        PAUSED: 'pause',
+        RESUMED: 'resume',
+        SKIPPABLE_STATE_CHANGED: 'skippableStateChanged',
+        SKIPPED: 'skip',
+        STARTED: 'start',
+        THIRD_QUARTILE: 'thirdQuartile',
+        USER_CLOSE: 'userClose',
+        VIDEO_CLICKED: 'videoClicked',
+        VIDEO_ICON_CLICKED: 'videoIconClicked',
+        VIEWABLE_IMPRESSION: 'viewable_impression',
+        VOLUME_CHANGED: 'volumeChange',
+        VOLUME_MUTED: 'mute'
+      };
+
+      var AdErrorEvent = function AdErrorEvent() {};
+
+      AdErrorEvent.prototype = {
+        getError: noopFunc,
+        getUserRequestContext: function getUserRequestContext() {}
+      };
+      AdErrorEvent.Type = {
+        AD_ERROR: 'adError'
+      };
+
+      var CustomContentLoadedEvent = function CustomContentLoadedEvent() {};
+
+      CustomContentLoadedEvent.Type = {
+        CUSTOM_CONTENT_LOADED: 'deprecated-event'
+      };
+
+      var CompanionAdSelectionSettings = function CompanionAdSelectionSettings() {};
+
+      CompanionAdSelectionSettings.CreativeType = {
+        ALL: 'All',
+        FLASH: 'Flash',
+        IMAGE: 'Image'
+      };
+      CompanionAdSelectionSettings.ResourceType = {
+        ALL: 'All',
+        HTML: 'Html',
+        IFRAME: 'IFrame',
+        STATIC: 'Static'
+      };
+      CompanionAdSelectionSettings.SizeCriteria = {
+        IGNORE: 'IgnoreSize',
+        SELECT_EXACT_MATCH: 'SelectExactMatch',
+        SELECT_NEAR_MATCH: 'SelectNearMatch'
+      };
+
+      var AdCuePoints = function AdCuePoints() {};
+
+      AdCuePoints.prototype = {
+        getCuePoints: function getCuePoints() {
+          return [];
+        },
+        getAdIdRegistry: function getAdIdRegistry() {
+          return '';
+        },
+        getAdIsValue: function getAdIsValue() {
+          return '';
+        }
+      };
+      var AdProgressData = noopFunc;
+
+      var UniversalAdIdInfo = function UniversalAdIdInfo() {};
+
+      Object.assign(ima, {
+        AdCuePoints: AdCuePoints,
+        AdDisplayContainer: AdDisplayContainer,
+        AdError: AdError,
+        AdErrorEvent: AdErrorEvent,
+        AdEvent: AdEvent,
+        AdPodInfo: AdPodInfo,
+        AdProgressData: AdProgressData,
+        AdsLoader: AdsLoader,
+        AdsManager: manager,
+        AdsManagerLoadedEvent: AdsManagerLoadedEvent,
+        AdsRenderingSettings: AdsRenderingSettings,
+        AdsRequest: AdsRequest,
+        CompanionAd: CompanionAd,
+        CompanionAdSelectionSettings: CompanionAdSelectionSettings,
+        CustomContentLoadedEvent: CustomContentLoadedEvent,
+        gptProxyInstance: {},
+        ImaSdkSettings: ImaSdkSettings,
+        OmidAccessMode: {
+          DOMAIN: 'domain',
+          FULL: 'full',
+          LIMITED: 'limited'
+        },
+        settings: new ImaSdkSettings(),
+        UiElements: {
+          AD_ATTRIBUTION: 'adAttribution',
+          COUNTDOWN: 'countdown'
+        },
+        UniversalAdIdInfo: UniversalAdIdInfo,
+        VERSION: VERSION,
+        ViewMode: {
+          FULLSCREEN: 'fullscreen',
+          NORMAL: 'normal'
+        }
+      });
+
+      if (!window.google) {
+        window.google = {};
+      }
+
+      window.google.ima = ima;
+      hit(source);
+    }
+    GoogleIma3.names = ['google-ima3'];
+    GoogleIma3.injections = [hit, noopFunc];
+
+    /* eslint-disable func-names, no-underscore-dangle */
+    /**
+     * @redirect didomi-loader
+     *
+     * @description
+     * Mocks Didomi's CMP loader script.
+     * https://developers.didomi.io/
+     *
+     * **Example**
+     * ```
+     * ||sdk.privacy-center.org/fbf86806f86e/loader.js$script,redirect=didomi-loader
+     * ```
+     */
+
+    function DidomiLoader(source) {
+      function UserConsentStatusForVendorSubscribe() {}
+
+      UserConsentStatusForVendorSubscribe.prototype.filter = function () {
+        return new UserConsentStatusForVendorSubscribe();
+      };
+
+      UserConsentStatusForVendorSubscribe.prototype.subscribe = noopFunc;
+
+      function UserConsentStatusForVendor() {}
+
+      UserConsentStatusForVendor.prototype.first = function () {
+        return new UserConsentStatusForVendorSubscribe();
+      };
+
+      UserConsentStatusForVendor.prototype.filter = function () {
+        return new UserConsentStatusForVendorSubscribe();
+      };
+
+      UserConsentStatusForVendor.prototype.subscribe = noopFunc;
+      var DidomiWrapper = {
+        isConsentRequired: falseFunc,
+        getUserConsentStatusForPurpose: trueFunc,
+        getUserConsentStatus: trueFunc,
+        getUserStatus: noopFunc,
+        getRequiredPurposes: noopArray,
+        getUserConsentStatusForVendor: trueFunc,
+        Purposes: {
+          Cookies: 'cookies'
+        },
+        notice: {
+          configure: noopFunc,
+          hide: noopFunc,
+          isVisible: falseFunc,
+          show: noopFunc,
+          showDataProcessing: trueFunc
+        },
+        isUserConsentStatusPartial: falseFunc,
+        on: function on() {
+          return {
+            actions: {},
+            emitter: {},
+            services: {},
+            store: {}
+          };
+        },
+        shouldConsentBeCollected: falseFunc,
+        getUserConsentStatusForAll: noopFunc,
+        getObservableOnUserConsentStatusForVendor: function getObservableOnUserConsentStatusForVendor() {
+          return new UserConsentStatusForVendor();
+        }
+      };
+      window.Didomi = DidomiWrapper;
+      var didomiStateWrapper = {
+        didomiExperimentId: '',
+        didomiExperimentUserGroup: '',
+        didomiGDPRApplies: 1,
+        didomiIABConsent: '',
+        didomiPurposesConsent: '',
+        didomiPurposesConsentDenied: '',
+        didomiPurposesConsentUnknown: '',
+        didomiVendorsConsent: '',
+        didomiVendorsConsentDenied: '',
+        didomiVendorsConsentUnknown: '',
+        didomiVendorsRawConsent: '',
+        didomiVendorsRawConsentDenied: '',
+        didomiVendorsRawConsentUnknown: ''
+      };
+      window.didomiState = didomiStateWrapper;
+      var tcData = {
+        eventStatus: 'tcloaded',
+        gdprApplies: false,
+        listenerId: noopFunc,
+        vendor: {
+          consents: []
+        },
+        purpose: {
+          consents: []
+        }
+      };
+
+      var __tcfapiWrapper = function __tcfapiWrapper() {
+        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        // eslint-disable-next-line no-restricted-syntax
+        for (var _i = 0, _args = args; _i < _args.length; _i++) {
+          var arg = _args[_i];
+
+          if (typeof arg === 'function') {
+            try {
+              setTimeout(arg(tcData, true));
+            } catch (ex) {
+              /* empty */
+            }
+          }
+        }
+      };
+
+      window.__tcfapi = __tcfapiWrapper;
+      var didomiEventListenersWrapper = {
+        stub: true,
+        push: noopFunc
+      };
+      window.didomiEventListeners = didomiEventListenersWrapper;
+      var didomiOnReadyWrapper = {
+        stub: true,
+        push: function push(arg) {
+          if (typeof arg !== 'function') {
+            return;
+          }
+
+          if (document.readyState !== 'complete') {
+            window.addEventListener('load', function () {
+              setTimeout(arg(window.Didomi));
+            });
+          } else {
+            setTimeout(arg(window.Didomi));
+          }
+        }
+      };
+      window.didomiOnReady = window.didomiOnReady || didomiOnReadyWrapper;
+
+      if (Array.isArray(window.didomiOnReady)) {
+        window.didomiOnReady.forEach(function (arg) {
+          if (typeof arg === 'function') {
+            try {
+              setTimeout(arg(window.Didomi));
+            } catch (e) {
+              /* empty */
+            }
+          }
+        });
+      }
+
+      hit(source);
+    }
+    DidomiLoader.names = ['didomi-loader'];
+    DidomiLoader.injections = [hit, noopFunc, noopArray, trueFunc, falseFunc];
+
+    /* eslint-disable func-names */
+    /**
+     * @redirect prebid
+     *
+     * @description
+     * Mocks the prebid.js header bidding suit.
+     * https://docs.prebid.org/
+     *
+     * **Example**
+     * ```
+     * ||tmgrup.com.tr/bd/hb/prebid.js$script,redirect=prebid
+     * ```
+     */
+
+    function Prebid(source) {
+      var pushFunction = function pushFunction(arg) {
+        if (typeof arg === 'function') {
+          try {
+            arg.call();
+          } catch (ex) {
+            /* empty */
+          }
+        }
+      };
+
+      var pbjsWrapper = {
+        addAdUnits: function addAdUnits() {},
+        adServers: {
+          dfp: {
+            // https://docs.prebid.org/dev-docs/publisher-api-reference/adServers.dfp.buildVideoUrl.html
+            // returns ad URL
+            buildVideoUrl: noopStr
+          }
+        },
+        adUnits: [],
+        aliasBidder: function aliasBidder() {},
+        cmd: [],
+        enableAnalytics: function enableAnalytics() {},
+        getHighestCpmBids: noopArray,
+        libLoaded: true,
+        que: [],
+        requestBids: function requestBids(arg) {
+          if (arg instanceof Object && arg.bidsBackHandler) {
+            try {
+              arg.bidsBackHandler.call(); // https://docs.prebid.org/dev-docs/publisher-api-reference/requestBids.html
+            } catch (ex) {
+              /* empty */
+            }
+          }
+        },
+        removeAdUnit: function removeAdUnit() {},
+        setBidderConfig: function setBidderConfig() {},
+        setConfig: function setConfig() {},
+        setTargetingForGPTAsync: function setTargetingForGPTAsync() {}
+      };
+      pbjsWrapper.cmd.push = pushFunction;
+      pbjsWrapper.que.push = pushFunction;
+      window.pbjs = pbjsWrapper;
+      hit(source);
+    }
+    Prebid.names = ['prebid'];
+    Prebid.injections = [hit, noopFunc, noopStr, noopArray];
+
+    /* eslint-disable func-names */
+    /**
+     * @redirect prebid-ads
+     *
+     * @description
+     * Sets predefined constants on a page:
+     * - `canRunAds`: `true`
+     * - `isAdBlockActive`: `false`
+     *
+     * **Example**
+     * ```
+     * ||playerdrive.me/assets/js/prebid-ads.js$script,redirect=prebid-ads
+     * ```
+     */
+
+    function prebidAds(source) {
+      window.canRunAds = true;
+      window.isAdBlockActive = false;
+      hit(source);
+    }
+    prebidAds.names = ['prebid-ads', 'ubo-prebid-ads.js', 'prebid-ads.js'];
+    prebidAds.injections = [hit];
+
+    /* eslint-disable func-names */
+    /**
+     * @redirect naver-wcslog
+     *
+     * @description
+     * Mocks wcslog.js of Naver Analytics.
+     *
+     * **Example**
+     * ```
+     * ||wcs.naver.net/wcslog.js$script,redirect=naver-wcslog
+     * ```
+     */
+
+    function NaverWcslog(source) {
+      window.wcs_add = {};
+      window.wcs_do = noopFunc;
+      window.wcs = {
+        inflow: noopFunc
+      };
+      hit(source);
+    }
+    NaverWcslog.names = ['naver-wcslog'];
+    NaverWcslog.injections = [hit, noopFunc];
+
     var redirectsList = /*#__PURE__*/Object.freeze({
         __proto__: null,
         noeval: noeval,
@@ -7748,10 +9077,16 @@
         preventPopadsNet: preventPopadsNet,
         AmazonApstag: AmazonApstag,
         Matomo: Matomo,
-        Fingerprintjs: Fingerprintjs,
+        Fingerprintjs2: Fingerprintjs2,
+        Fingerprintjs3: Fingerprintjs3,
         Gemius: Gemius,
         ATInternetSmartTag: ATInternetSmartTag,
-        preventBab2: preventBab2
+        preventBab2: preventBab2,
+        GoogleIma3: GoogleIma3,
+        DidomiLoader: DidomiLoader,
+        Prebid: Prebid,
+        prebidAds: prebidAds,
+        NaverWcslog: NaverWcslog
     });
 
     function _classCallCheck(instance, Constructor) {
