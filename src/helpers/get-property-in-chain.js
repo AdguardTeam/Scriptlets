@@ -32,6 +32,11 @@ export function getPropertyInChain(base, chain) {
 
     const nextBase = base[prop];
     chain = chain.slice(pos + 1);
+
+    if (nextBase === null) {
+        return { base, prop, chain };
+    }
+
     if (nextBase !== undefined) {
         return getPropertyInChain(nextBase, chain);
     }

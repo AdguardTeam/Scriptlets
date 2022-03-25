@@ -143,7 +143,8 @@ export function setConstant(source, property, value, stack) {
         }
         canceled = value !== undefined
             && constantValue !== undefined
-            && typeof value !== typeof constantValue;
+            && typeof value !== typeof constantValue
+            && value !== null;
         return canceled;
     };
 
@@ -188,7 +189,7 @@ export function setConstant(source, property, value, stack) {
 
         // Handler method init is used to keep track of factual value
         // and apply mustCancel() check only on end prop
-        const undefPropHandler = {
+        const inChainPropHandler = {
             factValue: undefined,
             init(a) {
                 this.factValue = a;
@@ -233,6 +234,12 @@ export function setConstant(source, property, value, stack) {
             return;
         }
 
+        // Null prop in chain
+        if (base !== undefined && base[prop] === null) {
+            trapProp(base, prop, true, inChainPropHandler);
+            return;
+        }
+
         // Defined prop in chain
         const propValue = owner[prop];
         if (propValue instanceof Object || (typeof propValue === 'object' && propValue !== null)) {
@@ -240,7 +247,7 @@ export function setConstant(source, property, value, stack) {
         }
 
         // Undefined prop in chain
-        trapProp(owner, prop, true, undefPropHandler);
+        trapProp(owner, prop, true, inChainPropHandler);
     };
 
     setChainPropAccess(window, property);

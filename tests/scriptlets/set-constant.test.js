@@ -152,6 +152,25 @@ if (!isSupported) {
         const illegalNumberProp = 'illegalNumberProp';
         runScriptletFromTag(illegalNumberProp, 32768);
         assert.strictEqual(window[illegalNumberProp], undefined);
+        clearGlobalProps(illegalNumberProp);
+    });
+
+    test('set value on null prop', (assert) => {
+        // end prop is null
+        window.test = null;
+        runScriptletFromTag('test', '15');
+        assert.strictEqual(window.test, 15, 'null end prop changed');
+        clearGlobalProps('test');
+
+        // null prop in chain
+        window.nullChain = {
+            nullProp: null,
+        };
+        runScriptletFromTag('nullChain.nullProp.endProp', 'true');
+        window.nullChain.nullProp = {
+            endProp: false,
+        };
+        assert.strictEqual(window.nullChain.nullProp.endProp, true, 'nsdfsdxfhgsd');
     });
 
     test('sets values to the chained properties', (assert) => {
@@ -265,29 +284,6 @@ if (!isSupported) {
         window.chain = null;
         runScriptletFromTag('chain.property.aaa', 'true');
         assert.strictEqual(window.chain, null, 'predefined obj was not changed');
-        clearGlobalProps('chain');
-    });
-
-    // for now the scriptlet does not set the chained property if one of chain prop is null.
-    // that might happen, for example, while loading the page.
-    // after the needed property is loaded, the scriptlet does not check it and do not set the value
-    // https://github.com/AdguardTeam/Scriptlets/issues/128
-    test('set value after timeout if it was null earlier', (assert) => {
-        window.chain = null;
-        runScriptletFromTag('chain.property.aaa', 'true');
-        assert.strictEqual(window.chain, null, 'predefined obj was not changed');
-
-        const done = assert.async();
-
-        setTimeout(() => {
-            window.chain = { property: {} };
-        }, 50);
-
-        setTimeout(() => {
-            assert.strictEqual(window.chain.property.aaa, undefined, 'chained prop was NOT set after delay');
-            done();
-        }, 100);
-
         clearGlobalProps('chain');
     });
 }
