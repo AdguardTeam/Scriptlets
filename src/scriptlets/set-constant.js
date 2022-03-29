@@ -12,6 +12,7 @@ import {
     toRegExp,
     matchStackTrace,
     nativeIsNaN,
+    isEmptyObject,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -240,6 +241,11 @@ export function setConstant(source, property, value, stack) {
             return;
         }
 
+        // Empty object prop in chain
+        if ((base instanceof Object || typeof base === 'object') && isEmptyObject(base)) {
+            trapProp(base, prop, true, inChainPropHandler);
+        }
+
         // Defined prop in chain
         const propValue = owner[prop];
         if (propValue instanceof Object || (typeof propValue === 'object' && propValue !== null)) {
@@ -249,7 +255,6 @@ export function setConstant(source, property, value, stack) {
         // Undefined prop in chain
         trapProp(owner, prop, true, inChainPropHandler);
     };
-
     setChainPropAccess(window, property);
 }
 
@@ -278,4 +283,5 @@ setConstant.injections = [
     toRegExp,
     matchStackTrace,
     nativeIsNaN,
+    isEmptyObject,
 ];
