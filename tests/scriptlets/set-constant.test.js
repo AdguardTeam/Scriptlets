@@ -166,8 +166,8 @@ if (!isSupported) {
             testMethod: () => { },
         };
         assert.strictEqual(window.testObj.testChain.testProp, true, 'target prop set');
-        assert.strictEqual(window.testObj.testChain.otherProp, 'someValue', 'target prop set');
-        assert.strictEqual(typeof window.testObj.testChain.testMethod, 'function', 'target prop set');
+        assert.strictEqual(window.testObj.testChain.otherProp, 'someValue', 'sibling value property is kept');
+        assert.strictEqual(typeof window.testObj.testChain.testMethod, 'function', 'sibling function property is kept');
         clearGlobalProps('testObj');
     });
 
