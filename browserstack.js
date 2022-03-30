@@ -16,7 +16,7 @@ if (!process.env.TRAVIS) {
     dotenv.config();
 }
 
-const CAPABILITIES = [
+const PLATFORMS = [
     {
         browserName: 'Chrome',
         browserVersion: '55',
@@ -43,6 +43,18 @@ const CAPABILITIES = [
     },
 ];
 
+const COMMON_CAPABILITIES = {
+    'browserstack.idleTimeout': 3 * 60, // 3 minutes
+};
+
+const CAPABILITIES = PLATFORMS
+    .map((platform) => {
+        return {
+            ...platform,
+            ...COMMON_CAPABILITIES,
+        };
+    });
+
 const TESTS_DIST = './tests/dist';
 const TEST_FILE_NAME_MARKER = '.html';
 
@@ -51,7 +63,6 @@ const bsLocal = new BrowserStackLocal.Local();
 const bsOptions = {
     key: process.env.BROWSERSTACK_KEY,
     forceLocal: true,
-    idleTimeout: 300,
 };
 
 const startBsLocal = () => {
