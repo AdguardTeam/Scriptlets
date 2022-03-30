@@ -50,6 +50,8 @@ const bsLocal = new BrowserStackLocal.Local();
 
 const bsOptions = {
     key: process.env.BROWSERSTACK_KEY,
+    forceLocal: true,
+    idleTimeout: 300,
 };
 
 const startBsLocal = () => {
