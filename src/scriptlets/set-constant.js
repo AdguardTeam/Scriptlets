@@ -24,6 +24,8 @@ import {
  *
  * > Actually, it's not a constant. Please note, that it can be rewritten with a value of a different type.
  *
+ * > If empty object is present in chain it will be trapped until chain leftovers appear.
+ *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#set-constantjs-
  *
