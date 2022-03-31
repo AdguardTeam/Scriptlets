@@ -46,6 +46,9 @@ const CAPABILITIES = [
 const TESTS_DIST = './tests/dist';
 const TEST_FILE_NAME_MARKER = '.html';
 
+const TESTS_TIMEOUT = 10000;
+const CONDITION_TIMEOUT = 2000;
+
 const bsLocal = new BrowserStackLocal.Local();
 
 const bsOptions = {
@@ -172,17 +175,15 @@ const runTestsForFile = async (context, filename) => {
     await driver.get(`http://localhost:${port}/${filename}`);
 
     // wait for testsFinished
-    const testsFinished = () => {
-        return driver.executeScript('return window && window.jsReporter && window.jsReporter.testsFinished');
-    };
-    const waitForTestsFinish = async () => {
-        await driver.wait(testsFinished, 10000, 'Timed out after 10 seconds', 2000);
-    };
     try {
-        await waitForTestsFinish();
+        await driver.wait(() => {
+            return driver.executeScript('return window && window.jsReporter && window.jsReporter.testsFinished');
+        }, TESTS_TIMEOUT, 'Timed out after 10 seconds', CONDITION_TIMEOUT);
     } catch {
         await driver.navigate().refresh();
-        await waitForTestsFinish();
+        await driver.wait(() => {
+            return driver.executeScript('return window && window.jsReporter && window.jsReporter.testsFinished');
+        }, TESTS_TIMEOUT, 'Timed out after 10 seconds', CONDITION_TIMEOUT);
     }
 
     /**
