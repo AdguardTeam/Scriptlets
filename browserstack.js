@@ -172,9 +172,18 @@ const runTestsForFile = async (context, filename) => {
     await driver.get(`http://localhost:${port}/${filename}`);
 
     // wait for testsFinished
-    await driver.wait(() => {
+    const testsFinished = () => {
         return driver.executeScript('return window && window.jsReporter && window.jsReporter.testsFinished');
-    });
+    };
+    const waitForTestsFinish = async () => {
+        await driver.wait(testsFinished, 10000, 'Timed out after 10 seconds', 2000);
+    };
+    try {
+        await waitForTestsFinish();
+    } catch {
+        await driver.navigate().refresh();
+        await waitForTestsFinish();
+    }
 
     /**
      * Use old browsers compatible syntax inside executeAsyncScript
