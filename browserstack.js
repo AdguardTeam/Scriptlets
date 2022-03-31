@@ -155,6 +155,7 @@ const addScriptletsData = (capability) => {
         name: `${getCapabilityInfo(capability)} Scriptlets`,
         'browserstack.local': 'true',
         'browserstack.debug': 'true',
+        'browserstack.networkLogs': 'true',
         'browserstack.user': process.env.BROWSERSTACK_USER,
         'browserstack.key': process.env.BROWSERSTACK_KEY,
     };
@@ -174,16 +175,17 @@ const runTestsForFile = async (context, filename) => {
 
     await driver.get(`http://localhost:${port}/${filename}`);
 
-    // wait for testsFinished
+    // wait for tests to finish
     try {
         await driver.wait(() => {
-            return driver.executeScript('return window && window.jsReporter && window.jsReporter.testsFinished');
-        }, TESTS_TIMEOUT, 'Timed out after 10 seconds', CONDITION_TIMEOUT);
+            return driver.executeScript('return false');
+        }, 500, 'FIRST TIMEOUT', 250);
     } catch {
+        // if timed out, refresh test page and try again
         await driver.navigate().refresh();
         await driver.wait(() => {
-            return driver.executeScript('return window && window.jsReporter && window.jsReporter.testsFinished');
-        }, TESTS_TIMEOUT, 'Timed out after 10 seconds', CONDITION_TIMEOUT);
+            return driver.executeScript('return false');
+        }, 500, 'SECOND TIMEOUT', 250);
     }
 
     /**
