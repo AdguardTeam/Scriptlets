@@ -198,6 +198,11 @@ export function setConstant(source, property, value, stack) {
                 return this.factValue;
             },
             set(a) {
+                // Prevent breakage due to loop assignments like win.obj = win.obj
+                if (this.factValue === a) {
+                    return;
+                }
+
                 this.factValue = a;
                 if (a instanceof Object) {
                     setChainPropAccess(a, chain);
