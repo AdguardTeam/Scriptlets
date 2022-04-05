@@ -34,11 +34,8 @@ Build:
             ls -alt
 
             yarn install ${bamboo.varsYarn}
-            yarn browserstack
             yarn prepare-builds
             rm -rf node_modules
-        environment: BROWSERSTACK_USER="${bamboo.browserstackUser}" \
-          BROWSERSTACK_KEY="${bamboo.browserstackPassword}"
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:

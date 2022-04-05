@@ -290,4 +290,18 @@ if (!isSupported) {
 
         clearGlobalProps('chain');
     });
+
+    test('set value after loop reassignment', (assert) => {
+        window.loopObj = {
+            chainProp: {
+                aaa: true,
+            },
+        };
+        runScriptletFromTag('loopObj.chainProp.bbb', '1');
+        // eslint-disable-next-line no-self-assign
+        window.loopObj = window.loopObj;
+        window.loopObj.chainProp.bbb = 0;
+        assert.strictEqual(window.loopObj.chainProp.bbb, 1, 'value set after loop reassignment');
+        clearGlobalProps('loopObj');
+    });
 }
