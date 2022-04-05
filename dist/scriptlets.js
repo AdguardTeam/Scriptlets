@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.3
+ * Version 1.6.5
  */
 
 (function () {
@@ -2676,6 +2676,11 @@
             return this.factValue;
           },
           set: function set(a) {
+            // Prevent breakage due to loop assignments like win.obj = win.obj
+            if (this.factValue === a) {
+              return;
+            }
+
             this.factValue = a;
 
             if (a instanceof Object) {
