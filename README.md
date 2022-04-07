@@ -103,7 +103,7 @@ yarn build
 yarn link
 ```
 
-In [tsurlfilter repository](https://bit.adguard.com/projects/ADGUARD-FILTERS/repos/tsurlfilter/browse) install and link dependencies, link scriptlets, move into package and build, and create tsurlfilter link.
+In tsurlfilter repository install and link dependencies, link scriptlets, move into package and build, and create tsurlfilter link.
 ```
 lerna bootstrap
 
@@ -113,7 +113,7 @@ cd ./packages/tsurlfilter
 yarn build
 yarn link
 ```
-In [extension repository](https://bit.adguard.com/projects/EXTENSIONS/repos/browser-extension/browse) install dependincies, link packages and build
+In extension repository install dependincies, link packages and build
 ```
 yarn
 
