@@ -96,14 +96,14 @@ yarn watch
 ```
 
 ### Build for Extension
-In scriptlets repository install dependencies, build scriptlets bundle, and create scriptlets link.
+In scriptlets directory install dependencies, build scriptlets bundle, and create scriptlets link.
 ```
 yarn
 yarn build
 yarn link
 ```
 
-In tsurlfilter repository install and link dependencies, link scriptlets, move into package and build, and create tsurlfilter link.
+In tsurlfilter directory install and link dependencies, link scriptlets, move into package and build, and create tsurlfilter link.
 ```
 lerna bootstrap
 
@@ -113,7 +113,7 @@ cd ./packages/tsurlfilter
 yarn build
 yarn link
 ```
-In extension repository install dependincies, link packages and build
+In extension directory install dependincies, link packages and build
 ```
 yarn
 
