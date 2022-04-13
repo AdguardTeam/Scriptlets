@@ -155,10 +155,12 @@ export function setConstant(source, property, value, stack) {
         return canceled;
     };
 
+    // eslint-disable-next-line consistent-return
     const trapProp = (base, prop, configurable, handler) => {
         if (!handler.init(base[prop])) {
-            return;
+            return false;
         }
+
         const origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
         let prevGetter;
         let prevSetter;
@@ -167,9 +169,9 @@ export function setConstant(source, property, value, stack) {
             // This check is required to avoid defining non-configurable props
             if (!origDescriptor.configurable) {
                 if (source.verbose) {
-                    log('Property is not configurable');
+                    log(`set-constant: property '${prop}' is not configurable`);
                 }
-                return;
+                return false;
             }
 
             base[prop] = constantValue;
@@ -195,6 +197,7 @@ export function setConstant(source, property, value, stack) {
                 handler.set(a);
             },
         });
+        return true;
     };
 
     const setChainPropAccess = (owner, property) => {
@@ -249,8 +252,10 @@ export function setConstant(source, property, value, stack) {
 
         // End prop case
         if (!chain) {
-            trapProp(base, prop, false, endPropHandler);
-            hit(source);
+            const isTrapped = trapProp(base, prop, false, endPropHandler);
+            if (isTrapped) {
+                hit(source);
+            }
             return;
         }
 

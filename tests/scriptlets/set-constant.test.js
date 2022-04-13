@@ -318,12 +318,15 @@ if (!isSupported) {
     });
 
     test('trying to set non-configurable silently exits', (assert) => {
+        console.log = function log(input) {
+            assert.ok(input.includes('testProp'), 'non-configurable prop logged');
+        };
         Object.defineProperty(window, 'testProp', {
             value: 5,
             configurable: false,
         });
-        runScriptletFromTag(window.testProp, '0');
-        assert.strictEqual(window.testProp, 5);
+        runScriptletFromTag('window.testProp', '0');
+        assert.strictEqual(window.testProp, 5, 'error avoided');
         clearGlobalProps('testProp');
     });
 }
