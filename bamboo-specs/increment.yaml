@@ -27,9 +27,8 @@ Increment:
         interpreter: SHELL
         scripts:
           - |-
-            if [[ `git log -1 --pretty=%B` =~ "deploy: update dist" ]];then
-              # do not increment for dist deploy while release build
-            else
+            # do not increment for dist deploy after release build
+            if ! [[ `git log -1 --pretty=%B` =~ "deploy: update dist" ]];then
               set -e
               set -x
               ls -alt
