@@ -26,6 +26,8 @@ import {
  *         - `emptyObj` - empty object
  *         - `emptyArr` - empty array
  *         - `''` - empty string
+ *         - `yes`
+ *         - `no`
  *
  * **Examples**
  * ```
@@ -64,6 +66,10 @@ export function setLocalStorageItem(source, key, value) {
         if (Math.abs(keyValue) > 0x7FFF) {
             return;
         }
+    } else if (value === 'yes') {
+        keyValue = 'yes';
+    } else if (value === 'no') {
+        keyValue = 'no';
     } else {
         return;
     }

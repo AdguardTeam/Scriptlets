@@ -148,6 +148,18 @@ if (!isSupported) {
         assert.strictEqual(window[emptyStringProp], '');
         clearGlobalProps(emptyStringProp);
 
+        // setting constant to 'yes';
+        const yesStringProp = 'yesStringProp';
+        runScriptletFromTag(yesStringProp, 'yes');
+        assert.strictEqual(window[yesStringProp], 'yes');
+        clearGlobalProps(yesStringProp);
+
+        // setting constant to 'no';
+        const noStringProp = 'noStringProp';
+        runScriptletFromTag(noStringProp, 'no');
+        assert.strictEqual(window[noStringProp], 'no');
+        clearGlobalProps(noStringProp);
+
         // setting constant to illegalNumber doesn't works;
         const illegalNumberProp = 'illegalNumberProp';
         runScriptletFromTag(illegalNumberProp, 32768);
