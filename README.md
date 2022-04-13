@@ -90,14 +90,37 @@ Build for CoreLibs
 yarn corelibs
 ```
 
-Build for Extension
-```
-yarn build
-```
-
 Build dev (rebuild js files on every change)
 ```
 yarn watch
+```
+
+### Build for Extension
+In scriptlets directory install dependencies, build scriptlets bundle, and create scriptlets link.
+```
+yarn
+yarn build
+yarn link
+```
+
+In tsurlfilter directory install and link dependencies, link scriptlets, move into package and build, and create tsurlfilter link.
+```
+lerna bootstrap
+
+yarn link "@adguard/scriptlets"
+
+cd ./packages/tsurlfilter
+yarn build
+yarn link
+```
+In extension directory install dependincies, link packages and build
+```
+yarn
+
+yarn link @adguard/scriptlets
+yarn link @adguard/tsurlfilter
+
+yarn dev
 ```
 
 ### Build output

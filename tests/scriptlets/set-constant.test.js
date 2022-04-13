@@ -148,6 +148,18 @@ if (!isSupported) {
         assert.strictEqual(window[emptyStringProp], '');
         clearGlobalProps(emptyStringProp);
 
+        // setting constant to 'yes';
+        const yesStringProp = 'yesStringProp';
+        runScriptletFromTag(yesStringProp, 'yes');
+        assert.strictEqual(window[yesStringProp], 'yes');
+        clearGlobalProps(yesStringProp);
+
+        // setting constant to 'no';
+        const noStringProp = 'noStringProp';
+        runScriptletFromTag(noStringProp, 'no');
+        assert.strictEqual(window[noStringProp], 'no');
+        clearGlobalProps(noStringProp);
+
         // setting constant to illegalNumber doesn't works;
         const illegalNumberProp = 'illegalNumberProp';
         runScriptletFromTag(illegalNumberProp, 32768);
@@ -289,5 +301,19 @@ if (!isSupported) {
         }, 100);
 
         clearGlobalProps('chain');
+    });
+
+    test('set value after loop reassignment', (assert) => {
+        window.loopObj = {
+            chainProp: {
+                aaa: true,
+            },
+        };
+        runScriptletFromTag('loopObj.chainProp.bbb', '1');
+        // eslint-disable-next-line no-self-assign
+        window.loopObj = window.loopObj;
+        window.loopObj.chainProp.bbb = 0;
+        assert.strictEqual(window.loopObj.chainProp.bbb, 1, 'value set after loop reassignment');
+        clearGlobalProps('loopObj');
     });
 }

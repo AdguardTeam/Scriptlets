@@ -27,11 +27,13 @@ Increment:
         interpreter: SHELL
         scripts:
           - |-
-            set -e
-            set -x
-            ls -alt
-
-            yarn increment
+            # do not increment for dist deploy after release build
+            if [[ `git log -1 --pretty=%B` != "deploy: update dist" ]];then
+              set -e
+              set -x
+              ls -alt
+              yarn increment
+            fi
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:
