@@ -155,7 +155,6 @@ export function setConstant(source, property, value, stack) {
         return canceled;
     };
 
-    // eslint-disable-next-line consistent-return
     const trapProp = (base, prop, configurable, handler) => {
         if (!handler.init(base[prop])) {
             return false;
