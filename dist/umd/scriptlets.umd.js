@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.5
+ * Version 1.6.7
  */
 
 (function (factory) {
@@ -2522,6 +2522,8 @@
      *         - `noopPromiseReject` - function returning Promise.reject()
      *         - `''` - empty string
      *         - `-1` - number value `-1`
+     *         - `yes`
+     *         - `no`
      * - `stack` - optional, string or regular expression that must match the current function call stack trace;
      * if regular expression is invalid it will be skipped
      *
@@ -2596,6 +2598,10 @@
         constantValue = -1;
       } else if (value === '') {
         constantValue = '';
+      } else if (value === 'yes') {
+        constantValue = 'yes';
+      } else if (value === 'no') {
+        constantValue = 'no';
       } else {
         return;
       }
@@ -5096,6 +5102,8 @@
      *         - `emptyObj` - empty object
      *         - `emptyArr` - empty array
      *         - `''` - empty string
+     *         - `yes`
+     *         - `no`
      *
      * **Examples**
      * ```
@@ -5138,6 +5146,10 @@
         if (Math.abs(keyValue) > 0x7FFF) {
           return;
         }
+      } else if (value === 'yes') {
+        keyValue = 'yes';
+      } else if (value === 'no') {
+        keyValue = 'no';
       } else {
         return;
       }
@@ -5186,6 +5198,8 @@
      *         - `emptyObj` - empty object
      *         - `emptyArr` - empty array
      *         - `''` - empty string
+     *         - `yes`
+     *         - `no`
      *
      * **Examples**
      * ```
@@ -5228,6 +5242,10 @@
         if (Math.abs(keyValue) > 0x7FFF) {
           return;
         }
+      } else if (value === 'yes') {
+        keyValue = 'yes';
+      } else if (value === 'no') {
+        keyValue = 'no';
       } else {
         return;
       }
