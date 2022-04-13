@@ -85,6 +85,8 @@ export function setConstant(source, property, value, stack) {
         || !matchStackTrace(stack, new Error().stack)) {
         return;
     }
+    // eslint-disable-next-line no-console
+    const log = console.log.bind(console);
 
     const emptyArr = noopArray();
     const emptyObj = noopObject();
@@ -162,6 +164,14 @@ export function setConstant(source, property, value, stack) {
         let prevSetter;
         // This is required to prevent scriptlets overwrite each over
         if (origDescriptor instanceof Object) {
+            // This check is required to avoid defining non-configurable props
+            if (!origDescriptor.configurable) {
+                if (source.verbose) {
+                    log('Property is not configurable');
+                }
+                return;
+            }
+
             base[prop] = constantValue;
             if (origDescriptor.get instanceof Function) {
                 prevGetter = origDescriptor.get;

@@ -316,4 +316,14 @@ if (!isSupported) {
         assert.strictEqual(window.loopObj.chainProp.bbb, 1, 'value set after loop reassignment');
         clearGlobalProps('loopObj');
     });
+
+    test('trying to set non-configurable silently exits', (assert) => {
+        Object.defineProperty(window, 'testProp', {
+            value: 5,
+            configurable: false,
+        });
+        runScriptletFromTag(window.testProp, '0');
+        assert.strictEqual(window.testProp, 5);
+        clearGlobalProps('testProp');
+    });
 }
