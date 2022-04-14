@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.7
+ * Version 1.6.8
  */
 
 (function () {
@@ -2554,8 +2554,10 @@
     function setConstant(source, property, value, stack) {
       if (!property || !matchStackTrace(stack, new Error().stack)) {
         return;
-      }
+      } // eslint-disable-next-line no-console
 
+
+      var log = console.log.bind(console);
       var emptyArr = noopArray();
       var emptyObj = noopObject();
       var constantValue;
@@ -2627,7 +2629,7 @@
 
       var trapProp = function trapProp(base, prop, configurable, handler) {
         if (!handler.init(base[prop])) {
-          return;
+          return false;
         }
 
         var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
@@ -2635,6 +2637,15 @@
         var prevSetter; // This is required to prevent scriptlets overwrite each over
 
         if (origDescriptor instanceof Object) {
+          // This check is required to avoid defining non-configurable props
+          if (!origDescriptor.configurable) {
+            if (source.verbose) {
+              log("set-constant: property '".concat(prop, "' is not configurable"));
+            }
+
+            return false;
+          }
+
           base[prop] = constantValue;
 
           if (origDescriptor.get instanceof Function) {
@@ -2663,6 +2674,7 @@
             handler.set(a);
           }
         });
+        return true;
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
@@ -2719,8 +2731,12 @@
         }; // End prop case
 
         if (!chain) {
-          trapProp(base, prop, false, endPropHandler);
-          hit(source);
+          var isTrapped = trapProp(base, prop, false, endPropHandler);
+
+          if (isTrapped) {
+            hit(source);
+          }
+
           return;
         } // Defined prop in chain
 
