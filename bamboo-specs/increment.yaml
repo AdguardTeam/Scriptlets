@@ -29,6 +29,9 @@ Increment:
         interpreter: SHELL
         scripts:
           - |-
+            #!/bin/sh
+            set -e -f -u -x
+
             # Explicitly checkout the revision that we need.
             git checkout "${bamboo.repository.revision.number}"
 
