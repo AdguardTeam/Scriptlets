@@ -318,6 +318,7 @@ if (!isSupported) {
     });
 
     test('trying to set non-configurable silently exits', (assert) => {
+        assert.expect(2);
         console.log = function log(input) {
             assert.ok(input.includes('testProp'), 'non-configurable prop logged');
         };
