@@ -1,11 +1,10 @@
 import path from 'path';
-import fs from 'fs';
+import fs from 'fs-extra';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
 import cleanup from 'rollup-plugin-cleanup';
 import copy from 'rollup-plugin-copy';
-import clear from 'rollup-plugin-clear';
 import json from '@rollup/plugin-json';
 import generateHtml from 'rollup-plugin-generate-html';
 
@@ -29,6 +28,7 @@ const footer = `
  */
 `;
 
+const BUILD_DIST = 'dist';
 const TESTS_DIST = 'tests/dist';
 const TMP_DIR = 'tmp';
 const DIST_REDIRECT_FILES = 'dist/redirect-files';
@@ -39,7 +39,7 @@ const mainConfig = {
         scriptlets: 'src/scriptlets/scriptlets-wrapper.js',
     },
     output: {
-        dir: 'dist',
+        dir: BUILD_DIST,
         entryFileNames: '[name].js',
         format: 'iife',
         strict: false,
@@ -102,7 +102,7 @@ const umdConfig = {
 const redirectsBuild = {
     input: 'src/redirects/redirects.js',
     output: {
-        dir: 'dist',
+        dir: BUILD_DIST,
         name: 'Redirects',
         format: 'iife',
         strict: false,
@@ -132,6 +132,12 @@ const redirectsBuild = {
  * @param {string} subDir subdirectory with test files
  */
 const getTestConfig = (fileName, dirPath, subDir) => {
+    if (!fs.existsSync(TESTS_DIST)) {
+        fs.mkdirSync(TESTS_DIST);
+    } else {
+        fs.emptyDirSync(TESTS_DIST);
+    }
+
     // cut off '.test.js' test file name ending
     const finalFileName = fileName.slice(0, -TEST_FILE_NAME_MARKER.length);
     return ({
@@ -144,9 +150,6 @@ const getTestConfig = (fileName, dirPath, subDir) => {
             format: 'iife',
         },
         plugins: [
-            clear({
-                targets: [TESTS_DIST],
-            }),
             resolve(),
             commonjs({
                 include: 'node_modules/**',

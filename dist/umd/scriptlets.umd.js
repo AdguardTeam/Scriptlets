@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.3
+ * Version 1.6.8
  */
 
 (function (factory) {
@@ -2522,6 +2522,8 @@
      *         - `noopPromiseReject` - function returning Promise.reject()
      *         - `''` - empty string
      *         - `-1` - number value `-1`
+     *         - `yes`
+     *         - `no`
      * - `stack` - optional, string or regular expression that must match the current function call stack trace;
      * if regular expression is invalid it will be skipped
      *
@@ -2554,8 +2556,10 @@
     function setConstant(source, property, value, stack) {
       if (!property || !matchStackTrace(stack, new Error().stack)) {
         return;
-      }
+      } // eslint-disable-next-line no-console
 
+
+      var log = console.log.bind(console);
       var emptyArr = noopArray();
       var emptyObj = noopObject();
       var constantValue;
@@ -2596,6 +2600,10 @@
         constantValue = -1;
       } else if (value === '') {
         constantValue = '';
+      } else if (value === 'yes') {
+        constantValue = 'yes';
+      } else if (value === 'no') {
+        constantValue = 'no';
       } else {
         return;
       }
@@ -2623,7 +2631,7 @@
 
       var trapProp = function trapProp(base, prop, configurable, handler) {
         if (!handler.init(base[prop])) {
-          return;
+          return false;
         }
 
         var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
@@ -2631,6 +2639,15 @@
         var prevSetter; // This is required to prevent scriptlets overwrite each over
 
         if (origDescriptor instanceof Object) {
+          // This check is required to avoid defining non-configurable props
+          if (!origDescriptor.configurable) {
+            if (source.verbose) {
+              log("set-constant: property '".concat(prop, "' is not configurable"));
+            }
+
+            return false;
+          }
+
           base[prop] = constantValue;
 
           if (origDescriptor.get instanceof Function) {
@@ -2659,6 +2676,7 @@
             handler.set(a);
           }
         });
+        return true;
       };
 
       var setChainPropAccess = function setChainPropAccess(owner, property) {
@@ -2678,6 +2696,11 @@
             return this.factValue;
           },
           set: function set(a) {
+            // Prevent breakage due to loop assignments like win.obj = win.obj
+            if (this.factValue === a) {
+              return;
+            }
+
             this.factValue = a;
 
             if (a instanceof Object) {
@@ -2710,8 +2733,12 @@
         }; // End prop case
 
         if (!chain) {
-          trapProp(base, prop, false, endPropHandler);
-          hit(source);
+          var isTrapped = trapProp(base, prop, false, endPropHandler);
+
+          if (isTrapped) {
+            hit(source);
+          }
+
           return;
         } // Defined prop in chain
 
@@ -5091,6 +5118,8 @@
      *         - `emptyObj` - empty object
      *         - `emptyArr` - empty array
      *         - `''` - empty string
+     *         - `yes`
+     *         - `no`
      *
      * **Examples**
      * ```
@@ -5133,6 +5162,10 @@
         if (Math.abs(keyValue) > 0x7FFF) {
           return;
         }
+      } else if (value === 'yes') {
+        keyValue = 'yes';
+      } else if (value === 'no') {
+        keyValue = 'no';
       } else {
         return;
       }
@@ -5181,6 +5214,8 @@
      *         - `emptyObj` - empty object
      *         - `emptyArr` - empty array
      *         - `''` - empty string
+     *         - `yes`
+     *         - `no`
      *
      * **Examples**
      * ```
@@ -5223,6 +5258,10 @@
         if (Math.abs(keyValue) > 0x7FFF) {
           return;
         }
+      } else if (value === 'yes') {
+        keyValue = 'yes';
+      } else if (value === 'no') {
+        keyValue = 'no';
       } else {
         return;
       }

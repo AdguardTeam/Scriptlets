@@ -148,6 +148,18 @@ if (!isSupported) {
         assert.strictEqual(window[emptyStringProp], '');
         clearGlobalProps(emptyStringProp);
 
+        // setting constant to 'yes';
+        const yesStringProp = 'yesStringProp';
+        runScriptletFromTag(yesStringProp, 'yes');
+        assert.strictEqual(window[yesStringProp], 'yes');
+        clearGlobalProps(yesStringProp);
+
+        // setting constant to 'no';
+        const noStringProp = 'noStringProp';
+        runScriptletFromTag(noStringProp, 'no');
+        assert.strictEqual(window[noStringProp], 'no');
+        clearGlobalProps(noStringProp);
+
         // setting constant to illegalNumber doesn't works;
         const illegalNumberProp = 'illegalNumberProp';
         runScriptletFromTag(illegalNumberProp, 32768);
@@ -174,7 +186,7 @@ if (!isSupported) {
     test('set value on null prop', (assert) => {
         // end prop is null
         window.nullProp = null;
-        runScriptletFromTag('nullProp', '15');
+        runScriptletFromTag('nullProp', 15);
         assert.strictEqual(window.nullProp, 15, 'null end prop changed');
         clearGlobalProps('nullProp');
     });
@@ -312,5 +324,56 @@ if (!isSupported) {
         runScriptletFromTag('chain.property.aaa', 'true');
         assert.strictEqual(window.chain, null, 'predefined obj was not changed');
         clearGlobalProps('chain');
+    });
+
+    // for now the scriptlet does not set the chained property if one of chain prop is null.
+    // that might happen, for example, while loading the page.
+    // after the needed property is loaded, the scriptlet does not check it and do not set the value
+    // https://github.com/AdguardTeam/Scriptlets/issues/128
+    test('set value after timeout if it was null earlier', (assert) => {
+        window.chain = null;
+        runScriptletFromTag('chain.property.aaa', 'true');
+        assert.strictEqual(window.chain, null, 'predefined obj was not changed');
+
+        const done = assert.async();
+
+        setTimeout(() => {
+            window.chain = { property: {} };
+        }, 50);
+
+        setTimeout(() => {
+            assert.strictEqual(window.chain.property.aaa, undefined, 'chained prop was NOT set after delay');
+            done();
+        }, 100);
+
+        clearGlobalProps('chain');
+    });
+
+    test('set value after loop reassignment', (assert) => {
+        window.loopObj = {
+            chainProp: {
+                aaa: true,
+            },
+        };
+        runScriptletFromTag('loopObj.chainProp.bbb', '1');
+        // eslint-disable-next-line no-self-assign
+        window.loopObj = window.loopObj;
+        window.loopObj.chainProp.bbb = 0;
+        assert.strictEqual(window.loopObj.chainProp.bbb, 1, 'value set after loop reassignment');
+        clearGlobalProps('loopObj');
+    });
+
+    test('trying to set non-configurable silently exits', (assert) => {
+        assert.expect(2);
+        console.log = function log(input) {
+            assert.ok(input.includes('testProp'), 'non-configurable prop logged');
+        };
+        Object.defineProperty(window, 'testProp', {
+            value: 5,
+            configurable: false,
+        });
+        runScriptletFromTag('window.testProp', '0');
+        assert.strictEqual(window.testProp, 5, 'error avoided');
+        clearGlobalProps('testProp');
     });
 }
