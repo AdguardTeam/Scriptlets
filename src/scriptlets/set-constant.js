@@ -85,6 +85,8 @@ export function setConstant(source, property, value, stack) {
         || !matchStackTrace(stack, new Error().stack)) {
         return;
     }
+    // eslint-disable-next-line no-console
+    const log = console.log.bind(console);
 
     const emptyArr = noopArray();
     const emptyObj = noopObject();
@@ -155,13 +157,22 @@ export function setConstant(source, property, value, stack) {
 
     const trapProp = (base, prop, configurable, handler) => {
         if (!handler.init(base[prop])) {
-            return;
+            return false;
         }
+
         const origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
         let prevGetter;
         let prevSetter;
         // This is required to prevent scriptlets overwrite each over
         if (origDescriptor instanceof Object) {
+            // This check is required to avoid defining non-configurable props
+            if (!origDescriptor.configurable) {
+                if (source.verbose) {
+                    log(`set-constant: property '${prop}' is not configurable`);
+                }
+                return false;
+            }
+
             base[prop] = constantValue;
             if (origDescriptor.get instanceof Function) {
                 prevGetter = origDescriptor.get;
@@ -185,6 +196,7 @@ export function setConstant(source, property, value, stack) {
                 handler.set(a);
             },
         });
+        return true;
     };
 
     const setChainPropAccess = (owner, property) => {
@@ -239,8 +251,10 @@ export function setConstant(source, property, value, stack) {
 
         // End prop case
         if (!chain) {
-            trapProp(base, prop, false, endPropHandler);
-            hit(source);
+            const isTrapped = trapProp(base, prop, false, endPropHandler);
+            if (isTrapped) {
+                hit(source);
+            }
             return;
         }
 
