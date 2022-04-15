@@ -105,6 +105,10 @@ declare module '@adguard/scriptlets' {
      */
     function isValidScriptletRule(ruleText: string): boolean;
 
+    /**
+     * Method creates string for file with scriptlets functions,
+     * where dependencies are placed inside scriptlet functions
+     */
     function getScriptletFunctionString(name: string): string;
 
     /**

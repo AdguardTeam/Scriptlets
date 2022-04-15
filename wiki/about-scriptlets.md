@@ -1475,6 +1475,8 @@ example.org#%#//scriptlet('set-constant', property, value[, stack])
         - `noopPromiseReject` - function returning Promise.reject()
         - `''` - empty string
         - `-1` - number value `-1`
+        - `yes`
+        - `no`
 - `stack` - optional, string or regular expression that must match the current function call stack trace;
 if regular expression is invalid it will be skipped
 
@@ -1583,6 +1585,8 @@ example.com#%#//scriptlet('set-local-storage-item', 'key', 'value')
         - `emptyObj` - empty object
         - `emptyArr` - empty array
         - `''` - empty string
+        - `yes`
+        - `no`
 
 **Examples**
 ```
@@ -1629,6 +1633,8 @@ example.com#%#//scriptlet('set-session-storage-item', 'key', 'value')
         - `emptyObj` - empty object
         - `emptyArr` - empty array
         - `''` - empty string
+        - `yes`
+        - `no`
 
 **Examples**
 ```

@@ -148,6 +148,18 @@ if (!isSupported) {
         assert.strictEqual(window[emptyStringProp], '');
         clearGlobalProps(emptyStringProp);
 
+        // setting constant to 'yes';
+        const yesStringProp = 'yesStringProp';
+        runScriptletFromTag(yesStringProp, 'yes');
+        assert.strictEqual(window[yesStringProp], 'yes');
+        clearGlobalProps(yesStringProp);
+
+        // setting constant to 'no';
+        const noStringProp = 'noStringProp';
+        runScriptletFromTag(noStringProp, 'no');
+        assert.strictEqual(window[noStringProp], 'no');
+        clearGlobalProps(noStringProp);
+
         // setting constant to illegalNumber doesn't works;
         const illegalNumberProp = 'illegalNumberProp';
         runScriptletFromTag(illegalNumberProp, 32768);
@@ -303,5 +315,19 @@ if (!isSupported) {
         window.loopObj.chainProp.bbb = 0;
         assert.strictEqual(window.loopObj.chainProp.bbb, 1, 'value set after loop reassignment');
         clearGlobalProps('loopObj');
+    });
+
+    test('trying to set non-configurable silently exits', (assert) => {
+        assert.expect(2);
+        console.log = function log(input) {
+            assert.ok(input.includes('testProp'), 'non-configurable prop logged');
+        };
+        Object.defineProperty(window, 'testProp', {
+            value: 5,
+            configurable: false,
+        });
+        runScriptletFromTag('window.testProp', '0');
+        assert.strictEqual(window.testProp, 5, 'error avoided');
+        clearGlobalProps('testProp');
     });
 }

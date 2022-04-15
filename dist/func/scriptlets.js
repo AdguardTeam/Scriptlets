@@ -1369,8 +1369,10 @@ function setConstant(source, args){
 function setConstant(source, property, value, stack) {
     if (!property || !matchStackTrace(stack, new Error().stack)) {
       return;
-    }
+    } // eslint-disable-next-line no-console
 
+
+    var log = console.log.bind(console);
     var emptyArr = noopArray();
     var emptyObj = noopObject();
     var constantValue;
@@ -1411,6 +1413,10 @@ function setConstant(source, property, value, stack) {
       constantValue = -1;
     } else if (value === '') {
       constantValue = '';
+    } else if (value === 'yes') {
+      constantValue = 'yes';
+    } else if (value === 'no') {
+      constantValue = 'no';
     } else {
       return;
     }
@@ -1438,7 +1444,7 @@ function setConstant(source, property, value, stack) {
 
     var trapProp = function trapProp(base, prop, configurable, handler) {
       if (!handler.init(base[prop])) {
-        return;
+        return false;
       }
 
       var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
@@ -1446,6 +1452,15 @@ function setConstant(source, property, value, stack) {
       var prevSetter; // This is required to prevent scriptlets overwrite each over
 
       if (origDescriptor instanceof Object) {
+        // This check is required to avoid defining non-configurable props
+        if (!origDescriptor.configurable) {
+          if (source.verbose) {
+            log("set-constant: property '".concat(prop, "' is not configurable"));
+          }
+
+          return false;
+        }
+
         base[prop] = constantValue;
 
         if (origDescriptor.get instanceof Function) {
@@ -1474,6 +1489,7 @@ function setConstant(source, property, value, stack) {
           handler.set(a);
         }
       });
+      return true;
     };
 
     var setChainPropAccess = function setChainPropAccess(owner, property) {
@@ -1530,8 +1546,12 @@ function setConstant(source, property, value, stack) {
       }; // End prop case
 
       if (!chain) {
-        trapProp(base, prop, false, endPropHandler);
-        hit(source);
+        var isTrapped = trapProp(base, prop, false, endPropHandler);
+
+        if (isTrapped) {
+          hit(source);
+        }
+
         return;
       } // Defined prop in chain
 
@@ -6309,6 +6329,10 @@ function setLocalStorageItem(source, key, value) {
       if (Math.abs(keyValue) > 0x7FFF) {
         return;
       }
+    } else if (value === 'yes') {
+      keyValue = 'yes';
+    } else if (value === 'no') {
+      keyValue = 'no';
     } else {
       return;
     }
@@ -6431,6 +6455,10 @@ function setSessionStorageItem(source, key, value) {
       if (Math.abs(keyValue) > 0x7FFF) {
         return;
       }
+    } else if (value === 'yes') {
+      keyValue = 'yes';
+    } else if (value === 'no') {
+      keyValue = 'no';
     } else {
       return;
     }
