@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.5
+ * Version 1.6.6
  */
 
 (function (factory) {
@@ -5964,7 +5964,7 @@
      * This file must export all scriptlets which should be accessible
      */
 
-    var scriptletList = /*#__PURE__*/Object.freeze({
+    var scriptletsList = /*#__PURE__*/Object.freeze({
         __proto__: null,
         abortOnPropertyRead: abortOnPropertyRead,
         abortOnPropertyWrite: abortOnPropertyWrite,
@@ -6219,8 +6219,8 @@
 
 
     var getScriptletByName = function getScriptletByName(name) {
-      var scriptlets = Object.keys(scriptletList).map(function (key) {
-        return scriptletList[key];
+      var scriptlets = Object.keys(scriptletsList).map(function (key) {
+        return scriptletsList[key];
       });
       return scriptlets.find(function (s) {
         return s.names // full match name checking
@@ -6637,8 +6637,8 @@
     var COMMA_SEPARATOR = ',';
     var REMOVE_ATTR_METHOD = 'removeAttr';
     var REMOVE_CLASS_METHOD = 'removeClass';
-    var REMOVE_ATTR_ALIASES = scriptletList[REMOVE_ATTR_METHOD].names;
-    var REMOVE_CLASS_ALIASES = scriptletList[REMOVE_CLASS_METHOD].names;
+    var REMOVE_ATTR_ALIASES = scriptletsList[REMOVE_ATTR_METHOD].names;
+    var REMOVE_CLASS_ALIASES = scriptletsList[REMOVE_CLASS_METHOD].names;
     var ADG_REMOVE_ATTR_NAME = REMOVE_ATTR_ALIASES[0];
     var ADG_REMOVE_CLASS_NAME = REMOVE_CLASS_ALIASES[0];
     var REMOVE_ATTR_CLASS_APPLYING = ['asap', 'stay', 'complete'];
@@ -6849,8 +6849,8 @@
         } // object of name and aliases for the Adg-scriptlet
 
 
-        var adgScriptletObject = Object.keys(scriptletList).map(function (el) {
-          return scriptletList[el];
+        var adgScriptletObject = Object.keys(scriptletsList).map(function (el) {
+          return scriptletsList[el];
         }).map(function (s) {
           var _s$names = toArray(s.names),
               name = _s$names[0],
@@ -13158,6 +13158,32 @@
       return result;
     }
     /**
+     * Method creates string for file with scriptlets functions,
+     * where dependencies are placed inside scriptlet functions
+     */
+
+
+    var getScriptletFunctionString = function getScriptletFunctionString() {
+      function wrapInFunc(name, code) {
+        return "function ".concat(name, "(source, args){\n").concat(code, "\n}");
+      }
+
+      var scriptletsFunctions = Object.values(scriptletsList);
+      var scriptletsStrings = scriptletsFunctions.map(function (scriptlet) {
+        var scriptletWithDeps = attachDependencies(scriptlet);
+        var scriptletWithCall = addCall(scriptlet, scriptletWithDeps);
+        return wrapInFunc(scriptlet.name, scriptletWithCall);
+      });
+      var scriptletsString = scriptletsStrings.join('\n');
+      var scriptletsMapString = "const scriptletsMap = {\n".concat(scriptletsFunctions.map(function (scriptlet) {
+        return scriptlet.names.map(function (name) {
+          return "'".concat(name, "': ").concat(scriptlet.name);
+        }).join(',\n');
+      }).join(',\n'), "\n}");
+      var exportString = "var getScriptletFunction = (name) => {\n        return scriptletsMap[name];\n    };\n    module.exports = { getScriptletFunction };\n    ";
+      return "".concat(scriptletsString, "\n").concat(scriptletsMapString, "\n").concat(exportString);
+    };
+    /**
      * Scriptlets variable
      *
      * @returns {Object} object with methods:
@@ -13169,6 +13195,7 @@
     var scriptletsObject = function () {
       return {
         invoke: getScriptletCode,
+        getScriptletFunctionString: getScriptletFunctionString,
         isValidScriptletName: validator.isValidScriptletName,
         isValidScriptletRule: isValidScriptletRule,
         isAdgScriptletRule: validator.isAdgScriptletRule,

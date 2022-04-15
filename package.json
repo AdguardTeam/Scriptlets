@@ -4,8 +4,7 @@
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "scripts": {
         "watch": "rollup -c -w",
-        "bundle:click2load": "rollup -c --environment CLICK2LOAD",
-        "build": "rollup -c && babel-node redirects.build.js",
+        "build": "rollup -c && babel-node redirects.build.js && babel-node func-bundler.js",
         "corelibs": "rollup -c --environment CLEAN && babel-node corelibs.build.js && REDIRECTS=CORELIBS babel-node redirects.build.js",
         "build-test": "rollup -c --environment UI_TEST",
         "test": "yarn build-test && node tests/index.js",
@@ -43,6 +42,15 @@
     "homepage": "https://github.com/AdguardTeam/Scriptlets#adguard-scriptlets-and-redirect-resources",
     "main": "dist/umd/scriptlets.umd.js",
     "types": "dist/umd/scriptlets.d.ts",
+    "exports": {
+        "./package.json": "./package.json",
+        ".": {
+            "default": "./dist/umd/scriptlets.umd.js"
+        },
+        "./func": {
+            "default": "./dist/func/scriptlets.js"
+        }
+    },
     "devDependencies": {
         "@babel/cli": "^7.8.4",
         "@babel/core": "^7.9.0",
@@ -66,6 +74,7 @@
         "eslint-config-airbnb-base": "^14.2.1",
         "eslint-plugin-compat": "^3.9.0",
         "eslint-plugin-import": "^2.22.1",
+        "fs-extra": "^10.0.1",
         "husky": "^3.1.0",
         "js-reporters": "^2.1.0",
         "kleur": "^4.1.4",
@@ -85,7 +94,7 @@
         "js-yaml": "^3.13.1"
     },
     "files": [
-        "dist/"
+        "dist"
     ],
     "browserslist": [
         "last 1 versions",
