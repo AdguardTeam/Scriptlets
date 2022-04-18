@@ -54,6 +54,7 @@ export const noopPromiseReject = () => Promise.reject(); // eslint-disable-line 
 
 /**
  * Returns Promise object that is resolved with a response
+ * @param {string} responseBody value of response body
  */
 export const noopPromiseResolve = (responseBody = '{}') => {
     // eslint-disable-next-line compat/compat
