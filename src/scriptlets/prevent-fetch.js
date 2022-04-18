@@ -29,7 +29,7 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('prevent-fetch'[, propsToMatch])
+ * example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody]])
  * ```
  *
  * - `propsToMatch` - optional, string of space-separated properties to match; possible props:
@@ -37,7 +37,9 @@ import {
  *   - colon-separated pairs `name:value` where
  *     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
  *     - `value` is string or regular expression for matching the value of the option passed to fetch call; invalid regular expression will cause any value matching
- *
+ * - responseBody - optional, string for defining response body value, defaults to `emptyObj`. Possible values:
+ *    - `emptyObj` - empty object
+ *    - `emptyArr` - empty array
  * > Usage with no arguments will log fetch calls to browser console;
  * which is useful for debugging but permitted for production filter lists.
  *
@@ -63,7 +65,7 @@ import {
  *     ```
  */
 /* eslint-enable max-len */
-export function preventFetch(source, propsToMatch) {
+export function preventFetch(source, propsToMatch, responseBody = 'emptyObj') {
     // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -102,7 +104,7 @@ export function preventFetch(source, propsToMatch) {
 
         if (shouldPrevent) {
             hit(source);
-            return noopPromiseResolve();
+            return noopPromiseResolve(responseBody);
         }
 
         return Reflect.apply(target, thisArg, args);

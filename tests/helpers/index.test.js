@@ -1,6 +1,7 @@
 import {
     toRegExp,
     getNumberFromString,
+    noopPromiseResolve,
 } from '../../src/helpers';
 
 const { test, module } = QUnit;
@@ -88,4 +89,15 @@ test('Test getNumberFromString for all data types inputs', (assert) => {
     // array
     inputValue = ['test'];
     assert.strictEqual(getNumberFromString(inputValue), null);
+});
+
+test('Test noopPromiseResolve for valid response.body values', async (assert) => {
+    const objResponse = await noopPromiseResolve('emptyObj');
+    const objBody = await objResponse.json();
+
+    const arrResponse = await noopPromiseResolve('emptyArr');
+    const arrBody = await arrResponse.json();
+
+    assert.ok(typeof objBody === 'object' && !objBody.length);
+    assert.ok(Array.isArray(arrBody) && !arrBody.length);
 });

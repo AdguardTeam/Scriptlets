@@ -53,7 +53,20 @@ export const noopObject = () => ({});
 export const noopPromiseReject = () => Promise.reject(); // eslint-disable-line compat/compat
 
 /**
- * Returns Promise object that is resolved with an empty response
+ * Returns Promise object that is resolved with a response
  */
-// eslint-disable-next-line compat/compat
-export const noopPromiseResolve = () => Promise.resolve(new Response('{}'));
+export const noopPromiseResolve = (responseBody = 'emptyObj') => {
+    let payload;
+    if (responseBody === 'emptyObj') {
+        payload = '{}';
+    } else if (responseBody === 'emptyArr') {
+        payload = '[]';
+    }
+    // eslint-disable-next-line compat/compat
+    const response = new Response(payload, {
+        status: 200,
+        statusText: 'OK',
+    });
+    // eslint-disable-next-line compat/compat
+    return Promise.resolve(response);
+};
