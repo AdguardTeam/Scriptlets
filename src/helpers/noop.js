@@ -55,15 +55,9 @@ export const noopPromiseReject = () => Promise.reject(); // eslint-disable-line 
 /**
  * Returns Promise object that is resolved with a response
  */
-export const noopPromiseResolve = (responseBody = 'emptyObj') => {
-    let payload;
-    if (responseBody === 'emptyObj') {
-        payload = '{}';
-    } else if (responseBody === 'emptyArr') {
-        payload = '[]';
-    }
+export const noopPromiseResolve = (responseBody = '{}') => {
     // eslint-disable-next-line compat/compat
-    const response = new Response(payload, {
+    const response = new Response(responseBody, {
         status: 200,
         statusText: 'OK',
     });

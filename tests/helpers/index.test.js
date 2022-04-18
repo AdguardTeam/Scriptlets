@@ -92,10 +92,10 @@ test('Test getNumberFromString for all data types inputs', (assert) => {
 });
 
 test('Test noopPromiseResolve for valid response.body values', async (assert) => {
-    const objResponse = await noopPromiseResolve('emptyObj');
+    const objResponse = await noopPromiseResolve('{}');
     const objBody = await objResponse.json();
 
-    const arrResponse = await noopPromiseResolve('emptyArr');
+    const arrResponse = await noopPromiseResolve('[]');
     const arrBody = await arrResponse.json();
 
     assert.ok(typeof objBody === 'object' && !objBody.length);

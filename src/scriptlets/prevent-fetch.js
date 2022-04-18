@@ -74,6 +74,15 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj') {
         return;
     }
 
+    let strResponseBody;
+    if (responseBody === 'emptyObj') {
+        strResponseBody = '{}';
+    } else if (responseBody === 'emptyArr') {
+        strResponseBody = '[]';
+    } else {
+        return;
+    }
+
     const handlerWrapper = (target, thisArg, args) => {
         let shouldPrevent = false;
         const fetchData = getFetchData(args);
@@ -104,7 +113,7 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj') {
 
         if (shouldPrevent) {
             hit(source);
-            return noopPromiseResolve(responseBody);
+            return noopPromiseResolve(true, strResponseBody);
         }
 
         return Reflect.apply(target, thisArg, args);

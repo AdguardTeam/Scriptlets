@@ -271,4 +271,20 @@ if (!isSupported) {
         assert.strictEqual(window.hit, undefined, 'hit should not fire');
         done();
     });
+
+    test('prevent all, fetch returns empty array', async (assert) => {
+        const INPUT_JSON_PATH_1 = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const inputRequest1 = new Request(INPUT_JSON_PATH_1); // eslint-disable-line compat/compat
+
+        // match any fetch
+        runScriptlet(name, ['*', 'emptyArr']);
+        const done = assert.async();
+
+        const response = await fetch(inputRequest1);
+        const parsedData = await response.json();
+
+        assert.ok(Array.isArray(parsedData) && parsedData.length === 0, 'Response is empty array');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
 }
