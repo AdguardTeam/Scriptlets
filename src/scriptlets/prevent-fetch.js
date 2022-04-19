@@ -47,6 +47,7 @@ import {
  * 1. Prevent all fetch calls
  *     ```
  *     example.org#%#//scriptlet('prevent-fetch', '*')
+ * *   example.org#%#//scriptlet('prevent-fetch', '')
  *     ```
  *
  * 2. Prevent fetch call for specific url
@@ -62,6 +63,15 @@ import {
  * 4. Prevent fetch call for specific url and request method
  *     ```
  *     example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/')
+ *     ```
+ *
+ * 5. Prevent fetch call and specify response body value
+ *     ```
+ *     ! Specify response body for fetch call to a specific url
+ *     example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/', 'emptyArr')
+ *
+ *     ! Specify response body for all fetch calls
+ *     example.org#%#//scriptlet('prevent-fetch', '', 'emptyArr')
  *     ```
  */
 /* eslint-enable max-len */
