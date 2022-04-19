@@ -42,7 +42,7 @@ import {
  *    - `emptyArr` - empty array
  * > Usage with no arguments will log fetch calls to browser console;
  * which is useful for debugging but permitted for production filter lists.
- *`
+ *
  * **Examples**
  * 1. Prevent all fetch calls
  *     ```
