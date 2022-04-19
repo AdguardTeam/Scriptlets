@@ -164,6 +164,52 @@ if (!isSupported) {
         const illegalNumberProp = 'illegalNumberProp';
         runScriptletFromTag(illegalNumberProp, 32768);
         assert.strictEqual(window[illegalNumberProp], undefined);
+        clearGlobalProps(illegalNumberProp);
+    });
+
+    test('keep other keys after setting a value', (assert) => {
+        window.testObj = {
+            testChain: null,
+        };
+        runScriptletFromTag('testObj.testChain.testProp', 'true');
+        window.testObj.testChain = {
+            testProp: false,
+            otherProp: 'someValue',
+            testMethod: () => { },
+        };
+        assert.strictEqual(window.testObj.testChain.testProp, true, 'target prop set');
+        assert.strictEqual(window.testObj.testChain.otherProp, 'someValue', 'sibling value property is kept');
+        assert.strictEqual(typeof window.testObj.testChain.testMethod, 'function', 'sibling function property is kept');
+        clearGlobalProps('testObj');
+    });
+
+    test('set value on null prop', (assert) => {
+        // end prop is null
+        window.nullProp = null;
+        runScriptletFromTag('nullProp', 15);
+        assert.strictEqual(window.nullProp, 15, 'null end prop changed');
+        clearGlobalProps('nullProp');
+    });
+
+    test('set value through chain with empty object', (assert) => {
+        window.emptyObj = {};
+        runScriptletFromTag('emptyObj.a.prop', 'true');
+        window.emptyObj.a = {};
+        assert.strictEqual(window.emptyObj.a.prop, true, 'target prop set');
+        clearGlobalProps('emptyObj');
+    });
+
+    test('set value through chain with null', (assert) => {
+        // null prop in chain
+        window.nullChain = {
+            nullProp: null,
+        };
+        runScriptletFromTag('nullChain.nullProp.endProp', 'true');
+        window.nullChain.nullProp = {
+            endProp: false,
+        };
+        assert.strictEqual(window.nullChain.nullProp.endProp, true, 'chain with null trapped');
+        clearGlobalProps('nullChain');
     });
 
     test('sets values to the chained properties', (assert) => {
