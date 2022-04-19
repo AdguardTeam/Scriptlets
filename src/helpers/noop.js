@@ -57,11 +57,14 @@ export const noopPromiseReject = () => Promise.reject(); // eslint-disable-line 
  * @param {string} [responseBody='{}'] value of response body
  */
 export const noopPromiseResolve = (responseBody = '{}') => {
+    if (typeof Response === 'undefined') {
+        return;
+    }
     // eslint-disable-next-line compat/compat
     const response = new Response(responseBody, {
         status: 200,
         statusText: 'OK',
     });
-    // eslint-disable-next-line compat/compat
+    // eslint-disable-next-line compat/compat, consistent-return
     return Promise.resolve(response);
 };
