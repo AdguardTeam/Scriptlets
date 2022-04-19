@@ -126,7 +126,7 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj') {
 
         if (shouldPrevent) {
             hit(source);
-            return noopPromiseResolve(true, strResponseBody);
+            return noopPromiseResolve(strResponseBody);
         }
 
         return Reflect.apply(target, thisArg, args);
