@@ -83,7 +83,8 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj') {
     // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
     if (typeof fetch === 'undefined'
-        || typeof Proxy === 'undefined') {
+        || typeof Proxy === 'undefined'
+        || typeof Response === 'undefined') {
         return;
     }
 
