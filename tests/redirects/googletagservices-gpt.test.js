@@ -62,6 +62,7 @@ test('AdGuard Syntax', (assert) => {
     assert.strictEqual(typeof mockedPubads.getTargeting, 'function', 'pubads().getTargeting() is function');
     assert.ok(mockedPubads.getTargeting() instanceof Array, 'pubads().getTargeting() returns array');
     assert.strictEqual(mockedPubads.getTargeting().length, 0, 'pubads().getTargeting() is mocked');
+    assert.true(mockedPubads.isInitialLoadDisabled(), 'pubads().isInitialLoadDisabled() returns true');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 });

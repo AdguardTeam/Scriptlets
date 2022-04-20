@@ -1,5 +1,11 @@
 import {
-    hit, noopFunc, noopThis, noopNull, noopArray, noopStr,
+    hit,
+    noopFunc,
+    noopThis,
+    noopNull,
+    noopArray,
+    noopStr,
+    trueFunc,
 } from '../helpers';
 
 /**
@@ -84,6 +90,7 @@ export function GoogleTagServicesGpt(source) {
         getTargeting: noopArray,
         getTargetingKeys: noopArray,
         getSlots: noopArray,
+        isInitialLoadDisabled: trueFunc,
         refresh: noopFunc,
         set: noopThis,
         setCategoryExclusion: noopThis,
@@ -147,4 +154,5 @@ GoogleTagServicesGpt.injections = [
     noopNull,
     noopArray,
     noopStr,
+    trueFunc,
 ];
