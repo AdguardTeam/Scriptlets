@@ -13,6 +13,7 @@ AdGuard's Scriptlets and Redirect resources library which provides extended capa
 * [How to build](#how-to-build)
 * [How to test](#how-to-test)
 * [Browser compatibility](#browser-compatibility)
+* [Projects using Scriptlets](#used-by)
 
 * * *
 ## Scriptlets
@@ -466,3 +467,11 @@ and open needed HTML file from `tests/dist` in your browser with devtools
 | Chrome | Edge | Firefox | IE  | Opera | Safari |
 | ------ | ---- | ------- | --- | ----- | ------ |
 | 55     | 15   | 52      | 11  | 42    | 10     |
+
+## <a id="used-by"> Projects using Scriptlets
+* [CoreLibs](https://github.com/AdguardTeam/CoreLibs) (updates automatically)
+* [TSUrlFilter](https://github.com/AdguardTeam/tsurlfilter)
+* [FiltersCompiler](https://github.com/AdguardTeam/FiltersCompiler) (`tsurlfilter`'s update might be required as well)
+* [AdguardBrowserExtension](https://github.com/AdguardTeam/AdguardBrowserExtension) (`tsurlfilter` also should be updated)
+* [AdguardForSafari](https://github.com/AdguardTeam/AdGuardForSafari) (`adguard-resources` should be updated)
+* [AdguardForiOS](https://github.com/AdguardTeam/AdguardForiOS) (`tsurlfilter` should be updated in `advanced-adblocker-web-extension`)
