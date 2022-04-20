@@ -50,7 +50,7 @@ import {
  *     OR
  *     example.org#%#//scriptlet('prevent-fetch', '*')
  *     OR
- *   example.org#%#//scriptlet('prevent-fetch', '')
+ *     example.org#%#//scriptlet('prevent-fetch', '')
  *     ```
  *
  * 2. Prevent fetch call for specific url
