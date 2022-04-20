@@ -26,7 +26,7 @@ const afterEach = () => {
 
 module(name, { beforeEach, afterEach });
 
-const isSupported = typeof fetch !== 'undefined' && typeof Proxy !== 'undefined';
+const isSupported = typeof fetch !== 'undefined' && typeof Proxy !== 'undefined' && typeof Response !== 'undefined';
 
 if (!isSupported) {
     test('unsupported', (assert) => {
