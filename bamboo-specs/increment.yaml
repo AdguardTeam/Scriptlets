@@ -29,7 +29,7 @@ Increment:
         interpreter: SHELL
         scripts:
           - |-
-            #!/bin/sh
+            #!/bin/bash
             set -e -f -u -x
 
             # Explicitly checkout the revision that we need.
