@@ -1,6 +1,7 @@
 /* eslint-disable no-underscore-dangle, no-console */
 import { runScriptlet, clearGlobalProps } from '../helpers';
 import { startsWith } from '../../src/helpers/string-utils';
+import { isEmptyObject } from '../../src/helpers/object-utils';
 
 const { test, module } = QUnit;
 const name = 'prevent-fetch';
@@ -25,7 +26,7 @@ const afterEach = () => {
 
 module(name, { beforeEach, afterEach });
 
-const isSupported = typeof fetch !== 'undefined' && typeof Proxy !== 'undefined';
+const isSupported = typeof fetch !== 'undefined' && typeof Proxy !== 'undefined' && typeof Response !== 'undefined';
 
 if (!isSupported) {
     test('unsupported', (assert) => {
@@ -130,15 +131,17 @@ if (!isSupported) {
         const done = assert.async(2);
 
         const response1 = await fetch(inputRequest1);
+        const parsedData1 = await response1.json();
 
-        assert.equal(response1.body, null, 'first response is mocked');
+        assert.ok(isEmptyObject(parsedData1), 'Response is mocked');
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
         clearGlobalProps('hit');
 
         const response2 = await fetch(inputRequest2);
+        const parsedData2 = await response2.json();
 
-        assert.equal(response2.body, null, 'second response is mocked');
+        assert.ok(isEmptyObject(parsedData2), 'Response is mocked');
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -153,8 +156,9 @@ if (!isSupported) {
         const done = assert.async();
 
         const response = await fetch(INPUT_JSON_PATH, options);
+        const parsedData = await response.json();
 
-        assert.equal(response.body, null, 'Response is mocked');
+        assert.ok(isEmptyObject(parsedData), 'Response is mocked');
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -169,8 +173,9 @@ if (!isSupported) {
         const done = assert.async();
 
         const response = await fetch(INPUT_JSON_PATH, init);
+        const parsedData = await response.json();
 
-        assert.equal(response.body, null, 'Response is mocked');
+        assert.ok(isEmptyObject(parsedData), 'Response is mocked');
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -187,8 +192,9 @@ if (!isSupported) {
         const done = assert.async();
 
         const response = await fetch(inputRequest);
+        const parsedData = await response.json();
 
-        assert.equal(response.body, null, 'Response is mocked');
+        assert.ok(isEmptyObject(parsedData), 'Response is mocked');
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -263,6 +269,22 @@ if (!isSupported) {
 
         assert.deepEqual(actualJson, expectedJson);
         assert.strictEqual(window.hit, undefined, 'hit should not fire');
+        done();
+    });
+
+    test('prevent all, fetch returns empty array', async (assert) => {
+        const INPUT_JSON_PATH_1 = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const inputRequest1 = new Request(INPUT_JSON_PATH_1); // eslint-disable-line compat/compat
+
+        // match any fetch
+        runScriptlet(name, ['*', 'emptyArr']);
+        const done = assert.async();
+
+        const response = await fetch(inputRequest1);
+        const parsedData = await response.json();
+
+        assert.ok(Array.isArray(parsedData) && parsedData.length === 0, 'Response is empty array');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
 }
