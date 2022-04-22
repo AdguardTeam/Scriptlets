@@ -4,7 +4,7 @@
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "scripts": {
         "watch": "rollup -c -w",
-        "build": "rollup -c && babel-node redirects.build.js && babel-node func-bundler.js",
+        "build": "rollup -c && babel-node redirects.build.js && babel-node func.build.js",
         "corelibs": "rollup -c --environment CLEAN && babel-node corelibs.build.js && REDIRECTS=CORELIBS babel-node redirects.build.js",
         "build-test": "rollup -c --environment UI_TEST",
         "test": "yarn build-test && node tests/index.js",
