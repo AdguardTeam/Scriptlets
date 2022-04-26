@@ -19,7 +19,7 @@ const afterEach = () => {
 module(name, { beforeEach, afterEach });
 
 test('AdGuard: yandex metrika watch.js', (assert) => {
-    assert.expect(12);
+    assert.expect(14);
 
     // yandex_metrika_callbacks: these callbacks needed for
     // creating an instance of Ya.Metrika after script loading
@@ -29,9 +29,13 @@ test('AdGuard: yandex metrika watch.js', (assert) => {
 
     runRedirect(name);
 
-    assert.ok(window.Ya.Metrika, 'Metrika function was created');
-    const ya = new window.Ya.Metrika();
+    const { Metrika } = window.Ya.Metrika;
+    assert.ok(Metrika, 'Metrika function was created');
+    assert.ok(Metrika.counters().length === 0, 'Metrika.counters returns empty array');
+
+    const ya = new Metrika();
     assert.notOk(ya.addFileExtension(), 'addFileExtension function created and executed');
+    assert.ok(ya.counters().length === 0, 'ya.counters returns empty array');
 
     // no-options methods test
     assert.notOk(ya.addFileExtension(), 'addFileExtension function created and executed');
