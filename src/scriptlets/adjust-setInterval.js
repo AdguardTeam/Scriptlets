@@ -9,7 +9,7 @@ import {
     getMatchDelay,
     getWildcardSymbol,
     shouldMatchAnyDelay,
-} from '../helpers';
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**

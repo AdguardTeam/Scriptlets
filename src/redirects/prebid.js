@@ -4,7 +4,7 @@ import {
     noopFunc,
     noopStr,
     noopArray,
-} from '../helpers';
+} from '../helpers/index';
 
 /**
  * @redirect prebid

@@ -3,6 +3,7 @@ import Base64 from 'crypto-js/enc-base64';
 import yaml from 'js-yaml';
 import * as redirectsList from './src/redirects/redirects-list';
 import { version } from './package.json';
+import { staticRedirects, rawBlockingRedirects } from './scripts/get-redirects';
 
 const fs = require('fs');
 const path = require('path');
@@ -24,26 +25,14 @@ const REDIRECT_FILES_PATH = path.resolve(PATH_TO_DIST, 'redirect-files');
 const CORELIBS_RESULT_PATH = path.resolve(PATH_TO_DIST, CORELIBS_FILE_NAME);
 
 const REDIRECTS_DIRECTORY = '../src/redirects';
-const STATIC_REDIRECTS_PATH = './src/redirects/static-redirects.yml';
-const BLOCKING_REDIRECTS_PATH = './src/redirects/blocking-redirects.yml';
 const banner = `#
 #    AdGuard Scriptlets (Redirects Source)
 #    Version ${version}
 #
 `;
 
-let staticRedirects;
-try {
-    staticRedirects = yaml.safeLoad(fs.readFileSync(STATIC_REDIRECTS_PATH, 'utf8'));
-} catch (e) {
-    // eslint-disable-next-line no-console
-    console.log(`Unable to load yaml because of: ${e}`);
-    throw e;
-}
-
 let blockingRedirects;
 try {
-    const rawBlockingRedirects = yaml.safeLoad(fs.readFileSync(BLOCKING_REDIRECTS_PATH, 'utf8'));
     blockingRedirects = rawBlockingRedirects.map((raw) => {
         // get bundled html file as content for redirect
         const content = fs.readFileSync(path.resolve(REDIRECT_FILES_PATH, raw.title), 'utf8');

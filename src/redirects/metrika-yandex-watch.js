@@ -1,4 +1,4 @@
-import { hit, noopFunc, noopArray } from '../helpers';
+import { hit, noopFunc, noopArray } from '../helpers/index';
 
 /**
  * @redirect metrika-yandex-watch

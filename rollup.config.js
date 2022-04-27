@@ -6,7 +6,9 @@ import babel from '@rollup/plugin-babel';
 import cleanup from 'rollup-plugin-cleanup';
 import copy from 'rollup-plugin-copy';
 import json from '@rollup/plugin-json';
+import replace from '@rollup/plugin-replace';
 import generateHtml from 'rollup-plugin-generate-html';
+import redirectsMap from './scripts/get-redirects';
 
 import project from './package.json';
 
@@ -48,6 +50,11 @@ const mainConfig = {
     },
     plugins: [
         resolve(),
+        replace({
+            __MAP__: redirectsMap,
+            // TODO: remove param in @rollup/plugin-replace 5.x.x+
+            preventAssignment: true,
+        }),
         commonjs({
             include: 'node_modules/**',
         }),
@@ -79,6 +86,11 @@ const umdConfig = {
     },
     plugins: [
         resolve(),
+        replace({
+            __MAP__: redirectsMap,
+            // TODO: remove param in @rollup/plugin-replace 5.x.x+
+            preventAssignment: true,
+        }),
         commonjs({
             include: 'node_modules/**',
         }),
@@ -247,6 +259,11 @@ const tmpRedirectsConfig = {
     },
     plugins: [
         resolve(),
+        replace({
+            __MAP__: redirectsMap,
+            // TODO: remove param in @rollup/plugin-replace 5.x.x+
+            preventAssignment: true,
+        }),
         commonjs({
             include: 'node_modules/**',
         }),

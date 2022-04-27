@@ -12,7 +12,7 @@ import {
     toRegExp,
     matchStackTrace,
     nativeIsNaN,
-} from '../helpers';
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**

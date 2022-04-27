@@ -15,7 +15,7 @@ import {
     getRequestData,
     getObjectEntries,
     getObjectFromEntries,
-} from '../helpers';
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**

@@ -1,4 +1,4 @@
-import { hit, toRegExp } from '../helpers';
+import { hit, toRegExp } from '../helpers/index';
 
 /**
  * @scriptlet close-window

@@ -1,5 +1,5 @@
 /* eslint-disable no-console, func-names, no-multi-assign */
-import { hit } from '../helpers';
+import { hit } from '../helpers/index';
 
 /**
  * @scriptlet set-popads-dummy

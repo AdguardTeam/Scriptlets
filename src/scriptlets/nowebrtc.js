@@ -3,7 +3,7 @@ import {
     hit,
     noopFunc,
     convertRtcConfigToString,
-} from '../helpers';
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**

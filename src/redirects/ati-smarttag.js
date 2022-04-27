@@ -1,4 +1,4 @@
-import { hit, noopFunc } from '../helpers';
+import { hit, noopFunc } from '../helpers/index';
 
 /**
  * @redirect ati-smarttag

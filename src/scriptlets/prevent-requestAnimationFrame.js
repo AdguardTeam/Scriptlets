@@ -6,7 +6,7 @@ import {
     // following helpers are needed for helpers above
     toRegExp,
     startsWith,
-} from '../helpers';
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**

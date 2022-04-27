@@ -1,4 +1,4 @@
-import { hit } from '../helpers';
+import { hit } from '../helpers/index';
 
 /**
  * @scriptlet disable-newtab-links

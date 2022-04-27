@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.8
+ * Version 1.6.10
  */
 
 (function () {
@@ -643,12 +643,24 @@
     }; // eslint-disable-line compat/compat
 
     /**
-     * Returns Promise object that is resolved with an empty response
+     * Returns Promise object that is resolved with a response
+     * @param {string} [responseBody='{}'] value of response body
      */
-    // eslint-disable-next-line compat/compat
 
     var noopPromiseResolve = function noopPromiseResolve() {
-      return Promise.resolve(new Response());
+      var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '{}';
+
+      if (typeof Response === 'undefined') {
+        return;
+      } // eslint-disable-next-line compat/compat
+
+
+      var response = new Response(responseBody, {
+        status: 200,
+        statusText: 'OK'
+      }); // eslint-disable-next-line compat/compat, consistent-return
+
+      return Promise.resolve(response);
     };
 
     /* eslint-disable no-console, no-underscore-dangle */
@@ -5003,7 +5015,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('prevent-fetch'[, propsToMatch])
+     * example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody]])
      * ```
      *
      * - `propsToMatch` - optional, string of space-separated properties to match; possible props:
@@ -5011,14 +5023,20 @@
      *   - colon-separated pairs `name:value` where
      *     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
      *     - `value` is string or regular expression for matching the value of the option passed to fetch call; invalid regular expression will cause any value matching
-     *
+     * - responseBody - optional, string for defining response body value, defaults to `emptyObj`. Possible values:
+     *    - `emptyObj` - empty object
+     *    - `emptyArr` - empty array
      * > Usage with no arguments will log fetch calls to browser console;
      * which is useful for debugging but permitted for production filter lists.
      *
      * **Examples**
      * 1. Prevent all fetch calls
      *     ```
+     *     example.org#%#//scriptlet('prevent-fetch')
+     *     OR
      *     example.org#%#//scriptlet('prevent-fetch', '*')
+     *     OR
+     *     example.org#%#//scriptlet('prevent-fetch', '')
      *     ```
      *
      * 2. Prevent fetch call for specific url
@@ -5035,15 +5053,36 @@
      *     ```
      *     example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/')
      *     ```
+     *
+     * 5. Prevent fetch call and specify response body value
+     *     ```
+     *     ! Specify response body for fetch call to a specific url
+     *     example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/', 'emptyArr')
+     *
+     *     ! Specify response body for all fetch calls
+     *     example.org#%#//scriptlet('prevent-fetch', '', 'emptyArr')
+     *     ```
      */
 
     /* eslint-enable max-len */
 
     function preventFetch(source, propsToMatch) {
+      var responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'emptyObj';
+
       // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-      if (typeof fetch === 'undefined' || typeof Proxy === 'undefined') {
+      if (typeof fetch === 'undefined' || typeof Proxy === 'undefined' || typeof Response === 'undefined') {
+        return;
+      }
+
+      var strResponseBody;
+
+      if (responseBody === 'emptyObj') {
+        strResponseBody = '{}';
+      } else if (responseBody === 'emptyArr') {
+        strResponseBody = '[]';
+      } else {
         return;
       }
 
@@ -5077,7 +5116,7 @@
 
         if (shouldPrevent) {
           hit(source);
-          return noopPromiseResolve();
+          return noopPromiseResolve(strResponseBody);
         }
 
         return Reflect.apply(target, thisArg, args);
@@ -7542,6 +7581,7 @@
         getTargeting: noopArray,
         getTargetingKeys: noopArray,
         getSlots: noopArray,
+        isInitialLoadDisabled: trueFunc,
         refresh: noopFunc,
         set: noopThis,
         setCategoryExclusion: noopThis,
@@ -7615,7 +7655,7 @@
       hit(source);
     }
     GoogleTagServicesGpt.names = ['googletagservices-gpt', 'ubo-googletagservices_gpt.js', 'googletagservices_gpt.js'];
-    GoogleTagServicesGpt.injections = [hit, noopFunc, noopThis, noopNull, noopArray, noopStr];
+    GoogleTagServicesGpt.injections = [hit, noopFunc, noopThis, noopNull, noopArray, noopStr, trueFunc];
 
     /**
      * @redirect scorecardresearch-beacon
@@ -7823,14 +7863,16 @@
       };
 
       function Metrika() {} // constructor
-      // Methods without options
 
+
+      Metrika.counters = noopArray; // Methods without options
 
       Metrika.prototype.addFileExtension = noopFunc;
       Metrika.prototype.getClientID = noopFunc;
       Metrika.prototype.setUserID = noopFunc;
       Metrika.prototype.userParams = noopFunc;
-      Metrika.prototype.params = noopFunc; // Methods with options
+      Metrika.prototype.params = noopFunc;
+      Metrika.prototype.counters = noopArray; // Methods with options
       // The order of arguments should be kept in according to API
 
       Metrika.prototype.extLink = function (url, options) {
@@ -7873,7 +7915,7 @@
       hit(source);
     }
     metrikaYandexWatch.names = ['metrika-yandex-watch'];
-    metrikaYandexWatch.injections = [hit, noopFunc];
+    metrikaYandexWatch.injections = [hit, noopFunc, noopArray];
 
     /**
      * @redirect amazon-apstag
@@ -13144,10 +13186,126 @@
 
       result = source.engine === 'test' ? wrapInNonameFunc(result) : passSourceAndProps(source, result);
       return result;
+    }; // It will be replaced with dictionary-object in build-script
+    // eslint-disable-next-line no-undef
+
+
+    var map$1 = {
+      "1x1-transparent.gif": "1x1-transparent.gif",
+      "1x1.gif": "1x1-transparent.gif",
+      "1x1-transparent-gif": "1x1-transparent.gif",
+      "2x2-transparent.png": "2x2-transparent.png",
+      "2x2.png": "2x2-transparent.png",
+      "2x2-transparent-png": "2x2-transparent.png",
+      "3x2-transparent.png": "3x2-transparent.png",
+      "3x2.png": "3x2-transparent.png",
+      "3x2-transparent-png": "3x2-transparent.png",
+      "32x32-transparent.png": "32x32-transparent.png",
+      "32x32.png": "32x32-transparent.png",
+      "32x32-transparent-png": "32x32-transparent.png",
+      "noopframe": "noopframe.html",
+      "noop.html": "noopframe.html",
+      "blank-html": "noopframe.html",
+      "noopcss": "noopcss.css",
+      "blank-css": "noopcss.css",
+      "noopjs": "noopjs.js",
+      "noop.js": "noopjs.js",
+      "blank-js": "noopjs.js",
+      "noopjson": "noopjson.json",
+      "nooptext": "nooptext.js",
+      "noop.txt": "nooptext.js",
+      "blank-text": "nooptext.js",
+      "empty": "nooptext.js",
+      "noopvmap-1.0": "noopvmap01.xml",
+      "noop-vmap1.0.xml": "noopvmap01.xml",
+      "noopvast-2.0": "noopvast02.xml",
+      "noopvast-3.0": "noopvast03.xml",
+      "noopvast-4.0": "noopvast04.xml",
+      "noopmp3-0.1s": "noopmp3.mp3",
+      "blank-mp3": "noopmp3.mp3",
+      "noopmp4-1s": "noopmp4.mp4",
+      "noop-1s.mp4": "noopmp4.mp4",
+      "blank-mp4": "noopmp4.mp4",
+      "click2load.html": "click2load.html",
+      "ubo-click2load.html": "click2load.html",
+      "amazon-apstag": "amazon-apstag.js",
+      "ubo-amazon_apstag.js": "amazon-apstag.js",
+      "amazon_apstag.js": "amazon-apstag.js",
+      "ati-smarttag": "ati-smarttag.js",
+      "didomi-loader": "didomi-loader.js",
+      "fingerprintjs2": "fingerprintjs2.js",
+      "ubo-fingerprint2.js": "fingerprintjs2.js",
+      "fingerprint2.js": "fingerprintjs2.js",
+      "fingerprintjs3": "fingerprintjs3.js",
+      "ubo-fingerprint3.js": "fingerprintjs3.js",
+      "fingerprint3.js": "fingerprintjs3.js",
+      "gemius": "gemius.js",
+      "google-analytics-ga": "google-analytics-ga.js",
+      "ubo-google-analytics_ga.js": "google-analytics-ga.js",
+      "google-analytics_ga.js": "google-analytics-ga.js",
+      "google-analytics": "google-analytics.js",
+      "ubo-google-analytics_analytics.js": "google-analytics.js",
+      "google-analytics_analytics.js": "google-analytics.js",
+      "googletagmanager-gtm": "google-analytics.js",
+      "ubo-googletagmanager_gtm.js": "google-analytics.js",
+      "googletagmanager_gtm.js": "google-analytics.js",
+      "google-ima3": "google-ima3.js",
+      "googlesyndication-adsbygoogle": "googlesyndication-adsbygoogle.js",
+      "ubo-googlesyndication_adsbygoogle.js": "googlesyndication-adsbygoogle.js",
+      "googlesyndication_adsbygoogle.js": "googlesyndication-adsbygoogle.js",
+      "googletagservices-gpt": "googletagservices-gpt.js",
+      "ubo-googletagservices_gpt.js": "googletagservices-gpt.js",
+      "googletagservices_gpt.js": "googletagservices-gpt.js",
+      "matomo": "matomo.js",
+      "metrika-yandex-tag": "metrika-yandex-tag.js",
+      "metrika-yandex-watch": "metrika-yandex-watch.js",
+      "naver-wcslog": "naver-wcslog.js",
+      "noeval": "noeval.js",
+      "noeval.js": "noeval.js",
+      "silent-noeval.js": "noeval.js",
+      "ubo-noeval.js": "noeval.js",
+      "ubo-silent-noeval.js": "noeval.js",
+      "ubo-noeval": "noeval.js",
+      "ubo-silent-noeval": "noeval.js",
+      "prebid-ads": "prebid-ads.js",
+      "ubo-prebid-ads.js": "prebid-ads.js",
+      "prebid-ads.js": "prebid-ads.js",
+      "prebid": "prebid.js",
+      "prevent-bab": "prevent-bab.js",
+      "nobab.js": "prevent-bab.js",
+      "ubo-nobab.js": "prevent-bab.js",
+      "bab-defuser.js": "prevent-bab.js",
+      "ubo-bab-defuser.js": "prevent-bab.js",
+      "ubo-nobab": "prevent-bab.js",
+      "ubo-bab-defuser": "prevent-bab.js",
+      "prevent-bab2": "prevent-bab2.js",
+      "nobab2.js": "prevent-bab2.js",
+      "prevent-fab-3.2.0": "prevent-fab-3.2.0.js",
+      "nofab.js": "prevent-fab-3.2.0.js",
+      "ubo-nofab.js": "prevent-fab-3.2.0.js",
+      "fuckadblock.js-3.2.0": "prevent-fab-3.2.0.js",
+      "ubo-fuckadblock.js-3.2.0": "prevent-fab-3.2.0.js",
+      "ubo-nofab": "prevent-fab-3.2.0.js",
+      "prevent-popads-net": "prevent-popads-net.js",
+      "popads.net.js": "prevent-popads-net.js",
+      "ubo-popads.net.js": "prevent-popads-net.js",
+      "ubo-popads.net": "prevent-popads-net.js",
+      "scorecardresearch-beacon": "scorecardresearch-beacon.js",
+      "ubo-scorecardresearch_beacon.js": "scorecardresearch-beacon.js",
+      "scorecardresearch_beacon.js": "scorecardresearch-beacon.js",
+      "set-popads-dummy": "set-popads-dummy.js",
+      "popads-dummy.js": "set-popads-dummy.js",
+      "ubo-popads-dummy.js": "set-popads-dummy.js",
+      "ubo-popads-dummy": "set-popads-dummy.js"
+    };
+
+    var getRedirectFilename = function getRedirectFilename(name) {
+      return map$1[name];
     };
 
     var redirectsCjs = {
       Redirects: Redirects,
+      getRedirectFilename: getRedirectFilename,
       getCode: getRedirectCode,
       isAdgRedirectRule: validator.isAdgRedirectRule,
       isValidAdgRedirectRule: validator.isValidAdgRedirectRule,

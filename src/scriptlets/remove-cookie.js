@@ -1,4 +1,4 @@
-import { hit, toRegExp } from '../helpers';
+import { hit, toRegExp } from '../helpers/index';
 
 /* eslint-disable max-len */
 /**

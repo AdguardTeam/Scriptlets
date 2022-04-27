@@ -76,6 +76,7 @@ function GoogleTagServicesGpt(source) {
       getTargeting: noopArray,
       getTargetingKeys: noopArray,
       getSlots: noopArray,
+      isInitialLoadDisabled: trueFunc,
       refresh: noopFunc,
       set: noopThis,
       setCategoryExclusion: noopThis,
@@ -216,6 +217,9 @@ function noopArray() {
   }
 function noopStr() {
     return '';
+  }
+function trueFunc() {
+    return true;
   };
         const updatedArgs = args ? [].concat(source).concat(args) : [source];
         try {

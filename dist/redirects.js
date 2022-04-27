@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.8
+ * Version 1.6.10
  */
 
 var Redirects = (function () {

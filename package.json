@@ -57,6 +57,7 @@
         "@rollup/plugin-commonjs": "^17.0.0",
         "@rollup/plugin-json": "^4.1.0",
         "@rollup/plugin-node-resolve": "^8.1.0",
+        "@rollup/plugin-replace": "^4.0.0",
         "axios": "^0.21.1",
         "browserstack-local": "^1.4.9",
         "crypto-js": "^4.1.1",

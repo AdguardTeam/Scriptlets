@@ -2,7 +2,7 @@ import {
     getPropertyInChain,
     setPropertyAccess,
     hit,
-} from '../helpers';
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**

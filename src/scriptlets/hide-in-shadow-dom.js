@@ -4,7 +4,7 @@ import {
     flatten,
     findHostElements,
     pierceShadowDom,
-} from '../helpers';
+} from '../helpers/index';
 
 /**
  * @scriptlet hide-in-shadow-dom

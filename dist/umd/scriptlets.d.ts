@@ -115,6 +115,12 @@ declare module '@adguard/scriptlets' {
         Redirects: Redirects;
 
         /**
+         * Returns filename with extension for requested alias
+         * @param alias alias for redirect filename
+         */
+        getRedirectFilename(alias: string): string;
+
+        /**
          * Checks if the `rule` is AdGuard redirect rule.
          *
          * @param rule

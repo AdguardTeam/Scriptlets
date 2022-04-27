@@ -1,5 +1,5 @@
 /* eslint-disable no-console, no-eval */
-import { hit } from '../helpers';
+import { hit } from '../helpers/index';
 
 /**
  * @scriptlet log-eval

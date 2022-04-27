@@ -1,5 +1,5 @@
 /* eslint-disable func-names */
-import { hit, setPropertyAccess } from '../helpers';
+import { hit, setPropertyAccess } from '../helpers/index';
 
 /**
  * @scriptlet prevent-adfly
