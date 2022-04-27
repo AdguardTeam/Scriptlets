@@ -1,16 +1,6 @@
-import { redirectsCjs } from '../redirects';
-
-import {
-    attachDependencies,
-    addCall,
-    passSourceAndProps,
-    wrapInNonameFunc,
-} from '../helpers/injector';
-
-import * as scriptletsList from './scriptlets-list';
-
+import { redirects } from '../redirects';
 import validator from '../helpers/validator';
-
+import { passSourceAndProps, wrapInNonameFunc } from '../helpers/injector';
 import {
     isValidScriptletRule,
     convertUboScriptletToAdg,
@@ -18,6 +8,10 @@ import {
     convertScriptletToAdg,
     convertAdgScriptletToUbo,
 } from '../helpers/converter';
+// FIXME add built process description in README
+// next module should be built and put in the tmp directory before building this module
+// eslint-disable-next-line import/no-unresolved,import/extensions
+import { getScriptletFunction } from '../../tmp/scriptlets-func';
 
 /**
  * @typedef {Object} Source - scriptlet properties
@@ -34,55 +28,19 @@ import {
 /**
  * Returns scriptlet code by param
  * @param {Source} source
- * @returns {string} scriptlet code
+ * @returns {string|null} scriptlet code
  */
 function getScriptletCode(source) {
     if (!validator.isValidScriptletName(source.name)) {
         return null;
     }
 
-    const scriptlet = validator.getScriptletByName(source.name);
-    let result = attachDependencies(scriptlet);
-    result = addCall(scriptlet, result);
-    result = source.engine === 'corelibs' || source.engine === 'test'
-        ? wrapInNonameFunc(result)
-        : passSourceAndProps(source, result);
+    const scriptletFunction = getScriptletFunction(source.name).toString();
+    const result = source.engine === 'corelibs' || source.engine === 'test'
+        ? wrapInNonameFunc(scriptletFunction)
+        : passSourceAndProps(source, scriptletFunction);
     return result;
 }
-
-/**
- * Method creates string for file with scriptlets functions,
- * where dependencies are placed inside scriptlet functions
- */
-const getScriptletFunctionString = () => {
-    function wrapInFunc(name, code) {
-        return `function ${name}(source, args){\n${code}\n}`;
-    }
-
-    const scriptletsFunctions = Object.values(scriptletsList);
-
-    const scriptletsStrings = scriptletsFunctions.map((scriptlet) => {
-        const scriptletWithDeps = attachDependencies(scriptlet);
-        const scriptletWithCall = addCall(scriptlet, scriptletWithDeps);
-        return wrapInFunc(scriptlet.name, scriptletWithCall);
-    });
-
-    const scriptletsString = scriptletsStrings.join('\n');
-
-    const scriptletsMapString = `const scriptletsMap = {\n${scriptletsFunctions.map((scriptlet) => {
-        return scriptlet.names.map((name) => {
-            return `'${name}': ${scriptlet.name}`;
-        }).join(',\n');
-    }).join(',\n')}\n}`;
-
-    const exportString = `var getScriptletFunction = (name) => {
-        return scriptletsMap[name];
-    };
-    module.exports = { getScriptletFunction };
-    `;
-
-    return `${scriptletsString}\n${scriptletsMapString}\n${exportString}`;
-};
 
 /**
  * Scriptlets variable
@@ -91,19 +49,21 @@ const getScriptletFunctionString = () => {
  * `invoke` method receives one argument with `Source` type
  * `validate` method receives one argument with `String` type
  */
-const scriptletsObject = (() => ({
-    invoke: getScriptletCode,
-    getScriptletFunctionString,
-    isValidScriptletName: validator.isValidScriptletName,
-    isValidScriptletRule,
-    isAdgScriptletRule: validator.isAdgScriptletRule,
-    isUboScriptletRule: validator.isUboScriptletRule,
-    isAbpSnippetRule: validator.isAbpSnippetRule,
-    convertUboToAdg: convertUboScriptletToAdg,
-    convertAbpToAdg: convertAbpSnippetToAdg,
-    convertScriptletToAdg,
-    convertAdgToUbo: convertAdgScriptletToUbo,
-    redirects: redirectsCjs,
-}))();
+const scriptletsObject = (() => {
+    return {
+        invoke: getScriptletCode,
+        getScriptletFunction,
+        isValidScriptletName: validator.isValidScriptletName,
+        isValidScriptletRule,
+        isAdgScriptletRule: validator.isAdgScriptletRule,
+        isUboScriptletRule: validator.isUboScriptletRule,
+        isAbpSnippetRule: validator.isAbpSnippetRule,
+        convertUboToAdg: convertUboScriptletToAdg,
+        convertAbpToAdg: convertAbpSnippetToAdg,
+        convertScriptletToAdg,
+        convertAdgToUbo: convertAdgScriptletToUbo,
+        redirects,
+    };
+})();
 
 export default scriptletsObject;

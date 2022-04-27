@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.8
+ * Version 1.6.9
  */
 
 var Redirects = (function () {
@@ -109,7 +109,7 @@ var Redirects = (function () {
 
   // YAML error class. http://stackoverflow.com/questions/8458984
 
-  function YAMLException(reason, mark) {
+  function YAMLException$1(reason, mark) {
     // Super constructor
     Error.call(this);
     this.name = 'YAMLException';
@@ -127,10 +127,10 @@ var Redirects = (function () {
   } // Inherit from Error
 
 
-  YAMLException.prototype = Object.create(Error.prototype);
-  YAMLException.prototype.constructor = YAMLException;
+  YAMLException$1.prototype = Object.create(Error.prototype);
+  YAMLException$1.prototype.constructor = YAMLException$1;
 
-  YAMLException.prototype.toString = function toString(compact) {
+  YAMLException$1.prototype.toString = function toString(compact) {
     var result = this.name + ': ';
     result += this.reason || '(unknown reason)';
 
@@ -141,7 +141,7 @@ var Redirects = (function () {
     return result;
   };
 
-  var exception = YAMLException;
+  var exception = YAMLException$1;
 
   function Mark(name, buffer, position, line, column) {
     this.name = name;
@@ -226,7 +226,7 @@ var Redirects = (function () {
     return result;
   }
 
-  function Type(tag, options) {
+  function Type$1(tag, options) {
     options = options || {};
     Object.keys(options).forEach(function (name) {
       if (TYPE_CONSTRUCTOR_OPTIONS.indexOf(name) === -1) {
@@ -256,7 +256,7 @@ var Redirects = (function () {
     }
   }
 
-  var type = Type;
+  var type = Type$1;
 
   /*eslint-disable max-len*/
 
@@ -302,7 +302,7 @@ var Redirects = (function () {
     return result;
   }
 
-  function Schema(definition) {
+  function Schema$1(definition) {
     this.include = definition.include || [];
     this.implicit = definition.implicit || [];
     this.explicit = definition.explicit || [];
@@ -316,14 +316,14 @@ var Redirects = (function () {
     this.compiledTypeMap = compileMap(this.compiledImplicit, this.compiledExplicit);
   }
 
-  Schema.DEFAULT = null;
+  Schema$1.DEFAULT = null;
 
-  Schema.create = function createSchema() {
+  Schema$1.create = function createSchema() {
     var schemas, types;
 
     switch (arguments.length) {
       case 1:
-        schemas = Schema.DEFAULT;
+        schemas = Schema$1.DEFAULT;
         types = arguments[0];
         break;
 
@@ -340,7 +340,7 @@ var Redirects = (function () {
     types = common.toArray(types);
 
     if (!schemas.every(function (schema) {
-      return schema instanceof Schema;
+      return schema instanceof Schema$1;
     })) {
       throw new exception('Specified list of super schemas (or a single Schema object) contains a non-Schema object.');
     }
@@ -351,13 +351,13 @@ var Redirects = (function () {
       throw new exception('Specified list of YAML types (or a single Type object) contains a non-Type object.');
     }
 
-    return new Schema({
+    return new Schema$1({
       include: schemas,
       explicit: types
     });
   };
 
-  var schema = Schema;
+  var schema = Schema$1;
 
   var str = new type('tag:yaml.org,2002:str', {
     kind: 'scalar',
@@ -876,8 +876,8 @@ var Redirects = (function () {
 
   try {
     // A trick for browserified version, to not include `Buffer` shim
-    var _require = commonjsRequire;
-    NodeBuffer = _require('buffer').Buffer;
+    var _require$1 = commonjsRequire;
+    NodeBuffer = _require$1('buffer').Buffer;
   } catch (__) {} // [ 64, 65, 66 ] -> [ padding, CR, LF ]
 
 
@@ -1003,8 +1003,8 @@ var Redirects = (function () {
     represent: representYamlBinary
   });
 
-  var _hasOwnProperty = Object.prototype.hasOwnProperty;
-  var _toString = Object.prototype.toString;
+  var _hasOwnProperty$3 = Object.prototype.hasOwnProperty;
+  var _toString$2 = Object.prototype.toString;
 
   function resolveYamlOmap(data) {
     if (data === null) return true;
@@ -1019,10 +1019,10 @@ var Redirects = (function () {
     for (index = 0, length = object.length; index < length; index += 1) {
       pair = object[index];
       pairHasKey = false;
-      if (_toString.call(pair) !== '[object Object]') return false;
+      if (_toString$2.call(pair) !== '[object Object]') return false;
 
       for (pairKey in pair) {
-        if (_hasOwnProperty.call(pair, pairKey)) {
+        if (_hasOwnProperty$3.call(pair, pairKey)) {
           if (!pairHasKey) pairHasKey = true;else return false;
         }
       }
@@ -1092,7 +1092,7 @@ var Redirects = (function () {
     construct: constructYamlPairs
   });
 
-  var _hasOwnProperty$1 = Object.prototype.hasOwnProperty;
+  var _hasOwnProperty$2 = Object.prototype.hasOwnProperty;
 
   function resolveYamlSet(data) {
     if (data === null) return true;
@@ -1100,7 +1100,7 @@ var Redirects = (function () {
         object = data;
 
     for (key in object) {
-      if (_hasOwnProperty$1.call(object, key)) {
+      if (_hasOwnProperty$2.call(object, key)) {
         if (object[key] !== null) return false;
       }
     }
@@ -1212,8 +1212,8 @@ var Redirects = (function () {
 
   try {
     // workaround to exclude package from browserify list.
-    var _require$1 = commonjsRequire;
-    esprima = _require$1('esprima');
+    var _require = commonjsRequire;
+    esprima = _require('esprima');
   } catch (_) {
     /* eslint-disable no-redeclare */
 
@@ -1297,7 +1297,7 @@ var Redirects = (function () {
   /*eslint-disable max-len,no-use-before-define*/
 
 
-  var _hasOwnProperty$2 = Object.prototype.hasOwnProperty;
+  var _hasOwnProperty$1 = Object.prototype.hasOwnProperty;
   var CONTEXT_FLOW_IN = 1;
   var CONTEXT_FLOW_OUT = 2;
   var CONTEXT_BLOCK_IN = 3;
@@ -1477,7 +1477,7 @@ var Redirects = (function () {
     simpleEscapeMap[i] = simpleEscapeSequence(i);
   }
 
-  function State(input, options) {
+  function State$1(input, options) {
     this.input = input;
     this.filename = options['filename'] || null;
     this.schema = options['schema'] || default_full;
@@ -1564,7 +1564,7 @@ var Redirects = (function () {
         throwError(state, 'ill-formed tag handle (first argument) of the TAG directive');
       }
 
-      if (_hasOwnProperty$2.call(state.tagMap, handle)) {
+      if (_hasOwnProperty$1.call(state.tagMap, handle)) {
         throwError(state, 'there is a previously declared suffix for "' + handle + '" tag handle');
       }
 
@@ -1610,7 +1610,7 @@ var Redirects = (function () {
     for (index = 0, quantity = sourceKeys.length; index < quantity; index += 1) {
       key = sourceKeys[index];
 
-      if (!_hasOwnProperty$2.call(destination, key)) {
+      if (!_hasOwnProperty$1.call(destination, key)) {
         destination[key] = source[key];
         overridableKeys[key] = true;
       }
@@ -1658,7 +1658,7 @@ var Redirects = (function () {
         mergeMappings(state, _result, valueNode, overridableKeys);
       }
     } else {
-      if (!state.json && !_hasOwnProperty$2.call(overridableKeys, keyNode) && _hasOwnProperty$2.call(_result, keyNode)) {
+      if (!state.json && !_hasOwnProperty$1.call(overridableKeys, keyNode) && _hasOwnProperty$1.call(_result, keyNode)) {
         state.line = startLine || state.line;
         state.position = startPos || state.position;
         throwError(state, 'duplicated mapping key');
@@ -2573,7 +2573,7 @@ var Redirects = (function () {
 
     if (isVerbatim) {
       state.tag = tagName;
-    } else if (_hasOwnProperty$2.call(state.tagMap, tagHandle)) {
+    } else if (_hasOwnProperty$1.call(state.tagMap, tagHandle)) {
       state.tag = state.tagMap[tagHandle] + tagName;
     } else if (tagHandle === '!') {
       state.tag = '!' + tagName;
@@ -2633,7 +2633,7 @@ var Redirects = (function () {
 
     alias = state.input.slice(_position, state.position);
 
-    if (!_hasOwnProperty$2.call(state.anchorMap, alias)) {
+    if (!_hasOwnProperty$1.call(state.anchorMap, alias)) {
       throwError(state, 'unidentified alias "' + alias + '"');
     }
 
@@ -2770,7 +2770,7 @@ var Redirects = (function () {
             break;
           }
         }
-      } else if (_hasOwnProperty$2.call(state.typeMap[state.kind || 'fallback'], state.tag)) {
+      } else if (_hasOwnProperty$1.call(state.typeMap[state.kind || 'fallback'], state.tag)) {
         type = state.typeMap[state.kind || 'fallback'][state.tag];
 
         if (state.result !== null && type.kind !== state.kind) {
@@ -2864,7 +2864,7 @@ var Redirects = (function () {
 
       if (ch !== 0) readLineBreak(state);
 
-      if (_hasOwnProperty$2.call(directiveHandlers, directiveName)) {
+      if (_hasOwnProperty$1.call(directiveHandlers, directiveName)) {
         directiveHandlers[directiveName](state, directiveName, directiveArgs);
       } else {
         throwWarning(state, 'unknown document directive "' + directiveName + '"');
@@ -2933,7 +2933,7 @@ var Redirects = (function () {
       }
     }
 
-    var state = new State(input, options);
+    var state = new State$1(input, options);
     var nullpos = input.indexOf('\0');
 
     if (nullpos !== -1) {
@@ -2958,7 +2958,7 @@ var Redirects = (function () {
     return state.documents;
   }
 
-  function loadAll(input, iterator, options) {
+  function loadAll$1(input, iterator, options) {
     if (iterator !== null && typeof iterator === 'object' && typeof options === 'undefined') {
       options = iterator;
       iterator = null;
@@ -2975,7 +2975,7 @@ var Redirects = (function () {
     }
   }
 
-  function load(input, options) {
+  function load$1(input, options) {
     var documents = loadDocuments(input, options);
 
     if (documents.length === 0) {
@@ -2988,27 +2988,27 @@ var Redirects = (function () {
     throw new exception('expected a single document in the stream, but found more');
   }
 
-  function safeLoadAll(input, iterator, options) {
+  function safeLoadAll$1(input, iterator, options) {
     if (typeof iterator === 'object' && iterator !== null && typeof options === 'undefined') {
       options = iterator;
       iterator = null;
     }
 
-    return loadAll(input, iterator, common.extend({
+    return loadAll$1(input, iterator, common.extend({
       schema: default_safe
     }, options));
   }
 
-  function safeLoad(input, options) {
-    return load(input, common.extend({
+  function safeLoad$1(input, options) {
+    return load$1(input, common.extend({
       schema: default_safe
     }, options));
   }
 
-  var loadAll_1 = loadAll;
-  var load_1 = load;
-  var safeLoadAll_1 = safeLoadAll;
-  var safeLoad_1 = safeLoad;
+  var loadAll_1 = loadAll$1;
+  var load_1 = load$1;
+  var safeLoadAll_1 = safeLoadAll$1;
+  var safeLoad_1 = safeLoad$1;
   var loader = {
     loadAll: loadAll_1,
     load: load_1,
@@ -3019,8 +3019,8 @@ var Redirects = (function () {
   /*eslint-disable no-use-before-define*/
 
 
-  var _toString$2 = Object.prototype.toString;
-  var _hasOwnProperty$3 = Object.prototype.hasOwnProperty;
+  var _toString = Object.prototype.toString;
+  var _hasOwnProperty = Object.prototype.hasOwnProperty;
   var CHAR_TAB = 0x09;
   /* Tab */
 
@@ -3127,7 +3127,7 @@ var Redirects = (function () {
 
       type = schema.compiledTypeMap['fallback'][tag];
 
-      if (type && _hasOwnProperty$3.call(type.styleAliases, style)) {
+      if (type && _hasOwnProperty.call(type.styleAliases, style)) {
         style = type.styleAliases[style];
       }
 
@@ -3157,7 +3157,7 @@ var Redirects = (function () {
     return '\\' + handle + common.repeat('0', length - string.length) + string;
   }
 
-  function State$1(options) {
+  function State(options) {
     this.schema = options['schema'] || default_full;
     this.indent = Math.max(1, options['indent'] || 2);
     this.noArrayIndent = options['noArrayIndent'] || false;
@@ -3707,9 +3707,9 @@ var Redirects = (function () {
         if (type.represent) {
           style = state.styleMap[type.tag] || type.defaultStyle;
 
-          if (_toString$2.call(type.represent) === '[object Function]') {
+          if (_toString.call(type.represent) === '[object Function]') {
             _result = type.represent(object, style);
-          } else if (_hasOwnProperty$3.call(type.represent, style)) {
+          } else if (_hasOwnProperty.call(type.represent, style)) {
             _result = type.represent[style](object, style);
           } else {
             throw new exception('!<' + type.tag + '> tag resolver accepts not "' + style + '" style');
@@ -3736,7 +3736,7 @@ var Redirects = (function () {
       detectType(state, object, true);
     }
 
-    var type = _toString$2.call(state.dump);
+    var type = _toString.call(state.dump);
 
     if (block) {
       block = state.flowLevel < 0 || state.flowLevel > level;
@@ -3851,22 +3851,22 @@ var Redirects = (function () {
     }
   }
 
-  function dump(input, options) {
+  function dump$1(input, options) {
     options = options || {};
-    var state = new State$1(options);
+    var state = new State(options);
     if (!state.noRefs) getDuplicateReferences(input, state);
     if (writeNode(state, 0, input, true, true)) return state.dump + '\n';
     return '';
   }
 
-  function safeDump(input, options) {
-    return dump(input, common.extend({
+  function safeDump$1(input, options) {
+    return dump$1(input, common.extend({
       schema: default_safe
     }, options));
   }
 
-  var dump_1 = dump;
-  var safeDump_1 = safeDump;
+  var dump_1 = dump$1;
+  var safeDump_1 = safeDump$1;
   var dumper = {
     dump: dump_1,
     safeDump: safeDump_1
@@ -3878,20 +3878,20 @@ var Redirects = (function () {
     };
   }
 
-  var Type$1 = type;
-  var Schema$1 = schema;
+  var Type = type;
+  var Schema = schema;
   var FAILSAFE_SCHEMA = failsafe;
   var JSON_SCHEMA = json;
   var CORE_SCHEMA = core;
   var DEFAULT_SAFE_SCHEMA = default_safe;
   var DEFAULT_FULL_SCHEMA = default_full;
-  var load$1 = loader.load;
-  var loadAll$1 = loader.loadAll;
-  var safeLoad$1 = loader.safeLoad;
-  var safeLoadAll$1 = loader.safeLoadAll;
-  var dump$1 = dumper.dump;
-  var safeDump$1 = dumper.safeDump;
-  var YAMLException$1 = exception; // Deprecated schema names from JS-YAML 2.0.x
+  var load = loader.load;
+  var loadAll = loader.loadAll;
+  var safeLoad = loader.safeLoad;
+  var safeLoadAll = loader.safeLoadAll;
+  var dump = dumper.dump;
+  var safeDump = dumper.safeDump;
+  var YAMLException = exception; // Deprecated schema names from JS-YAML 2.0.x
 
   var MINIMAL_SCHEMA = failsafe;
   var SAFE_SCHEMA = default_safe;
@@ -3901,21 +3901,21 @@ var Redirects = (function () {
   var parse = deprecated('parse');
   var compose = deprecated('compose');
   var addConstructor = deprecated('addConstructor');
-  var jsYaml = {
-    Type: Type$1,
-    Schema: Schema$1,
+  var jsYaml$1 = {
+    Type: Type,
+    Schema: Schema,
     FAILSAFE_SCHEMA: FAILSAFE_SCHEMA,
     JSON_SCHEMA: JSON_SCHEMA,
     CORE_SCHEMA: CORE_SCHEMA,
     DEFAULT_SAFE_SCHEMA: DEFAULT_SAFE_SCHEMA,
     DEFAULT_FULL_SCHEMA: DEFAULT_FULL_SCHEMA,
-    load: load$1,
-    loadAll: loadAll$1,
-    safeLoad: safeLoad$1,
-    safeLoadAll: safeLoadAll$1,
-    dump: dump$1,
-    safeDump: safeDump$1,
-    YAMLException: YAMLException$1,
+    load: load,
+    loadAll: loadAll,
+    safeLoad: safeLoad,
+    safeLoadAll: safeLoadAll,
+    dump: dump,
+    safeDump: safeDump,
+    YAMLException: YAMLException,
     MINIMAL_SCHEMA: MINIMAL_SCHEMA,
     SAFE_SCHEMA: SAFE_SCHEMA,
     DEFAULT_SCHEMA: DEFAULT_SCHEMA,
@@ -3925,7 +3925,7 @@ var Redirects = (function () {
     addConstructor: addConstructor
   };
 
-  var jsYaml$1 = jsYaml;
+  var jsYaml = jsYaml$1;
 
   function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
@@ -3959,7 +3959,7 @@ var Redirects = (function () {
       classCallCheck(this, Redirects);
 
       try {
-        var arrOfRedirects = jsYaml$1.safeLoad(rawYaml);
+        var arrOfRedirects = jsYaml.safeLoad(rawYaml);
         this.redirects = arrOfRedirects.reduce(function (acc, redirect) {
           return _objectSpread(_objectSpread({}, acc), {}, defineProperty({}, redirect.title, redirect));
         }, {});
@@ -4006,4 +4006,4 @@ var Redirects = (function () {
 
   return Redirects;
 
-}());
+})();

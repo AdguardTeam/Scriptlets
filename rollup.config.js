@@ -234,34 +234,6 @@ const testConfigs = (() => {
     return configs;
 })();
 
-const tmpRedirectsConfig = {
-    input: {
-        tmpRedirects: 'src/redirects/redirects-wrapper.js',
-    },
-    output: {
-        name: 'tmpRedirects',
-        dir: TMP_DIR,
-        entryFileNames: '[name].js',
-        format: 'iife',
-        strict: false,
-    },
-    plugins: [
-        resolve(),
-        commonjs({
-            include: 'node_modules/**',
-        }),
-        json({
-            preferConst: true,
-            indent: '  ',
-            compact: true,
-            namedExports: true,
-        }),
-        babel({
-            babelHelpers: 'runtime',
-        }),
-    ],
-};
-
 const clickToLoadConfig = {
     input: 'src/redirects/blocking-redirects/click2load.js',
     output: {
@@ -286,7 +258,7 @@ const clickToLoadConfig = {
  * We need extra script file to calculate sha256 for extension.
  * Since using generateHtml will bundle and inline script code to html webpage
  * but no dist file will be created, clickToLoadScriptConfig is needed separately.
- * The extra script file will be removed from dist/redirect-files later while redirects.build.js run
+ * The extra script file will be removed from dist/redirect-files later while build-redirects.js run
  */
 const clickToLoadScriptConfig = {
     input: 'src/redirects/blocking-redirects/click2load.js',
@@ -305,12 +277,13 @@ const clickToLoadScriptConfig = {
 const isCleanBuild = process.env.CLEAN === 'true'; // strip comments
 if (isCleanBuild) {
     mainConfig.plugins.push(cleanup());
-    tmpRedirectsConfig.plugins.push(cleanup());
+    // tmpRedirectsConfig.plugins.push(cleanup());
 }
 
 const isTest = process.env.UI_TEST === 'true';
 
-let resultConfig = [];
+// eslint-disable-next-line import/no-mutable-exports
+let resultConfig;
 
 if (isTest) {
     resultConfig = [mainConfig, ...testConfigs];
@@ -322,8 +295,8 @@ if (isTest) {
         mainConfig,
         redirectsBuild,
         umdConfig,
-        tmpRedirectsConfig,
+        // tmpRedirectsConfig,
     ];
 }
 
-module.exports = resultConfig;
+export default resultConfig;

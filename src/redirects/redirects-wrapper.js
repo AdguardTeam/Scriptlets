@@ -8,3 +8,5 @@ import { redirectsCjs } from './index';
 
 // eslint-disable-next-line no-undef
 redirects = redirectsCjs;
+
+// TODO remove this file

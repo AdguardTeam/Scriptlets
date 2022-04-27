@@ -1,20 +1,14 @@
 import sha256 from 'crypto-js/sha256';
 import Base64 from 'crypto-js/enc-base64';
 import yaml from 'js-yaml';
-import * as redirectsList from './src/redirects/redirects-list';
-import { version } from './package.json';
+import fs from 'fs';
+import path from 'path';
+import { EOL } from 'os';
 
-const fs = require('fs');
-const path = require('path');
-const { EOL } = require('os');
-
-const { redirectsFilesList, getDataFromFiles } = require('./scripts/build-docs');
-
-// define global variable redirects
-// because require('./tmp/tmpRedirects') trying to put redirects code in it
-global.redirects = {};
-// eslint-disable-next-line import/no-unresolved
-require('./tmp/tmpRedirects');
+import * as redirectsList from '../src/redirects/redirects-list';
+import { version } from '../package.json';
+import { redirectsFilesList, getDataFromFiles } from './build-docs';
+import { redirects } from '../tmp/redirects';
 
 const FILE_NAME = 'redirects.yml';
 const CORELIBS_FILE_NAME = 'redirects.json';
@@ -71,13 +65,22 @@ const redirectsObject = Object
     .values(redirectsList)
     .map((rr) => {
         const [name, ...aliases] = rr.names;
-        const source = { name, args: [] };
-        const redirect = global.redirects.getCode(source);
+        const source = {
+            name,
+            args: [],
+        };
 
-        return { name, redirect, aliases };
+        const redirect = redirects.getCode(source);
+
+        return {
+            name,
+            redirect,
+            aliases,
+        };
     });
 
-const redirectsDescriptions = getDataFromFiles(redirectsFilesList, REDIRECTS_DIRECTORY).flat(1);
+const redirectsDescriptions = getDataFromFiles(redirectsFilesList, REDIRECTS_DIRECTORY)
+    .flat(1);
 
 /**
  * Returns first line of describing comment from redirect resource file
@@ -96,10 +99,11 @@ const getComment = (rrName) => {
  * @param redirectsData
  */
 const prepareJsRedirectFiles = (redirectsData) => {
-    Object.values(redirectsData).forEach((redirect) => {
-        const redirectPath = `${REDIRECT_FILES_PATH}/${redirect.file}`;
-        fs.writeFileSync(redirectPath, redirect.content, 'utf8');
-    });
+    Object.values(redirectsData)
+        .forEach((redirect) => {
+            const redirectPath = `${REDIRECT_FILES_PATH}/${redirect.file}`;
+            fs.writeFileSync(redirectPath, redirect.content, 'utf8');
+        });
 };
 
 /**
@@ -108,24 +112,27 @@ const prepareJsRedirectFiles = (redirectsData) => {
  * @param redirectsData
  */
 const prepareStaticRedirectFiles = (redirectsData) => {
-    Object.values(redirectsData).forEach((redirect) => {
-        const {
-            contentType, content, file,
-        } = redirect;
+    Object.values(redirectsData)
+        .forEach((redirect) => {
+            const {
+                contentType,
+                content,
+                file,
+            } = redirect;
 
-        const redirectPath = `${REDIRECT_FILES_PATH}/${file}`;
+            const redirectPath = `${REDIRECT_FILES_PATH}/${file}`;
 
-        let contentToWrite = content;
-        if (contentType.match(';base64')) {
-            // yaml leaves new lines or spaces
-            // replace them all because base64 isn't supposed to have them
-            contentToWrite = content.replace(/(\r\n|\n|\r|\s)/gm, '');
-            const buff = Buffer.from(contentToWrite, 'base64');
-            fs.writeFileSync(redirectPath, buff);
-        } else {
-            fs.writeFileSync(redirectPath, contentToWrite, 'utf8');
-        }
-    });
+            let contentToWrite = content;
+            if (contentType.match(';base64')) {
+                // yaml leaves new lines or spaces
+                // replace them all because base64 isn't supposed to have them
+                contentToWrite = content.replace(/(\r\n|\n|\r|\s)/gm, '');
+                const buff = Buffer.from(contentToWrite, 'base64');
+                fs.writeFileSync(redirectPath, buff);
+            } else {
+                fs.writeFileSync(redirectPath, contentToWrite, 'utf8');
+            }
+        });
 };
 
 const jsRedirects = redirectsFilesList.map((fileName) => {
@@ -152,12 +159,14 @@ const mergedRedirects = [
     ...jsRedirects,
 ];
 
-if (process.env.REDIRECTS !== 'CORELIBS') {
+export const buildRedirectsFiles = () => {
     try {
         let yamlRedirects = yaml.safeDump(mergedRedirects);
 
         // add empty line before titles
-        yamlRedirects = yamlRedirects.split('- title:').join(`${EOL}- title:`).trimLeft();
+        yamlRedirects = yamlRedirects.split('- title:')
+            .join(`${EOL}- title:`)
+            .trimStart();
 
         // add version and title to the top
         yamlRedirects = `${banner}${yamlRedirects}`;
@@ -177,32 +186,38 @@ if (process.env.REDIRECTS !== 'CORELIBS') {
         console.log(`Couldn't save to ${RESULT_PATH}, because of: ${e.message}`);
         throw e;
     }
-}
+};
 
-if (process.env.REDIRECTS === 'CORELIBS') {
+export const buildRedirectsForCorelibs = () => {
     // Build scriptlets.json. It is used in the corelibs
-    const base64Redirects = Object.values(mergedRedirects).map((redirect) => {
-        const {
-            contentType, content, title, aliases, isBlocking = false,
-        } = redirect;
-        let base64Content;
-        let bas64ContentType = contentType;
-        if (contentType.match(';base64')) {
-            // yaml leaves new lines or spaces
-            // replace them all because base64 isn't supposed to have them
-            base64Content = content.replace(/(\r\n|\n|\r|\s)/gm, '');
-        } else {
-            base64Content = Buffer.from(content, 'binary').toString('base64');
-            bas64ContentType = `${contentType};base64`;
-        }
-        return {
-            title,
-            aliases,
-            isBlocking,
-            contentType: bas64ContentType,
-            content: base64Content.trim(),
-        };
-    });
+    const base64Redirects = Object.values(mergedRedirects)
+        .map((redirect) => {
+            const {
+                contentType,
+                content,
+                title,
+                aliases,
+                isBlocking = false,
+            } = redirect;
+            let base64Content;
+            let bas64ContentType = contentType;
+            if (contentType.match(';base64')) {
+                // yaml leaves new lines or spaces
+                // replace them all because base64 isn't supposed to have them
+                base64Content = content.replace(/(\r\n|\n|\r|\s)/gm, '');
+            } else {
+                base64Content = Buffer.from(content, 'binary')
+                    .toString('base64');
+                bas64ContentType = `${contentType};base64`;
+            }
+            return {
+                title,
+                aliases,
+                isBlocking,
+                contentType: bas64ContentType,
+                content: base64Content.trim(),
+            };
+        });
 
     try {
         const jsonString = JSON.stringify(base64Redirects, null, 4);
@@ -212,4 +227,4 @@ if (process.env.REDIRECTS === 'CORELIBS') {
         console.log(`Couldn't save to ${CORELIBS_RESULT_PATH}, because of: ${e.message}`);
         throw e;
     }
-}
+};

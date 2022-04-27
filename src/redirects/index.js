@@ -55,7 +55,7 @@ const getRedirectCode = (source) => {
     return result;
 };
 
-export const redirectsCjs = {
+export const redirects = {
     Redirects,
     getCode: getRedirectCode,
     isAdgRedirectRule: validator.isAdgRedirectRule,
