@@ -315,6 +315,15 @@ redirects.convertRedirectToAdg(rule);
 redirects.convertAdgRedirectToUbo(rule);
 ```
 
+```javascript
+/**
+ * For a given name or alias of redirect returns the corresponding filename
+ * @param {string} name — name or alias of redirect
+ * @returns {string} — Redirect's filename with extension
+ */
+redirects.getRedirectFilename(name);
+```
+
 
 #### Corelibs library
 
