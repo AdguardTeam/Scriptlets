@@ -6,7 +6,7 @@
 yarn-error.log
 node_modules
 private
-tmp
+/tmp
 output.md
 tests/dist
 browserstack.err

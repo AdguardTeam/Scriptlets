@@ -1,14 +1,20 @@
 import sha256 from 'crypto-js/sha256';
 import Base64 from 'crypto-js/enc-base64';
 import yaml from 'js-yaml';
-import fs from 'fs';
+import fs from 'fs-extra';
 import path from 'path';
 import { EOL } from 'os';
 
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+import babel from '@rollup/plugin-babel';
+import cleanup from 'rollup-plugin-cleanup';
+import generateHtml from 'rollup-plugin-generate-html';
 import * as redirectsList from '../src/redirects/redirects-list';
 import { version } from '../package.json';
 import { redirectsFilesList, getDataFromFiles } from './build-docs';
-import { redirects } from '../tmp/redirects';
+import { writeFile } from './helpers';
+import { rollupStandard } from './rollup-runners';
 
 const FILE_NAME = 'redirects.yml';
 const CORELIBS_FILE_NAME = 'redirects.json';
@@ -17,6 +23,7 @@ const RESULT_PATH = path.resolve(PATH_TO_DIST, FILE_NAME);
 const REDIRECT_FILES_PATH = path.resolve(PATH_TO_DIST, 'redirect-files');
 const CORELIBS_RESULT_PATH = path.resolve(PATH_TO_DIST, CORELIBS_FILE_NAME);
 
+const DIST_REDIRECT_FILES = 'dist/redirect-files';
 const REDIRECTS_DIRECTORY = '../src/redirects';
 const STATIC_REDIRECTS_PATH = './src/redirects/static-redirects.yml';
 const BLOCKING_REDIRECTS_PATH = './src/redirects/blocking-redirects.yml';
@@ -26,71 +33,132 @@ const banner = `#
 #
 `;
 
-let staticRedirects;
-try {
-    staticRedirects = yaml.safeLoad(fs.readFileSync(STATIC_REDIRECTS_PATH, 'utf8'));
-} catch (e) {
-    // eslint-disable-next-line no-console
-    console.log(`Unable to load yaml because of: ${e}`);
-    throw e;
-}
+const getStaticRedirects = async () => {
+    let staticRedirects;
 
-let blockingRedirects;
-try {
-    const rawBlockingRedirects = yaml.safeLoad(fs.readFileSync(BLOCKING_REDIRECTS_PATH, 'utf8'));
-    blockingRedirects = rawBlockingRedirects.map((raw) => {
+    try {
+        const staticRedirectsContent = await fs.readFile(STATIC_REDIRECTS_PATH);
+        staticRedirects = yaml.safeLoad(staticRedirectsContent);
+    } catch (e) {
+        // eslint-disable-next-line no-console
+        console.log(`Unable to load yaml because of: ${e}`);
+        throw e;
+    }
+
+    return staticRedirects;
+};
+
+const getBlockingRedirects = async () => {
+    const completeRawBlockingRedirect = async (rawBlockingRedirect) => {
         // get bundled html file as content for redirect
-        const content = fs.readFileSync(path.resolve(REDIRECT_FILES_PATH, raw.title), 'utf8');
+        const content = await fs.readFile(path.resolve(REDIRECT_FILES_PATH, rawBlockingRedirect.title), 'utf8');
         // get babelized script content
-        const scriptPath = path.resolve(REDIRECT_FILES_PATH, raw.scriptPath);
-        const scriptContent = fs.readFileSync(scriptPath, 'utf8');
+        const scriptPath = path.resolve(__dirname, '../tmp', rawBlockingRedirect.scriptPath);
+        const scriptContent = await fs.readFile(scriptPath, 'utf8');
         // needed for CSP in browser extension
         const sha = `sha256-${Base64.stringify(sha256(scriptContent))}`;
-        // remove not needed dist script file
-        fs.unlinkSync(scriptPath);
+
         return {
-            ...raw,
+            ...rawBlockingRedirect,
             isBlocking: true,
             content,
             sha,
         };
-    });
-} catch (e) {
-    // eslint-disable-next-line no-console
-    console.log(`Unable to load yaml because of: ${e}`);
-    throw e;
-}
+    };
 
-const redirectsObject = Object
-    .values(redirectsList)
-    .map((rr) => {
-        const [name, ...aliases] = rr.names;
-        const source = {
-            name,
-            args: [],
-        };
+    let blockingRedirects;
+    try {
+        const blockingRedirectsContent = await fs.readFile(BLOCKING_REDIRECTS_PATH);
+        const rawBlockingRedirects = yaml.safeLoad(blockingRedirectsContent);
 
-        const redirect = redirects.getCode(source);
+        // FIXME fix eslint config
+        // eslint-disable-next-line compat/compat
+        blockingRedirects = await Promise.all(rawBlockingRedirects
+            .map((rawBlockingRedirect) => completeRawBlockingRedirect(rawBlockingRedirect)));
+    } catch (e) {
+        // eslint-disable-next-line no-console
+        console.log(`Unable to load yaml because of: ${e}`);
+        throw e;
+    }
 
-        return {
-            name,
-            redirect,
-            aliases,
-        };
-    });
+    return blockingRedirects;
+};
 
-const redirectsDescriptions = getDataFromFiles(redirectsFilesList, REDIRECTS_DIRECTORY)
-    .flat(1);
+const getJsRedirects = () => {
+    const { redirects } = require('../tmp/redirects'); // eslint-disable-line global-require
+    // FIXME rename redirectsObject to redirectDataList
+    const redirectsObject = Object
+        .values(redirectsList)
+        .map((rr) => {
+            const [name, ...aliases] = rr.names;
+            const source = {
+                name,
+                args: [],
+            };
 
-/**
- * Returns first line of describing comment from redirect resource file
- * @param {string} rrName redirect resource name
- */
-const getComment = (rrName) => {
-    const { description } = redirectsDescriptions.find((rr) => rr.name === rrName);
-    const descArr = description.split('\n');
+            const redirect = redirects.getCode(source);
 
-    return descArr.find((str) => str !== '');
+            return {
+                name,
+                redirect,
+                aliases,
+            };
+        });
+
+    const redirectsDescriptions = getDataFromFiles(redirectsFilesList, REDIRECTS_DIRECTORY)
+        .flat(1);
+
+    /**
+     * Returns first line of describing comment from redirect resource file
+     * @param {string} rrName redirect resource name
+     */
+    const getComment = (rrName) => {
+        const { description } = redirectsDescriptions.find((rr) => rr.name === rrName);
+        const descArr = description.split('\n');
+
+        return descArr.find((str) => str !== '');
+    };
+
+    const complementJsRedirects = (fileName) => {
+        const redirectName = fileName.replace(/\.js/, '');
+        const complement = redirectsObject.find((obj) => obj.name === redirectName);
+        const comment = getComment(redirectName);
+
+        if (complement) {
+            return {
+                title: redirectName,
+                comment,
+                aliases: complement.aliases,
+                contentType: 'application/javascript',
+                content: complement.redirect,
+                file: fileName,
+            };
+        }
+        throw new Error(`Couldn't find source for non-static redirect: ${fileName}`);
+    };
+
+    const jsRedirects = redirectsFilesList.map((filename) => complementJsRedirects(filename));
+
+    return jsRedirects;
+};
+
+const getPreparedRedirects = async () => {
+    const staticRedirects = await getStaticRedirects();
+    const blockingRedirects = await getBlockingRedirects();
+    const jsRedirects = getJsRedirects();
+
+    const mergedRedirects = [
+        ...staticRedirects,
+        ...blockingRedirects,
+        ...jsRedirects,
+    ];
+
+    return {
+        staticRedirects,
+        blockingRedirects,
+        jsRedirects,
+        mergedRedirects,
+    };
 };
 
 /**
@@ -98,12 +166,16 @@ const getComment = (rrName) => {
  *
  * @param redirectsData
  */
-const prepareJsRedirectFiles = (redirectsData) => {
-    Object.values(redirectsData)
-        .forEach((redirect) => {
-            const redirectPath = `${REDIRECT_FILES_PATH}/${redirect.file}`;
-            fs.writeFileSync(redirectPath, redirect.content, 'utf8');
-        });
+const buildJsRedirectFiles = async (redirectsData) => {
+    const saveRedirectData = async (redirect) => {
+        const redirectPath = `${REDIRECT_FILES_PATH}/${redirect.file}`;
+        await writeFile(redirectPath, redirect.content);
+    };
+
+    // FIXME fix eslint config
+    // eslint-disable-next-line compat/compat
+    await Promise.all(Object.values(redirectsData)
+        .map((redirect) => saveRedirectData(redirect)));
 };
 
 /**
@@ -111,84 +183,139 @@ const prepareJsRedirectFiles = (redirectsData) => {
  *
  * @param redirectsData
  */
-const prepareStaticRedirectFiles = (redirectsData) => {
-    Object.values(redirectsData)
-        .forEach((redirect) => {
-            const {
-                contentType,
-                content,
-                file,
-            } = redirect;
+const buildStaticRedirectFiles = async (redirectsData) => {
+    const prepareRedirectData = async (redirect) => {
+        const {
+            contentType,
+            content,
+            file,
+        } = redirect;
 
-            const redirectPath = `${REDIRECT_FILES_PATH}/${file}`;
+        const redirectPath = `${REDIRECT_FILES_PATH}/${file}`;
 
-            let contentToWrite = content;
-            if (contentType.match(';base64')) {
-                // yaml leaves new lines or spaces
-                // replace them all because base64 isn't supposed to have them
-                contentToWrite = content.replace(/(\r\n|\n|\r|\s)/gm, '');
-                const buff = Buffer.from(contentToWrite, 'base64');
-                fs.writeFileSync(redirectPath, buff);
-            } else {
-                fs.writeFileSync(redirectPath, contentToWrite, 'utf8');
-            }
-        });
-};
-
-const jsRedirects = redirectsFilesList.map((fileName) => {
-    const rrName = fileName.replace(/\.js/, '');
-    const complement = redirectsObject.find((obj) => obj.name === rrName);
-    const comment = getComment(rrName);
-
-    if (complement) {
-        return {
-            title: rrName,
-            comment,
-            aliases: complement.aliases,
-            contentType: 'application/javascript',
-            content: complement.redirect,
-            file: fileName,
-        };
-    }
-    throw new Error(`Couldn't find source for non-static redirect: ${fileName}`);
-});
-
-const mergedRedirects = [
-    ...staticRedirects,
-    ...blockingRedirects,
-    ...jsRedirects,
-];
-
-export const buildRedirectsFiles = () => {
-    try {
-        let yamlRedirects = yaml.safeDump(mergedRedirects);
-
-        // add empty line before titles
-        yamlRedirects = yamlRedirects.split('- title:')
-            .join(`${EOL}- title:`)
-            .trimStart();
-
-        // add version and title to the top
-        yamlRedirects = `${banner}${yamlRedirects}`;
-
-        fs.writeFileSync(RESULT_PATH, yamlRedirects, 'utf8');
-
-        // redirect files
-        if (!fs.existsSync(REDIRECT_FILES_PATH)) {
-            fs.mkdirSync(REDIRECT_FILES_PATH);
+        let contentToWrite = content;
+        if (contentType.match(';base64')) {
+            // yaml leaves new lines or spaces
+            // replace them all because base64 isn't supposed to have them
+            contentToWrite = content.replace(/(\r\n|\n|\r|\s)/gm, '');
+            const buff = Buffer.from(contentToWrite, 'base64');
+            await writeFile(redirectPath, buff);
+        } else {
+            await writeFile(redirectPath, contentToWrite);
         }
+    };
 
-        prepareStaticRedirectFiles(staticRedirects);
-        prepareJsRedirectFiles(jsRedirects);
-        // blocking redirects have already been bundled to dist by rollup
-    } catch (e) {
-        // eslint-disable-next-line no-console
-        console.log(`Couldn't save to ${RESULT_PATH}, because of: ${e.message}`);
-        throw e;
-    }
+    // FIXME fix eslint config
+    // eslint-disable-next-line compat/compat
+    await Promise.all(Object.values(redirectsData)
+        .map((redirect) => prepareRedirectData(redirect)));
 };
 
-export const buildRedirectsForCorelibs = () => {
+const buildRedirectsYamlFile = async (mergedRedirects) => {
+    let yamlRedirects = yaml.safeDump(mergedRedirects);
+
+    // add empty line before titles
+    yamlRedirects = yamlRedirects.split('- title:')
+        .join(`${EOL}- title:`)
+        .trimStart();
+
+    // add version and title to the top
+    yamlRedirects = `${banner}${yamlRedirects}`;
+
+    await writeFile(RESULT_PATH, yamlRedirects);
+};
+
+export const prebuildRedirects = async () => {
+    await rollupStandard({
+        input: {
+            redirects: 'src/redirects/index.js',
+        },
+        output: {
+            dir: 'tmp',
+            entryFileNames: '[name].js',
+            format: 'es',
+        },
+        plugins: [
+            resolve(),
+            commonjs({
+                include: 'node_modules/**',
+            }),
+        ],
+    });
+};
+
+/**
+ * We need extra script file to calculate sha256 for extension.
+ * Since using generateHtml will bundle and inline script code to html webpage
+ * but no dist file will be created, clickToLoadScriptConfig is needed separately.
+ * The extra script file will be removed from dist/redirect-files later while build-redirects.js run
+ */
+export const buildClick2Load = async () => {
+    const buildClick2LoadScript = async () => {
+        await rollupStandard({
+            input: {
+                click2load: 'src/redirects/blocking-redirects/click2load.js',
+            },
+            output: {
+                dir: 'tmp',
+                entryFileNames: '[name].js',
+                name: 'click2load',
+                format: 'iife',
+            },
+            plugins: [
+                resolve(),
+                babel({ babelHelpers: 'runtime' }),
+                cleanup(),
+            ],
+        });
+    };
+
+    const buildClick2LoadHtml = async () => {
+        await rollupStandard({
+            input: 'src/redirects/blocking-redirects/click2load.js',
+            output: {
+                dir: DIST_REDIRECT_FILES,
+                name: 'click2load',
+                format: 'iife',
+            },
+            plugins: [
+                resolve(),
+                babel({ babelHelpers: 'runtime' }),
+                cleanup(),
+                generateHtml({
+                    filename: `${DIST_REDIRECT_FILES}/click2load.html`,
+                    template: 'src/redirects/blocking-redirects/click2load.html',
+                    selector: 'body',
+                    inline: true,
+                }),
+            ],
+        });
+    };
+
+    // FIXME fix eslint config
+    // eslint-disable-next-line compat/compat
+    await Promise.all([buildClick2LoadScript(), buildClick2LoadHtml()]);
+};
+
+export const buildRedirectsFiles = async () => {
+    const {
+        mergedRedirects,
+        staticRedirects,
+        jsRedirects,
+    } = await getPreparedRedirects();
+
+    // FIXME fix eslint config
+    // eslint-disable-next-line compat/compat
+    await Promise.all([
+        buildRedirectsYamlFile(mergedRedirects),
+        buildStaticRedirectFiles(staticRedirects),
+        buildJsRedirectFiles(jsRedirects),
+    ]);
+};
+
+export const buildRedirectsForCorelibs = async () => {
+    const { mergedRedirects } = await getPreparedRedirects();
+
     // Build scriptlets.json. It is used in the corelibs
     const base64Redirects = Object.values(mergedRedirects)
         .map((redirect) => {
@@ -221,7 +348,7 @@ export const buildRedirectsForCorelibs = () => {
 
     try {
         const jsonString = JSON.stringify(base64Redirects, null, 4);
-        fs.writeFileSync(CORELIBS_RESULT_PATH, jsonString, 'utf8');
+        await writeFile(CORELIBS_RESULT_PATH, jsonString);
     } catch (e) {
         // eslint-disable-next-line no-console
         console.log(`Couldn't save to ${CORELIBS_RESULT_PATH}, because of: ${e.message}`);

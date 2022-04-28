@@ -15,7 +15,6 @@
  *     dependencyFunc();
  * };
  */
-import fs from 'fs-extra';
 import path from 'path';
 import { addCall, attachDependencies } from '../src/helpers/injector';
 import { writeFile } from './helpers';
@@ -61,6 +60,7 @@ const getScriptletFunctionString = () => {
 export const buildScriptletsFunc = async () => {
     console.log('Start building scriptlets functions...');
     const scriptlet = getScriptletFunctionString();
-    await writeFile(path.resolve(__dirname, './tmp/scriptlets-func.js'), scriptlet);
+    // FIXME move tmp dir to constants
+    await writeFile(path.resolve(__dirname, '../tmp/scriptlets-func.js'), scriptlet);
     console.log('Scriptlets functions built successfully');
 };

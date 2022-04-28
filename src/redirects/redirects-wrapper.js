@@ -1,12 +1,12 @@
 /**
  * It is necessary for CJS module building and adding 'redirects' to global scope.
- * Otherwise rollup will warn about 'output.name',
+ * Otherwise, rollup will warn about 'output.name',
  * using which instead of 'entryFileNames' will name the iife output,
  * which should not be named.
  */
-import { redirectsCjs } from './index';
+import { redirects } from './index';
 
 // eslint-disable-next-line no-undef
-redirects = redirectsCjs;
+global.redirects = redirects;
 
 // TODO remove this file

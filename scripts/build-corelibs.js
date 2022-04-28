@@ -3,11 +3,12 @@ import path from 'path';
 
 import * as scriptletList from '../src/scriptlets/scriptlets-list';
 import { version } from '../package.json';
-import { getScriptletFunction } from '../tmp/scriptlets-func';
 import { wrapInNonameFunc } from '../src/helpers/injector';
 import { writeFile } from './helpers';
 
 const buildCorelibsJson = () => {
+    const { getScriptletFunction } = require('../tmp/scriptlets-func'); // eslint-disable-line import/no-unresolved,global-require
+
     const scriptlets = Object
         .values(scriptletList)
         .map((s) => {
@@ -22,7 +23,7 @@ const buildCorelibsJson = () => {
     return JSON.stringify({ version, scriptlets }, null, 4);
 };
 
-export const buildCorelibs = async () => {
+export const buildScriptletsForCorelibs = async () => {
     console.log('Start building corelibs...');
     const json = buildCorelibsJson();
     await writeFile(path.resolve(__dirname, '../dist/scriptlets.corelibs.json'), json, 'utf8');

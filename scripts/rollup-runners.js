@@ -12,7 +12,7 @@ export const rollupStandard = async (config) => {
         log('Start building...', config.input);
         const bundle = await rollup.rollup(config);
         await bundle.write(config.output);
-        log(chalk.greenBright('Successfully built'));
+        log(chalk.greenBright('Successfully built'), config.input);
     };
 
     if (Array.isArray(config)) {
