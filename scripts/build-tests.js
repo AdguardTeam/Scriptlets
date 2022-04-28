@@ -7,9 +7,10 @@ import cleanup from 'rollup-plugin-cleanup';
 import copy from 'rollup-plugin-copy';
 import json from '@rollup/plugin-json';
 import generateHtml from 'rollup-plugin-generate-html';
+import { rollupStandard } from './rollup-runners';
 
 // FIXME build tests
-const TESTS_DIST = 'tests/dist';
+const TESTS_DIST = path.resolve(__dirname, '../tests/dist');
 const TEST_FILE_NAME_MARKER = '.test.js';
 
 /**
@@ -78,8 +79,8 @@ const getTestConfig = (fileName, dirPath, subDir) => {
 
 // FIXME build tests
 // eslint-disable-next-line no-unused-vars
-const testConfigs = (() => {
-    const TESTS_DIR = 'tests';
+const getTestConfigs = () => {
+    const TESTS_DIR = '../tests';
     const MULTIPLE_TEST_FILES_DIRS = [
         'scriptlets',
         'redirects',
@@ -121,4 +122,12 @@ const testConfigs = (() => {
     ];
 
     return configs;
-})();
+};
+
+const buildTests = async () => {
+    const testConfigs = getTestConfigs();
+
+    await rollupStandard(testConfigs);
+};
+
+buildTests();

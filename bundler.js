@@ -22,7 +22,6 @@ const tasks = [
     buildRedirectsFiles,
     buildRedirectsForCorelibs,
     buildScriptlets,
-    // FIXME build without comments for corelibs
     buildScriptletsForCorelibs,
     buildTxt,
 ];
