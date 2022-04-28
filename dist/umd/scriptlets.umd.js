@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.9
+ * Version 1.6.13
  */
 
 (function (factory) {
@@ -5047,31 +5047,34 @@ listener: ${convertTypeToString(listener)}`;
      * which is useful for debugging but permitted for production filter lists.
      *
      * **Examples**
-     * 1. Prevent all fetch calls
+     * 1. Log all fetch calls
      *     ```
      *     example.org#%#//scriptlet('prevent-fetch')
-     *     OR
+     *     ```
+     *
+     * 2. Prevent all fetch calls
+     *     ```
      *     example.org#%#//scriptlet('prevent-fetch', '*')
      *     OR
      *     example.org#%#//scriptlet('prevent-fetch', '')
      *     ```
      *
-     * 2. Prevent fetch call for specific url
+     * 3. Prevent fetch call for specific url
      *     ```
      *     example.org#%#//scriptlet('prevent-fetch', '/url\\.part/')
      *     ```
      *
-     * 3. Prevent fetch call for specific request method
+     * 4. Prevent fetch call for specific request method
      *     ```
      *     example.org#%#//scriptlet('prevent-fetch', 'method:HEAD')
      *     ```
      *
-     * 4. Prevent fetch call for specific url and request method
+     * 5. Prevent fetch call for specific url and request method
      *     ```
      *     example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/')
      *     ```
      *
-     * 5. Prevent fetch call and specify response body value
+     * 6. Prevent fetch call and specify response body value
      *     ```
      *     ! Specify response body for fetch call to a specific url
      *     example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/', 'emptyArr')
@@ -7891,13 +7894,14 @@ listener: ${convertTypeToString(listener)}`;
         };
 
         function Metrika() { } // constructor
-
+        Metrika.counters = noopArray;
         // Methods without options
         Metrika.prototype.addFileExtension = noopFunc;
         Metrika.prototype.getClientID = noopFunc;
         Metrika.prototype.setUserID = noopFunc;
         Metrika.prototype.userParams = noopFunc;
         Metrika.prototype.params = noopFunc;
+        Metrika.prototype.counters = noopArray;
 
         // Methods with options
         // The order of arguments should be kept in according to API
@@ -7936,7 +7940,7 @@ listener: ${convertTypeToString(listener)}`;
         'metrika-yandex-watch',
     ];
 
-    metrikaYandexWatch.injections = [hit, noopFunc];
+    metrikaYandexWatch.injections = [hit, noopFunc, noopArray];
 
     /**
      * @redirect amazon-apstag
@@ -9430,7 +9434,7 @@ listener: ${convertTypeToString(listener)}`;
       construct: function (data) { return data !== null ? data : []; }
     });
 
-    var map = new type('tag:yaml.org,2002:map', {
+    var map$1 = new type('tag:yaml.org,2002:map', {
       kind: 'mapping',
       construct: function (data) { return data !== null ? data : {}; }
     });
@@ -9439,7 +9443,7 @@ listener: ${convertTypeToString(listener)}`;
       explicit: [
         str,
         seq,
-        map
+        map$1
       ]
     });
 
@@ -13022,8 +13026,124 @@ listener: ${convertTypeToString(listener)}`;
         return result;
     };
 
+    // It will be replaced with dictionary-object in build-script
+    // eslint-disable-next-line no-undef
+    const map = {
+        "1x1-transparent.gif": "1x1-transparent.gif",
+        "1x1.gif": "1x1-transparent.gif",
+        "1x1-transparent-gif": "1x1-transparent.gif",
+        "2x2-transparent.png": "2x2-transparent.png",
+        "2x2.png": "2x2-transparent.png",
+        "2x2-transparent-png": "2x2-transparent.png",
+        "3x2-transparent.png": "3x2-transparent.png",
+        "3x2.png": "3x2-transparent.png",
+        "3x2-transparent-png": "3x2-transparent.png",
+        "32x32-transparent.png": "32x32-transparent.png",
+        "32x32.png": "32x32-transparent.png",
+        "32x32-transparent-png": "32x32-transparent.png",
+        "noopframe": "noopframe.html",
+        "noop.html": "noopframe.html",
+        "blank-html": "noopframe.html",
+        "noopcss": "noopcss.css",
+        "blank-css": "noopcss.css",
+        "noopjs": "noopjs.js",
+        "noop.js": "noopjs.js",
+        "blank-js": "noopjs.js",
+        "noopjson": "noopjson.json",
+        "nooptext": "nooptext.js",
+        "noop.txt": "nooptext.js",
+        "blank-text": "nooptext.js",
+        "empty": "nooptext.js",
+        "noopvmap-1.0": "noopvmap01.xml",
+        "noop-vmap1.0.xml": "noopvmap01.xml",
+        "noopvast-2.0": "noopvast02.xml",
+        "noopvast-3.0": "noopvast03.xml",
+        "noopvast-4.0": "noopvast04.xml",
+        "noopmp3-0.1s": "noopmp3.mp3",
+        "blank-mp3": "noopmp3.mp3",
+        "noopmp4-1s": "noopmp4.mp4",
+        "noop-1s.mp4": "noopmp4.mp4",
+        "blank-mp4": "noopmp4.mp4",
+        "click2load.html": "click2load.html",
+        "ubo-click2load.html": "click2load.html",
+        "amazon-apstag": "amazon-apstag.js",
+        "ubo-amazon_apstag.js": "amazon-apstag.js",
+        "amazon_apstag.js": "amazon-apstag.js",
+        "ati-smarttag": "ati-smarttag.js",
+        "didomi-loader": "didomi-loader.js",
+        "fingerprintjs2": "fingerprintjs2.js",
+        "ubo-fingerprint2.js": "fingerprintjs2.js",
+        "fingerprint2.js": "fingerprintjs2.js",
+        "fingerprintjs3": "fingerprintjs3.js",
+        "ubo-fingerprint3.js": "fingerprintjs3.js",
+        "fingerprint3.js": "fingerprintjs3.js",
+        "gemius": "gemius.js",
+        "google-analytics-ga": "google-analytics-ga.js",
+        "ubo-google-analytics_ga.js": "google-analytics-ga.js",
+        "google-analytics_ga.js": "google-analytics-ga.js",
+        "google-analytics": "google-analytics.js",
+        "ubo-google-analytics_analytics.js": "google-analytics.js",
+        "google-analytics_analytics.js": "google-analytics.js",
+        "googletagmanager-gtm": "google-analytics.js",
+        "ubo-googletagmanager_gtm.js": "google-analytics.js",
+        "googletagmanager_gtm.js": "google-analytics.js",
+        "google-ima3": "google-ima3.js",
+        "googlesyndication-adsbygoogle": "googlesyndication-adsbygoogle.js",
+        "ubo-googlesyndication_adsbygoogle.js": "googlesyndication-adsbygoogle.js",
+        "googlesyndication_adsbygoogle.js": "googlesyndication-adsbygoogle.js",
+        "googletagservices-gpt": "googletagservices-gpt.js",
+        "ubo-googletagservices_gpt.js": "googletagservices-gpt.js",
+        "googletagservices_gpt.js": "googletagservices-gpt.js",
+        "matomo": "matomo.js",
+        "metrika-yandex-tag": "metrika-yandex-tag.js",
+        "metrika-yandex-watch": "metrika-yandex-watch.js",
+        "naver-wcslog": "naver-wcslog.js",
+        "noeval": "noeval.js",
+        "noeval.js": "noeval.js",
+        "silent-noeval.js": "noeval.js",
+        "ubo-noeval.js": "noeval.js",
+        "ubo-silent-noeval.js": "noeval.js",
+        "ubo-noeval": "noeval.js",
+        "ubo-silent-noeval": "noeval.js",
+        "prebid-ads": "prebid-ads.js",
+        "ubo-prebid-ads.js": "prebid-ads.js",
+        "prebid-ads.js": "prebid-ads.js",
+        "prebid": "prebid.js",
+        "prevent-bab": "prevent-bab.js",
+        "nobab.js": "prevent-bab.js",
+        "ubo-nobab.js": "prevent-bab.js",
+        "bab-defuser.js": "prevent-bab.js",
+        "ubo-bab-defuser.js": "prevent-bab.js",
+        "ubo-nobab": "prevent-bab.js",
+        "ubo-bab-defuser": "prevent-bab.js",
+        "prevent-bab2": "prevent-bab2.js",
+        "nobab2.js": "prevent-bab2.js",
+        "prevent-fab-3.2.0": "prevent-fab-3.2.0.js",
+        "nofab.js": "prevent-fab-3.2.0.js",
+        "ubo-nofab.js": "prevent-fab-3.2.0.js",
+        "fuckadblock.js-3.2.0": "prevent-fab-3.2.0.js",
+        "ubo-fuckadblock.js-3.2.0": "prevent-fab-3.2.0.js",
+        "ubo-nofab": "prevent-fab-3.2.0.js",
+        "prevent-popads-net": "prevent-popads-net.js",
+        "popads.net.js": "prevent-popads-net.js",
+        "ubo-popads.net.js": "prevent-popads-net.js",
+        "ubo-popads.net": "prevent-popads-net.js",
+        "scorecardresearch-beacon": "scorecardresearch-beacon.js",
+        "ubo-scorecardresearch_beacon.js": "scorecardresearch-beacon.js",
+        "scorecardresearch_beacon.js": "scorecardresearch-beacon.js",
+        "set-popads-dummy": "set-popads-dummy.js",
+        "popads-dummy.js": "set-popads-dummy.js",
+        "ubo-popads-dummy.js": "set-popads-dummy.js",
+        "ubo-popads-dummy": "set-popads-dummy.js"
+    };
+
+    const getRedirectFilename = (name) => {
+        return map[name];
+    };
+
     const redirects = {
         Redirects,
+        getRedirectFilename,
         getCode: getRedirectCode,
         isAdgRedirectRule: validator.isAdgRedirectRule,
         isValidAdgRedirectRule: validator.isValidAdgRedirectRule,

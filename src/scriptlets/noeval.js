@@ -1,5 +1,5 @@
 /* eslint-disable no-eval, no-extra-bind */
-import { hit } from '../helpers';
+import { hit } from '../helpers/index';
 
 /**
  * @scriptlet noeval

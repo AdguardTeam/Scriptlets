@@ -8,7 +8,7 @@ import {
     matchStackTrace,
     // following helpers are needed for helpers above
     toRegExp,
-} from '../helpers';
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**

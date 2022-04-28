@@ -15,7 +15,7 @@ import {
     getRequestData,
     getObjectEntries,
     getObjectFromEntries,
-} from '../helpers';
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**
@@ -44,31 +44,34 @@ import {
  * which is useful for debugging but permitted for production filter lists.
  *
  * **Examples**
- * 1. Prevent all fetch calls
+ * 1. Log all fetch calls
  *     ```
  *     example.org#%#//scriptlet('prevent-fetch')
- *     OR
+ *     ```
+ *
+ * 2. Prevent all fetch calls
+ *     ```
  *     example.org#%#//scriptlet('prevent-fetch', '*')
  *     OR
  *     example.org#%#//scriptlet('prevent-fetch', '')
  *     ```
  *
- * 2. Prevent fetch call for specific url
+ * 3. Prevent fetch call for specific url
  *     ```
  *     example.org#%#//scriptlet('prevent-fetch', '/url\\.part/')
  *     ```
  *
- * 3. Prevent fetch call for specific request method
+ * 4. Prevent fetch call for specific request method
  *     ```
  *     example.org#%#//scriptlet('prevent-fetch', 'method:HEAD')
  *     ```
  *
- * 4. Prevent fetch call for specific url and request method
+ * 5. Prevent fetch call for specific url and request method
  *     ```
  *     example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/')
  *     ```
  *
- * 5. Prevent fetch call and specify response body value
+ * 6. Prevent fetch call and specify response body value
  *     ```
  *     ! Specify response body for fetch call to a specific url
  *     example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/', 'emptyArr')

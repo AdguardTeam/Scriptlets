@@ -1,5 +1,5 @@
 /* eslint-disable func-names */
-import { hit, noopFunc } from '../helpers';
+import { hit, noopFunc } from '../helpers/index';
 
 /**
  * @redirect gemius

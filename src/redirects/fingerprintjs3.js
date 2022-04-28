@@ -2,7 +2,7 @@
 import {
     hit,
     noopStr,
-} from '../helpers';
+} from '../helpers/index';
 
 /**
  * @redirect fingerprintjs3

@@ -2,7 +2,7 @@ import {
     hit,
     toRegExp,
     safeGetDescriptor,
-} from '../helpers';
+} from '../helpers/index';
 
 /* eslint-disable max-len, consistent-return */
 /**

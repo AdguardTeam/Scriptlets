@@ -6,7 +6,7 @@ import {
     startsWith,
     createOnErrorHandler,
     hit,
-} from '../helpers';
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**

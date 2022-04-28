@@ -15,6 +15,8 @@ import { version } from '../package.json';
 import { redirectsFilesList, getDataFromFiles } from './build-docs';
 import { writeFile } from './helpers';
 import { rollupStandard } from './rollup-runners';
+import replace from '@rollup/plugin-replace';
+import redirectsMap from './get-redirects';
 
 const FILE_NAME = 'redirects.yml';
 const CORELIBS_FILE_NAME = 'redirects.json';
@@ -237,6 +239,11 @@ export const prebuildRedirects = async () => {
         },
         plugins: [
             resolve(),
+            replace({
+                __MAP__: redirectsMap,
+                // TODO: remove param in @rollup/plugin-replace 5.x.x+
+                preventAssignment: true,
+            }),
             commonjs({
                 include: 'node_modules/**',
             }),

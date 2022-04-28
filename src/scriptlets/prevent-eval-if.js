@@ -1,6 +1,6 @@
 /* eslint-disable no-eval, no-extra-bind, func-names */
 
-import { toRegExp, hit } from '../helpers';
+import { toRegExp, hit } from '../helpers/index';
 
 /**
  * @scriptlet prevent-eval-if

@@ -1,7 +1,7 @@
 import {
     hit,
     nativeIsNaN,
-} from '../helpers';
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**

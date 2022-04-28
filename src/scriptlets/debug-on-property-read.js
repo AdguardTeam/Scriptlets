@@ -5,7 +5,7 @@ import {
     createOnErrorHandler,
     hit,
     noopFunc,
-} from '../helpers';
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**

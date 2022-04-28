@@ -1,8 +1,10 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import copy from 'rollup-plugin-copy';
+import replace from '@rollup/plugin-replace';
 import { rollupStandard } from './rollup-runners';
 import project from '../package.json';
+import redirectsMap from './get-redirects';
 
 const BUILD_DIST = 'dist';
 const BANNER = `
@@ -37,6 +39,11 @@ const buildScriptletsIIFE = async () => {
         },
         plugins: [
             resolve(),
+            replace({
+                __MAP__: redirectsMap,
+                // TODO: remove param in @rollup/plugin-replace 5.x.x+
+                preventAssignment: true,
+            }),
             commonjs({
                 include: 'node_modules/**',
             }),
@@ -63,6 +70,11 @@ const buildScriptletsUMD = async () => {
             resolve(),
             commonjs({
                 include: 'node_modules/**',
+            }),
+            replace({
+                __MAP__: redirectsMap,
+                // TODO: remove param in @rollup/plugin-replace 5.x.x+
+                preventAssignment: true,
             }),
             copy({
                 targets: [

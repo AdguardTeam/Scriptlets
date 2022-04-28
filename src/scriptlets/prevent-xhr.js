@@ -11,7 +11,7 @@ import {
     validateStrPattern,
     isEmptyObject,
     getObjectEntries,
-} from '../helpers';
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**

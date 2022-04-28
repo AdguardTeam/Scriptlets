@@ -6,7 +6,7 @@ import {
     noopArray,
     noopStr,
     trueFunc,
-} from '../helpers';
+} from '../helpers/index';
 
 /**
  * @redirect googletagservices-gpt

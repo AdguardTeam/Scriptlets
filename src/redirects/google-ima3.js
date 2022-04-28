@@ -1,5 +1,5 @@
 /* eslint-disable func-names, no-underscore-dangle */
-import { hit, noopFunc } from '../helpers';
+import { hit, noopFunc } from '../helpers/index';
 
 /**
  * @redirect google-ima3

@@ -20,14 +20,16 @@ function metrikaYandexWatch(source) {
   };
 
   function Metrika() {} // constructor
-  // Methods without options
 
+
+  Metrika.counters = noopArray; // Methods without options
 
   Metrika.prototype.addFileExtension = noopFunc;
   Metrika.prototype.getClientID = noopFunc;
   Metrika.prototype.setUserID = noopFunc;
   Metrika.prototype.userParams = noopFunc;
-  Metrika.prototype.params = noopFunc; // Methods with options
+  Metrika.prototype.params = noopFunc;
+  Metrika.prototype.counters = noopArray; // Methods with options
   // The order of arguments should be kept in according to API
 
   Metrika.prototype.extLink = function (url, options) {
@@ -126,7 +128,10 @@ function hit(source, message) {
     window.__debug(source);
   }
 }
-function noopFunc() {};
+function noopFunc() {}
+function noopArray() {
+  return [];
+};
         const updatedArgs = args ? [].concat(source).concat(args) : [source];
         try {
             metrikaYandexWatch.apply(this, updatedArgs);

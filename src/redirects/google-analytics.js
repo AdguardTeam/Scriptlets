@@ -3,7 +3,7 @@ import {
     noopFunc,
     noopNull,
     noopArray,
-} from '../helpers';
+} from '../helpers/index';
 
 /**
  * @redirect google-analytics

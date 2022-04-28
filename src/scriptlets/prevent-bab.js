@@ -1,5 +1,5 @@
 /* eslint-disable consistent-return, no-eval */
-import { hit } from '../helpers';
+import { hit } from '../helpers/index';
 
 /**
  * @scriptlet prevent-bab
