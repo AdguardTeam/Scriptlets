@@ -4,7 +4,7 @@ import copy from 'rollup-plugin-copy';
 import replace from '@rollup/plugin-replace';
 import { rollupStandard } from './rollup-runners';
 import project from '../package.json';
-import redirectsMap from './get-redirects';
+import { getRedirectsMap } from './build-redirects';
 
 const BUILD_DIST = 'dist';
 const BANNER = `
@@ -40,7 +40,7 @@ const buildScriptletsIIFE = async () => {
         plugins: [
             resolve(),
             replace({
-                __MAP__: redirectsMap,
+                __MAP__: await getRedirectsMap(),
                 // TODO: remove param in @rollup/plugin-replace 5.x.x+
                 preventAssignment: true,
             }),
@@ -72,7 +72,7 @@ const buildScriptletsUMD = async () => {
                 include: 'node_modules/**',
             }),
             replace({
-                __MAP__: redirectsMap,
+                __MAP__: await getRedirectsMap(),
                 // TODO: remove param in @rollup/plugin-replace 5.x.x+
                 preventAssignment: true,
             }),

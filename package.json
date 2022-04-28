@@ -4,7 +4,6 @@
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "scripts": {
         "build": "babel-node bundler.js",
-        "corelibs": "cross-env CLEAN=true babel-node bundler.js && babel-node scripts/build-corelibs.js && REDIRECTS=CORELIBS babel-node build-redirects.js",
         "build-test": "cross-env UI_TEST=true babel-node bundler.js",
         "test": "yarn build-test && node tests/index.js",
         "browserstack": "yarn build-test && node browserstack.js",

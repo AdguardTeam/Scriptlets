@@ -10,13 +10,12 @@ import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
 import cleanup from 'rollup-plugin-cleanup';
 import generateHtml from 'rollup-plugin-generate-html';
+import replace from '@rollup/plugin-replace';
 import * as redirectsList from '../src/redirects/redirects-list';
 import { version } from '../package.json';
 import { redirectsFilesList, getDataFromFiles } from './build-docs';
 import { writeFile } from './helpers';
 import { rollupStandard } from './rollup-runners';
-import replace from '@rollup/plugin-replace';
-import redirectsMap from './get-redirects';
 
 const FILE_NAME = 'redirects.yml';
 const CORELIBS_FILE_NAME = 'redirects.json';
@@ -163,6 +162,31 @@ const getPreparedRedirects = async () => {
     };
 };
 
+const createRedirectsMap = (redirects) => {
+    const map = {};
+
+    redirects.forEach((item) => {
+        const { title, aliases, file } = item;
+
+        if (title) {
+            map[title] = file;
+        }
+
+        if (aliases) {
+            aliases.forEach((alias) => {
+                map[alias] = file;
+            });
+        }
+    });
+
+    return JSON.stringify(map, null, 4);
+};
+
+export const getRedirectsMap = async () => {
+    const { mergedRedirects } = await getPreparedRedirects();
+    return createRedirectsMap(mergedRedirects);
+};
+
 /**
  * Copies non-static redirects sources to dist
  *
@@ -240,7 +264,7 @@ export const prebuildRedirects = async () => {
         plugins: [
             resolve(),
             replace({
-                __MAP__: redirectsMap,
+                __MAP__: await getRedirectsMap(),
                 // TODO: remove param in @rollup/plugin-replace 5.x.x+
                 preventAssignment: true,
             }),
