@@ -108,12 +108,11 @@ function noopStr() {
 }
 function noopArray() {
   return [];
-};
-        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        try {
-            Prebid.apply(this, updatedArgs);
-        } catch (e) {
-            console.log(e);
-        }
-    
+}
+const updatedArgs = args ? [].concat(source).concat(args) : [source];
+try {
+    Prebid.apply(this, updatedArgs);
+} catch (e) {
+    console.log(e);
+}
 })({"name":"prebid","args":[]}, []);

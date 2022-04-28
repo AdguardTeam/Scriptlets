@@ -69,12 +69,11 @@ function hit(source, message) {
     window.__debug(source);
   }
 }
-function noopFunc() {};
-        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        try {
-            Gemius.apply(this, updatedArgs);
-        } catch (e) {
-            console.log(e);
-        }
-    
+function noopFunc() {}
+const updatedArgs = args ? [].concat(source).concat(args) : [source];
+try {
+    Gemius.apply(this, updatedArgs);
+} catch (e) {
+    console.log(e);
+}
 })({"name":"gemius","args":[]}, []);

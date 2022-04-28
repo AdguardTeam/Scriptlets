@@ -49,10 +49,9 @@ const getScriptletFunctionString = () => {
     }).join(',\n')}\n}`;
 
     const exportString = `var getScriptletFunction = (name) => {
-        return scriptletsMap[name];
-    };
-    export { getScriptletFunction };
-    `;
+    return scriptletsMap[name];
+};
+export { getScriptletFunction };`;
 
     return `${scriptletsString}\n${scriptletsMapString}\n${exportString}`;
 };

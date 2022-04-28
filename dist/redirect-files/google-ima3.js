@@ -655,12 +655,11 @@ function hit(source, message) {
     window.__debug(source);
   }
 }
-function noopFunc() {};
-        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        try {
-            GoogleIma3.apply(this, updatedArgs);
-        } catch (e) {
-            console.log(e);
-        }
-    
+function noopFunc() {}
+const updatedArgs = args ? [].concat(source).concat(args) : [source];
+try {
+    GoogleIma3.apply(this, updatedArgs);
+} catch (e) {
+    console.log(e);
+}
 })({"name":"google-ima3","args":[]}, []);

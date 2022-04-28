@@ -203,12 +203,11 @@ function trueFunc() {
 }
 function falseFunc() {
   return false;
-};
-        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        try {
-            DidomiLoader.apply(this, updatedArgs);
-        } catch (e) {
-            console.log(e);
-        }
-    
+}
+const updatedArgs = args ? [].concat(source).concat(args) : [source];
+try {
+    DidomiLoader.apply(this, updatedArgs);
+} catch (e) {
+    console.log(e);
+}
 })({"name":"didomi-loader","args":[]}, []);

@@ -17,7 +17,7 @@
         "increment": "yarn version --patch --no-git-tag-version"
     },
     "lint-staged": {
-        "*.js": [
+        "{src,tests,scripts}/**/*.js": [
             "eslint"
         ]
     },
@@ -91,7 +91,8 @@
         "rollup-plugin-copy": "^3.1.0",
         "rollup-plugin-generate-html": "^0.2.0",
         "selenium-webdriver": "^4.1.1",
-        "sinon": "^7.5.0"
+        "sinon": "^7.5.0",
+        "terser": "^5.13.0"
     },
     "files": [
         "dist"

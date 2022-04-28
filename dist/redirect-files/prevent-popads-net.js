@@ -97,12 +97,11 @@ function hit(source, message) {
   if (typeof window.__debug === 'function') {
     window.__debug(source);
   }
-};
-        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        try {
-            preventPopadsNet.apply(this, updatedArgs);
-        } catch (e) {
-            console.log(e);
-        }
-    
+}
+const updatedArgs = args ? [].concat(source).concat(args) : [source];
+try {
+    preventPopadsNet.apply(this, updatedArgs);
+} catch (e) {
+    console.log(e);
+}
 })({"name":"prevent-popads-net","args":[]}, []);

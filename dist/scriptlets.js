@@ -1220,8 +1220,9 @@
      */
     function attachDependencies(scriptlet) {
         const { injections = [] } = scriptlet;
-        // eslint-disable-next-line max-len
-        return injections.reduce((accum, dep) => `${accum}\n${dependencies[dep.name]}`, scriptlet.toString());
+        return injections.reduce((accum, dep) => {
+            return `${accum}\n${dependencies[dep.name]}`;
+        }, scriptlet.toString());
     }
 
     /**
@@ -1230,14 +1231,13 @@
      * @param {string} code
      */
     function addCall(scriptlet, code) {
-        return `${code};
-        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        try {
-            ${scriptlet.name}.apply(this, updatedArgs);
-        } catch (e) {
-            console.log(e);
-        }
-    `;
+        return `${code}
+const updatedArgs = args ? [].concat(source).concat(args) : [source];
+try {
+    ${scriptlet.name}.apply(this, updatedArgs);
+} catch (e) {
+    console.log(e);
+}`;
     }
 
     /**
@@ -13417,13 +13417,13 @@ listener: ${convertTypeToString(listener)}`;
       if (typeof window.__debug === 'function') {
         window.__debug(source);
       }
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                abortCurrentInlineScript.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        abortCurrentInlineScript.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function abortOnPropertyRead(source, args){
     function abortOnPropertyRead(source, property) {
@@ -13596,13 +13596,13 @@ listener: ${convertTypeToString(listener)}`;
       if (typeof window.__debug === 'function') {
         window.__debug(source);
       }
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                abortOnPropertyRead.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        abortOnPropertyRead.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function abortOnPropertyWrite(source, args){
     function abortOnPropertyWrite(source, property) {
@@ -13774,13 +13774,13 @@ listener: ${convertTypeToString(listener)}`;
       if (typeof window.__debug === 'function') {
         window.__debug(source);
       }
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                abortOnPropertyWrite.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        abortOnPropertyWrite.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function abortOnStackTrace(source, args){
     function abortOnStackTrace(source, property, stack) {
@@ -14006,13 +14006,12 @@ listener: ${convertTypeToString(listener)}`;
       .join('\n');
       return stackRegexp.test(refinedStackTrace);
     }
-            const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                abortOnStackTrace.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        abortOnStackTrace.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function adjustSetInterval(source, args){
     function adjustSetInterval(source, match, interval, boost) {
@@ -14136,13 +14135,13 @@ listener: ${convertTypeToString(listener)}`;
     }
     function shouldMatchAnyDelay(delay) {
       return delay === (0, _constants.getWildcardSymbol)();
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                adjustSetInterval.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        adjustSetInterval.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function adjustSetTimeout(source, args){
     function adjustSetTimeout(source, match, timeout, boost) {
@@ -14266,13 +14265,13 @@ listener: ${convertTypeToString(listener)}`;
     }
     function shouldMatchAnyDelay(delay) {
       return delay === (0, _constants.getWildcardSymbol)();
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                adjustSetTimeout.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        adjustSetTimeout.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function debugCurrentInlineScript(source, args){
     function debugCurrentInlineScript(source, property, search) {
@@ -14508,13 +14507,13 @@ listener: ${convertTypeToString(listener)}`;
       if (typeof window.__debug === 'function') {
         window.__debug(source);
       }
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                debugCurrentInlineScript.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        debugCurrentInlineScript.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function debugOnPropertyRead(source, args){
     function debugOnPropertyRead(source, property) {
@@ -14688,13 +14687,13 @@ listener: ${convertTypeToString(listener)}`;
         window.__debug(source);
       }
     }
-    function noopFunc() {}        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                debugOnPropertyRead.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    function noopFunc() {}
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        debugOnPropertyRead.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function debugOnPropertyWrite(source, args){
     function debugOnPropertyWrite(source, property) {
@@ -14866,13 +14865,13 @@ listener: ${convertTypeToString(listener)}`;
       if (typeof window.__debug === 'function') {
         window.__debug(source);
       }
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                debugOnPropertyWrite.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        debugOnPropertyWrite.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function dirString(source, args){
     function dirString(source, times) {
@@ -14954,13 +14953,13 @@ listener: ${convertTypeToString(listener)}`;
       if (typeof window.__debug === 'function') {
         window.__debug(source);
       }
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                dirString.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        dirString.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function disableNewtabLinks(source, args){
     function disableNewtabLinks(source) {
@@ -15034,13 +15033,13 @@ listener: ${convertTypeToString(listener)}`;
       if (typeof window.__debug === 'function') {
         window.__debug(source);
       }
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                disableNewtabLinks.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        disableNewtabLinks.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function forceWindowClose(source, args){
     function forceWindowClose(source) {
@@ -15149,13 +15148,13 @@ listener: ${convertTypeToString(listener)}`;
 
       var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       return new RegExp(escaped);
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                forceWindowClose.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        forceWindowClose.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function hideInShadowDom(source, args){
     function hideInShadowDom(source, selector, baseSelector) {
@@ -15374,13 +15373,13 @@ listener: ${convertTypeToString(listener)}`;
         targets: targets,
         innerHosts: innerHosts
       };
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                hideInShadowDom.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        hideInShadowDom.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function jsonPrune(source, args){
     function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
@@ -15641,13 +15640,12 @@ listener: ${convertTypeToString(listener)}`;
       var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       return new RegExp(escaped);
     }
-            const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                jsonPrune.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        jsonPrune.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function log(source, args){
     function log() {
@@ -15656,13 +15654,13 @@ listener: ${convertTypeToString(listener)}`;
       }
 
       console.log(args); // eslint-disable-line no-console
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                log.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        log.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function logAddEventListener(source, args){
     function logAddEventListener(source) {
@@ -15789,13 +15787,12 @@ listener: ${convertTypeToString(listener)}`;
         return "".concat(key, ":\"").concat(recordValueStr, "\"");
       }).join(' ');
     }
-            const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                logAddEventListener.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        logAddEventListener.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function logEval(source, args){
     function logEval(source) {
@@ -15883,13 +15880,13 @@ listener: ${convertTypeToString(listener)}`;
       if (typeof window.__debug === 'function') {
         window.__debug(source);
       }
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                logEval.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        logEval.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function logOnStacktrace(source, args){
     function logOnStacktrace(source, property) {
@@ -16082,13 +16079,13 @@ listener: ${convertTypeToString(listener)}`;
       if (typeof window.__debug === 'function') {
         window.__debug(source);
       }
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                logOnStacktrace.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        logOnStacktrace.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function noeval(source, args){
     function noeval(source) {
@@ -16151,13 +16148,13 @@ listener: ${convertTypeToString(listener)}`;
       if (typeof window.__debug === 'function') {
         window.__debug(source);
       }
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                noeval.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        noeval.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function nowebrtc(source, args){
     function nowebrtc(source) {
@@ -16276,13 +16273,13 @@ listener: ${convertTypeToString(listener)}`;
       }
 
       return str;
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                nowebrtc.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        nowebrtc.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function preventAddEventListener(source, args){
     function preventAddEventListener(source, typeSearch, listenerSearch) {
@@ -16397,13 +16394,13 @@ listener: ${convertTypeToString(listener)}`;
     }
     function listenerToString(listener) {
       return typeof listener === 'function' ? listener.toString() : listener.handleEvent.toString();
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                preventAddEventListener.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        preventAddEventListener.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function preventAdfly(source, args){
     function preventAdfly(source) {
@@ -16552,13 +16549,13 @@ listener: ${convertTypeToString(listener)}`;
       if (typeof window.__debug === 'function') {
         window.__debug(source);
       }
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                preventAdfly.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        preventAdfly.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function preventBab(source, args){
     function preventBab(source) {
@@ -16684,13 +16681,13 @@ listener: ${convertTypeToString(listener)}`;
       if (typeof window.__debug === 'function') {
         window.__debug(source);
       }
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                preventBab.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        preventBab.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function preventElementSrcLoading(source, args){
     function preventElementSrcLoading(source, tagName, match) {
@@ -16874,13 +16871,13 @@ listener: ${convertTypeToString(listener)}`;
       }
 
       return null;
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                preventElementSrcLoading.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        preventElementSrcLoading.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function preventEvalIf(source, args){
     function preventEvalIf(source, search) {
@@ -16967,13 +16964,13 @@ listener: ${convertTypeToString(listener)}`;
       if (typeof window.__debug === 'function') {
         window.__debug(source);
       }
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                preventEvalIf.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        preventEvalIf.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function preventFab(source, args){
     function preventFab(source) {
@@ -17115,13 +17112,13 @@ listener: ${convertTypeToString(listener)}`;
     function noopFunc() {}
     function noopThis() {
       return this;
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                preventFab.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        preventFab.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function preventFetch(source, args){
     function preventFetch(source, propsToMatch) {
@@ -17337,13 +17334,12 @@ listener: ${convertTypeToString(listener)}`;
       });
       return (0, _objectUtils.getObjectFromEntries)(entries);
     }
-            const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                preventFetch.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        preventFetch.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function preventPopadsNet(source, args){
     function preventPopadsNet(source) {
@@ -17443,13 +17439,13 @@ listener: ${convertTypeToString(listener)}`;
       if (typeof window.__debug === 'function') {
         window.__debug(source);
       }
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                preventPopadsNet.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        preventPopadsNet.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function preventRefresh(source, args){
     function preventRefresh(source, delaySec) {
@@ -17602,13 +17598,13 @@ listener: ${convertTypeToString(listener)}`;
       var native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
 
       return native(num);
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                preventRefresh.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        preventRefresh.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function preventRequestAnimationFrame(source, args){
     function preventRequestAnimationFrame(source, match) {
@@ -17750,13 +17746,13 @@ listener: ${convertTypeToString(listener)}`;
       // if str === '', (str && false) will return ''
       // that's why it has to be !!str
       return !!str && str.indexOf(prefix) === 0;
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                preventRequestAnimationFrame.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        preventRequestAnimationFrame.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function preventSetInterval(source, args){
     function preventSetInterval(source, match, delay) {
@@ -17942,13 +17938,12 @@ listener: ${convertTypeToString(listener)}`;
       // that's why it has to be !!str
       return !!str && str.indexOf(prefix) === 0;
     }
-            const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                preventSetInterval.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        preventSetInterval.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function preventSetTimeout(source, args){
     function preventSetTimeout(source, match, delay) {
@@ -18134,13 +18129,12 @@ listener: ${convertTypeToString(listener)}`;
       // that's why it has to be !!str
       return !!str && str.indexOf(prefix) === 0;
     }
-            const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                preventSetTimeout.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        preventSetTimeout.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function preventWindowOpen(source, args){
     function preventWindowOpen(source) {
@@ -18451,13 +18445,12 @@ listener: ${convertTypeToString(listener)}`;
       // that's why it has to be !!str
       return !!str && str.indexOf(prefix) === 0;
     }
-            const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                preventWindowOpen.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        preventWindowOpen.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function preventXHR(source, args){
     function preventXHR(source, propsToMatch, randomize) {
@@ -18671,13 +18664,12 @@ listener: ${convertTypeToString(listener)}`;
       });
       return matchData;
     }
-            const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                preventXHR.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        preventXHR.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function removeAttr(source, args){
     function removeAttr(source, attrs, selector) {
@@ -18891,13 +18883,13 @@ listener: ${convertTypeToString(listener)}`;
       }
 
       connect();
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                removeAttr.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        removeAttr.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function removeClass(source, args){
     function removeClass(source, classNames, selector) {
@@ -19136,13 +19128,13 @@ listener: ${convertTypeToString(listener)}`;
       }
 
       connect();
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                removeClass.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        removeClass.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function removeCookie(source, args){
     function removeCookie(source, match) {
@@ -19263,13 +19255,13 @@ listener: ${convertTypeToString(listener)}`;
       if (typeof window.__debug === 'function') {
         window.__debug(source);
       }
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                removeCookie.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        removeCookie.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function removeInShadowDom(source, args){
     function removeInShadowDom(source, selector, baseSelector) {
@@ -19487,13 +19479,13 @@ listener: ${convertTypeToString(listener)}`;
         targets: targets,
         innerHosts: innerHosts
       };
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                removeInShadowDom.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        removeInShadowDom.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function setAttr(source, args){
     function setAttr(source, selector, attr) {
@@ -19664,13 +19656,13 @@ listener: ${convertTypeToString(listener)}`;
       var native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
 
       return native(num);
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                setAttr.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        setAttr.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function setConstant(source, args){
     function setConstant(source, property, value, stack) {
@@ -20017,13 +20009,13 @@ listener: ${convertTypeToString(listener)}`;
       var native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
 
       return native(num);
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                setConstant.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        setConstant.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function setCookie(source, args){
     function setCookie(source, name, value) {
@@ -20135,13 +20127,13 @@ listener: ${convertTypeToString(listener)}`;
 
       var cookieData = "".concat(encodeURIComponent(name), "=").concat(encodeURIComponent(valueToSet), "; ").concat(pathToSet);
       return cookieData;
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                setCookie.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        setCookie.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function setCookieReload(source, args){
     function setCookieReload(source, name, value) {
@@ -20269,13 +20261,13 @@ listener: ${convertTypeToString(listener)}`;
 
       var cookieData = "".concat(encodeURIComponent(name), "=").concat(encodeURIComponent(valueToSet), "; ").concat(pathToSet);
       return cookieData;
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                setCookieReload.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        setCookieReload.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function setLocalStorageItem(source, args){
     function setLocalStorageItem(source, key, value) {
@@ -20394,13 +20386,13 @@ listener: ${convertTypeToString(listener)}`;
       var native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
 
       return native(num);
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                setLocalStorageItem.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        setLocalStorageItem.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function setPopadsDummy(source, args){
     function setPopadsDummy(source) {
@@ -20476,13 +20468,13 @@ listener: ${convertTypeToString(listener)}`;
       if (typeof window.__debug === 'function') {
         window.__debug(source);
       }
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                setPopadsDummy.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        setPopadsDummy.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     function setSessionStorageItem(source, args){
     function setSessionStorageItem(source, key, value) {
@@ -20601,13 +20593,13 @@ listener: ${convertTypeToString(listener)}`;
       var native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
 
       return native(num);
-    }        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-            try {
-                setSessionStorageItem.apply(this, updatedArgs);
-            } catch (e) {
-                console.log(e);
-            }
-        
+    }
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        setSessionStorageItem.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }
     }
     const scriptletsMap = {
     'abort-current-inline-script': abortCurrentInlineScript,
@@ -20826,8 +20818,8 @@ listener: ${convertTypeToString(listener)}`;
     'set-session-storage-item': setSessionStorageItem
     };
     var getScriptletFunction = (name) => {
-            return scriptletsMap[name];
-        };
+        return scriptletsMap[name];
+    };
 
     /**
      * @typedef {Object} Source - scriptlet properties

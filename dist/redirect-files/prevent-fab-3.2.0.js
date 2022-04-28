@@ -139,12 +139,11 @@ function hit(source, message) {
 function noopFunc() {}
 function noopThis() {
   return this;
-};
-        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        try {
-            preventFab.apply(this, updatedArgs);
-        } catch (e) {
-            console.log(e);
-        }
-    
+}
+const updatedArgs = args ? [].concat(source).concat(args) : [source];
+try {
+    preventFab.apply(this, updatedArgs);
+} catch (e) {
+    console.log(e);
+}
 })({"name":"prevent-fab-3.2.0","args":[]}, []);

@@ -221,12 +221,11 @@ function noopStr() {
 }
 function trueFunc() {
   return true;
-};
-        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        try {
-            GoogleTagServicesGpt.apply(this, updatedArgs);
-        } catch (e) {
-            console.log(e);
-        }
-    
+}
+const updatedArgs = args ? [].concat(source).concat(args) : [source];
+try {
+    GoogleTagServicesGpt.apply(this, updatedArgs);
+} catch (e) {
+    console.log(e);
+}
 })({"name":"googletagservices-gpt","args":[]}, []);

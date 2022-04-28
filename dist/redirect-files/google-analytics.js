@@ -176,12 +176,11 @@ function noopNull() {
 }
 function noopArray() {
   return [];
-};
-        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        try {
-            GoogleAnalytics.apply(this, updatedArgs);
-        } catch (e) {
-            console.log(e);
-        }
-    
+}
+const updatedArgs = args ? [].concat(source).concat(args) : [source];
+try {
+    GoogleAnalytics.apply(this, updatedArgs);
+} catch (e) {
+    console.log(e);
+}
 })({"name":"google-analytics","args":[]}, []);

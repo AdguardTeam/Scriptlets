@@ -87,12 +87,11 @@ function hit(source, message) {
 }
 function noopStr() {
   return '';
-};
-        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        try {
-            Fingerprintjs3.apply(this, updatedArgs);
-        } catch (e) {
-            console.log(e);
-        }
-    
+}
+const updatedArgs = args ? [].concat(source).concat(args) : [source];
+try {
+    Fingerprintjs3.apply(this, updatedArgs);
+} catch (e) {
+    console.log(e);
+}
 })({"name":"fingerprintjs3","args":[]}, []);

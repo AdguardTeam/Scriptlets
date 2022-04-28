@@ -158,12 +158,11 @@ function hit(source, message) {
     window.__debug(source);
   }
 }
-function noopFunc() {};
-        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        try {
-            GoogleAnalyticsGa.apply(this, updatedArgs);
-        } catch (e) {
-            console.log(e);
-        }
-    
+function noopFunc() {}
+const updatedArgs = args ? [].concat(source).concat(args) : [source];
+try {
+    GoogleAnalyticsGa.apply(this, updatedArgs);
+} catch (e) {
+    console.log(e);
+}
 })({"name":"google-analytics-ga","args":[]}, []);

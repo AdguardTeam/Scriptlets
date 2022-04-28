@@ -131,12 +131,11 @@ function hit(source, message) {
 function noopFunc() {}
 function noopArray() {
   return [];
-};
-        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        try {
-            metrikaYandexWatch.apply(this, updatedArgs);
-        } catch (e) {
-            console.log(e);
-        }
-    
+}
+const updatedArgs = args ? [].concat(source).concat(args) : [source];
+try {
+    metrikaYandexWatch.apply(this, updatedArgs);
+} catch (e) {
+    console.log(e);
+}
 })({"name":"metrika-yandex-watch","args":[]}, []);

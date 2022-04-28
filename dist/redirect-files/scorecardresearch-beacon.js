@@ -65,12 +65,11 @@ function hit(source, message) {
   if (typeof window.__debug === 'function') {
     window.__debug(source);
   }
-};
-        const updatedArgs = args ? [].concat(source).concat(args) : [source];
-        try {
-            ScoreCardResearchBeacon.apply(this, updatedArgs);
-        } catch (e) {
-            console.log(e);
-        }
-    
+}
+const updatedArgs = args ? [].concat(source).concat(args) : [source];
+try {
+    ScoreCardResearchBeacon.apply(this, updatedArgs);
+} catch (e) {
+    console.log(e);
+}
 })({"name":"scorecardresearch-beacon","args":[]}, []);
