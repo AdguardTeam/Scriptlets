@@ -2,6 +2,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import copy from 'rollup-plugin-copy';
 import replace from '@rollup/plugin-replace';
+import babel from '@rollup/plugin-babel';
 import { rollupStandard } from './rollup-runners';
 import project from '../package.json';
 import { getRedirectsMap } from './build-redirects';
@@ -47,6 +48,9 @@ const buildScriptletsIIFE = async () => {
             commonjs({
                 include: 'node_modules/**',
             }),
+            babel({
+                babelHelpers: 'runtime',
+            }),
         ],
     });
 };
@@ -71,6 +75,9 @@ const buildScriptletsUMD = async () => {
             commonjs({
                 include: 'node_modules/**',
             }),
+            babel({
+                babelHelpers: 'runtime',
+            }),
             replace({
                 __MAP__: await getRedirectsMap(),
                 // TODO: remove param in @rollup/plugin-replace 5.x.x+
@@ -90,7 +97,8 @@ export const buildScriptlets = async () => {
     // eslint-disable-next-line compat/compat
     await Promise.all([
         buildScriptletsUMD(),
-        buildScriptletsIIFE()]);
+        buildScriptletsIIFE(),
+    ]);
 };
 
 export const buildScriptletsList = async () => {
@@ -108,6 +116,9 @@ export const buildScriptletsList = async () => {
             resolve(),
             commonjs({
                 include: 'node_modules/**',
+            }),
+            babel({
+                babelHelpers: 'runtime',
             }),
         ],
     });

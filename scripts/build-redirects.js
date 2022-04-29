@@ -271,6 +271,9 @@ export const prebuildRedirects = async () => {
             commonjs({
                 include: 'node_modules/**',
             }),
+            babel({
+                babelHelpers: 'runtime',
+            }),
         ],
     });
 };
