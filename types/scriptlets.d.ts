@@ -106,10 +106,9 @@ declare module '@adguard/scriptlets' {
     function isValidScriptletRule(ruleText: string): boolean;
 
     /**
-     * Method creates string for file with scriptlets functions,
-     * where dependencies are placed inside scriptlet functions
+     * Returns scriptlet function by name
      */
-    function getScriptletFunctionString(name: string): string;
+    function getScriptletFunction(name: string): () => void
 
     /**
      * Redirects module
@@ -157,9 +156,5 @@ declare module '@adguard/scriptlets' {
          */
         convertRedirectToAdg(rule: string): string;
     }
-}
-
-declare module '@adguard/scriptlets/func' {
-    export function getScriptletFunction(name: string): () => void;
 }
 
