@@ -29,7 +29,6 @@ const testPeerConfig = {
     iceServers: [testServerConfig],
 };
 
-// eslint-disable-next-line compat/compat
 const isSupported = typeof window.RTCPeerConnection !== 'undefined';
 
 if (!isSupported) {
@@ -58,7 +57,7 @@ if (!isSupported) {
     test('RTCPeerConnection without config', (assert) => {
         runScriptlet(name);
 
-        const localConnection = new RTCPeerConnection(); // eslint-disable-line compat/compat
+        const localConnection = new RTCPeerConnection();
         const sendChannel = localConnection.createDataChannel('sendChannel');
 
         assert.strictEqual(window.hit, 'FIRED');
@@ -68,7 +67,7 @@ if (!isSupported) {
     test('RTCPeerConnection with config', (assert) => {
         runScriptlet(name);
 
-        const testPeer = new RTCPeerConnection(testPeerConfig); // eslint-disable-line compat/compat
+        const testPeer = new RTCPeerConnection(testPeerConfig);
         const dataChannel = testPeer.createDataChannel('', {
             reliable: true,
         });
@@ -94,7 +93,7 @@ if (!isSupported) {
 
         runScriptlet(name);
 
-        // eslint-disable-next-line no-unused-vars, compat/compat
+        // eslint-disable-next-line no-unused-vars
         const testPeer = new RTCPeerConnection(testPeerConfig);
 
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');

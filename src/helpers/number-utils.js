@@ -5,7 +5,8 @@
  * @returns {boolean}
  */
 export const nativeIsNaN = (num) => {
-    const native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
+    // eslint-disable-next-line no-restricted-properties
+    const native = Number.isNaN || window.isNaN;
     return native(num);
 };
 
@@ -16,13 +17,14 @@ export const nativeIsNaN = (num) => {
  * @returns {boolean}
  */
 export const nativeIsFinite = (num) => {
-    const native = Number.isFinite || window.isFinite; // eslint-disable-line compat/compat
+    // eslint-disable-next-line no-restricted-properties
+    const native = Number.isFinite || window.isFinite;
     return native(num);
 };
 
 /**
  * Parses string for a number, if possible, otherwise returns null.
- * @param {*} rawDelay
+ * @param {*} rawString
  * @returns {number|null}
  */
 export const getNumberFromString = (rawString) => {

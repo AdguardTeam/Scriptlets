@@ -1,4 +1,4 @@
-/* eslint-disable compat/compat,no-console,no-await-in-loop */
+/* eslint-disable no-console,no-await-in-loop */
 const webdriver = require('selenium-webdriver');
 const BrowserStackLocal = require('browserstack-local');
 const dotenv = require('dotenv');

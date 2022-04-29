@@ -1,6 +1,11 @@
 {
-  "extends": ["airbnb-base", "plugin:compat/recommended"],
+  "extends": ["airbnb-base"],
   "parser": "@babel/eslint-parser",
+  "parserOptions": {
+    "babelOptions": {
+      "rootMode": "upward"
+    }
+  },
   "env": {
     "browser": true,
     "qunit": true

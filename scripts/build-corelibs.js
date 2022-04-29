@@ -9,8 +9,6 @@ import { writeFile } from './helpers';
 const buildCorelibsJson = async () => {
     const { getScriptletFunction } = require('../tmp/scriptlets-func'); // eslint-disable-line import/no-unresolved,global-require
 
-    // FIXME fix eslint config
-    // eslint-disable-next-line compat/compat
     const scriptlets = await Promise.all(Object
         .values(scriptletList)
         .map(async (s) => {

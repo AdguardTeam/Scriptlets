@@ -72,8 +72,6 @@ const getBlockingRedirects = async () => {
         const blockingRedirectsContent = await fs.readFile(BLOCKING_REDIRECTS_PATH);
         const rawBlockingRedirects = yaml.safeLoad(blockingRedirectsContent);
 
-        // FIXME fix eslint config
-        // eslint-disable-next-line compat/compat
         blockingRedirects = await Promise.all(rawBlockingRedirects
             .map((rawBlockingRedirect) => completeRawBlockingRedirect(rawBlockingRedirect)));
     } catch (e) {
@@ -198,8 +196,6 @@ const buildJsRedirectFiles = async (redirectsData) => {
         await writeFile(redirectPath, redirect.content);
     };
 
-    // FIXME fix eslint config
-    // eslint-disable-next-line compat/compat
     await Promise.all(Object.values(redirectsData)
         .map((redirect) => saveRedirectData(redirect)));
 };
@@ -231,8 +227,6 @@ const buildStaticRedirectFiles = async (redirectsData) => {
         }
     };
 
-    // FIXME fix eslint config
-    // eslint-disable-next-line compat/compat
     await Promise.all(Object.values(redirectsData)
         .map((redirect) => prepareRedirectData(redirect)));
 };
@@ -326,8 +320,6 @@ export const buildClick2Load = async () => {
         });
     };
 
-    // FIXME fix eslint config
-    // eslint-disable-next-line compat/compat
     await Promise.all([buildClick2LoadScript(), buildClick2LoadHtml()]);
 };
 
@@ -338,8 +330,6 @@ export const buildRedirectsFiles = async () => {
         jsRedirects,
     } = await getPreparedRedirects();
 
-    // FIXME fix eslint config
-    // eslint-disable-next-line compat/compat
     await Promise.all([
         buildRedirectsYamlFile(mergedRedirects),
         buildStaticRedirectFiles(staticRedirects),

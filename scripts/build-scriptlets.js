@@ -93,8 +93,6 @@ const buildScriptletsUMD = async () => {
 };
 
 export const buildScriptlets = async () => {
-    // FIXME fix eslint config
-    // eslint-disable-next-line compat/compat
     await Promise.all([
         buildScriptletsUMD(),
         buildScriptletsIIFE(),
