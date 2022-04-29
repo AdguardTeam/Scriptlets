@@ -2,5 +2,19 @@
     "extends": [
         "../.eslintrc",
         "plugin:compat/recommended"
-    ]
+    ],
+    "rules": {
+        "no-restricted-properties": [
+            "error",
+            {
+                "property": "includes"
+            },
+            {
+                "property": "startsWith"
+            },
+            {
+                "property": "endsWith"
+            }
+        ]
+    }
 }
