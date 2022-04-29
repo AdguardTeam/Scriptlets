@@ -66,7 +66,7 @@ export const buildScriptletsFunc = async () => {
         compress: false,
         format: { beautify: true },
     });
-    // FIXME move tmp dir to constants
+
     await writeFile(path.resolve(__dirname, '../tmp/scriptlets-func.js'), beautifiedScriptletFunctions.code);
 
     console.log('Scriptlets functions built successfully');

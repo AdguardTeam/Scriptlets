@@ -86,7 +86,7 @@ const getBlockingRedirects = async () => {
 
 const getJsRedirects = async (compress = false) => {
     const { redirects } = require('../tmp/redirects'); // eslint-disable-line global-require
-    // FIXME rename redirectsObject to redirectDataList
+
     let listOfRedirectsData = Object
         .values(redirectsList)
         .map((rr) => {

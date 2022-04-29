@@ -9,7 +9,6 @@ import json from '@rollup/plugin-json';
 import generateHtml from 'rollup-plugin-generate-html';
 import { rollupStandard } from './rollup-runners';
 
-// FIXME build tests
 const TESTS_DIST = path.resolve(__dirname, '../tests/dist');
 const TEST_FILE_NAME_MARKER = '.test.js';
 
@@ -77,8 +76,6 @@ const getTestConfig = (fileName, dirPath, subDir) => {
     });
 };
 
-// FIXME build tests
-// eslint-disable-next-line no-unused-vars
 const getTestConfigs = () => {
     const TESTS_DIR = '../tests';
     const MULTIPLE_TEST_FILES_DIRS = [

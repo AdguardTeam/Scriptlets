@@ -102,7 +102,6 @@ export const buildScriptlets = async () => {
 export const buildScriptletsList = async () => {
     await rollupStandard({
         input: {
-            // FIXME move to constants
             'scriptlets-list': 'src/scriptlets/scriptlets-list.js',
         },
         output: {

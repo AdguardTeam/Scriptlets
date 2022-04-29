@@ -11,9 +11,6 @@ import { buildScriptletsForCorelibs } from './scripts/build-corelibs';
 import { buildScriptlets, buildScriptletsList } from './scripts/build-scriptlets';
 import { buildTxt } from './scripts/build-txt';
 
-// FIXME check if click2load works
-// FIXME check scriptlets on testcases
-
 const tasks = [
     buildScriptletsList,
     buildScriptletsFunc,

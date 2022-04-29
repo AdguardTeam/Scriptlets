@@ -8,7 +8,7 @@ import {
     convertScriptletToAdg,
     convertAdgScriptletToUbo,
 } from '../helpers/converter';
-// FIXME add built process description in README
+
 // next module should be built and put in the tmp directory before building this module
 // eslint-disable-next-line import/no-unresolved,import/extensions
 import { getScriptletFunction } from '../../tmp/scriptlets-func';
