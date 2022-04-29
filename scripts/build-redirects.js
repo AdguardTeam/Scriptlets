@@ -11,6 +11,7 @@ import babel from '@rollup/plugin-babel';
 import cleanup from 'rollup-plugin-cleanup';
 import generateHtml from 'rollup-plugin-generate-html';
 import replace from '@rollup/plugin-replace';
+import { minify } from 'terser';
 import * as redirectsList from '../src/redirects/redirects-list';
 import { version } from '../package.json';
 import { redirectsFilesList, getDataFromFiles } from './build-docs';
@@ -83,10 +84,10 @@ const getBlockingRedirects = async () => {
     return blockingRedirects;
 };
 
-const getJsRedirects = () => {
+const getJsRedirects = async (compress = false) => {
     const { redirects } = require('../tmp/redirects'); // eslint-disable-line global-require
     // FIXME rename redirectsObject to redirectDataList
-    const redirectsObject = Object
+    let listOfRedirectsData = Object
         .values(redirectsList)
         .map((rr) => {
             const [name, ...aliases] = rr.names;
@@ -104,6 +105,26 @@ const getJsRedirects = () => {
             };
         });
 
+    const minifyOpt = {
+        mangle: false,
+        compress: false,
+        format: { beautify: true },
+    };
+
+    if (compress) {
+        minifyOpt.compress = {};
+        minifyOpt.format = { comments: false };
+    }
+
+    listOfRedirectsData = await Promise.all(listOfRedirectsData.map(async (redirectData) => {
+        const result = await minify(redirectData.redirect, minifyOpt);
+
+        return {
+            ...redirectData,
+            redirect: result.code,
+        };
+    }));
+
     const redirectsDescriptions = getDataFromFiles(redirectsFilesList, REDIRECTS_DIRECTORY)
         .flat(1);
 
@@ -120,7 +141,7 @@ const getJsRedirects = () => {
 
     const complementJsRedirects = (fileName) => {
         const redirectName = fileName.replace(/\.js/, '');
-        const complement = redirectsObject.find((obj) => obj.name === redirectName);
+        const complement = listOfRedirectsData.find((obj) => obj.name === redirectName);
         const comment = getComment(redirectName);
 
         if (complement) {
@@ -141,10 +162,10 @@ const getJsRedirects = () => {
     return jsRedirects;
 };
 
-const getPreparedRedirects = async () => {
+const getPreparedRedirects = async (compress = false) => {
     const staticRedirects = await getStaticRedirects();
     const blockingRedirects = await getBlockingRedirects();
-    const jsRedirects = getJsRedirects();
+    const jsRedirects = await getJsRedirects(compress);
 
     const mergedRedirects = [
         ...staticRedirects,
@@ -338,7 +359,7 @@ export const buildRedirectsFiles = async () => {
 };
 
 export const buildRedirectsForCorelibs = async () => {
-    const { mergedRedirects } = await getPreparedRedirects();
+    const { mergedRedirects } = await getPreparedRedirects(true);
 
     // Build scriptlets.json. It is used in the corelibs
     const base64Redirects = Object.values(mergedRedirects)

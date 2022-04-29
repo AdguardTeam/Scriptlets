@@ -18,12 +18,12 @@ export function attachDependencies(scriptlet) {
  */
 export function addCall(scriptlet, code) {
     return `${code}
-const updatedArgs = args ? [].concat(source).concat(args) : [source];
-try {
-    ${scriptlet.name}.apply(this, updatedArgs);
-} catch (e) {
-    console.log(e);
-}`;
+    const updatedArgs = args ? [].concat(source).concat(args) : [source];
+    try {
+        ${scriptlet.name}.apply(this, updatedArgs);
+    } catch (e) {
+        console.log(e);
+    }`;
 }
 
 /**

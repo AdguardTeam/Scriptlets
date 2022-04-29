@@ -16,6 +16,7 @@
  * };
  */
 import path from 'path';
+import { minify } from 'terser';
 import { addCall, attachDependencies } from '../src/helpers/injector';
 import { writeFile } from './helpers';
 
@@ -23,7 +24,7 @@ import { writeFile } from './helpers';
  * Method creates string for file with scriptlets functions,
  * where dependencies are placed inside scriptlet functions
  */
-const getScriptletFunctionString = () => {
+const getScriptletFunctionsString = () => {
     function wrapInFunc(name, code) {
         return `function ${name}(source, args){\n${code}\n}`;
     }
@@ -49,17 +50,24 @@ const getScriptletFunctionString = () => {
     }).join(',\n')}\n}`;
 
     const exportString = `var getScriptletFunction = (name) => {
-    return scriptletsMap[name];
-};
-export { getScriptletFunction };`;
+        return scriptletsMap[name];
+    };
+    export { getScriptletFunction };`;
 
     return `${scriptletsString}\n${scriptletsMapString}\n${exportString}`;
 };
 
 export const buildScriptletsFunc = async () => {
     console.log('Start building scriptlets functions...');
-    const scriptlet = getScriptletFunctionString();
+
+    const scriptletFunctions = getScriptletFunctionsString();
+    const beautifiedScriptletFunctions = await minify(scriptletFunctions, {
+        mangle: false,
+        compress: false,
+        format: { beautify: true },
+    });
     // FIXME move tmp dir to constants
-    await writeFile(path.resolve(__dirname, '../tmp/scriptlets-func.js'), scriptlet);
+    await writeFile(path.resolve(__dirname, '../tmp/scriptlets-func.js'), beautifiedScriptletFunctions.code);
+
     console.log('Scriptlets functions built successfully');
 };

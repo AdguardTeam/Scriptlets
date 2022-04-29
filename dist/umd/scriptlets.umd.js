@@ -177,8 +177,8 @@
      * @returns {boolean}
      */
     var nativeIsNaN = function nativeIsNaN(num) {
-      var native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
-
+      // eslint-disable-next-line no-restricted-properties
+      var native = Number.isNaN || window.isNaN;
       return native(num);
     };
     /**
@@ -189,13 +189,13 @@
      */
 
     var nativeIsFinite = function nativeIsFinite(num) {
-      var native = Number.isFinite || window.isFinite; // eslint-disable-line compat/compat
-
+      // eslint-disable-next-line no-restricted-properties
+      var native = Number.isFinite || window.isFinite;
       return native(num);
     };
     /**
      * Parses string for a number, if possible, otherwise returns null.
-     * @param {*} rawDelay
+     * @param {*} rawString
      * @returns {number|null}
      */
 
@@ -1331,7 +1331,7 @@
      */
 
     function addCall(scriptlet, code) {
-      return "".concat(code, "\nconst updatedArgs = args ? [].concat(source).concat(args) : [source];\ntry {\n    ").concat(scriptlet.name, ".apply(this, updatedArgs);\n} catch (e) {\n    console.log(e);\n}");
+      return "".concat(code, "\n    const updatedArgs = args ? [].concat(source).concat(args) : [source];\n    try {\n        ").concat(scriptlet.name, ".apply(this, updatedArgs);\n    } catch (e) {\n        console.log(e);\n    }");
     }
     /**
      * Wrap function into IIFE (Immediately invoked function expression)
@@ -13326,14 +13326,14 @@
       function abortCurrentInlineScript(source, property, search) {
         var searchRegexp = toRegExp(search);
         var rid = randomId();
-        var SRC_DATA_MARKER = 'data:text/javascript;base64,';
+        var SRC_DATA_MARKER = "data:text/javascript;base64,";
 
         var getCurrentScript = function getCurrentScript() {
-          if ('currentScript' in document) {
-            return document.currentScript; // eslint-disable-line compat/compat
+          if ("currentScript" in document) {
+            return document.currentScript;
           }
 
-          var scripts = document.getElementsByTagName('script');
+          var scripts = document.getElementsByTagName("script");
           return scripts[scripts.length - 1];
         };
 
@@ -13346,19 +13346,14 @@
             return;
           }
 
-          var content = scriptEl.textContent; // We are using Node.prototype.textContent property descriptor
-          // to get the real script content
-          // even when document.currentScript.textContent is replaced.
-          // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
+          var content = scriptEl.textContent;
 
           try {
-            var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
+            var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").get;
             content = textContentGetter.call(scriptEl);
-          } catch (e) {} // eslint-disable-line no-empty
-          // https://github.com/AdguardTeam/Scriptlets/issues/130
+          } catch (e) {}
 
-
-          if (content.length === 0 && typeof scriptEl.src !== 'undefined' && startsWith(scriptEl.src, SRC_DATA_MARKER)) {
+          if (content.length === 0 && typeof scriptEl.src !== "undefined" && startsWith(scriptEl.src, SRC_DATA_MARKER)) {
             var encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
             content = window.atob(encodedContent);
           }
@@ -13373,18 +13368,13 @@
           var chainInfo = getPropertyInChain(owner, property);
           var base = chainInfo.base;
           var prop = chainInfo.prop,
-              chain = chainInfo.chain; // The scriptlet might be executed before the chain property has been created
-          // (for instance, document.body before the HTML body was loaded).
-          // In this case we're checking whether the base element exists or not
-          // and if not, we simply exit without overriding anything.
-          // e.g. https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
+              chain = chainInfo.chain;
 
           if (base instanceof Object === false && base === null) {
-            var props = property.split('.');
+            var props = property.split(".");
             var propIndex = props.indexOf(prop);
             var baseName = props[propIndex - 1];
-            console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded.")); // eslint-disable-line no-console, max-len
-
+            console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded."));
             return;
           }
 
@@ -13456,7 +13446,7 @@
       }
 
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf('.');
+        var pos = chain.indexOf(".");
 
         if (pos === -1) {
           return {
@@ -13465,11 +13455,9 @@
           };
         }
 
-        var prop = chain.slice(0, pos); // https://github.com/AdguardTeam/Scriptlets/issues/128
+        var prop = chain.slice(0, pos);
 
         if (base === null) {
-          // if base is null, return 'null' as base.
-          // it's needed for triggering the reason logging while debugging
           return {
             base: base,
             prop: prop,
@@ -13495,11 +13483,11 @@
       }
 
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-        var DEFAULT_VALUE = '.?';
-        var FORWARD_SLASH = '/';
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
 
-        if (input === '') {
+        if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
 
@@ -13507,21 +13495,18 @@
           return new RegExp(input.slice(1, -1));
         }
 
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
 
       function startsWith(str, prefix) {
-        // if str === '', (str && false) will return ''
-        // that's why it has to be !!str
         return !!str && str.indexOf(prefix) === 0;
       }
 
       function createOnErrorHandler(rid) {
-        // eslint-disable-next-line consistent-return
         var nativeOnError = window.onerror;
         return function onError(error) {
-          if (typeof error === 'string' && error.indexOf(rid) !== -1) {
+          if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
           }
 
@@ -13544,29 +13529,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -13583,13 +13564,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -13666,7 +13643,7 @@
       }
 
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf('.');
+        var pos = chain.indexOf(".");
 
         if (pos === -1) {
           return {
@@ -13675,11 +13652,9 @@
           };
         }
 
-        var prop = chain.slice(0, pos); // https://github.com/AdguardTeam/Scriptlets/issues/128
+        var prop = chain.slice(0, pos);
 
         if (base === null) {
-          // if base is null, return 'null' as base.
-          // it's needed for triggering the reason logging while debugging
           return {
             base: base,
             prop: prop,
@@ -13705,10 +13680,9 @@
       }
 
       function createOnErrorHandler(rid) {
-        // eslint-disable-next-line consistent-return
         var nativeOnError = window.onerror;
         return function onError(error) {
-          if (typeof error === 'string' && error.indexOf(rid) !== -1) {
+          if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
           }
 
@@ -13731,29 +13705,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -13770,13 +13740,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -13852,7 +13818,7 @@
       }
 
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf('.');
+        var pos = chain.indexOf(".");
 
         if (pos === -1) {
           return {
@@ -13861,11 +13827,9 @@
           };
         }
 
-        var prop = chain.slice(0, pos); // https://github.com/AdguardTeam/Scriptlets/issues/128
+        var prop = chain.slice(0, pos);
 
         if (base === null) {
-          // if base is null, return 'null' as base.
-          // it's needed for triggering the reason logging while debugging
           return {
             base: base,
             prop: prop,
@@ -13891,10 +13855,9 @@
       }
 
       function createOnErrorHandler(rid) {
-        // eslint-disable-next-line consistent-return
         var nativeOnError = window.onerror;
         return function onError(error) {
-          if (typeof error === 'string' && error.indexOf(rid) !== -1) {
+          if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
           }
 
@@ -13917,29 +13880,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -13956,13 +13915,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -14016,7 +13971,6 @@
           var value = base[prop];
 
           if (!validateStrPattern(stack)) {
-            // eslint-disable-next-line no-console
             console.log("Invalid parameter: ".concat(stack));
             return;
           }
@@ -14059,7 +14013,7 @@
       }
 
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf('.');
+        var pos = chain.indexOf(".");
 
         if (pos === -1) {
           return {
@@ -14068,11 +14022,9 @@
           };
         }
 
-        var prop = chain.slice(0, pos); // https://github.com/AdguardTeam/Scriptlets/issues/128
+        var prop = chain.slice(0, pos);
 
         if (base === null) {
-          // if base is null, return 'null' as base.
-          // it's needed for triggering the reason logging while debugging
           return {
             base: base,
             prop: prop,
@@ -14098,10 +14050,9 @@
       }
 
       function createOnErrorHandler(rid) {
-        // eslint-disable-next-line consistent-return
         var nativeOnError = window.onerror;
         return function onError(error) {
-          if (typeof error === 'string' && error.indexOf(rid) !== -1) {
+          if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
           }
 
@@ -14124,29 +14075,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -14163,19 +14110,15 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
 
       function validateStrPattern(input) {
-        var FORWARD_SLASH = '/';
+        var FORWARD_SLASH = "/";
         var str = input;
 
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
@@ -14195,16 +14138,14 @@
       }
 
       function matchStackTrace(stackMatch, stackTrace) {
-        if (!stackMatch || stackMatch === '') {
+        if (!stackMatch || stackMatch === "") {
           return true;
         }
 
         var stackRegexp = (0, _stringUtils.toRegExp)(stackMatch);
-        var refinedStackTrace = stackTrace.split('\n').slice(2) // get rid of our own functions in the stack trace
-        .map(function (line) {
+        var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
-        }) // trim the lines
-        .join('\n');
+        }).join("\n");
         return stackRegexp.test(refinedStackTrace);
       }
 
@@ -14245,29 +14186,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -14284,23 +14221,19 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
 
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-        var DEFAULT_VALUE = '.?';
-        var FORWARD_SLASH = '/';
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
 
-        if (input === '') {
+        if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
 
@@ -14308,17 +14241,16 @@
           return new RegExp(input.slice(1, -1));
         }
 
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
 
       function getBoostMultiplier(boost) {
-        var DEFAULT_MULTIPLIER = 0.05;
-        var MIN_MULTIPLIER = 0.02;
+        var DEFAULT_MULTIPLIER = .05;
+        var MIN_MULTIPLIER = .02;
         var MAX_MULTIPLIER = 50;
         var parsedBoost = parseFloat(boost);
-        var boostMultiplier = (0, _numberUtils.nativeIsNaN)(parsedBoost) || !(0, _numberUtils.nativeIsFinite)(parsedBoost) ? DEFAULT_MULTIPLIER // default scriptlet value
-        : parsedBoost;
+        var boostMultiplier = (0, _numberUtils.nativeIsNaN)(parsedBoost) || !(0, _numberUtils.nativeIsFinite)(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
 
         if (boostMultiplier < MIN_MULTIPLIER) {
           boostMultiplier = MIN_MULTIPLIER;
@@ -14336,10 +14268,9 @@
       }
 
       function getMatchDelay(delay) {
-        var DEFAULT_DELAY = 1000;
+        var DEFAULT_DELAY = 1e3;
         var parsedDelay = parseInt(delay, 10);
-        var delayMatch = (0, _numberUtils.nativeIsNaN)(parsedDelay) ? DEFAULT_DELAY // default scriptlet value
-        : parsedDelay;
+        var delayMatch = (0, _numberUtils.nativeIsNaN)(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
         return delayMatch;
       }
 
@@ -14384,29 +14315,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -14423,23 +14350,19 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
 
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-        var DEFAULT_VALUE = '.?';
-        var FORWARD_SLASH = '/';
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
 
-        if (input === '') {
+        if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
 
@@ -14447,17 +14370,16 @@
           return new RegExp(input.slice(1, -1));
         }
 
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
 
       function getBoostMultiplier(boost) {
-        var DEFAULT_MULTIPLIER = 0.05;
-        var MIN_MULTIPLIER = 0.02;
+        var DEFAULT_MULTIPLIER = .05;
+        var MIN_MULTIPLIER = .02;
         var MAX_MULTIPLIER = 50;
         var parsedBoost = parseFloat(boost);
-        var boostMultiplier = (0, _numberUtils.nativeIsNaN)(parsedBoost) || !(0, _numberUtils.nativeIsFinite)(parsedBoost) ? DEFAULT_MULTIPLIER // default scriptlet value
-        : parsedBoost;
+        var boostMultiplier = (0, _numberUtils.nativeIsNaN)(parsedBoost) || !(0, _numberUtils.nativeIsFinite)(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
 
         if (boostMultiplier < MIN_MULTIPLIER) {
           boostMultiplier = MIN_MULTIPLIER;
@@ -14475,10 +14397,9 @@
       }
 
       function getMatchDelay(delay) {
-        var DEFAULT_DELAY = 1000;
+        var DEFAULT_DELAY = 1e3;
         var parsedDelay = parseInt(delay, 10);
-        var delayMatch = (0, _numberUtils.nativeIsNaN)(parsedDelay) ? DEFAULT_DELAY // default scriptlet value
-        : parsedDelay;
+        var delayMatch = (0, _numberUtils.nativeIsNaN)(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
         return delayMatch;
       }
 
@@ -14501,11 +14422,11 @@
         var rid = randomId();
 
         var getCurrentScript = function getCurrentScript() {
-          if ('currentScript' in document) {
-            return document.currentScript; // eslint-disable-line compat/compat
+          if ("currentScript" in document) {
+            return document.currentScript;
           }
 
-          var scripts = document.getElementsByTagName('script');
+          var scripts = document.getElementsByTagName("script");
           return scripts[scripts.length - 1];
         };
 
@@ -14518,20 +14439,16 @@
             return;
           }
 
-          var content = scriptEl.textContent; // We are using Node.prototype.textContent property descriptor
-          // to get the real script content
-          // even when document.currentScript.textContent is replaced.
-          // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
+          var content = scriptEl.textContent;
 
           try {
-            var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
+            var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").get;
             content = textContentGetter.call(scriptEl);
-          } catch (e) {} // eslint-disable-line no-empty
-
+          } catch (e) {}
 
           if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && searchRegexp.test(content)) {
             hit(source);
-            debugger; // eslint-disable-line no-debugger
+            debugger;
           }
         };
 
@@ -14539,18 +14456,13 @@
           var chainInfo = getPropertyInChain(owner, property);
           var base = chainInfo.base;
           var prop = chainInfo.prop,
-              chain = chainInfo.chain; // The scriptlet might be executed before the chain property has been created
-          // (for instance, document.body before the HTML body was loaded).
-          // In this case we're checking whether the base element exists or not
-          // and if not, we simply exit without overriding anything.
-          // e.g. https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
+              chain = chainInfo.chain;
 
           if (base instanceof Object === false && base === null) {
-            var props = property.split('.');
+            var props = property.split(".");
             var propIndex = props.indexOf(prop);
             var baseName = props[propIndex - 1];
-            console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded.")); // eslint-disable-line no-console, max-len
-
+            console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded."));
             return;
           }
 
@@ -14605,7 +14517,7 @@
       }
 
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf('.');
+        var pos = chain.indexOf(".");
 
         if (pos === -1) {
           return {
@@ -14614,11 +14526,9 @@
           };
         }
 
-        var prop = chain.slice(0, pos); // https://github.com/AdguardTeam/Scriptlets/issues/128
+        var prop = chain.slice(0, pos);
 
         if (base === null) {
-          // if base is null, return 'null' as base.
-          // it's needed for triggering the reason logging while debugging
           return {
             base: base,
             prop: prop,
@@ -14644,11 +14554,11 @@
       }
 
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-        var DEFAULT_VALUE = '.?';
-        var FORWARD_SLASH = '/';
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
 
-        if (input === '') {
+        if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
 
@@ -14656,15 +14566,14 @@
           return new RegExp(input.slice(1, -1));
         }
 
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
 
       function createOnErrorHandler(rid) {
-        // eslint-disable-next-line consistent-return
         var nativeOnError = window.onerror;
         return function onError(error) {
-          if (typeof error === 'string' && error.indexOf(rid) !== -1) {
+          if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
           }
 
@@ -14687,29 +14596,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -14726,13 +14631,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -14756,7 +14657,7 @@
 
         var abort = function abort() {
           hit(source);
-          debugger; // eslint-disable-line no-debugger
+          debugger;
         };
 
         var setChainPropAccess = function setChainPropAccess(owner, property) {
@@ -14809,7 +14710,7 @@
       }
 
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf('.');
+        var pos = chain.indexOf(".");
 
         if (pos === -1) {
           return {
@@ -14818,11 +14719,9 @@
           };
         }
 
-        var prop = chain.slice(0, pos); // https://github.com/AdguardTeam/Scriptlets/issues/128
+        var prop = chain.slice(0, pos);
 
         if (base === null) {
-          // if base is null, return 'null' as base.
-          // it's needed for triggering the reason logging while debugging
           return {
             base: base,
             prop: prop,
@@ -14848,10 +14747,9 @@
       }
 
       function createOnErrorHandler(rid) {
-        // eslint-disable-next-line consistent-return
         var nativeOnError = window.onerror;
         return function onError(error) {
-          if (typeof error === 'string' && error.indexOf(rid) !== -1) {
+          if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
           }
 
@@ -14874,29 +14772,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -14913,13 +14807,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -14945,7 +14835,7 @@
 
         var abort = function abort() {
           hit(source);
-          debugger; // eslint-disable-line no-debugger
+          debugger;
         };
 
         var setChainPropAccess = function setChainPropAccess(owner, property) {
@@ -14997,7 +14887,7 @@
       }
 
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf('.');
+        var pos = chain.indexOf(".");
 
         if (pos === -1) {
           return {
@@ -15006,11 +14896,9 @@
           };
         }
 
-        var prop = chain.slice(0, pos); // https://github.com/AdguardTeam/Scriptlets/issues/128
+        var prop = chain.slice(0, pos);
 
         if (base === null) {
-          // if base is null, return 'null' as base.
-          // it's needed for triggering the reason logging while debugging
           return {
             base: base,
             prop: prop,
@@ -15036,10 +14924,9 @@
       }
 
       function createOnErrorHandler(rid) {
-        // eslint-disable-next-line consistent-return
         var nativeOnError = window.onerror;
         return function onError(error) {
-          if (typeof error === 'string' && error.indexOf(rid) !== -1) {
+          if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
           }
 
@@ -15062,29 +14949,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -15101,13 +14984,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -15128,21 +15007,18 @@
         times = parseInt(times, 10);
 
         function dirWrapper(object) {
-          // eslint-disable-next-line no-unused-vars
           var temp;
 
           for (var i = 0; i < times; i += 1) {
-            // eslint-disable-next-line no-unused-expressions
             temp = "".concat(object);
           }
 
-          if (typeof dir === 'function') {
+          if (typeof dir === "function") {
             dir.call(this, object);
           }
 
           hit(source, temp);
-        } // eslint-disable-next-line no-console
-
+        }
 
         console.dir = dirWrapper;
       }
@@ -15154,29 +15030,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -15193,13 +15065,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -15215,11 +15083,11 @@
 
     function disableNewtabLinks(source, args) {
       function disableNewtabLinks(source) {
-        document.addEventListener('click', function (ev) {
+        document.addEventListener("click", function (ev) {
           var target = ev.target;
 
           while (target !== null) {
-            if (target.localName === 'a' && target.hasAttribute('target')) {
+            if (target.localName === "a" && target.hasAttribute("target")) {
               ev.stopPropagation();
               ev.preventDefault();
               hit(source);
@@ -15238,29 +15106,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -15277,13 +15141,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -15299,13 +15159,12 @@
 
     function forceWindowClose(source, args) {
       function forceWindowClose(source) {
-        var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : ''; // eslint-disable-next-line no-console
+        var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        var log = console.log.bind(console);
 
-        var log = console.log.bind(console); // https://github.com/AdguardTeam/Scriptlets/issues/158#issuecomment-993423036
-
-        if (typeof window.close !== 'function') {
+        if (typeof window.close !== "function") {
           if (source.verbose) {
-            log('window.close() is not a function so \'close-window\' scriptlet is unavailable');
+            log("window.close() is not a function so 'close-window' scriptlet is unavailable");
           }
 
           return;
@@ -15316,13 +15175,11 @@
             hit(source);
             window.close();
           } catch (e) {
-            // log the error if window closing is impossible
-            // https://developer.mozilla.org/en-US/docs/Web/API/Window/close
             log(e);
           }
         };
 
-        if (path === '') {
+        if (path === "") {
           closeImmediately();
         } else {
           var pathRegexp = toRegExp(path);
@@ -15341,29 +15198,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -15380,23 +15233,19 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
 
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-        var DEFAULT_VALUE = '.?';
-        var FORWARD_SLASH = '/';
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
 
-        if (input === '') {
+        if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
 
@@ -15404,7 +15253,7 @@
           return new RegExp(input.slice(1, -1));
         }
 
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
 
@@ -15419,24 +15268,17 @@
 
     function hideInShadowDom(source, args) {
       function hideInShadowDom(source, selector, baseSelector) {
-        // do nothing if browser does not support ShadowRoot
-        // https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot
         if (!Element.prototype.attachShadow) {
           return;
         }
 
         var hideElement = function hideElement(targetElement) {
-          var DISPLAY_NONE_CSS = 'display:none!important;';
+          var DISPLAY_NONE_CSS = "display:none!important;";
           targetElement.style.cssText = DISPLAY_NONE_CSS;
         };
-        /**
-         * Handles shadow-dom piercing and hiding of found elements
-         */
-
 
         var hideHandler = function hideHandler() {
-          // start value of shadow-dom hosts for the page dom
-          var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector); // if there is shadow-dom host, they should be explored
+          var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
 
           while (hostElements.length !== 0) {
             var isHidden = false;
@@ -15452,9 +15294,7 @@
 
             if (isHidden) {
               hit(source);
-            } // continue to pierce for inner shadow-dom hosts
-            // and search inside them while the next iteration
-
+            }
 
             hostElements = innerHosts;
           }
@@ -15471,29 +15311,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -15510,13 +15346,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -15524,12 +15356,6 @@
       function observeDOMChanges(callback) {
         var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
         var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-        /**
-         * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
-         * Those calls that fall into the "cooldown" period, are ignored
-         * @param {Function} method
-         * @param {Number} delay - milliseconds
-         */
 
         var throttle = function throttle(method, delay) {
           var wait = false;
@@ -15559,17 +15385,8 @@
 
           return wrapper;
         };
-        /**
-         * 'delay' in milliseconds for 'throttle' method
-         */
-
 
         var THROTTLE_DELAY_MS = 20;
-        /**
-         * Used for remove-class
-         */
-        // eslint-disable-next-line no-use-before-define, compat/compat
-
         var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
 
         var connect = function connect() {
@@ -15603,12 +15420,8 @@
       }
 
       function findHostElements(rootElement) {
-        var hosts = []; // Element.querySelectorAll() returns list of elements
-        // which are defined in DOM of Element.
-        // Meanwhile, inner DOM of the element with shadowRoot property
-        // is absolutely another DOM and which can not be reached by querySelectorAll('*')
-
-        var domElems = rootElement.querySelectorAll('*');
+        var hosts = [];
+        var domElems = rootElement.querySelectorAll("*");
         domElems.forEach(function (el) {
           if (el.shadowRoot) {
             hosts.push(el);
@@ -15619,20 +15432,15 @@
 
       function pierceShadowDom(selector, hostElements) {
         var targets = [];
-        var innerHostsAcc = []; // it's possible to get a few hostElements found by baseSelector on the page
-
+        var innerHostsAcc = [];
         hostElements.forEach(function (host) {
-          // check presence of selector element inside base element if it's not in shadow-dom
           var simpleElems = host.querySelectorAll(selector);
           targets = targets.concat([].slice.call(simpleElems));
           var shadowRootElem = host.shadowRoot;
           var shadowChildren = shadowRootElem.querySelectorAll(selector);
-          targets = targets.concat([].slice.call(shadowChildren)); // find inner shadow-dom hosts inside processing shadow-dom
-
+          targets = targets.concat([].slice.call(shadowChildren));
           innerHostsAcc.push(findHostElements(shadowRootElem));
-        }); // if there were more than one host element,
-        // innerHostsAcc is an array of arrays and should be flatten
-
+        });
         var innerHosts = (0, _arrayUtils.flatten)(innerHostsAcc);
         return {
           targets: targets,
@@ -15653,23 +15461,22 @@
       function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
         if (!!stack && !matchStackTrace(stack, new Error().stack)) {
           return;
-        } // eslint-disable-next-line no-console
-
+        }
 
         var log = console.log.bind(console);
-        var prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
-        var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
+        var prunePaths = propsToRemove !== undefined && propsToRemove !== "" ? propsToRemove.split(/ +/) : [];
+        var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== "" ? requiredInitialProps.split(/ +/) : [];
 
         function isPruningNeeded(root) {
           if (!root) {
             return false;
           }
 
-          var shouldProcess; // Only log hostname and matched JSON payload if only second argument is present
+          var shouldProcess;
 
           if (prunePaths.length === 0 && requiredPaths.length > 0) {
             var rootString = JSON.stringify(root);
-            var matchRegex = toRegExp(requiredPaths.join(''));
+            var matchRegex = toRegExp(requiredPaths.join(""));
             var shouldLog = matchRegex.test(rootString);
 
             if (shouldLog) {
@@ -15681,20 +15488,15 @@
 
           for (var i = 0; i < requiredPaths.length; i += 1) {
             var requiredPath = requiredPaths[i];
-            var lastNestedPropName = requiredPath.split('.').pop();
-            var hasWildcard = requiredPath.indexOf('.*.') > -1 || requiredPath.indexOf('*.') > -1 || requiredPath.indexOf('.*') > -1 || requiredPath.indexOf('.[].') > -1 || requiredPath.indexOf('[].') > -1 || requiredPath.indexOf('.[]') > -1; // if the path has wildcard, getPropertyInChain should 'look through' chain props
-
-            var details = getWildcardPropertyInChain(root, requiredPath, hasWildcard); // start value of 'shouldProcess' due to checking below
-
+            var lastNestedPropName = requiredPath.split(".").pop();
+            var hasWildcard = requiredPath.indexOf(".*.") > -1 || requiredPath.indexOf("*.") > -1 || requiredPath.indexOf(".*") > -1 || requiredPath.indexOf(".[].") > -1 || requiredPath.indexOf("[].") > -1 || requiredPath.indexOf(".[]") > -1;
+            var details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
             shouldProcess = !hasWildcard;
 
             for (var _i = 0; _i < details.length; _i += 1) {
               if (hasWildcard) {
-                // if there is a wildcard,
-                // at least one (||) of props chain should be present in object
                 shouldProcess = !(details[_i].base[lastNestedPropName] === undefined) || shouldProcess;
               } else {
-                // otherwise each one (&&) of them should be there
                 shouldProcess = !(details[_i].base[lastNestedPropName] === undefined) && shouldProcess;
               }
             }
@@ -15702,11 +15504,6 @@
 
           return shouldProcess;
         }
-        /**
-         * Prunes properties of 'root' object
-         * @param {Object} root
-         */
-
 
         var jsonPruner = function jsonPruner(root) {
           if (prunePaths.length === 0 && requiredPaths.length === 0) {
@@ -15717,9 +15514,7 @@
           try {
             if (isPruningNeeded(root) === false) {
               return root;
-            } // if pruning is needed, we check every input pathToRemove
-            // and delete it if root has it
-
+            }
 
             prunePaths.forEach(function (path) {
               var ownerObjArr = getWildcardPropertyInChain(root, path, true);
@@ -15742,33 +15537,26 @@
         var jsonParseWrapper = function jsonParseWrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
-          } // dealing with stringified json in args, which should be parsed.
-          // so we call nativeJSONParse as JSON.parse which is bound to JSON object
-
+          }
 
           var root = nativeJSONParse.apply(JSON, args);
           return jsonPruner(root);
-        }; // JSON.parse mocking
-
+        };
 
         jsonParseWrapper.toString = nativeJSONParse.toString.bind(nativeJSONParse);
-        JSON.parse = jsonParseWrapper; // eslint-disable-next-line compat/compat
-
-        var nativeResponseJson = Response.prototype.json; // eslint-disable-next-line func-names
+        JSON.parse = jsonParseWrapper;
+        var nativeResponseJson = Response.prototype.json;
 
         var responseJsonWrapper = function responseJsonWrapper() {
           var promise = nativeResponseJson.apply(this);
           return promise.then(function (obj) {
             return jsonPruner(obj);
           });
-        }; // do nothing if browser does not support Response (e.g. Internet Explorer)
-        // https://developer.mozilla.org/en-US/docs/Web/API/Response
+        };
 
-
-        if (typeof Response === 'undefined') {
+        if (typeof Response === "undefined") {
           return;
-        } // eslint-disable-next-line compat/compat
-
+        }
 
         Response.prototype.json = responseJsonWrapper;
       }
@@ -15780,29 +15568,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -15819,42 +15603,33 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
 
       function matchStackTrace(stackMatch, stackTrace) {
-        if (!stackMatch || stackMatch === '') {
+        if (!stackMatch || stackMatch === "") {
           return true;
         }
 
         var stackRegexp = (0, _stringUtils.toRegExp)(stackMatch);
-        var refinedStackTrace = stackTrace.split('\n').slice(2) // get rid of our own functions in the stack trace
-        .map(function (line) {
+        var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
-        }) // trim the lines
-        .join('\n');
+        }).join("\n");
         return stackRegexp.test(refinedStackTrace);
       }
 
       function getWildcardPropertyInChain(base, chain) {
         var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
-        var pos = chain.indexOf('.');
+        var pos = chain.indexOf(".");
 
         if (pos === -1) {
-          // for paths like 'a.b.*' every final nested prop should be processed
-          if (chain === (0, _constants.getWildcardSymbol)() || chain === '[]') {
-            // eslint-disable-next-line no-restricted-syntax
+          if (chain === (0, _constants.getWildcardSymbol)() || chain === "[]") {
             for (var key in base) {
-              // to process each key in base except inherited ones
               if (Object.prototype.hasOwnProperty.call(base, key)) {
                 output.push({
                   base: base,
@@ -15873,13 +15648,11 @@
         }
 
         var prop = chain.slice(0, pos);
-        var shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === (0, _constants.getWildcardSymbol)() && base instanceof Object;
+        var shouldLookThrough = prop === "[]" && Array.isArray(base) || prop === (0, _constants.getWildcardSymbol)() && base instanceof Object;
 
         if (shouldLookThrough) {
           var nextProp = chain.slice(pos + 1);
-          var baseKeys = Object.keys(base); // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src ad.1.src'),
-          // each one of base keys should be considered as a potential chain prop in final path
-
+          var baseKeys = Object.keys(base);
           baseKeys.forEach(function (key) {
             var item = base[key];
             getWildcardPropertyInChain(item, nextProp, lookThrough, output);
@@ -15897,11 +15670,11 @@
       }
 
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-        var DEFAULT_VALUE = '.?';
-        var FORWARD_SLASH = '/';
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
 
-        if (input === '') {
+        if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
 
@@ -15909,7 +15682,7 @@
           return new RegExp(input.slice(1, -1));
         }
 
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
 
@@ -15928,7 +15701,7 @@
           args[_key] = arguments[_key];
         }
 
-        console.log(args); // eslint-disable-line no-console
+        console.log(args);
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -15942,17 +15715,15 @@
 
     function logAddEventListener(source, args) {
       function logAddEventListener(source) {
-        // eslint-disable-next-line no-console
         var log = console.log.bind(console);
         var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
         function addEventListenerWrapper(type, listener) {
           if (validateType(type) && validateListener(listener)) {
-            var logMessage = "addEventListener(\"".concat(type, "\", ").concat(listenerToString(listener), ")");
+            var logMessage = 'addEventListener("'.concat(type, '", ').concat(listenerToString(listener), ")");
             log(logMessage);
             hit(source);
           } else if (source.verbose) {
-            // logging while debugging
             var _logMessage = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
 
             log(_logMessage);
@@ -15975,29 +15746,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -16014,40 +15781,33 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
 
       function validateType(type) {
-        // https://github.com/AdguardTeam/Scriptlets/issues/125
-        return typeof type !== 'undefined';
+        return typeof type !== "undefined";
       }
 
       function validateListener(listener) {
-        // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#parameters
-        return typeof listener !== 'undefined' && (typeof listener === 'function' || typeof listener === 'object' // https://github.com/AdguardTeam/Scriptlets/issues/76
-        && listener !== null && typeof listener.handleEvent === 'function');
+        return typeof listener !== "undefined" && (typeof listener === "function" || typeof listener === "object" && listener !== null && typeof listener.handleEvent === "function");
       }
 
       function listenerToString(listener) {
-        return typeof listener === 'function' ? listener.toString() : listener.handleEvent.toString();
+        return typeof listener === "function" ? listener.toString() : listener.handleEvent.toString();
       }
 
       function convertTypeToString(value) {
         var output;
 
-        if (typeof value === 'undefined') {
-          output = 'undefined';
-        } else if (typeof value === 'object') {
+        if (typeof value === "undefined") {
+          output = "undefined";
+        } else if (typeof value === "object") {
           if (value === null) {
-            output = 'null';
+            output = "null";
           } else {
             output = objectToString(value);
           }
@@ -16059,7 +15819,7 @@
       }
 
       function objectToString(obj) {
-        return (0, _objectUtils.isEmptyObject)(obj) ? '{}' : (0, _objectUtils.getObjectEntries)(obj).map(function (pair) {
+        return (0, _objectUtils.isEmptyObject)(obj) ? "{}" : (0, _objectUtils.getObjectEntries)(obj).map(function (pair) {
           var key = pair[0];
           var value = pair[1];
           var recordValueStr = value;
@@ -16068,8 +15828,8 @@
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
 
-          return "".concat(key, ":\"").concat(recordValueStr, "\"");
-        }).join(' ');
+          return "".concat(key, ':"').concat(recordValueStr, '"');
+        }).join(" ");
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -16083,18 +15843,16 @@
 
     function logEval(source, args) {
       function logEval(source) {
-        var log = console.log.bind(console); // wrap eval function
-
+        var log = console.log.bind(console);
         var nativeEval = window.eval;
 
         function evalWrapper(str) {
           hit(source);
-          log("eval(\"".concat(str, "\")"));
+          log('eval("'.concat(str, '")'));
           return nativeEval(str);
         }
 
-        window.eval = evalWrapper; // wrap new Function
-
+        window.eval = evalWrapper;
         var nativeFunction = window.Function;
 
         function FunctionWrapper() {
@@ -16104,7 +15862,7 @@
             args[_key] = arguments[_key];
           }
 
-          log("new Function(".concat(args.join(', '), ")"));
+          log("new Function(".concat(args.join(", "), ")"));
           return nativeFunction.apply(this, [].concat(args));
         }
 
@@ -16120,29 +15878,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -16159,13 +15913,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -16186,36 +15936,26 @@
         }
 
         var refineStackTrace = function refineStackTrace(stackString) {
-          // Split stack trace string by lines and remove first two elements ('Error' and getter call)
-          // Remove '    at ' at the start of each string
-          var stackSteps = stackString.split('\n').slice(2).map(function (line) {
-            return line.replace(/ {4}at /, '');
-          }); // Trim each line extracting funcName : fullPath pair
-
+          var stackSteps = stackString.split("\n").slice(2).map(function (line) {
+            return line.replace(/ {4}at /, "");
+          });
           var logInfoArray = stackSteps.map(function (line) {
             var funcName;
             var funcFullPath;
-            /* eslint-disable-next-line no-useless-escape */
-
             var reg = /\(([^\)]+)\)/;
 
             if (line.match(reg)) {
-              funcName = line.split(' ').slice(0, -1).join(' ');
-              /* eslint-disable-next-line prefer-destructuring, no-useless-escape */
-
+              funcName = line.split(" ").slice(0, -1).join(" ");
               funcFullPath = line.match(reg)[1];
             } else {
-              // For when func name is not available
-              funcName = 'function name is not available';
+              funcName = "function name is not available";
               funcFullPath = line;
             }
 
             return [funcName, funcFullPath];
-          }); // Convert array into object for better display using console.table
-
+          });
           var logInfoObject = {};
           logInfoArray.forEach(function (pair) {
-            /* eslint-disable-next-line prefer-destructuring */
             logInfoObject[pair[0]] = pair[1];
           });
           return logInfoObject;
@@ -16246,30 +15986,27 @@
           }
 
           var value = base[prop];
-          /* eslint-disable no-console, compat/compat */
-
           setPropertyAccess(base, prop, {
             get: function get() {
               hit(source);
-              console.log("%cGet %c".concat(prop), 'color:red;', 'color:green;');
+              console.log("%cGet %c".concat(prop), "color:red;", "color:green;");
               console.table(refineStackTrace(new Error().stack));
               return value;
             },
             set: function set(newValue) {
               hit(source);
-              console.log("%cSet %c".concat(prop), 'color:red;', 'color:green;');
+              console.log("%cSet %c".concat(prop), "color:red;", "color:green;");
               console.table(refineStackTrace(new Error().stack));
               value = newValue;
             }
           });
-          /* eslint-enable no-console, compat/compat */
         };
 
         setChainPropAccess(window, property);
       }
 
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf('.');
+        var pos = chain.indexOf(".");
 
         if (pos === -1) {
           return {
@@ -16278,11 +16015,9 @@
           };
         }
 
-        var prop = chain.slice(0, pos); // https://github.com/AdguardTeam/Scriptlets/issues/128
+        var prop = chain.slice(0, pos);
 
         if (base === null) {
-          // if base is null, return 'null' as base.
-          // it's needed for triggering the reason logging while debugging
           return {
             base: base,
             prop: prop,
@@ -16325,29 +16060,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -16364,13 +16095,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -16398,29 +16125,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -16437,13 +16160,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -16459,20 +16178,19 @@
 
     function nowebrtc(source, args) {
       function nowebrtc(source) {
-        var propertyName = '';
+        var propertyName = "";
 
         if (window.RTCPeerConnection) {
-          propertyName = 'RTCPeerConnection';
+          propertyName = "RTCPeerConnection";
         } else if (window.webkitRTCPeerConnection) {
-          propertyName = 'webkitRTCPeerConnection';
+          propertyName = "webkitRTCPeerConnection";
         }
 
-        if (propertyName === '') {
+        if (propertyName === "") {
           return;
         }
 
         var rtcReplacement = function rtcReplacement(config) {
-          // eslint-disable-next-line max-len
           hit(source, "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config)));
         };
 
@@ -16502,29 +16220,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -16541,13 +16255,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -16555,21 +16265,14 @@
       function noopFunc() {}
 
       function convertRtcConfigToString(config) {
-        var UNDEF_STR = 'undefined';
+        var UNDEF_STR = "undefined";
         var str = UNDEF_STR;
 
         if (config === null) {
-          str = 'null';
+          str = "null";
         } else if (config instanceof Object) {
-          var SERVERS_PROP_NAME = 'iceServers';
-          var URLS_PROP_NAME = 'urls';
-          /*
-              const exampleConfig = {
-                  'iceServers': [
-                      'urls': ['stun:35.66.206.188:443'],
-                  ],
-              };
-          */
+          var SERVERS_PROP_NAME = "iceServers";
+          var URLS_PROP_NAME = "urls";
 
           if (Object.prototype.hasOwnProperty.call(config, SERVERS_PROP_NAME) && Object.prototype.hasOwnProperty.call(config[SERVERS_PROP_NAME][0], URLS_PROP_NAME) && !!config[SERVERS_PROP_NAME][0][URLS_PROP_NAME]) {
             str = config[SERVERS_PROP_NAME][0][URLS_PROP_NAME].toString();
@@ -16613,8 +16316,7 @@
           return nativeAddEventListener.apply(this, [type, listener].concat(args));
         }
 
-        window.EventTarget.prototype.addEventListener = addEventListenerWrapper; // https://github.com/AdguardTeam/Scriptlets/issues/143
-
+        window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
         window.addEventListener = addEventListenerWrapper;
         document.addEventListener = addEventListenerWrapper;
       }
@@ -16626,29 +16328,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -16665,23 +16363,19 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
 
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-        var DEFAULT_VALUE = '.?';
-        var FORWARD_SLASH = '/';
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
 
-        if (input === '') {
+        if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
 
@@ -16689,23 +16383,20 @@
           return new RegExp(input.slice(1, -1));
         }
 
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
 
       function validateType(type) {
-        // https://github.com/AdguardTeam/Scriptlets/issues/125
-        return typeof type !== 'undefined';
+        return typeof type !== "undefined";
       }
 
       function validateListener(listener) {
-        // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#parameters
-        return typeof listener !== 'undefined' && (typeof listener === 'function' || typeof listener === 'object' // https://github.com/AdguardTeam/Scriptlets/issues/76
-        && listener !== null && typeof listener.handleEvent === 'function');
+        return typeof listener !== "undefined" && (typeof listener === "function" || typeof listener === "object" && listener !== null && typeof listener.handleEvent === "function");
       }
 
       function listenerToString(listener) {
-        return typeof listener === 'function' ? listener.toString() : listener.handleEvent.toString();
+        return typeof listener === "function" ? listener.toString() : listener.handleEvent.toString();
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -16724,8 +16415,8 @@
         };
 
         var handler = function handler(encodedURL) {
-          var evenChars = '';
-          var oddChars = '';
+          var evenChars = "";
+          var oddChars = "";
 
           for (var i = 0; i < encodedURL.length; i += 1) {
             if (i % 2 === 0) {
@@ -16735,13 +16426,12 @@
             }
           }
 
-          var data = (evenChars + oddChars).split('');
+          var data = (evenChars + oddChars).split("");
 
           for (var _i = 0; _i < data.length; _i += 1) {
             if (isDigit(data[_i])) {
               for (var ii = _i + 1; ii < data.length; ii += 1) {
                 if (isDigit(data[ii])) {
-                  // eslint-disable-next-line no-bitwise
                   var temp = parseInt(data[_i], 10) ^ parseInt(data[ii], 10);
 
                   if (temp < 10) {
@@ -16755,35 +16445,30 @@
             }
           }
 
-          data = data.join('');
+          data = data.join("");
           var decodedURL = window.atob(data).slice(16, -16);
-          /* eslint-disable compat/compat */
 
           if (window.stop) {
             window.stop();
           }
-          /* eslint-enable compat/compat */
-
 
           window.onbeforeunload = null;
           window.location.href = decodedURL;
         };
 
-        var val; // Do not apply handler more than one time
-
+        var val;
         var applyHandler = true;
-        var result = setPropertyAccess(window, 'ysmm', {
+        var result = setPropertyAccess(window, "ysmm", {
           configurable: false,
           set: function set(value) {
             if (applyHandler) {
               applyHandler = false;
 
               try {
-                if (typeof value === 'string') {
+                if (typeof value === "string") {
                   handler(value);
                 }
-              } catch (err) {} // eslint-disable-line no-empty
-
+              } catch (err) {}
             }
 
             val = value;
@@ -16796,7 +16481,7 @@
         if (result) {
           hit(source);
         } else {
-          window.console.error('Failed to set up prevent-adfly scriptlet');
+          window.console.error("Failed to set up prevent-adfly scriptlet");
         }
       }
 
@@ -16818,29 +16503,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -16857,13 +16538,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -16883,7 +16560,7 @@
         var babRegex = /\.bab_elementid.$/;
 
         var timeoutWrapper = function timeoutWrapper(callback) {
-          if (typeof callback !== 'string' || !babRegex.test(callback)) {
+          if (typeof callback !== "string" || !babRegex.test(callback)) {
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
@@ -16895,10 +16572,10 @@
         };
 
         window.setTimeout = timeoutWrapper;
-        var signatures = [['blockadblock'], ['babasbm'], [/getItem\('babn'\)/], ['getElementById', 'String.fromCharCode', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 'charAt', 'DOMContentLoaded', 'AdBlock', 'addEventListener', 'doScroll', 'fromCharCode', '<<2|r>>4', 'sessionStorage', 'clientWidth', 'localStorage', 'Math', 'random']];
+        var signatures = [["blockadblock"], ["babasbm"], [/getItem\('babn'\)/], ["getElementById", "String.fromCharCode", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", "charAt", "DOMContentLoaded", "AdBlock", "addEventListener", "doScroll", "fromCharCode", "<<2|r>>4", "sessionStorage", "clientWidth", "localStorage", "Math", "random"]];
 
         var check = function check(str) {
-          if (typeof str !== 'string') {
+          if (typeof str !== "string") {
             return false;
           }
 
@@ -16915,7 +16592,7 @@
               }
             }
 
-            if (match / tokens.length >= 0.8) {
+            if (match / tokens.length >= .8) {
               return true;
             }
           }
@@ -16934,10 +16611,10 @@
           var bodyEl = document.body;
 
           if (bodyEl) {
-            bodyEl.style.removeProperty('visibility');
+            bodyEl.style.removeProperty("visibility");
           }
 
-          var el = document.getElementById('babasbmsgx');
+          var el = document.getElementById("babasbmsgx");
 
           if (el) {
             el.parentNode.removeChild(el);
@@ -16954,29 +16631,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -16993,13 +16666,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -17015,49 +16684,42 @@
 
     function preventElementSrcLoading(source, args) {
       function preventElementSrcLoading(source, tagName, match) {
-        // do nothing if browser does not support Proxy or Reflect
-        if (typeof Proxy === 'undefined' || typeof Reflect === 'undefined') {
+        if (typeof Proxy === "undefined" || typeof Reflect === "undefined") {
           return;
         }
 
         var srcMockData = {
-          // "KCk9Pnt9" = "()=>{}"
-          script: 'data:text/javascript;base64,KCk9Pnt9',
-          // Empty 1x1 image
-          img: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
-          // Empty h1 tag
-          iframe: 'data:text/html;base64, PGRpdj48L2Rpdj4='
+          script: "data:text/javascript;base64,KCk9Pnt9",
+          img: "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==",
+          iframe: "data:text/html;base64, PGRpdj48L2Rpdj4="
         };
         var instance;
 
-        if (tagName === 'script') {
+        if (tagName === "script") {
           instance = HTMLScriptElement;
-        } else if (tagName === 'img') {
+        } else if (tagName === "img") {
           instance = HTMLImageElement;
-        } else if (tagName === 'iframe') {
+        } else if (tagName === "iframe") {
           instance = HTMLIFrameElement;
         } else {
           return;
-        } // For websites that use Trusted Types
-        // https://w3c.github.io/webappsec-trusted-types/dist/spec/
+        }
 
-
-        var hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === 'function';
+        var hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === "function";
         var policy;
 
         if (hasTrustedTypes) {
-          policy = window.trustedTypes.createPolicy('mock', {
+          policy = window.trustedTypes.createPolicy("mock", {
             createScriptURL: function createScriptURL(arg) {
               return arg;
             }
           });
         }
 
-        var SOURCE_PROPERTY_NAME = 'src';
+        var SOURCE_PROPERTY_NAME = "src";
         var searchRegexp = toRegExp(match);
 
         var setAttributeWrapper = function setAttributeWrapper(target, thisArg, args) {
-          // Check if arguments are present
           if (!args[0] || !args[1]) {
             return Reflect.apply(target, thisArg, args);
           }
@@ -17071,15 +16733,13 @@
             return Reflect.apply(target, thisArg, args);
           }
 
-          hit(source); // Forward the URI that corresponds with element's MIME type
-
+          hit(source);
           return Reflect.apply(target, thisArg, [attrName, srcMockData[nodeName]]);
         };
 
         var setAttributeHandler = {
           apply: setAttributeWrapper
-        }; // eslint-disable-next-line max-len
-
+        };
         instance.prototype.setAttribute = new Proxy(Element.prototype.setAttribute, setAttributeHandler);
         var origDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
 
@@ -17100,8 +16760,7 @@
             if (!isMatched) {
               origDescriptor.set.call(this, urlValue);
               return;
-            } // eslint-disable-next-line no-undef
-
+            }
 
             if (policy && urlValue instanceof TrustedScriptURL) {
               var trustedSrc = policy.createScriptURL(urlValue);
@@ -17123,29 +16782,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -17162,23 +16817,19 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
 
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-        var DEFAULT_VALUE = '.?';
-        var FORWARD_SLASH = '/';
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
 
-        if (input === '') {
+        if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
 
@@ -17186,7 +16837,7 @@
           return new RegExp(input.slice(1, -1));
         }
 
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
 
@@ -17225,11 +16876,11 @@
       }
 
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-        var DEFAULT_VALUE = '.?';
-        var FORWARD_SLASH = '/';
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
 
-        if (input === '') {
+        if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
 
@@ -17237,7 +16888,7 @@
           return new RegExp(input.slice(1, -1));
         }
 
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
 
@@ -17248,29 +16899,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -17287,13 +16934,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -17309,7 +16952,7 @@
 
     function preventFab(source, args) {
       function preventFab(source) {
-        hit(source); // redefines Fab function for adblock detection
+        hit(source);
 
         var Fab = function Fab() {};
 
@@ -17349,43 +16992,42 @@
             return fab;
           },
           set: function set() {}
-        }; // redefined Fab data properties which if 'FuckAdBlock' variable exists
+        };
 
-        if (Object.prototype.hasOwnProperty.call(window, 'FuckAdBlock')) {
+        if (Object.prototype.hasOwnProperty.call(window, "FuckAdBlock")) {
           window.FuckAdBlock = Fab;
         } else {
-          // or redefined Fab accessor properties
-          Object.defineProperty(window, 'FuckAdBlock', getSetFab);
+          Object.defineProperty(window, "FuckAdBlock", getSetFab);
         }
 
-        if (Object.prototype.hasOwnProperty.call(window, 'BlockAdBlock')) {
+        if (Object.prototype.hasOwnProperty.call(window, "BlockAdBlock")) {
           window.BlockAdBlock = Fab;
         } else {
-          Object.defineProperty(window, 'BlockAdBlock', getSetFab);
+          Object.defineProperty(window, "BlockAdBlock", getSetFab);
         }
 
-        if (Object.prototype.hasOwnProperty.call(window, 'SniffAdBlock')) {
+        if (Object.prototype.hasOwnProperty.call(window, "SniffAdBlock")) {
           window.SniffAdBlock = Fab;
         } else {
-          Object.defineProperty(window, 'SniffAdBlock', getSetFab);
+          Object.defineProperty(window, "SniffAdBlock", getSetFab);
         }
 
-        if (Object.prototype.hasOwnProperty.call(window, 'fuckAdBlock')) {
+        if (Object.prototype.hasOwnProperty.call(window, "fuckAdBlock")) {
           window.fuckAdBlock = fab;
         } else {
-          Object.defineProperty(window, 'fuckAdBlock', getsetfab);
+          Object.defineProperty(window, "fuckAdBlock", getsetfab);
         }
 
-        if (Object.prototype.hasOwnProperty.call(window, 'blockAdBlock')) {
+        if (Object.prototype.hasOwnProperty.call(window, "blockAdBlock")) {
           window.blockAdBlock = fab;
         } else {
-          Object.defineProperty(window, 'blockAdBlock', getsetfab);
+          Object.defineProperty(window, "blockAdBlock", getsetfab);
         }
 
-        if (Object.prototype.hasOwnProperty.call(window, 'sniffAdBlock')) {
+        if (Object.prototype.hasOwnProperty.call(window, "sniffAdBlock")) {
           window.sniffAdBlock = fab;
         } else {
-          Object.defineProperty(window, 'sniffAdBlock', getsetfab);
+          Object.defineProperty(window, "sniffAdBlock", getsetfab);
         }
       }
 
@@ -17396,29 +17038,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -17435,13 +17073,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -17463,20 +17097,18 @@
 
     function preventFetch(source, args) {
       function preventFetch(source, propsToMatch) {
-        var responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'emptyObj'; // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
-        // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
-        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+        var responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "emptyObj";
 
-        if (typeof fetch === 'undefined' || typeof Proxy === 'undefined' || typeof Response === 'undefined') {
+        if (typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
           return;
         }
 
         var strResponseBody;
 
-        if (responseBody === 'emptyObj') {
-          strResponseBody = '{}';
-        } else if (responseBody === 'emptyArr') {
-          strResponseBody = '[]';
+        if (responseBody === "emptyObj") {
+          strResponseBody = "{}";
+        } else if (responseBody === "emptyArr") {
+          strResponseBody = "[]";
         } else {
           return;
         }
@@ -17485,23 +17117,19 @@
           var shouldPrevent = false;
           var fetchData = getFetchData(args);
 
-          if (typeof propsToMatch === 'undefined') {
-            // log if no propsToMatch given
+          if (typeof propsToMatch === "undefined") {
             var logMessage = "log: fetch( ".concat(objectToString(fetchData), " )");
             hit(source, logMessage);
-          } else if (propsToMatch === '' || propsToMatch === getWildcardSymbol()) {
-            // prevent all fetch calls
+          } else if (propsToMatch === "" || propsToMatch === getWildcardSymbol()) {
             shouldPrevent = true;
           } else {
             var parsedData = parseMatchProps(propsToMatch);
 
             if (!validateParsedData(parsedData)) {
-              // eslint-disable-next-line no-console
               console.log("Invalid parameter: ".concat(propsToMatch));
               shouldPrevent = false;
             } else {
-              var matchData = getMatchPropsData(parsedData); // prevent only if all props match
-
+              var matchData = getMatchPropsData(parsedData);
               shouldPrevent = Object.keys(matchData).every(function (matchKey) {
                 var matchValue = matchData[matchKey];
                 return Object.prototype.hasOwnProperty.call(fetchData, matchKey) && matchValue.test(fetchData[matchKey]);
@@ -17520,7 +17148,7 @@
         var fetchHandler = {
           apply: handlerWrapper
         };
-        fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
+        fetch = new Proxy(fetch, fetchHandler);
       }
 
       function hit(source, message) {
@@ -17530,29 +17158,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -17569,13 +17193,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -17586,14 +17206,12 @@
         var fetchInit;
 
         if (args[0] instanceof Request) {
-          // if Request passed to fetch, it will be in array
           var requestData = getRequestData(args[0]);
           fetchUrl = requestData.url;
           fetchInit = requestData;
         } else {
-          fetchUrl = args[0]; // eslint-disable-line prefer-destructuring
-
-          fetchInit = args[1]; // eslint-disable-line prefer-destructuring
+          fetchUrl = args[0];
+          fetchInit = args[1];
         }
 
         fetchPropsObj.url = fetchUrl;
@@ -17608,7 +17226,7 @@
       }
 
       function objectToString(obj) {
-        return (0, _objectUtils.isEmptyObject)(obj) ? '{}' : (0, _objectUtils.getObjectEntries)(obj).map(function (pair) {
+        return (0, _objectUtils.isEmptyObject)(obj) ? "{}" : (0, _objectUtils.getObjectEntries)(obj).map(function (pair) {
           var key = pair[0];
           var value = pair[1];
           var recordValueStr = value;
@@ -17617,13 +17235,13 @@
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
 
-          return "".concat(key, ":\"").concat(recordValueStr, "\"");
-        }).join(' ');
+          return "".concat(key, ':"').concat(recordValueStr, '"');
+        }).join(" ");
       }
 
       function parseMatchProps(propsToMatchStr) {
-        var PROPS_DIVIDER = ' ';
-        var PAIRS_MARKER = ':';
+        var PROPS_DIVIDER = " ";
+        var PAIRS_MARKER = ":";
         var propsObj = {};
         var props = propsToMatchStr.split(PROPS_DIVIDER);
         props.forEach(function (prop) {
@@ -17655,29 +17273,26 @@
       }
 
       function noopPromiseResolve() {
-        var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '{}';
+        var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
 
-        if (typeof Response === 'undefined') {
+        if (typeof Response === "undefined") {
           return;
-        } // eslint-disable-next-line compat/compat
-
+        }
 
         var response = new Response(responseBody, {
           status: 200,
-          statusText: 'OK'
-        }); // eslint-disable-next-line compat/compat, consistent-return
-
+          statusText: "OK"
+        });
         return Promise.resolve(response);
       }
 
       function getWildcardSymbol() {
-        return '*';
+        return "*";
       }
 
       function getRequestData(request) {
-        var REQUEST_INIT_OPTIONS = ['url', 'method', 'headers', 'body', 'mode', 'credentials', 'cache', 'redirect', 'referrer', 'integrity'];
+        var REQUEST_INIT_OPTIONS = ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "integrity"];
         var entries = REQUEST_INIT_OPTIONS.map(function (key) {
-          // if request has no such option, value will be undefined
           var value = request[key];
           return [key, value];
         });
@@ -17716,10 +17331,9 @@
       }
 
       function createOnErrorHandler(rid) {
-        // eslint-disable-next-line consistent-return
         var nativeOnError = window.onerror;
         return function onError(error) {
-          if (typeof error === 'string' && error.indexOf(rid) !== -1) {
+          if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
           }
 
@@ -17746,29 +17360,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -17785,13 +17395,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -17813,12 +17419,10 @@
           try {
             metaNodes = document.querySelectorAll('meta[http-equiv="refresh" i][content]');
           } catch (e) {
-            // 'i' attribute flag is problematic in Edge 15
             try {
               metaNodes = document.querySelectorAll('meta[http-equiv="refresh"][content]');
             } catch (e) {
               if (source.verbose) {
-                // eslint-disable-next-line no-console
                 console.log(e);
               }
             }
@@ -17829,15 +17433,14 @@
 
         var getMetaContentDelay = function getMetaContentDelay(metaElements) {
           var delays = metaElements.map(function (meta) {
-            var contentString = meta.getAttribute('content');
+            var contentString = meta.getAttribute("content");
 
             if (contentString.length === 0) {
               return null;
             }
 
-            var contentDelay; // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#attr-http-equiv
-
-            var limiterIndex = contentString.indexOf(';');
+            var contentDelay;
+            var limiterIndex = contentString.indexOf(";");
 
             if (limiterIndex !== -1) {
               var delaySubstring = contentString.substring(0, limiterIndex);
@@ -17849,12 +17452,10 @@
             return contentDelay;
           }).filter(function (delay) {
             return delay !== null;
-          }); // Get smallest delay of all metas on the page
-
+          });
           var minDelay = delays.reduce(function (a, b) {
             return Math.min(a, b);
-          }); // eslint-disable-next-line consistent-return
-
+          });
           return minDelay;
         };
 
@@ -17865,26 +17466,25 @@
             return;
           }
 
-          var secondsToRun = getNumberFromString(delaySec); // Check if argument is provided
+          var secondsToRun = getNumberFromString(delaySec);
 
           if (!secondsToRun) {
             secondsToRun = getMetaContentDelay(metaElements);
-          } // Check if meta tag has delay
-
+          }
 
           if (!secondsToRun) {
             return;
           }
 
-          var delayMs = secondsToRun * 1000;
+          var delayMs = secondsToRun * 1e3;
           setTimeout(function () {
             window.stop();
             hit(source);
           }, delayMs);
         };
 
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', stop, {
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", stop, {
             once: true
           });
         } else {
@@ -17899,29 +17499,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -17938,13 +17534,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -17956,8 +17548,7 @@
       }
 
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
-
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
 
@@ -17972,9 +17563,8 @@
 
     function preventRequestAnimationFrame(source, args) {
       function preventRequestAnimationFrame(source, match) {
-        var nativeRequestAnimationFrame = window.requestAnimationFrame; // logs requestAnimationFrame to console if no arguments have been specified
-
-        var shouldLog = typeof match === 'undefined';
+        var nativeRequestAnimationFrame = window.requestAnimationFrame;
+        var shouldLog = typeof match === "undefined";
 
         var _parseMatchArg = parseMatchArg(match),
             isInvertedMatch = _parseMatchArg.isInvertedMatch,
@@ -17984,7 +17574,7 @@
           var shouldPrevent = false;
 
           if (shouldLog) {
-            var logMessage = "log: requestAnimationFrame(\"".concat(callback.toString(), "\")");
+            var logMessage = 'log: requestAnimationFrame("'.concat(callback.toString(), '")');
             hit(source, logMessage);
           } else if (validateStrPattern(match)) {
             shouldPrevent = matchRegexp.test(callback.toString()) !== isInvertedMatch;
@@ -18012,29 +17602,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -18051,13 +17637,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -18065,7 +17647,7 @@
       function noopFunc() {}
 
       function parseMatchArg(match) {
-        var INVERT_MARKER = '!';
+        var INVERT_MARKER = "!";
         var isInvertedMatch = startsWith(match, INVERT_MARKER);
         var matchValue = isInvertedMatch ? match.slice(1) : match;
         var matchRegexp = toRegExp(matchValue);
@@ -18076,7 +17658,7 @@
       }
 
       function validateStrPattern(input) {
-        var FORWARD_SLASH = '/';
+        var FORWARD_SLASH = "/";
         var str = input;
 
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
@@ -18096,11 +17678,11 @@
       }
 
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-        var DEFAULT_VALUE = '.?';
-        var FORWARD_SLASH = '/';
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
 
-        if (input === '') {
+        if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
 
@@ -18108,13 +17690,11 @@
           return new RegExp(input.slice(1, -1));
         }
 
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
 
       function startsWith(str, prefix) {
-        // if str === '', (str && false) will return ''
-        // that's why it has to be !!str
         return !!str && str.indexOf(prefix) === 0;
       }
 
@@ -18129,15 +17709,10 @@
 
     function preventSetInterval(source, args) {
       function preventSetInterval(source, match, delay) {
-        // if browser does not support Proxy (e.g. Internet Explorer),
-        // we use none-proxy "legacy" wrapper for preventing
-        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-        var isProxySupported = typeof Proxy !== 'undefined';
+        var isProxySupported = typeof Proxy !== "undefined";
         var nativeInterval = window.setInterval;
-        var log = console.log.bind(console); // eslint-disable-line no-console
-        // logs setIntervals to console if no arguments have been specified
-
-        var shouldLog = typeof match === 'undefined' && typeof delay === 'undefined';
+        var log = console.log.bind(console);
+        var shouldLog = typeof match === "undefined" && typeof delay === "undefined";
 
         var _parseMatchArg = parseMatchArg(match),
             isInvertedMatch = _parseMatchArg.isInvertedMatch,
@@ -18162,8 +17737,7 @@
         };
 
         var legacyIntervalWrapper = function legacyIntervalWrapper(callback, interval) {
-          var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
-
+          var shouldPrevent = false;
           var cbString = String(callback);
 
           if (shouldLog) {
@@ -18188,8 +17762,7 @@
         var handlerWrapper = function handlerWrapper(target, thisArg, args) {
           var callback = args[0];
           var interval = args[1];
-          var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
-
+          var shouldPrevent = false;
           var cbString = String(callback);
 
           if (shouldLog) {
@@ -18220,29 +17793,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -18259,13 +17828,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -18273,7 +17838,7 @@
       function noopFunc() {}
 
       function parseMatchArg(match) {
-        var INVERT_MARKER = '!';
+        var INVERT_MARKER = "!";
         var isInvertedMatch = startsWith(match, INVERT_MARKER);
         var matchValue = isInvertedMatch ? match.slice(1) : match;
         var matchRegexp = toRegExp(matchValue);
@@ -18284,7 +17849,7 @@
       }
 
       function parseDelayArg(delay) {
-        var INVERT_MARKER = '!';
+        var INVERT_MARKER = "!";
         var isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
         var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
         delayValue = parseInt(delayValue, 10);
@@ -18296,11 +17861,11 @@
       }
 
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-        var DEFAULT_VALUE = '.?';
-        var FORWARD_SLASH = '/';
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
 
-        if (input === '') {
+        if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
 
@@ -18308,13 +17873,11 @@
           return new RegExp(input.slice(1, -1));
         }
 
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
 
       function startsWith(str, prefix) {
-        // if str === '', (str && false) will return ''
-        // that's why it has to be !!str
         return !!str && str.indexOf(prefix) === 0;
       }
 
@@ -18329,15 +17892,10 @@
 
     function preventSetTimeout(source, args) {
       function preventSetTimeout(source, match, delay) {
-        // if browser does not support Proxy (e.g. Internet Explorer),
-        // we use none-proxy "legacy" wrapper for preventing
-        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-        var isProxySupported = typeof Proxy !== 'undefined';
+        var isProxySupported = typeof Proxy !== "undefined";
         var nativeTimeout = window.setTimeout;
-        var log = console.log.bind(console); // eslint-disable-line no-console
-        // logs setTimeouts to console if no arguments have been specified
-
-        var shouldLog = typeof match === 'undefined' && typeof delay === 'undefined';
+        var log = console.log.bind(console);
+        var shouldLog = typeof match === "undefined" && typeof delay === "undefined";
 
         var _parseMatchArg = parseMatchArg(match),
             isInvertedMatch = _parseMatchArg.isInvertedMatch,
@@ -18362,8 +17920,7 @@
         };
 
         var legacyTimeoutWrapper = function legacyTimeoutWrapper(callback, timeout) {
-          var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
-
+          var shouldPrevent = false;
           var cbString = String(callback);
 
           if (shouldLog) {
@@ -18388,8 +17945,7 @@
         var handlerWrapper = function handlerWrapper(target, thisArg, args) {
           var callback = args[0];
           var timeout = args[1];
-          var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
-
+          var shouldPrevent = false;
           var cbString = String(callback);
 
           if (shouldLog) {
@@ -18420,29 +17976,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -18459,13 +18011,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -18473,7 +18021,7 @@
       function noopFunc() {}
 
       function parseMatchArg(match) {
-        var INVERT_MARKER = '!';
+        var INVERT_MARKER = "!";
         var isInvertedMatch = startsWith(match, INVERT_MARKER);
         var matchValue = isInvertedMatch ? match.slice(1) : match;
         var matchRegexp = toRegExp(matchValue);
@@ -18484,7 +18032,7 @@
       }
 
       function parseDelayArg(delay) {
-        var INVERT_MARKER = '!';
+        var INVERT_MARKER = "!";
         var isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
         var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
         delayValue = parseInt(delayValue, 10);
@@ -18496,11 +18044,11 @@
       }
 
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-        var DEFAULT_VALUE = '.?';
-        var FORWARD_SLASH = '/';
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
 
-        if (input === '') {
+        if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
 
@@ -18508,13 +18056,11 @@
           return new RegExp(input.slice(1, -1));
         }
 
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
 
       function startsWith(str, prefix) {
-        // if str === '', (str && false) will return ''
-        // that's why it has to be !!str
         return !!str && str.indexOf(prefix) === 0;
       }
 
@@ -18531,21 +18077,18 @@
       function preventWindowOpen(source) {
         var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : getWildcardSymbol();
         var delay = arguments.length > 2 ? arguments[2] : undefined;
-        var replacement = arguments.length > 3 ? arguments[3] : undefined; // default match value is needed for preventing all window.open calls
-        // if scriptlet runs without args
-
+        var replacement = arguments.length > 3 ? arguments[3] : undefined;
         var nativeOpen = window.open;
-        var isNewSyntax = match !== '0' && match !== '1';
+        var isNewSyntax = match !== "0" && match !== "1";
 
         var oldOpenWrapper = function oldOpenWrapper(str) {
-          match = Number(match) > 0; // 'delay' was 'search' prop for matching in old syntax
+          match = Number(match) > 0;
 
           for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
             args[_key - 1] = arguments[_key];
           }
 
           if (!validateStrPattern(delay)) {
-            // eslint-disable-next-line no-console
             console.log("Invalid parameter: ".concat(delay));
             return nativeOpen.apply(window, [str].concat(args));
           }
@@ -18561,14 +18104,14 @@
         };
 
         var newOpenWrapper = function newOpenWrapper(url) {
-          var shouldLog = replacement && replacement.indexOf('log') > -1;
+          var shouldLog = replacement && replacement.indexOf("log") > -1;
 
           for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
             args[_key2 - 1] = arguments[_key2];
           }
 
           if (shouldLog) {
-            var argsStr = args && args.length > 0 ? ", ".concat(args.join(', ')) : '';
+            var argsStr = args && args.length > 0 ? ", ".concat(args.join(", ")) : "";
             var logMessage = "log: window-open: ".concat(url).concat(argsStr);
             hit(source, logMessage);
           }
@@ -18584,7 +18127,6 @@
 
             shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
           } else {
-            // eslint-disable-next-line no-console
             console.log("Invalid parameter: ".concat(match));
             shouldPrevent = false;
           }
@@ -18604,19 +18146,19 @@
               var decoy = createDecoy(decoyArgs);
               var popup = decoy.contentWindow;
 
-              if (typeof popup === 'object' && popup !== null) {
-                Object.defineProperty(popup, 'closed', {
+              if (typeof popup === "object" && popup !== null) {
+                Object.defineProperty(popup, "closed", {
                   value: false
                 });
-                Object.defineProperty(popup, 'opener', {
+                Object.defineProperty(popup, "opener", {
                   value: window
                 });
-                Object.defineProperty(popup, 'frameElement', {
+                Object.defineProperty(popup, "frameElement", {
                   value: null
                 });
               } else {
                 var nativeGetter = decoy.contentWindow && decoy.contentWindow.get;
-                Object.defineProperty(decoy, 'contentWindow', {
+                Object.defineProperty(decoy, "contentWindow", {
                   get: getPreventGetter(nativeGetter)
                 });
                 popup = decoy.contentWindow;
@@ -18632,8 +18174,7 @@
           return nativeOpen.apply(window, [url].concat(args));
         };
 
-        window.open = isNewSyntax ? newOpenWrapper : oldOpenWrapper; // Protect window.open from native code check
-
+        window.open = isNewSyntax ? newOpenWrapper : oldOpenWrapper;
         window.open.toString = nativeOpen.toString.bind(nativeOpen);
       }
 
@@ -18644,29 +18185,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -18683,19 +18220,15 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
 
       function validateStrPattern(input) {
-        var FORWARD_SLASH = '/';
+        var FORWARD_SLASH = "/";
         var str = input;
 
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
@@ -18715,7 +18248,7 @@
       }
 
       function validateMatchStr(match) {
-        var INVERT_MARKER = '!';
+        var INVERT_MARKER = "!";
         var str = match;
 
         if (startsWith(match, INVERT_MARKER)) {
@@ -18726,11 +18259,11 @@
       }
 
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-        var DEFAULT_VALUE = '.?';
-        var FORWARD_SLASH = '/';
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
 
-        if (input === '') {
+        if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
 
@@ -18738,18 +18271,17 @@
           return new RegExp(input.slice(1, -1));
         }
 
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
 
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
-
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
 
       function parseMatchArg(match) {
-        var INVERT_MARKER = '!';
+        var INVERT_MARKER = "!";
         var isInvertedMatch = startsWith(match, INVERT_MARKER);
         var matchValue = isInvertedMatch ? match.slice(1) : match;
         var matchRegexp = toRegExp(matchValue);
@@ -18760,24 +18292,21 @@
       }
 
       function handleOldReplacement(replacement) {
-        var result; // defaults to return noopFunc instead of window.open
+        var result;
 
         if (!replacement) {
           result = _noop.noopFunc;
-        } else if (replacement === 'trueFunc') {
+        } else if (replacement === "trueFunc") {
           result = _noop.trueFunc;
-        } else if (replacement.indexOf('=') > -1) {
-          // We should return noopFunc instead of window.open
-          // but with some property if website checks it (examples 5, 6)
-          // https://github.com/AdguardTeam/Scriptlets/issues/71
-          var isProp = (0, _stringUtils.startsWith)(replacement, '{') && (0, _stringUtils.endsWith)(replacement, '}');
+        } else if (replacement.indexOf("=") > -1) {
+          var isProp = (0, _stringUtils.startsWith)(replacement, "{") && (0, _stringUtils.endsWith)(replacement, "}");
 
           if (isProp) {
             var propertyPart = replacement.slice(1, -1);
-            var propertyName = (0, _stringUtils.substringBefore)(propertyPart, '=');
-            var propertyValue = (0, _stringUtils.substringAfter)(propertyPart, '=');
+            var propertyName = (0, _stringUtils.substringBefore)(propertyPart, "=");
+            var propertyValue = (0, _stringUtils.substringAfter)(propertyPart, "=");
 
-            if (propertyValue === 'noopFunc') {
+            if (propertyValue === "noopFunc") {
               result = {};
               result[propertyName] = _noop.noopFunc;
             }
@@ -18788,17 +18317,17 @@
       }
 
       function createDecoy(args) {
-        var OBJECT_TAG_NAME = 'object';
-        var OBJECT_URL_PROP_NAME = 'data';
-        var IFRAME_TAG_NAME = 'iframe';
-        var IFRAME_URL_PROP_NAME = 'src';
+        var OBJECT_TAG_NAME = "object";
+        var OBJECT_URL_PROP_NAME = "data";
+        var IFRAME_TAG_NAME = "iframe";
+        var IFRAME_URL_PROP_NAME = "src";
         var replacement = args.replacement,
             url = args.url,
             delay = args.delay;
         var tag;
         var urlProp;
 
-        if (replacement === 'obj') {
+        if (replacement === "obj") {
           tag = OBJECT_TAG_NAME;
           urlProp = OBJECT_URL_PROP_NAME;
         } else {
@@ -18808,24 +18337,24 @@
 
         var decoy = document.createElement(tag);
         decoy[urlProp] = url;
-        decoy.style.setProperty('height', '1px', 'important');
-        decoy.style.setProperty('position', 'fixed', 'important');
-        decoy.style.setProperty('top', '-1px', 'important');
-        decoy.style.setProperty('width', '1px', 'important');
+        decoy.style.setProperty("height", "1px", "important");
+        decoy.style.setProperty("position", "fixed", "important");
+        decoy.style.setProperty("top", "-1px", "important");
+        decoy.style.setProperty("width", "1px", "important");
         document.body.appendChild(decoy);
         setTimeout(function () {
           return decoy.remove();
-        }, delay * 1000);
+        }, delay * 1e3);
         return decoy;
       }
 
       function getPreventGetter(nativeGetter) {
         var preventGetter = function preventGetter(target, prop) {
-          if (prop && prop === 'closed') {
+          if (prop && prop === "closed") {
             return false;
           }
 
-          if (typeof nativeGetter === 'function') {
+          if (typeof nativeGetter === "function") {
             return _noop.noopFunc;
           }
 
@@ -18840,12 +18369,10 @@
       }
 
       function getWildcardSymbol() {
-        return '*';
+        return "*";
       }
 
       function startsWith(str, prefix) {
-        // if str === '', (str && false) will return ''
-        // that's why it has to be !!str
         return !!str && str.indexOf(prefix) === 0;
       }
 
@@ -18860,41 +18387,34 @@
 
     function preventXHR(source, args) {
       function preventXHR(source, propsToMatch, randomize) {
-        // do nothing if browser does not support Proxy (e.g. Internet Explorer)
-        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-        if (typeof Proxy === 'undefined') {
+        if (typeof Proxy === "undefined") {
           return;
         }
 
         var shouldPrevent = false;
-        var responseText = '';
+        var responseText = "";
         var responseUrl;
 
         var openWrapper = function openWrapper(target, thisArg, args) {
-          // Get method and url from .open()
           var xhrData = {
             method: args[0],
             url: args[1]
           };
           responseUrl = xhrData.url;
 
-          if (typeof propsToMatch === 'undefined') {
-            // Log if no propsToMatch given
+          if (typeof propsToMatch === "undefined") {
             var logMessage = "log: xhr( ".concat(objectToString(xhrData), " )");
             hit(source, logMessage);
-          } else if (propsToMatch === '' || propsToMatch === getWildcardSymbol()) {
-            // Prevent all fetch calls
+          } else if (propsToMatch === "" || propsToMatch === getWildcardSymbol()) {
             shouldPrevent = true;
           } else {
             var parsedData = parseMatchProps(propsToMatch);
 
             if (!validateParsedData(parsedData)) {
-              // eslint-disable-next-line no-console
               console.log("Invalid parameter: ".concat(propsToMatch));
               shouldPrevent = false;
             } else {
-              var matchData = getMatchPropsData(parsedData); // prevent only if all props match
-
+              var matchData = getMatchPropsData(parsedData);
               shouldPrevent = Object.keys(matchData).every(function (matchKey) {
                 var matchValue = matchData[matchKey];
                 return Object.prototype.hasOwnProperty.call(xhrData, matchKey) && matchValue.test(xhrData[matchKey]);
@@ -18910,11 +18430,9 @@
             return Reflect.apply(target, thisArg, args);
           }
 
-          if (randomize === 'true') {
-            // Generate random alphanumeric string of 10 symbols
+          if (randomize === "true") {
             responseText = Math.random().toString(36).slice(-10);
-          } // Mock response object
-
+          }
 
           Object.defineProperties(thisArg, {
             readyState: {
@@ -18922,7 +18440,7 @@
               writable: false
             },
             response: {
-              value: '',
+              value: "",
               writable: false
             },
             responseText: {
@@ -18934,7 +18452,7 @@
               writable: false
             },
             responseXML: {
-              value: '',
+              value: "",
               writable: false
             },
             status: {
@@ -18942,17 +18460,16 @@
               writable: false
             },
             statusText: {
-              value: 'OK',
+              value: "OK",
               writable: false
             }
-          }); // Mock events
-
+          });
           setTimeout(function () {
-            var stateEvent = new Event('readystatechange');
+            var stateEvent = new Event("readystatechange");
             thisArg.dispatchEvent(stateEvent);
-            var loadEvent = new Event('load');
+            var loadEvent = new Event("load");
             thisArg.dispatchEvent(loadEvent);
-            var loadEndEvent = new Event('loadend');
+            var loadEndEvent = new Event("loadend");
             thisArg.dispatchEvent(loadEndEvent);
           }, 1);
           hit(source);
@@ -18976,29 +18493,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -19015,19 +18528,15 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
 
       function objectToString(obj) {
-        return (0, _objectUtils.isEmptyObject)(obj) ? '{}' : (0, _objectUtils.getObjectEntries)(obj).map(function (pair) {
+        return (0, _objectUtils.isEmptyObject)(obj) ? "{}" : (0, _objectUtils.getObjectEntries)(obj).map(function (pair) {
           var key = pair[0];
           var value = pair[1];
           var recordValueStr = value;
@@ -19036,17 +18545,17 @@
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
 
-          return "".concat(key, ":\"").concat(recordValueStr, "\"");
-        }).join(' ');
+          return "".concat(key, ':"').concat(recordValueStr, '"');
+        }).join(" ");
       }
 
       function getWildcardSymbol() {
-        return '*';
+        return "*";
       }
 
       function parseMatchProps(propsToMatchStr) {
-        var PROPS_DIVIDER = ' ';
-        var PAIRS_MARKER = ':';
+        var PROPS_DIVIDER = " ";
+        var PAIRS_MARKER = ":";
         var propsObj = {};
         var props = propsToMatchStr.split(PROPS_DIVIDER);
         props.forEach(function (prop) {
@@ -19088,7 +18597,7 @@
 
     function removeAttr(source, args) {
       function removeAttr(source, attrs, selector) {
-        var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'asap stay';
+        var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "asap stay";
 
         if (!attrs) {
           return;
@@ -19097,7 +18606,7 @@
         attrs = attrs.split(/\s*\|\s*/);
 
         if (!selector) {
-          selector = "[".concat(attrs.join('],['), "]");
+          selector = "[".concat(attrs.join("],["), "]");
         }
 
         var rmattr = function rmattr() {
@@ -19106,7 +18615,6 @@
           try {
             nodes = [].slice.call(document.querySelectorAll(selector));
           } catch (e) {
-            // eslint-disable-next-line no-console
             console.log("Invalid remove-attr selector arg: '".concat(selector, "'"));
           }
 
@@ -19123,13 +18631,11 @@
           }
         };
 
-        var FLAGS_DIVIDER = ' ';
-        var ASAP_FLAG = 'asap';
-        var COMPLETE_FLAG = 'complete';
-        var STAY_FLAG = 'stay';
+        var FLAGS_DIVIDER = " ";
+        var ASAP_FLAG = "asap";
+        var COMPLETE_FLAG = "complete";
+        var STAY_FLAG = "stay";
         var VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
-        /* eslint-disable no-restricted-properties */
-
         var passedFlags = applying.trim().split(FLAGS_DIVIDER).filter(function (f) {
           return VALID_FLAGS.indexOf(f) !== -1;
         });
@@ -19139,8 +18645,7 @@
 
           if (!passedFlags.indexOf(STAY_FLAG) !== -1) {
             return;
-          } // 'true' for observing attributes
-
+          }
 
           observeDOMChanges(rmattr, true);
         };
@@ -19149,16 +18654,14 @@
           rmattr();
         }
 
-        if (document.readyState !== 'complete' && passedFlags.indexOf(COMPLETE_FLAG) !== -1) {
-          window.addEventListener('load', run, {
+        if (document.readyState !== "complete" && passedFlags.indexOf(COMPLETE_FLAG) !== -1) {
+          window.addEventListener("load", run, {
             once: true
           });
         } else if (passedFlags.indexOf(STAY_FLAG) !== -1) {
-          // Do not call rmattr() twice for 'asap stay' flag
           if (passedFlags.length === 1) {
             rmattr();
-          } // 'true' for observing attributes
-
+          }
 
           observeDOMChanges(rmattr, true);
         }
@@ -19171,29 +18674,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -19210,13 +18709,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -19224,12 +18719,6 @@
       function observeDOMChanges(callback) {
         var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
         var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-        /**
-         * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
-         * Those calls that fall into the "cooldown" period, are ignored
-         * @param {Function} method
-         * @param {Number} delay - milliseconds
-         */
 
         var throttle = function throttle(method, delay) {
           var wait = false;
@@ -19259,17 +18748,8 @@
 
           return wrapper;
         };
-        /**
-         * 'delay' in milliseconds for 'throttle' method
-         */
-
 
         var THROTTLE_DELAY_MS = 20;
-        /**
-         * Used for remove-class
-         */
-        // eslint-disable-next-line no-use-before-define, compat/compat
-
         var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
 
         var connect = function connect() {
@@ -19313,7 +18793,7 @@
 
     function removeClass(source, args) {
       function removeClass(source, classNames, selector) {
-        var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'asap stay';
+        var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "asap stay";
 
         if (!classNames) {
           return;
@@ -19337,7 +18817,6 @@
             try {
               foundNodes = [].slice.call(document.querySelectorAll(selector));
             } catch (e) {
-              // eslint-disable-next-line no-console
               console.log("Invalid remove-class selector arg: '".concat(selector, "'"));
             }
 
@@ -19370,14 +18849,12 @@
           }
         };
 
-        var CLASS_ATTR_NAME = ['class'];
-        var FLAGS_DIVIDER = ' ';
-        var ASAP_FLAG = 'asap';
-        var COMPLETE_FLAG = 'complete';
-        var STAY_FLAG = 'stay';
+        var CLASS_ATTR_NAME = ["class"];
+        var FLAGS_DIVIDER = " ";
+        var ASAP_FLAG = "asap";
+        var COMPLETE_FLAG = "complete";
+        var STAY_FLAG = "stay";
         var VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
-        /* eslint-disable no-restricted-properties */
-
         var passedFlags = applying.trim().split(FLAGS_DIVIDER).filter(function (f) {
           return VALID_FLAGS.indexOf(f) !== -1;
         });
@@ -19387,9 +18864,7 @@
 
           if (!passedFlags.indexOf(STAY_FLAG) !== -1) {
             return;
-          } // 'true' for observing attributes
-          // 'class' for observing only classes
-
+          }
 
           observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
         };
@@ -19398,17 +18873,14 @@
           removeClassHandler();
         }
 
-        if (document.readyState !== 'complete' && passedFlags.indexOf(COMPLETE_FLAG) !== -1) {
-          window.addEventListener('load', run, {
+        if (document.readyState !== "complete" && passedFlags.indexOf(COMPLETE_FLAG) !== -1) {
+          window.addEventListener("load", run, {
             once: true
           });
         } else if (passedFlags.indexOf(STAY_FLAG) !== -1) {
-          // Do not call removeClassHandler() twice for 'asap stay' flag
           if (passedFlags.length === 1) {
             removeClassHandler();
-          } // 'true' for observing attributes
-          // 'class' for observing only classes
-
+          }
 
           observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
         }
@@ -19421,29 +18893,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -19460,13 +18928,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -19474,12 +18938,6 @@
       function observeDOMChanges(callback) {
         var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
         var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-        /**
-         * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
-         * Those calls that fall into the "cooldown" period, are ignored
-         * @param {Function} method
-         * @param {Number} delay - milliseconds
-         */
 
         var throttle = function throttle(method, delay) {
           var wait = false;
@@ -19509,17 +18967,8 @@
 
           return wrapper;
         };
-        /**
-         * 'delay' in milliseconds for 'throttle' method
-         */
-
 
         var THROTTLE_DELAY_MS = 20;
-        /**
-         * Used for remove-class
-         */
-        // eslint-disable-next-line no-use-before-define, compat/compat
-
         var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
 
         var connect = function connect() {
@@ -19569,8 +19018,8 @@
           var cookieSpec = "".concat(cookieName, "=");
           var domain1 = "; domain=".concat(hostName);
           var domain2 = "; domain=.".concat(hostName);
-          var path = '; path=/';
-          var expiration = '; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          var path = "; path=/";
+          var expiration = "; expires=Thu, 01 Jan 1970 00:00:00 GMT";
           document.cookie = cookieSpec + expiration;
           document.cookie = cookieSpec + domain1 + expiration;
           document.cookie = cookieSpec + domain2 + expiration;
@@ -19581,8 +19030,8 @@
         };
 
         var rmCookie = function rmCookie() {
-          document.cookie.split(';').forEach(function (cookieStr) {
-            var pos = cookieStr.indexOf('=');
+          document.cookie.split(";").forEach(function (cookieStr) {
+            var pos = cookieStr.indexOf("=");
 
             if (pos === -1) {
               return;
@@ -19594,10 +19043,10 @@
               return;
             }
 
-            var hostParts = document.location.hostname.split('.');
+            var hostParts = document.location.hostname.split(".");
 
             for (var i = 0; i <= hostParts.length - 1; i += 1) {
-              var hostName = hostParts.slice(i).join('.');
+              var hostName = hostParts.slice(i).join(".");
 
               if (hostName) {
                 removeCookieFromHost(cookieName, hostName);
@@ -19607,15 +19056,15 @@
         };
 
         rmCookie();
-        window.addEventListener('beforeunload', rmCookie);
+        window.addEventListener("beforeunload", rmCookie);
       }
 
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-        var DEFAULT_VALUE = '.?';
-        var FORWARD_SLASH = '/';
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
 
-        if (input === '') {
+        if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
 
@@ -19623,7 +19072,7 @@
           return new RegExp(input.slice(1, -1));
         }
 
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
 
@@ -19634,29 +19083,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -19673,13 +19118,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -19695,8 +19136,6 @@
 
     function removeInShadowDom(source, args) {
       function removeInShadowDom(source, selector, baseSelector) {
-        // do nothing if browser does not support ShadowRoot
-        // https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot
         if (!Element.prototype.attachShadow) {
           return;
         }
@@ -19704,14 +19143,9 @@
         var removeElement = function removeElement(targetElement) {
           targetElement.remove();
         };
-        /**
-         * Handles shadow-dom piercing and removing of found elements
-         */
-
 
         var removeHandler = function removeHandler() {
-          // start value of shadow-dom hosts for the page dom
-          var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector); // if there is shadow-dom host, they should be explored
+          var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
 
           while (hostElements.length !== 0) {
             var isRemoved = false;
@@ -19727,9 +19161,7 @@
 
             if (isRemoved) {
               hit(source);
-            } // continue to pierce for inner shadow-dom hosts
-            // and search inside them while the next iteration
-
+            }
 
             hostElements = innerHosts;
           }
@@ -19746,29 +19178,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -19785,13 +19213,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -19799,12 +19223,6 @@
       function observeDOMChanges(callback) {
         var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
         var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-        /**
-         * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
-         * Those calls that fall into the "cooldown" period, are ignored
-         * @param {Function} method
-         * @param {Number} delay - milliseconds
-         */
 
         var throttle = function throttle(method, delay) {
           var wait = false;
@@ -19834,17 +19252,8 @@
 
           return wrapper;
         };
-        /**
-         * 'delay' in milliseconds for 'throttle' method
-         */
-
 
         var THROTTLE_DELAY_MS = 20;
-        /**
-         * Used for remove-class
-         */
-        // eslint-disable-next-line no-use-before-define, compat/compat
-
         var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
 
         var connect = function connect() {
@@ -19878,12 +19287,8 @@
       }
 
       function findHostElements(rootElement) {
-        var hosts = []; // Element.querySelectorAll() returns list of elements
-        // which are defined in DOM of Element.
-        // Meanwhile, inner DOM of the element with shadowRoot property
-        // is absolutely another DOM and which can not be reached by querySelectorAll('*')
-
-        var domElems = rootElement.querySelectorAll('*');
+        var hosts = [];
+        var domElems = rootElement.querySelectorAll("*");
         domElems.forEach(function (el) {
           if (el.shadowRoot) {
             hosts.push(el);
@@ -19894,20 +19299,15 @@
 
       function pierceShadowDom(selector, hostElements) {
         var targets = [];
-        var innerHostsAcc = []; // it's possible to get a few hostElements found by baseSelector on the page
-
+        var innerHostsAcc = [];
         hostElements.forEach(function (host) {
-          // check presence of selector element inside base element if it's not in shadow-dom
           var simpleElems = host.querySelectorAll(selector);
           targets = targets.concat([].slice.call(simpleElems));
           var shadowRootElem = host.shadowRoot;
           var shadowChildren = shadowRootElem.querySelectorAll(selector);
-          targets = targets.concat([].slice.call(shadowChildren)); // find inner shadow-dom hosts inside processing shadow-dom
-
+          targets = targets.concat([].slice.call(shadowChildren));
           innerHostsAcc.push(findHostElements(shadowRootElem));
-        }); // if there were more than one host element,
-        // innerHostsAcc is an array of arrays and should be flatten
-
+        });
         var innerHosts = (0, _arrayUtils.flatten)(innerHostsAcc);
         return {
           targets: targets,
@@ -19926,14 +19326,13 @@
 
     function setAttr(source, args) {
       function setAttr(source, selector, attr) {
-        var value = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+        var value = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
 
         if (!selector || !attr) {
           return;
-        } // Drop strings that cant be parsed into number, negative numbers and numbers below 32767
+        }
 
-
-        if (value.length !== 0 && (nativeIsNaN(parseInt(value, 10)) || parseInt(value, 10) < 0 || parseInt(value, 10) > 0x7FFF)) {
+        if (value.length !== 0 && (nativeIsNaN(parseInt(value, 10)) || parseInt(value, 10) < 0 || parseInt(value, 10) > 32767)) {
           return;
         }
 
@@ -19961,29 +19360,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -20000,13 +19395,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -20014,12 +19405,6 @@
       function observeDOMChanges(callback) {
         var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
         var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-        /**
-         * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
-         * Those calls that fall into the "cooldown" period, are ignored
-         * @param {Function} method
-         * @param {Number} delay - milliseconds
-         */
 
         var throttle = function throttle(method, delay) {
           var wait = false;
@@ -20049,17 +19434,8 @@
 
           return wrapper;
         };
-        /**
-         * 'delay' in milliseconds for 'throttle' method
-         */
-
 
         var THROTTLE_DELAY_MS = 20;
-        /**
-         * Used for remove-class
-         */
-        // eslint-disable-next-line no-use-before-define, compat/compat
-
         var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
 
         var connect = function connect() {
@@ -20093,8 +19469,7 @@
       }
 
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
-
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
 
@@ -20111,35 +19486,34 @@
       function setConstant(source, property, value, stack) {
         if (!property || !matchStackTrace(stack, new Error().stack)) {
           return;
-        } // eslint-disable-next-line no-console
-
+        }
 
         var log = console.log.bind(console);
         var emptyArr = noopArray();
         var emptyObj = noopObject();
         var constantValue;
 
-        if (value === 'undefined') {
+        if (value === "undefined") {
           constantValue = undefined;
-        } else if (value === 'false') {
+        } else if (value === "false") {
           constantValue = false;
-        } else if (value === 'true') {
+        } else if (value === "true") {
           constantValue = true;
-        } else if (value === 'null') {
+        } else if (value === "null") {
           constantValue = null;
-        } else if (value === 'emptyArr') {
+        } else if (value === "emptyArr") {
           constantValue = emptyArr;
-        } else if (value === 'emptyObj') {
+        } else if (value === "emptyObj") {
           constantValue = emptyObj;
-        } else if (value === 'noopFunc') {
+        } else if (value === "noopFunc") {
           constantValue = noopFunc;
-        } else if (value === 'trueFunc') {
+        } else if (value === "trueFunc") {
           constantValue = trueFunc;
-        } else if (value === 'falseFunc') {
+        } else if (value === "falseFunc") {
           constantValue = falseFunc;
-        } else if (value === 'noopPromiseResolve') {
+        } else if (value === "noopPromiseResolve") {
           constantValue = noopPromiseResolve;
-        } else if (value === 'noopPromiseReject') {
+        } else if (value === "noopPromiseReject") {
           constantValue = noopPromiseReject;
         } else if (/^\d+$/.test(value)) {
           constantValue = parseFloat(value);
@@ -20148,27 +19522,27 @@
             return;
           }
 
-          if (Math.abs(constantValue) > 0x7FFF) {
+          if (Math.abs(constantValue) > 32767) {
             return;
           }
-        } else if (value === '-1') {
+        } else if (value === "-1") {
           constantValue = -1;
-        } else if (value === '') {
-          constantValue = '';
-        } else if (value === 'yes') {
-          constantValue = 'yes';
-        } else if (value === 'no') {
-          constantValue = 'no';
+        } else if (value === "") {
+          constantValue = "";
+        } else if (value === "yes") {
+          constantValue = "yes";
+        } else if (value === "no") {
+          constantValue = "no";
         } else {
           return;
         }
 
         var getCurrentScript = function getCurrentScript() {
-          if ('currentScript' in document) {
-            return document.currentScript; // eslint-disable-line compat/compat
+          if ("currentScript" in document) {
+            return document.currentScript;
           }
 
-          var scripts = document.getElementsByTagName('script');
+          var scripts = document.getElementsByTagName("script");
           return scripts[scripts.length - 1];
         };
 
@@ -20191,10 +19565,9 @@
 
           var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
           var prevGetter;
-          var prevSetter; // This is required to prevent scriptlets overwrite each over
+          var prevSetter;
 
           if (origDescriptor instanceof Object) {
-            // This check is required to avoid defining non-configurable props
             if (!origDescriptor.configurable) {
               if (source.verbose) {
                 log("set-constant: property '".concat(prop, "' is not configurable"));
@@ -20238,9 +19611,7 @@
           var chainInfo = getPropertyInChain(owner, property);
           var base = chainInfo.base;
           var prop = chainInfo.prop,
-              chain = chainInfo.chain; // Handler method init is used to keep track of factual value
-          // and apply mustCancel() check only on end prop
-
+              chain = chainInfo.chain;
           var undefPropHandler = {
             factValue: undefined,
             init: function init(a) {
@@ -20251,7 +19622,6 @@
               return this.factValue;
             },
             set: function set(a) {
-              // Prevent breakage due to loop assignments like win.obj = win.obj
               if (this.factValue === a) {
                 return;
               }
@@ -20274,8 +19644,6 @@
               return true;
             },
             get: function get() {
-              // .currrentSript script check so we won't trap other scriptlets on the same chain
-              // eslint-disable-next-line compat/compat
               return document.currentScript === ourScript ? this.factValue : constantValue;
             },
             set: function set(a) {
@@ -20285,7 +19653,7 @@
 
               constantValue = a;
             }
-          }; // End prop case
+          };
 
           if (!chain) {
             var isTrapped = trapProp(base, prop, false, endPropHandler);
@@ -20295,15 +19663,13 @@
             }
 
             return;
-          } // Defined prop in chain
-
+          }
 
           var propValue = owner[prop];
 
-          if (propValue instanceof Object || typeof propValue === 'object' && propValue !== null) {
+          if (propValue instanceof Object || typeof propValue === "object" && propValue !== null) {
             setChainPropAccess(propValue, chain);
-          } // Undefined prop in chain
-
+          }
 
           trapProp(owner, prop, true, undefPropHandler);
         };
@@ -20318,29 +19684,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -20357,13 +19719,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -20391,23 +19749,21 @@
       }
 
       function noopPromiseResolve() {
-        var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '{}';
+        var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
 
-        if (typeof Response === 'undefined') {
+        if (typeof Response === "undefined") {
           return;
-        } // eslint-disable-next-line compat/compat
-
+        }
 
         var response = new Response(responseBody, {
           status: 200,
-          statusText: 'OK'
-        }); // eslint-disable-next-line compat/compat, consistent-return
-
+          statusText: "OK"
+        });
         return Promise.resolve(response);
       }
 
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf('.');
+        var pos = chain.indexOf(".");
 
         if (pos === -1) {
           return {
@@ -20416,11 +19772,9 @@
           };
         }
 
-        var prop = chain.slice(0, pos); // https://github.com/AdguardTeam/Scriptlets/issues/128
+        var prop = chain.slice(0, pos);
 
         if (base === null) {
-          // if base is null, return 'null' as base.
-          // it's needed for triggering the reason logging while debugging
           return {
             base: base,
             prop: prop,
@@ -20446,22 +19800,19 @@
       }
 
       function matchStackTrace(stackMatch, stackTrace) {
-        if (!stackMatch || stackMatch === '') {
+        if (!stackMatch || stackMatch === "") {
           return true;
         }
 
         var stackRegexp = (0, _stringUtils.toRegExp)(stackMatch);
-        var refinedStackTrace = stackTrace.split('\n').slice(2) // get rid of our own functions in the stack trace
-        .map(function (line) {
+        var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
-        }) // trim the lines
-        .join('\n');
+        }).join("\n");
         return stackRegexp.test(refinedStackTrace);
       }
 
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
-
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
 
@@ -20491,29 +19842,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -20530,13 +19877,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -20548,26 +19891,26 @@
 
         var valueToSet;
 
-        if (value === 'true') {
-          valueToSet = 'true';
-        } else if (value === 'True') {
-          valueToSet = 'True';
-        } else if (value === 'false') {
-          valueToSet = 'false';
-        } else if (value === 'False') {
-          valueToSet = 'False';
-        } else if (value === 'yes') {
-          valueToSet = 'yes';
-        } else if (value === 'Yes') {
-          valueToSet = 'Yes';
-        } else if (value === 'Y') {
-          valueToSet = 'Y';
-        } else if (value === 'no') {
-          valueToSet = 'no';
-        } else if (value === 'ok') {
-          valueToSet = 'ok';
-        } else if (value === 'OK') {
-          valueToSet = 'OK';
+        if (value === "true") {
+          valueToSet = "true";
+        } else if (value === "True") {
+          valueToSet = "True";
+        } else if (value === "false") {
+          valueToSet = "false";
+        } else if (value === "False") {
+          valueToSet = "False";
+        } else if (value === "yes") {
+          valueToSet = "yes";
+        } else if (value === "Yes") {
+          valueToSet = "Yes";
+        } else if (value === "Y") {
+          valueToSet = "Y";
+        } else if (value === "no") {
+          valueToSet = "no";
+        } else if (value === "ok") {
+          valueToSet = "ok";
+        } else if (value === "OK") {
+          valueToSet = "OK";
         } else if (/^\d+$/.test(value)) {
           valueToSet = parseFloat(value);
 
@@ -20582,8 +19925,7 @@
           return null;
         }
 
-        var pathToSet = 'path=/;'; // eslint-disable-next-line max-len
-
+        var pathToSet = "path=/;";
         var cookieData = "".concat(encodeURIComponent(name), "=").concat(encodeURIComponent(valueToSet), "; ").concat(pathToSet);
         return cookieData;
       }
@@ -20599,8 +19941,8 @@
 
     function setCookieReload(source, args) {
       function setCookieReload(source, name, value) {
-        var isCookieAlreadySet = document.cookie.split(';').some(function (cookieStr) {
-          var pos = cookieStr.indexOf('=');
+        var isCookieAlreadySet = document.cookie.split(";").some(function (cookieStr) {
+          var pos = cookieStr.indexOf("=");
 
           if (pos === -1) {
             return false;
@@ -20630,29 +19972,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -20669,13 +20007,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -20687,26 +20021,26 @@
 
         var valueToSet;
 
-        if (value === 'true') {
-          valueToSet = 'true';
-        } else if (value === 'True') {
-          valueToSet = 'True';
-        } else if (value === 'false') {
-          valueToSet = 'false';
-        } else if (value === 'False') {
-          valueToSet = 'False';
-        } else if (value === 'yes') {
-          valueToSet = 'yes';
-        } else if (value === 'Yes') {
-          valueToSet = 'Yes';
-        } else if (value === 'Y') {
-          valueToSet = 'Y';
-        } else if (value === 'no') {
-          valueToSet = 'no';
-        } else if (value === 'ok') {
-          valueToSet = 'ok';
-        } else if (value === 'OK') {
-          valueToSet = 'OK';
+        if (value === "true") {
+          valueToSet = "true";
+        } else if (value === "True") {
+          valueToSet = "True";
+        } else if (value === "false") {
+          valueToSet = "false";
+        } else if (value === "False") {
+          valueToSet = "False";
+        } else if (value === "yes") {
+          valueToSet = "yes";
+        } else if (value === "Yes") {
+          valueToSet = "Yes";
+        } else if (value === "Y") {
+          valueToSet = "Y";
+        } else if (value === "no") {
+          valueToSet = "no";
+        } else if (value === "ok") {
+          valueToSet = "ok";
+        } else if (value === "OK") {
+          valueToSet = "OK";
         } else if (/^\d+$/.test(value)) {
           valueToSet = parseFloat(value);
 
@@ -20721,8 +20055,7 @@
           return null;
         }
 
-        var pathToSet = 'path=/;'; // eslint-disable-next-line max-len
-
+        var pathToSet = "path=/;";
         var cookieData = "".concat(encodeURIComponent(name), "=").concat(encodeURIComponent(valueToSet), "; ").concat(pathToSet);
         return cookieData;
       }
@@ -20738,26 +20071,26 @@
 
     function setLocalStorageItem(source, args) {
       function setLocalStorageItem(source, key, value) {
-        if (!key || !value && value !== '') {
+        if (!key || !value && value !== "") {
           return;
         }
 
         var keyValue;
 
-        if (value === 'undefined') {
+        if (value === "undefined") {
           keyValue = undefined;
-        } else if (value === 'false') {
+        } else if (value === "false") {
           keyValue = false;
-        } else if (value === 'true') {
+        } else if (value === "true") {
           keyValue = true;
-        } else if (value === 'null') {
+        } else if (value === "null") {
           keyValue = null;
-        } else if (value === 'emptyArr') {
-          keyValue = '[]';
-        } else if (value === 'emptyObj') {
-          keyValue = '{}';
-        } else if (value === '') {
-          keyValue = '';
+        } else if (value === "emptyArr") {
+          keyValue = "[]";
+        } else if (value === "emptyObj") {
+          keyValue = "{}";
+        } else if (value === "") {
+          keyValue = "";
         } else if (/^\d+$/.test(value)) {
           keyValue = parseFloat(value);
 
@@ -20765,27 +20098,26 @@
             return;
           }
 
-          if (Math.abs(keyValue) > 0x7FFF) {
+          if (Math.abs(keyValue) > 32767) {
             return;
           }
-        } else if (value === 'yes') {
-          keyValue = 'yes';
-        } else if (value === 'no') {
-          keyValue = 'no';
+        } else if (value === "yes") {
+          keyValue = "yes";
+        } else if (value === "no") {
+          keyValue = "no";
         } else {
           return;
         }
 
         var setItem = function setItem(key, value) {
           var _window = window,
-              localStorage = _window.localStorage; // setItem() may throw an exception if the storage is full.
+              localStorage = _window.localStorage;
 
           try {
             localStorage.setItem(key, value);
             hit(source);
           } catch (e) {
             if (source.verbose) {
-              // eslint-disable-next-line no-console
               console.log("Was unable to set localStorage item due to: ".concat(e.message));
             }
           }
@@ -20801,29 +20133,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -20840,20 +20168,15 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
 
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
-
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
 
@@ -20893,29 +20216,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -20932,13 +20251,9 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
@@ -20954,26 +20269,26 @@
 
     function setSessionStorageItem(source, args) {
       function setSessionStorageItem(source, key, value) {
-        if (!key || !value && value !== '') {
+        if (!key || !value && value !== "") {
           return;
         }
 
         var keyValue;
 
-        if (value === 'undefined') {
+        if (value === "undefined") {
           keyValue = undefined;
-        } else if (value === 'false') {
+        } else if (value === "false") {
           keyValue = false;
-        } else if (value === 'true') {
+        } else if (value === "true") {
           keyValue = true;
-        } else if (value === 'null') {
+        } else if (value === "null") {
           keyValue = null;
-        } else if (value === 'emptyArr') {
-          keyValue = '[]';
-        } else if (value === 'emptyObj') {
-          keyValue = '{}';
-        } else if (value === '') {
-          keyValue = '';
+        } else if (value === "emptyArr") {
+          keyValue = "[]";
+        } else if (value === "emptyObj") {
+          keyValue = "{}";
+        } else if (value === "") {
+          keyValue = "";
         } else if (/^\d+$/.test(value)) {
           keyValue = parseFloat(value);
 
@@ -20981,27 +20296,26 @@
             return;
           }
 
-          if (Math.abs(keyValue) > 0x7FFF) {
+          if (Math.abs(keyValue) > 32767) {
             return;
           }
-        } else if (value === 'yes') {
-          keyValue = 'yes';
-        } else if (value === 'no') {
-          keyValue = 'no';
+        } else if (value === "yes") {
+          keyValue = "yes";
+        } else if (value === "no") {
+          keyValue = "no";
         } else {
           return;
         }
 
         var setItem = function setItem(key, value) {
           var _window = window,
-              sessionStorage = _window.sessionStorage; // setItem() may throw an exception if the storage is full.
+              sessionStorage = _window.sessionStorage;
 
           try {
             sessionStorage.setItem(key, value);
             hit(source);
           } catch (e) {
             if (source.verbose) {
-              // eslint-disable-next-line no-console
               console.log("Was unable to set sessionStorage item due to: ".concat(e.message));
             }
           }
@@ -21017,29 +20331,25 @@
 
         try {
           var log = console.log.bind(console);
-          var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-          var prefix = source.ruleText || '';
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
 
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = '#%#//';
-            var UBO_SCRIPTLET_MARKER = '##+js';
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
 
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            } // delete all domains from ruleText and leave just rule part
+            }
 
-
-            var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
-          } // Used to check if scriptlet uses 'hit' function for logging
+          }
 
-
-          var LOG_MARKER = 'log: ';
+          var LOG_MARKER = "log: ";
 
           if (message) {
             if (message.indexOf(LOG_MARKER) === -1) {
@@ -21056,20 +20366,15 @@
           }
 
           log("".concat(prefix, " trace end"));
-        } catch (e) {// try catch for Edge 15
-          // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-          // console.log throws an error
-        } // This is necessary for unit-tests only!
+        } catch (e) {}
 
-
-        if (typeof window.__debug === 'function') {
+        if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
 
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
-
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
 
@@ -21083,220 +20388,220 @@
     }
 
     var scriptletsMap = {
-      'abort-current-inline-script': abortCurrentInlineScript,
-      'abort-current-script.js': abortCurrentInlineScript,
-      'ubo-abort-current-script.js': abortCurrentInlineScript,
-      'acs.js': abortCurrentInlineScript,
-      'ubo-acs.js': abortCurrentInlineScript,
-      'ubo-abort-current-script': abortCurrentInlineScript,
-      'ubo-acs': abortCurrentInlineScript,
-      'abort-current-inline-script.js': abortCurrentInlineScript,
-      'ubo-abort-current-inline-script.js': abortCurrentInlineScript,
-      'acis.js': abortCurrentInlineScript,
-      'ubo-acis.js': abortCurrentInlineScript,
-      'ubo-abort-current-inline-script': abortCurrentInlineScript,
-      'ubo-acis': abortCurrentInlineScript,
-      'abp-abort-current-inline-script': abortCurrentInlineScript,
-      'abort-on-property-read': abortOnPropertyRead,
-      'abort-on-property-read.js': abortOnPropertyRead,
-      'ubo-abort-on-property-read.js': abortOnPropertyRead,
-      'aopr.js': abortOnPropertyRead,
-      'ubo-aopr.js': abortOnPropertyRead,
-      'ubo-abort-on-property-read': abortOnPropertyRead,
-      'ubo-aopr': abortOnPropertyRead,
-      'abp-abort-on-property-read': abortOnPropertyRead,
-      'abort-on-property-write': abortOnPropertyWrite,
-      'abort-on-property-write.js': abortOnPropertyWrite,
-      'ubo-abort-on-property-write.js': abortOnPropertyWrite,
-      'aopw.js': abortOnPropertyWrite,
-      'ubo-aopw.js': abortOnPropertyWrite,
-      'ubo-abort-on-property-write': abortOnPropertyWrite,
-      'ubo-aopw': abortOnPropertyWrite,
-      'abp-abort-on-property-write': abortOnPropertyWrite,
-      'abort-on-stack-trace': abortOnStackTrace,
-      'abort-on-stack-trace.js': abortOnStackTrace,
-      'ubo-abort-on-stack-trace.js': abortOnStackTrace,
-      'aost.js': abortOnStackTrace,
-      'ubo-aost.js': abortOnStackTrace,
-      'ubo-abort-on-stack-trace': abortOnStackTrace,
-      'ubo-aost': abortOnStackTrace,
-      'abp-abort-on-stack-trace': abortOnStackTrace,
-      'adjust-setInterval': adjustSetInterval,
-      'nano-setInterval-booster.js': adjustSetInterval,
-      'ubo-nano-setInterval-booster.js': adjustSetInterval,
-      'nano-sib.js': adjustSetInterval,
-      'ubo-nano-sib.js': adjustSetInterval,
-      'ubo-nano-setInterval-booster': adjustSetInterval,
-      'ubo-nano-sib': adjustSetInterval,
-      'adjust-setTimeout': adjustSetTimeout,
-      'nano-setTimeout-booster.js': adjustSetTimeout,
-      'ubo-nano-setTimeout-booster.js': adjustSetTimeout,
-      'nano-stb.js': adjustSetTimeout,
-      'ubo-nano-stb.js': adjustSetTimeout,
-      'ubo-nano-setTimeout-booster': adjustSetTimeout,
-      'ubo-nano-stb': adjustSetTimeout,
-      'debug-current-inline-script': debugCurrentInlineScript,
-      'debug-on-property-read': debugOnPropertyRead,
-      'debug-on-property-write': debugOnPropertyWrite,
-      'dir-string': dirString,
-      'abp-dir-string': dirString,
-      'disable-newtab-links': disableNewtabLinks,
-      'disable-newtab-links.js': disableNewtabLinks,
-      'ubo-disable-newtab-links.js': disableNewtabLinks,
-      'ubo-disable-newtab-links': disableNewtabLinks,
-      'close-window': forceWindowClose,
-      'window-close-if.js': forceWindowClose,
-      'ubo-window-close-if.js': forceWindowClose,
-      'ubo-window-close-if': forceWindowClose,
-      'hide-in-shadow-dom': hideInShadowDom,
-      'json-prune': jsonPrune,
-      'json-prune.js': jsonPrune,
-      'ubo-json-prune.js': jsonPrune,
-      'ubo-json-prune': jsonPrune,
-      'abp-json-prune': jsonPrune,
-      'log': log,
-      'log-addEventListener': logAddEventListener,
-      'addEventListener-logger.js': logAddEventListener,
-      'ubo-addEventListener-logger.js': logAddEventListener,
-      'aell.js': logAddEventListener,
-      'ubo-aell.js': logAddEventListener,
-      'ubo-addEventListener-logger': logAddEventListener,
-      'ubo-aell': logAddEventListener,
-      'log-eval': logEval,
-      'log-on-stack-trace': logOnStacktrace,
-      'noeval': noeval,
-      'noeval.js': noeval,
-      'silent-noeval.js': noeval,
-      'ubo-noeval.js': noeval,
-      'ubo-silent-noeval.js': noeval,
-      'ubo-noeval': noeval,
-      'ubo-silent-noeval': noeval,
-      'nowebrtc': nowebrtc,
-      'nowebrtc.js': nowebrtc,
-      'ubo-nowebrtc.js': nowebrtc,
-      'ubo-nowebrtc': nowebrtc,
-      'prevent-addEventListener': preventAddEventListener,
-      'addEventListener-defuser.js': preventAddEventListener,
-      'ubo-addEventListener-defuser.js': preventAddEventListener,
-      'aeld.js': preventAddEventListener,
-      'ubo-aeld.js': preventAddEventListener,
-      'ubo-addEventListener-defuser': preventAddEventListener,
-      'ubo-aeld': preventAddEventListener,
-      'prevent-adfly': preventAdfly,
-      'adfly-defuser.js': preventAdfly,
-      'ubo-adfly-defuser.js': preventAdfly,
-      'ubo-adfly-defuser': preventAdfly,
-      'prevent-bab': preventBab,
-      'nobab.js': preventBab,
-      'ubo-nobab.js': preventBab,
-      'bab-defuser.js': preventBab,
-      'ubo-bab-defuser.js': preventBab,
-      'ubo-nobab': preventBab,
-      'ubo-bab-defuser': preventBab,
-      'prevent-element-src-loading': preventElementSrcLoading,
-      'prevent-eval-if': preventEvalIf,
-      'noeval-if.js': preventEvalIf,
-      'ubo-noeval-if.js': preventEvalIf,
-      'ubo-noeval-if': preventEvalIf,
-      'prevent-fab-3.2.0': preventFab,
-      'nofab.js': preventFab,
-      'ubo-nofab.js': preventFab,
-      'fuckadblock.js-3.2.0': preventFab,
-      'ubo-fuckadblock.js-3.2.0': preventFab,
-      'ubo-nofab': preventFab,
-      'prevent-fetch': preventFetch,
-      'no-fetch-if.js': preventFetch,
-      'ubo-no-fetch-if.js': preventFetch,
-      'ubo-no-fetch-if': preventFetch,
-      'prevent-popads-net': preventPopadsNet,
-      'popads.net.js': preventPopadsNet,
-      'ubo-popads.net.js': preventPopadsNet,
-      'ubo-popads.net': preventPopadsNet,
-      'prevent-refresh': preventRefresh,
-      'refresh-defuser.js': preventRefresh,
-      'refresh-defuser': preventRefresh,
-      'ubo-refresh-defuser.js': preventRefresh,
-      'ubo-refresh-defuser': preventRefresh,
-      'prevent-requestAnimationFrame': preventRequestAnimationFrame,
-      'no-requestAnimationFrame-if.js': preventRequestAnimationFrame,
-      'ubo-no-requestAnimationFrame-if.js': preventRequestAnimationFrame,
-      'norafif.js': preventRequestAnimationFrame,
-      'ubo-norafif.js': preventRequestAnimationFrame,
-      'ubo-no-requestAnimationFrame-if': preventRequestAnimationFrame,
-      'ubo-norafif': preventRequestAnimationFrame,
-      'prevent-setInterval': preventSetInterval,
-      'no-setInterval-if.js': preventSetInterval,
-      'ubo-no-setInterval-if.js': preventSetInterval,
-      'setInterval-defuser.js': preventSetInterval,
-      'ubo-setInterval-defuser.js': preventSetInterval,
-      'nosiif.js': preventSetInterval,
-      'ubo-nosiif.js': preventSetInterval,
-      'sid.js': preventSetInterval,
-      'ubo-sid.js': preventSetInterval,
-      'ubo-no-setInterval-if': preventSetInterval,
-      'ubo-setInterval-defuser': preventSetInterval,
-      'ubo-nosiif': preventSetInterval,
-      'ubo-sid': preventSetInterval,
-      'prevent-setTimeout': preventSetTimeout,
-      'no-setTimeout-if.js': preventSetTimeout,
-      'ubo-no-setTimeout-if.js': preventSetTimeout,
-      'nostif.js': preventSetTimeout,
-      'ubo-nostif.js': preventSetTimeout,
-      'ubo-no-setTimeout-if': preventSetTimeout,
-      'ubo-nostif': preventSetTimeout,
-      'setTimeout-defuser.js': preventSetTimeout,
-      'ubo-setTimeout-defuser.js': preventSetTimeout,
-      'ubo-setTimeout-defuser': preventSetTimeout,
-      'std.js': preventSetTimeout,
-      'ubo-std.js': preventSetTimeout,
-      'ubo-std': preventSetTimeout,
-      'prevent-window-open': preventWindowOpen,
-      'window.open-defuser.js': preventWindowOpen,
-      'ubo-window.open-defuser.js': preventWindowOpen,
-      'ubo-window.open-defuser': preventWindowOpen,
-      'nowoif.js': preventWindowOpen,
-      'ubo-nowoif.js': preventWindowOpen,
-      'ubo-nowoif': preventWindowOpen,
-      'prevent-xhr': preventXHR,
-      'no-xhr-if.js': preventXHR,
-      'ubo-no-xhr-if.js': preventXHR,
-      'ubo-no-xhr-if': preventXHR,
-      'remove-attr': removeAttr,
-      'remove-attr.js': removeAttr,
-      'ubo-remove-attr.js': removeAttr,
-      'ra.js': removeAttr,
-      'ubo-ra.js': removeAttr,
-      'ubo-remove-attr': removeAttr,
-      'ubo-ra': removeAttr,
-      'remove-class': removeClass,
-      'remove-class.js': removeClass,
-      'ubo-remove-class.js': removeClass,
-      'rc.js': removeClass,
-      'ubo-rc.js': removeClass,
-      'ubo-remove-class': removeClass,
-      'ubo-rc': removeClass,
-      'remove-cookie': removeCookie,
-      'cookie-remover.js': removeCookie,
-      'ubo-cookie-remover.js': removeCookie,
-      'ubo-cookie-remover': removeCookie,
-      'remove-in-shadow-dom': removeInShadowDom,
-      'set-attr': setAttr,
-      'set-constant': setConstant,
-      'set-constant.js': setConstant,
-      'ubo-set-constant.js': setConstant,
-      'set.js': setConstant,
-      'ubo-set.js': setConstant,
-      'ubo-set-constant': setConstant,
-      'ubo-set': setConstant,
-      'abp-override-property-read': setConstant,
-      'set-cookie': setCookie,
-      'set-cookie-reload': setCookieReload,
-      'set-local-storage-item': setLocalStorageItem,
-      'set-popads-dummy': setPopadsDummy,
-      'popads-dummy.js': setPopadsDummy,
-      'ubo-popads-dummy.js': setPopadsDummy,
-      'ubo-popads-dummy': setPopadsDummy,
-      'set-session-storage-item': setSessionStorageItem
+      "abort-current-inline-script": abortCurrentInlineScript,
+      "abort-current-script.js": abortCurrentInlineScript,
+      "ubo-abort-current-script.js": abortCurrentInlineScript,
+      "acs.js": abortCurrentInlineScript,
+      "ubo-acs.js": abortCurrentInlineScript,
+      "ubo-abort-current-script": abortCurrentInlineScript,
+      "ubo-acs": abortCurrentInlineScript,
+      "abort-current-inline-script.js": abortCurrentInlineScript,
+      "ubo-abort-current-inline-script.js": abortCurrentInlineScript,
+      "acis.js": abortCurrentInlineScript,
+      "ubo-acis.js": abortCurrentInlineScript,
+      "ubo-abort-current-inline-script": abortCurrentInlineScript,
+      "ubo-acis": abortCurrentInlineScript,
+      "abp-abort-current-inline-script": abortCurrentInlineScript,
+      "abort-on-property-read": abortOnPropertyRead,
+      "abort-on-property-read.js": abortOnPropertyRead,
+      "ubo-abort-on-property-read.js": abortOnPropertyRead,
+      "aopr.js": abortOnPropertyRead,
+      "ubo-aopr.js": abortOnPropertyRead,
+      "ubo-abort-on-property-read": abortOnPropertyRead,
+      "ubo-aopr": abortOnPropertyRead,
+      "abp-abort-on-property-read": abortOnPropertyRead,
+      "abort-on-property-write": abortOnPropertyWrite,
+      "abort-on-property-write.js": abortOnPropertyWrite,
+      "ubo-abort-on-property-write.js": abortOnPropertyWrite,
+      "aopw.js": abortOnPropertyWrite,
+      "ubo-aopw.js": abortOnPropertyWrite,
+      "ubo-abort-on-property-write": abortOnPropertyWrite,
+      "ubo-aopw": abortOnPropertyWrite,
+      "abp-abort-on-property-write": abortOnPropertyWrite,
+      "abort-on-stack-trace": abortOnStackTrace,
+      "abort-on-stack-trace.js": abortOnStackTrace,
+      "ubo-abort-on-stack-trace.js": abortOnStackTrace,
+      "aost.js": abortOnStackTrace,
+      "ubo-aost.js": abortOnStackTrace,
+      "ubo-abort-on-stack-trace": abortOnStackTrace,
+      "ubo-aost": abortOnStackTrace,
+      "abp-abort-on-stack-trace": abortOnStackTrace,
+      "adjust-setInterval": adjustSetInterval,
+      "nano-setInterval-booster.js": adjustSetInterval,
+      "ubo-nano-setInterval-booster.js": adjustSetInterval,
+      "nano-sib.js": adjustSetInterval,
+      "ubo-nano-sib.js": adjustSetInterval,
+      "ubo-nano-setInterval-booster": adjustSetInterval,
+      "ubo-nano-sib": adjustSetInterval,
+      "adjust-setTimeout": adjustSetTimeout,
+      "nano-setTimeout-booster.js": adjustSetTimeout,
+      "ubo-nano-setTimeout-booster.js": adjustSetTimeout,
+      "nano-stb.js": adjustSetTimeout,
+      "ubo-nano-stb.js": adjustSetTimeout,
+      "ubo-nano-setTimeout-booster": adjustSetTimeout,
+      "ubo-nano-stb": adjustSetTimeout,
+      "debug-current-inline-script": debugCurrentInlineScript,
+      "debug-on-property-read": debugOnPropertyRead,
+      "debug-on-property-write": debugOnPropertyWrite,
+      "dir-string": dirString,
+      "abp-dir-string": dirString,
+      "disable-newtab-links": disableNewtabLinks,
+      "disable-newtab-links.js": disableNewtabLinks,
+      "ubo-disable-newtab-links.js": disableNewtabLinks,
+      "ubo-disable-newtab-links": disableNewtabLinks,
+      "close-window": forceWindowClose,
+      "window-close-if.js": forceWindowClose,
+      "ubo-window-close-if.js": forceWindowClose,
+      "ubo-window-close-if": forceWindowClose,
+      "hide-in-shadow-dom": hideInShadowDom,
+      "json-prune": jsonPrune,
+      "json-prune.js": jsonPrune,
+      "ubo-json-prune.js": jsonPrune,
+      "ubo-json-prune": jsonPrune,
+      "abp-json-prune": jsonPrune,
+      log: log,
+      "log-addEventListener": logAddEventListener,
+      "addEventListener-logger.js": logAddEventListener,
+      "ubo-addEventListener-logger.js": logAddEventListener,
+      "aell.js": logAddEventListener,
+      "ubo-aell.js": logAddEventListener,
+      "ubo-addEventListener-logger": logAddEventListener,
+      "ubo-aell": logAddEventListener,
+      "log-eval": logEval,
+      "log-on-stack-trace": logOnStacktrace,
+      noeval: noeval,
+      "noeval.js": noeval,
+      "silent-noeval.js": noeval,
+      "ubo-noeval.js": noeval,
+      "ubo-silent-noeval.js": noeval,
+      "ubo-noeval": noeval,
+      "ubo-silent-noeval": noeval,
+      nowebrtc: nowebrtc,
+      "nowebrtc.js": nowebrtc,
+      "ubo-nowebrtc.js": nowebrtc,
+      "ubo-nowebrtc": nowebrtc,
+      "prevent-addEventListener": preventAddEventListener,
+      "addEventListener-defuser.js": preventAddEventListener,
+      "ubo-addEventListener-defuser.js": preventAddEventListener,
+      "aeld.js": preventAddEventListener,
+      "ubo-aeld.js": preventAddEventListener,
+      "ubo-addEventListener-defuser": preventAddEventListener,
+      "ubo-aeld": preventAddEventListener,
+      "prevent-adfly": preventAdfly,
+      "adfly-defuser.js": preventAdfly,
+      "ubo-adfly-defuser.js": preventAdfly,
+      "ubo-adfly-defuser": preventAdfly,
+      "prevent-bab": preventBab,
+      "nobab.js": preventBab,
+      "ubo-nobab.js": preventBab,
+      "bab-defuser.js": preventBab,
+      "ubo-bab-defuser.js": preventBab,
+      "ubo-nobab": preventBab,
+      "ubo-bab-defuser": preventBab,
+      "prevent-element-src-loading": preventElementSrcLoading,
+      "prevent-eval-if": preventEvalIf,
+      "noeval-if.js": preventEvalIf,
+      "ubo-noeval-if.js": preventEvalIf,
+      "ubo-noeval-if": preventEvalIf,
+      "prevent-fab-3.2.0": preventFab,
+      "nofab.js": preventFab,
+      "ubo-nofab.js": preventFab,
+      "fuckadblock.js-3.2.0": preventFab,
+      "ubo-fuckadblock.js-3.2.0": preventFab,
+      "ubo-nofab": preventFab,
+      "prevent-fetch": preventFetch,
+      "no-fetch-if.js": preventFetch,
+      "ubo-no-fetch-if.js": preventFetch,
+      "ubo-no-fetch-if": preventFetch,
+      "prevent-popads-net": preventPopadsNet,
+      "popads.net.js": preventPopadsNet,
+      "ubo-popads.net.js": preventPopadsNet,
+      "ubo-popads.net": preventPopadsNet,
+      "prevent-refresh": preventRefresh,
+      "refresh-defuser.js": preventRefresh,
+      "refresh-defuser": preventRefresh,
+      "ubo-refresh-defuser.js": preventRefresh,
+      "ubo-refresh-defuser": preventRefresh,
+      "prevent-requestAnimationFrame": preventRequestAnimationFrame,
+      "no-requestAnimationFrame-if.js": preventRequestAnimationFrame,
+      "ubo-no-requestAnimationFrame-if.js": preventRequestAnimationFrame,
+      "norafif.js": preventRequestAnimationFrame,
+      "ubo-norafif.js": preventRequestAnimationFrame,
+      "ubo-no-requestAnimationFrame-if": preventRequestAnimationFrame,
+      "ubo-norafif": preventRequestAnimationFrame,
+      "prevent-setInterval": preventSetInterval,
+      "no-setInterval-if.js": preventSetInterval,
+      "ubo-no-setInterval-if.js": preventSetInterval,
+      "setInterval-defuser.js": preventSetInterval,
+      "ubo-setInterval-defuser.js": preventSetInterval,
+      "nosiif.js": preventSetInterval,
+      "ubo-nosiif.js": preventSetInterval,
+      "sid.js": preventSetInterval,
+      "ubo-sid.js": preventSetInterval,
+      "ubo-no-setInterval-if": preventSetInterval,
+      "ubo-setInterval-defuser": preventSetInterval,
+      "ubo-nosiif": preventSetInterval,
+      "ubo-sid": preventSetInterval,
+      "prevent-setTimeout": preventSetTimeout,
+      "no-setTimeout-if.js": preventSetTimeout,
+      "ubo-no-setTimeout-if.js": preventSetTimeout,
+      "nostif.js": preventSetTimeout,
+      "ubo-nostif.js": preventSetTimeout,
+      "ubo-no-setTimeout-if": preventSetTimeout,
+      "ubo-nostif": preventSetTimeout,
+      "setTimeout-defuser.js": preventSetTimeout,
+      "ubo-setTimeout-defuser.js": preventSetTimeout,
+      "ubo-setTimeout-defuser": preventSetTimeout,
+      "std.js": preventSetTimeout,
+      "ubo-std.js": preventSetTimeout,
+      "ubo-std": preventSetTimeout,
+      "prevent-window-open": preventWindowOpen,
+      "window.open-defuser.js": preventWindowOpen,
+      "ubo-window.open-defuser.js": preventWindowOpen,
+      "ubo-window.open-defuser": preventWindowOpen,
+      "nowoif.js": preventWindowOpen,
+      "ubo-nowoif.js": preventWindowOpen,
+      "ubo-nowoif": preventWindowOpen,
+      "prevent-xhr": preventXHR,
+      "no-xhr-if.js": preventXHR,
+      "ubo-no-xhr-if.js": preventXHR,
+      "ubo-no-xhr-if": preventXHR,
+      "remove-attr": removeAttr,
+      "remove-attr.js": removeAttr,
+      "ubo-remove-attr.js": removeAttr,
+      "ra.js": removeAttr,
+      "ubo-ra.js": removeAttr,
+      "ubo-remove-attr": removeAttr,
+      "ubo-ra": removeAttr,
+      "remove-class": removeClass,
+      "remove-class.js": removeClass,
+      "ubo-remove-class.js": removeClass,
+      "rc.js": removeClass,
+      "ubo-rc.js": removeClass,
+      "ubo-remove-class": removeClass,
+      "ubo-rc": removeClass,
+      "remove-cookie": removeCookie,
+      "cookie-remover.js": removeCookie,
+      "ubo-cookie-remover.js": removeCookie,
+      "ubo-cookie-remover": removeCookie,
+      "remove-in-shadow-dom": removeInShadowDom,
+      "set-attr": setAttr,
+      "set-constant": setConstant,
+      "set-constant.js": setConstant,
+      "ubo-set-constant.js": setConstant,
+      "set.js": setConstant,
+      "ubo-set.js": setConstant,
+      "ubo-set-constant": setConstant,
+      "ubo-set": setConstant,
+      "abp-override-property-read": setConstant,
+      "set-cookie": setCookie,
+      "set-cookie-reload": setCookieReload,
+      "set-local-storage-item": setLocalStorageItem,
+      "set-popads-dummy": setPopadsDummy,
+      "popads-dummy.js": setPopadsDummy,
+      "ubo-popads-dummy.js": setPopadsDummy,
+      "ubo-popads-dummy": setPopadsDummy,
+      "set-session-storage-item": setSessionStorageItem
     };
 
     var getScriptletFunction = function getScriptletFunction(name) {
