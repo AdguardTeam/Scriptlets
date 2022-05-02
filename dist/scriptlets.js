@@ -7,165 +7,73 @@
 (function () {
 
     /**
-     * Returns wildcard symbol
-     * @returns {string} '*'
+     * Concat dependencies to scriptlet code
+     * @param {string} scriptlet string view of scriptlet
      */
-    var getWildcardSymbol = function getWildcardSymbol() {
-      return '*';
-    };
-
-    /**
-     * Generate random six symbols id
-     */
-    function randomId() {
-      return Math.random().toString(36).substr(2, 9);
+    function attachDependencies(scriptlet) {
+      var _scriptlet$injections = scriptlet.injections,
+          injections = _scriptlet$injections === void 0 ? [] : _scriptlet$injections;
+      return injections.reduce(function (accum, dep) {
+        return "".concat(accum, "\n").concat(dep.toString());
+      }, scriptlet.toString());
     }
-
     /**
-     * Set getter and setter to property if it's configurable
-     * @param {Object} object target object with property
-     * @param {string} property property name
-     * @param {Object} descriptor contains getter and setter functions
-     * @returns {boolean} is operation successful
+     * Add scriptlet call to existing code
+     * @param {Function} scriptlet
+     * @param {string} code
      */
-    function setPropertyAccess(object, property, descriptor) {
-      var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
 
-      if (currentDescriptor && !currentDescriptor.configurable) {
-        return false;
-      }
-
-      Object.defineProperty(object, property, descriptor);
-      return true;
+    function addCall(scriptlet, code) {
+      return "".concat(code, "\n    const updatedArgs = args ? [].concat(source).concat(args) : [source];\n    try {\n        ").concat(scriptlet.name, ".apply(this, updatedArgs);\n    } catch (e) {\n        console.log(e);\n    }");
     }
-
     /**
-     * @typedef Chain
-     * @property {Object} base
-     * @property {string} prop
-     * @property {string} [chain]
+     * Wrap function into IIFE (Immediately invoked function expression)
+     *
+     * @param {Source} source - object with scriptlet properties
+     * @param {string} code - scriptlet source code with dependencies
+     *
+     * @param redirect
+     * @returns {string} full scriptlet code
+     *
+     * @example
+     * const source = {
+     *      args: ["aaa", "bbb"],
+     *      name: 'noeval',
+     * };
+     * const code = "function noeval(source, args) { alert(source); } noeval.apply(this, args);"
+     * const result = wrapInIIFE(source, code);
+     *
+     * // result
+     * `(function(source, args) {
+     *      function noeval(source) { alert(source); }
+     *      noeval.apply(this, args);
+     * )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])`
      */
 
-    /**
-     * Check if the property exists in the base object (recursively)
-     *
-     * If property doesn't exist in base object,
-     * defines this property as 'undefined'
-     * and returns base, property name and remaining part of property chain
-     *
-     * @param {Object} base
-     * @param {string} chain
-     * @returns {Chain}
-     */
-    function getPropertyInChain(base, chain) {
-      var pos = chain.indexOf('.');
+    function passSourceAndProps(source, code) {
+      var redirect = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
-      if (pos === -1) {
-        return {
-          base: base,
-          prop: chain
-        };
+      if (source.hit) {
+        source.hit = source.hit.toString();
       }
 
-      var prop = chain.slice(0, pos); // https://github.com/AdguardTeam/Scriptlets/issues/128
+      var sourceString = JSON.stringify(source);
+      var argsString = source.args ? "[".concat(source.args.map(JSON.stringify), "]") : undefined;
+      var params = argsString ? "".concat(sourceString, ", ").concat(argsString) : sourceString;
 
-      if (base === null) {
-        // if base is null, return 'null' as base.
-        // it's needed for triggering the reason logging while debugging
-        return {
-          base: base,
-          prop: prop,
-          chain: chain
-        };
+      if (redirect) {
+        return "(function(source, args){\n".concat(code, "\n})(").concat(params, ");");
       }
 
-      var nextBase = base[prop];
-      chain = chain.slice(pos + 1);
-
-      if (nextBase !== undefined) {
-        return getPropertyInChain(nextBase, chain);
-      }
-
-      Object.defineProperty(base, prop, {
-        configurable: true
-      });
-      return {
-        base: nextBase,
-        prop: prop,
-        chain: chain
-      };
+      return "(".concat(code, ")(").concat(params, ");");
     }
-
     /**
-     * @typedef Chain
-     * @property {Object} base
-     * @property {string} prop
-     * @property {string} [chain]
+     * Wrap code in no name function
+     * @param {string} code which must be wrapped
      */
 
-    /**
-     * Check if the property exists in the base object (recursively).
-     * Similar to getPropertyInChain but upgraded for json-prune:
-     * handle wildcard properties and does not define nonexistent base property as 'undefined'
-     *
-     * @param {Object} base
-     * @param {string} chain
-     * @param {boolean} [lookThrough=false]
-     * should the method look through it's props in order to wildcard
-     * @param {Array} [output=[]] result acc
-     * @returns {Chain[]} array of objects
-     */
-
-    function getWildcardPropertyInChain(base, chain) {
-      var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-      var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
-      var pos = chain.indexOf('.');
-
-      if (pos === -1) {
-        // for paths like 'a.b.*' every final nested prop should be processed
-        if (chain === getWildcardSymbol() || chain === '[]') {
-          // eslint-disable-next-line no-restricted-syntax
-          for (var key in base) {
-            // to process each key in base except inherited ones
-            if (Object.prototype.hasOwnProperty.call(base, key)) {
-              output.push({
-                base: base,
-                prop: key
-              });
-            }
-          }
-        } else {
-          output.push({
-            base: base,
-            prop: chain
-          });
-        }
-
-        return output;
-      }
-
-      var prop = chain.slice(0, pos);
-      var shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === getWildcardSymbol() && base instanceof Object;
-
-      if (shouldLookThrough) {
-        var nextProp = chain.slice(pos + 1);
-        var baseKeys = Object.keys(base); // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src ad.1.src'),
-        // each one of base keys should be considered as a potential chain prop in final path
-
-        baseKeys.forEach(function (key) {
-          var item = base[key];
-          getWildcardPropertyInChain(item, nextProp, lookThrough, output);
-        });
-      }
-
-      var nextBase = base[prop];
-      chain = chain.slice(pos + 1);
-
-      if (nextBase !== undefined) {
-        getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
-      }
-
-      return output;
+    function wrapInNonameFunc(code) {
+      return "function(source, args){\n".concat(code, "\n}");
     }
 
     /**
@@ -271,15 +179,6 @@
 
     var replaceAll = function replaceAll(input, substr, newSubstr) {
       return input.split(substr).join(newSubstr);
-    };
-    /**
-     * Escapes special chars in string
-     * @param {string} str
-     * @returns {string}
-     */
-
-    var escapeRegExp = function escapeRegExp(str) {
-      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     };
     /**
      * A literal string or regexp pattern wrapped in forward slashes.
@@ -547,6 +446,367 @@
 
       return output;
     };
+
+    function _defineProperty(obj, key, value) {
+      if (key in obj) {
+        Object.defineProperty(obj, key, {
+          value: value,
+          enumerable: true,
+          configurable: true,
+          writable: true
+        });
+      } else {
+        obj[key] = value;
+      }
+
+      return obj;
+    }
+
+    var defineProperty = _defineProperty;
+
+    /**
+     * Iterate over iterable argument and evaluate current state with transitions
+     * @param {string} init first transition name
+     * @param {Array|Collection|string} iterable
+     * @param {Object} transitions transtion functions
+     * @param {any} args arguments which should be passed to transition functions
+     */
+    function iterateWithTransitions(iterable, transitions, init, args) {
+      var state = init || Object.keys(transitions)[0];
+
+      for (var i = 0; i < iterable.length; i += 1) {
+        state = transitions[state](iterable, i, args);
+      }
+
+      return state;
+    }
+    /**
+     * AdGuard scriptlet rule mask
+     */
+
+
+    var ADG_SCRIPTLET_MASK = '#//scriptlet';
+    /**
+     * Helper to accumulate an array of strings char by char
+     */
+
+    var wordSaver = function wordSaver() {
+      var str = '';
+      var strs = [];
+
+      var saveSymb = function saveSymb(s) {
+        str += s;
+        return str;
+      };
+
+      var saveStr = function saveStr() {
+        strs.push(str);
+        str = '';
+      };
+
+      var getAll = function getAll() {
+        return [].concat(strs);
+      };
+
+      return {
+        saveSymb: saveSymb,
+        saveStr: saveStr,
+        getAll: getAll
+      };
+    };
+
+    var substringAfter = function substringAfter(str, separator) {
+      if (!str) {
+        return str;
+      }
+
+      var index = str.indexOf(separator);
+      return index < 0 ? '' : str.substring(index + separator.length);
+    };
+    /**
+     * Parse and validate scriptlet rule
+     * @param {*} ruleText
+     * @returns {{name: string, args: Array<string>}}
+     */
+
+
+    var parseRule = function parseRule(ruleText) {
+      var _transitions;
+
+      ruleText = substringAfter(ruleText, ADG_SCRIPTLET_MASK);
+      /**
+       * Transition names
+       */
+
+      var TRANSITION = {
+        OPENED: 'opened',
+        PARAM: 'param',
+        CLOSED: 'closed'
+      };
+      /**
+       * Transition function: the current index position in start, end or between params
+       * @param {string} rule
+       * @param {number} index
+       * @param {Object} Object
+       * @property {Object} Object.sep contains prop symb with current separator char
+       */
+
+      var opened = function opened(rule, index, _ref) {
+        var sep = _ref.sep;
+        var char = rule[index];
+        var transition;
+
+        switch (char) {
+          case ' ':
+          case '(':
+          case ',':
+            {
+              transition = TRANSITION.OPENED;
+              break;
+            }
+
+          case '\'':
+          case '"':
+            {
+              sep.symb = char;
+              transition = TRANSITION.PARAM;
+              break;
+            }
+
+          case ')':
+            {
+              transition = index === rule.length - 1 ? TRANSITION.CLOSED : TRANSITION.OPENED;
+              break;
+            }
+
+          default:
+            {
+              throw new Error('The rule is not a scriptlet');
+            }
+        }
+
+        return transition;
+      };
+      /**
+       * Transition function: the current index position inside param
+       * @param {string} rule
+       * @param {number} index
+       * @param {Object} Object
+       * @property {Object} Object.sep contains prop `symb` with current separator char
+       * @property {Object} Object.saver helper which allow to save strings by car by char
+       */
+
+
+      var param = function param(rule, index, _ref2) {
+        var saver = _ref2.saver,
+            sep = _ref2.sep;
+        var char = rule[index];
+
+        switch (char) {
+          case '\'':
+          case '"':
+            {
+              var preIndex = index - 1;
+              var before = rule[preIndex];
+
+              if (char === sep.symb && before !== '\\') {
+                sep.symb = null;
+                saver.saveStr();
+                return TRANSITION.OPENED;
+              }
+            }
+          // eslint-disable-next-line no-fallthrough
+
+          default:
+            {
+              saver.saveSymb(char);
+              return TRANSITION.PARAM;
+            }
+        }
+      };
+
+      var transitions = (_transitions = {}, defineProperty(_transitions, TRANSITION.OPENED, opened), defineProperty(_transitions, TRANSITION.PARAM, param), defineProperty(_transitions, TRANSITION.CLOSED, function () {}), _transitions);
+      var sep = {
+        symb: null
+      };
+      var saver = wordSaver();
+      var state = iterateWithTransitions(ruleText, transitions, TRANSITION.OPENED, {
+        sep: sep,
+        saver: saver
+      });
+
+      if (state !== 'closed') {
+        throw new Error("Invalid scriptlet rule ".concat(ruleText));
+      }
+
+      var args = saver.getAll();
+      return {
+        name: args[0],
+        args: args.slice(1)
+      };
+    };
+
+    /**
+     * Returns wildcard symbol
+     * @returns {string} '*'
+     */
+    var getWildcardSymbol = function getWildcardSymbol() {
+      return '*';
+    };
+
+    /**
+     * Generate random six symbols id
+     */
+    function randomId() {
+      return Math.random().toString(36).substr(2, 9);
+    }
+
+    /**
+     * Set getter and setter to property if it's configurable
+     * @param {Object} object target object with property
+     * @param {string} property property name
+     * @param {Object} descriptor contains getter and setter functions
+     * @returns {boolean} is operation successful
+     */
+    function setPropertyAccess(object, property, descriptor) {
+      var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+
+      if (currentDescriptor && !currentDescriptor.configurable) {
+        return false;
+      }
+
+      Object.defineProperty(object, property, descriptor);
+      return true;
+    }
+
+    /**
+     * @typedef Chain
+     * @property {Object} base
+     * @property {string} prop
+     * @property {string} [chain]
+     */
+
+    /**
+     * Check if the property exists in the base object (recursively)
+     *
+     * If property doesn't exist in base object,
+     * defines this property as 'undefined'
+     * and returns base, property name and remaining part of property chain
+     *
+     * @param {Object} base
+     * @param {string} chain
+     * @returns {Chain}
+     */
+    function getPropertyInChain(base, chain) {
+      var pos = chain.indexOf('.');
+
+      if (pos === -1) {
+        return {
+          base: base,
+          prop: chain
+        };
+      }
+
+      var prop = chain.slice(0, pos); // https://github.com/AdguardTeam/Scriptlets/issues/128
+
+      if (base === null) {
+        // if base is null, return 'null' as base.
+        // it's needed for triggering the reason logging while debugging
+        return {
+          base: base,
+          prop: prop,
+          chain: chain
+        };
+      }
+
+      var nextBase = base[prop];
+      chain = chain.slice(pos + 1);
+
+      if (nextBase !== undefined) {
+        return getPropertyInChain(nextBase, chain);
+      }
+
+      Object.defineProperty(base, prop, {
+        configurable: true
+      });
+      return {
+        base: nextBase,
+        prop: prop,
+        chain: chain
+      };
+    }
+
+    /**
+     * @typedef Chain
+     * @property {Object} base
+     * @property {string} prop
+     * @property {string} [chain]
+     */
+
+    /**
+     * Check if the property exists in the base object (recursively).
+     * Similar to getPropertyInChain but upgraded for json-prune:
+     * handle wildcard properties and does not define nonexistent base property as 'undefined'
+     *
+     * @param {Object} base
+     * @param {string} chain
+     * @param {boolean} [lookThrough=false]
+     * should the method look through it's props in order to wildcard
+     * @param {Array} [output=[]] result acc
+     * @returns {Chain[]} array of objects
+     */
+
+    function getWildcardPropertyInChain(base, chain) {
+      var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+      var pos = chain.indexOf('.');
+
+      if (pos === -1) {
+        // for paths like 'a.b.*' every final nested prop should be processed
+        if (chain === getWildcardSymbol() || chain === '[]') {
+          // eslint-disable-next-line no-restricted-syntax
+          for (var key in base) {
+            // to process each key in base except inherited ones
+            if (Object.prototype.hasOwnProperty.call(base, key)) {
+              output.push({
+                base: base,
+                prop: key
+              });
+            }
+          }
+        } else {
+          output.push({
+            base: base,
+            prop: chain
+          });
+        }
+
+        return output;
+      }
+
+      var prop = chain.slice(0, pos);
+      var shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === getWildcardSymbol() && base instanceof Object;
+
+      if (shouldLookThrough) {
+        var nextProp = chain.slice(pos + 1);
+        var baseKeys = Object.keys(base); // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src ad.1.src'),
+        // each one of base keys should be considered as a potential chain prop in final path
+
+        baseKeys.forEach(function (key) {
+          var item = base[key];
+          getWildcardPropertyInChain(item, nextProp, lookThrough, output);
+        });
+      }
+
+      var nextBase = base[prop];
+      chain = chain.slice(pos + 1);
+
+      if (nextBase !== undefined) {
+        getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
+      }
+
+      return output;
+    }
 
     /**
      * Generates function which silents global errors on page generated by scriptlet
@@ -1238,338 +1498,6 @@
 
     var listenerToString = function listenerToString(listener) {
       return typeof listener === 'function' ? listener.toString() : listener.handleEvent.toString();
-    };
-
-    /**
-     * This file must export all used dependencies
-     */
-
-    var dependencies = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        getWildcardSymbol: getWildcardSymbol,
-        randomId: randomId,
-        setPropertyAccess: setPropertyAccess,
-        getPropertyInChain: getPropertyInChain,
-        getWildcardPropertyInChain: getWildcardPropertyInChain,
-        replaceAll: replaceAll,
-        escapeRegExp: escapeRegExp,
-        toRegExp: toRegExp,
-        validateStrPattern: validateStrPattern,
-        getBeforeRegExp: getBeforeRegExp,
-        startsWith: startsWith,
-        endsWith: endsWith,
-        substringAfter: substringAfter$1,
-        substringBefore: substringBefore,
-        wrapInSingleQuotes: wrapInSingleQuotes,
-        getStringInBraces: getStringInBraces,
-        convertRtcConfigToString: convertRtcConfigToString,
-        validateMatchStr: validateMatchStr,
-        parseMatchArg: parseMatchArg,
-        parseDelayArg: parseDelayArg,
-        objectToString: objectToString,
-        convertTypeToString: convertTypeToString,
-        createOnErrorHandler: createOnErrorHandler,
-        noopFunc: noopFunc,
-        noopNull: noopNull,
-        trueFunc: trueFunc,
-        falseFunc: falseFunc,
-        noopThis: noopThis,
-        noopStr: noopStr,
-        noopArray: noopArray,
-        noopObject: noopObject,
-        noopPromiseReject: noopPromiseReject,
-        noopPromiseResolve: noopPromiseResolve,
-        hit: hit,
-        observeDOMChanges: observeDOMChanges,
-        matchStackTrace: matchStackTrace,
-        findHostElements: findHostElements,
-        pierceShadowDom: pierceShadowDom,
-        flatten: flatten,
-        prepareCookie: prepareCookie,
-        nativeIsNaN: nativeIsNaN,
-        nativeIsFinite: nativeIsFinite,
-        getNumberFromString: getNumberFromString,
-        shouldMatchAnyDelay: shouldMatchAnyDelay,
-        getMatchDelay: getMatchDelay,
-        isDelayMatched: isDelayMatched,
-        getBoostMultiplier: getBoostMultiplier,
-        getRequestData: getRequestData,
-        getFetchData: getFetchData,
-        parseMatchProps: parseMatchProps,
-        validateParsedData: validateParsedData,
-        getMatchPropsData: getMatchPropsData,
-        getObjectEntries: getObjectEntries,
-        getObjectFromEntries: getObjectFromEntries,
-        isEmptyObject: isEmptyObject,
-        safeGetDescriptor: safeGetDescriptor,
-        handleOldReplacement: handleOldReplacement,
-        createDecoy: createDecoy,
-        getPreventGetter: getPreventGetter,
-        validateType: validateType,
-        validateListener: validateListener,
-        listenerToString: listenerToString
-    });
-
-    /**
-     * Concat dependencies to scriptlet code
-     * @param {string} scriptlet string view of scriptlet
-     */
-
-    function attachDependencies(scriptlet) {
-      var _scriptlet$injections = scriptlet.injections,
-          injections = _scriptlet$injections === void 0 ? [] : _scriptlet$injections;
-      return injections.reduce(function (accum, dep) {
-        return "".concat(accum, "\n").concat(dependencies[dep.name]);
-      }, scriptlet.toString());
-    }
-    /**
-     * Add scriptlet call to existing code
-     * @param {Function} scriptlet
-     * @param {string} code
-     */
-
-    function addCall(scriptlet, code) {
-      return "".concat(code, "\n    const updatedArgs = args ? [].concat(source).concat(args) : [source];\n    try {\n        ").concat(scriptlet.name, ".apply(this, updatedArgs);\n    } catch (e) {\n        console.log(e);\n    }");
-    }
-    /**
-     * Wrap function into IIFE (Immediately invoked function expression)
-     *
-     * @param {Source} source - object with scriptlet properties
-     * @param {string} code - scriptlet source code with dependencies
-     *
-     * @returns {string} full scriptlet code
-     *
-     * @example
-     * const source = {
-     *      args: ["aaa", "bbb"],
-     *      name: 'noeval',
-     * };
-     * const code = "function noeval(source, args) { alert(source); } noeval.apply(this, args);"
-     * const result = wrapInIIFE(source, code);
-     *
-     * // result
-     * `(function(source, args) {
-     *      function noeval(source) { alert(source); }
-     *      noeval.apply(this, args);
-     * )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])`
-     */
-
-    function passSourceAndProps(source, code) {
-      if (source.hit) {
-        source.hit = source.hit.toString();
-      }
-
-      var sourceString = JSON.stringify(source);
-      var argsString = source.args ? "[".concat(source.args.map(JSON.stringify), "]") : undefined;
-      var params = argsString ? "".concat(sourceString, ", ").concat(argsString) : sourceString;
-      return "(function(source, args){\n".concat(code, "\n})(").concat(params, ");");
-    }
-    /**
-     * Wrap code in no name function
-     * @param {string} code which must be wrapped
-     */
-
-    function wrapInNonameFunc(code) {
-      return "function(source, args){\n".concat(code, "\n}");
-    }
-
-    function _defineProperty(obj, key, value) {
-      if (key in obj) {
-        Object.defineProperty(obj, key, {
-          value: value,
-          enumerable: true,
-          configurable: true,
-          writable: true
-        });
-      } else {
-        obj[key] = value;
-      }
-
-      return obj;
-    }
-
-    var defineProperty = _defineProperty;
-
-    /**
-     * Iterate over iterable argument and evaluate current state with transitions
-     * @param {string} init first transition name
-     * @param {Array|Collection|string} iterable
-     * @param {Object} transitions transtion functions
-     * @param {any} args arguments which should be passed to transition functions
-     */
-    function iterateWithTransitions(iterable, transitions, init, args) {
-      var state = init || Object.keys(transitions)[0];
-
-      for (var i = 0; i < iterable.length; i += 1) {
-        state = transitions[state](iterable, i, args);
-      }
-
-      return state;
-    }
-    /**
-     * AdGuard scriptlet rule mask
-     */
-
-
-    var ADG_SCRIPTLET_MASK = '#//scriptlet';
-    /**
-     * Helper to accumulate an array of strings char by char
-     */
-
-    var wordSaver = function wordSaver() {
-      var str = '';
-      var strs = [];
-
-      var saveSymb = function saveSymb(s) {
-        str += s;
-        return str;
-      };
-
-      var saveStr = function saveStr() {
-        strs.push(str);
-        str = '';
-      };
-
-      var getAll = function getAll() {
-        return [].concat(strs);
-      };
-
-      return {
-        saveSymb: saveSymb,
-        saveStr: saveStr,
-        getAll: getAll
-      };
-    };
-
-    var substringAfter = function substringAfter(str, separator) {
-      if (!str) {
-        return str;
-      }
-
-      var index = str.indexOf(separator);
-      return index < 0 ? '' : str.substring(index + separator.length);
-    };
-    /**
-     * Parse and validate scriptlet rule
-     * @param {*} ruleText
-     * @returns {{name: string, args: Array<string>}}
-     */
-
-
-    var parseRule = function parseRule(ruleText) {
-      var _transitions;
-
-      ruleText = substringAfter(ruleText, ADG_SCRIPTLET_MASK);
-      /**
-       * Transition names
-       */
-
-      var TRANSITION = {
-        OPENED: 'opened',
-        PARAM: 'param',
-        CLOSED: 'closed'
-      };
-      /**
-       * Transition function: the current index position in start, end or between params
-       * @param {string} rule
-       * @param {number} index
-       * @param {Object} Object
-       * @property {Object} Object.sep contains prop symb with current separator char
-       */
-
-      var opened = function opened(rule, index, _ref) {
-        var sep = _ref.sep;
-        var char = rule[index];
-        var transition;
-
-        switch (char) {
-          case ' ':
-          case '(':
-          case ',':
-            {
-              transition = TRANSITION.OPENED;
-              break;
-            }
-
-          case '\'':
-          case '"':
-            {
-              sep.symb = char;
-              transition = TRANSITION.PARAM;
-              break;
-            }
-
-          case ')':
-            {
-              transition = index === rule.length - 1 ? TRANSITION.CLOSED : TRANSITION.OPENED;
-              break;
-            }
-
-          default:
-            {
-              throw new Error('The rule is not a scriptlet');
-            }
-        }
-
-        return transition;
-      };
-      /**
-       * Transition function: the current index position inside param
-       * @param {string} rule
-       * @param {number} index
-       * @param {Object} Object
-       * @property {Object} Object.sep contains prop `symb` with current separator char
-       * @property {Object} Object.saver helper which allow to save strings by car by char
-       */
-
-
-      var param = function param(rule, index, _ref2) {
-        var saver = _ref2.saver,
-            sep = _ref2.sep;
-        var char = rule[index];
-
-        switch (char) {
-          case '\'':
-          case '"':
-            {
-              var preIndex = index - 1;
-              var before = rule[preIndex];
-
-              if (char === sep.symb && before !== '\\') {
-                sep.symb = null;
-                saver.saveStr();
-                return TRANSITION.OPENED;
-              }
-            }
-          // eslint-disable-next-line no-fallthrough
-
-          default:
-            {
-              saver.saveSymb(char);
-              return TRANSITION.PARAM;
-            }
-        }
-      };
-
-      var transitions = (_transitions = {}, defineProperty(_transitions, TRANSITION.OPENED, opened), defineProperty(_transitions, TRANSITION.PARAM, param), defineProperty(_transitions, TRANSITION.CLOSED, function () {}), _transitions);
-      var sep = {
-        symb: null
-      };
-      var saver = wordSaver();
-      var state = iterateWithTransitions(ruleText, transitions, TRANSITION.OPENED, {
-        sep: sep,
-        saver: saver
-      });
-
-      if (state !== 'closed') {
-        throw new Error("Invalid scriptlet rule ".concat(ruleText));
-      }
-
-      var args = saver.getAll();
-      return {
-        name: args[0],
-        args: args.slice(1)
-      };
     };
 
     /* eslint-disable max-len */
@@ -9520,7 +9448,7 @@
       }
     });
 
-    var map$1 = new type('tag:yaml.org,2002:map', {
+    var map = new type('tag:yaml.org,2002:map', {
       kind: 'mapping',
       construct: function construct(data) {
         return data !== null ? data : {};
@@ -9528,7 +9456,7 @@
     });
 
     var failsafe = new schema({
-      explicit: [str, seq, map$1]
+      explicit: [str, seq, map]
     });
 
     function resolveYamlNull(data) {
@@ -13151,6 +13079,115 @@
       return Redirects;
     }();
 
+    var redirectsMap = {
+      "1x1-transparent.gif": "1x1-transparent.gif",
+      "1x1.gif": "1x1-transparent.gif",
+      "1x1-transparent-gif": "1x1-transparent.gif",
+      "2x2-transparent.png": "2x2-transparent.png",
+      "2x2.png": "2x2-transparent.png",
+      "2x2-transparent-png": "2x2-transparent.png",
+      "3x2-transparent.png": "3x2-transparent.png",
+      "3x2.png": "3x2-transparent.png",
+      "3x2-transparent-png": "3x2-transparent.png",
+      "32x32-transparent.png": "32x32-transparent.png",
+      "32x32.png": "32x32-transparent.png",
+      "32x32-transparent-png": "32x32-transparent.png",
+      noopframe: "noopframe.html",
+      "noop.html": "noopframe.html",
+      "blank-html": "noopframe.html",
+      noopcss: "noopcss.css",
+      "blank-css": "noopcss.css",
+      noopjs: "noopjs.js",
+      "noop.js": "noopjs.js",
+      "blank-js": "noopjs.js",
+      noopjson: "noopjson.json",
+      nooptext: "nooptext.js",
+      "noop.txt": "nooptext.js",
+      "blank-text": "nooptext.js",
+      empty: "nooptext.js",
+      "noopvmap-1.0": "noopvmap01.xml",
+      "noop-vmap1.0.xml": "noopvmap01.xml",
+      "noopvast-2.0": "noopvast02.xml",
+      "noopvast-3.0": "noopvast03.xml",
+      "noopvast-4.0": "noopvast04.xml",
+      "noopmp3-0.1s": "noopmp3.mp3",
+      "blank-mp3": "noopmp3.mp3",
+      "noopmp4-1s": "noopmp4.mp4",
+      "noop-1s.mp4": "noopmp4.mp4",
+      "blank-mp4": "noopmp4.mp4",
+      "click2load.html": "click2load.html",
+      "ubo-click2load.html": "click2load.html",
+      "amazon-apstag": "amazon-apstag.js",
+      "ubo-amazon_apstag.js": "amazon-apstag.js",
+      "amazon_apstag.js": "amazon-apstag.js",
+      "ati-smarttag": "ati-smarttag.js",
+      "didomi-loader": "didomi-loader.js",
+      fingerprintjs2: "fingerprintjs2.js",
+      "ubo-fingerprint2.js": "fingerprintjs2.js",
+      "fingerprint2.js": "fingerprintjs2.js",
+      fingerprintjs3: "fingerprintjs3.js",
+      "ubo-fingerprint3.js": "fingerprintjs3.js",
+      "fingerprint3.js": "fingerprintjs3.js",
+      gemius: "gemius.js",
+      "google-analytics-ga": "google-analytics-ga.js",
+      "ubo-google-analytics_ga.js": "google-analytics-ga.js",
+      "google-analytics_ga.js": "google-analytics-ga.js",
+      "google-analytics": "google-analytics.js",
+      "ubo-google-analytics_analytics.js": "google-analytics.js",
+      "google-analytics_analytics.js": "google-analytics.js",
+      "googletagmanager-gtm": "google-analytics.js",
+      "ubo-googletagmanager_gtm.js": "google-analytics.js",
+      "googletagmanager_gtm.js": "google-analytics.js",
+      "google-ima3": "google-ima3.js",
+      "googlesyndication-adsbygoogle": "googlesyndication-adsbygoogle.js",
+      "ubo-googlesyndication_adsbygoogle.js": "googlesyndication-adsbygoogle.js",
+      "googlesyndication_adsbygoogle.js": "googlesyndication-adsbygoogle.js",
+      "googletagservices-gpt": "googletagservices-gpt.js",
+      "ubo-googletagservices_gpt.js": "googletagservices-gpt.js",
+      "googletagservices_gpt.js": "googletagservices-gpt.js",
+      matomo: "matomo.js",
+      "metrika-yandex-tag": "metrika-yandex-tag.js",
+      "metrika-yandex-watch": "metrika-yandex-watch.js",
+      "naver-wcslog": "naver-wcslog.js",
+      noeval: "noeval.js",
+      "noeval.js": "noeval.js",
+      "silent-noeval.js": "noeval.js",
+      "ubo-noeval.js": "noeval.js",
+      "ubo-silent-noeval.js": "noeval.js",
+      "ubo-noeval": "noeval.js",
+      "ubo-silent-noeval": "noeval.js",
+      "prebid-ads": "prebid-ads.js",
+      "ubo-prebid-ads.js": "prebid-ads.js",
+      "prebid-ads.js": "prebid-ads.js",
+      prebid: "prebid.js",
+      "prevent-bab": "prevent-bab.js",
+      "nobab.js": "prevent-bab.js",
+      "ubo-nobab.js": "prevent-bab.js",
+      "bab-defuser.js": "prevent-bab.js",
+      "ubo-bab-defuser.js": "prevent-bab.js",
+      "ubo-nobab": "prevent-bab.js",
+      "ubo-bab-defuser": "prevent-bab.js",
+      "prevent-bab2": "prevent-bab2.js",
+      "nobab2.js": "prevent-bab2.js",
+      "prevent-fab-3.2.0": "prevent-fab-3.2.0.js",
+      "nofab.js": "prevent-fab-3.2.0.js",
+      "ubo-nofab.js": "prevent-fab-3.2.0.js",
+      "fuckadblock.js-3.2.0": "prevent-fab-3.2.0.js",
+      "ubo-fuckadblock.js-3.2.0": "prevent-fab-3.2.0.js",
+      "ubo-nofab": "prevent-fab-3.2.0.js",
+      "prevent-popads-net": "prevent-popads-net.js",
+      "popads.net.js": "prevent-popads-net.js",
+      "ubo-popads.net.js": "prevent-popads-net.js",
+      "ubo-popads.net": "prevent-popads-net.js",
+      "scorecardresearch-beacon": "scorecardresearch-beacon.js",
+      "ubo-scorecardresearch_beacon.js": "scorecardresearch-beacon.js",
+      "scorecardresearch_beacon.js": "scorecardresearch-beacon.js",
+      "set-popads-dummy": "set-popads-dummy.js",
+      "popads-dummy.js": "set-popads-dummy.js",
+      "ubo-popads-dummy.js": "set-popads-dummy.js",
+      "ubo-popads-dummy": "set-popads-dummy.js"
+    };
+
     /**
      * Finds redirect resource by it's name
      * @param {string} name - redirect name
@@ -13186,123 +13223,12 @@
       result = addCall(redirect, result); // redirect code for different sources is checked in tests
       // so it should be just a code without any source and props passed
 
-      result = source.engine === 'test' ? wrapInNonameFunc(result) : passSourceAndProps(source, result);
+      result = source.engine === 'test' ? wrapInNonameFunc(result) : passSourceAndProps(source, result, true);
       return result;
-    }; // It will be replaced with dictionary-object in build-script
-    // eslint-disable-next-line no-undef
-
-
-    var map = {
-      "1x1-transparent.gif": "1x1-transparent.gif",
-      "1x1.gif": "1x1-transparent.gif",
-      "1x1-transparent-gif": "1x1-transparent.gif",
-      "2x2-transparent.png": "2x2-transparent.png",
-      "2x2.png": "2x2-transparent.png",
-      "2x2-transparent-png": "2x2-transparent.png",
-      "3x2-transparent.png": "3x2-transparent.png",
-      "3x2.png": "3x2-transparent.png",
-      "3x2-transparent-png": "3x2-transparent.png",
-      "32x32-transparent.png": "32x32-transparent.png",
-      "32x32.png": "32x32-transparent.png",
-      "32x32-transparent-png": "32x32-transparent.png",
-      "noopframe": "noopframe.html",
-      "noop.html": "noopframe.html",
-      "blank-html": "noopframe.html",
-      "noopcss": "noopcss.css",
-      "blank-css": "noopcss.css",
-      "noopjs": "noopjs.js",
-      "noop.js": "noopjs.js",
-      "blank-js": "noopjs.js",
-      "noopjson": "noopjson.json",
-      "nooptext": "nooptext.js",
-      "noop.txt": "nooptext.js",
-      "blank-text": "nooptext.js",
-      "empty": "nooptext.js",
-      "noopvmap-1.0": "noopvmap01.xml",
-      "noop-vmap1.0.xml": "noopvmap01.xml",
-      "noopvast-2.0": "noopvast02.xml",
-      "noopvast-3.0": "noopvast03.xml",
-      "noopvast-4.0": "noopvast04.xml",
-      "noopmp3-0.1s": "noopmp3.mp3",
-      "blank-mp3": "noopmp3.mp3",
-      "noopmp4-1s": "noopmp4.mp4",
-      "noop-1s.mp4": "noopmp4.mp4",
-      "blank-mp4": "noopmp4.mp4",
-      "click2load.html": "click2load.html",
-      "ubo-click2load.html": "click2load.html",
-      "amazon-apstag": "amazon-apstag.js",
-      "ubo-amazon_apstag.js": "amazon-apstag.js",
-      "amazon_apstag.js": "amazon-apstag.js",
-      "ati-smarttag": "ati-smarttag.js",
-      "didomi-loader": "didomi-loader.js",
-      "fingerprintjs2": "fingerprintjs2.js",
-      "ubo-fingerprint2.js": "fingerprintjs2.js",
-      "fingerprint2.js": "fingerprintjs2.js",
-      "fingerprintjs3": "fingerprintjs3.js",
-      "ubo-fingerprint3.js": "fingerprintjs3.js",
-      "fingerprint3.js": "fingerprintjs3.js",
-      "gemius": "gemius.js",
-      "google-analytics-ga": "google-analytics-ga.js",
-      "ubo-google-analytics_ga.js": "google-analytics-ga.js",
-      "google-analytics_ga.js": "google-analytics-ga.js",
-      "google-analytics": "google-analytics.js",
-      "ubo-google-analytics_analytics.js": "google-analytics.js",
-      "google-analytics_analytics.js": "google-analytics.js",
-      "googletagmanager-gtm": "google-analytics.js",
-      "ubo-googletagmanager_gtm.js": "google-analytics.js",
-      "googletagmanager_gtm.js": "google-analytics.js",
-      "google-ima3": "google-ima3.js",
-      "googlesyndication-adsbygoogle": "googlesyndication-adsbygoogle.js",
-      "ubo-googlesyndication_adsbygoogle.js": "googlesyndication-adsbygoogle.js",
-      "googlesyndication_adsbygoogle.js": "googlesyndication-adsbygoogle.js",
-      "googletagservices-gpt": "googletagservices-gpt.js",
-      "ubo-googletagservices_gpt.js": "googletagservices-gpt.js",
-      "googletagservices_gpt.js": "googletagservices-gpt.js",
-      "matomo": "matomo.js",
-      "metrika-yandex-tag": "metrika-yandex-tag.js",
-      "metrika-yandex-watch": "metrika-yandex-watch.js",
-      "naver-wcslog": "naver-wcslog.js",
-      "noeval": "noeval.js",
-      "noeval.js": "noeval.js",
-      "silent-noeval.js": "noeval.js",
-      "ubo-noeval.js": "noeval.js",
-      "ubo-silent-noeval.js": "noeval.js",
-      "ubo-noeval": "noeval.js",
-      "ubo-silent-noeval": "noeval.js",
-      "prebid-ads": "prebid-ads.js",
-      "ubo-prebid-ads.js": "prebid-ads.js",
-      "prebid-ads.js": "prebid-ads.js",
-      "prebid": "prebid.js",
-      "prevent-bab": "prevent-bab.js",
-      "nobab.js": "prevent-bab.js",
-      "ubo-nobab.js": "prevent-bab.js",
-      "bab-defuser.js": "prevent-bab.js",
-      "ubo-bab-defuser.js": "prevent-bab.js",
-      "ubo-nobab": "prevent-bab.js",
-      "ubo-bab-defuser": "prevent-bab.js",
-      "prevent-bab2": "prevent-bab2.js",
-      "nobab2.js": "prevent-bab2.js",
-      "prevent-fab-3.2.0": "prevent-fab-3.2.0.js",
-      "nofab.js": "prevent-fab-3.2.0.js",
-      "ubo-nofab.js": "prevent-fab-3.2.0.js",
-      "fuckadblock.js-3.2.0": "prevent-fab-3.2.0.js",
-      "ubo-fuckadblock.js-3.2.0": "prevent-fab-3.2.0.js",
-      "ubo-nofab": "prevent-fab-3.2.0.js",
-      "prevent-popads-net": "prevent-popads-net.js",
-      "popads.net.js": "prevent-popads-net.js",
-      "ubo-popads.net.js": "prevent-popads-net.js",
-      "ubo-popads.net": "prevent-popads-net.js",
-      "scorecardresearch-beacon": "scorecardresearch-beacon.js",
-      "ubo-scorecardresearch_beacon.js": "scorecardresearch-beacon.js",
-      "scorecardresearch_beacon.js": "scorecardresearch-beacon.js",
-      "set-popads-dummy": "set-popads-dummy.js",
-      "popads-dummy.js": "set-popads-dummy.js",
-      "ubo-popads-dummy.js": "set-popads-dummy.js",
-      "ubo-popads-dummy": "set-popads-dummy.js"
     };
 
     var getRedirectFilename = function getRedirectFilename(name) {
-      return map[name];
+      return redirectsMap[name];
     };
 
     var redirects = {
@@ -14140,11 +14066,28 @@
           return true;
         }
 
-        var stackRegexp = (0, _stringUtils.toRegExp)(stackMatch);
+        var stackRegexp = toRegExp(stackMatch);
         var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         }).join("\n");
         return stackRegexp.test(refinedStackTrace);
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -14248,7 +14191,7 @@
         var MIN_MULTIPLIER = .02;
         var MAX_MULTIPLIER = 50;
         var parsedBoost = parseFloat(boost);
-        var boostMultiplier = (0, _numberUtils.nativeIsNaN)(parsedBoost) || !(0, _numberUtils.nativeIsFinite)(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
+        var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
 
         if (boostMultiplier < MIN_MULTIPLIER) {
           boostMultiplier = MIN_MULTIPLIER;
@@ -14265,15 +14208,29 @@
         return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
       }
 
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+
+      function nativeIsFinite(num) {
+        var native = Number.isFinite || window.isFinite;
+        return native(num);
+      }
+
       function getMatchDelay(delay) {
         var DEFAULT_DELAY = 1e3;
         var parsedDelay = parseInt(delay, 10);
-        var delayMatch = (0, _numberUtils.nativeIsNaN)(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
+        var delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
         return delayMatch;
       }
 
+      function getWildcardSymbol() {
+        return "*";
+      }
+
       function shouldMatchAnyDelay(delay) {
-        return delay === (0, _constants.getWildcardSymbol)();
+        return delay === getWildcardSymbol();
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -14377,7 +14334,7 @@
         var MIN_MULTIPLIER = .02;
         var MAX_MULTIPLIER = 50;
         var parsedBoost = parseFloat(boost);
-        var boostMultiplier = (0, _numberUtils.nativeIsNaN)(parsedBoost) || !(0, _numberUtils.nativeIsFinite)(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
+        var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
 
         if (boostMultiplier < MIN_MULTIPLIER) {
           boostMultiplier = MIN_MULTIPLIER;
@@ -14394,15 +14351,29 @@
         return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
       }
 
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+
+      function nativeIsFinite(num) {
+        var native = Number.isFinite || window.isFinite;
+        return native(num);
+      }
+
       function getMatchDelay(delay) {
         var DEFAULT_DELAY = 1e3;
         var parsedDelay = parseInt(delay, 10);
-        var delayMatch = (0, _numberUtils.nativeIsNaN)(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
+        var delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
         return delayMatch;
       }
 
+      function getWildcardSymbol() {
+        return "*";
+      }
+
       function shouldMatchAnyDelay(delay) {
-        return delay === (0, _constants.getWildcardSymbol)();
+        return delay === getWildcardSymbol();
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -15417,6 +15388,28 @@
         connect();
       }
 
+      function flatten(input) {
+        var stack = [];
+        input.forEach(function (el) {
+          return stack.push(el);
+        });
+        var res = [];
+
+        while (stack.length) {
+          var next = stack.pop();
+
+          if (Array.isArray(next)) {
+            next.forEach(function (el) {
+              return stack.push(el);
+            });
+          } else {
+            res.push(next);
+          }
+        }
+
+        return res.reverse();
+      }
+
       function findHostElements(rootElement) {
         var hosts = [];
         var domElems = rootElement.querySelectorAll("*");
@@ -15439,7 +15432,7 @@
           targets = targets.concat([].slice.call(shadowChildren));
           innerHostsAcc.push(findHostElements(shadowRootElem));
         });
-        var innerHosts = (0, _arrayUtils.flatten)(innerHostsAcc);
+        var innerHosts = flatten(innerHostsAcc);
         return {
           targets: targets,
           innerHosts: innerHosts
@@ -15613,7 +15606,7 @@
           return true;
         }
 
-        var stackRegexp = (0, _stringUtils.toRegExp)(stackMatch);
+        var stackRegexp = toRegExp(stackMatch);
         var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         }).join("\n");
@@ -15626,7 +15619,7 @@
         var pos = chain.indexOf(".");
 
         if (pos === -1) {
-          if (chain === (0, _constants.getWildcardSymbol)() || chain === "[]") {
+          if (chain === getWildcardSymbol() || chain === "[]") {
             for (var key in base) {
               if (Object.prototype.hasOwnProperty.call(base, key)) {
                 output.push({
@@ -15646,7 +15639,7 @@
         }
 
         var prop = chain.slice(0, pos);
-        var shouldLookThrough = prop === "[]" && Array.isArray(base) || prop === (0, _constants.getWildcardSymbol)() && base instanceof Object;
+        var shouldLookThrough = prop === "[]" && Array.isArray(base) || prop === getWildcardSymbol() && base instanceof Object;
 
         if (shouldLookThrough) {
           var nextProp = chain.slice(pos + 1);
@@ -15682,6 +15675,10 @@
 
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
+      }
+
+      function getWildcardSymbol() {
+        return "*";
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -15817,7 +15814,7 @@
       }
 
       function objectToString(obj) {
-        return (0, _objectUtils.isEmptyObject)(obj) ? "{}" : (0, _objectUtils.getObjectEntries)(obj).map(function (pair) {
+        return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
           var key = pair[0];
           var value = pair[1];
           var recordValueStr = value;
@@ -15828,6 +15825,19 @@
 
           return "".concat(key, ':"').concat(recordValueStr, '"');
         }).join(" ");
+      }
+
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0;
+      }
+
+      function getObjectEntries(object) {
+        var keys = Object.keys(object);
+        var entries = [];
+        keys.forEach(function (key) {
+          return entries.push([key, object[key]]);
+        });
+        return entries;
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -17224,7 +17234,7 @@
       }
 
       function objectToString(obj) {
-        return (0, _objectUtils.isEmptyObject)(obj) ? "{}" : (0, _objectUtils.getObjectEntries)(obj).map(function (pair) {
+        return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
           var key = pair[0];
           var value = pair[1];
           var recordValueStr = value;
@@ -17258,14 +17268,14 @@
 
       function validateParsedData(data) {
         return Object.values(data).every(function (value) {
-          return (0, _stringUtils.validateStrPattern)(value);
+          return validateStrPattern(value);
         });
       }
 
       function getMatchPropsData(data) {
         var matchData = {};
         Object.keys(data).forEach(function (key) {
-          matchData[key] = (0, _stringUtils.toRegExp)(data[key]);
+          matchData[key] = toRegExp(data[key]);
         });
         return matchData;
       }
@@ -17288,13 +17298,73 @@
         return "*";
       }
 
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function validateStrPattern(input) {
+        var FORWARD_SLASH = "/";
+        var str = input;
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          str = input.slice(1, -1);
+        }
+
+        var isValid;
+
+        try {
+          isValid = new RegExp(str);
+          isValid = true;
+        } catch (e) {
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0;
+      }
+
       function getRequestData(request) {
         var REQUEST_INIT_OPTIONS = ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "integrity"];
         var entries = REQUEST_INIT_OPTIONS.map(function (key) {
           var value = request[key];
           return [key, value];
         });
-        return (0, _objectUtils.getObjectFromEntries)(entries);
+        return getObjectFromEntries(entries);
+      }
+
+      function getObjectEntries(object) {
+        var keys = Object.keys(object);
+        var entries = [];
+        keys.forEach(function (key) {
+          return entries.push([key, object[key]]);
+        });
+        return entries;
+      }
+
+      function getObjectFromEntries(entries) {
+        var output = entries.reduce(function (acc, el) {
+          var key = el[0];
+          var value = el[1];
+          acc[key] = value;
+          return acc;
+        }, {});
+        return output;
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -17851,7 +17921,7 @@
         var isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
         var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
         delayValue = parseInt(delayValue, 10);
-        var delayMatch = (0, _numberUtils.nativeIsNaN)(delayValue) ? null : delayValue;
+        var delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
         return {
           isInvertedDelayMatch: isInvertedDelayMatch,
           delayMatch: delayMatch
@@ -17877,6 +17947,11 @@
 
       function startsWith(str, prefix) {
         return !!str && str.indexOf(prefix) === 0;
+      }
+
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -18034,7 +18109,7 @@
         var isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
         var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
         delayValue = parseInt(delayValue, 10);
-        var delayMatch = (0, _numberUtils.nativeIsNaN)(delayValue) ? null : delayValue;
+        var delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
         return {
           isInvertedDelayMatch: isInvertedDelayMatch,
           delayMatch: delayMatch
@@ -18060,6 +18135,11 @@
 
       function startsWith(str, prefix) {
         return !!str && str.indexOf(prefix) === 0;
+      }
+
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -18293,20 +18373,20 @@
         var result;
 
         if (!replacement) {
-          result = _noop.noopFunc;
+          result = noopFunc;
         } else if (replacement === "trueFunc") {
-          result = _noop.trueFunc;
+          result = trueFunc;
         } else if (replacement.indexOf("=") > -1) {
-          var isProp = (0, _stringUtils.startsWith)(replacement, "{") && (0, _stringUtils.endsWith)(replacement, "}");
+          var isProp = startsWith(replacement, "{") && endsWith(replacement, "}");
 
           if (isProp) {
             var propertyPart = replacement.slice(1, -1);
-            var propertyName = (0, _stringUtils.substringBefore)(propertyPart, "=");
-            var propertyValue = (0, _stringUtils.substringAfter)(propertyPart, "=");
+            var propertyName = substringBefore(propertyPart, "=");
+            var propertyValue = substringAfter(propertyPart, "=");
 
             if (propertyValue === "noopFunc") {
               result = {};
-              result[propertyName] = _noop.noopFunc;
+              result[propertyName] = noopFunc;
             }
           }
         }
@@ -18353,7 +18433,7 @@
           }
 
           if (typeof nativeGetter === "function") {
-            return _noop.noopFunc;
+            return noopFunc;
           }
 
           return prop && target[prop];
@@ -18370,8 +18450,36 @@
         return "*";
       }
 
+      function noopFunc() {}
+
+      function trueFunc() {
+        return true;
+      }
+
       function startsWith(str, prefix) {
         return !!str && str.indexOf(prefix) === 0;
+      }
+
+      function endsWith(str, ending) {
+        return !!str && str.indexOf(ending) === str.length - ending.length;
+      }
+
+      function substringBefore(str, separator) {
+        if (!str || !separator) {
+          return str;
+        }
+
+        var index = str.indexOf(separator);
+        return index < 0 ? str : str.substring(0, index);
+      }
+
+      function substringAfter(str, separator) {
+        if (!str) {
+          return str;
+        }
+
+        var index = str.indexOf(separator);
+        return index < 0 ? "" : str.substring(index + separator.length);
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -18534,7 +18642,7 @@
       }
 
       function objectToString(obj) {
-        return (0, _objectUtils.isEmptyObject)(obj) ? "{}" : (0, _objectUtils.getObjectEntries)(obj).map(function (pair) {
+        return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
           var key = pair[0];
           var value = pair[1];
           var recordValueStr = value;
@@ -18572,16 +18680,66 @@
 
       function validateParsedData(data) {
         return Object.values(data).every(function (value) {
-          return (0, _stringUtils.validateStrPattern)(value);
+          return validateStrPattern(value);
         });
       }
 
       function getMatchPropsData(data) {
         var matchData = {};
         Object.keys(data).forEach(function (key) {
-          matchData[key] = (0, _stringUtils.toRegExp)(data[key]);
+          matchData[key] = toRegExp(data[key]);
         });
         return matchData;
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function validateStrPattern(input) {
+        var FORWARD_SLASH = "/";
+        var str = input;
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          str = input.slice(1, -1);
+        }
+
+        var isValid;
+
+        try {
+          isValid = new RegExp(str);
+          isValid = true;
+        } catch (e) {
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0;
+      }
+
+      function getObjectEntries(object) {
+        var keys = Object.keys(object);
+        var entries = [];
+        keys.forEach(function (key) {
+          return entries.push([key, object[key]]);
+        });
+        return entries;
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -19284,6 +19442,28 @@
         connect();
       }
 
+      function flatten(input) {
+        var stack = [];
+        input.forEach(function (el) {
+          return stack.push(el);
+        });
+        var res = [];
+
+        while (stack.length) {
+          var next = stack.pop();
+
+          if (Array.isArray(next)) {
+            next.forEach(function (el) {
+              return stack.push(el);
+            });
+          } else {
+            res.push(next);
+          }
+        }
+
+        return res.reverse();
+      }
+
       function findHostElements(rootElement) {
         var hosts = [];
         var domElems = rootElement.querySelectorAll("*");
@@ -19306,7 +19486,7 @@
           targets = targets.concat([].slice.call(shadowChildren));
           innerHostsAcc.push(findHostElements(shadowRootElem));
         });
-        var innerHosts = (0, _arrayUtils.flatten)(innerHostsAcc);
+        var innerHosts = flatten(innerHostsAcc);
         return {
           targets: targets,
           innerHosts: innerHosts
@@ -19797,12 +19977,29 @@
         };
       }
 
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
       function matchStackTrace(stackMatch, stackTrace) {
         if (!stackMatch || stackMatch === "") {
           return true;
         }
 
-        var stackRegexp = (0, _stringUtils.toRegExp)(stackMatch);
+        var stackRegexp = toRegExp(stackMatch);
         var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         }).join("\n");
@@ -19882,6 +20079,11 @@
         }
       }
 
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+
       function prepareCookie(name, value) {
         if (!name || !value) {
           return null;
@@ -19912,7 +20114,7 @@
         } else if (/^\d+$/.test(value)) {
           valueToSet = parseFloat(value);
 
-          if ((0, _numberUtils.nativeIsNaN)(valueToSet)) {
+          if (nativeIsNaN(valueToSet)) {
             return null;
           }
 
@@ -20012,6 +20214,11 @@
         }
       }
 
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+
       function prepareCookie(name, value) {
         if (!name || !value) {
           return null;
@@ -20042,7 +20249,7 @@
         } else if (/^\d+$/.test(value)) {
           valueToSet = parseFloat(value);
 
-          if ((0, _numberUtils.nativeIsNaN)(valueToSet)) {
+          if (nativeIsNaN(valueToSet)) {
             return null;
           }
 

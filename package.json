@@ -4,7 +4,8 @@
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "scripts": {
         "build": "babel-node bundler.js",
-        "test": "babel-node scripts/build-tests.js && node tests/index.js",
+        "build-tests": "yarn build && babel-node scripts/build-tests.js",
+        "test": "yarn build-tests && node tests/index.js",
         "browserstack": "babel-node scripts/build-tests.js && node browserstack.js",
         "gui-test": "babel-node scripts/build-tests.js && open http://localhost:8585 && node ./tests/server.js",
         "lint": "eslint .",

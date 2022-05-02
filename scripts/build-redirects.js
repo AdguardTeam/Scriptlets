@@ -10,7 +10,6 @@ import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
 import cleanup from 'rollup-plugin-cleanup';
 import generateHtml from 'rollup-plugin-generate-html';
-import replace from '@rollup/plugin-replace';
 import { minify } from 'terser';
 import * as redirectsList from '../src/redirects/redirects-list';
 import { version } from '../package.json';
@@ -84,8 +83,18 @@ const getBlockingRedirects = async () => {
     return blockingRedirects;
 };
 
-const getJsRedirects = async (compress = false) => {
-    const { redirects } = require('../tmp/redirects'); // eslint-disable-line global-require
+const getJsRedirects = async (options = {}) => {
+    const compress = options.compress ?? false;
+    const code = options.code ?? true;
+
+    const getCode = (() => {
+        if (code) {
+            // eslint-disable-next-line import/no-unresolved,global-require
+            const { redirects } = require('../tmp/redirects');
+            return redirects.getCode;
+        }
+        return () => '';
+    })();
 
     let listOfRedirectsData = Object
         .values(redirectsList)
@@ -96,7 +105,7 @@ const getJsRedirects = async (compress = false) => {
                 args: [],
             };
 
-            const redirect = redirects.getCode(source);
+            const redirect = getCode(source);
 
             return {
                 name,
@@ -162,10 +171,10 @@ const getJsRedirects = async (compress = false) => {
     return jsRedirects;
 };
 
-const getPreparedRedirects = async (compress = false) => {
+export const getPreparedRedirects = async (options) => {
     const staticRedirects = await getStaticRedirects();
     const blockingRedirects = await getBlockingRedirects();
-    const jsRedirects = await getJsRedirects(compress);
+    const jsRedirects = await getJsRedirects(options);
 
     const mergedRedirects = [
         ...staticRedirects,
@@ -179,31 +188,6 @@ const getPreparedRedirects = async (compress = false) => {
         jsRedirects,
         mergedRedirects,
     };
-};
-
-const createRedirectsMap = (redirects) => {
-    const map = {};
-
-    redirects.forEach((item) => {
-        const { title, aliases, file } = item;
-
-        if (title) {
-            map[title] = file;
-        }
-
-        if (aliases) {
-            aliases.forEach((alias) => {
-                map[alias] = file;
-            });
-        }
-    });
-
-    return JSON.stringify(map, null, 4);
-};
-
-export const getRedirectsMap = async () => {
-    const { mergedRedirects } = await getPreparedRedirects();
-    return createRedirectsMap(mergedRedirects);
 };
 
 /**
@@ -278,11 +262,6 @@ export const prebuildRedirects = async () => {
         },
         plugins: [
             resolve(),
-            replace({
-                __MAP__: await getRedirectsMap(),
-                // TODO: remove param in @rollup/plugin-replace 5.x.x+
-                preventAssignment: true,
-            }),
             commonjs({
                 include: 'node_modules/**',
             }),
@@ -359,7 +338,7 @@ export const buildRedirectsFiles = async () => {
 };
 
 export const buildRedirectsForCorelibs = async () => {
-    const { mergedRedirects } = await getPreparedRedirects(true);
+    const { mergedRedirects } = await getPreparedRedirects({ compress: true });
 
     // Build scriptlets.json. It is used in the corelibs
     const base64Redirects = Object.values(mergedRedirects)
@@ -399,4 +378,26 @@ export const buildRedirectsForCorelibs = async () => {
         console.log(`Couldn't save to ${CORELIBS_RESULT_PATH}, because of: ${e.message}`);
         throw e;
     }
+};
+
+export const buildRedirectsList = async () => {
+    await rollupStandard({
+        input: {
+            'redirects-list': 'src/redirects/redirects-list.js',
+        },
+        output: {
+            dir: 'tmp',
+            entryFileNames: '[name].js',
+            format: 'es',
+        },
+        plugins: [
+            resolve(),
+            commonjs({
+                include: 'node_modules/**',
+            }),
+            babel({
+                babelHelpers: 'runtime',
+            }),
+        ],
+    });
 };

@@ -106,7 +106,7 @@ declare module '@adguard/scriptlets' {
     function isValidScriptletRule(ruleText: string): boolean;
 
     /**
-     * Method returns scriptlet function
+     * Returns scriptlet function by name
      */
     function getScriptletFunction(name: string): () => void
 

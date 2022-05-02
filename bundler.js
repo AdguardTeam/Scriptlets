@@ -5,17 +5,24 @@ import {
     buildClick2Load,
     buildRedirectsFiles,
     buildRedirectsForCorelibs,
+    buildRedirectsList,
     prebuildRedirects,
 } from './scripts/build-redirects';
 import { buildScriptletsForCorelibs } from './scripts/build-corelibs';
 import { buildScriptlets, buildScriptletsList } from './scripts/build-scriptlets';
 import { buildTxt } from './scripts/build-txt';
+import { buildRedirectsMap } from './scripts/build-redirects-map';
+
+const buildScriptletsAndRedirectsLists = async () => {
+    await Promise.all([buildRedirectsList(), buildScriptletsList()]);
+};
 
 const tasks = [
-    buildScriptletsList,
+    buildScriptletsAndRedirectsLists,
     buildScriptletsFunc,
-    prebuildRedirects,
     buildClick2Load,
+    buildRedirectsMap,
+    prebuildRedirects,
     buildRedirectsFiles,
     buildRedirectsForCorelibs,
     buildScriptlets,

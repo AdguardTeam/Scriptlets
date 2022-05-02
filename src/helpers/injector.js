@@ -1,5 +1,3 @@
-import * as dependencies from '.';
-
 /**
  * Concat dependencies to scriptlet code
  * @param {string} scriptlet string view of scriptlet
@@ -7,7 +5,7 @@ import * as dependencies from '.';
 export function attachDependencies(scriptlet) {
     const { injections = [] } = scriptlet;
     return injections.reduce((accum, dep) => {
-        return `${accum}\n${dependencies[dep.name]}`;
+        return `${accum}\n${dep.toString()}`;
     }, scriptlet.toString());
 }
 
@@ -32,6 +30,7 @@ export function addCall(scriptlet, code) {
  * @param {Source} source - object with scriptlet properties
  * @param {string} code - scriptlet source code with dependencies
  *
+ * @param redirect
  * @returns {string} full scriptlet code
  *
  * @example
@@ -48,14 +47,19 @@ export function addCall(scriptlet, code) {
  *      noeval.apply(this, args);
  * )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])`
  */
-export function passSourceAndProps(source, code) {
+export function passSourceAndProps(source, code, redirect = false) {
     if (source.hit) {
         source.hit = source.hit.toString();
     }
     const sourceString = JSON.stringify(source);
     const argsString = source.args ? `[${source.args.map(JSON.stringify)}]` : undefined;
     const params = argsString ? `${sourceString}, ${argsString}` : sourceString;
-    return `(function(source, args){\n${code}\n})(${params});`;
+
+    if (redirect) {
+        return `(function(source, args){\n${code}\n})(${params});`;
+    }
+
+    return `(${code})(${params});`;
 }
 
 /**
