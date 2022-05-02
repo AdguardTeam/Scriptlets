@@ -42,9 +42,6 @@
         "./package.json": "./package.json",
         ".": {
             "default": "./dist/umd/scriptlets.umd.js"
-        },
-        "./func": {
-            "default": "./dist/func/scriptlets.js"
         }
     },
     "dependencies": {
