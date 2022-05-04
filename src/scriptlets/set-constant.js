@@ -12,6 +12,7 @@ import {
     toRegExp,
     matchStackTrace,
     nativeIsNaN,
+    isEmptyObject,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -22,6 +23,8 @@ import {
  * Creates a constant property and assigns it one of the values from the predefined list.
  *
  * > Actually, it's not a constant. Please note, that it can be rewritten with a value of a different type.
+ *
+ * > If empty object is present in chain it will be trapped until chain leftovers appear.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#set-constantjs-
@@ -151,7 +154,8 @@ export function setConstant(source, property, value, stack) {
         }
         canceled = value !== undefined
             && constantValue !== undefined
-            && typeof value !== typeof constantValue;
+            && typeof value !== typeof constantValue
+            && value !== null;
         return canceled;
     };
 
@@ -206,7 +210,7 @@ export function setConstant(source, property, value, stack) {
 
         // Handler method init is used to keep track of factual value
         // and apply mustCancel() check only on end prop
-        const undefPropHandler = {
+        const inChainPropHandler = {
             factValue: undefined,
             init(a) {
                 this.factValue = a;
@@ -258,6 +262,17 @@ export function setConstant(source, property, value, stack) {
             return;
         }
 
+        // Null prop in chain
+        if (base !== undefined && base[prop] === null) {
+            trapProp(base, prop, true, inChainPropHandler);
+            return;
+        }
+
+        // Empty object prop in chain
+        if ((base instanceof Object || typeof base === 'object') && isEmptyObject(base)) {
+            trapProp(base, prop, true, inChainPropHandler);
+        }
+
         // Defined prop in chain
         const propValue = owner[prop];
         if (propValue instanceof Object || (typeof propValue === 'object' && propValue !== null)) {
@@ -265,9 +280,8 @@ export function setConstant(source, property, value, stack) {
         }
 
         // Undefined prop in chain
-        trapProp(owner, prop, true, undefPropHandler);
+        trapProp(owner, prop, true, inChainPropHandler);
     };
-
     setChainPropAccess(window, property);
 }
 
@@ -296,4 +310,5 @@ setConstant.injections = [
     toRegExp,
     matchStackTrace,
     nativeIsNaN,
+    isEmptyObject,
 ];
