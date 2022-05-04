@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import { hit, noopFunc } from '../helpers';
+import { hit, noopFunc } from '../helpers/index';
 
 /**
  * @redirect google-analytics-ga

@@ -29,7 +29,7 @@ Increment:
         interpreter: SHELL
         scripts:
           - |-
-            #!/bin/sh
+            #!/bin/bash
             set -e -f -u -x
 
             # Explicitly checkout the revision that we need.
@@ -37,6 +37,7 @@ Increment:
 
             # do not increment for dist deploy after release build
             if [[ `git log -1 --pretty=%s` != "deploy: update dist" ]];then
+              git checkout master
               set -e
               set -x
               ls -alt

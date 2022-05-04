@@ -1,5 +1,5 @@
 /* eslint-disable no-console, func-names, no-multi-assign */
-import { hit, noopFunc, noopThis } from '../helpers';
+import { hit, noopFunc, noopThis } from '../helpers/index';
 
 /**
  * @scriptlet prevent-fab-3.2.0

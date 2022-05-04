@@ -55,8 +55,17 @@ const getRedirectCode = (source) => {
     return result;
 };
 
+// It will be replaced with dictionary-object in build-script
+// eslint-disable-next-line no-undef
+const map = __MAP__;
+
+const getRedirectFilename = (name) => {
+    return map[name];
+};
+
 export const redirectsCjs = {
     Redirects,
+    getRedirectFilename,
     getCode: getRedirectCode,
     isAdgRedirectRule: validator.isAdgRedirectRule,
     isValidAdgRedirectRule: validator.isValidAdgRedirectRule,

@@ -5,7 +5,7 @@ import {
     noopArray,
     trueFunc,
     falseFunc,
-} from '../helpers';
+} from '../helpers/index';
 
 /**
  * @redirect didomi-loader

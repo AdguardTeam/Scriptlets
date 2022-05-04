@@ -1,4 +1,4 @@
-import { hit, observeDOMChanges } from '../helpers';
+import { hit, observeDOMChanges } from '../helpers/index';
 
 /* eslint-disable max-len */
 /**

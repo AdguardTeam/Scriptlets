@@ -1,6 +1,6 @@
 import {
     hit, createOnErrorHandler, randomId,
-} from '../helpers';
+} from '../helpers/index';
 
 /**
  * @scriptlet prevent-popads-net

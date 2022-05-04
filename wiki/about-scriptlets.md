@@ -744,7 +744,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#no-fetch-ifjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet('prevent-fetch'[, propsToMatch])
+example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody]])
 ```
 
 - `propsToMatch` - optional, string of space-separated properties to match; possible props:
@@ -752,29 +752,47 @@ example.org#%#//scriptlet('prevent-fetch'[, propsToMatch])
   - colon-separated pairs `name:value` where
     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
     - `value` is string or regular expression for matching the value of the option passed to fetch call; invalid regular expression will cause any value matching
-
+- responseBody - optional, string for defining response body value, defaults to `emptyObj`. Possible values:
+   - `emptyObj` - empty object
+   - `emptyArr` - empty array
 > Usage with no arguments will log fetch calls to browser console;
 which is useful for debugging but permitted for production filter lists.
 
 **Examples**
-1. Prevent all fetch calls
+1. Log all fetch calls
     ```
-    example.org#%#//scriptlet('prevent-fetch', '*')
+    example.org#%#//scriptlet('prevent-fetch')
     ```
 
-2. Prevent fetch call for specific url
+2. Prevent all fetch calls
+    ```
+    example.org#%#//scriptlet('prevent-fetch', '*')
+    OR
+    example.org#%#//scriptlet('prevent-fetch', '')
+    ```
+
+3. Prevent fetch call for specific url
     ```
     example.org#%#//scriptlet('prevent-fetch', '/url\\.part/')
     ```
 
-3. Prevent fetch call for specific request method
+4. Prevent fetch call for specific request method
     ```
     example.org#%#//scriptlet('prevent-fetch', 'method:HEAD')
     ```
 
-4. Prevent fetch call for specific url and request method
+5. Prevent fetch call for specific url and request method
     ```
     example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/')
+    ```
+
+6. Prevent fetch call and specify response body value
+    ```
+    ! Specify response body for fetch call to a specific url
+    example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/', 'emptyArr')
+
+    ! Specify response body for all fetch calls
+    example.org#%#//scriptlet('prevent-fetch', '', 'emptyArr')
     ```
 
 [Scriptlet source](../src/scriptlets/prevent-fetch.js)

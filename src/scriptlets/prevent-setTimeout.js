@@ -7,7 +7,7 @@ import {
     toRegExp,
     startsWith,
     nativeIsNaN,
-} from '../helpers';
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**

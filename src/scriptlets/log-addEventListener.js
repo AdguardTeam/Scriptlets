@@ -8,7 +8,7 @@ import {
     objectToString,
     isEmptyObject,
     getObjectEntries,
-} from '../helpers';
+} from '../helpers/index';
 
 /**
  * @scriptlet log-addEventListener

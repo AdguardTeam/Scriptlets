@@ -1,4 +1,4 @@
-import { hit, nativeIsNaN, prepareCookie } from '../helpers';
+import { hit, nativeIsNaN, prepareCookie } from '../helpers/index';
 
 /**
  * @scriptlet set-cookie-reload

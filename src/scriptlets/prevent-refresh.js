@@ -3,7 +3,7 @@ import {
     getNumberFromString,
     // following helpers are needed for helpers above
     nativeIsNaN,
-} from '../helpers';
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**

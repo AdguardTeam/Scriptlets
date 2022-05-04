@@ -1,5 +1,5 @@
 /* eslint-disable func-names */
-import { hit } from '../helpers';
+import { hit } from '../helpers/index';
 
 /**
  * @redirect fingerprintjs2
