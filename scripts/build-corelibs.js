@@ -17,7 +17,6 @@ const buildCorelibsJson = async () => {
                 .toString();
             const result = await minify(scriptlet, {
                 mangle: false,
-                compress: {},
                 format: { comments: false },
             });
             return {

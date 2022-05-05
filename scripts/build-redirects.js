@@ -279,48 +279,44 @@ export const prebuildRedirects = async () => {
  * The extra script file will be removed from dist/redirect-files later while build-redirects.js run
  */
 export const buildClick2Load = async () => {
-    const buildClick2LoadScript = async () => {
-        await rollupStandard({
-            input: {
-                click2load: 'src/redirects/blocking-redirects/click2load.js',
-            },
-            output: {
-                dir: 'tmp',
-                entryFileNames: '[name].js',
-                name: 'click2load',
-                format: 'iife',
-            },
-            plugins: [
-                resolve(),
-                babel({ babelHelpers: 'runtime' }),
-                cleanup(),
-            ],
-        });
-    };
+    const buildClick2LoadScript = rollupStandard({
+        input: {
+            click2load: 'src/redirects/blocking-redirects/click2load.js',
+        },
+        output: {
+            dir: 'tmp',
+            entryFileNames: '[name].js',
+            name: 'click2load',
+            format: 'iife',
+        },
+        plugins: [
+            resolve(),
+            babel({ babelHelpers: 'runtime' }),
+            cleanup(),
+        ],
+    });
 
-    const buildClick2LoadHtml = async () => {
-        await rollupStandard({
-            input: 'src/redirects/blocking-redirects/click2load.js',
-            output: {
-                dir: DIST_REDIRECT_FILES,
-                name: 'click2load',
-                format: 'iife',
-            },
-            plugins: [
-                resolve(),
-                babel({ babelHelpers: 'runtime' }),
-                cleanup(),
-                generateHtml({
-                    filename: `${DIST_REDIRECT_FILES}/click2load.html`,
-                    template: 'src/redirects/blocking-redirects/click2load.html',
-                    selector: 'body',
-                    inline: true,
-                }),
-            ],
-        });
-    };
+    const buildClick2LoadHtml = rollupStandard({
+        input: 'src/redirects/blocking-redirects/click2load.js',
+        output: {
+            dir: DIST_REDIRECT_FILES,
+            name: 'click2load',
+            format: 'iife',
+        },
+        plugins: [
+            resolve(),
+            babel({ babelHelpers: 'runtime' }),
+            cleanup(),
+            generateHtml({
+                filename: `${DIST_REDIRECT_FILES}/click2load.html`,
+                template: 'src/redirects/blocking-redirects/click2load.html',
+                selector: 'body',
+                inline: true,
+            }),
+        ],
+    });
 
-    await Promise.all([buildClick2LoadScript(), buildClick2LoadHtml()]);
+    await Promise.all([buildClick2LoadScript, buildClick2LoadHtml]);
 };
 
 export const buildRedirectsFiles = async () => {
