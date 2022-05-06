@@ -353,7 +353,7 @@ export const buildRedirectsForCorelibs = async () => {
                 // replace them all because base64 isn't supposed to have them
                 base64Content = content.replace(/(\r\n|\n|\r|\s)/gm, '');
             } else {
-                base64Content = Buffer.from(content, 'binary')
+                base64Content = Buffer.from(content)
                     .toString('base64');
                 bas64ContentType = `${contentType};base64`;
             }
