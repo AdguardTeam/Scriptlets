@@ -27,9 +27,6 @@ jobs:
       - name: yarn test
         run: yarn test
 
-      - name: yarn corelibs
-        run: yarn corelibs
-
       - name: yarn build
         run: yarn build
 
