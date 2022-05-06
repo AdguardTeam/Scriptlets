@@ -149,6 +149,15 @@ scriptlets.invoke(source);
 
 ```javascript
 /**
+ * Returns scriptlet function by name
+ * @param {string} name scriptlet name
+ * @returns {Function}
+ */
+scriptlets.getScriptletFunction(name);
+```
+
+```javascript
+/**
  * Checks whether the `name` is valid scriptlet name
  * @param {string} name
  * @returns {boolean}
