@@ -1,14 +1,6 @@
-import { redirectsCjs } from '../redirects';
-
-import {
-    attachDependencies,
-    addCall,
-    passSourceAndProps,
-    wrapInNonameFunc,
-} from '../helpers/injector';
-
+import { redirects } from '../redirects';
 import validator from '../helpers/validator';
-
+import { passSourceAndProps, wrapInNonameFunc } from '../helpers/injector';
 import {
     isValidScriptletRule,
     convertUboScriptletToAdg,
@@ -16,6 +8,10 @@ import {
     convertScriptletToAdg,
     convertAdgScriptletToUbo,
 } from '../helpers/converter';
+
+// next module should be built and put in the tmp directory before building this module
+// eslint-disable-next-line import/no-unresolved,import/extensions
+import { getScriptletFunction } from '../../tmp/scriptlets-func';
 
 /**
  * @typedef {Object} Source - scriptlet properties
@@ -32,19 +28,17 @@ import {
 /**
  * Returns scriptlet code by param
  * @param {Source} source
- * @returns {string} scriptlet code
+ * @returns {string|null} scriptlet code
  */
 function getScriptletCode(source) {
     if (!validator.isValidScriptletName(source.name)) {
         return null;
     }
 
-    const scriptlet = validator.getScriptletByName(source.name);
-    let result = attachDependencies(scriptlet);
-    result = addCall(scriptlet, result);
-    result = source.engine === 'corelibs' || source.engine === 'test'
-        ? wrapInNonameFunc(result)
-        : passSourceAndProps(source, result);
+    const scriptletFunction = getScriptletFunction(source.name).toString();
+    const result = source.engine === 'corelibs' || source.engine === 'test'
+        ? wrapInNonameFunc(scriptletFunction)
+        : passSourceAndProps(source, scriptletFunction);
     return result;
 }
 
@@ -55,18 +49,21 @@ function getScriptletCode(source) {
  * `invoke` method receives one argument with `Source` type
  * `validate` method receives one argument with `String` type
  */
-const scriptletsObject = (() => ({
-    invoke: getScriptletCode,
-    isValidScriptletName: validator.isValidScriptletName,
-    isValidScriptletRule,
-    isAdgScriptletRule: validator.isAdgScriptletRule,
-    isUboScriptletRule: validator.isUboScriptletRule,
-    isAbpSnippetRule: validator.isAbpSnippetRule,
-    convertUboToAdg: convertUboScriptletToAdg,
-    convertAbpToAdg: convertAbpSnippetToAdg,
-    convertScriptletToAdg,
-    convertAdgToUbo: convertAdgScriptletToUbo,
-    redirects: redirectsCjs,
-}))();
+const scriptletsObject = (() => {
+    return {
+        invoke: getScriptletCode,
+        getScriptletFunction,
+        isValidScriptletName: validator.isValidScriptletName,
+        isValidScriptletRule,
+        isAdgScriptletRule: validator.isAdgScriptletRule,
+        isUboScriptletRule: validator.isUboScriptletRule,
+        isAbpSnippetRule: validator.isAbpSnippetRule,
+        convertUboToAdg: convertUboScriptletToAdg,
+        convertAbpToAdg: convertAbpSnippetToAdg,
+        convertScriptletToAdg,
+        convertAdgToUbo: convertAdgScriptletToUbo,
+        redirects,
+    };
+})();
 
 export default scriptletsObject;

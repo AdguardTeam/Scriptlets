@@ -29,7 +29,7 @@ test('AdGuard: yandex metrika watch.js', (assert) => {
 
     runRedirect(name);
 
-    const { Metrika } = window.Ya.Metrika;
+    const { Metrika } = window.Ya;
     assert.ok(Metrika, 'Metrika function was created');
     assert.ok(Metrika.counters().length === 0, 'Metrika.counters returns empty array');
 

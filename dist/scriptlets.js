@@ -1,171 +1,79 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.11
+ * Version 1.6.13
  */
 
 (function () {
 
     /**
-     * Returns wildcard symbol
-     * @returns {string} '*'
+     * Concat dependencies to scriptlet code
+     * @param {string} scriptlet string view of scriptlet
      */
-    var getWildcardSymbol = function getWildcardSymbol() {
-      return '*';
-    };
-
-    /**
-     * Generate random six symbols id
-     */
-    function randomId() {
-      return Math.random().toString(36).substr(2, 9);
+    function attachDependencies(scriptlet) {
+      var _scriptlet$injections = scriptlet.injections,
+          injections = _scriptlet$injections === void 0 ? [] : _scriptlet$injections;
+      return injections.reduce(function (accum, dep) {
+        return "".concat(accum, "\n").concat(dep.toString());
+      }, scriptlet.toString());
     }
-
     /**
-     * Set getter and setter to property if it's configurable
-     * @param {Object} object target object with property
-     * @param {string} property property name
-     * @param {Object} descriptor contains getter and setter functions
-     * @returns {boolean} is operation successful
+     * Add scriptlet call to existing code
+     * @param {Function} scriptlet
+     * @param {string} code
      */
-    function setPropertyAccess(object, property, descriptor) {
-      var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
 
-      if (currentDescriptor && !currentDescriptor.configurable) {
-        return false;
-      }
-
-      Object.defineProperty(object, property, descriptor);
-      return true;
+    function addCall(scriptlet, code) {
+      return "".concat(code, "\n    const updatedArgs = args ? [].concat(source).concat(args) : [source];\n    try {\n        ").concat(scriptlet.name, ".apply(this, updatedArgs);\n    } catch (e) {\n        console.log(e);\n    }");
     }
-
     /**
-     * @typedef Chain
-     * @property {Object} base
-     * @property {string} prop
-     * @property {string} [chain]
+     * Wrap function into IIFE (Immediately invoked function expression)
+     *
+     * @param {Source} source - object with scriptlet properties
+     * @param {string} code - scriptlet source code with dependencies
+     *
+     * @param redirect
+     * @returns {string} full scriptlet code
+     *
+     * @example
+     * const source = {
+     *      args: ["aaa", "bbb"],
+     *      name: 'noeval',
+     * };
+     * const code = "function noeval(source, args) { alert(source); } noeval.apply(this, args);"
+     * const result = wrapInIIFE(source, code);
+     *
+     * // result
+     * `(function(source, args) {
+     *      function noeval(source) { alert(source); }
+     *      noeval.apply(this, args);
+     * )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])`
      */
 
-    /**
-     * Check if the property exists in the base object (recursively)
-     *
-     * If property doesn't exist in base object,
-     * defines this property as 'undefined'
-     * and returns base, property name and remaining part of property chain
-     *
-     * @param {Object} base
-     * @param {string} chain
-     * @returns {Chain}
-     */
-    function getPropertyInChain(base, chain) {
-      var pos = chain.indexOf('.');
+    function passSourceAndProps(source, code) {
+      var redirect = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
-      if (pos === -1) {
-        return {
-          base: base,
-          prop: chain
-        };
+      if (source.hit) {
+        source.hit = source.hit.toString();
       }
 
-      var prop = chain.slice(0, pos); // https://github.com/AdguardTeam/Scriptlets/issues/128
+      var sourceString = JSON.stringify(source);
+      var argsString = source.args ? "[".concat(source.args.map(JSON.stringify), "]") : undefined;
+      var params = argsString ? "".concat(sourceString, ", ").concat(argsString) : sourceString;
 
-      if (base === null) {
-        // if base is null, return 'null' as base.
-        // it's needed for triggering the reason logging while debugging
-        return {
-          base: base,
-          prop: prop,
-          chain: chain
-        };
+      if (redirect) {
+        return "(function(source, args){\n".concat(code, "\n})(").concat(params, ");");
       }
 
-      var nextBase = base[prop];
-      chain = chain.slice(pos + 1);
-
-      if (nextBase !== undefined) {
-        return getPropertyInChain(nextBase, chain);
-      }
-
-      Object.defineProperty(base, prop, {
-        configurable: true
-      });
-      return {
-        base: nextBase,
-        prop: prop,
-        chain: chain
-      };
+      return "(".concat(code, ")(").concat(params, ");");
     }
-
     /**
-     * @typedef Chain
-     * @property {Object} base
-     * @property {string} prop
-     * @property {string} [chain]
+     * Wrap code in no name function
+     * @param {string} code which must be wrapped
      */
 
-    /**
-     * Check if the property exists in the base object (recursively).
-     * Similar to getPropertyInChain but upgraded for json-prune:
-     * handle wildcard properties and does not define nonexistent base property as 'undefined'
-     *
-     * @param {Object} base
-     * @param {string} chain
-     * @param {boolean} [lookThrough=false]
-     * should the method look through it's props in order to wildcard
-     * @param {Array} [output=[]] result acc
-     * @returns {Chain[]} array of objects
-     */
-
-    function getWildcardPropertyInChain(base, chain) {
-      var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-      var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
-      var pos = chain.indexOf('.');
-
-      if (pos === -1) {
-        // for paths like 'a.b.*' every final nested prop should be processed
-        if (chain === getWildcardSymbol() || chain === '[]') {
-          // eslint-disable-next-line no-restricted-syntax
-          for (var key in base) {
-            // to process each key in base except inherited ones
-            if (Object.prototype.hasOwnProperty.call(base, key)) {
-              output.push({
-                base: base,
-                prop: key
-              });
-            }
-          }
-        } else {
-          output.push({
-            base: base,
-            prop: chain
-          });
-        }
-
-        return output;
-      }
-
-      var prop = chain.slice(0, pos);
-      var shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === getWildcardSymbol() && base instanceof Object;
-
-      if (shouldLookThrough) {
-        var nextProp = chain.slice(pos + 1);
-        var baseKeys = Object.keys(base); // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src ad.1.src'),
-        // each one of base keys should be considered as a potential chain prop in final path
-
-        baseKeys.forEach(function (key) {
-          var item = base[key];
-          getWildcardPropertyInChain(item, nextProp, lookThrough, output);
-        });
-      }
-
-      var nextBase = base[prop];
-      chain = chain.slice(pos + 1);
-
-      if (nextBase !== undefined) {
-        getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
-      }
-
-      return output;
+    function wrapInNonameFunc(code) {
+      return "function(source, args){\n".concat(code, "\n}");
     }
 
     /**
@@ -175,8 +83,8 @@
      * @returns {boolean}
      */
     var nativeIsNaN = function nativeIsNaN(num) {
-      var native = Number.isNaN || window.isNaN; // eslint-disable-line compat/compat
-
+      // eslint-disable-next-line no-restricted-properties
+      var native = Number.isNaN || window.isNaN;
       return native(num);
     };
     /**
@@ -187,13 +95,13 @@
      */
 
     var nativeIsFinite = function nativeIsFinite(num) {
-      var native = Number.isFinite || window.isFinite; // eslint-disable-line compat/compat
-
+      // eslint-disable-next-line no-restricted-properties
+      var native = Number.isFinite || window.isFinite;
       return native(num);
     };
     /**
      * Parses string for a number, if possible, otherwise returns null.
-     * @param {*} rawDelay
+     * @param {*} rawString
      * @returns {number|null}
      */
 
@@ -271,15 +179,6 @@
 
     var replaceAll = function replaceAll(input, substr, newSubstr) {
       return input.split(substr).join(newSubstr);
-    };
-    /**
-     * Escapes special chars in string
-     * @param {string} str
-     * @returns {string}
-     */
-
-    var escapeRegExp = function escapeRegExp(str) {
-      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     };
     /**
      * A literal string or regexp pattern wrapped in forward slashes.
@@ -370,7 +269,7 @@
       // that's why it has to be !!str
       return !!str && str.indexOf(ending) === str.length - ending.length;
     };
-    var substringAfter = function substringAfter(str, separator) {
+    var substringAfter$1 = function substringAfter(str, separator) {
       if (!str) {
         return str;
       }
@@ -547,6 +446,367 @@
 
       return output;
     };
+
+    function _defineProperty(obj, key, value) {
+      if (key in obj) {
+        Object.defineProperty(obj, key, {
+          value: value,
+          enumerable: true,
+          configurable: true,
+          writable: true
+        });
+      } else {
+        obj[key] = value;
+      }
+
+      return obj;
+    }
+
+    var defineProperty = _defineProperty;
+
+    /**
+     * Iterate over iterable argument and evaluate current state with transitions
+     * @param {string} init first transition name
+     * @param {Array|Collection|string} iterable
+     * @param {Object} transitions transtion functions
+     * @param {any} args arguments which should be passed to transition functions
+     */
+    function iterateWithTransitions(iterable, transitions, init, args) {
+      var state = init || Object.keys(transitions)[0];
+
+      for (var i = 0; i < iterable.length; i += 1) {
+        state = transitions[state](iterable, i, args);
+      }
+
+      return state;
+    }
+    /**
+     * AdGuard scriptlet rule mask
+     */
+
+
+    var ADG_SCRIPTLET_MASK = '#//scriptlet';
+    /**
+     * Helper to accumulate an array of strings char by char
+     */
+
+    var wordSaver = function wordSaver() {
+      var str = '';
+      var strs = [];
+
+      var saveSymb = function saveSymb(s) {
+        str += s;
+        return str;
+      };
+
+      var saveStr = function saveStr() {
+        strs.push(str);
+        str = '';
+      };
+
+      var getAll = function getAll() {
+        return [].concat(strs);
+      };
+
+      return {
+        saveSymb: saveSymb,
+        saveStr: saveStr,
+        getAll: getAll
+      };
+    };
+
+    var substringAfter = function substringAfter(str, separator) {
+      if (!str) {
+        return str;
+      }
+
+      var index = str.indexOf(separator);
+      return index < 0 ? '' : str.substring(index + separator.length);
+    };
+    /**
+     * Parse and validate scriptlet rule
+     * @param {*} ruleText
+     * @returns {{name: string, args: Array<string>}}
+     */
+
+
+    var parseRule = function parseRule(ruleText) {
+      var _transitions;
+
+      ruleText = substringAfter(ruleText, ADG_SCRIPTLET_MASK);
+      /**
+       * Transition names
+       */
+
+      var TRANSITION = {
+        OPENED: 'opened',
+        PARAM: 'param',
+        CLOSED: 'closed'
+      };
+      /**
+       * Transition function: the current index position in start, end or between params
+       * @param {string} rule
+       * @param {number} index
+       * @param {Object} Object
+       * @property {Object} Object.sep contains prop symb with current separator char
+       */
+
+      var opened = function opened(rule, index, _ref) {
+        var sep = _ref.sep;
+        var char = rule[index];
+        var transition;
+
+        switch (char) {
+          case ' ':
+          case '(':
+          case ',':
+            {
+              transition = TRANSITION.OPENED;
+              break;
+            }
+
+          case '\'':
+          case '"':
+            {
+              sep.symb = char;
+              transition = TRANSITION.PARAM;
+              break;
+            }
+
+          case ')':
+            {
+              transition = index === rule.length - 1 ? TRANSITION.CLOSED : TRANSITION.OPENED;
+              break;
+            }
+
+          default:
+            {
+              throw new Error('The rule is not a scriptlet');
+            }
+        }
+
+        return transition;
+      };
+      /**
+       * Transition function: the current index position inside param
+       * @param {string} rule
+       * @param {number} index
+       * @param {Object} Object
+       * @property {Object} Object.sep contains prop `symb` with current separator char
+       * @property {Object} Object.saver helper which allow to save strings by car by char
+       */
+
+
+      var param = function param(rule, index, _ref2) {
+        var saver = _ref2.saver,
+            sep = _ref2.sep;
+        var char = rule[index];
+
+        switch (char) {
+          case '\'':
+          case '"':
+            {
+              var preIndex = index - 1;
+              var before = rule[preIndex];
+
+              if (char === sep.symb && before !== '\\') {
+                sep.symb = null;
+                saver.saveStr();
+                return TRANSITION.OPENED;
+              }
+            }
+          // eslint-disable-next-line no-fallthrough
+
+          default:
+            {
+              saver.saveSymb(char);
+              return TRANSITION.PARAM;
+            }
+        }
+      };
+
+      var transitions = (_transitions = {}, defineProperty(_transitions, TRANSITION.OPENED, opened), defineProperty(_transitions, TRANSITION.PARAM, param), defineProperty(_transitions, TRANSITION.CLOSED, function () {}), _transitions);
+      var sep = {
+        symb: null
+      };
+      var saver = wordSaver();
+      var state = iterateWithTransitions(ruleText, transitions, TRANSITION.OPENED, {
+        sep: sep,
+        saver: saver
+      });
+
+      if (state !== 'closed') {
+        throw new Error("Invalid scriptlet rule ".concat(ruleText));
+      }
+
+      var args = saver.getAll();
+      return {
+        name: args[0],
+        args: args.slice(1)
+      };
+    };
+
+    /**
+     * Returns wildcard symbol
+     * @returns {string} '*'
+     */
+    var getWildcardSymbol = function getWildcardSymbol() {
+      return '*';
+    };
+
+    /**
+     * Generate random six symbols id
+     */
+    function randomId() {
+      return Math.random().toString(36).substr(2, 9);
+    }
+
+    /**
+     * Set getter and setter to property if it's configurable
+     * @param {Object} object target object with property
+     * @param {string} property property name
+     * @param {Object} descriptor contains getter and setter functions
+     * @returns {boolean} is operation successful
+     */
+    function setPropertyAccess(object, property, descriptor) {
+      var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+
+      if (currentDescriptor && !currentDescriptor.configurable) {
+        return false;
+      }
+
+      Object.defineProperty(object, property, descriptor);
+      return true;
+    }
+
+    /**
+     * @typedef Chain
+     * @property {Object} base
+     * @property {string} prop
+     * @property {string} [chain]
+     */
+
+    /**
+     * Check if the property exists in the base object (recursively)
+     *
+     * If property doesn't exist in base object,
+     * defines this property as 'undefined'
+     * and returns base, property name and remaining part of property chain
+     *
+     * @param {Object} base
+     * @param {string} chain
+     * @returns {Chain}
+     */
+    function getPropertyInChain(base, chain) {
+      var pos = chain.indexOf('.');
+
+      if (pos === -1) {
+        return {
+          base: base,
+          prop: chain
+        };
+      }
+
+      var prop = chain.slice(0, pos); // https://github.com/AdguardTeam/Scriptlets/issues/128
+
+      if (base === null) {
+        // if base is null, return 'null' as base.
+        // it's needed for triggering the reason logging while debugging
+        return {
+          base: base,
+          prop: prop,
+          chain: chain
+        };
+      }
+
+      var nextBase = base[prop];
+      chain = chain.slice(pos + 1);
+
+      if (nextBase !== undefined) {
+        return getPropertyInChain(nextBase, chain);
+      }
+
+      Object.defineProperty(base, prop, {
+        configurable: true
+      });
+      return {
+        base: nextBase,
+        prop: prop,
+        chain: chain
+      };
+    }
+
+    /**
+     * @typedef Chain
+     * @property {Object} base
+     * @property {string} prop
+     * @property {string} [chain]
+     */
+
+    /**
+     * Check if the property exists in the base object (recursively).
+     * Similar to getPropertyInChain but upgraded for json-prune:
+     * handle wildcard properties and does not define nonexistent base property as 'undefined'
+     *
+     * @param {Object} base
+     * @param {string} chain
+     * @param {boolean} [lookThrough=false]
+     * should the method look through it's props in order to wildcard
+     * @param {Array} [output=[]] result acc
+     * @returns {Chain[]} array of objects
+     */
+
+    function getWildcardPropertyInChain(base, chain) {
+      var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+      var pos = chain.indexOf('.');
+
+      if (pos === -1) {
+        // for paths like 'a.b.*' every final nested prop should be processed
+        if (chain === getWildcardSymbol() || chain === '[]') {
+          // eslint-disable-next-line no-restricted-syntax
+          for (var key in base) {
+            // to process each key in base except inherited ones
+            if (Object.prototype.hasOwnProperty.call(base, key)) {
+              output.push({
+                base: base,
+                prop: key
+              });
+            }
+          }
+        } else {
+          output.push({
+            base: base,
+            prop: chain
+          });
+        }
+
+        return output;
+      }
+
+      var prop = chain.slice(0, pos);
+      var shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === getWildcardSymbol() && base instanceof Object;
+
+      if (shouldLookThrough) {
+        var nextProp = chain.slice(pos + 1);
+        var baseKeys = Object.keys(base); // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src ad.1.src'),
+        // each one of base keys should be considered as a potential chain prop in final path
+
+        baseKeys.forEach(function (key) {
+          var item = base[key];
+          getWildcardPropertyInChain(item, nextProp, lookThrough, output);
+        });
+      }
+
+      var nextBase = base[prop];
+      chain = chain.slice(pos + 1);
+
+      if (nextBase !== undefined) {
+        getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
+      }
+
+      return output;
+    }
 
     /**
      * Generates function which silents global errors on page generated by scriptlet
@@ -1151,7 +1411,7 @@
         if (isProp) {
           var propertyPart = replacement.slice(1, -1);
           var propertyName = substringBefore(propertyPart, '=');
-          var propertyValue = substringAfter(propertyPart, '=');
+          var propertyValue = substringAfter$1(propertyPart, '=');
 
           if (propertyValue === 'noopFunc') {
             result = {};
@@ -1240,339 +1500,6 @@
       return typeof listener === 'function' ? listener.toString() : listener.handleEvent.toString();
     };
 
-    /**
-     * This file must export all used dependencies
-     */
-
-    var dependencies = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        getWildcardSymbol: getWildcardSymbol,
-        randomId: randomId,
-        setPropertyAccess: setPropertyAccess,
-        getPropertyInChain: getPropertyInChain,
-        getWildcardPropertyInChain: getWildcardPropertyInChain,
-        replaceAll: replaceAll,
-        escapeRegExp: escapeRegExp,
-        toRegExp: toRegExp,
-        validateStrPattern: validateStrPattern,
-        getBeforeRegExp: getBeforeRegExp,
-        startsWith: startsWith,
-        endsWith: endsWith,
-        substringAfter: substringAfter,
-        substringBefore: substringBefore,
-        wrapInSingleQuotes: wrapInSingleQuotes,
-        getStringInBraces: getStringInBraces,
-        convertRtcConfigToString: convertRtcConfigToString,
-        validateMatchStr: validateMatchStr,
-        parseMatchArg: parseMatchArg,
-        parseDelayArg: parseDelayArg,
-        objectToString: objectToString,
-        convertTypeToString: convertTypeToString,
-        createOnErrorHandler: createOnErrorHandler,
-        noopFunc: noopFunc,
-        noopNull: noopNull,
-        trueFunc: trueFunc,
-        falseFunc: falseFunc,
-        noopThis: noopThis,
-        noopStr: noopStr,
-        noopArray: noopArray,
-        noopObject: noopObject,
-        noopPromiseReject: noopPromiseReject,
-        noopPromiseResolve: noopPromiseResolve,
-        hit: hit,
-        observeDOMChanges: observeDOMChanges,
-        matchStackTrace: matchStackTrace,
-        findHostElements: findHostElements,
-        pierceShadowDom: pierceShadowDom,
-        flatten: flatten,
-        prepareCookie: prepareCookie,
-        nativeIsNaN: nativeIsNaN,
-        nativeIsFinite: nativeIsFinite,
-        getNumberFromString: getNumberFromString,
-        shouldMatchAnyDelay: shouldMatchAnyDelay,
-        getMatchDelay: getMatchDelay,
-        isDelayMatched: isDelayMatched,
-        getBoostMultiplier: getBoostMultiplier,
-        getRequestData: getRequestData,
-        getFetchData: getFetchData,
-        parseMatchProps: parseMatchProps,
-        validateParsedData: validateParsedData,
-        getMatchPropsData: getMatchPropsData,
-        getObjectEntries: getObjectEntries,
-        getObjectFromEntries: getObjectFromEntries,
-        isEmptyObject: isEmptyObject,
-        safeGetDescriptor: safeGetDescriptor,
-        handleOldReplacement: handleOldReplacement,
-        createDecoy: createDecoy,
-        getPreventGetter: getPreventGetter,
-        validateType: validateType,
-        validateListener: validateListener,
-        listenerToString: listenerToString
-    });
-
-    /**
-     * Concat dependencies to scriptlet code
-     * @param {string} scriptlet string view of scriptlet
-     */
-
-    function attachDependencies(scriptlet) {
-      var _scriptlet$injections = scriptlet.injections,
-          injections = _scriptlet$injections === void 0 ? [] : _scriptlet$injections; // eslint-disable-next-line max-len
-
-      return injections.reduce(function (accum, dep) {
-        return "".concat(accum, "\n").concat(dependencies[dep.name]);
-      }, scriptlet.toString());
-    }
-    /**
-     * Add scriptlet call to existing code
-     * @param {Function} scriptlet
-     * @param {string} code
-     */
-
-    function addCall(scriptlet, code) {
-      return "".concat(code, ";\n        const updatedArgs = args ? [].concat(source).concat(args) : [source];\n        try {\n            ").concat(scriptlet.name, ".apply(this, updatedArgs);\n        } catch (e) {\n            console.log(e);\n        }\n    ");
-    }
-    /**
-     * Wrap function into IIFE (Immediately invoked function expression)
-     *
-     * @param {Source} source - object with scriptlet properties
-     * @param {string} code - scriptlet source code with dependencies
-     *
-     * @returns {string} full scriptlet code
-     *
-     * @example
-     * const source = {
-     *      args: ["aaa", "bbb"],
-     *      name: 'noeval',
-     * };
-     * const code = "function noeval(source, args) { alert(source); } noeval.apply(this, args);"
-     * const result = wrapInIIFE(source, code);
-     *
-     * // result
-     * `(function(source, args) {
-     *      function noeval(source) { alert(source); }
-     *      noeval.apply(this, args);
-     * )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])`
-     */
-
-    function passSourceAndProps(source, code) {
-      if (source.hit) {
-        source.hit = source.hit.toString();
-      }
-
-      var sourceString = JSON.stringify(source);
-      var argsString = source.args ? "[".concat(source.args.map(JSON.stringify), "]") : undefined;
-      var params = argsString ? "".concat(sourceString, ", ").concat(argsString) : sourceString;
-      return "(function(source, args){\n".concat(code, "\n})(").concat(params, ");");
-    }
-    /**
-     * Wrap code in no name function
-     * @param {string} code which must be wrapped
-     */
-
-    function wrapInNonameFunc(code) {
-      return "function(source, args){\n".concat(code, "\n}");
-    }
-
-    function _defineProperty(obj, key, value) {
-      if (key in obj) {
-        Object.defineProperty(obj, key, {
-          value: value,
-          enumerable: true,
-          configurable: true,
-          writable: true
-        });
-      } else {
-        obj[key] = value;
-      }
-
-      return obj;
-    }
-
-    var defineProperty = _defineProperty;
-
-    /**
-     * Iterate over iterable argument and evaluate current state with transitions
-     * @param {string} init first transition name
-     * @param {Array|Collection|string} iterable
-     * @param {Object} transitions transtion functions
-     * @param {any} args arguments which should be passed to transition functions
-     */
-    function iterateWithTransitions(iterable, transitions, init, args) {
-      var state = init || Object.keys(transitions)[0];
-
-      for (var i = 0; i < iterable.length; i += 1) {
-        state = transitions[state](iterable, i, args);
-      }
-
-      return state;
-    }
-    /**
-     * AdGuard scriptlet rule mask
-     */
-
-
-    var ADG_SCRIPTLET_MASK = '#//scriptlet';
-    /**
-     * Helper to accumulate an array of strings char by char
-     */
-
-    var wordSaver = function wordSaver() {
-      var str = '';
-      var strs = [];
-
-      var saveSymb = function saveSymb(s) {
-        str += s;
-        return str;
-      };
-
-      var saveStr = function saveStr() {
-        strs.push(str);
-        str = '';
-      };
-
-      var getAll = function getAll() {
-        return [].concat(strs);
-      };
-
-      return {
-        saveSymb: saveSymb,
-        saveStr: saveStr,
-        getAll: getAll
-      };
-    };
-
-    var substringAfter$1 = function substringAfter(str, separator) {
-      if (!str) {
-        return str;
-      }
-
-      var index = str.indexOf(separator);
-      return index < 0 ? '' : str.substring(index + separator.length);
-    };
-    /**
-     * Parse and validate scriptlet rule
-     * @param {*} ruleText
-     * @returns {{name: string, args: Array<string>}}
-     */
-
-
-    var parseRule = function parseRule(ruleText) {
-      var _transitions;
-
-      ruleText = substringAfter$1(ruleText, ADG_SCRIPTLET_MASK);
-      /**
-       * Transition names
-       */
-
-      var TRANSITION = {
-        OPENED: 'opened',
-        PARAM: 'param',
-        CLOSED: 'closed'
-      };
-      /**
-       * Transition function: the current index position in start, end or between params
-       * @param {string} rule
-       * @param {number} index
-       * @param {Object} Object
-       * @property {Object} Object.sep contains prop symb with current separator char
-       */
-
-      var opened = function opened(rule, index, _ref) {
-        var sep = _ref.sep;
-        var char = rule[index];
-        var transition;
-
-        switch (char) {
-          case ' ':
-          case '(':
-          case ',':
-            {
-              transition = TRANSITION.OPENED;
-              break;
-            }
-
-          case '\'':
-          case '"':
-            {
-              sep.symb = char;
-              transition = TRANSITION.PARAM;
-              break;
-            }
-
-          case ')':
-            {
-              transition = index === rule.length - 1 ? TRANSITION.CLOSED : TRANSITION.OPENED;
-              break;
-            }
-
-          default:
-            {
-              throw new Error('The rule is not a scriptlet');
-            }
-        }
-
-        return transition;
-      };
-      /**
-       * Transition function: the current index position inside param
-       * @param {string} rule
-       * @param {number} index
-       * @param {Object} Object
-       * @property {Object} Object.sep contains prop `symb` with current separator char
-       * @property {Object} Object.saver helper which allow to save strings by car by char
-       */
-
-
-      var param = function param(rule, index, _ref2) {
-        var saver = _ref2.saver,
-            sep = _ref2.sep;
-        var char = rule[index];
-
-        switch (char) {
-          case '\'':
-          case '"':
-            {
-              var preIndex = index - 1;
-              var before = rule[preIndex];
-
-              if (char === sep.symb && before !== '\\') {
-                sep.symb = null;
-                saver.saveStr();
-                return TRANSITION.OPENED;
-              }
-            }
-          // eslint-disable-next-line no-fallthrough
-
-          default:
-            {
-              saver.saveSymb(char);
-              return TRANSITION.PARAM;
-            }
-        }
-      };
-
-      var transitions = (_transitions = {}, defineProperty(_transitions, TRANSITION.OPENED, opened), defineProperty(_transitions, TRANSITION.PARAM, param), defineProperty(_transitions, TRANSITION.CLOSED, function () {}), _transitions);
-      var sep = {
-        symb: null
-      };
-      var saver = wordSaver();
-      var state = iterateWithTransitions(ruleText, transitions, TRANSITION.OPENED, {
-        sep: sep,
-        saver: saver
-      });
-
-      if (state !== 'closed') {
-        throw new Error("Invalid scriptlet rule ".concat(ruleText));
-      }
-
-      var args = saver.getAll();
-      return {
-        name: args[0],
-        args: args.slice(1)
-      };
-    };
-
     /* eslint-disable max-len */
 
     /**
@@ -1606,7 +1533,7 @@
 
     /* eslint-enable max-len */
 
-    function abortOnPropertyRead(source, property) {
+    function abortOnPropertyRead$1(source, property) {
       if (!property) {
         return;
       }
@@ -1651,9 +1578,9 @@
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
-    abortOnPropertyRead.names = ['abort-on-property-read', // aliases are needed for matching the related scriptlet converted into our syntax
+    abortOnPropertyRead$1.names = ['abort-on-property-read', // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-property-read.js', 'ubo-abort-on-property-read.js', 'aopr.js', 'ubo-aopr.js', 'ubo-abort-on-property-read', 'ubo-aopr', 'abp-abort-on-property-read'];
-    abortOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
+    abortOnPropertyRead$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
     /* eslint-disable max-len */
 
@@ -1685,7 +1612,7 @@
 
     /* eslint-enable max-len */
 
-    function abortOnPropertyWrite(source, property) {
+    function abortOnPropertyWrite$1(source, property) {
       if (!property) {
         return;
       }
@@ -1729,9 +1656,9 @@
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
-    abortOnPropertyWrite.names = ['abort-on-property-write', // aliases are needed for matching the related scriptlet converted into our syntax
+    abortOnPropertyWrite$1.names = ['abort-on-property-write', // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-property-write.js', 'ubo-abort-on-property-write.js', 'aopw.js', 'ubo-aopw.js', 'ubo-abort-on-property-write', 'ubo-aopw', 'abp-abort-on-property-write'];
-    abortOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
+    abortOnPropertyWrite$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
     /* eslint-disable max-len */
 
@@ -1838,7 +1765,7 @@
 
     /* eslint-enable max-len */
 
-    function preventSetTimeout(source, match, delay) {
+    function preventSetTimeout$1(source, match, delay) {
       // if browser does not support Proxy (e.g. Internet Explorer),
       // we use none-proxy "legacy" wrapper for preventing
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -1922,14 +1849,14 @@
       };
       window.setTimeout = isProxySupported ? new Proxy(window.setTimeout, setTimeoutHandler) : legacyTimeoutWrapper;
     }
-    preventSetTimeout.names = ['prevent-setTimeout', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventSetTimeout$1.names = ['prevent-setTimeout', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-setTimeout-if.js', // new implementation of setTimeout-defuser.js
     'ubo-no-setTimeout-if.js', 'nostif.js', // new short name of no-setTimeout-if
     'ubo-nostif.js', 'ubo-no-setTimeout-if', 'ubo-nostif', // old scriptlet names which should be supported as well.
     // should be removed eventually.
     // do not remove until other filter lists maintainers use them
     'setTimeout-defuser.js', 'ubo-setTimeout-defuser.js', 'ubo-setTimeout-defuser', 'std.js', 'ubo-std.js', 'ubo-std'];
-    preventSetTimeout.injections = [hit, noopFunc, parseMatchArg, parseDelayArg, toRegExp, startsWith, nativeIsNaN];
+    preventSetTimeout$1.injections = [hit, noopFunc, parseMatchArg, parseDelayArg, toRegExp, startsWith, nativeIsNaN];
 
     /* eslint-disable max-len */
 
@@ -2036,7 +1963,7 @@
 
     /* eslint-enable max-len */
 
-    function preventSetInterval(source, match, delay) {
+    function preventSetInterval$1(source, match, delay) {
       // if browser does not support Proxy (e.g. Internet Explorer),
       // we use none-proxy "legacy" wrapper for preventing
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -2120,13 +2047,13 @@
       };
       window.setInterval = isProxySupported ? new Proxy(window.setInterval, setIntervalHandler) : legacyIntervalWrapper;
     }
-    preventSetInterval.names = ['prevent-setInterval', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventSetInterval$1.names = ['prevent-setInterval', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-setInterval-if.js', // new implementation of setInterval-defuser.js
     'ubo-no-setInterval-if.js', 'setInterval-defuser.js', // old name should be supported as well
     'ubo-setInterval-defuser.js', 'nosiif.js', // new short name of no-setInterval-if
     'ubo-nosiif.js', 'sid.js', // old short scriptlet name
     'ubo-sid.js', 'ubo-no-setInterval-if', 'ubo-setInterval-defuser', 'ubo-nosiif', 'ubo-sid'];
-    preventSetInterval.injections = [hit, noopFunc, parseMatchArg, parseDelayArg, toRegExp, startsWith, nativeIsNaN];
+    preventSetInterval$1.injections = [hit, noopFunc, parseMatchArg, parseDelayArg, toRegExp, startsWith, nativeIsNaN];
 
     /* eslint-disable max-len */
 
@@ -2193,7 +2120,7 @@
 
     /* eslint-enable max-len */
 
-    function preventWindowOpen(source) {
+    function preventWindowOpen$1(source) {
       var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : getWildcardSymbol();
       var delay = arguments.length > 2 ? arguments[2] : undefined;
       var replacement = arguments.length > 3 ? arguments[3] : undefined;
@@ -2301,9 +2228,9 @@
 
       window.open.toString = nativeOpen.toString.bind(nativeOpen);
     }
-    preventWindowOpen.names = ['prevent-window-open', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventWindowOpen$1.names = ['prevent-window-open', // aliases are needed for matching the related scriptlet converted into our syntax
     'window.open-defuser.js', 'ubo-window.open-defuser.js', 'ubo-window.open-defuser', 'nowoif.js', 'ubo-nowoif.js', 'ubo-nowoif'];
-    preventWindowOpen.injections = [hit, validateStrPattern, validateMatchStr, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, getWildcardSymbol, noopFunc, trueFunc, startsWith, endsWith, substringBefore, substringAfter];
+    preventWindowOpen$1.injections = [hit, validateStrPattern, validateMatchStr, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, getWildcardSymbol, noopFunc, trueFunc, startsWith, endsWith, substringBefore, substringAfter$1];
 
     /* eslint-disable max-len */
 
@@ -2372,7 +2299,7 @@
 
     /* eslint-enable max-len */
 
-    function abortCurrentInlineScript(source, property, search) {
+    function abortCurrentInlineScript$1(source, property, search) {
       var searchRegexp = toRegExp(search);
       var rid = randomId();
       var SRC_DATA_MARKER = 'data:text/javascript;base64,';
@@ -2488,11 +2415,11 @@
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
-    abortCurrentInlineScript.names = ['abort-current-inline-script', // aliases are needed for matching the related scriptlet converted into our syntax
+    abortCurrentInlineScript$1.names = ['abort-current-inline-script', // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-current-script.js', 'ubo-abort-current-script.js', 'acs.js', 'ubo-acs.js', // "ubo"-aliases with no "js"-ending
     'ubo-abort-current-script', 'ubo-acs', // obsolete but supported aliases
     'abort-current-inline-script.js', 'ubo-abort-current-inline-script.js', 'acis.js', 'ubo-acis.js', 'ubo-abort-current-inline-script', 'ubo-acis', 'abp-abort-current-inline-script'];
-    abortCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, startsWith, createOnErrorHandler, hit];
+    abortCurrentInlineScript$1.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, startsWith, createOnErrorHandler, hit];
 
     /* eslint-disable max-len */
 
@@ -2563,7 +2490,7 @@
 
     /* eslint-enable max-len */
 
-    function setConstant(source, property, value, stack) {
+    function setConstant$1(source, property, value, stack) {
       if (!property || !matchStackTrace(stack, new Error().stack)) {
         return;
       } // eslint-disable-next-line no-console
@@ -2765,9 +2692,9 @@
 
       setChainPropAccess(window, property);
     }
-    setConstant.names = ['set-constant', // aliases are needed for matching the related scriptlet converted into our syntax
+    setConstant$1.names = ['set-constant', // aliases are needed for matching the related scriptlet converted into our syntax
     'set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js', 'ubo-set-constant', 'ubo-set', 'abp-override-property-read'];
-    setConstant.injections = [hit, noopArray, noopObject, noopFunc, trueFunc, falseFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, nativeIsNaN];
+    setConstant$1.injections = [hit, noopArray, noopObject, noopFunc, trueFunc, falseFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, nativeIsNaN];
 
     /* eslint-disable max-len */
 
@@ -2806,7 +2733,7 @@
 
     /* eslint-enable max-len */
 
-    function removeCookie(source, match) {
+    function removeCookie$1(source, match) {
       var matchRegexp = toRegExp(match);
 
       var removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
@@ -2853,9 +2780,9 @@
       rmCookie();
       window.addEventListener('beforeunload', rmCookie);
     }
-    removeCookie.names = ['remove-cookie', // aliases are needed for matching the related scriptlet converted into our syntax
+    removeCookie$1.names = ['remove-cookie', // aliases are needed for matching the related scriptlet converted into our syntax
     'cookie-remover.js', 'ubo-cookie-remover.js', 'ubo-cookie-remover'];
-    removeCookie.injections = [toRegExp, hit];
+    removeCookie$1.injections = [toRegExp, hit];
 
     /* eslint-disable max-len */
 
@@ -2899,7 +2826,7 @@
 
     /* eslint-enable max-len */
 
-    function preventAddEventListener(source, typeSearch, listenerSearch) {
+    function preventAddEventListener$1(source, typeSearch, listenerSearch) {
       var typeSearchRegexp = toRegExp(typeSearch);
       var listenerSearchRegexp = toRegExp(listenerSearch);
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
@@ -2928,9 +2855,9 @@
       window.addEventListener = addEventListenerWrapper;
       document.addEventListener = addEventListenerWrapper;
     }
-    preventAddEventListener.names = ['prevent-addEventListener', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventAddEventListener$1.names = ['prevent-addEventListener', // aliases are needed for matching the related scriptlet converted into our syntax
     'addEventListener-defuser.js', 'ubo-addEventListener-defuser.js', 'aeld.js', 'ubo-aeld.js', 'ubo-addEventListener-defuser', 'ubo-aeld'];
-    preventAddEventListener.injections = [hit, toRegExp, validateType, validateListener, listenerToString];
+    preventAddEventListener$1.injections = [hit, toRegExp, validateType, validateListener, listenerToString];
 
     /* eslint-disable consistent-return, no-eval */
     /**
@@ -2951,7 +2878,7 @@
      * ```
      */
 
-    function preventBab(source) {
+    function preventBab$1(source) {
       var nativeSetTimeout = window.setTimeout;
       var babRegex = /\.bab_elementid.$/;
 
@@ -3019,9 +2946,9 @@
 
       window.eval = evalWrapper.bind(window);
     }
-    preventBab.names = ['prevent-bab', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventBab$1.names = ['prevent-bab', // aliases are needed for matching the related scriptlet converted into our syntax
     'nobab.js', 'ubo-nobab.js', 'bab-defuser.js', 'ubo-bab-defuser.js', 'ubo-nobab', 'ubo-bab-defuser'];
-    preventBab.injections = [hit];
+    preventBab$1.injections = [hit];
 
     /* eslint-disable no-unused-vars, no-extra-bind, func-names */
     /* eslint-disable max-len */
@@ -3043,7 +2970,7 @@
 
     /* eslint-enable max-len */
 
-    function nowebrtc(source) {
+    function nowebrtc$1(source) {
       var propertyName = '';
 
       if (window.RTCPeerConnection) {
@@ -3079,9 +3006,9 @@
         }.bind(null);
       }
     }
-    nowebrtc.names = ['nowebrtc', // aliases are needed for matching the related scriptlet converted into our syntax
+    nowebrtc$1.names = ['nowebrtc', // aliases are needed for matching the related scriptlet converted into our syntax
     'nowebrtc.js', 'ubo-nowebrtc.js', 'ubo-nowebrtc'];
-    nowebrtc.injections = [hit, noopFunc, convertRtcConfigToString];
+    nowebrtc$1.injections = [hit, noopFunc, convertRtcConfigToString];
 
     /**
      * @scriptlet log-addEventListener
@@ -3098,7 +3025,7 @@
      * ```
      */
 
-    function logAddEventListener(source) {
+    function logAddEventListener$1(source) {
       // eslint-disable-next-line no-console
       var log = console.log.bind(console);
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
@@ -3124,9 +3051,9 @@
 
       window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
     }
-    logAddEventListener.names = ['log-addEventListener', // aliases are needed for matching the related scriptlet converted into our syntax
+    logAddEventListener$1.names = ['log-addEventListener', // aliases are needed for matching the related scriptlet converted into our syntax
     'addEventListener-logger.js', 'ubo-addEventListener-logger.js', 'aell.js', 'ubo-aell.js', 'ubo-addEventListener-logger', 'ubo-aell'];
-    logAddEventListener.injections = [hit, validateType, validateListener, listenerToString, convertTypeToString, objectToString, isEmptyObject, getObjectEntries];
+    logAddEventListener$1.injections = [hit, validateType, validateListener, listenerToString, convertTypeToString, objectToString, isEmptyObject, getObjectEntries];
 
     /* eslint-disable no-console, no-eval */
     /**
@@ -3141,7 +3068,7 @@
      * ```
      */
 
-    function logEval(source) {
+    function logEval$1(source) {
       var log = console.log.bind(console); // wrap eval function
 
       var nativeEval = window.eval;
@@ -3171,8 +3098,8 @@
       FunctionWrapper.prototype.constructor = FunctionWrapper;
       window.Function = FunctionWrapper;
     }
-    logEval.names = ['log-eval'];
-    logEval.injections = [hit];
+    logEval$1.names = ['log-eval'];
+    logEval$1.injections = [hit];
 
     /**
      * @scriptlet log
@@ -3186,14 +3113,14 @@
      * example.org#%#//scriptlet('log', 'arg1', 'arg2')
      * ```
      */
-    function log() {
+    function log$1() {
       for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
         args[_key] = arguments[_key];
       }
 
       console.log(args); // eslint-disable-line no-console
     }
-    log.names = ['log'];
+    log$1.names = ['log'];
 
     /* eslint-disable no-eval, no-extra-bind */
     /**
@@ -3215,14 +3142,14 @@
      * ```
      */
 
-    function noeval(source) {
+    function noeval$1(source) {
       window.eval = function evalWrapper(s) {
         hit(source, "AdGuard has prevented eval:\n".concat(s));
       }.bind();
     }
-    noeval.names = ['noeval', // aliases are needed for matching the related scriptlet converted into our syntax
+    noeval$1.names = ['noeval', // aliases are needed for matching the related scriptlet converted into our syntax
     'noeval.js', 'silent-noeval.js', 'ubo-noeval.js', 'ubo-silent-noeval.js', 'ubo-noeval', 'ubo-silent-noeval'];
-    noeval.injections = [hit];
+    noeval$1.injections = [hit];
 
     /* eslint-disable no-eval, no-extra-bind, func-names */
     /**
@@ -3250,7 +3177,7 @@
      * ```
      */
 
-    function preventEvalIf(source, search) {
+    function preventEvalIf$1(source, search) {
       var searchRegexp = toRegExp(search);
       var nativeEval = window.eval;
 
@@ -3263,9 +3190,9 @@
         return undefined;
       }.bind(window);
     }
-    preventEvalIf.names = ['prevent-eval-if', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventEvalIf$1.names = ['prevent-eval-if', // aliases are needed for matching the related scriptlet converted into our syntax
     'noeval-if.js', 'ubo-noeval-if.js', 'ubo-noeval-if'];
-    preventEvalIf.injections = [toRegExp, hit];
+    preventEvalIf$1.injections = [toRegExp, hit];
 
     /* eslint-disable no-console, func-names, no-multi-assign */
     /**
@@ -3283,7 +3210,7 @@
      * ```
      */
 
-    function preventFab(source) {
+    function preventFab$1(source) {
       hit(source); // redefines Fab function for adblock detection
 
       var Fab = function Fab() {};
@@ -3363,9 +3290,9 @@
         Object.defineProperty(window, 'sniffAdBlock', getsetfab);
       }
     }
-    preventFab.names = ['prevent-fab-3.2.0', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventFab$1.names = ['prevent-fab-3.2.0', // aliases are needed for matching the related scriptlet converted into our syntax
     'nofab.js', 'ubo-nofab.js', 'fuckadblock.js-3.2.0', 'ubo-fuckadblock.js-3.2.0', 'ubo-nofab'];
-    preventFab.injections = [hit, noopFunc, noopThis];
+    preventFab$1.injections = [hit, noopFunc, noopThis];
 
     /* eslint-disable no-console, func-names, no-multi-assign */
     /**
@@ -3383,7 +3310,7 @@
      * ```
      */
 
-    function setPopadsDummy(source) {
+    function setPopadsDummy$1(source) {
       delete window.PopAds;
       delete window.popns;
       Object.defineProperties(window, {
@@ -3401,9 +3328,9 @@
         }
       });
     }
-    setPopadsDummy.names = ['set-popads-dummy', // aliases are needed for matching the related scriptlet converted into our syntax
+    setPopadsDummy$1.names = ['set-popads-dummy', // aliases are needed for matching the related scriptlet converted into our syntax
     'popads-dummy.js', 'ubo-popads-dummy.js', 'ubo-popads-dummy'];
-    setPopadsDummy.injections = [hit];
+    setPopadsDummy$1.injections = [hit];
 
     /**
      * @scriptlet prevent-popads-net
@@ -3420,7 +3347,7 @@
      * ```
      */
 
-    function preventPopadsNet(source) {
+    function preventPopadsNet$1(source) {
       var rid = randomId();
 
       var throwError = function throwError() {
@@ -3440,9 +3367,9 @@
       window.onerror = createOnErrorHandler(rid).bind();
       hit(source);
     }
-    preventPopadsNet.names = ['prevent-popads-net', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventPopadsNet$1.names = ['prevent-popads-net', // aliases are needed for matching the related scriptlet converted into our syntax
     'popads.net.js', 'ubo-popads.net.js', 'ubo-popads.net'];
-    preventPopadsNet.injections = [createOnErrorHandler, randomId, hit];
+    preventPopadsNet$1.injections = [createOnErrorHandler, randomId, hit];
 
     /* eslint-disable func-names */
     /**
@@ -3460,7 +3387,7 @@
      * ```
      */
 
-    function preventAdfly(source) {
+    function preventAdfly$1(source) {
       var isDigit = function isDigit(data) {
         return /^\d$/.test(data);
       };
@@ -3541,9 +3468,9 @@
         window.console.error('Failed to set up prevent-adfly scriptlet');
       }
     }
-    preventAdfly.names = ['prevent-adfly', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventAdfly$1.names = ['prevent-adfly', // aliases are needed for matching the related scriptlet converted into our syntax
     'adfly-defuser.js', 'ubo-adfly-defuser.js', 'ubo-adfly-defuser'];
-    preventAdfly.injections = [setPropertyAccess, hit];
+    preventAdfly$1.injections = [setPropertyAccess, hit];
 
     /* eslint-disable max-len */
 
@@ -3566,7 +3493,7 @@
 
     /* eslint-enable max-len */
 
-    function debugOnPropertyRead(source, property) {
+    function debugOnPropertyRead$1(source, property) {
       if (!property) {
         return;
       }
@@ -3611,8 +3538,8 @@
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
-    debugOnPropertyRead.names = ['debug-on-property-read'];
-    debugOnPropertyRead.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, noopFunc];
+    debugOnPropertyRead$1.names = ['debug-on-property-read'];
+    debugOnPropertyRead$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, noopFunc];
 
     /* eslint-disable max-len */
 
@@ -3633,7 +3560,7 @@
 
     /* eslint-enable max-len */
 
-    function debugOnPropertyWrite(source, property) {
+    function debugOnPropertyWrite$1(source, property) {
       if (!property) {
         return;
       }
@@ -3677,8 +3604,8 @@
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
-    debugOnPropertyWrite.names = ['debug-on-property-write'];
-    debugOnPropertyWrite.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
+    debugOnPropertyWrite$1.names = ['debug-on-property-write'];
+    debugOnPropertyWrite$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
 
     /* eslint-disable max-len */
 
@@ -3699,7 +3626,7 @@
 
     /* eslint-enable max-len */
 
-    function debugCurrentInlineScript(source, property, search) {
+    function debugCurrentInlineScript$1(source, property, search) {
       var searchRegexp = toRegExp(search);
       var rid = randomId();
 
@@ -3791,8 +3718,8 @@
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
-    debugCurrentInlineScript.names = ['debug-current-inline-script'];
-    debugCurrentInlineScript.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit];
+    debugCurrentInlineScript$1.names = ['debug-current-inline-script'];
+    debugCurrentInlineScript$1.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit];
 
     /* eslint-disable max-len */
 
@@ -3858,7 +3785,7 @@
 
     /* eslint-enable max-len */
 
-    function removeAttr(source, attrs, selector) {
+    function removeAttr$1(source, attrs, selector) {
       var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'asap stay';
 
       if (!attrs) {
@@ -3934,9 +3861,9 @@
         observeDOMChanges(rmattr, true);
       }
     }
-    removeAttr.names = ['remove-attr', // aliases are needed for matching the related scriptlet converted into our syntax
+    removeAttr$1.names = ['remove-attr', // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-attr.js', 'ubo-remove-attr.js', 'ra.js', 'ubo-ra.js', 'ubo-remove-attr', 'ubo-ra'];
-    removeAttr.injections = [hit, observeDOMChanges];
+    removeAttr$1.injections = [hit, observeDOMChanges];
 
     /* eslint-disable max-len */
 
@@ -3987,7 +3914,7 @@
 
     /* eslint-enable max-len */
 
-    function setAttr(source, selector, attr) {
+    function setAttr$1(source, selector, attr) {
       var value = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
 
       if (!selector || !attr) {
@@ -4015,8 +3942,8 @@
       setAttr();
       observeDOMChanges(setAttr, true);
     }
-    setAttr.names = ['set-attr'];
-    setAttr.injections = [hit, observeDOMChanges, nativeIsNaN];
+    setAttr$1.names = ['set-attr'];
+    setAttr$1.injections = [hit, observeDOMChanges, nativeIsNaN];
 
     /* eslint-disable max-len */
 
@@ -4086,7 +4013,7 @@
 
     /* eslint-enable max-len */
 
-    function removeClass(source, classNames, selector) {
+    function removeClass$1(source, classNames, selector) {
       var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'asap stay';
 
       if (!classNames) {
@@ -4187,9 +4114,9 @@
         observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
       }
     }
-    removeClass.names = ['remove-class', // aliases are needed for matching the related scriptlet converted into our syntax
+    removeClass$1.names = ['remove-class', // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-class.js', 'ubo-remove-class.js', 'rc.js', 'ubo-rc.js', 'ubo-remove-class', 'ubo-rc'];
-    removeClass.injections = [hit, observeDOMChanges];
+    removeClass$1.injections = [hit, observeDOMChanges];
 
     /**
      * @scriptlet disable-newtab-links
@@ -4206,7 +4133,7 @@
      * ```
      */
 
-    function disableNewtabLinks(source) {
+    function disableNewtabLinks$1(source) {
       document.addEventListener('click', function (ev) {
         var target = ev.target;
 
@@ -4222,9 +4149,9 @@
         }
       });
     }
-    disableNewtabLinks.names = ['disable-newtab-links', // aliases are needed for matching the related scriptlet converted into our syntax
+    disableNewtabLinks$1.names = ['disable-newtab-links', // aliases are needed for matching the related scriptlet converted into our syntax
     'disable-newtab-links.js', 'ubo-disable-newtab-links.js', 'ubo-disable-newtab-links'];
-    disableNewtabLinks.injections = [hit];
+    disableNewtabLinks$1.injections = [hit];
 
     /* eslint-disable max-len */
 
@@ -4279,7 +4206,7 @@
 
     /* eslint-enable max-len */
 
-    function adjustSetInterval(source, match, interval, boost) {
+    function adjustSetInterval$1(source, match, interval, boost) {
       var nativeSetInterval = window.setInterval;
       var matchRegexp = toRegExp(match);
 
@@ -4298,9 +4225,9 @@
 
       window.setInterval = intervalWrapper;
     }
-    adjustSetInterval.names = ['adjust-setInterval', // aliases are needed for matching the related scriptlet converted into our syntax
+    adjustSetInterval$1.names = ['adjust-setInterval', // aliases are needed for matching the related scriptlet converted into our syntax
     'nano-setInterval-booster.js', 'ubo-nano-setInterval-booster.js', 'nano-sib.js', 'ubo-nano-sib.js', 'ubo-nano-setInterval-booster', 'ubo-nano-sib'];
-    adjustSetInterval.injections = [hit, toRegExp, getBoostMultiplier, isDelayMatched, nativeIsNaN, nativeIsFinite, getMatchDelay, getWildcardSymbol, shouldMatchAnyDelay];
+    adjustSetInterval$1.injections = [hit, toRegExp, getBoostMultiplier, isDelayMatched, nativeIsNaN, nativeIsFinite, getMatchDelay, getWildcardSymbol, shouldMatchAnyDelay];
 
     /* eslint-disable max-len */
 
@@ -4355,7 +4282,7 @@
 
     /* eslint-enable max-len */
 
-    function adjustSetTimeout(source, match, timeout, boost) {
+    function adjustSetTimeout$1(source, match, timeout, boost) {
       var nativeSetTimeout = window.setTimeout;
       var matchRegexp = toRegExp(match);
 
@@ -4374,9 +4301,9 @@
 
       window.setTimeout = timeoutWrapper;
     }
-    adjustSetTimeout.names = ['adjust-setTimeout', // aliases are needed for matching the related scriptlet converted into our syntax
+    adjustSetTimeout$1.names = ['adjust-setTimeout', // aliases are needed for matching the related scriptlet converted into our syntax
     'nano-setTimeout-booster.js', 'ubo-nano-setTimeout-booster.js', 'nano-stb.js', 'ubo-nano-stb.js', 'ubo-nano-setTimeout-booster', 'ubo-nano-stb'];
-    adjustSetTimeout.injections = [hit, toRegExp, getBoostMultiplier, isDelayMatched, nativeIsNaN, nativeIsFinite, getMatchDelay, getWildcardSymbol, shouldMatchAnyDelay];
+    adjustSetTimeout$1.injections = [hit, toRegExp, getBoostMultiplier, isDelayMatched, nativeIsNaN, nativeIsFinite, getMatchDelay, getWildcardSymbol, shouldMatchAnyDelay];
 
     /* eslint-disable max-len */
 
@@ -4408,7 +4335,7 @@
 
     /* eslint-enable max-len */
 
-    function dirString(source, times) {
+    function dirString$1(source, times) {
       var _console = console,
           dir = _console.dir;
       times = parseInt(times, 10);
@@ -4432,8 +4359,8 @@
 
       console.dir = dirWrapper;
     }
-    dirString.names = ['dir-string', 'abp-dir-string'];
-    dirString.injections = [hit];
+    dirString$1.names = ['dir-string', 'abp-dir-string'];
+    dirString$1.injections = [hit];
 
     /* eslint-disable max-len */
 
@@ -4515,7 +4442,7 @@
 
     /* eslint-enable max-len */
 
-    function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
+    function jsonPrune$1(source, propsToRemove, requiredInitialProps, stack) {
       if (!!stack && !matchStackTrace(stack, new Error().stack)) {
         return;
       } // eslint-disable-next-line no-console
@@ -4637,9 +4564,9 @@
 
       Response.prototype.json = responseJsonWrapper;
     }
-    jsonPrune.names = ['json-prune', // aliases are needed for matching the related scriptlet converted into our syntax
+    jsonPrune$1.names = ['json-prune', // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune.js', 'ubo-json-prune.js', 'ubo-json-prune', 'abp-json-prune'];
-    jsonPrune.injections = [hit, matchStackTrace, getWildcardPropertyInChain, toRegExp, getWildcardSymbol];
+    jsonPrune$1.injections = [hit, matchStackTrace, getWildcardPropertyInChain, toRegExp, getWildcardSymbol];
 
     /* eslint-disable max-len */
 
@@ -4713,7 +4640,7 @@
 
     /* eslint-enable max-len */
 
-    function preventRequestAnimationFrame(source, match) {
+    function preventRequestAnimationFrame$1(source, match) {
       var nativeRequestAnimationFrame = window.requestAnimationFrame; // logs requestAnimationFrame to console if no arguments have been specified
 
       var shouldLog = typeof match === 'undefined';
@@ -4746,9 +4673,9 @@
 
       window.requestAnimationFrame = rafWrapper;
     }
-    preventRequestAnimationFrame.names = ['prevent-requestAnimationFrame', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventRequestAnimationFrame$1.names = ['prevent-requestAnimationFrame', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-requestAnimationFrame-if.js', 'ubo-no-requestAnimationFrame-if.js', 'norafif.js', 'ubo-norafif.js', 'ubo-no-requestAnimationFrame-if', 'ubo-norafif'];
-    preventRequestAnimationFrame.injections = [hit, noopFunc, parseMatchArg, validateStrPattern, toRegExp, startsWith];
+    preventRequestAnimationFrame$1.injections = [hit, noopFunc, parseMatchArg, validateStrPattern, toRegExp, startsWith];
 
     /* eslint-disable max-len */
 
@@ -4783,7 +4710,7 @@
 
     /* eslint-enable max-len */
 
-    function setCookie(source, name, value) {
+    function setCookie$1(source, name, value) {
       var cookieData = prepareCookie(name, value);
 
       if (cookieData) {
@@ -4791,8 +4718,8 @@
         document.cookie = cookieData;
       }
     }
-    setCookie.names = ['set-cookie'];
-    setCookie.injections = [hit, nativeIsNaN, prepareCookie];
+    setCookie$1.names = ['set-cookie'];
+    setCookie$1.injections = [hit, nativeIsNaN, prepareCookie];
 
     /**
      * @scriptlet set-cookie-reload
@@ -4824,7 +4751,7 @@
      * ```
      */
 
-    function setCookieReload(source, name, value) {
+    function setCookieReload$1(source, name, value) {
       var isCookieAlreadySet = document.cookie.split(';').some(function (cookieStr) {
         var pos = cookieStr.indexOf('=');
 
@@ -4848,8 +4775,8 @@
         }
       }
     }
-    setCookieReload.names = ['set-cookie-reload'];
-    setCookieReload.injections = [hit, nativeIsNaN, prepareCookie];
+    setCookieReload$1.names = ['set-cookie-reload'];
+    setCookieReload$1.injections = [hit, nativeIsNaN, prepareCookie];
 
     /**
      * @scriptlet hide-in-shadow-dom
@@ -4879,7 +4806,7 @@
      * ```
      */
 
-    function hideInShadowDom(source, selector, baseSelector) {
+    function hideInShadowDom$1(source, selector, baseSelector) {
       // do nothing if browser does not support ShadowRoot
       // https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot
       if (!Element.prototype.attachShadow) {
@@ -4924,8 +4851,8 @@
       hideHandler();
       observeDOMChanges(hideHandler, true);
     }
-    hideInShadowDom.names = ['hide-in-shadow-dom'];
-    hideInShadowDom.injections = [hit, observeDOMChanges, flatten, findHostElements, pierceShadowDom];
+    hideInShadowDom$1.names = ['hide-in-shadow-dom'];
+    hideInShadowDom$1.injections = [hit, observeDOMChanges, flatten, findHostElements, pierceShadowDom];
 
     /**
      * @scriptlet remove-in-shadow-dom
@@ -4955,7 +4882,7 @@
      * ```
      */
 
-    function removeInShadowDom(source, selector, baseSelector) {
+    function removeInShadowDom$1(source, selector, baseSelector) {
       // do nothing if browser does not support ShadowRoot
       // https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot
       if (!Element.prototype.attachShadow) {
@@ -4999,8 +4926,8 @@
       removeHandler();
       observeDOMChanges(removeHandler, true);
     }
-    removeInShadowDom.names = ['remove-in-shadow-dom'];
-    removeInShadowDom.injections = [hit, observeDOMChanges, flatten, findHostElements, pierceShadowDom];
+    removeInShadowDom$1.names = ['remove-in-shadow-dom'];
+    removeInShadowDom$1.injections = [hit, observeDOMChanges, flatten, findHostElements, pierceShadowDom];
 
     /* eslint-disable max-len */
 
@@ -5030,31 +4957,34 @@
      * which is useful for debugging but permitted for production filter lists.
      *
      * **Examples**
-     * 1. Prevent all fetch calls
+     * 1. Log all fetch calls
      *     ```
      *     example.org#%#//scriptlet('prevent-fetch')
-     *     OR
+     *     ```
+     *
+     * 2. Prevent all fetch calls
+     *     ```
      *     example.org#%#//scriptlet('prevent-fetch', '*')
      *     OR
      *     example.org#%#//scriptlet('prevent-fetch', '')
      *     ```
      *
-     * 2. Prevent fetch call for specific url
+     * 3. Prevent fetch call for specific url
      *     ```
      *     example.org#%#//scriptlet('prevent-fetch', '/url\\.part/')
      *     ```
      *
-     * 3. Prevent fetch call for specific request method
+     * 4. Prevent fetch call for specific request method
      *     ```
      *     example.org#%#//scriptlet('prevent-fetch', 'method:HEAD')
      *     ```
      *
-     * 4. Prevent fetch call for specific url and request method
+     * 5. Prevent fetch call for specific url and request method
      *     ```
      *     example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/')
      *     ```
      *
-     * 5. Prevent fetch call and specify response body value
+     * 6. Prevent fetch call and specify response body value
      *     ```
      *     ! Specify response body for fetch call to a specific url
      *     example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/', 'emptyArr')
@@ -5066,7 +4996,7 @@
 
     /* eslint-enable max-len */
 
-    function preventFetch(source, propsToMatch) {
+    function preventFetch$1(source, propsToMatch) {
       var responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'emptyObj';
 
       // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
@@ -5127,9 +5057,9 @@
       };
       fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
     }
-    preventFetch.names = ['prevent-fetch', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventFetch$1.names = ['prevent-fetch', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-fetch-if.js', 'ubo-no-fetch-if.js', 'ubo-no-fetch-if'];
-    preventFetch.injections = [hit, getFetchData, objectToString, parseMatchProps, validateParsedData, getMatchPropsData, noopPromiseResolve, getWildcardSymbol, toRegExp, validateStrPattern, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries];
+    preventFetch$1.injections = [hit, getFetchData, objectToString, parseMatchProps, validateParsedData, getMatchPropsData, noopPromiseResolve, getWildcardSymbol, toRegExp, validateStrPattern, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries];
 
     /* eslint-disable max-len */
 
@@ -5168,7 +5098,7 @@
 
     /* eslint-enable max-len */
 
-    function setLocalStorageItem(source, key, value) {
+    function setLocalStorageItem$1(source, key, value) {
       if (!key || !value && value !== '') {
         return;
       }
@@ -5224,8 +5154,8 @@
 
       setItem(key, keyValue);
     }
-    setLocalStorageItem.names = ['set-local-storage-item'];
-    setLocalStorageItem.injections = [hit, nativeIsNaN];
+    setLocalStorageItem$1.names = ['set-local-storage-item'];
+    setLocalStorageItem$1.injections = [hit, nativeIsNaN];
 
     /* eslint-disable max-len */
 
@@ -5264,7 +5194,7 @@
 
     /* eslint-enable max-len */
 
-    function setSessionStorageItem(source, key, value) {
+    function setSessionStorageItem$1(source, key, value) {
       if (!key || !value && value !== '') {
         return;
       }
@@ -5320,8 +5250,8 @@
 
       setItem(key, keyValue);
     }
-    setSessionStorageItem.names = ['set-session-storage-item'];
-    setSessionStorageItem.injections = [hit, nativeIsNaN];
+    setSessionStorageItem$1.names = ['set-session-storage-item'];
+    setSessionStorageItem$1.injections = [hit, nativeIsNaN];
 
     /* eslint-disable max-len */
 
@@ -5358,7 +5288,7 @@
 
     /* eslint-enable max-len */
 
-    function abortOnStackTrace(source, property, stack) {
+    function abortOnStackTrace$1(source, property, stack) {
       if (!property || !stack) {
         return;
       }
@@ -5423,9 +5353,9 @@
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
-    abortOnStackTrace.names = ['abort-on-stack-trace', // aliases are needed for matching the related scriptlet converted into our syntax
+    abortOnStackTrace$1.names = ['abort-on-stack-trace', // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-stack-trace.js', 'ubo-abort-on-stack-trace.js', 'aost.js', 'ubo-aost.js', 'ubo-abort-on-stack-trace', 'ubo-aost', 'abp-abort-on-stack-trace'];
-    abortOnStackTrace.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, validateStrPattern, matchStackTrace, toRegExp];
+    abortOnStackTrace$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, validateStrPattern, matchStackTrace, toRegExp];
 
     /* eslint-disable max-len */
 
@@ -5448,7 +5378,7 @@
 
     /* eslint-enable max-len */
 
-    function logOnStacktrace(source, property) {
+    function logOnStacktrace$1(source, property) {
       if (!property) {
         return;
       }
@@ -5535,8 +5465,8 @@
 
       setChainPropAccess(window, property);
     }
-    logOnStacktrace.names = ['log-on-stack-trace'];
-    logOnStacktrace.injections = [getPropertyInChain, setPropertyAccess, hit];
+    logOnStacktrace$1.names = ['log-on-stack-trace'];
+    logOnStacktrace$1.injections = [getPropertyInChain, setPropertyAccess, hit];
 
     /* eslint-disable max-len */
 
@@ -5599,7 +5529,7 @@
 
     /* eslint-enable max-len */
 
-    function preventXHR(source, propsToMatch, randomize) {
+    function preventXHR$1(source, propsToMatch, randomize) {
       // do nothing if browser does not support Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
       if (typeof Proxy === 'undefined') {
@@ -5708,9 +5638,9 @@
       XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
       XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
     }
-    preventXHR.names = ['prevent-xhr', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventXHR$1.names = ['prevent-xhr', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-xhr-if.js', 'ubo-no-xhr-if.js', 'ubo-no-xhr-if'];
-    preventXHR.injections = [hit, objectToString, getWildcardSymbol, parseMatchProps, validateParsedData, getMatchPropsData, toRegExp, validateStrPattern, isEmptyObject, getObjectEntries];
+    preventXHR$1.injections = [hit, objectToString, getWildcardSymbol, parseMatchProps, validateParsedData, getMatchPropsData, toRegExp, validateStrPattern, isEmptyObject, getObjectEntries];
 
     /**
      * @scriptlet close-window
@@ -5737,7 +5667,7 @@
      * ```
      */
 
-    function forceWindowClose(source) {
+    function forceWindowClose$1(source) {
       var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
       // eslint-disable-next-line no-console
       var log = console.log.bind(console); // https://github.com/AdguardTeam/Scriptlets/issues/158#issuecomment-993423036
@@ -5772,8 +5702,8 @@
         }
       }
     }
-    forceWindowClose.names = ['close-window', 'window-close-if.js', 'ubo-window-close-if.js', 'ubo-window-close-if'];
-    forceWindowClose.injections = [hit, toRegExp];
+    forceWindowClose$1.names = ['close-window', 'window-close-if.js', 'ubo-window-close-if.js', 'ubo-window-close-if'];
+    forceWindowClose$1.injections = [hit, toRegExp];
 
     /* eslint-disable max-len */
 
@@ -5807,7 +5737,7 @@
 
     /* eslint-enable max-len */
 
-    function preventRefresh(source, delaySec) {
+    function preventRefresh$1(source, delaySec) {
       var getMetaElements = function getMetaElements() {
         var metaNodes = [];
 
@@ -5892,12 +5822,12 @@
         stop();
       }
     }
-    preventRefresh.names = ['prevent-refresh', // Aliases are needed for matching the related scriptlet converted into our syntax
+    preventRefresh$1.names = ['prevent-refresh', // Aliases are needed for matching the related scriptlet converted into our syntax
     // These are used by UBO rules syntax
     // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
     'refresh-defuser.js', 'refresh-defuser', // Prefix 'ubo-' is required to run converted rules
     'ubo-refresh-defuser.js', 'ubo-refresh-defuser'];
-    preventRefresh.injections = [hit, getNumberFromString, nativeIsNaN];
+    preventRefresh$1.injections = [hit, getNumberFromString, nativeIsNaN];
 
     /* eslint-disable max-len, consistent-return */
 
@@ -5927,7 +5857,7 @@
 
     /* eslint-enable max-len */
 
-    function preventElementSrcLoading(source, tagName, match) {
+    function preventElementSrcLoading$1(source, tagName, match) {
       // do nothing if browser does not support Proxy or Reflect
       if (typeof Proxy === 'undefined' || typeof Reflect === 'undefined') {
         return;
@@ -6028,8 +5958,8 @@
         }
       });
     }
-    preventElementSrcLoading.names = ['prevent-element-src-loading'];
-    preventElementSrcLoading.injections = [hit, toRegExp, safeGetDescriptor];
+    preventElementSrcLoading$1.names = ['prevent-element-src-loading'];
+    preventElementSrcLoading$1.injections = [hit, toRegExp, safeGetDescriptor];
 
     /**
      * This file must export all scriptlets which should be accessible
@@ -6037,51 +5967,51 @@
 
     var scriptletList = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        abortOnPropertyRead: abortOnPropertyRead,
-        abortOnPropertyWrite: abortOnPropertyWrite,
-        preventSetTimeout: preventSetTimeout,
-        preventSetInterval: preventSetInterval,
-        preventWindowOpen: preventWindowOpen,
-        abortCurrentInlineScript: abortCurrentInlineScript,
-        setConstant: setConstant,
-        removeCookie: removeCookie,
-        preventAddEventListener: preventAddEventListener,
-        preventBab: preventBab,
-        nowebrtc: nowebrtc,
-        logAddEventListener: logAddEventListener,
-        logEval: logEval,
-        log: log,
-        noeval: noeval,
-        preventEvalIf: preventEvalIf,
-        preventFab: preventFab,
-        setPopadsDummy: setPopadsDummy,
-        preventPopadsNet: preventPopadsNet,
-        preventAdfly: preventAdfly,
-        debugOnPropertyRead: debugOnPropertyRead,
-        debugOnPropertyWrite: debugOnPropertyWrite,
-        debugCurrentInlineScript: debugCurrentInlineScript,
-        removeAttr: removeAttr,
-        setAttr: setAttr,
-        removeClass: removeClass,
-        disableNewtabLinks: disableNewtabLinks,
-        adjustSetInterval: adjustSetInterval,
-        adjustSetTimeout: adjustSetTimeout,
-        dirString: dirString,
-        jsonPrune: jsonPrune,
-        preventRequestAnimationFrame: preventRequestAnimationFrame,
-        setCookie: setCookie,
-        setCookieReload: setCookieReload,
-        hideInShadowDom: hideInShadowDom,
-        removeInShadowDom: removeInShadowDom,
-        preventFetch: preventFetch,
-        setLocalStorageItem: setLocalStorageItem,
-        setSessionStorageItem: setSessionStorageItem,
-        abortOnStackTrace: abortOnStackTrace,
-        logOnStacktrace: logOnStacktrace,
-        preventXHR: preventXHR,
-        forceWindowClose: forceWindowClose,
-        preventRefresh: preventRefresh,
-        preventElementSrcLoading: preventElementSrcLoading
+        abortOnPropertyRead: abortOnPropertyRead$1,
+        abortOnPropertyWrite: abortOnPropertyWrite$1,
+        preventSetTimeout: preventSetTimeout$1,
+        preventSetInterval: preventSetInterval$1,
+        preventWindowOpen: preventWindowOpen$1,
+        abortCurrentInlineScript: abortCurrentInlineScript$1,
+        setConstant: setConstant$1,
+        removeCookie: removeCookie$1,
+        preventAddEventListener: preventAddEventListener$1,
+        preventBab: preventBab$1,
+        nowebrtc: nowebrtc$1,
+        logAddEventListener: logAddEventListener$1,
+        logEval: logEval$1,
+        log: log$1,
+        noeval: noeval$1,
+        preventEvalIf: preventEvalIf$1,
+        preventFab: preventFab$1,
+        setPopadsDummy: setPopadsDummy$1,
+        preventPopadsNet: preventPopadsNet$1,
+        preventAdfly: preventAdfly$1,
+        debugOnPropertyRead: debugOnPropertyRead$1,
+        debugOnPropertyWrite: debugOnPropertyWrite$1,
+        debugCurrentInlineScript: debugCurrentInlineScript$1,
+        removeAttr: removeAttr$1,
+        setAttr: setAttr$1,
+        removeClass: removeClass$1,
+        disableNewtabLinks: disableNewtabLinks$1,
+        adjustSetInterval: adjustSetInterval$1,
+        adjustSetTimeout: adjustSetTimeout$1,
+        dirString: dirString$1,
+        jsonPrune: jsonPrune$1,
+        preventRequestAnimationFrame: preventRequestAnimationFrame$1,
+        setCookie: setCookie$1,
+        setCookieReload: setCookieReload$1,
+        hideInShadowDom: hideInShadowDom$1,
+        removeInShadowDom: removeInShadowDom$1,
+        preventFetch: preventFetch$1,
+        setLocalStorageItem: setLocalStorageItem$1,
+        setSessionStorageItem: setSessionStorageItem$1,
+        abortOnStackTrace: abortOnStackTrace$1,
+        logOnStacktrace: logOnStacktrace$1,
+        preventXHR: preventXHR$1,
+        forceWindowClose: forceWindowClose$1,
+        preventRefresh: preventRefresh$1,
+        preventElementSrcLoading: preventElementSrcLoading$1
     });
 
     /**
@@ -6092,7 +6022,7 @@
      * e.g. googletagmanager-gtm is removed and should be removed from compatibility table as well
      * but now it works as alias for google-analytics so it should stay valid for compiler
      */
-    var redirects = [{
+    var redirects$1 = [{
       adg: '1x1-transparent.gif',
       ubo: '1x1.gif',
       abp: '1x1-transparent-gif'
@@ -6367,7 +6297,7 @@
       NAME: 'googletagservices-gpt',
       TYPES: ['script']
     }];
-    var validAdgRedirects = redirects.filter(function (el) {
+    var validAdgRedirects = redirects$1.filter(function (el) {
       return el.adg;
     });
     /**
@@ -6436,7 +6366,7 @@
      */
 
     var parseModifiers = function parseModifiers(rule) {
-      return substringAfter(rule, '$').split(',');
+      return substringAfter$1(rule, '$').split(',');
     };
     /**
      * Gets redirect resource name
@@ -6451,7 +6381,7 @@
       var redirectNamePart = ruleModifiers.find(function (el) {
         return el.indexOf(marker) > -1;
       });
-      return substringAfter(redirectNamePart, marker);
+      return substringAfter$1(redirectNamePart, marker);
     };
     /**
      * Checks if the `rule` is AdGuard redirect rule.
@@ -6673,7 +6603,7 @@
       return arrayWithHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableRest();
     }
 
-    var toArray = _toArray;
+    var toArray$1 = _toArray;
 
     /**
      * AdGuard scriptlet rule
@@ -6769,7 +6699,7 @@
       // https://github.com/AdguardTeam/Scriptlets/issues/133
       var lastArg = parsedArgs.pop();
 
-      var _parsedArgs = toArray(parsedArgs),
+      var _parsedArgs = toArray$1(parsedArgs),
           name = _parsedArgs[0],
           value = _parsedArgs[1],
           restArgs = _parsedArgs.slice(2);
@@ -6856,7 +6786,7 @@
       var mask = rule.indexOf(validator.ABP_SCRIPTLET_MASK) > -1 ? validator.ABP_SCRIPTLET_MASK : validator.ABP_SCRIPTLET_EXCEPTION_MASK;
       var template = mask === validator.ABP_SCRIPTLET_MASK ? ADGUARD_SCRIPTLET_TEMPLATE : ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
       var domains = substringBefore(rule, mask);
-      var args = substringAfter(rule, mask);
+      var args = substringAfter$1(rule, mask);
       return args.split(SEMICOLON_DIVIDER).map(function (args) {
         return getSentences(args).filter(function (arg) {
           return arg;
@@ -6923,7 +6853,7 @@
         var adgScriptletObject = Object.keys(scriptletList).map(function (el) {
           return scriptletList[el];
         }).map(function (s) {
-          var _s$names = toArray(s.names),
+          var _s$names = toArray$1(s.names),
               name = _s$names[0],
               aliases = _s$names.slice(1);
 
@@ -7035,7 +6965,7 @@
       var uboMarkerData = getMarkerData(uboModifiers, validator.REDIRECT_RULE_TYPES.UBO, rule);
       var adgModifiers = uboModifiers.map(function (modifier, index) {
         if (index === uboMarkerData.index) {
-          var uboName = substringAfter(modifier, uboMarkerData.marker);
+          var uboName = substringAfter$1(modifier, uboMarkerData.marker);
           var adgName = validator.REDIRECT_RULE_TYPES.UBO.compatibility[uboName];
           var adgMarker = uboMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER ? validator.REDIRECT_RULE_TYPES.ADG.redirectRuleMarker : validator.REDIRECT_RULE_TYPES.ADG.redirectMarker;
           return "".concat(adgMarker).concat(adgName);
@@ -7060,7 +6990,7 @@
       var abpModifiers = validator.parseModifiers(rule);
       var adgModifiers = abpModifiers.map(function (modifier) {
         if (modifier.indexOf(validator.REDIRECT_RULE_TYPES.ABP.redirectMarker) > -1) {
-          var abpName = substringAfter(modifier, validator.REDIRECT_RULE_TYPES.ABP.redirectMarker);
+          var abpName = substringAfter$1(modifier, validator.REDIRECT_RULE_TYPES.ABP.redirectMarker);
           var adgName = validator.REDIRECT_RULE_TYPES.ABP.compatibility[abpName];
           return "".concat(validator.REDIRECT_RULE_TYPES.ADG.redirectMarker).concat(adgName);
         }
@@ -9142,7 +9072,7 @@
 
     var redirectsList = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        noeval: noeval,
+        noeval: noeval$1,
         GoogleAnalytics: GoogleAnalytics,
         GoogleAnalyticsGa: GoogleAnalyticsGa,
         GoogleSyndicationAdsByGoogle: GoogleSyndicationAdsByGoogle,
@@ -9150,10 +9080,10 @@
         ScoreCardResearchBeacon: ScoreCardResearchBeacon,
         metrikaYandexTag: metrikaYandexTag,
         metrikaYandexWatch: metrikaYandexWatch,
-        preventFab: preventFab,
-        preventBab: preventBab,
-        setPopadsDummy: setPopadsDummy,
-        preventPopadsNet: preventPopadsNet,
+        preventFab: preventFab$1,
+        preventBab: preventBab$1,
+        setPopadsDummy: setPopadsDummy$1,
+        preventPopadsNet: preventPopadsNet$1,
         AmazonApstag: AmazonApstag,
         Matomo: Matomo,
         Fingerprintjs2: Fingerprintjs2,
@@ -9202,7 +9132,7 @@
       return typeof subject === 'object' && subject !== null;
     }
 
-    function toArray$1(sequence) {
+    function toArray(sequence) {
       if (Array.isArray(sequence)) return sequence;else if (isNothing(sequence)) return [];
       return [sequence];
     }
@@ -9239,7 +9169,7 @@
 
     var isNothing_1 = isNothing;
     var isObject_1 = isObject;
-    var toArray_1 = toArray$1;
+    var toArray_1 = toArray;
     var repeat_1 = repeat;
     var isNegativeZero_1 = isNegativeZero;
     var extend_1 = extend;
@@ -9254,7 +9184,7 @@
 
     // YAML error class. http://stackoverflow.com/questions/8458984
 
-    function YAMLException(reason, mark) {
+    function YAMLException$1(reason, mark) {
       // Super constructor
       Error.call(this);
       this.name = 'YAMLException';
@@ -9272,10 +9202,10 @@
     } // Inherit from Error
 
 
-    YAMLException.prototype = Object.create(Error.prototype);
-    YAMLException.prototype.constructor = YAMLException;
+    YAMLException$1.prototype = Object.create(Error.prototype);
+    YAMLException$1.prototype.constructor = YAMLException$1;
 
-    YAMLException.prototype.toString = function toString(compact) {
+    YAMLException$1.prototype.toString = function toString(compact) {
       var result = this.name + ': ';
       result += this.reason || '(unknown reason)';
 
@@ -9286,7 +9216,7 @@
       return result;
     };
 
-    var exception = YAMLException;
+    var exception = YAMLException$1;
 
     function Mark(name, buffer, position, line, column) {
       this.name = name;
@@ -9371,7 +9301,7 @@
       return result;
     }
 
-    function Type(tag, options) {
+    function Type$1(tag, options) {
       options = options || {};
       Object.keys(options).forEach(function (name) {
         if (TYPE_CONSTRUCTOR_OPTIONS.indexOf(name) === -1) {
@@ -9401,7 +9331,7 @@
       }
     }
 
-    var type = Type;
+    var type = Type$1;
 
     /*eslint-disable max-len*/
 
@@ -9447,7 +9377,7 @@
       return result;
     }
 
-    function Schema(definition) {
+    function Schema$1(definition) {
       this.include = definition.include || [];
       this.implicit = definition.implicit || [];
       this.explicit = definition.explicit || [];
@@ -9461,14 +9391,14 @@
       this.compiledTypeMap = compileMap(this.compiledImplicit, this.compiledExplicit);
     }
 
-    Schema.DEFAULT = null;
+    Schema$1.DEFAULT = null;
 
-    Schema.create = function createSchema() {
+    Schema$1.create = function createSchema() {
       var schemas, types;
 
       switch (arguments.length) {
         case 1:
-          schemas = Schema.DEFAULT;
+          schemas = Schema$1.DEFAULT;
           types = arguments[0];
           break;
 
@@ -9485,7 +9415,7 @@
       types = common.toArray(types);
 
       if (!schemas.every(function (schema) {
-        return schema instanceof Schema;
+        return schema instanceof Schema$1;
       })) {
         throw new exception('Specified list of super schemas (or a single Schema object) contains a non-Schema object.');
       }
@@ -9496,13 +9426,13 @@
         throw new exception('Specified list of YAML types (or a single Type object) contains a non-Type object.');
       }
 
-      return new Schema({
+      return new Schema$1({
         include: schemas,
         explicit: types
       });
     };
 
-    var schema = Schema;
+    var schema = Schema$1;
 
     var str = new type('tag:yaml.org,2002:str', {
       kind: 'scalar',
@@ -10021,8 +9951,8 @@
 
     try {
       // A trick for browserified version, to not include `Buffer` shim
-      var _require = commonjsRequire;
-      NodeBuffer = _require('buffer').Buffer;
+      var _require$1 = commonjsRequire;
+      NodeBuffer = _require$1('buffer').Buffer;
     } catch (__) {} // [ 64, 65, 66 ] -> [ padding, CR, LF ]
 
 
@@ -10148,8 +10078,8 @@
       represent: representYamlBinary
     });
 
-    var _hasOwnProperty = Object.prototype.hasOwnProperty;
-    var _toString = Object.prototype.toString;
+    var _hasOwnProperty$3 = Object.prototype.hasOwnProperty;
+    var _toString$2 = Object.prototype.toString;
 
     function resolveYamlOmap(data) {
       if (data === null) return true;
@@ -10164,10 +10094,10 @@
       for (index = 0, length = object.length; index < length; index += 1) {
         pair = object[index];
         pairHasKey = false;
-        if (_toString.call(pair) !== '[object Object]') return false;
+        if (_toString$2.call(pair) !== '[object Object]') return false;
 
         for (pairKey in pair) {
-          if (_hasOwnProperty.call(pair, pairKey)) {
+          if (_hasOwnProperty$3.call(pair, pairKey)) {
             if (!pairHasKey) pairHasKey = true;else return false;
           }
         }
@@ -10237,7 +10167,7 @@
       construct: constructYamlPairs
     });
 
-    var _hasOwnProperty$1 = Object.prototype.hasOwnProperty;
+    var _hasOwnProperty$2 = Object.prototype.hasOwnProperty;
 
     function resolveYamlSet(data) {
       if (data === null) return true;
@@ -10245,7 +10175,7 @@
           object = data;
 
       for (key in object) {
-        if (_hasOwnProperty$1.call(object, key)) {
+        if (_hasOwnProperty$2.call(object, key)) {
           if (object[key] !== null) return false;
         }
       }
@@ -10357,8 +10287,8 @@
 
     try {
       // workaround to exclude package from browserify list.
-      var _require$1 = commonjsRequire;
-      esprima = _require$1('esprima');
+      var _require = commonjsRequire;
+      esprima = _require('esprima');
     } catch (_) {
       /* eslint-disable no-redeclare */
 
@@ -10442,7 +10372,7 @@
     /*eslint-disable max-len,no-use-before-define*/
 
 
-    var _hasOwnProperty$2 = Object.prototype.hasOwnProperty;
+    var _hasOwnProperty$1 = Object.prototype.hasOwnProperty;
     var CONTEXT_FLOW_IN = 1;
     var CONTEXT_FLOW_OUT = 2;
     var CONTEXT_BLOCK_IN = 3;
@@ -10622,7 +10552,7 @@
       simpleEscapeMap[i] = simpleEscapeSequence(i);
     }
 
-    function State(input, options) {
+    function State$1(input, options) {
       this.input = input;
       this.filename = options['filename'] || null;
       this.schema = options['schema'] || default_full;
@@ -10709,7 +10639,7 @@
           throwError(state, 'ill-formed tag handle (first argument) of the TAG directive');
         }
 
-        if (_hasOwnProperty$2.call(state.tagMap, handle)) {
+        if (_hasOwnProperty$1.call(state.tagMap, handle)) {
           throwError(state, 'there is a previously declared suffix for "' + handle + '" tag handle');
         }
 
@@ -10755,7 +10685,7 @@
       for (index = 0, quantity = sourceKeys.length; index < quantity; index += 1) {
         key = sourceKeys[index];
 
-        if (!_hasOwnProperty$2.call(destination, key)) {
+        if (!_hasOwnProperty$1.call(destination, key)) {
           destination[key] = source[key];
           overridableKeys[key] = true;
         }
@@ -10803,7 +10733,7 @@
           mergeMappings(state, _result, valueNode, overridableKeys);
         }
       } else {
-        if (!state.json && !_hasOwnProperty$2.call(overridableKeys, keyNode) && _hasOwnProperty$2.call(_result, keyNode)) {
+        if (!state.json && !_hasOwnProperty$1.call(overridableKeys, keyNode) && _hasOwnProperty$1.call(_result, keyNode)) {
           state.line = startLine || state.line;
           state.position = startPos || state.position;
           throwError(state, 'duplicated mapping key');
@@ -11718,7 +11648,7 @@
 
       if (isVerbatim) {
         state.tag = tagName;
-      } else if (_hasOwnProperty$2.call(state.tagMap, tagHandle)) {
+      } else if (_hasOwnProperty$1.call(state.tagMap, tagHandle)) {
         state.tag = state.tagMap[tagHandle] + tagName;
       } else if (tagHandle === '!') {
         state.tag = '!' + tagName;
@@ -11778,7 +11708,7 @@
 
       alias = state.input.slice(_position, state.position);
 
-      if (!_hasOwnProperty$2.call(state.anchorMap, alias)) {
+      if (!_hasOwnProperty$1.call(state.anchorMap, alias)) {
         throwError(state, 'unidentified alias "' + alias + '"');
       }
 
@@ -11915,7 +11845,7 @@
               break;
             }
           }
-        } else if (_hasOwnProperty$2.call(state.typeMap[state.kind || 'fallback'], state.tag)) {
+        } else if (_hasOwnProperty$1.call(state.typeMap[state.kind || 'fallback'], state.tag)) {
           type = state.typeMap[state.kind || 'fallback'][state.tag];
 
           if (state.result !== null && type.kind !== state.kind) {
@@ -12009,7 +11939,7 @@
 
         if (ch !== 0) readLineBreak(state);
 
-        if (_hasOwnProperty$2.call(directiveHandlers, directiveName)) {
+        if (_hasOwnProperty$1.call(directiveHandlers, directiveName)) {
           directiveHandlers[directiveName](state, directiveName, directiveArgs);
         } else {
           throwWarning(state, 'unknown document directive "' + directiveName + '"');
@@ -12078,7 +12008,7 @@
         }
       }
 
-      var state = new State(input, options);
+      var state = new State$1(input, options);
       var nullpos = input.indexOf('\0');
 
       if (nullpos !== -1) {
@@ -12103,7 +12033,7 @@
       return state.documents;
     }
 
-    function loadAll(input, iterator, options) {
+    function loadAll$1(input, iterator, options) {
       if (iterator !== null && typeof iterator === 'object' && typeof options === 'undefined') {
         options = iterator;
         iterator = null;
@@ -12120,7 +12050,7 @@
       }
     }
 
-    function load(input, options) {
+    function load$1(input, options) {
       var documents = loadDocuments(input, options);
 
       if (documents.length === 0) {
@@ -12133,27 +12063,27 @@
       throw new exception('expected a single document in the stream, but found more');
     }
 
-    function safeLoadAll(input, iterator, options) {
+    function safeLoadAll$1(input, iterator, options) {
       if (typeof iterator === 'object' && iterator !== null && typeof options === 'undefined') {
         options = iterator;
         iterator = null;
       }
 
-      return loadAll(input, iterator, common.extend({
+      return loadAll$1(input, iterator, common.extend({
         schema: default_safe
       }, options));
     }
 
-    function safeLoad(input, options) {
-      return load(input, common.extend({
+    function safeLoad$1(input, options) {
+      return load$1(input, common.extend({
         schema: default_safe
       }, options));
     }
 
-    var loadAll_1 = loadAll;
-    var load_1 = load;
-    var safeLoadAll_1 = safeLoadAll;
-    var safeLoad_1 = safeLoad;
+    var loadAll_1 = loadAll$1;
+    var load_1 = load$1;
+    var safeLoadAll_1 = safeLoadAll$1;
+    var safeLoad_1 = safeLoad$1;
     var loader = {
       loadAll: loadAll_1,
       load: load_1,
@@ -12164,8 +12094,8 @@
     /*eslint-disable no-use-before-define*/
 
 
-    var _toString$2 = Object.prototype.toString;
-    var _hasOwnProperty$3 = Object.prototype.hasOwnProperty;
+    var _toString = Object.prototype.toString;
+    var _hasOwnProperty = Object.prototype.hasOwnProperty;
     var CHAR_TAB = 0x09;
     /* Tab */
 
@@ -12272,7 +12202,7 @@
 
         type = schema.compiledTypeMap['fallback'][tag];
 
-        if (type && _hasOwnProperty$3.call(type.styleAliases, style)) {
+        if (type && _hasOwnProperty.call(type.styleAliases, style)) {
           style = type.styleAliases[style];
         }
 
@@ -12302,7 +12232,7 @@
       return '\\' + handle + common.repeat('0', length - string.length) + string;
     }
 
-    function State$1(options) {
+    function State(options) {
       this.schema = options['schema'] || default_full;
       this.indent = Math.max(1, options['indent'] || 2);
       this.noArrayIndent = options['noArrayIndent'] || false;
@@ -12852,9 +12782,9 @@
           if (type.represent) {
             style = state.styleMap[type.tag] || type.defaultStyle;
 
-            if (_toString$2.call(type.represent) === '[object Function]') {
+            if (_toString.call(type.represent) === '[object Function]') {
               _result = type.represent(object, style);
-            } else if (_hasOwnProperty$3.call(type.represent, style)) {
+            } else if (_hasOwnProperty.call(type.represent, style)) {
               _result = type.represent[style](object, style);
             } else {
               throw new exception('!<' + type.tag + '> tag resolver accepts not "' + style + '" style');
@@ -12881,7 +12811,7 @@
         detectType(state, object, true);
       }
 
-      var type = _toString$2.call(state.dump);
+      var type = _toString.call(state.dump);
 
       if (block) {
         block = state.flowLevel < 0 || state.flowLevel > level;
@@ -12996,22 +12926,22 @@
       }
     }
 
-    function dump(input, options) {
+    function dump$1(input, options) {
       options = options || {};
-      var state = new State$1(options);
+      var state = new State(options);
       if (!state.noRefs) getDuplicateReferences(input, state);
       if (writeNode(state, 0, input, true, true)) return state.dump + '\n';
       return '';
     }
 
-    function safeDump(input, options) {
-      return dump(input, common.extend({
+    function safeDump$1(input, options) {
+      return dump$1(input, common.extend({
         schema: default_safe
       }, options));
     }
 
-    var dump_1 = dump;
-    var safeDump_1 = safeDump;
+    var dump_1 = dump$1;
+    var safeDump_1 = safeDump$1;
     var dumper = {
       dump: dump_1,
       safeDump: safeDump_1
@@ -13023,20 +12953,20 @@
       };
     }
 
-    var Type$1 = type;
-    var Schema$1 = schema;
+    var Type = type;
+    var Schema = schema;
     var FAILSAFE_SCHEMA = failsafe;
     var JSON_SCHEMA = json;
     var CORE_SCHEMA = core;
     var DEFAULT_SAFE_SCHEMA = default_safe;
     var DEFAULT_FULL_SCHEMA = default_full;
-    var load$1 = loader.load;
-    var loadAll$1 = loader.loadAll;
-    var safeLoad$1 = loader.safeLoad;
-    var safeLoadAll$1 = loader.safeLoadAll;
-    var dump$1 = dumper.dump;
-    var safeDump$1 = dumper.safeDump;
-    var YAMLException$1 = exception; // Deprecated schema names from JS-YAML 2.0.x
+    var load = loader.load;
+    var loadAll = loader.loadAll;
+    var safeLoad = loader.safeLoad;
+    var safeLoadAll = loader.safeLoadAll;
+    var dump = dumper.dump;
+    var safeDump = dumper.safeDump;
+    var YAMLException = exception; // Deprecated schema names from JS-YAML 2.0.x
 
     var MINIMAL_SCHEMA = failsafe;
     var SAFE_SCHEMA = default_safe;
@@ -13046,21 +12976,21 @@
     var parse = deprecated('parse');
     var compose = deprecated('compose');
     var addConstructor = deprecated('addConstructor');
-    var jsYaml = {
-      Type: Type$1,
-      Schema: Schema$1,
+    var jsYaml$1 = {
+      Type: Type,
+      Schema: Schema,
       FAILSAFE_SCHEMA: FAILSAFE_SCHEMA,
       JSON_SCHEMA: JSON_SCHEMA,
       CORE_SCHEMA: CORE_SCHEMA,
       DEFAULT_SAFE_SCHEMA: DEFAULT_SAFE_SCHEMA,
       DEFAULT_FULL_SCHEMA: DEFAULT_FULL_SCHEMA,
-      load: load$1,
-      loadAll: loadAll$1,
-      safeLoad: safeLoad$1,
-      safeLoadAll: safeLoadAll$1,
-      dump: dump$1,
-      safeDump: safeDump$1,
-      YAMLException: YAMLException$1,
+      load: load,
+      loadAll: loadAll,
+      safeLoad: safeLoad,
+      safeLoadAll: safeLoadAll,
+      dump: dump,
+      safeDump: safeDump,
+      YAMLException: YAMLException,
       MINIMAL_SCHEMA: MINIMAL_SCHEMA,
       SAFE_SCHEMA: SAFE_SCHEMA,
       DEFAULT_SCHEMA: DEFAULT_SCHEMA,
@@ -13070,7 +13000,7 @@
       addConstructor: addConstructor
     };
 
-    var jsYaml$1 = jsYaml;
+    var jsYaml = jsYaml$1;
 
     function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
@@ -13104,7 +13034,7 @@
         classCallCheck(this, Redirects);
 
         try {
-          var arrOfRedirects = jsYaml$1.safeLoad(rawYaml);
+          var arrOfRedirects = jsYaml.safeLoad(rawYaml);
           this.redirects = arrOfRedirects.reduce(function (acc, redirect) {
             return _objectSpread(_objectSpread({}, acc), {}, defineProperty({}, redirect.title, redirect));
           }, {});
@@ -13149,6 +13079,115 @@
       return Redirects;
     }();
 
+    var redirectsMap = {
+      "1x1-transparent.gif": "1x1-transparent.gif",
+      "1x1.gif": "1x1-transparent.gif",
+      "1x1-transparent-gif": "1x1-transparent.gif",
+      "2x2-transparent.png": "2x2-transparent.png",
+      "2x2.png": "2x2-transparent.png",
+      "2x2-transparent-png": "2x2-transparent.png",
+      "3x2-transparent.png": "3x2-transparent.png",
+      "3x2.png": "3x2-transparent.png",
+      "3x2-transparent-png": "3x2-transparent.png",
+      "32x32-transparent.png": "32x32-transparent.png",
+      "32x32.png": "32x32-transparent.png",
+      "32x32-transparent-png": "32x32-transparent.png",
+      noopframe: "noopframe.html",
+      "noop.html": "noopframe.html",
+      "blank-html": "noopframe.html",
+      noopcss: "noopcss.css",
+      "blank-css": "noopcss.css",
+      noopjs: "noopjs.js",
+      "noop.js": "noopjs.js",
+      "blank-js": "noopjs.js",
+      noopjson: "noopjson.json",
+      nooptext: "nooptext.js",
+      "noop.txt": "nooptext.js",
+      "blank-text": "nooptext.js",
+      empty: "nooptext.js",
+      "noopvmap-1.0": "noopvmap01.xml",
+      "noop-vmap1.0.xml": "noopvmap01.xml",
+      "noopvast-2.0": "noopvast02.xml",
+      "noopvast-3.0": "noopvast03.xml",
+      "noopvast-4.0": "noopvast04.xml",
+      "noopmp3-0.1s": "noopmp3.mp3",
+      "blank-mp3": "noopmp3.mp3",
+      "noopmp4-1s": "noopmp4.mp4",
+      "noop-1s.mp4": "noopmp4.mp4",
+      "blank-mp4": "noopmp4.mp4",
+      "click2load.html": "click2load.html",
+      "ubo-click2load.html": "click2load.html",
+      "amazon-apstag": "amazon-apstag.js",
+      "ubo-amazon_apstag.js": "amazon-apstag.js",
+      "amazon_apstag.js": "amazon-apstag.js",
+      "ati-smarttag": "ati-smarttag.js",
+      "didomi-loader": "didomi-loader.js",
+      fingerprintjs2: "fingerprintjs2.js",
+      "ubo-fingerprint2.js": "fingerprintjs2.js",
+      "fingerprint2.js": "fingerprintjs2.js",
+      fingerprintjs3: "fingerprintjs3.js",
+      "ubo-fingerprint3.js": "fingerprintjs3.js",
+      "fingerprint3.js": "fingerprintjs3.js",
+      gemius: "gemius.js",
+      "google-analytics-ga": "google-analytics-ga.js",
+      "ubo-google-analytics_ga.js": "google-analytics-ga.js",
+      "google-analytics_ga.js": "google-analytics-ga.js",
+      "google-analytics": "google-analytics.js",
+      "ubo-google-analytics_analytics.js": "google-analytics.js",
+      "google-analytics_analytics.js": "google-analytics.js",
+      "googletagmanager-gtm": "google-analytics.js",
+      "ubo-googletagmanager_gtm.js": "google-analytics.js",
+      "googletagmanager_gtm.js": "google-analytics.js",
+      "google-ima3": "google-ima3.js",
+      "googlesyndication-adsbygoogle": "googlesyndication-adsbygoogle.js",
+      "ubo-googlesyndication_adsbygoogle.js": "googlesyndication-adsbygoogle.js",
+      "googlesyndication_adsbygoogle.js": "googlesyndication-adsbygoogle.js",
+      "googletagservices-gpt": "googletagservices-gpt.js",
+      "ubo-googletagservices_gpt.js": "googletagservices-gpt.js",
+      "googletagservices_gpt.js": "googletagservices-gpt.js",
+      matomo: "matomo.js",
+      "metrika-yandex-tag": "metrika-yandex-tag.js",
+      "metrika-yandex-watch": "metrika-yandex-watch.js",
+      "naver-wcslog": "naver-wcslog.js",
+      noeval: "noeval.js",
+      "noeval.js": "noeval.js",
+      "silent-noeval.js": "noeval.js",
+      "ubo-noeval.js": "noeval.js",
+      "ubo-silent-noeval.js": "noeval.js",
+      "ubo-noeval": "noeval.js",
+      "ubo-silent-noeval": "noeval.js",
+      "prebid-ads": "prebid-ads.js",
+      "ubo-prebid-ads.js": "prebid-ads.js",
+      "prebid-ads.js": "prebid-ads.js",
+      prebid: "prebid.js",
+      "prevent-bab": "prevent-bab.js",
+      "nobab.js": "prevent-bab.js",
+      "ubo-nobab.js": "prevent-bab.js",
+      "bab-defuser.js": "prevent-bab.js",
+      "ubo-bab-defuser.js": "prevent-bab.js",
+      "ubo-nobab": "prevent-bab.js",
+      "ubo-bab-defuser": "prevent-bab.js",
+      "prevent-bab2": "prevent-bab2.js",
+      "nobab2.js": "prevent-bab2.js",
+      "prevent-fab-3.2.0": "prevent-fab-3.2.0.js",
+      "nofab.js": "prevent-fab-3.2.0.js",
+      "ubo-nofab.js": "prevent-fab-3.2.0.js",
+      "fuckadblock.js-3.2.0": "prevent-fab-3.2.0.js",
+      "ubo-fuckadblock.js-3.2.0": "prevent-fab-3.2.0.js",
+      "ubo-nofab": "prevent-fab-3.2.0.js",
+      "prevent-popads-net": "prevent-popads-net.js",
+      "popads.net.js": "prevent-popads-net.js",
+      "ubo-popads.net.js": "prevent-popads-net.js",
+      "ubo-popads.net": "prevent-popads-net.js",
+      "scorecardresearch-beacon": "scorecardresearch-beacon.js",
+      "ubo-scorecardresearch_beacon.js": "scorecardresearch-beacon.js",
+      "scorecardresearch_beacon.js": "scorecardresearch-beacon.js",
+      "set-popads-dummy": "set-popads-dummy.js",
+      "popads-dummy.js": "set-popads-dummy.js",
+      "ubo-popads-dummy.js": "set-popads-dummy.js",
+      "ubo-popads-dummy": "set-popads-dummy.js"
+    };
+
     /**
      * Finds redirect resource by it's name
      * @param {string} name - redirect name
@@ -13184,126 +13223,15 @@
       result = addCall(redirect, result); // redirect code for different sources is checked in tests
       // so it should be just a code without any source and props passed
 
-      result = source.engine === 'test' ? wrapInNonameFunc(result) : passSourceAndProps(source, result);
+      result = source.engine === 'test' ? wrapInNonameFunc(result) : passSourceAndProps(source, result, true);
       return result;
-    }; // It will be replaced with dictionary-object in build-script
-    // eslint-disable-next-line no-undef
-
-
-    var map$1 = {
-      "1x1-transparent.gif": "1x1-transparent.gif",
-      "1x1.gif": "1x1-transparent.gif",
-      "1x1-transparent-gif": "1x1-transparent.gif",
-      "2x2-transparent.png": "2x2-transparent.png",
-      "2x2.png": "2x2-transparent.png",
-      "2x2-transparent-png": "2x2-transparent.png",
-      "3x2-transparent.png": "3x2-transparent.png",
-      "3x2.png": "3x2-transparent.png",
-      "3x2-transparent-png": "3x2-transparent.png",
-      "32x32-transparent.png": "32x32-transparent.png",
-      "32x32.png": "32x32-transparent.png",
-      "32x32-transparent-png": "32x32-transparent.png",
-      "noopframe": "noopframe.html",
-      "noop.html": "noopframe.html",
-      "blank-html": "noopframe.html",
-      "noopcss": "noopcss.css",
-      "blank-css": "noopcss.css",
-      "noopjs": "noopjs.js",
-      "noop.js": "noopjs.js",
-      "blank-js": "noopjs.js",
-      "noopjson": "noopjson.json",
-      "nooptext": "nooptext.js",
-      "noop.txt": "nooptext.js",
-      "blank-text": "nooptext.js",
-      "empty": "nooptext.js",
-      "noopvmap-1.0": "noopvmap01.xml",
-      "noop-vmap1.0.xml": "noopvmap01.xml",
-      "noopvast-2.0": "noopvast02.xml",
-      "noopvast-3.0": "noopvast03.xml",
-      "noopvast-4.0": "noopvast04.xml",
-      "noopmp3-0.1s": "noopmp3.mp3",
-      "blank-mp3": "noopmp3.mp3",
-      "noopmp4-1s": "noopmp4.mp4",
-      "noop-1s.mp4": "noopmp4.mp4",
-      "blank-mp4": "noopmp4.mp4",
-      "click2load.html": "click2load.html",
-      "ubo-click2load.html": "click2load.html",
-      "amazon-apstag": "amazon-apstag.js",
-      "ubo-amazon_apstag.js": "amazon-apstag.js",
-      "amazon_apstag.js": "amazon-apstag.js",
-      "ati-smarttag": "ati-smarttag.js",
-      "didomi-loader": "didomi-loader.js",
-      "fingerprintjs2": "fingerprintjs2.js",
-      "ubo-fingerprint2.js": "fingerprintjs2.js",
-      "fingerprint2.js": "fingerprintjs2.js",
-      "fingerprintjs3": "fingerprintjs3.js",
-      "ubo-fingerprint3.js": "fingerprintjs3.js",
-      "fingerprint3.js": "fingerprintjs3.js",
-      "gemius": "gemius.js",
-      "google-analytics-ga": "google-analytics-ga.js",
-      "ubo-google-analytics_ga.js": "google-analytics-ga.js",
-      "google-analytics_ga.js": "google-analytics-ga.js",
-      "google-analytics": "google-analytics.js",
-      "ubo-google-analytics_analytics.js": "google-analytics.js",
-      "google-analytics_analytics.js": "google-analytics.js",
-      "googletagmanager-gtm": "google-analytics.js",
-      "ubo-googletagmanager_gtm.js": "google-analytics.js",
-      "googletagmanager_gtm.js": "google-analytics.js",
-      "google-ima3": "google-ima3.js",
-      "googlesyndication-adsbygoogle": "googlesyndication-adsbygoogle.js",
-      "ubo-googlesyndication_adsbygoogle.js": "googlesyndication-adsbygoogle.js",
-      "googlesyndication_adsbygoogle.js": "googlesyndication-adsbygoogle.js",
-      "googletagservices-gpt": "googletagservices-gpt.js",
-      "ubo-googletagservices_gpt.js": "googletagservices-gpt.js",
-      "googletagservices_gpt.js": "googletagservices-gpt.js",
-      "matomo": "matomo.js",
-      "metrika-yandex-tag": "metrika-yandex-tag.js",
-      "metrika-yandex-watch": "metrika-yandex-watch.js",
-      "naver-wcslog": "naver-wcslog.js",
-      "noeval": "noeval.js",
-      "noeval.js": "noeval.js",
-      "silent-noeval.js": "noeval.js",
-      "ubo-noeval.js": "noeval.js",
-      "ubo-silent-noeval.js": "noeval.js",
-      "ubo-noeval": "noeval.js",
-      "ubo-silent-noeval": "noeval.js",
-      "prebid-ads": "prebid-ads.js",
-      "ubo-prebid-ads.js": "prebid-ads.js",
-      "prebid-ads.js": "prebid-ads.js",
-      "prebid": "prebid.js",
-      "prevent-bab": "prevent-bab.js",
-      "nobab.js": "prevent-bab.js",
-      "ubo-nobab.js": "prevent-bab.js",
-      "bab-defuser.js": "prevent-bab.js",
-      "ubo-bab-defuser.js": "prevent-bab.js",
-      "ubo-nobab": "prevent-bab.js",
-      "ubo-bab-defuser": "prevent-bab.js",
-      "prevent-bab2": "prevent-bab2.js",
-      "nobab2.js": "prevent-bab2.js",
-      "prevent-fab-3.2.0": "prevent-fab-3.2.0.js",
-      "nofab.js": "prevent-fab-3.2.0.js",
-      "ubo-nofab.js": "prevent-fab-3.2.0.js",
-      "fuckadblock.js-3.2.0": "prevent-fab-3.2.0.js",
-      "ubo-fuckadblock.js-3.2.0": "prevent-fab-3.2.0.js",
-      "ubo-nofab": "prevent-fab-3.2.0.js",
-      "prevent-popads-net": "prevent-popads-net.js",
-      "popads.net.js": "prevent-popads-net.js",
-      "ubo-popads.net.js": "prevent-popads-net.js",
-      "ubo-popads.net": "prevent-popads-net.js",
-      "scorecardresearch-beacon": "scorecardresearch-beacon.js",
-      "ubo-scorecardresearch_beacon.js": "scorecardresearch-beacon.js",
-      "scorecardresearch_beacon.js": "scorecardresearch-beacon.js",
-      "set-popads-dummy": "set-popads-dummy.js",
-      "popads-dummy.js": "set-popads-dummy.js",
-      "ubo-popads-dummy.js": "set-popads-dummy.js",
-      "ubo-popads-dummy": "set-popads-dummy.js"
     };
 
     var getRedirectFilename = function getRedirectFilename(name) {
-      return map$1[name];
+      return redirectsMap[name];
     };
 
-    var redirectsCjs = {
+    var redirects = {
       Redirects: Redirects,
       getRedirectFilename: getRedirectFilename,
       getCode: getRedirectCode,
@@ -13316,6 +13244,7573 @@
       convertAbpRedirectToAdg: convertAbpRedirectToAdg,
       convertRedirectToAdg: convertRedirectToAdg,
       convertAdgRedirectToUbo: convertAdgRedirectToUbo
+    };
+
+    function abortCurrentInlineScript(source, args) {
+      function abortCurrentInlineScript(source, property, search) {
+        var searchRegexp = toRegExp(search);
+        var rid = randomId();
+        var SRC_DATA_MARKER = "data:text/javascript;base64,";
+
+        var getCurrentScript = function getCurrentScript() {
+          if ("currentScript" in document) {
+            return document.currentScript;
+          }
+
+          var scripts = document.getElementsByTagName("script");
+          return scripts[scripts.length - 1];
+        };
+
+        var ourScript = getCurrentScript();
+
+        var abort = function abort() {
+          var scriptEl = getCurrentScript();
+
+          if (!scriptEl) {
+            return;
+          }
+
+          var content = scriptEl.textContent;
+
+          try {
+            var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").get;
+            content = textContentGetter.call(scriptEl);
+          } catch (e) {}
+
+          if (content.length === 0 && typeof scriptEl.src !== "undefined" && startsWith(scriptEl.src, SRC_DATA_MARKER)) {
+            var encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
+            content = window.atob(encodedContent);
+          }
+
+          if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && searchRegexp.test(content)) {
+            hit(source);
+            throw new ReferenceError(rid);
+          }
+        };
+
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
+              chain = chainInfo.chain;
+
+          if (base instanceof Object === false && base === null) {
+            var props = property.split(".");
+            var propIndex = props.indexOf(prop);
+            var baseName = props[propIndex - 1];
+            console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded."));
+            return;
+          }
+
+          if (chain) {
+            var setter = function setter(a) {
+              base = a;
+
+              if (a instanceof Object) {
+                setChainPropAccess(a, chain);
+              }
+            };
+
+            Object.defineProperty(owner, prop, {
+              get: function get() {
+                return base;
+              },
+              set: setter
+            });
+            return;
+          }
+
+          var currentValue = base[prop];
+          var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+
+          if (origDescriptor instanceof Object === false || origDescriptor.get instanceof Function === false) {
+            currentValue = base[prop];
+            origDescriptor = undefined;
+          }
+
+          setPropertyAccess(base, prop, {
+            set: function set(value) {
+              abort();
+
+              if (origDescriptor instanceof Object) {
+                origDescriptor.set.call(base, value);
+              } else {
+                currentValue = value;
+              }
+            },
+            get: function get() {
+              abort();
+
+              if (origDescriptor instanceof Object) {
+                return origDescriptor.get.call(base);
+              }
+
+              return currentValue;
+            }
+          });
+        };
+
+        setChainPropAccess(window, property);
+        window.onerror = createOnErrorHandler(rid).bind();
+      }
+
+      function randomId() {
+        return Math.random().toString(36).substr(2, 9);
+      }
+
+      function setPropertyAccess(object, property, descriptor) {
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+
+        if (currentDescriptor && !currentDescriptor.configurable) {
+          return false;
+        }
+
+        Object.defineProperty(object, property, descriptor);
+        return true;
+      }
+
+      function getPropertyInChain(base, chain) {
+        var pos = chain.indexOf(".");
+
+        if (pos === -1) {
+          return {
+            base: base,
+            prop: chain
+          };
+        }
+
+        var prop = chain.slice(0, pos);
+
+        if (base === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        var nextBase = base[prop];
+        chain = chain.slice(pos + 1);
+
+        if (nextBase !== undefined) {
+          return getPropertyInChain(nextBase, chain);
+        }
+
+        Object.defineProperty(base, prop, {
+          configurable: true
+        });
+        return {
+          base: nextBase,
+          prop: prop,
+          chain: chain
+        };
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function startsWith(str, prefix) {
+        return !!str && str.indexOf(prefix) === 0;
+      }
+
+      function createOnErrorHandler(rid) {
+        var nativeOnError = window.onerror;
+        return function onError(error) {
+          if (typeof error === "string" && error.indexOf(rid) !== -1) {
+            return true;
+          }
+
+          if (nativeOnError instanceof Function) {
+            for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+              args[_key - 1] = arguments[_key];
+            }
+
+            return nativeOnError.apply(this, [error].concat(args));
+          }
+
+          return false;
+        };
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        abortCurrentInlineScript.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function abortOnPropertyRead(source, args) {
+      function abortOnPropertyRead(source, property) {
+        if (!property) {
+          return;
+        }
+
+        var rid = randomId();
+
+        var abort = function abort() {
+          hit(source);
+          throw new ReferenceError(rid);
+        };
+
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
+              chain = chainInfo.chain;
+
+          if (chain) {
+            var setter = function setter(a) {
+              base = a;
+
+              if (a instanceof Object) {
+                setChainPropAccess(a, chain);
+              }
+            };
+
+            Object.defineProperty(owner, prop, {
+              get: function get() {
+                return base;
+              },
+              set: setter
+            });
+            return;
+          }
+
+          setPropertyAccess(base, prop, {
+            get: abort,
+            set: function set() {}
+          });
+        };
+
+        setChainPropAccess(window, property);
+        window.onerror = createOnErrorHandler(rid).bind();
+      }
+
+      function randomId() {
+        return Math.random().toString(36).substr(2, 9);
+      }
+
+      function setPropertyAccess(object, property, descriptor) {
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+
+        if (currentDescriptor && !currentDescriptor.configurable) {
+          return false;
+        }
+
+        Object.defineProperty(object, property, descriptor);
+        return true;
+      }
+
+      function getPropertyInChain(base, chain) {
+        var pos = chain.indexOf(".");
+
+        if (pos === -1) {
+          return {
+            base: base,
+            prop: chain
+          };
+        }
+
+        var prop = chain.slice(0, pos);
+
+        if (base === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        var nextBase = base[prop];
+        chain = chain.slice(pos + 1);
+
+        if (nextBase !== undefined) {
+          return getPropertyInChain(nextBase, chain);
+        }
+
+        Object.defineProperty(base, prop, {
+          configurable: true
+        });
+        return {
+          base: nextBase,
+          prop: prop,
+          chain: chain
+        };
+      }
+
+      function createOnErrorHandler(rid) {
+        var nativeOnError = window.onerror;
+        return function onError(error) {
+          if (typeof error === "string" && error.indexOf(rid) !== -1) {
+            return true;
+          }
+
+          if (nativeOnError instanceof Function) {
+            for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+              args[_key - 1] = arguments[_key];
+            }
+
+            return nativeOnError.apply(this, [error].concat(args));
+          }
+
+          return false;
+        };
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        abortOnPropertyRead.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function abortOnPropertyWrite(source, args) {
+      function abortOnPropertyWrite(source, property) {
+        if (!property) {
+          return;
+        }
+
+        var rid = randomId();
+
+        var abort = function abort() {
+          hit(source);
+          throw new ReferenceError(rid);
+        };
+
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
+              chain = chainInfo.chain;
+
+          if (chain) {
+            var setter = function setter(a) {
+              base = a;
+
+              if (a instanceof Object) {
+                setChainPropAccess(a, chain);
+              }
+            };
+
+            Object.defineProperty(owner, prop, {
+              get: function get() {
+                return base;
+              },
+              set: setter
+            });
+            return;
+          }
+
+          setPropertyAccess(base, prop, {
+            set: abort
+          });
+        };
+
+        setChainPropAccess(window, property);
+        window.onerror = createOnErrorHandler(rid).bind();
+      }
+
+      function randomId() {
+        return Math.random().toString(36).substr(2, 9);
+      }
+
+      function setPropertyAccess(object, property, descriptor) {
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+
+        if (currentDescriptor && !currentDescriptor.configurable) {
+          return false;
+        }
+
+        Object.defineProperty(object, property, descriptor);
+        return true;
+      }
+
+      function getPropertyInChain(base, chain) {
+        var pos = chain.indexOf(".");
+
+        if (pos === -1) {
+          return {
+            base: base,
+            prop: chain
+          };
+        }
+
+        var prop = chain.slice(0, pos);
+
+        if (base === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        var nextBase = base[prop];
+        chain = chain.slice(pos + 1);
+
+        if (nextBase !== undefined) {
+          return getPropertyInChain(nextBase, chain);
+        }
+
+        Object.defineProperty(base, prop, {
+          configurable: true
+        });
+        return {
+          base: nextBase,
+          prop: prop,
+          chain: chain
+        };
+      }
+
+      function createOnErrorHandler(rid) {
+        var nativeOnError = window.onerror;
+        return function onError(error) {
+          if (typeof error === "string" && error.indexOf(rid) !== -1) {
+            return true;
+          }
+
+          if (nativeOnError instanceof Function) {
+            for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+              args[_key - 1] = arguments[_key];
+            }
+
+            return nativeOnError.apply(this, [error].concat(args));
+          }
+
+          return false;
+        };
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        abortOnPropertyWrite.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function abortOnStackTrace(source, args) {
+      function abortOnStackTrace(source, property, stack) {
+        if (!property || !stack) {
+          return;
+        }
+
+        var rid = randomId();
+
+        var abort = function abort() {
+          hit(source);
+          throw new ReferenceError(rid);
+        };
+
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
+              chain = chainInfo.chain;
+
+          if (chain) {
+            var setter = function setter(a) {
+              base = a;
+
+              if (a instanceof Object) {
+                setChainPropAccess(a, chain);
+              }
+            };
+
+            Object.defineProperty(owner, prop, {
+              get: function get() {
+                return base;
+              },
+              set: setter
+            });
+            return;
+          }
+
+          var value = base[prop];
+
+          if (!validateStrPattern(stack)) {
+            console.log("Invalid parameter: ".concat(stack));
+            return;
+          }
+
+          setPropertyAccess(base, prop, {
+            get: function get() {
+              if (matchStackTrace(stack, new Error().stack)) {
+                abort();
+              }
+
+              return value;
+            },
+            set: function set(newValue) {
+              if (matchStackTrace(stack, new Error().stack)) {
+                abort();
+              }
+
+              value = newValue;
+            }
+          });
+        };
+
+        setChainPropAccess(window, property);
+        window.onerror = createOnErrorHandler(rid).bind();
+      }
+
+      function randomId() {
+        return Math.random().toString(36).substr(2, 9);
+      }
+
+      function setPropertyAccess(object, property, descriptor) {
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+
+        if (currentDescriptor && !currentDescriptor.configurable) {
+          return false;
+        }
+
+        Object.defineProperty(object, property, descriptor);
+        return true;
+      }
+
+      function getPropertyInChain(base, chain) {
+        var pos = chain.indexOf(".");
+
+        if (pos === -1) {
+          return {
+            base: base,
+            prop: chain
+          };
+        }
+
+        var prop = chain.slice(0, pos);
+
+        if (base === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        var nextBase = base[prop];
+        chain = chain.slice(pos + 1);
+
+        if (nextBase !== undefined) {
+          return getPropertyInChain(nextBase, chain);
+        }
+
+        Object.defineProperty(base, prop, {
+          configurable: true
+        });
+        return {
+          base: nextBase,
+          prop: prop,
+          chain: chain
+        };
+      }
+
+      function createOnErrorHandler(rid) {
+        var nativeOnError = window.onerror;
+        return function onError(error) {
+          if (typeof error === "string" && error.indexOf(rid) !== -1) {
+            return true;
+          }
+
+          if (nativeOnError instanceof Function) {
+            for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+              args[_key - 1] = arguments[_key];
+            }
+
+            return nativeOnError.apply(this, [error].concat(args));
+          }
+
+          return false;
+        };
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function validateStrPattern(input) {
+        var FORWARD_SLASH = "/";
+        var str = input;
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          str = input.slice(1, -1);
+        }
+
+        var isValid;
+
+        try {
+          isValid = new RegExp(str);
+          isValid = true;
+        } catch (e) {
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+      function matchStackTrace(stackMatch, stackTrace) {
+        if (!stackMatch || stackMatch === "") {
+          return true;
+        }
+
+        var stackRegexp = toRegExp(stackMatch);
+        var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
+          return line.trim();
+        }).join("\n");
+        return stackRegexp.test(refinedStackTrace);
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        abortOnStackTrace.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function adjustSetInterval(source, args) {
+      function adjustSetInterval(source, match, interval, boost) {
+        var nativeSetInterval = window.setInterval;
+        var matchRegexp = toRegExp(match);
+
+        var intervalWrapper = function intervalWrapper(cb, d) {
+          if (matchRegexp.test(cb.toString()) && isDelayMatched(interval, d)) {
+            d *= getBoostMultiplier(boost);
+            hit(source);
+          }
+
+          for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+            args[_key - 2] = arguments[_key];
+          }
+
+          return nativeSetInterval.apply(window, [cb, d].concat(args));
+        };
+
+        window.setInterval = intervalWrapper;
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function getBoostMultiplier(boost) {
+        var DEFAULT_MULTIPLIER = .05;
+        var MIN_MULTIPLIER = .02;
+        var MAX_MULTIPLIER = 50;
+        var parsedBoost = parseFloat(boost);
+        var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
+
+        if (boostMultiplier < MIN_MULTIPLIER) {
+          boostMultiplier = MIN_MULTIPLIER;
+        }
+
+        if (boostMultiplier > MAX_MULTIPLIER) {
+          boostMultiplier = MAX_MULTIPLIER;
+        }
+
+        return boostMultiplier;
+      }
+
+      function isDelayMatched(inputDelay, realDelay) {
+        return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
+      }
+
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+
+      function nativeIsFinite(num) {
+        var native = Number.isFinite || window.isFinite;
+        return native(num);
+      }
+
+      function getMatchDelay(delay) {
+        var DEFAULT_DELAY = 1e3;
+        var parsedDelay = parseInt(delay, 10);
+        var delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
+        return delayMatch;
+      }
+
+      function getWildcardSymbol() {
+        return "*";
+      }
+
+      function shouldMatchAnyDelay(delay) {
+        return delay === getWildcardSymbol();
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        adjustSetInterval.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function adjustSetTimeout(source, args) {
+      function adjustSetTimeout(source, match, timeout, boost) {
+        var nativeSetTimeout = window.setTimeout;
+        var matchRegexp = toRegExp(match);
+
+        var timeoutWrapper = function timeoutWrapper(cb, d) {
+          if (matchRegexp.test(cb.toString()) && isDelayMatched(timeout, d)) {
+            d *= getBoostMultiplier(boost);
+            hit(source);
+          }
+
+          for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+            args[_key - 2] = arguments[_key];
+          }
+
+          return nativeSetTimeout.apply(window, [cb, d].concat(args));
+        };
+
+        window.setTimeout = timeoutWrapper;
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function getBoostMultiplier(boost) {
+        var DEFAULT_MULTIPLIER = .05;
+        var MIN_MULTIPLIER = .02;
+        var MAX_MULTIPLIER = 50;
+        var parsedBoost = parseFloat(boost);
+        var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
+
+        if (boostMultiplier < MIN_MULTIPLIER) {
+          boostMultiplier = MIN_MULTIPLIER;
+        }
+
+        if (boostMultiplier > MAX_MULTIPLIER) {
+          boostMultiplier = MAX_MULTIPLIER;
+        }
+
+        return boostMultiplier;
+      }
+
+      function isDelayMatched(inputDelay, realDelay) {
+        return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
+      }
+
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+
+      function nativeIsFinite(num) {
+        var native = Number.isFinite || window.isFinite;
+        return native(num);
+      }
+
+      function getMatchDelay(delay) {
+        var DEFAULT_DELAY = 1e3;
+        var parsedDelay = parseInt(delay, 10);
+        var delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
+        return delayMatch;
+      }
+
+      function getWildcardSymbol() {
+        return "*";
+      }
+
+      function shouldMatchAnyDelay(delay) {
+        return delay === getWildcardSymbol();
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        adjustSetTimeout.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function debugCurrentInlineScript(source, args) {
+      function debugCurrentInlineScript(source, property, search) {
+        var searchRegexp = toRegExp(search);
+        var rid = randomId();
+
+        var getCurrentScript = function getCurrentScript() {
+          if ("currentScript" in document) {
+            return document.currentScript;
+          }
+
+          var scripts = document.getElementsByTagName("script");
+          return scripts[scripts.length - 1];
+        };
+
+        var ourScript = getCurrentScript();
+
+        var abort = function abort() {
+          var scriptEl = getCurrentScript();
+
+          if (!scriptEl) {
+            return;
+          }
+
+          var content = scriptEl.textContent;
+
+          try {
+            var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").get;
+            content = textContentGetter.call(scriptEl);
+          } catch (e) {}
+
+          if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && searchRegexp.test(content)) {
+            hit(source);
+            debugger;
+          }
+        };
+
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
+              chain = chainInfo.chain;
+
+          if (base instanceof Object === false && base === null) {
+            var props = property.split(".");
+            var propIndex = props.indexOf(prop);
+            var baseName = props[propIndex - 1];
+            console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded."));
+            return;
+          }
+
+          if (chain) {
+            var setter = function setter(a) {
+              base = a;
+
+              if (a instanceof Object) {
+                setChainPropAccess(a, chain);
+              }
+            };
+
+            Object.defineProperty(owner, prop, {
+              get: function get() {
+                return base;
+              },
+              set: setter
+            });
+            return;
+          }
+
+          var currentValue = base[prop];
+          setPropertyAccess(base, prop, {
+            set: function set(value) {
+              abort();
+              currentValue = value;
+            },
+            get: function get() {
+              abort();
+              return currentValue;
+            }
+          });
+        };
+
+        setChainPropAccess(window, property);
+        window.onerror = createOnErrorHandler(rid).bind();
+      }
+
+      function randomId() {
+        return Math.random().toString(36).substr(2, 9);
+      }
+
+      function setPropertyAccess(object, property, descriptor) {
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+
+        if (currentDescriptor && !currentDescriptor.configurable) {
+          return false;
+        }
+
+        Object.defineProperty(object, property, descriptor);
+        return true;
+      }
+
+      function getPropertyInChain(base, chain) {
+        var pos = chain.indexOf(".");
+
+        if (pos === -1) {
+          return {
+            base: base,
+            prop: chain
+          };
+        }
+
+        var prop = chain.slice(0, pos);
+
+        if (base === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        var nextBase = base[prop];
+        chain = chain.slice(pos + 1);
+
+        if (nextBase !== undefined) {
+          return getPropertyInChain(nextBase, chain);
+        }
+
+        Object.defineProperty(base, prop, {
+          configurable: true
+        });
+        return {
+          base: nextBase,
+          prop: prop,
+          chain: chain
+        };
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function createOnErrorHandler(rid) {
+        var nativeOnError = window.onerror;
+        return function onError(error) {
+          if (typeof error === "string" && error.indexOf(rid) !== -1) {
+            return true;
+          }
+
+          if (nativeOnError instanceof Function) {
+            for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+              args[_key - 1] = arguments[_key];
+            }
+
+            return nativeOnError.apply(this, [error].concat(args));
+          }
+
+          return false;
+        };
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        debugCurrentInlineScript.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function debugOnPropertyRead(source, args) {
+      function debugOnPropertyRead(source, property) {
+        if (!property) {
+          return;
+        }
+
+        var rid = randomId();
+
+        var abort = function abort() {
+          hit(source);
+          debugger;
+        };
+
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
+              chain = chainInfo.chain;
+
+          if (chain) {
+            var setter = function setter(a) {
+              base = a;
+
+              if (a instanceof Object) {
+                setChainPropAccess(a, chain);
+              }
+            };
+
+            Object.defineProperty(owner, prop, {
+              get: function get() {
+                return base;
+              },
+              set: setter
+            });
+            return;
+          }
+
+          setPropertyAccess(base, prop, {
+            get: abort,
+            set: noopFunc
+          });
+        };
+
+        setChainPropAccess(window, property);
+        window.onerror = createOnErrorHandler(rid).bind();
+      }
+
+      function randomId() {
+        return Math.random().toString(36).substr(2, 9);
+      }
+
+      function setPropertyAccess(object, property, descriptor) {
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+
+        if (currentDescriptor && !currentDescriptor.configurable) {
+          return false;
+        }
+
+        Object.defineProperty(object, property, descriptor);
+        return true;
+      }
+
+      function getPropertyInChain(base, chain) {
+        var pos = chain.indexOf(".");
+
+        if (pos === -1) {
+          return {
+            base: base,
+            prop: chain
+          };
+        }
+
+        var prop = chain.slice(0, pos);
+
+        if (base === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        var nextBase = base[prop];
+        chain = chain.slice(pos + 1);
+
+        if (nextBase !== undefined) {
+          return getPropertyInChain(nextBase, chain);
+        }
+
+        Object.defineProperty(base, prop, {
+          configurable: true
+        });
+        return {
+          base: nextBase,
+          prop: prop,
+          chain: chain
+        };
+      }
+
+      function createOnErrorHandler(rid) {
+        var nativeOnError = window.onerror;
+        return function onError(error) {
+          if (typeof error === "string" && error.indexOf(rid) !== -1) {
+            return true;
+          }
+
+          if (nativeOnError instanceof Function) {
+            for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+              args[_key - 1] = arguments[_key];
+            }
+
+            return nativeOnError.apply(this, [error].concat(args));
+          }
+
+          return false;
+        };
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function noopFunc() {}
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        debugOnPropertyRead.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function debugOnPropertyWrite(source, args) {
+      function debugOnPropertyWrite(source, property) {
+        if (!property) {
+          return;
+        }
+
+        var rid = randomId();
+
+        var abort = function abort() {
+          hit(source);
+          debugger;
+        };
+
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
+              chain = chainInfo.chain;
+
+          if (chain) {
+            var setter = function setter(a) {
+              base = a;
+
+              if (a instanceof Object) {
+                setChainPropAccess(a, chain);
+              }
+            };
+
+            Object.defineProperty(owner, prop, {
+              get: function get() {
+                return base;
+              },
+              set: setter
+            });
+            return;
+          }
+
+          setPropertyAccess(base, prop, {
+            set: abort
+          });
+        };
+
+        setChainPropAccess(window, property);
+        window.onerror = createOnErrorHandler(rid).bind();
+      }
+
+      function randomId() {
+        return Math.random().toString(36).substr(2, 9);
+      }
+
+      function setPropertyAccess(object, property, descriptor) {
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+
+        if (currentDescriptor && !currentDescriptor.configurable) {
+          return false;
+        }
+
+        Object.defineProperty(object, property, descriptor);
+        return true;
+      }
+
+      function getPropertyInChain(base, chain) {
+        var pos = chain.indexOf(".");
+
+        if (pos === -1) {
+          return {
+            base: base,
+            prop: chain
+          };
+        }
+
+        var prop = chain.slice(0, pos);
+
+        if (base === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        var nextBase = base[prop];
+        chain = chain.slice(pos + 1);
+
+        if (nextBase !== undefined) {
+          return getPropertyInChain(nextBase, chain);
+        }
+
+        Object.defineProperty(base, prop, {
+          configurable: true
+        });
+        return {
+          base: nextBase,
+          prop: prop,
+          chain: chain
+        };
+      }
+
+      function createOnErrorHandler(rid) {
+        var nativeOnError = window.onerror;
+        return function onError(error) {
+          if (typeof error === "string" && error.indexOf(rid) !== -1) {
+            return true;
+          }
+
+          if (nativeOnError instanceof Function) {
+            for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+              args[_key - 1] = arguments[_key];
+            }
+
+            return nativeOnError.apply(this, [error].concat(args));
+          }
+
+          return false;
+        };
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        debugOnPropertyWrite.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function dirString(source, args) {
+      function dirString(source, times) {
+        var _console = console,
+            dir = _console.dir;
+        times = parseInt(times, 10);
+
+        function dirWrapper(object) {
+          var temp;
+
+          for (var i = 0; i < times; i += 1) {
+            temp = "".concat(object);
+          }
+
+          if (typeof dir === "function") {
+            dir.call(this, object);
+          }
+
+          hit(source, temp);
+        }
+
+        console.dir = dirWrapper;
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        dirString.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function disableNewtabLinks(source, args) {
+      function disableNewtabLinks(source) {
+        document.addEventListener("click", function (ev) {
+          var target = ev.target;
+
+          while (target !== null) {
+            if (target.localName === "a" && target.hasAttribute("target")) {
+              ev.stopPropagation();
+              ev.preventDefault();
+              hit(source);
+              break;
+            }
+
+            target = target.parentNode;
+          }
+        });
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        disableNewtabLinks.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function forceWindowClose(source, args) {
+      function forceWindowClose(source) {
+        var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        var log = console.log.bind(console);
+
+        if (typeof window.close !== "function") {
+          if (source.verbose) {
+            log("window.close() is not a function so 'close-window' scriptlet is unavailable");
+          }
+
+          return;
+        }
+
+        var closeImmediately = function closeImmediately() {
+          try {
+            hit(source);
+            window.close();
+          } catch (e) {
+            log(e);
+          }
+        };
+
+        if (path === "") {
+          closeImmediately();
+        } else {
+          var pathRegexp = toRegExp(path);
+          var currentPath = "".concat(window.location.pathname).concat(window.location.search);
+
+          if (pathRegexp.test(currentPath)) {
+            closeImmediately();
+          }
+        }
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        forceWindowClose.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function hideInShadowDom(source, args) {
+      function hideInShadowDom(source, selector, baseSelector) {
+        if (!Element.prototype.attachShadow) {
+          return;
+        }
+
+        var hideElement = function hideElement(targetElement) {
+          var DISPLAY_NONE_CSS = "display:none!important;";
+          targetElement.style.cssText = DISPLAY_NONE_CSS;
+        };
+
+        var hideHandler = function hideHandler() {
+          var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
+
+          while (hostElements.length !== 0) {
+            var isHidden = false;
+
+            var _pierceShadowDom = pierceShadowDom(selector, hostElements),
+                targets = _pierceShadowDom.targets,
+                innerHosts = _pierceShadowDom.innerHosts;
+
+            targets.forEach(function (targetEl) {
+              hideElement(targetEl);
+              isHidden = true;
+            });
+
+            if (isHidden) {
+              hit(source);
+            }
+
+            hostElements = innerHosts;
+          }
+        };
+
+        hideHandler();
+        observeDOMChanges(hideHandler, true);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function observeDOMChanges(callback) {
+        var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+
+        var throttle = function throttle(method, delay) {
+          var wait = false;
+          var savedArgs;
+
+          var wrapper = function wrapper() {
+            for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+              args[_key] = arguments[_key];
+            }
+
+            if (wait) {
+              savedArgs = args;
+              return;
+            }
+
+            method.apply(void 0, args);
+            wait = true;
+            setTimeout(function () {
+              wait = false;
+
+              if (savedArgs) {
+                wrapper(savedArgs);
+                savedArgs = null;
+              }
+            }, delay);
+          };
+
+          return wrapper;
+        };
+
+        var THROTTLE_DELAY_MS = 20;
+        var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+
+        var connect = function connect() {
+          if (attrsToObserve.length > 0) {
+            observer.observe(document.documentElement, {
+              childList: true,
+              subtree: true,
+              attributes: observeAttrs,
+              attributeFilter: attrsToObserve
+            });
+          } else {
+            observer.observe(document.documentElement, {
+              childList: true,
+              subtree: true,
+              attributes: observeAttrs
+            });
+          }
+        };
+
+        var disconnect = function disconnect() {
+          observer.disconnect();
+        };
+
+        function callbackWrapper() {
+          disconnect();
+          callback();
+          connect();
+        }
+
+        connect();
+      }
+
+      function flatten(input) {
+        var stack = [];
+        input.forEach(function (el) {
+          return stack.push(el);
+        });
+        var res = [];
+
+        while (stack.length) {
+          var next = stack.pop();
+
+          if (Array.isArray(next)) {
+            next.forEach(function (el) {
+              return stack.push(el);
+            });
+          } else {
+            res.push(next);
+          }
+        }
+
+        return res.reverse();
+      }
+
+      function findHostElements(rootElement) {
+        var hosts = [];
+        var domElems = rootElement.querySelectorAll("*");
+        domElems.forEach(function (el) {
+          if (el.shadowRoot) {
+            hosts.push(el);
+          }
+        });
+        return hosts;
+      }
+
+      function pierceShadowDom(selector, hostElements) {
+        var targets = [];
+        var innerHostsAcc = [];
+        hostElements.forEach(function (host) {
+          var simpleElems = host.querySelectorAll(selector);
+          targets = targets.concat([].slice.call(simpleElems));
+          var shadowRootElem = host.shadowRoot;
+          var shadowChildren = shadowRootElem.querySelectorAll(selector);
+          targets = targets.concat([].slice.call(shadowChildren));
+          innerHostsAcc.push(findHostElements(shadowRootElem));
+        });
+        var innerHosts = flatten(innerHostsAcc);
+        return {
+          targets: targets,
+          innerHosts: innerHosts
+        };
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        hideInShadowDom.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function jsonPrune(source, args) {
+      function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
+        if (!!stack && !matchStackTrace(stack, new Error().stack)) {
+          return;
+        }
+
+        var log = console.log.bind(console);
+        var prunePaths = propsToRemove !== undefined && propsToRemove !== "" ? propsToRemove.split(/ +/) : [];
+        var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== "" ? requiredInitialProps.split(/ +/) : [];
+
+        function isPruningNeeded(root) {
+          if (!root) {
+            return false;
+          }
+
+          var shouldProcess;
+
+          if (prunePaths.length === 0 && requiredPaths.length > 0) {
+            var rootString = JSON.stringify(root);
+            var matchRegex = toRegExp(requiredPaths.join(""));
+            var shouldLog = matchRegex.test(rootString);
+
+            if (shouldLog) {
+              log(window.location.hostname, root);
+              shouldProcess = false;
+              return shouldProcess;
+            }
+          }
+
+          for (var i = 0; i < requiredPaths.length; i += 1) {
+            var requiredPath = requiredPaths[i];
+            var lastNestedPropName = requiredPath.split(".").pop();
+            var hasWildcard = requiredPath.indexOf(".*.") > -1 || requiredPath.indexOf("*.") > -1 || requiredPath.indexOf(".*") > -1 || requiredPath.indexOf(".[].") > -1 || requiredPath.indexOf("[].") > -1 || requiredPath.indexOf(".[]") > -1;
+            var details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
+            shouldProcess = !hasWildcard;
+
+            for (var _i = 0; _i < details.length; _i += 1) {
+              if (hasWildcard) {
+                shouldProcess = !(details[_i].base[lastNestedPropName] === undefined) || shouldProcess;
+              } else {
+                shouldProcess = !(details[_i].base[lastNestedPropName] === undefined) && shouldProcess;
+              }
+            }
+          }
+
+          return shouldProcess;
+        }
+
+        var jsonPruner = function jsonPruner(root) {
+          if (prunePaths.length === 0 && requiredPaths.length === 0) {
+            log(window.location.hostname, root);
+            return root;
+          }
+
+          try {
+            if (isPruningNeeded(root) === false) {
+              return root;
+            }
+
+            prunePaths.forEach(function (path) {
+              var ownerObjArr = getWildcardPropertyInChain(root, path, true);
+              ownerObjArr.forEach(function (ownerObj) {
+                if (ownerObj !== undefined && ownerObj.base) {
+                  delete ownerObj.base[ownerObj.prop];
+                  hit(source);
+                }
+              });
+            });
+          } catch (e) {
+            log(e.toString());
+          }
+
+          return root;
+        };
+
+        var nativeJSONParse = JSON.parse;
+
+        var jsonParseWrapper = function jsonParseWrapper() {
+          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+
+          var root = nativeJSONParse.apply(JSON, args);
+          return jsonPruner(root);
+        };
+
+        jsonParseWrapper.toString = nativeJSONParse.toString.bind(nativeJSONParse);
+        JSON.parse = jsonParseWrapper;
+        var nativeResponseJson = Response.prototype.json;
+
+        var responseJsonWrapper = function responseJsonWrapper() {
+          var promise = nativeResponseJson.apply(this);
+          return promise.then(function (obj) {
+            return jsonPruner(obj);
+          });
+        };
+
+        if (typeof Response === "undefined") {
+          return;
+        }
+
+        Response.prototype.json = responseJsonWrapper;
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function matchStackTrace(stackMatch, stackTrace) {
+        if (!stackMatch || stackMatch === "") {
+          return true;
+        }
+
+        var stackRegexp = toRegExp(stackMatch);
+        var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
+          return line.trim();
+        }).join("\n");
+        return stackRegexp.test(refinedStackTrace);
+      }
+
+      function getWildcardPropertyInChain(base, chain) {
+        var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+        var pos = chain.indexOf(".");
+
+        if (pos === -1) {
+          if (chain === getWildcardSymbol() || chain === "[]") {
+            for (var key in base) {
+              if (Object.prototype.hasOwnProperty.call(base, key)) {
+                output.push({
+                  base: base,
+                  prop: key
+                });
+              }
+            }
+          } else {
+            output.push({
+              base: base,
+              prop: chain
+            });
+          }
+
+          return output;
+        }
+
+        var prop = chain.slice(0, pos);
+        var shouldLookThrough = prop === "[]" && Array.isArray(base) || prop === getWildcardSymbol() && base instanceof Object;
+
+        if (shouldLookThrough) {
+          var nextProp = chain.slice(pos + 1);
+          var baseKeys = Object.keys(base);
+          baseKeys.forEach(function (key) {
+            var item = base[key];
+            getWildcardPropertyInChain(item, nextProp, lookThrough, output);
+          });
+        }
+
+        var nextBase = base[prop];
+        chain = chain.slice(pos + 1);
+
+        if (nextBase !== undefined) {
+          getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
+        }
+
+        return output;
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function getWildcardSymbol() {
+        return "*";
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        jsonPrune.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function log(source, args) {
+      function log() {
+        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        console.log(args);
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        log.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function logAddEventListener(source, args) {
+      function logAddEventListener(source) {
+        var log = console.log.bind(console);
+        var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+
+        function addEventListenerWrapper(type, listener) {
+          if (validateType(type) && validateListener(listener)) {
+            var logMessage = 'addEventListener("'.concat(type, '", ').concat(listenerToString(listener), ")");
+            log(logMessage);
+            hit(source);
+          } else if (source.verbose) {
+            var _logMessage = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
+
+            log(_logMessage);
+          }
+
+          for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+            args[_key - 2] = arguments[_key];
+          }
+
+          return nativeAddEventListener.apply(this, [type, listener].concat(args));
+        }
+
+        window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function validateType(type) {
+        return typeof type !== "undefined";
+      }
+
+      function validateListener(listener) {
+        return typeof listener !== "undefined" && (typeof listener === "function" || typeof listener === "object" && listener !== null && typeof listener.handleEvent === "function");
+      }
+
+      function listenerToString(listener) {
+        return typeof listener === "function" ? listener.toString() : listener.handleEvent.toString();
+      }
+
+      function convertTypeToString(value) {
+        var output;
+
+        if (typeof value === "undefined") {
+          output = "undefined";
+        } else if (typeof value === "object") {
+          if (value === null) {
+            output = "null";
+          } else {
+            output = objectToString(value);
+          }
+        } else {
+          output = value.toString();
+        }
+
+        return output;
+      }
+
+      function objectToString(obj) {
+        return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
+          var key = pair[0];
+          var value = pair[1];
+          var recordValueStr = value;
+
+          if (value instanceof Object) {
+            recordValueStr = "{ ".concat(objectToString(value), " }");
+          }
+
+          return "".concat(key, ':"').concat(recordValueStr, '"');
+        }).join(" ");
+      }
+
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0;
+      }
+
+      function getObjectEntries(object) {
+        var keys = Object.keys(object);
+        var entries = [];
+        keys.forEach(function (key) {
+          return entries.push([key, object[key]]);
+        });
+        return entries;
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        logAddEventListener.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function logEval(source, args) {
+      function logEval(source) {
+        var log = console.log.bind(console);
+        var nativeEval = window.eval;
+
+        function evalWrapper(str) {
+          hit(source);
+          log('eval("'.concat(str, '")'));
+          return nativeEval(str);
+        }
+
+        window.eval = evalWrapper;
+        var nativeFunction = window.Function;
+
+        function FunctionWrapper() {
+          hit(source);
+
+          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+
+          log("new Function(".concat(args.join(", "), ")"));
+          return nativeFunction.apply(this, [].concat(args));
+        }
+
+        FunctionWrapper.prototype = Object.create(nativeFunction.prototype);
+        FunctionWrapper.prototype.constructor = FunctionWrapper;
+        window.Function = FunctionWrapper;
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        logEval.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function logOnStacktrace(source, args) {
+      function logOnStacktrace(source, property) {
+        if (!property) {
+          return;
+        }
+
+        var refineStackTrace = function refineStackTrace(stackString) {
+          var stackSteps = stackString.split("\n").slice(2).map(function (line) {
+            return line.replace(/ {4}at /, "");
+          });
+          var logInfoArray = stackSteps.map(function (line) {
+            var funcName;
+            var funcFullPath;
+            var reg = /\(([^\)]+)\)/;
+
+            if (line.match(reg)) {
+              funcName = line.split(" ").slice(0, -1).join(" ");
+              funcFullPath = line.match(reg)[1];
+            } else {
+              funcName = "function name is not available";
+              funcFullPath = line;
+            }
+
+            return [funcName, funcFullPath];
+          });
+          var logInfoObject = {};
+          logInfoArray.forEach(function (pair) {
+            logInfoObject[pair[0]] = pair[1];
+          });
+          return logInfoObject;
+        };
+
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
+              chain = chainInfo.chain;
+
+          if (chain) {
+            var setter = function setter(a) {
+              base = a;
+
+              if (a instanceof Object) {
+                setChainPropAccess(a, chain);
+              }
+            };
+
+            Object.defineProperty(owner, prop, {
+              get: function get() {
+                return base;
+              },
+              set: setter
+            });
+            return;
+          }
+
+          var value = base[prop];
+          setPropertyAccess(base, prop, {
+            get: function get() {
+              hit(source);
+              console.log("%cGet %c".concat(prop), "color:red;", "color:green;");
+              console.table(refineStackTrace(new Error().stack));
+              return value;
+            },
+            set: function set(newValue) {
+              hit(source);
+              console.log("%cSet %c".concat(prop), "color:red;", "color:green;");
+              console.table(refineStackTrace(new Error().stack));
+              value = newValue;
+            }
+          });
+        };
+
+        setChainPropAccess(window, property);
+      }
+
+      function getPropertyInChain(base, chain) {
+        var pos = chain.indexOf(".");
+
+        if (pos === -1) {
+          return {
+            base: base,
+            prop: chain
+          };
+        }
+
+        var prop = chain.slice(0, pos);
+
+        if (base === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        var nextBase = base[prop];
+        chain = chain.slice(pos + 1);
+
+        if (nextBase !== undefined) {
+          return getPropertyInChain(nextBase, chain);
+        }
+
+        Object.defineProperty(base, prop, {
+          configurable: true
+        });
+        return {
+          base: nextBase,
+          prop: prop,
+          chain: chain
+        };
+      }
+
+      function setPropertyAccess(object, property, descriptor) {
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+
+        if (currentDescriptor && !currentDescriptor.configurable) {
+          return false;
+        }
+
+        Object.defineProperty(object, property, descriptor);
+        return true;
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        logOnStacktrace.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function noeval(source, args) {
+      function noeval(source) {
+        window.eval = function evalWrapper(s) {
+          hit(source, "AdGuard has prevented eval:\n".concat(s));
+        }.bind();
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        noeval.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function nowebrtc(source, args) {
+      function nowebrtc(source) {
+        var propertyName = "";
+
+        if (window.RTCPeerConnection) {
+          propertyName = "RTCPeerConnection";
+        } else if (window.webkitRTCPeerConnection) {
+          propertyName = "webkitRTCPeerConnection";
+        }
+
+        if (propertyName === "") {
+          return;
+        }
+
+        var rtcReplacement = function rtcReplacement(config) {
+          hit(source, "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config)));
+        };
+
+        rtcReplacement.prototype = {
+          close: noopFunc,
+          createDataChannel: noopFunc,
+          createOffer: noopFunc,
+          setRemoteDescription: noopFunc
+        };
+        var rtc = window[propertyName];
+        window[propertyName] = rtcReplacement;
+
+        if (rtc.prototype) {
+          rtc.prototype.createDataChannel = function (a, b) {
+            return {
+              close: noopFunc,
+              send: noopFunc
+            };
+          }.bind(null);
+        }
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function noopFunc() {}
+
+      function convertRtcConfigToString(config) {
+        var UNDEF_STR = "undefined";
+        var str = UNDEF_STR;
+
+        if (config === null) {
+          str = "null";
+        } else if (config instanceof Object) {
+          var SERVERS_PROP_NAME = "iceServers";
+          var URLS_PROP_NAME = "urls";
+
+          if (Object.prototype.hasOwnProperty.call(config, SERVERS_PROP_NAME) && Object.prototype.hasOwnProperty.call(config[SERVERS_PROP_NAME][0], URLS_PROP_NAME) && !!config[SERVERS_PROP_NAME][0][URLS_PROP_NAME]) {
+            str = config[SERVERS_PROP_NAME][0][URLS_PROP_NAME].toString();
+          }
+        }
+
+        return str;
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        nowebrtc.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function preventAddEventListener(source, args) {
+      function preventAddEventListener(source, typeSearch, listenerSearch) {
+        var typeSearchRegexp = toRegExp(typeSearch);
+        var listenerSearchRegexp = toRegExp(listenerSearch);
+        var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+
+        function addEventListenerWrapper(type, listener) {
+          var shouldPrevent = false;
+
+          if (validateType(type) && validateListener(listener)) {
+            shouldPrevent = typeSearchRegexp.test(type.toString()) && listenerSearchRegexp.test(listenerToString(listener));
+          }
+
+          if (shouldPrevent) {
+            hit(source);
+            return undefined;
+          }
+
+          for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+            args[_key - 2] = arguments[_key];
+          }
+
+          return nativeAddEventListener.apply(this, [type, listener].concat(args));
+        }
+
+        window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
+        window.addEventListener = addEventListenerWrapper;
+        document.addEventListener = addEventListenerWrapper;
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function validateType(type) {
+        return typeof type !== "undefined";
+      }
+
+      function validateListener(listener) {
+        return typeof listener !== "undefined" && (typeof listener === "function" || typeof listener === "object" && listener !== null && typeof listener.handleEvent === "function");
+      }
+
+      function listenerToString(listener) {
+        return typeof listener === "function" ? listener.toString() : listener.handleEvent.toString();
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        preventAddEventListener.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function preventAdfly(source, args) {
+      function preventAdfly(source) {
+        var isDigit = function isDigit(data) {
+          return /^\d$/.test(data);
+        };
+
+        var handler = function handler(encodedURL) {
+          var evenChars = "";
+          var oddChars = "";
+
+          for (var i = 0; i < encodedURL.length; i += 1) {
+            if (i % 2 === 0) {
+              evenChars += encodedURL.charAt(i);
+            } else {
+              oddChars = encodedURL.charAt(i) + oddChars;
+            }
+          }
+
+          var data = (evenChars + oddChars).split("");
+
+          for (var _i = 0; _i < data.length; _i += 1) {
+            if (isDigit(data[_i])) {
+              for (var ii = _i + 1; ii < data.length; ii += 1) {
+                if (isDigit(data[ii])) {
+                  var temp = parseInt(data[_i], 10) ^ parseInt(data[ii], 10);
+
+                  if (temp < 10) {
+                    data[_i] = temp.toString();
+                  }
+
+                  _i = ii;
+                  break;
+                }
+              }
+            }
+          }
+
+          data = data.join("");
+          var decodedURL = window.atob(data).slice(16, -16);
+
+          if (window.stop) {
+            window.stop();
+          }
+
+          window.onbeforeunload = null;
+          window.location.href = decodedURL;
+        };
+
+        var val;
+        var applyHandler = true;
+        var result = setPropertyAccess(window, "ysmm", {
+          configurable: false,
+          set: function set(value) {
+            if (applyHandler) {
+              applyHandler = false;
+
+              try {
+                if (typeof value === "string") {
+                  handler(value);
+                }
+              } catch (err) {}
+            }
+
+            val = value;
+          },
+          get: function get() {
+            return val;
+          }
+        });
+
+        if (result) {
+          hit(source);
+        } else {
+          window.console.error("Failed to set up prevent-adfly scriptlet");
+        }
+      }
+
+      function setPropertyAccess(object, property, descriptor) {
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+
+        if (currentDescriptor && !currentDescriptor.configurable) {
+          return false;
+        }
+
+        Object.defineProperty(object, property, descriptor);
+        return true;
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        preventAdfly.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function preventBab(source, args) {
+      function preventBab(source) {
+        var nativeSetTimeout = window.setTimeout;
+        var babRegex = /\.bab_elementid.$/;
+
+        var timeoutWrapper = function timeoutWrapper(callback) {
+          if (typeof callback !== "string" || !babRegex.test(callback)) {
+            for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+              args[_key - 1] = arguments[_key];
+            }
+
+            return nativeSetTimeout.apply(window, [callback].concat(args));
+          }
+
+          hit(source);
+        };
+
+        window.setTimeout = timeoutWrapper;
+        var signatures = [["blockadblock"], ["babasbm"], [/getItem\('babn'\)/], ["getElementById", "String.fromCharCode", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", "charAt", "DOMContentLoaded", "AdBlock", "addEventListener", "doScroll", "fromCharCode", "<<2|r>>4", "sessionStorage", "clientWidth", "localStorage", "Math", "random"]];
+
+        var check = function check(str) {
+          if (typeof str !== "string") {
+            return false;
+          }
+
+          for (var i = 0; i < signatures.length; i += 1) {
+            var tokens = signatures[i];
+            var match = 0;
+
+            for (var j = 0; j < tokens.length; j += 1) {
+              var token = tokens[j];
+              var found = token instanceof RegExp ? token.test(str) : str.indexOf(token) > -1;
+
+              if (found) {
+                match += 1;
+              }
+            }
+
+            if (match / tokens.length >= .8) {
+              return true;
+            }
+          }
+
+          return false;
+        };
+
+        var nativeEval = window.eval;
+
+        var evalWrapper = function evalWrapper(str) {
+          if (!check(str)) {
+            return nativeEval(str);
+          }
+
+          hit(source);
+          var bodyEl = document.body;
+
+          if (bodyEl) {
+            bodyEl.style.removeProperty("visibility");
+          }
+
+          var el = document.getElementById("babasbmsgx");
+
+          if (el) {
+            el.parentNode.removeChild(el);
+          }
+        };
+
+        window.eval = evalWrapper.bind(window);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        preventBab.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function preventElementSrcLoading(source, args) {
+      function preventElementSrcLoading(source, tagName, match) {
+        if (typeof Proxy === "undefined" || typeof Reflect === "undefined") {
+          return;
+        }
+
+        var srcMockData = {
+          script: "data:text/javascript;base64,KCk9Pnt9",
+          img: "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==",
+          iframe: "data:text/html;base64, PGRpdj48L2Rpdj4="
+        };
+        var instance;
+
+        if (tagName === "script") {
+          instance = HTMLScriptElement;
+        } else if (tagName === "img") {
+          instance = HTMLImageElement;
+        } else if (tagName === "iframe") {
+          instance = HTMLIFrameElement;
+        } else {
+          return;
+        }
+
+        var hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === "function";
+        var policy;
+
+        if (hasTrustedTypes) {
+          policy = window.trustedTypes.createPolicy("mock", {
+            createScriptURL: function createScriptURL(arg) {
+              return arg;
+            }
+          });
+        }
+
+        var SOURCE_PROPERTY_NAME = "src";
+        var searchRegexp = toRegExp(match);
+
+        var setAttributeWrapper = function setAttributeWrapper(target, thisArg, args) {
+          if (!args[0] || !args[1]) {
+            return Reflect.apply(target, thisArg, args);
+          }
+
+          var nodeName = thisArg.nodeName.toLowerCase();
+          var attrName = args[0].toLowerCase();
+          var attrValue = args[1];
+          var isMatched = attrName === SOURCE_PROPERTY_NAME && tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(attrValue);
+
+          if (!isMatched) {
+            return Reflect.apply(target, thisArg, args);
+          }
+
+          hit(source);
+          return Reflect.apply(target, thisArg, [attrName, srcMockData[nodeName]]);
+        };
+
+        var setAttributeHandler = {
+          apply: setAttributeWrapper
+        };
+        instance.prototype.setAttribute = new Proxy(Element.prototype.setAttribute, setAttributeHandler);
+        var origDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
+
+        if (!origDescriptor) {
+          return;
+        }
+
+        Object.defineProperty(instance.prototype, SOURCE_PROPERTY_NAME, {
+          enumerable: true,
+          configurable: true,
+          get: function get() {
+            return origDescriptor.get.call(this);
+          },
+          set: function set(urlValue) {
+            var nodeName = this.nodeName.toLowerCase();
+            var isMatched = tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(urlValue);
+
+            if (!isMatched) {
+              origDescriptor.set.call(this, urlValue);
+              return;
+            }
+
+            if (policy && urlValue instanceof TrustedScriptURL) {
+              var trustedSrc = policy.createScriptURL(urlValue);
+              origDescriptor.set.call(this, trustedSrc);
+              hit(source);
+              return;
+            }
+
+            origDescriptor.set.call(this, srcMockData[nodeName]);
+            hit(source);
+          }
+        });
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function safeGetDescriptor(obj, prop) {
+        var descriptor = Object.getOwnPropertyDescriptor(obj, prop);
+
+        if (descriptor && descriptor.configurable) {
+          return descriptor;
+        }
+
+        return null;
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        preventElementSrcLoading.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function preventEvalIf(source, args) {
+      function preventEvalIf(source, search) {
+        var searchRegexp = toRegExp(search);
+        var nativeEval = window.eval;
+
+        window.eval = function (payload) {
+          if (!searchRegexp.test(payload.toString())) {
+            return nativeEval.call(window, payload);
+          }
+
+          hit(source, payload);
+          return undefined;
+        }.bind(window);
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        preventEvalIf.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function preventFab(source, args) {
+      function preventFab(source) {
+        hit(source);
+
+        var Fab = function Fab() {};
+
+        Fab.prototype.check = noopFunc;
+        Fab.prototype.clearEvent = noopFunc;
+        Fab.prototype.emitEvent = noopFunc;
+
+        Fab.prototype.on = function (a, b) {
+          if (!a) {
+            b();
+          }
+
+          return this;
+        };
+
+        Fab.prototype.onDetected = noopThis;
+
+        Fab.prototype.onNotDetected = function (a) {
+          a();
+          return this;
+        };
+
+        Fab.prototype.setOption = noopFunc;
+        Fab.prototype.options = {
+          set: noopFunc,
+          get: noopFunc
+        };
+        var fab = new Fab();
+        var getSetFab = {
+          get: function get() {
+            return Fab;
+          },
+          set: function set() {}
+        };
+        var getsetfab = {
+          get: function get() {
+            return fab;
+          },
+          set: function set() {}
+        };
+
+        if (Object.prototype.hasOwnProperty.call(window, "FuckAdBlock")) {
+          window.FuckAdBlock = Fab;
+        } else {
+          Object.defineProperty(window, "FuckAdBlock", getSetFab);
+        }
+
+        if (Object.prototype.hasOwnProperty.call(window, "BlockAdBlock")) {
+          window.BlockAdBlock = Fab;
+        } else {
+          Object.defineProperty(window, "BlockAdBlock", getSetFab);
+        }
+
+        if (Object.prototype.hasOwnProperty.call(window, "SniffAdBlock")) {
+          window.SniffAdBlock = Fab;
+        } else {
+          Object.defineProperty(window, "SniffAdBlock", getSetFab);
+        }
+
+        if (Object.prototype.hasOwnProperty.call(window, "fuckAdBlock")) {
+          window.fuckAdBlock = fab;
+        } else {
+          Object.defineProperty(window, "fuckAdBlock", getsetfab);
+        }
+
+        if (Object.prototype.hasOwnProperty.call(window, "blockAdBlock")) {
+          window.blockAdBlock = fab;
+        } else {
+          Object.defineProperty(window, "blockAdBlock", getsetfab);
+        }
+
+        if (Object.prototype.hasOwnProperty.call(window, "sniffAdBlock")) {
+          window.sniffAdBlock = fab;
+        } else {
+          Object.defineProperty(window, "sniffAdBlock", getsetfab);
+        }
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function noopFunc() {}
+
+      function noopThis() {
+        return this;
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        preventFab.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function preventFetch(source, args) {
+      function preventFetch(source, propsToMatch) {
+        var responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "emptyObj";
+
+        if (typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
+          return;
+        }
+
+        var strResponseBody;
+
+        if (responseBody === "emptyObj") {
+          strResponseBody = "{}";
+        } else if (responseBody === "emptyArr") {
+          strResponseBody = "[]";
+        } else {
+          return;
+        }
+
+        var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+          var shouldPrevent = false;
+          var fetchData = getFetchData(args);
+
+          if (typeof propsToMatch === "undefined") {
+            var logMessage = "log: fetch( ".concat(objectToString(fetchData), " )");
+            hit(source, logMessage);
+          } else if (propsToMatch === "" || propsToMatch === getWildcardSymbol()) {
+            shouldPrevent = true;
+          } else {
+            var parsedData = parseMatchProps(propsToMatch);
+
+            if (!validateParsedData(parsedData)) {
+              console.log("Invalid parameter: ".concat(propsToMatch));
+              shouldPrevent = false;
+            } else {
+              var matchData = getMatchPropsData(parsedData);
+              shouldPrevent = Object.keys(matchData).every(function (matchKey) {
+                var matchValue = matchData[matchKey];
+                return Object.prototype.hasOwnProperty.call(fetchData, matchKey) && matchValue.test(fetchData[matchKey]);
+              });
+            }
+          }
+
+          if (shouldPrevent) {
+            hit(source);
+            return noopPromiseResolve(strResponseBody);
+          }
+
+          return Reflect.apply(target, thisArg, args);
+        };
+
+        var fetchHandler = {
+          apply: handlerWrapper
+        };
+        fetch = new Proxy(fetch, fetchHandler);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function getFetchData(args) {
+        var fetchPropsObj = {};
+        var fetchUrl;
+        var fetchInit;
+
+        if (args[0] instanceof Request) {
+          var requestData = getRequestData(args[0]);
+          fetchUrl = requestData.url;
+          fetchInit = requestData;
+        } else {
+          fetchUrl = args[0];
+          fetchInit = args[1];
+        }
+
+        fetchPropsObj.url = fetchUrl;
+
+        if (fetchInit instanceof Object) {
+          Object.keys(fetchInit).forEach(function (prop) {
+            fetchPropsObj[prop] = fetchInit[prop];
+          });
+        }
+
+        return fetchPropsObj;
+      }
+
+      function objectToString(obj) {
+        return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
+          var key = pair[0];
+          var value = pair[1];
+          var recordValueStr = value;
+
+          if (value instanceof Object) {
+            recordValueStr = "{ ".concat(objectToString(value), " }");
+          }
+
+          return "".concat(key, ':"').concat(recordValueStr, '"');
+        }).join(" ");
+      }
+
+      function parseMatchProps(propsToMatchStr) {
+        var PROPS_DIVIDER = " ";
+        var PAIRS_MARKER = ":";
+        var propsObj = {};
+        var props = propsToMatchStr.split(PROPS_DIVIDER);
+        props.forEach(function (prop) {
+          var dividerInd = prop.indexOf(PAIRS_MARKER);
+
+          if (dividerInd === -1) {
+            propsObj.url = prop;
+          } else {
+            var key = prop.slice(0, dividerInd);
+            var value = prop.slice(dividerInd + 1);
+            propsObj[key] = value;
+          }
+        });
+        return propsObj;
+      }
+
+      function validateParsedData(data) {
+        return Object.values(data).every(function (value) {
+          return validateStrPattern(value);
+        });
+      }
+
+      function getMatchPropsData(data) {
+        var matchData = {};
+        Object.keys(data).forEach(function (key) {
+          matchData[key] = toRegExp(data[key]);
+        });
+        return matchData;
+      }
+
+      function noopPromiseResolve() {
+        var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
+
+        if (typeof Response === "undefined") {
+          return;
+        }
+
+        var response = new Response(responseBody, {
+          status: 200,
+          statusText: "OK"
+        });
+        return Promise.resolve(response);
+      }
+
+      function getWildcardSymbol() {
+        return "*";
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function validateStrPattern(input) {
+        var FORWARD_SLASH = "/";
+        var str = input;
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          str = input.slice(1, -1);
+        }
+
+        var isValid;
+
+        try {
+          isValid = new RegExp(str);
+          isValid = true;
+        } catch (e) {
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0;
+      }
+
+      function getRequestData(request) {
+        var REQUEST_INIT_OPTIONS = ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "integrity"];
+        var entries = REQUEST_INIT_OPTIONS.map(function (key) {
+          var value = request[key];
+          return [key, value];
+        });
+        return getObjectFromEntries(entries);
+      }
+
+      function getObjectEntries(object) {
+        var keys = Object.keys(object);
+        var entries = [];
+        keys.forEach(function (key) {
+          return entries.push([key, object[key]]);
+        });
+        return entries;
+      }
+
+      function getObjectFromEntries(entries) {
+        var output = entries.reduce(function (acc, el) {
+          var key = el[0];
+          var value = el[1];
+          acc[key] = value;
+          return acc;
+        }, {});
+        return output;
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        preventFetch.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function preventPopadsNet(source, args) {
+      function preventPopadsNet(source) {
+        var rid = randomId();
+
+        var throwError = function throwError() {
+          throw new ReferenceError(rid);
+        };
+
+        delete window.PopAds;
+        delete window.popns;
+        Object.defineProperties(window, {
+          PopAds: {
+            set: throwError
+          },
+          popns: {
+            set: throwError
+          }
+        });
+        window.onerror = createOnErrorHandler(rid).bind();
+        hit(source);
+      }
+
+      function createOnErrorHandler(rid) {
+        var nativeOnError = window.onerror;
+        return function onError(error) {
+          if (typeof error === "string" && error.indexOf(rid) !== -1) {
+            return true;
+          }
+
+          if (nativeOnError instanceof Function) {
+            for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+              args[_key - 1] = arguments[_key];
+            }
+
+            return nativeOnError.apply(this, [error].concat(args));
+          }
+
+          return false;
+        };
+      }
+
+      function randomId() {
+        return Math.random().toString(36).substr(2, 9);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        preventPopadsNet.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function preventRefresh(source, args) {
+      function preventRefresh(source, delaySec) {
+        var getMetaElements = function getMetaElements() {
+          var metaNodes = [];
+
+          try {
+            metaNodes = document.querySelectorAll('meta[http-equiv="refresh" i][content]');
+          } catch (e) {
+            try {
+              metaNodes = document.querySelectorAll('meta[http-equiv="refresh"][content]');
+            } catch (e) {
+              if (source.verbose) {
+                console.log(e);
+              }
+            }
+          }
+
+          return Array.from(metaNodes);
+        };
+
+        var getMetaContentDelay = function getMetaContentDelay(metaElements) {
+          var delays = metaElements.map(function (meta) {
+            var contentString = meta.getAttribute("content");
+
+            if (contentString.length === 0) {
+              return null;
+            }
+
+            var contentDelay;
+            var limiterIndex = contentString.indexOf(";");
+
+            if (limiterIndex !== -1) {
+              var delaySubstring = contentString.substring(0, limiterIndex);
+              contentDelay = getNumberFromString(delaySubstring);
+            } else {
+              contentDelay = getNumberFromString(contentString);
+            }
+
+            return contentDelay;
+          }).filter(function (delay) {
+            return delay !== null;
+          });
+          var minDelay = delays.reduce(function (a, b) {
+            return Math.min(a, b);
+          });
+          return minDelay;
+        };
+
+        var stop = function stop() {
+          var metaElements = getMetaElements();
+
+          if (metaElements.length === 0) {
+            return;
+          }
+
+          var secondsToRun = getNumberFromString(delaySec);
+
+          if (!secondsToRun) {
+            secondsToRun = getMetaContentDelay(metaElements);
+          }
+
+          if (!secondsToRun) {
+            return;
+          }
+
+          var delayMs = secondsToRun * 1e3;
+          setTimeout(function () {
+            window.stop();
+            hit(source);
+          }, delayMs);
+        };
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", stop, {
+            once: true
+          });
+        } else {
+          stop();
+        }
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function getNumberFromString(rawString) {
+        var parsedDelay = parseInt(rawString, 10);
+        var validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
+        return validDelay;
+      }
+
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        preventRefresh.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function preventRequestAnimationFrame(source, args) {
+      function preventRequestAnimationFrame(source, match) {
+        var nativeRequestAnimationFrame = window.requestAnimationFrame;
+        var shouldLog = typeof match === "undefined";
+
+        var _parseMatchArg = parseMatchArg(match),
+            isInvertedMatch = _parseMatchArg.isInvertedMatch,
+            matchRegexp = _parseMatchArg.matchRegexp;
+
+        var rafWrapper = function rafWrapper(callback) {
+          var shouldPrevent = false;
+
+          if (shouldLog) {
+            var logMessage = 'log: requestAnimationFrame("'.concat(callback.toString(), '")');
+            hit(source, logMessage);
+          } else if (validateStrPattern(match)) {
+            shouldPrevent = matchRegexp.test(callback.toString()) !== isInvertedMatch;
+          }
+
+          if (shouldPrevent) {
+            hit(source);
+            return nativeRequestAnimationFrame(noopFunc);
+          }
+
+          for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+            args[_key - 1] = arguments[_key];
+          }
+
+          return nativeRequestAnimationFrame.apply(window, [callback].concat(args));
+        };
+
+        window.requestAnimationFrame = rafWrapper;
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function noopFunc() {}
+
+      function parseMatchArg(match) {
+        var INVERT_MARKER = "!";
+        var isInvertedMatch = startsWith(match, INVERT_MARKER);
+        var matchValue = isInvertedMatch ? match.slice(1) : match;
+        var matchRegexp = toRegExp(matchValue);
+        return {
+          isInvertedMatch: isInvertedMatch,
+          matchRegexp: matchRegexp
+        };
+      }
+
+      function validateStrPattern(input) {
+        var FORWARD_SLASH = "/";
+        var str = input;
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          str = input.slice(1, -1);
+        }
+
+        var isValid;
+
+        try {
+          isValid = new RegExp(str);
+          isValid = true;
+        } catch (e) {
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function startsWith(str, prefix) {
+        return !!str && str.indexOf(prefix) === 0;
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        preventRequestAnimationFrame.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function preventSetInterval(source, args) {
+      function preventSetInterval(source, match, delay) {
+        var isProxySupported = typeof Proxy !== "undefined";
+        var nativeInterval = window.setInterval;
+        var log = console.log.bind(console);
+        var shouldLog = typeof match === "undefined" && typeof delay === "undefined";
+
+        var _parseMatchArg = parseMatchArg(match),
+            isInvertedMatch = _parseMatchArg.isInvertedMatch,
+            matchRegexp = _parseMatchArg.matchRegexp;
+
+        var _parseDelayArg = parseDelayArg(delay),
+            isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
+            delayMatch = _parseDelayArg.delayMatch;
+
+        var getShouldPrevent = function getShouldPrevent(callbackStr, interval) {
+          var shouldPrevent = false;
+
+          if (!delayMatch) {
+            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
+          } else if (!match) {
+            shouldPrevent = interval === delayMatch !== isInvertedDelayMatch;
+          } else {
+            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && interval === delayMatch !== isInvertedDelayMatch;
+          }
+
+          return shouldPrevent;
+        };
+
+        var legacyIntervalWrapper = function legacyIntervalWrapper(callback, interval) {
+          var shouldPrevent = false;
+          var cbString = String(callback);
+
+          if (shouldLog) {
+            hit(source);
+            log("setInterval(".concat(cbString, ", ").concat(interval, ")"));
+          } else {
+            shouldPrevent = getShouldPrevent(cbString, interval);
+          }
+
+          if (shouldPrevent) {
+            hit(source);
+            return nativeInterval(noopFunc, interval);
+          }
+
+          for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+            args[_key - 2] = arguments[_key];
+          }
+
+          return nativeInterval.apply(window, [callback, interval].concat(args));
+        };
+
+        var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+          var callback = args[0];
+          var interval = args[1];
+          var shouldPrevent = false;
+          var cbString = String(callback);
+
+          if (shouldLog) {
+            hit(source);
+            log("setInterval(".concat(cbString, ", ").concat(interval, ")"));
+          } else {
+            shouldPrevent = getShouldPrevent(cbString, interval);
+          }
+
+          if (shouldPrevent) {
+            hit(source);
+            args[0] = noopFunc;
+          }
+
+          return target.apply(thisArg, args);
+        };
+
+        var setIntervalHandler = {
+          apply: handlerWrapper
+        };
+        window.setInterval = isProxySupported ? new Proxy(window.setInterval, setIntervalHandler) : legacyIntervalWrapper;
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function noopFunc() {}
+
+      function parseMatchArg(match) {
+        var INVERT_MARKER = "!";
+        var isInvertedMatch = startsWith(match, INVERT_MARKER);
+        var matchValue = isInvertedMatch ? match.slice(1) : match;
+        var matchRegexp = toRegExp(matchValue);
+        return {
+          isInvertedMatch: isInvertedMatch,
+          matchRegexp: matchRegexp
+        };
+      }
+
+      function parseDelayArg(delay) {
+        var INVERT_MARKER = "!";
+        var isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
+        var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
+        delayValue = parseInt(delayValue, 10);
+        var delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
+        return {
+          isInvertedDelayMatch: isInvertedDelayMatch,
+          delayMatch: delayMatch
+        };
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function startsWith(str, prefix) {
+        return !!str && str.indexOf(prefix) === 0;
+      }
+
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        preventSetInterval.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function preventSetTimeout(source, args) {
+      function preventSetTimeout(source, match, delay) {
+        var isProxySupported = typeof Proxy !== "undefined";
+        var nativeTimeout = window.setTimeout;
+        var log = console.log.bind(console);
+        var shouldLog = typeof match === "undefined" && typeof delay === "undefined";
+
+        var _parseMatchArg = parseMatchArg(match),
+            isInvertedMatch = _parseMatchArg.isInvertedMatch,
+            matchRegexp = _parseMatchArg.matchRegexp;
+
+        var _parseDelayArg = parseDelayArg(delay),
+            isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
+            delayMatch = _parseDelayArg.delayMatch;
+
+        var getShouldPrevent = function getShouldPrevent(callbackStr, timeout) {
+          var shouldPrevent = false;
+
+          if (!delayMatch) {
+            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
+          } else if (!match) {
+            shouldPrevent = timeout === delayMatch !== isInvertedDelayMatch;
+          } else {
+            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && timeout === delayMatch !== isInvertedDelayMatch;
+          }
+
+          return shouldPrevent;
+        };
+
+        var legacyTimeoutWrapper = function legacyTimeoutWrapper(callback, timeout) {
+          var shouldPrevent = false;
+          var cbString = String(callback);
+
+          if (shouldLog) {
+            hit(source);
+            log("setTimeout(".concat(cbString, ", ").concat(timeout, ")"));
+          } else {
+            shouldPrevent = getShouldPrevent(cbString, timeout);
+          }
+
+          if (shouldPrevent) {
+            hit(source);
+            return nativeTimeout(noopFunc, timeout);
+          }
+
+          for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+            args[_key - 2] = arguments[_key];
+          }
+
+          return nativeTimeout.apply(window, [callback, timeout].concat(args));
+        };
+
+        var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+          var callback = args[0];
+          var timeout = args[1];
+          var shouldPrevent = false;
+          var cbString = String(callback);
+
+          if (shouldLog) {
+            hit(source);
+            log("setTimeout(".concat(cbString, ", ").concat(timeout, ")"));
+          } else {
+            shouldPrevent = getShouldPrevent(cbString, timeout);
+          }
+
+          if (shouldPrevent) {
+            hit(source);
+            args[0] = noopFunc;
+          }
+
+          return target.apply(thisArg, args);
+        };
+
+        var setTimeoutHandler = {
+          apply: handlerWrapper
+        };
+        window.setTimeout = isProxySupported ? new Proxy(window.setTimeout, setTimeoutHandler) : legacyTimeoutWrapper;
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function noopFunc() {}
+
+      function parseMatchArg(match) {
+        var INVERT_MARKER = "!";
+        var isInvertedMatch = startsWith(match, INVERT_MARKER);
+        var matchValue = isInvertedMatch ? match.slice(1) : match;
+        var matchRegexp = toRegExp(matchValue);
+        return {
+          isInvertedMatch: isInvertedMatch,
+          matchRegexp: matchRegexp
+        };
+      }
+
+      function parseDelayArg(delay) {
+        var INVERT_MARKER = "!";
+        var isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
+        var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
+        delayValue = parseInt(delayValue, 10);
+        var delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
+        return {
+          isInvertedDelayMatch: isInvertedDelayMatch,
+          delayMatch: delayMatch
+        };
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function startsWith(str, prefix) {
+        return !!str && str.indexOf(prefix) === 0;
+      }
+
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        preventSetTimeout.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function preventWindowOpen(source, args) {
+      function preventWindowOpen(source) {
+        var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : getWildcardSymbol();
+        var delay = arguments.length > 2 ? arguments[2] : undefined;
+        var replacement = arguments.length > 3 ? arguments[3] : undefined;
+        var nativeOpen = window.open;
+        var isNewSyntax = match !== "0" && match !== "1";
+
+        var oldOpenWrapper = function oldOpenWrapper(str) {
+          match = Number(match) > 0;
+
+          for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+            args[_key - 1] = arguments[_key];
+          }
+
+          if (!validateStrPattern(delay)) {
+            console.log("Invalid parameter: ".concat(delay));
+            return nativeOpen.apply(window, [str].concat(args));
+          }
+
+          var searchRegexp = toRegExp(delay);
+
+          if (match !== searchRegexp.test(str)) {
+            return nativeOpen.apply(window, [str].concat(args));
+          }
+
+          hit(source);
+          return handleOldReplacement(replacement);
+        };
+
+        var newOpenWrapper = function newOpenWrapper(url) {
+          var shouldLog = replacement && replacement.indexOf("log") > -1;
+
+          for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+            args[_key2 - 1] = arguments[_key2];
+          }
+
+          if (shouldLog) {
+            var argsStr = args && args.length > 0 ? ", ".concat(args.join(", ")) : "";
+            var logMessage = "log: window-open: ".concat(url).concat(argsStr);
+            hit(source, logMessage);
+          }
+
+          var shouldPrevent = false;
+
+          if (match === getWildcardSymbol()) {
+            shouldPrevent = true;
+          } else if (validateMatchStr(match)) {
+            var _parseMatchArg = parseMatchArg(match),
+                isInvertedMatch = _parseMatchArg.isInvertedMatch,
+                matchRegexp = _parseMatchArg.matchRegexp;
+
+            shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
+          } else {
+            console.log("Invalid parameter: ".concat(match));
+            shouldPrevent = false;
+          }
+
+          if (shouldPrevent) {
+            var parsedDelay = parseInt(delay, 10);
+            var result;
+
+            if (nativeIsNaN(parsedDelay)) {
+              result = noopNull();
+            } else {
+              var decoyArgs = {
+                replacement: replacement,
+                url: url,
+                delay: parsedDelay
+              };
+              var decoy = createDecoy(decoyArgs);
+              var popup = decoy.contentWindow;
+
+              if (typeof popup === "object" && popup !== null) {
+                Object.defineProperty(popup, "closed", {
+                  value: false
+                });
+                Object.defineProperty(popup, "opener", {
+                  value: window
+                });
+                Object.defineProperty(popup, "frameElement", {
+                  value: null
+                });
+              } else {
+                var nativeGetter = decoy.contentWindow && decoy.contentWindow.get;
+                Object.defineProperty(decoy, "contentWindow", {
+                  get: getPreventGetter(nativeGetter)
+                });
+                popup = decoy.contentWindow;
+              }
+
+              result = popup;
+            }
+
+            hit(source);
+            return result;
+          }
+
+          return nativeOpen.apply(window, [url].concat(args));
+        };
+
+        window.open = isNewSyntax ? newOpenWrapper : oldOpenWrapper;
+        window.open.toString = nativeOpen.toString.bind(nativeOpen);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function validateStrPattern(input) {
+        var FORWARD_SLASH = "/";
+        var str = input;
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          str = input.slice(1, -1);
+        }
+
+        var isValid;
+
+        try {
+          isValid = new RegExp(str);
+          isValid = true;
+        } catch (e) {
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+      function validateMatchStr(match) {
+        var INVERT_MARKER = "!";
+        var str = match;
+
+        if (startsWith(match, INVERT_MARKER)) {
+          str = match.slice(1);
+        }
+
+        return validateStrPattern(str);
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+
+      function parseMatchArg(match) {
+        var INVERT_MARKER = "!";
+        var isInvertedMatch = startsWith(match, INVERT_MARKER);
+        var matchValue = isInvertedMatch ? match.slice(1) : match;
+        var matchRegexp = toRegExp(matchValue);
+        return {
+          isInvertedMatch: isInvertedMatch,
+          matchRegexp: matchRegexp
+        };
+      }
+
+      function handleOldReplacement(replacement) {
+        var result;
+
+        if (!replacement) {
+          result = noopFunc;
+        } else if (replacement === "trueFunc") {
+          result = trueFunc;
+        } else if (replacement.indexOf("=") > -1) {
+          var isProp = startsWith(replacement, "{") && endsWith(replacement, "}");
+
+          if (isProp) {
+            var propertyPart = replacement.slice(1, -1);
+            var propertyName = substringBefore(propertyPart, "=");
+            var propertyValue = substringAfter(propertyPart, "=");
+
+            if (propertyValue === "noopFunc") {
+              result = {};
+              result[propertyName] = noopFunc;
+            }
+          }
+        }
+
+        return result;
+      }
+
+      function createDecoy(args) {
+        var OBJECT_TAG_NAME = "object";
+        var OBJECT_URL_PROP_NAME = "data";
+        var IFRAME_TAG_NAME = "iframe";
+        var IFRAME_URL_PROP_NAME = "src";
+        var replacement = args.replacement,
+            url = args.url,
+            delay = args.delay;
+        var tag;
+        var urlProp;
+
+        if (replacement === "obj") {
+          tag = OBJECT_TAG_NAME;
+          urlProp = OBJECT_URL_PROP_NAME;
+        } else {
+          tag = IFRAME_TAG_NAME;
+          urlProp = IFRAME_URL_PROP_NAME;
+        }
+
+        var decoy = document.createElement(tag);
+        decoy[urlProp] = url;
+        decoy.style.setProperty("height", "1px", "important");
+        decoy.style.setProperty("position", "fixed", "important");
+        decoy.style.setProperty("top", "-1px", "important");
+        decoy.style.setProperty("width", "1px", "important");
+        document.body.appendChild(decoy);
+        setTimeout(function () {
+          return decoy.remove();
+        }, delay * 1e3);
+        return decoy;
+      }
+
+      function getPreventGetter(nativeGetter) {
+        var preventGetter = function preventGetter(target, prop) {
+          if (prop && prop === "closed") {
+            return false;
+          }
+
+          if (typeof nativeGetter === "function") {
+            return noopFunc;
+          }
+
+          return prop && target[prop];
+        };
+
+        return preventGetter;
+      }
+
+      function noopNull() {
+        return null;
+      }
+
+      function getWildcardSymbol() {
+        return "*";
+      }
+
+      function noopFunc() {}
+
+      function trueFunc() {
+        return true;
+      }
+
+      function startsWith(str, prefix) {
+        return !!str && str.indexOf(prefix) === 0;
+      }
+
+      function endsWith(str, ending) {
+        return !!str && str.indexOf(ending) === str.length - ending.length;
+      }
+
+      function substringBefore(str, separator) {
+        if (!str || !separator) {
+          return str;
+        }
+
+        var index = str.indexOf(separator);
+        return index < 0 ? str : str.substring(0, index);
+      }
+
+      function substringAfter(str, separator) {
+        if (!str) {
+          return str;
+        }
+
+        var index = str.indexOf(separator);
+        return index < 0 ? "" : str.substring(index + separator.length);
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        preventWindowOpen.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function preventXHR(source, args) {
+      function preventXHR(source, propsToMatch, randomize) {
+        if (typeof Proxy === "undefined") {
+          return;
+        }
+
+        var shouldPrevent = false;
+        var responseText = "";
+        var responseUrl;
+
+        var openWrapper = function openWrapper(target, thisArg, args) {
+          var xhrData = {
+            method: args[0],
+            url: args[1]
+          };
+          responseUrl = xhrData.url;
+
+          if (typeof propsToMatch === "undefined") {
+            var logMessage = "log: xhr( ".concat(objectToString(xhrData), " )");
+            hit(source, logMessage);
+          } else if (propsToMatch === "" || propsToMatch === getWildcardSymbol()) {
+            shouldPrevent = true;
+          } else {
+            var parsedData = parseMatchProps(propsToMatch);
+
+            if (!validateParsedData(parsedData)) {
+              console.log("Invalid parameter: ".concat(propsToMatch));
+              shouldPrevent = false;
+            } else {
+              var matchData = getMatchPropsData(parsedData);
+              shouldPrevent = Object.keys(matchData).every(function (matchKey) {
+                var matchValue = matchData[matchKey];
+                return Object.prototype.hasOwnProperty.call(xhrData, matchKey) && matchValue.test(xhrData[matchKey]);
+              });
+            }
+          }
+
+          return Reflect.apply(target, thisArg, args);
+        };
+
+        var sendWrapper = function sendWrapper(target, thisArg, args) {
+          if (!shouldPrevent) {
+            return Reflect.apply(target, thisArg, args);
+          }
+
+          if (randomize === "true") {
+            responseText = Math.random().toString(36).slice(-10);
+          }
+
+          Object.defineProperties(thisArg, {
+            readyState: {
+              value: 4,
+              writable: false
+            },
+            response: {
+              value: "",
+              writable: false
+            },
+            responseText: {
+              value: responseText,
+              writable: false
+            },
+            responseURL: {
+              value: responseUrl,
+              writable: false
+            },
+            responseXML: {
+              value: "",
+              writable: false
+            },
+            status: {
+              value: 200,
+              writable: false
+            },
+            statusText: {
+              value: "OK",
+              writable: false
+            }
+          });
+          setTimeout(function () {
+            var stateEvent = new Event("readystatechange");
+            thisArg.dispatchEvent(stateEvent);
+            var loadEvent = new Event("load");
+            thisArg.dispatchEvent(loadEvent);
+            var loadEndEvent = new Event("loadend");
+            thisArg.dispatchEvent(loadEndEvent);
+          }, 1);
+          hit(source);
+          return undefined;
+        };
+
+        var openHandler = {
+          apply: openWrapper
+        };
+        var sendHandler = {
+          apply: sendWrapper
+        };
+        XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
+        XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function objectToString(obj) {
+        return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
+          var key = pair[0];
+          var value = pair[1];
+          var recordValueStr = value;
+
+          if (value instanceof Object) {
+            recordValueStr = "{ ".concat(objectToString(value), " }");
+          }
+
+          return "".concat(key, ':"').concat(recordValueStr, '"');
+        }).join(" ");
+      }
+
+      function getWildcardSymbol() {
+        return "*";
+      }
+
+      function parseMatchProps(propsToMatchStr) {
+        var PROPS_DIVIDER = " ";
+        var PAIRS_MARKER = ":";
+        var propsObj = {};
+        var props = propsToMatchStr.split(PROPS_DIVIDER);
+        props.forEach(function (prop) {
+          var dividerInd = prop.indexOf(PAIRS_MARKER);
+
+          if (dividerInd === -1) {
+            propsObj.url = prop;
+          } else {
+            var key = prop.slice(0, dividerInd);
+            var value = prop.slice(dividerInd + 1);
+            propsObj[key] = value;
+          }
+        });
+        return propsObj;
+      }
+
+      function validateParsedData(data) {
+        return Object.values(data).every(function (value) {
+          return validateStrPattern(value);
+        });
+      }
+
+      function getMatchPropsData(data) {
+        var matchData = {};
+        Object.keys(data).forEach(function (key) {
+          matchData[key] = toRegExp(data[key]);
+        });
+        return matchData;
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function validateStrPattern(input) {
+        var FORWARD_SLASH = "/";
+        var str = input;
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          str = input.slice(1, -1);
+        }
+
+        var isValid;
+
+        try {
+          isValid = new RegExp(str);
+          isValid = true;
+        } catch (e) {
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0;
+      }
+
+      function getObjectEntries(object) {
+        var keys = Object.keys(object);
+        var entries = [];
+        keys.forEach(function (key) {
+          return entries.push([key, object[key]]);
+        });
+        return entries;
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        preventXHR.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function removeAttr(source, args) {
+      function removeAttr(source, attrs, selector) {
+        var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "asap stay";
+
+        if (!attrs) {
+          return;
+        }
+
+        attrs = attrs.split(/\s*\|\s*/);
+
+        if (!selector) {
+          selector = "[".concat(attrs.join("],["), "]");
+        }
+
+        var rmattr = function rmattr() {
+          var nodes = [];
+
+          try {
+            nodes = [].slice.call(document.querySelectorAll(selector));
+          } catch (e) {
+            console.log("Invalid remove-attr selector arg: '".concat(selector, "'"));
+          }
+
+          var removed = false;
+          nodes.forEach(function (node) {
+            attrs.forEach(function (attr) {
+              node.removeAttribute(attr);
+              removed = true;
+            });
+          });
+
+          if (removed) {
+            hit(source);
+          }
+        };
+
+        var FLAGS_DIVIDER = " ";
+        var ASAP_FLAG = "asap";
+        var COMPLETE_FLAG = "complete";
+        var STAY_FLAG = "stay";
+        var VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
+        var passedFlags = applying.trim().split(FLAGS_DIVIDER).filter(function (f) {
+          return VALID_FLAGS.indexOf(f) !== -1;
+        });
+
+        var run = function run() {
+          rmattr();
+
+          if (!passedFlags.indexOf(STAY_FLAG) !== -1) {
+            return;
+          }
+
+          observeDOMChanges(rmattr, true);
+        };
+
+        if (passedFlags.indexOf(ASAP_FLAG) !== -1) {
+          rmattr();
+        }
+
+        if (document.readyState !== "complete" && passedFlags.indexOf(COMPLETE_FLAG) !== -1) {
+          window.addEventListener("load", run, {
+            once: true
+          });
+        } else if (passedFlags.indexOf(STAY_FLAG) !== -1) {
+          if (passedFlags.length === 1) {
+            rmattr();
+          }
+
+          observeDOMChanges(rmattr, true);
+        }
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function observeDOMChanges(callback) {
+        var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+
+        var throttle = function throttle(method, delay) {
+          var wait = false;
+          var savedArgs;
+
+          var wrapper = function wrapper() {
+            for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+              args[_key] = arguments[_key];
+            }
+
+            if (wait) {
+              savedArgs = args;
+              return;
+            }
+
+            method.apply(void 0, args);
+            wait = true;
+            setTimeout(function () {
+              wait = false;
+
+              if (savedArgs) {
+                wrapper(savedArgs);
+                savedArgs = null;
+              }
+            }, delay);
+          };
+
+          return wrapper;
+        };
+
+        var THROTTLE_DELAY_MS = 20;
+        var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+
+        var connect = function connect() {
+          if (attrsToObserve.length > 0) {
+            observer.observe(document.documentElement, {
+              childList: true,
+              subtree: true,
+              attributes: observeAttrs,
+              attributeFilter: attrsToObserve
+            });
+          } else {
+            observer.observe(document.documentElement, {
+              childList: true,
+              subtree: true,
+              attributes: observeAttrs
+            });
+          }
+        };
+
+        var disconnect = function disconnect() {
+          observer.disconnect();
+        };
+
+        function callbackWrapper() {
+          disconnect();
+          callback();
+          connect();
+        }
+
+        connect();
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        removeAttr.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function removeClass(source, args) {
+      function removeClass(source, classNames, selector) {
+        var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "asap stay";
+
+        if (!classNames) {
+          return;
+        }
+
+        classNames = classNames.split(/\s*\|\s*/);
+        var selectors = [];
+
+        if (!selector) {
+          selectors = classNames.map(function (className) {
+            return ".".concat(className);
+          });
+        }
+
+        var removeClassHandler = function removeClassHandler() {
+          var nodes = new Set();
+
+          if (selector) {
+            var foundNodes = [];
+
+            try {
+              foundNodes = [].slice.call(document.querySelectorAll(selector));
+            } catch (e) {
+              console.log("Invalid remove-class selector arg: '".concat(selector, "'"));
+            }
+
+            foundNodes.forEach(function (n) {
+              return nodes.add(n);
+            });
+          } else if (selectors.length > 0) {
+            selectors.forEach(function (s) {
+              var elements = document.querySelectorAll(s);
+
+              for (var i = 0; i < elements.length; i += 1) {
+                var element = elements[i];
+                nodes.add(element);
+              }
+            });
+          }
+
+          var removed = false;
+          nodes.forEach(function (node) {
+            classNames.forEach(function (className) {
+              if (node.classList.contains(className)) {
+                node.classList.remove(className);
+                removed = true;
+              }
+            });
+          });
+
+          if (removed) {
+            hit(source);
+          }
+        };
+
+        var CLASS_ATTR_NAME = ["class"];
+        var FLAGS_DIVIDER = " ";
+        var ASAP_FLAG = "asap";
+        var COMPLETE_FLAG = "complete";
+        var STAY_FLAG = "stay";
+        var VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
+        var passedFlags = applying.trim().split(FLAGS_DIVIDER).filter(function (f) {
+          return VALID_FLAGS.indexOf(f) !== -1;
+        });
+
+        var run = function run() {
+          removeClassHandler();
+
+          if (!passedFlags.indexOf(STAY_FLAG) !== -1) {
+            return;
+          }
+
+          observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
+        };
+
+        if (passedFlags.indexOf(ASAP_FLAG) !== -1) {
+          removeClassHandler();
+        }
+
+        if (document.readyState !== "complete" && passedFlags.indexOf(COMPLETE_FLAG) !== -1) {
+          window.addEventListener("load", run, {
+            once: true
+          });
+        } else if (passedFlags.indexOf(STAY_FLAG) !== -1) {
+          if (passedFlags.length === 1) {
+            removeClassHandler();
+          }
+
+          observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
+        }
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function observeDOMChanges(callback) {
+        var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+
+        var throttle = function throttle(method, delay) {
+          var wait = false;
+          var savedArgs;
+
+          var wrapper = function wrapper() {
+            for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+              args[_key] = arguments[_key];
+            }
+
+            if (wait) {
+              savedArgs = args;
+              return;
+            }
+
+            method.apply(void 0, args);
+            wait = true;
+            setTimeout(function () {
+              wait = false;
+
+              if (savedArgs) {
+                wrapper(savedArgs);
+                savedArgs = null;
+              }
+            }, delay);
+          };
+
+          return wrapper;
+        };
+
+        var THROTTLE_DELAY_MS = 20;
+        var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+
+        var connect = function connect() {
+          if (attrsToObserve.length > 0) {
+            observer.observe(document.documentElement, {
+              childList: true,
+              subtree: true,
+              attributes: observeAttrs,
+              attributeFilter: attrsToObserve
+            });
+          } else {
+            observer.observe(document.documentElement, {
+              childList: true,
+              subtree: true,
+              attributes: observeAttrs
+            });
+          }
+        };
+
+        var disconnect = function disconnect() {
+          observer.disconnect();
+        };
+
+        function callbackWrapper() {
+          disconnect();
+          callback();
+          connect();
+        }
+
+        connect();
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        removeClass.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function removeCookie(source, args) {
+      function removeCookie(source, match) {
+        var matchRegexp = toRegExp(match);
+
+        var removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
+          var cookieSpec = "".concat(cookieName, "=");
+          var domain1 = "; domain=".concat(hostName);
+          var domain2 = "; domain=.".concat(hostName);
+          var path = "; path=/";
+          var expiration = "; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie = cookieSpec + expiration;
+          document.cookie = cookieSpec + domain1 + expiration;
+          document.cookie = cookieSpec + domain2 + expiration;
+          document.cookie = cookieSpec + path + expiration;
+          document.cookie = cookieSpec + domain1 + path + expiration;
+          document.cookie = cookieSpec + domain2 + path + expiration;
+          hit(source);
+        };
+
+        var rmCookie = function rmCookie() {
+          document.cookie.split(";").forEach(function (cookieStr) {
+            var pos = cookieStr.indexOf("=");
+
+            if (pos === -1) {
+              return;
+            }
+
+            var cookieName = cookieStr.slice(0, pos).trim();
+
+            if (!matchRegexp.test(cookieName)) {
+              return;
+            }
+
+            var hostParts = document.location.hostname.split(".");
+
+            for (var i = 0; i <= hostParts.length - 1; i += 1) {
+              var hostName = hostParts.slice(i).join(".");
+
+              if (hostName) {
+                removeCookieFromHost(cookieName, hostName);
+              }
+            }
+          });
+        };
+
+        rmCookie();
+        window.addEventListener("beforeunload", rmCookie);
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        removeCookie.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function removeInShadowDom(source, args) {
+      function removeInShadowDom(source, selector, baseSelector) {
+        if (!Element.prototype.attachShadow) {
+          return;
+        }
+
+        var removeElement = function removeElement(targetElement) {
+          targetElement.remove();
+        };
+
+        var removeHandler = function removeHandler() {
+          var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
+
+          while (hostElements.length !== 0) {
+            var isRemoved = false;
+
+            var _pierceShadowDom = pierceShadowDom(selector, hostElements),
+                targets = _pierceShadowDom.targets,
+                innerHosts = _pierceShadowDom.innerHosts;
+
+            targets.forEach(function (targetEl) {
+              removeElement(targetEl);
+              isRemoved = true;
+            });
+
+            if (isRemoved) {
+              hit(source);
+            }
+
+            hostElements = innerHosts;
+          }
+        };
+
+        removeHandler();
+        observeDOMChanges(removeHandler, true);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function observeDOMChanges(callback) {
+        var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+
+        var throttle = function throttle(method, delay) {
+          var wait = false;
+          var savedArgs;
+
+          var wrapper = function wrapper() {
+            for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+              args[_key] = arguments[_key];
+            }
+
+            if (wait) {
+              savedArgs = args;
+              return;
+            }
+
+            method.apply(void 0, args);
+            wait = true;
+            setTimeout(function () {
+              wait = false;
+
+              if (savedArgs) {
+                wrapper(savedArgs);
+                savedArgs = null;
+              }
+            }, delay);
+          };
+
+          return wrapper;
+        };
+
+        var THROTTLE_DELAY_MS = 20;
+        var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+
+        var connect = function connect() {
+          if (attrsToObserve.length > 0) {
+            observer.observe(document.documentElement, {
+              childList: true,
+              subtree: true,
+              attributes: observeAttrs,
+              attributeFilter: attrsToObserve
+            });
+          } else {
+            observer.observe(document.documentElement, {
+              childList: true,
+              subtree: true,
+              attributes: observeAttrs
+            });
+          }
+        };
+
+        var disconnect = function disconnect() {
+          observer.disconnect();
+        };
+
+        function callbackWrapper() {
+          disconnect();
+          callback();
+          connect();
+        }
+
+        connect();
+      }
+
+      function flatten(input) {
+        var stack = [];
+        input.forEach(function (el) {
+          return stack.push(el);
+        });
+        var res = [];
+
+        while (stack.length) {
+          var next = stack.pop();
+
+          if (Array.isArray(next)) {
+            next.forEach(function (el) {
+              return stack.push(el);
+            });
+          } else {
+            res.push(next);
+          }
+        }
+
+        return res.reverse();
+      }
+
+      function findHostElements(rootElement) {
+        var hosts = [];
+        var domElems = rootElement.querySelectorAll("*");
+        domElems.forEach(function (el) {
+          if (el.shadowRoot) {
+            hosts.push(el);
+          }
+        });
+        return hosts;
+      }
+
+      function pierceShadowDom(selector, hostElements) {
+        var targets = [];
+        var innerHostsAcc = [];
+        hostElements.forEach(function (host) {
+          var simpleElems = host.querySelectorAll(selector);
+          targets = targets.concat([].slice.call(simpleElems));
+          var shadowRootElem = host.shadowRoot;
+          var shadowChildren = shadowRootElem.querySelectorAll(selector);
+          targets = targets.concat([].slice.call(shadowChildren));
+          innerHostsAcc.push(findHostElements(shadowRootElem));
+        });
+        var innerHosts = flatten(innerHostsAcc);
+        return {
+          targets: targets,
+          innerHosts: innerHosts
+        };
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        removeInShadowDom.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function setAttr(source, args) {
+      function setAttr(source, selector, attr) {
+        var value = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+
+        if (!selector || !attr) {
+          return;
+        }
+
+        if (value.length !== 0 && (nativeIsNaN(parseInt(value, 10)) || parseInt(value, 10) < 0 || parseInt(value, 10) > 32767)) {
+          return;
+        }
+
+        var setAttr = function setAttr() {
+          var nodes = [].slice.call(document.querySelectorAll(selector));
+          var set = false;
+          nodes.forEach(function (node) {
+            node.setAttribute(attr, value);
+            set = true;
+          });
+
+          if (set) {
+            hit(source);
+          }
+        };
+
+        setAttr();
+        observeDOMChanges(setAttr, true);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function observeDOMChanges(callback) {
+        var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+
+        var throttle = function throttle(method, delay) {
+          var wait = false;
+          var savedArgs;
+
+          var wrapper = function wrapper() {
+            for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+              args[_key] = arguments[_key];
+            }
+
+            if (wait) {
+              savedArgs = args;
+              return;
+            }
+
+            method.apply(void 0, args);
+            wait = true;
+            setTimeout(function () {
+              wait = false;
+
+              if (savedArgs) {
+                wrapper(savedArgs);
+                savedArgs = null;
+              }
+            }, delay);
+          };
+
+          return wrapper;
+        };
+
+        var THROTTLE_DELAY_MS = 20;
+        var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+
+        var connect = function connect() {
+          if (attrsToObserve.length > 0) {
+            observer.observe(document.documentElement, {
+              childList: true,
+              subtree: true,
+              attributes: observeAttrs,
+              attributeFilter: attrsToObserve
+            });
+          } else {
+            observer.observe(document.documentElement, {
+              childList: true,
+              subtree: true,
+              attributes: observeAttrs
+            });
+          }
+        };
+
+        var disconnect = function disconnect() {
+          observer.disconnect();
+        };
+
+        function callbackWrapper() {
+          disconnect();
+          callback();
+          connect();
+        }
+
+        connect();
+      }
+
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        setAttr.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function setConstant(source, args) {
+      function setConstant(source, property, value, stack) {
+        if (!property || !matchStackTrace(stack, new Error().stack)) {
+          return;
+        }
+
+        var log = console.log.bind(console);
+        var emptyArr = noopArray();
+        var emptyObj = noopObject();
+        var constantValue;
+
+        if (value === "undefined") {
+          constantValue = undefined;
+        } else if (value === "false") {
+          constantValue = false;
+        } else if (value === "true") {
+          constantValue = true;
+        } else if (value === "null") {
+          constantValue = null;
+        } else if (value === "emptyArr") {
+          constantValue = emptyArr;
+        } else if (value === "emptyObj") {
+          constantValue = emptyObj;
+        } else if (value === "noopFunc") {
+          constantValue = noopFunc;
+        } else if (value === "trueFunc") {
+          constantValue = trueFunc;
+        } else if (value === "falseFunc") {
+          constantValue = falseFunc;
+        } else if (value === "noopPromiseResolve") {
+          constantValue = noopPromiseResolve;
+        } else if (value === "noopPromiseReject") {
+          constantValue = noopPromiseReject;
+        } else if (/^\d+$/.test(value)) {
+          constantValue = parseFloat(value);
+
+          if (nativeIsNaN(constantValue)) {
+            return;
+          }
+
+          if (Math.abs(constantValue) > 32767) {
+            return;
+          }
+        } else if (value === "-1") {
+          constantValue = -1;
+        } else if (value === "") {
+          constantValue = "";
+        } else if (value === "yes") {
+          constantValue = "yes";
+        } else if (value === "no") {
+          constantValue = "no";
+        } else {
+          return;
+        }
+
+        var getCurrentScript = function getCurrentScript() {
+          if ("currentScript" in document) {
+            return document.currentScript;
+          }
+
+          var scripts = document.getElementsByTagName("script");
+          return scripts[scripts.length - 1];
+        };
+
+        var ourScript = getCurrentScript();
+        var canceled = false;
+
+        var mustCancel = function mustCancel(value) {
+          if (canceled) {
+            return canceled;
+          }
+
+          canceled = value !== undefined && constantValue !== undefined && typeof value !== typeof constantValue;
+          return canceled;
+        };
+
+        var trapProp = function trapProp(base, prop, configurable, handler) {
+          if (!handler.init(base[prop])) {
+            return false;
+          }
+
+          var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+          var prevGetter;
+          var prevSetter;
+
+          if (origDescriptor instanceof Object) {
+            if (!origDescriptor.configurable) {
+              if (source.verbose) {
+                log("set-constant: property '".concat(prop, "' is not configurable"));
+              }
+
+              return false;
+            }
+
+            base[prop] = constantValue;
+
+            if (origDescriptor.get instanceof Function) {
+              prevGetter = origDescriptor.get;
+            }
+
+            if (origDescriptor.set instanceof Function) {
+              prevSetter = origDescriptor.set;
+            }
+          }
+
+          Object.defineProperty(base, prop, {
+            configurable: configurable,
+            get: function get() {
+              if (prevGetter !== undefined) {
+                prevGetter();
+              }
+
+              return handler.get();
+            },
+            set: function set(a) {
+              if (prevSetter !== undefined) {
+                prevSetter(a);
+              }
+
+              handler.set(a);
+            }
+          });
+          return true;
+        };
+
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
+              chain = chainInfo.chain;
+          var undefPropHandler = {
+            factValue: undefined,
+            init: function init(a) {
+              this.factValue = a;
+              return true;
+            },
+            get: function get() {
+              return this.factValue;
+            },
+            set: function set(a) {
+              if (this.factValue === a) {
+                return;
+              }
+
+              this.factValue = a;
+
+              if (a instanceof Object) {
+                setChainPropAccess(a, chain);
+              }
+            }
+          };
+          var endPropHandler = {
+            factValue: undefined,
+            init: function init(a) {
+              if (mustCancel(a)) {
+                return false;
+              }
+
+              this.factValue = a;
+              return true;
+            },
+            get: function get() {
+              return document.currentScript === ourScript ? this.factValue : constantValue;
+            },
+            set: function set(a) {
+              if (!mustCancel(a)) {
+                return;
+              }
+
+              constantValue = a;
+            }
+          };
+
+          if (!chain) {
+            var isTrapped = trapProp(base, prop, false, endPropHandler);
+
+            if (isTrapped) {
+              hit(source);
+            }
+
+            return;
+          }
+
+          var propValue = owner[prop];
+
+          if (propValue instanceof Object || typeof propValue === "object" && propValue !== null) {
+            setChainPropAccess(propValue, chain);
+          }
+
+          trapProp(owner, prop, true, undefPropHandler);
+        };
+
+        setChainPropAccess(window, property);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function noopArray() {
+        return [];
+      }
+
+      function noopObject() {
+        return {};
+      }
+
+      function noopFunc() {}
+
+      function trueFunc() {
+        return true;
+      }
+
+      function falseFunc() {
+        return false;
+      }
+
+      function noopPromiseReject() {
+        return Promise.reject();
+      }
+
+      function noopPromiseResolve() {
+        var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
+
+        if (typeof Response === "undefined") {
+          return;
+        }
+
+        var response = new Response(responseBody, {
+          status: 200,
+          statusText: "OK"
+        });
+        return Promise.resolve(response);
+      }
+
+      function getPropertyInChain(base, chain) {
+        var pos = chain.indexOf(".");
+
+        if (pos === -1) {
+          return {
+            base: base,
+            prop: chain
+          };
+        }
+
+        var prop = chain.slice(0, pos);
+
+        if (base === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        var nextBase = base[prop];
+        chain = chain.slice(pos + 1);
+
+        if (nextBase !== undefined) {
+          return getPropertyInChain(nextBase, chain);
+        }
+
+        Object.defineProperty(base, prop, {
+          configurable: true
+        });
+        return {
+          base: nextBase,
+          prop: prop,
+          chain: chain
+        };
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function matchStackTrace(stackMatch, stackTrace) {
+        if (!stackMatch || stackMatch === "") {
+          return true;
+        }
+
+        var stackRegexp = toRegExp(stackMatch);
+        var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
+          return line.trim();
+        }).join("\n");
+        return stackRegexp.test(refinedStackTrace);
+      }
+
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        setConstant.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function setCookie(source, args) {
+      function setCookie(source, name, value) {
+        var cookieData = prepareCookie(name, value);
+
+        if (cookieData) {
+          hit(source);
+          document.cookie = cookieData;
+        }
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+
+      function prepareCookie(name, value) {
+        if (!name || !value) {
+          return null;
+        }
+
+        var valueToSet;
+
+        if (value === "true") {
+          valueToSet = "true";
+        } else if (value === "True") {
+          valueToSet = "True";
+        } else if (value === "false") {
+          valueToSet = "false";
+        } else if (value === "False") {
+          valueToSet = "False";
+        } else if (value === "yes") {
+          valueToSet = "yes";
+        } else if (value === "Yes") {
+          valueToSet = "Yes";
+        } else if (value === "Y") {
+          valueToSet = "Y";
+        } else if (value === "no") {
+          valueToSet = "no";
+        } else if (value === "ok") {
+          valueToSet = "ok";
+        } else if (value === "OK") {
+          valueToSet = "OK";
+        } else if (/^\d+$/.test(value)) {
+          valueToSet = parseFloat(value);
+
+          if (nativeIsNaN(valueToSet)) {
+            return null;
+          }
+
+          if (Math.abs(valueToSet) < 0 || Math.abs(valueToSet) > 15) {
+            return null;
+          }
+        } else {
+          return null;
+        }
+
+        var pathToSet = "path=/;";
+        var cookieData = "".concat(encodeURIComponent(name), "=").concat(encodeURIComponent(valueToSet), "; ").concat(pathToSet);
+        return cookieData;
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        setCookie.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function setCookieReload(source, args) {
+      function setCookieReload(source, name, value) {
+        var isCookieAlreadySet = document.cookie.split(";").some(function (cookieStr) {
+          var pos = cookieStr.indexOf("=");
+
+          if (pos === -1) {
+            return false;
+          }
+
+          var cookieName = cookieStr.slice(0, pos).trim();
+          var cookieValue = cookieStr.slice(pos + 1).trim();
+          return name === cookieName && value === cookieValue;
+        });
+        var shouldReload = !isCookieAlreadySet;
+        var cookieData = prepareCookie(name, value);
+
+        if (cookieData) {
+          hit(source);
+          document.cookie = cookieData;
+
+          if (shouldReload) {
+            window.location.reload();
+          }
+        }
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+
+      function prepareCookie(name, value) {
+        if (!name || !value) {
+          return null;
+        }
+
+        var valueToSet;
+
+        if (value === "true") {
+          valueToSet = "true";
+        } else if (value === "True") {
+          valueToSet = "True";
+        } else if (value === "false") {
+          valueToSet = "false";
+        } else if (value === "False") {
+          valueToSet = "False";
+        } else if (value === "yes") {
+          valueToSet = "yes";
+        } else if (value === "Yes") {
+          valueToSet = "Yes";
+        } else if (value === "Y") {
+          valueToSet = "Y";
+        } else if (value === "no") {
+          valueToSet = "no";
+        } else if (value === "ok") {
+          valueToSet = "ok";
+        } else if (value === "OK") {
+          valueToSet = "OK";
+        } else if (/^\d+$/.test(value)) {
+          valueToSet = parseFloat(value);
+
+          if (nativeIsNaN(valueToSet)) {
+            return null;
+          }
+
+          if (Math.abs(valueToSet) < 0 || Math.abs(valueToSet) > 15) {
+            return null;
+          }
+        } else {
+          return null;
+        }
+
+        var pathToSet = "path=/;";
+        var cookieData = "".concat(encodeURIComponent(name), "=").concat(encodeURIComponent(valueToSet), "; ").concat(pathToSet);
+        return cookieData;
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        setCookieReload.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function setLocalStorageItem(source, args) {
+      function setLocalStorageItem(source, key, value) {
+        if (!key || !value && value !== "") {
+          return;
+        }
+
+        var keyValue;
+
+        if (value === "undefined") {
+          keyValue = undefined;
+        } else if (value === "false") {
+          keyValue = false;
+        } else if (value === "true") {
+          keyValue = true;
+        } else if (value === "null") {
+          keyValue = null;
+        } else if (value === "emptyArr") {
+          keyValue = "[]";
+        } else if (value === "emptyObj") {
+          keyValue = "{}";
+        } else if (value === "") {
+          keyValue = "";
+        } else if (/^\d+$/.test(value)) {
+          keyValue = parseFloat(value);
+
+          if (nativeIsNaN(keyValue)) {
+            return;
+          }
+
+          if (Math.abs(keyValue) > 32767) {
+            return;
+          }
+        } else if (value === "yes") {
+          keyValue = "yes";
+        } else if (value === "no") {
+          keyValue = "no";
+        } else {
+          return;
+        }
+
+        var setItem = function setItem(key, value) {
+          var _window = window,
+              localStorage = _window.localStorage;
+
+          try {
+            localStorage.setItem(key, value);
+            hit(source);
+          } catch (e) {
+            if (source.verbose) {
+              console.log("Was unable to set localStorage item due to: ".concat(e.message));
+            }
+          }
+        };
+
+        setItem(key, keyValue);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        setLocalStorageItem.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function setPopadsDummy(source, args) {
+      function setPopadsDummy(source) {
+        delete window.PopAds;
+        delete window.popns;
+        Object.defineProperties(window, {
+          PopAds: {
+            get: function get() {
+              hit(source);
+              return {};
+            }
+          },
+          popns: {
+            get: function get() {
+              hit(source);
+              return {};
+            }
+          }
+        });
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        setPopadsDummy.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function setSessionStorageItem(source, args) {
+      function setSessionStorageItem(source, key, value) {
+        if (!key || !value && value !== "") {
+          return;
+        }
+
+        var keyValue;
+
+        if (value === "undefined") {
+          keyValue = undefined;
+        } else if (value === "false") {
+          keyValue = false;
+        } else if (value === "true") {
+          keyValue = true;
+        } else if (value === "null") {
+          keyValue = null;
+        } else if (value === "emptyArr") {
+          keyValue = "[]";
+        } else if (value === "emptyObj") {
+          keyValue = "{}";
+        } else if (value === "") {
+          keyValue = "";
+        } else if (/^\d+$/.test(value)) {
+          keyValue = parseFloat(value);
+
+          if (nativeIsNaN(keyValue)) {
+            return;
+          }
+
+          if (Math.abs(keyValue) > 32767) {
+            return;
+          }
+        } else if (value === "yes") {
+          keyValue = "yes";
+        } else if (value === "no") {
+          keyValue = "no";
+        } else {
+          return;
+        }
+
+        var setItem = function setItem(key, value) {
+          var _window = window,
+              sessionStorage = _window.sessionStorage;
+
+          try {
+            sessionStorage.setItem(key, value);
+            hit(source);
+          } catch (e) {
+            if (source.verbose) {
+              console.log("Was unable to set sessionStorage item due to: ".concat(e.message));
+            }
+          }
+        };
+
+        setItem(key, keyValue);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        setSessionStorageItem.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    var scriptletsMap = {
+      "abort-current-inline-script": abortCurrentInlineScript,
+      "abort-current-script.js": abortCurrentInlineScript,
+      "ubo-abort-current-script.js": abortCurrentInlineScript,
+      "acs.js": abortCurrentInlineScript,
+      "ubo-acs.js": abortCurrentInlineScript,
+      "ubo-abort-current-script": abortCurrentInlineScript,
+      "ubo-acs": abortCurrentInlineScript,
+      "abort-current-inline-script.js": abortCurrentInlineScript,
+      "ubo-abort-current-inline-script.js": abortCurrentInlineScript,
+      "acis.js": abortCurrentInlineScript,
+      "ubo-acis.js": abortCurrentInlineScript,
+      "ubo-abort-current-inline-script": abortCurrentInlineScript,
+      "ubo-acis": abortCurrentInlineScript,
+      "abp-abort-current-inline-script": abortCurrentInlineScript,
+      "abort-on-property-read": abortOnPropertyRead,
+      "abort-on-property-read.js": abortOnPropertyRead,
+      "ubo-abort-on-property-read.js": abortOnPropertyRead,
+      "aopr.js": abortOnPropertyRead,
+      "ubo-aopr.js": abortOnPropertyRead,
+      "ubo-abort-on-property-read": abortOnPropertyRead,
+      "ubo-aopr": abortOnPropertyRead,
+      "abp-abort-on-property-read": abortOnPropertyRead,
+      "abort-on-property-write": abortOnPropertyWrite,
+      "abort-on-property-write.js": abortOnPropertyWrite,
+      "ubo-abort-on-property-write.js": abortOnPropertyWrite,
+      "aopw.js": abortOnPropertyWrite,
+      "ubo-aopw.js": abortOnPropertyWrite,
+      "ubo-abort-on-property-write": abortOnPropertyWrite,
+      "ubo-aopw": abortOnPropertyWrite,
+      "abp-abort-on-property-write": abortOnPropertyWrite,
+      "abort-on-stack-trace": abortOnStackTrace,
+      "abort-on-stack-trace.js": abortOnStackTrace,
+      "ubo-abort-on-stack-trace.js": abortOnStackTrace,
+      "aost.js": abortOnStackTrace,
+      "ubo-aost.js": abortOnStackTrace,
+      "ubo-abort-on-stack-trace": abortOnStackTrace,
+      "ubo-aost": abortOnStackTrace,
+      "abp-abort-on-stack-trace": abortOnStackTrace,
+      "adjust-setInterval": adjustSetInterval,
+      "nano-setInterval-booster.js": adjustSetInterval,
+      "ubo-nano-setInterval-booster.js": adjustSetInterval,
+      "nano-sib.js": adjustSetInterval,
+      "ubo-nano-sib.js": adjustSetInterval,
+      "ubo-nano-setInterval-booster": adjustSetInterval,
+      "ubo-nano-sib": adjustSetInterval,
+      "adjust-setTimeout": adjustSetTimeout,
+      "nano-setTimeout-booster.js": adjustSetTimeout,
+      "ubo-nano-setTimeout-booster.js": adjustSetTimeout,
+      "nano-stb.js": adjustSetTimeout,
+      "ubo-nano-stb.js": adjustSetTimeout,
+      "ubo-nano-setTimeout-booster": adjustSetTimeout,
+      "ubo-nano-stb": adjustSetTimeout,
+      "debug-current-inline-script": debugCurrentInlineScript,
+      "debug-on-property-read": debugOnPropertyRead,
+      "debug-on-property-write": debugOnPropertyWrite,
+      "dir-string": dirString,
+      "abp-dir-string": dirString,
+      "disable-newtab-links": disableNewtabLinks,
+      "disable-newtab-links.js": disableNewtabLinks,
+      "ubo-disable-newtab-links.js": disableNewtabLinks,
+      "ubo-disable-newtab-links": disableNewtabLinks,
+      "close-window": forceWindowClose,
+      "window-close-if.js": forceWindowClose,
+      "ubo-window-close-if.js": forceWindowClose,
+      "ubo-window-close-if": forceWindowClose,
+      "hide-in-shadow-dom": hideInShadowDom,
+      "json-prune": jsonPrune,
+      "json-prune.js": jsonPrune,
+      "ubo-json-prune.js": jsonPrune,
+      "ubo-json-prune": jsonPrune,
+      "abp-json-prune": jsonPrune,
+      log: log,
+      "log-addEventListener": logAddEventListener,
+      "addEventListener-logger.js": logAddEventListener,
+      "ubo-addEventListener-logger.js": logAddEventListener,
+      "aell.js": logAddEventListener,
+      "ubo-aell.js": logAddEventListener,
+      "ubo-addEventListener-logger": logAddEventListener,
+      "ubo-aell": logAddEventListener,
+      "log-eval": logEval,
+      "log-on-stack-trace": logOnStacktrace,
+      noeval: noeval,
+      "noeval.js": noeval,
+      "silent-noeval.js": noeval,
+      "ubo-noeval.js": noeval,
+      "ubo-silent-noeval.js": noeval,
+      "ubo-noeval": noeval,
+      "ubo-silent-noeval": noeval,
+      nowebrtc: nowebrtc,
+      "nowebrtc.js": nowebrtc,
+      "ubo-nowebrtc.js": nowebrtc,
+      "ubo-nowebrtc": nowebrtc,
+      "prevent-addEventListener": preventAddEventListener,
+      "addEventListener-defuser.js": preventAddEventListener,
+      "ubo-addEventListener-defuser.js": preventAddEventListener,
+      "aeld.js": preventAddEventListener,
+      "ubo-aeld.js": preventAddEventListener,
+      "ubo-addEventListener-defuser": preventAddEventListener,
+      "ubo-aeld": preventAddEventListener,
+      "prevent-adfly": preventAdfly,
+      "adfly-defuser.js": preventAdfly,
+      "ubo-adfly-defuser.js": preventAdfly,
+      "ubo-adfly-defuser": preventAdfly,
+      "prevent-bab": preventBab,
+      "nobab.js": preventBab,
+      "ubo-nobab.js": preventBab,
+      "bab-defuser.js": preventBab,
+      "ubo-bab-defuser.js": preventBab,
+      "ubo-nobab": preventBab,
+      "ubo-bab-defuser": preventBab,
+      "prevent-element-src-loading": preventElementSrcLoading,
+      "prevent-eval-if": preventEvalIf,
+      "noeval-if.js": preventEvalIf,
+      "ubo-noeval-if.js": preventEvalIf,
+      "ubo-noeval-if": preventEvalIf,
+      "prevent-fab-3.2.0": preventFab,
+      "nofab.js": preventFab,
+      "ubo-nofab.js": preventFab,
+      "fuckadblock.js-3.2.0": preventFab,
+      "ubo-fuckadblock.js-3.2.0": preventFab,
+      "ubo-nofab": preventFab,
+      "prevent-fetch": preventFetch,
+      "no-fetch-if.js": preventFetch,
+      "ubo-no-fetch-if.js": preventFetch,
+      "ubo-no-fetch-if": preventFetch,
+      "prevent-popads-net": preventPopadsNet,
+      "popads.net.js": preventPopadsNet,
+      "ubo-popads.net.js": preventPopadsNet,
+      "ubo-popads.net": preventPopadsNet,
+      "prevent-refresh": preventRefresh,
+      "refresh-defuser.js": preventRefresh,
+      "refresh-defuser": preventRefresh,
+      "ubo-refresh-defuser.js": preventRefresh,
+      "ubo-refresh-defuser": preventRefresh,
+      "prevent-requestAnimationFrame": preventRequestAnimationFrame,
+      "no-requestAnimationFrame-if.js": preventRequestAnimationFrame,
+      "ubo-no-requestAnimationFrame-if.js": preventRequestAnimationFrame,
+      "norafif.js": preventRequestAnimationFrame,
+      "ubo-norafif.js": preventRequestAnimationFrame,
+      "ubo-no-requestAnimationFrame-if": preventRequestAnimationFrame,
+      "ubo-norafif": preventRequestAnimationFrame,
+      "prevent-setInterval": preventSetInterval,
+      "no-setInterval-if.js": preventSetInterval,
+      "ubo-no-setInterval-if.js": preventSetInterval,
+      "setInterval-defuser.js": preventSetInterval,
+      "ubo-setInterval-defuser.js": preventSetInterval,
+      "nosiif.js": preventSetInterval,
+      "ubo-nosiif.js": preventSetInterval,
+      "sid.js": preventSetInterval,
+      "ubo-sid.js": preventSetInterval,
+      "ubo-no-setInterval-if": preventSetInterval,
+      "ubo-setInterval-defuser": preventSetInterval,
+      "ubo-nosiif": preventSetInterval,
+      "ubo-sid": preventSetInterval,
+      "prevent-setTimeout": preventSetTimeout,
+      "no-setTimeout-if.js": preventSetTimeout,
+      "ubo-no-setTimeout-if.js": preventSetTimeout,
+      "nostif.js": preventSetTimeout,
+      "ubo-nostif.js": preventSetTimeout,
+      "ubo-no-setTimeout-if": preventSetTimeout,
+      "ubo-nostif": preventSetTimeout,
+      "setTimeout-defuser.js": preventSetTimeout,
+      "ubo-setTimeout-defuser.js": preventSetTimeout,
+      "ubo-setTimeout-defuser": preventSetTimeout,
+      "std.js": preventSetTimeout,
+      "ubo-std.js": preventSetTimeout,
+      "ubo-std": preventSetTimeout,
+      "prevent-window-open": preventWindowOpen,
+      "window.open-defuser.js": preventWindowOpen,
+      "ubo-window.open-defuser.js": preventWindowOpen,
+      "ubo-window.open-defuser": preventWindowOpen,
+      "nowoif.js": preventWindowOpen,
+      "ubo-nowoif.js": preventWindowOpen,
+      "ubo-nowoif": preventWindowOpen,
+      "prevent-xhr": preventXHR,
+      "no-xhr-if.js": preventXHR,
+      "ubo-no-xhr-if.js": preventXHR,
+      "ubo-no-xhr-if": preventXHR,
+      "remove-attr": removeAttr,
+      "remove-attr.js": removeAttr,
+      "ubo-remove-attr.js": removeAttr,
+      "ra.js": removeAttr,
+      "ubo-ra.js": removeAttr,
+      "ubo-remove-attr": removeAttr,
+      "ubo-ra": removeAttr,
+      "remove-class": removeClass,
+      "remove-class.js": removeClass,
+      "ubo-remove-class.js": removeClass,
+      "rc.js": removeClass,
+      "ubo-rc.js": removeClass,
+      "ubo-remove-class": removeClass,
+      "ubo-rc": removeClass,
+      "remove-cookie": removeCookie,
+      "cookie-remover.js": removeCookie,
+      "ubo-cookie-remover.js": removeCookie,
+      "ubo-cookie-remover": removeCookie,
+      "remove-in-shadow-dom": removeInShadowDom,
+      "set-attr": setAttr,
+      "set-constant": setConstant,
+      "set-constant.js": setConstant,
+      "ubo-set-constant.js": setConstant,
+      "set.js": setConstant,
+      "ubo-set.js": setConstant,
+      "ubo-set-constant": setConstant,
+      "ubo-set": setConstant,
+      "abp-override-property-read": setConstant,
+      "set-cookie": setCookie,
+      "set-cookie-reload": setCookieReload,
+      "set-local-storage-item": setLocalStorageItem,
+      "set-popads-dummy": setPopadsDummy,
+      "popads-dummy.js": setPopadsDummy,
+      "ubo-popads-dummy.js": setPopadsDummy,
+      "ubo-popads-dummy": setPopadsDummy,
+      "set-session-storage-item": setSessionStorageItem
+    };
+
+    var getScriptletFunction = function getScriptletFunction(name) {
+      return scriptletsMap[name];
     };
 
     /**
@@ -13333,7 +20828,7 @@
     /**
      * Returns scriptlet code by param
      * @param {Source} source
-     * @returns {string} scriptlet code
+     * @returns {string|null} scriptlet code
      */
 
     function getScriptletCode(source) {
@@ -13341,10 +20836,8 @@
         return null;
       }
 
-      var scriptlet = validator.getScriptletByName(source.name);
-      var result = attachDependencies(scriptlet);
-      result = addCall(scriptlet, result);
-      result = source.engine === 'corelibs' || source.engine === 'test' ? wrapInNonameFunc(result) : passSourceAndProps(source, result);
+      var scriptletFunction = getScriptletFunction(source.name).toString();
+      var result = source.engine === 'corelibs' || source.engine === 'test' ? wrapInNonameFunc(scriptletFunction) : passSourceAndProps(source, scriptletFunction);
       return result;
     }
     /**
@@ -13359,6 +20852,7 @@
     var scriptletsObject = function () {
       return {
         invoke: getScriptletCode,
+        getScriptletFunction: getScriptletFunction,
         isValidScriptletName: validator.isValidScriptletName,
         isValidScriptletRule: isValidScriptletRule,
         isAdgScriptletRule: validator.isAdgScriptletRule,
@@ -13368,7 +20862,7 @@
         convertAbpToAdg: convertAbpSnippetToAdg,
         convertScriptletToAdg: convertScriptletToAdg,
         convertAdgToUbo: convertAdgScriptletToUbo,
-        redirects: redirectsCjs
+        redirects: redirects
       };
     }();
 
@@ -13379,7 +20873,7 @@
 
     scriptlets = scriptletsObject;
 
-}());
+})();
 
 /**
  * -------------------------------------------

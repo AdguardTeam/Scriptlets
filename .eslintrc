@@ -1,16 +1,23 @@
 {
-  "extends": ["airbnb-base", "plugin:compat/recommended"],
-  "rules": {
-    "indent": ["error", 4],
-    "no-param-reassign": "off",
-    "no-shadow": "off",
-    "import/prefer-default-export": "off",
-    "arrow-body-style": "off",
-    "import/no-extraneous-dependencies": "off"
+  "extends": ["airbnb-base"],
+  "parser": "@babel/eslint-parser",
+  "parserOptions": {
+    "babelOptions": {
+      "rootMode": "upward"
+    }
   },
   "env": {
     "browser": true,
     "qunit": true
   },
-  "parser": "@babel/eslint-parser"
+  "rules": {
+    "indent": ["error", 4],
+    "no-param-reassign": 0,
+    "no-shadow": 0,
+    "import/prefer-default-export": 0,
+    "arrow-body-style": 0,
+    "import/no-extraneous-dependencies": 0,
+    "no-await-in-loop": 0,
+    "no-restricted-syntax": 0
+  }
 }

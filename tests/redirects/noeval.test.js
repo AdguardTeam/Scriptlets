@@ -1,5 +1,5 @@
 /* eslint-disable no-eval, no-console, no-underscore-dangle */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import { clearGlobalProps, runRedirect } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'noeval';
@@ -40,7 +40,7 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('AG noeval alias', (assert) => {
-    runScriptlet(name);
+    runRedirect(name);
 
     const evalStr = '2';
 

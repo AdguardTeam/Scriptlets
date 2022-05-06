@@ -3,26 +3,21 @@
     "version": "1.6.13",
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "scripts": {
-        "watch": "rollup -c -w",
-        "bundle:click2load": "rollup -c --environment CLICK2LOAD",
-        "build": "rollup -c && babel-node redirects.build.js",
-        "corelibs": "rollup -c --environment CLEAN && babel-node corelibs.build.js && REDIRECTS=CORELIBS babel-node redirects.build.js",
-        "build-test": "rollup -c --environment UI_TEST",
-        "test": "yarn build-test && node tests/index.js",
-        "test-watch": "rollup -c --watch --environment UI_TEST",
-        "browserstack": "yarn build-test && node browserstack.js",
-        "gui-test": "yarn build-test && open http://localhost:8585 && node ./tests/server.js",
+        "build": "babel-node bundler.js",
+        "build-tests": "yarn build && babel-node scripts/build-tests.js",
+        "test": "yarn build-tests && node tests/index.js",
+        "browserstack": "babel-node scripts/build-tests.js && node browserstack.js",
+        "gui-test": "babel-node scripts/build-tests.js && open http://localhost:8585 && node ./tests/server.js",
         "lint": "eslint .",
         "lint-staged": "lint-staged",
         "wiki:build-docs": "node scripts/build-docs.js",
         "wiki:check-updates": "node ./scripts/check-sources-updates.js",
         "wiki:update": "yarn wiki:check-updates && node ./scripts/build-compatibility-table.js",
-        "prepare-builds": "yarn corelibs && yarn build && babel-node ./scripts/build-txt.js",
-        "prepublishOnly": "yarn prepare-builds",
+        "prepublishOnly": "yarn build",
         "increment": "yarn version --patch --no-git-tag-version"
     },
     "lint-staged": {
-        "*.js": [
+        "{src,tests,scripts}/**/*.js": [
             "eslint"
         ]
     },
@@ -43,6 +38,16 @@
     "homepage": "https://github.com/AdguardTeam/Scriptlets#adguard-scriptlets-and-redirect-resources",
     "main": "dist/umd/scriptlets.umd.js",
     "types": "dist/umd/scriptlets.d.ts",
+    "exports": {
+        "./package.json": "./package.json",
+        ".": {
+            "default": "./dist/umd/scriptlets.umd.js"
+        }
+    },
+    "dependencies": {
+        "@babel/runtime": "^7.7.2",
+        "js-yaml": "^3.13.1"
+    },
     "devDependencies": {
         "@babel/cli": "^7.8.4",
         "@babel/core": "^7.9.0",
@@ -60,6 +65,9 @@
         "@rollup/plugin-replace": "^4.0.0",
         "axios": "^0.21.1",
         "browserstack-local": "^1.4.9",
+        "chalk": "^4.1.2",
+        "commander": "^9.2.0",
+        "cross-env": "^7.0.3",
         "crypto-js": "^4.1.1",
         "dotenv": "^8.2.0",
         "dox": "^0.9.0",
@@ -67,25 +75,23 @@
         "eslint-config-airbnb-base": "^14.2.1",
         "eslint-plugin-compat": "^3.9.0",
         "eslint-plugin-import": "^2.22.1",
+        "fs-extra": "^10.0.1",
         "husky": "^3.1.0",
         "js-reporters": "^2.1.0",
         "kleur": "^4.1.4",
         "lint-staged": "^12.1.2",
         "node-qunit-puppeteer": "^2.0.3",
         "qunit": "^2.9.3",
-        "rollup": "^2.21.0",
+        "rollup": "^2.70.2",
         "rollup-plugin-cleanup": "^3.1.1",
         "rollup-plugin-copy": "^3.1.0",
         "rollup-plugin-generate-html": "^0.2.0",
         "selenium-webdriver": "^4.1.1",
-        "sinon": "^7.5.0"
-    },
-    "dependencies": {
-        "@babel/runtime": "^7.7.2",
-        "js-yaml": "^3.13.1"
+        "sinon": "^7.5.0",
+        "terser": "^5.13.0"
     },
     "files": [
-        "dist/"
+        "dist"
     ],
     "browserslist": [
         "last 1 versions",

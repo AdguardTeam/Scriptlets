@@ -18,6 +18,8 @@ import * as redirectsList from './redirects-list';
 
 import Redirects from './redirects';
 
+import { redirectsMap } from '../../tmp/redirects-map';
+
 /**
  * Finds redirect resource by it's name
  * @param {string} name - redirect name
@@ -50,20 +52,16 @@ const getRedirectCode = (source) => {
     // so it should be just a code without any source and props passed
     result = source.engine === 'test'
         ? wrapInNonameFunc(result)
-        : passSourceAndProps(source, result);
+        : passSourceAndProps(source, result, true);
 
     return result;
 };
 
-// It will be replaced with dictionary-object in build-script
-// eslint-disable-next-line no-undef
-const map = __MAP__;
-
 const getRedirectFilename = (name) => {
-    return map[name];
+    return redirectsMap[name];
 };
 
-export const redirectsCjs = {
+export const redirects = {
     Redirects,
     getRedirectFilename,
     getCode: getRedirectCode,

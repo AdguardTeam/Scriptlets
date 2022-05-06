@@ -31,7 +31,6 @@ const server = {
 };
 
 const start = (server, port) => {
-    // eslint-disable-next-line compat/compat
     return new Promise((resolve) => {
         server.listen(port, () => {
             console.log(`Server running at port: ${port}`);
@@ -41,7 +40,6 @@ const start = (server, port) => {
 };
 
 const stop = (server) => {
-    // eslint-disable-next-line compat/compat
     return new Promise((resolve) => {
         server.close(() => {
             resolve();
