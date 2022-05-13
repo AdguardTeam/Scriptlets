@@ -106,6 +106,11 @@ declare module '@adguard/scriptlets' {
     function isValidScriptletRule(ruleText: string): boolean;
 
     /**
+     * Returns scriptlet function by name
+     */
+    function getScriptletFunction(name: string): () => void
+
+    /**
      * Redirects module
      */
     const redirects: {
@@ -152,3 +157,4 @@ declare module '@adguard/scriptlets' {
         convertRedirectToAdg(rule: string): string;
     }
 }
+

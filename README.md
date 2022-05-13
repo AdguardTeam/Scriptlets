@@ -149,6 +149,15 @@ scriptlets.invoke(source);
 
 ```javascript
 /**
+ * Returns scriptlet function by name
+ * @param {string} name scriptlet name
+ * @returns {Function}
+ */
+scriptlets.getScriptletFunction(name);
+```
+
+```javascript
+/**
  * Checks whether the `name` is valid scriptlet name
  * @param {string} name
  * @returns {boolean}
@@ -424,7 +433,7 @@ Watcher is available
 yarn test-watch
 ```
 
-Limit testing by commenting out corresponding values in `rollup.config.js`
+Limit testing by commenting out corresponding values in `build-tests.js`
 ```
 const MULTIPLE_TEST_FILES_DIRS = [
 // 'scriptlets',
@@ -446,7 +455,7 @@ import './redirects/index.test';
 
 > It is also possible to exclude libtests in `tests/lib-tests/index.test.js`
 
-Run specific scriptlet or redirect test by editing `rollup.config.js`
+Run specific scriptlet or redirect test by editing `build-tests.js`
 ```
 .filter((el) => {
     return el !== 'index.test.js'

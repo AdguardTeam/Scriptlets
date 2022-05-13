@@ -24,7 +24,6 @@ const NON_REDIRECTS_FILES = [
     'index.js',
     'redirects.js',
     'redirects-list.js',
-    'redirects-wrapper.js',
 ];
 
 /**

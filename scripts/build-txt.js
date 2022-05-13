@@ -1,19 +1,11 @@
-const fs = require('fs');
-const path = require('path');
-const { version } = require('../package.json');
+import path from 'path';
+import { writeFile } from './helpers';
+import { version } from '../package.json';
 
 const PATH = '../dist';
 const FILENAME = 'build.txt';
 
-const main = () => {
+export const buildTxt = async () => {
     const content = `version=${version}`;
-    const dir = path.resolve(__dirname, PATH);
-
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir);
-    }
-
-    fs.writeFileSync(path.resolve(__dirname, PATH, FILENAME), content);
+    await writeFile(path.resolve(__dirname, PATH, FILENAME), content);
 };
-
-main();

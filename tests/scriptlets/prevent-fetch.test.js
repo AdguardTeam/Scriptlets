@@ -9,7 +9,7 @@ const name = 'prevent-fetch';
 const FETCH_OBJECTS_PATH = './test-files';
 const nativeFetch = fetch;
 const nativeConsole = console.log;
-const nativeResponseJson = Response.prototype.json; // eslint-disable-line compat/compat
+const nativeResponseJson = Response.prototype.json;
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -21,7 +21,7 @@ const afterEach = () => {
     clearGlobalProps('hit', '__debug');
     fetch = nativeFetch; // eslint-disable-line no-global-assign
     console.log = nativeConsole;
-    Response.prototype.json = nativeResponseJson; // eslint-disable-line compat/compat
+    Response.prototype.json = nativeResponseJson;
 };
 
 module(name, { beforeEach, afterEach });
@@ -87,7 +87,7 @@ if (!isSupported) {
 
     test('fetch request - no args - logging', async (assert) => {
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
-        const inputRequest = new Request(INPUT_JSON_PATH); // eslint-disable-line compat/compat
+        const inputRequest = new Request(INPUT_JSON_PATH);
         const expectedJson = {
             a1: 1,
             b2: 'test',
@@ -117,13 +117,13 @@ if (!isSupported) {
 
     test('prevent any fetch call', async (assert) => {
         const INPUT_JSON_PATH_1 = `${FETCH_OBJECTS_PATH}/test01.json`;
-        const inputRequest1 = new Request(INPUT_JSON_PATH_1); // eslint-disable-line compat/compat
+        const inputRequest1 = new Request(INPUT_JSON_PATH_1);
 
         const INPUT_JSON_PATH_2 = `${FETCH_OBJECTS_PATH}/test02.json`;
         const init2 = {
             method: 'GET',
         };
-        // eslint-disable-next-line compat/compat
+
         const inputRequest2 = new Request(INPUT_JSON_PATH_2, init2);
 
         // match any fetch
@@ -185,7 +185,7 @@ if (!isSupported) {
         const init = {
             method: 'HEAD',
         };
-        // eslint-disable-line compat/compat
+
         const inputRequest = new Request(INPUT_JSON_PATH, init);
 
         runScriptlet(name, ['/02\\.json/ method:/GET|HEAD/']);
@@ -227,7 +227,7 @@ if (!isSupported) {
         const init = {
             method: 'GET',
         };
-        // eslint-disable-line compat/compat
+
         const inputRequest = new Request(INPUT_JSON_PATH, init);
         const expectedJson = {
             a1: 1,
@@ -252,7 +252,7 @@ if (!isSupported) {
         const init = {
             method: 'GET',
         };
-        // eslint-disable-line compat/compat
+
         const inputRequest = new Request(INPUT_JSON_PATH, init);
         const expectedJson = {
             a1: 1,
@@ -274,7 +274,7 @@ if (!isSupported) {
 
     test('prevent all, fetch returns empty array', async (assert) => {
         const INPUT_JSON_PATH_1 = `${FETCH_OBJECTS_PATH}/test01.json`;
-        const inputRequest1 = new Request(INPUT_JSON_PATH_1); // eslint-disable-line compat/compat
+        const inputRequest1 = new Request(INPUT_JSON_PATH_1);
 
         // match any fetch
         runScriptlet(name, ['*', 'emptyArr']);
