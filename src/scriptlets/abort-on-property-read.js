@@ -4,6 +4,9 @@ import {
     getPropertyInChain,
     createOnErrorHandler,
     hit,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    isEmptyObject,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -94,4 +97,5 @@ abortOnPropertyRead.injections = [
     getPropertyInChain,
     createOnErrorHandler,
     hit,
+    isEmptyObject,
 ];
