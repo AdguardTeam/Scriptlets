@@ -28,7 +28,7 @@ export function noTopics(source) {
 
     // document.browsingTopics() is async function so it's better to return noopPromiseResolve()
     // https://github.com/patcg-individual-drafts/topics#the-api-and-how-it-works
-    Document.prototype[TOPICS_PROPERTY_NAME] = () => noopPromiseResolve();
+    Document.prototype[TOPICS_PROPERTY_NAME] = () => noopPromiseResolve('[]');
     hit(source);
 }
 
