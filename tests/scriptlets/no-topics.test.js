@@ -27,7 +27,7 @@ const afterEach = () => {
 
 module(name, { beforeEach, afterEach });
 
-test('no-floc - works', async (assert) => {
+test('no-topics - works', async (assert) => {
     const done = assert.async();
     runScriptlet(name);
 
