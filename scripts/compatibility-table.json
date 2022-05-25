@@ -78,6 +78,9 @@
             "ubo": "nowebrtc.js"
         },
         {
+            "adg": "no-topics"
+        },
+        {
             "adg": "prevent-addEventListener",
             "ubo": "addEventListener-defuser.js (aeld.js)"
         },
