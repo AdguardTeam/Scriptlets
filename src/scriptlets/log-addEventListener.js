@@ -46,6 +46,9 @@ listener: ${convertTypeToString(listener)}`;
     }
 
     window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
+    // https://github.com/AdguardTeam/Scriptlets/issues/215
+    window.addEventListener = addEventListenerWrapper;
+    document.addEventListener = addEventListenerWrapper;
 }
 
 logAddEventListener.names = [
