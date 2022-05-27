@@ -45,18 +45,16 @@ listener: ${convertTypeToString(listener)}`;
         return nativeAddEventListener.apply(this, [type, listener, ...args]);
     }
 
+    const descriptor = {
+        configurable: true,
+        set: () => {},
+        get: () => addEventListenerWrapper,
+    };
     // https://github.com/AdguardTeam/Scriptlets/issues/215
-    Object.defineProperty(window.EventTarget.prototype, 'addEventListener', {
-        set() {
-            return true;
-        },
-        get() {
-            return addEventListenerWrapper;
-        },
-    });
-
-    window.addEventListener = addEventListenerWrapper;
-    document.addEventListener = addEventListenerWrapper;
+    // https://github.com/AdguardTeam/Scriptlets/issues/143
+    Object.defineProperty(window.EventTarget.prototype, 'addEventListener', descriptor);
+    Object.defineProperty(window, 'addEventListener', descriptor);
+    Object.defineProperty(document, 'addEventListener', descriptor);
 }
 
 logAddEventListener.names = [
