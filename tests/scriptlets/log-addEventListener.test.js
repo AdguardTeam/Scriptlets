@@ -46,19 +46,14 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('logs events to console', (assert) => {
-    assert.expect(3);
     const agLogAddEventListenerProp = 'agLogAddEventListenerProp';
     const eventName = 'click';
-    const callback = () => {
+    const callback = function callback() {
         window[agLogAddEventListenerProp] = 'clicked';
     };
     console.log = function log(input) {
         // Ignore hit messages with "trace"
         if (input.indexOf('trace') > -1) {
-            return;
-        }
-        // Avoid asserting with qunit's own calls
-        if (input.indexOf(eventName) === -1) {
             return;
         }
         assert.strictEqual(input, `addEventListener("${eventName}", ${callback.toString()})`, 'console.hit input should be equal');
@@ -76,7 +71,6 @@ test('logs events to console', (assert) => {
 });
 
 test('logs events to console - listener is null', (assert) => {
-    assert.expect(3);
     const eventName = 'click';
     const listener = null;
 
@@ -87,12 +81,6 @@ test('logs events to console - listener is null', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        // Avoid asserting with qunit's own calls
-        if (input.indexOf(INVALID_MESSAGE_PART) === -1
-            || input.indexOf(INVALID_MESSAGE_START) === -1) {
-            return;
-        }
-
         assert.ok(input.indexOf(INVALID_MESSAGE_START) > -1, 'passed invalid args');
         assert.ok(input.indexOf(INVALID_MESSAGE_PART) > -1, 'passed invalid args');
     };
@@ -107,7 +95,6 @@ test('logs events to console - listener is null', (assert) => {
 });
 
 test('logs events to console - listener is not a function', (assert) => {
-    assert.expect(4);
     let isCalled = false;
 
     // Firefox 52 can not call handleEvent of empty object listener
@@ -127,11 +114,6 @@ test('logs events to console - listener is not a function', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        // Avoid asserting with qunit's own calls
-        if (input.indexOf(INVALID_MESSAGE_PART) === -1
-            || input.indexOf(INVALID_MESSAGE_START) === -1) {
-            return;
-        }
         assert.ok(input.indexOf(INVALID_MESSAGE_START) > -1, 'passed invalid args');
         assert.ok(input.indexOf(INVALID_MESSAGE_PART) > -1, 'passed invalid args');
     };
@@ -147,7 +129,6 @@ test('logs events to console - listener is not a function', (assert) => {
 });
 
 test('logs events to console - event is undefined', (assert) => {
-    assert.expect(4);
     const TEST_EVENT_TYPE = window.undefinedEvent; // not defined
 
     const testPropName = 'test';
@@ -161,11 +142,6 @@ test('logs events to console - event is undefined', (assert) => {
     console.log = function log(input) {
         // Ignore hit messages with "trace"
         if (input.indexOf('trace') > -1) {
-            return;
-        }
-        // Avoid asserting with qunit's own calls
-        if (input.indexOf(INVALID_MESSAGE_PART) === -1
-            || input.indexOf(INVALID_MESSAGE_START) === -1) {
             return;
         }
         assert.ok(input.indexOf(INVALID_MESSAGE_START) > -1, 'passed invalid args');
