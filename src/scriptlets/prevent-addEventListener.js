@@ -66,10 +66,16 @@ export function preventAddEventListener(source, typeSearch, listenerSearch) {
         return nativeAddEventListener.apply(this, [type, listener, ...args]);
     }
 
-    window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
+    const descriptor = {
+        configurable: true,
+        set: () => {},
+        get: () => addEventListenerWrapper,
+    };
+    // https://github.com/AdguardTeam/Scriptlets/issues/215
     // https://github.com/AdguardTeam/Scriptlets/issues/143
-    window.addEventListener = addEventListenerWrapper;
-    document.addEventListener = addEventListenerWrapper;
+    Object.defineProperty(window.EventTarget.prototype, 'addEventListener', descriptor);
+    Object.defineProperty(window, 'addEventListener', descriptor);
+    Object.defineProperty(document, 'addEventListener', descriptor);
 }
 
 preventAddEventListener.names = [
