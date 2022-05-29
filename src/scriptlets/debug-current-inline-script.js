@@ -5,6 +5,9 @@ import {
     toRegExp,
     createOnErrorHandler,
     hit,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    isEmptyObject,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -124,4 +127,5 @@ debugCurrentInlineScript.injections = [
     toRegExp,
     createOnErrorHandler,
     hit,
+    isEmptyObject,
 ];

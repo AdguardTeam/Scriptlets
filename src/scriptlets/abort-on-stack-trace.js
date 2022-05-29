@@ -8,6 +8,7 @@ import {
     matchStackTrace,
     // following helpers are needed for helpers above
     toRegExp,
+    isEmptyObject,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -119,4 +120,5 @@ abortOnStackTrace.injections = [
     validateStrPattern,
     matchStackTrace,
     toRegExp,
+    isEmptyObject,
 ];

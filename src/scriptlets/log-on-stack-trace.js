@@ -2,6 +2,9 @@ import {
     getPropertyInChain,
     setPropertyAccess,
     hit,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    isEmptyObject,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -104,4 +107,5 @@ logOnStacktrace.injections = [
     getPropertyInChain,
     setPropertyAccess,
     hit,
+    isEmptyObject,
 ];

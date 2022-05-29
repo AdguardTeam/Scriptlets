@@ -6,6 +6,9 @@ import {
     startsWith,
     createOnErrorHandler,
     hit,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    isEmptyObject,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -213,4 +216,5 @@ abortCurrentInlineScript.injections = [
     startsWith,
     createOnErrorHandler,
     hit,
+    isEmptyObject,
 ];
