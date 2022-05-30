@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.15
+ * Version 1.6.18
  */
 
 (function () {
@@ -5962,6 +5962,41 @@
     preventElementSrcLoading$1.injections = [hit, toRegExp, safeGetDescriptor];
 
     /**
+     * @scriptlet no-topics
+     *
+     * @description
+     * Prevents using The Topics API
+     * https://developer.chrome.com/docs/privacy-sandbox/topics/
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('no-topics')
+     * ```
+     */
+
+    function noTopics$1(source) {
+      var TOPICS_PROPERTY_NAME = 'browsingTopics';
+
+      if (Document instanceof Object === false) {
+        return;
+      }
+
+      if (!Object.prototype.hasOwnProperty.call(Document.prototype, TOPICS_PROPERTY_NAME) || Document.prototype[TOPICS_PROPERTY_NAME] instanceof Function === false) {
+        return;
+      } // document.browsingTopics() is async function so it's better to return noopPromiseResolve()
+      // https://github.com/patcg-individual-drafts/topics#the-api-and-how-it-works
+
+
+      Document.prototype[TOPICS_PROPERTY_NAME] = function () {
+        return noopPromiseResolve('[]');
+      };
+
+      hit(source);
+    }
+    noTopics$1.names = ['no-topics'];
+    noTopics$1.injections = [hit, noopPromiseResolve];
+
+    /**
      * This file must export all scriptlets which should be accessible
      */
 
@@ -6011,7 +6046,8 @@
         preventXHR: preventXHR$1,
         forceWindowClose: forceWindowClose$1,
         preventRefresh: preventRefresh$1,
-        preventElementSrcLoading: preventElementSrcLoading$1
+        preventElementSrcLoading: preventElementSrcLoading$1,
+        noTopics: noTopics$1
     });
 
     /**
@@ -16119,6 +16155,97 @@
       }
     }
 
+    function noTopics(source, args) {
+      function noTopics(source) {
+        var TOPICS_PROPERTY_NAME = "browsingTopics";
+
+        if (Document instanceof Object === false) {
+          return;
+        }
+
+        if (!Object.prototype.hasOwnProperty.call(Document.prototype, TOPICS_PROPERTY_NAME) || Document.prototype[TOPICS_PROPERTY_NAME] instanceof Function === false) {
+          return;
+        }
+
+        Document.prototype[TOPICS_PROPERTY_NAME] = function () {
+          return noopPromiseResolve("[]");
+        };
+
+        hit(source);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function noopPromiseResolve() {
+        var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
+
+        if (typeof Response === "undefined") {
+          return;
+        }
+
+        var response = new Response(responseBody, {
+          status: 200,
+          statusText: "OK"
+        });
+        return Promise.resolve(response);
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        noTopics.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
     function noeval(source, args) {
       function noeval(source) {
         window.eval = function evalWrapper(s) {
@@ -20674,6 +20801,7 @@
       "ubo-aell": logAddEventListener,
       "log-eval": logEval,
       "log-on-stack-trace": logOnStacktrace,
+      "no-topics": noTopics,
       noeval: noeval,
       "noeval.js": noeval,
       "silent-noeval.js": noeval,
