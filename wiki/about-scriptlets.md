@@ -17,6 +17,7 @@
 * [log-eval](#log-eval)
 * [log-on-stack-trace](#log-on-stack-trace)
 * [log](#log)
+* [no-topics](#no-topics)
 * [noeval](#noeval)
 * [nowebrtc](#nowebrtc)
 * [prevent-addEventListener](#prevent-addEventListener)
@@ -564,6 +565,19 @@ example.org#%#//scriptlet('log', 'arg1', 'arg2')
 ```
 
 [Scriptlet source](../src/scriptlets/log.js)
+* * *
+
+### <a id="no-topics"></a> ⚡️ no-topics
+
+Prevents using The Topics API
+https://developer.chrome.com/docs/privacy-sandbox/topics/
+
+**Syntax**
+```
+example.org#%#//scriptlet('no-topics')
+```
+
+[Scriptlet source](../src/scriptlets/no-topics.js)
 * * *
 
 ### <a id="noeval"></a> ⚡️ noeval

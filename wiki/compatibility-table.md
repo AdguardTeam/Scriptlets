@@ -22,6 +22,7 @@
 | [naver-wcslog](../wiki/about-scriptlets.md#naver-wcslog) |  |  |
 | [noeval](../wiki/about-scriptlets.md#noeval) |  |  |
 | [nowebrtc](../wiki/about-scriptlets.md#nowebrtc) | nowebrtc.js |  |
+| [no-topics](../wiki/about-scriptlets.md#no-topics) |  |  |
 | [prevent-addEventListener](../wiki/about-scriptlets.md#prevent-addEventListener) | addEventListener-defuser.js (aeld.js) |  |
 | [prevent-adfly](../wiki/about-scriptlets.md#prevent-adfly) | adfly-defuser.js |  |
 | [prevent-bab](../wiki/about-scriptlets.md#prevent-bab) |  |  |
