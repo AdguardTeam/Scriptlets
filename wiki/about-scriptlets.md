@@ -297,6 +297,9 @@ defaults to match all callbacks; invalid regular expression will cause exit and 
 
 Closes the browser tab immediately.
 
+> `window.close()` usage is restricted in Chrome. In this case
+tab will only be closed if using AdGuard browser extension.
+
 **Syntax**
 ```
 example.org#%#//scriptlet('close-window'[, path])

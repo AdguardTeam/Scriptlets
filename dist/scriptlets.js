@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.18
+ * Version 1.6.20
  */
 
 (function () {
@@ -5648,6 +5648,9 @@
      * @description
      * Closes the browser tab immediately.
      *
+     * > `window.close()` usage is restricted in Chrome. In this case
+     * tab will only be closed if using AdGuard browser extension.
+     *
      * **Syntax**
      * ```
      * example.org#%#//scriptlet('close-window'[, path])
@@ -5691,14 +5694,36 @@
         }
       };
 
-      if (path === '') {
-        closeImmediately();
-      } else {
+      var closeByExtension = function closeByExtension() {
+        var extCall = function extCall() {
+          dispatchEvent(new Event('adguard:scriptlet-close-window'));
+        };
+
+        window.addEventListener('adguard:subscribed-to-close-window', extCall, {
+          once: true
+        });
+        setTimeout(function () {
+          window.removeEventListener('adguard:subscribed-to-close-window', extCall, {
+            once: true
+          });
+        }, 5000);
+      };
+
+      var shouldClose = function shouldClose() {
+        if (path === '') {
+          return true;
+        }
+
         var pathRegexp = toRegExp(path);
         var currentPath = "".concat(window.location.pathname).concat(window.location.search);
+        return pathRegexp.test(currentPath);
+      };
 
-        if (pathRegexp.test(currentPath)) {
-          closeImmediately();
+      if (shouldClose()) {
+        closeImmediately();
+
+        if (navigator.userAgent.indexOf('Chrome') > -1) {
+          closeByExtension();
         }
       }
     }
@@ -15184,14 +15209,36 @@
           }
         };
 
-        if (path === "") {
-          closeImmediately();
-        } else {
+        var closeByExtension = function closeByExtension() {
+          var extCall = function extCall() {
+            dispatchEvent(new Event("adguard:scriptlet-close-window"));
+          };
+
+          window.addEventListener("adguard:subscribed-to-close-window", extCall, {
+            once: true
+          });
+          setTimeout(function () {
+            window.removeEventListener("adguard:subscribed-to-close-window", extCall, {
+              once: true
+            });
+          }, 5e3);
+        };
+
+        var shouldClose = function shouldClose() {
+          if (path === "") {
+            return true;
+          }
+
           var pathRegexp = toRegExp(path);
           var currentPath = "".concat(window.location.pathname).concat(window.location.search);
+          return pathRegexp.test(currentPath);
+        };
 
-          if (pathRegexp.test(currentPath)) {
-            closeImmediately();
+        if (shouldClose()) {
+          closeImmediately();
+
+          if (navigator.userAgent.indexOf("Chrome") > -1) {
+            closeByExtension();
           }
         }
       }
