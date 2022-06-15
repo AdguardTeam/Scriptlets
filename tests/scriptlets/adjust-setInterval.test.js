@@ -267,3 +267,29 @@ test('no match -- invalid regexp pattern', (assert) => {
         done2();
     }, 150);
 });
+
+test('no match -- invalid callback - undefined', (assert) => {
+    const callback = undefined;
+
+    let loggedMessage;
+    // eslint-disable-next-line no-console
+    console.log = function log(input) {
+        if (input.indexOf('trace') > -1) {
+            return;
+        }
+        loggedMessage = input;
+    };
+
+    const scriptletArgs = ['.?'];
+    runScriptlet(name, scriptletArgs);
+
+    const testInterval = setInterval(callback, 100);
+
+    assert.strictEqual(window.hit, undefined, 'hit should not fire');
+    assert.strictEqual(
+        loggedMessage,
+        `Scriptlet adjust-setInterval can not be applied because of invalid callback: '${String(callback)}'.`, // eslint-disable-line max-len
+        'console.logged warning ok',
+    );
+    clearInterval(testInterval);
+});

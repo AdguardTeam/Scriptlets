@@ -1,7 +1,7 @@
 import {
     hit,
-    validateStrPattern,
-    validateMatchStr,
+    isValidStrPattern,
+    isValidMatchStr,
     toRegExp,
     nativeIsNaN,
     parseMatchArg,
@@ -90,7 +90,7 @@ export function preventWindowOpen(source, match = getWildcardSymbol(), delay, re
     const oldOpenWrapper = (str, ...args) => {
         match = Number(match) > 0;
         // 'delay' was 'search' prop for matching in old syntax
-        if (!validateStrPattern(delay)) {
+        if (!isValidStrPattern(delay)) {
             // eslint-disable-next-line no-console
             console.log(`Invalid parameter: ${delay}`);
             return nativeOpen.apply(window, [str, ...args]);
@@ -116,7 +116,7 @@ export function preventWindowOpen(source, match = getWildcardSymbol(), delay, re
         let shouldPrevent = false;
         if (match === getWildcardSymbol()) {
             shouldPrevent = true;
-        } else if (validateMatchStr(match)) {
+        } else if (isValidMatchStr(match)) {
             const { isInvertedMatch, matchRegexp } = parseMatchArg(match);
             shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
         } else {
@@ -176,8 +176,8 @@ preventWindowOpen.names = [
 
 preventWindowOpen.injections = [
     hit,
-    validateStrPattern,
-    validateMatchStr,
+    isValidStrPattern,
+    isValidMatchStr,
     toRegExp,
     nativeIsNaN,
     parseMatchArg,

@@ -4,7 +4,7 @@ import {
     getPropertyInChain,
     createOnErrorHandler,
     hit,
-    validateStrPattern,
+    isValidStrPattern,
     matchStackTrace,
     // following helpers are needed for helpers above
     toRegExp,
@@ -72,7 +72,7 @@ export function abortOnStackTrace(source, property, stack) {
         }
 
         let value = base[prop];
-        if (!validateStrPattern(stack)) {
+        if (!isValidStrPattern(stack)) {
             // eslint-disable-next-line no-console
             console.log(`Invalid parameter: ${stack}`);
             return;
@@ -116,7 +116,7 @@ abortOnStackTrace.injections = [
     getPropertyInChain,
     createOnErrorHandler,
     hit,
-    validateStrPattern,
+    isValidStrPattern,
     matchStackTrace,
     toRegExp,
 ];

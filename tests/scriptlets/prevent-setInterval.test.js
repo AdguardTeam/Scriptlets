@@ -43,30 +43,31 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('no args -- logging', (assert) => {
-    runScriptlet(name);
-
-    const done = assert.async();
-
     const agLogSetInterval = 'agLogSetInterval';
     function callback() {
         window[agLogSetInterval] = 'changed';
     }
     const timeout = 10;
 
-    const intervalId = setInterval(callback, timeout);
-    testIntervals.push(intervalId);
-
+    let loggedMessage;
     // eslint-disable-next-line no-console
     console.log = function log(input) {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(input, `setInterval("${callback.toString()}", ${timeout})`, 'console.hit input should be equal');
+        loggedMessage = input;
     };
+
+    const done = assert.async();
+    runScriptlet(name);
+
+    const intervalId = setInterval(callback, timeout);
+    testIntervals.push(intervalId);
 
     // We need to run our assertion after all timeouts
     setTimeout(() => {
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        assert.strictEqual(loggedMessage, `setInterval(${callback.toString()}, ${timeout})`, 'console.hit input ok');
         assert.strictEqual(window[agLogSetInterval], 'changed', 'property changed');
         clearGlobalProps(agLogSetInterval);
         done();
@@ -238,7 +239,7 @@ test('prevent-setInterval: does not work - invalid regexp pattern', (assert) => 
     // We need to run our assertion after all timeouts
     setTimeout(() => {
         assert.equal(window.one, 'changed', 'property should be changed');
-        assert.strictEqual(window.hit, undefined, 'hit fired');
+        assert.strictEqual(window.hit, undefined, 'hit should not fire');
         done();
     }, 100);
 
@@ -247,7 +248,45 @@ test('prevent-setInterval: does not work - invalid regexp pattern', (assert) => 
     runScriptlet(name, scriptletArgs);
 
     // check if scriptlet doesn't affect on others timeouts
-    const anotherTimeout = () => { window.one = 'changed'; };
-    const testInterval = setInterval(anotherTimeout);
+    const callback = () => { window.one = 'changed'; };
+    const testInterval = setInterval(callback, 50);
+    testIntervals.push(testInterval);
+});
+
+test('prevent-setInterval: no callback for setInterval considered as undefined', (assert) => {
+    const done = assert.async();
+    window.one = 1;
+    // We need to run our assertion after all timeouts
+    setTimeout(() => {
+        assert.equal(window.one, 1, 'property should not be changed');
+        assert.strictEqual(window.hit, undefined, 'hit should NOT fire as callback is invalid');
+        done();
+    }, 100);
+
+    // run scriptlet code — match any callback
+    const scriptletArgs = ['.?'];
+    runScriptlet(name, scriptletArgs);
+
+    // callback is undefined is such case, should not hit
+    const testInterval = setInterval(console.log('this is no callback'), 10); // eslint-disable-line no-console
+    testIntervals.push(testInterval);
+});
+
+test('prevent-setInterval: null as callback', (assert) => {
+    const done = assert.async();
+    window.one = 1;
+    // We need to run our assertion after all timeouts
+    setTimeout(() => {
+        assert.equal(window.one, 1, 'property should not be changed');
+        assert.strictEqual(window.hit, undefined, 'hit should NOT fire as callback is null');
+        done();
+    }, 100);
+
+    // run scriptlet code — match any callback
+    const scriptletArgs = ['.?'];
+    runScriptlet(name, scriptletArgs);
+
+    const callback = null;
+    const testInterval = setInterval(callback, 10);
     testIntervals.push(testInterval);
 });

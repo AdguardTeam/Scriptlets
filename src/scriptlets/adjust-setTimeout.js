@@ -1,5 +1,6 @@
 import {
     hit,
+    isValidCallback,
     toRegExp,
     getBoostMultiplier,
     isDelayMatched,
@@ -16,20 +17,20 @@ import {
  * @scriptlet adjust-setTimeout
  *
  * @description
- * Adjusts timeout for specified setTimeout() callbacks.
+ * Adjusts delay for specified setTimeout() callbacks.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-settimeout-boosterjs-
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('adjust-setTimeout'[, match [, timeout[, boost]]])
- * ```
+ * example.org#%#//scriptlet('adjust-setTimeout'[, matchCallback [, matchDelay[, boost]]])
+ * ```matchCallback, matchDelay
  *
- * - `match` - optional, string or regular expression for stringified callback matching;
+ * - `matchCallback` - optional, string or regular expression for stringified callback matching;
  * defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
- * - `timeout` - optional, defaults to 1000, matching setTimeout delay; decimal integer OR '*' for any delay
- * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), timeout multiplier
+ * - `matchDelay` - optional, defaults to 1000, matching setTimeout delay; decimal integer OR '*' for any delay
+ * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), setTimeout delay multiplier
  *
  * **Examples**
  * 1. Adjust all setTimeout() x20 times where timeout equal 1000ms:
@@ -61,18 +62,26 @@ import {
  *     ```
  */
 /* eslint-enable max-len */
-export function adjustSetTimeout(source, match, timeout, boost) {
+export function adjustSetTimeout(source, matchCallback, matchDelay, boost) {
     const nativeSetTimeout = window.setTimeout;
 
-    const matchRegexp = toRegExp(match);
+    const matchRegexp = toRegExp(matchCallback);
 
-    const timeoutWrapper = (cb, d, ...args) => {
-        if (matchRegexp.test(cb.toString()) && isDelayMatched(timeout, d)) {
-            d *= getBoostMultiplier(boost);
+    const timeoutWrapper = (callback, delay, ...args) => {
+        // https://github.com/AdguardTeam/Scriptlets/issues/221
+        if (!isValidCallback(callback)) {
+            if (source.verbose) {
+                // eslint-disable-next-line no-console, max-len
+                console.log(`Scriptlet adjust-setTimeout can not be applied because of invalid callback: '${String(callback)}'.`);
+            }
+        } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
+            delay *= getBoostMultiplier(boost);
             hit(source);
         }
-        return nativeSetTimeout.apply(window, [cb, d, ...args]);
+
+        return nativeSetTimeout.apply(window, [callback, delay, ...args]);
     };
+
     window.setTimeout = timeoutWrapper;
 }
 
@@ -89,9 +98,11 @@ adjustSetTimeout.names = [
 
 adjustSetTimeout.injections = [
     hit,
+    isValidCallback,
     toRegExp,
     getBoostMultiplier,
     isDelayMatched,
+    // following helpers should be injected as helpers above use them
     nativeIsNaN,
     nativeIsFinite,
     getMatchDelay,

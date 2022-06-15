@@ -40,28 +40,29 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('prevent-requestAnimationFrame: no args -- logging', (assert) => {
-    runScriptlet(name);
-
-    const done = assert.async();
-
     const logProperty = 'logRequestAnimationFrame';
-
     function testFunction() {
         window[logProperty] = 'changed';
     }
-    window.requestAnimationFrame(testFunction);
 
+    let loggedMessage;
     // eslint-disable-next-line no-console
     console.log = function log(input) {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(input, `requestAnimationFrame("${testFunction.toString()}")`, 'console.hit input');
+        loggedMessage = input;
     };
+
+    runScriptlet(name);
+    const done = assert.async();
+
+    requestAnimationFrame(testFunction);
 
     // do test checking after scriptlet's execution end
     setTimeout(() => {
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        assert.strictEqual(loggedMessage, `requestAnimationFrame(${testFunction.toString()})`, 'console.hit input');
         assert.strictEqual(window[logProperty], 'changed', 'property changed');
         clearGlobalProps(logProperty);
         done();

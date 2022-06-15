@@ -1,4 +1,4 @@
-import { toRegExp, validateStrPattern } from './string-utils';
+import { toRegExp, isValidStrPattern } from './string-utils';
 import { getObjectFromEntries } from './object-utils';
 
 /**
@@ -92,7 +92,7 @@ export const parseMatchProps = (propsToMatchStr) => {
  */
 export const validateParsedData = (data) => {
     return Object.values(data)
-        .every((value) => validateStrPattern(value));
+        .every((value) => isValidStrPattern(value));
 };
 
 /**

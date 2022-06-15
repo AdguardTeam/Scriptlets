@@ -8,7 +8,7 @@ import {
     // following helpers should be imported and injected
     // because they are used by helpers above
     toRegExp,
-    validateStrPattern,
+    isValidStrPattern,
     isEmptyObject,
     getObjectEntries,
 } from '../helpers/index';
@@ -179,7 +179,7 @@ preventXHR.injections = [
     validateParsedData,
     getMatchPropsData,
     toRegExp,
-    validateStrPattern,
+    isValidStrPattern,
     isEmptyObject,
     getObjectEntries,
 ];
