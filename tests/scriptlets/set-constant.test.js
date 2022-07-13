@@ -195,6 +195,30 @@ if (!isSupported) {
         clearGlobalProps('chained');
     });
 
+    test('sets values on the same chain (undefined) (with source.id)', (assert) => {
+        const runScriptletWithId = (id, ...args) => {
+            const params = {
+                id,
+                name,
+                args,
+                verbose: true,
+            };
+            const script = document.createElement('script');
+            script.textContent = window.scriptlets.invoke(params);
+            document.body.append(script);
+        };
+        const setConstantId = 1;
+
+        runScriptletWithId(setConstantId, 'chained.property.aaa', 'true');
+        runScriptletWithId(setConstantId, 'chained.property.bbb', 10);
+        window.chained = { property: {} };
+
+        assert.strictEqual(window.chained.property.aaa, true);
+        assert.strictEqual(window.chained.property.bbb, 10);
+
+        clearGlobalProps('chained');
+    });
+
     test('values with same types are not overwritten, values with different types are overwritten', (assert) => {
         const property = 'customProperty';
         const firstValue = 10;

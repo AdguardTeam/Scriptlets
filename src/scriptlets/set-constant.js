@@ -228,6 +228,7 @@ export function setConstant(source, property, value, stack) {
             },
         };
         const endPropHandler = {
+            handlerId: source.id,
             factValue: undefined,
             init(a) {
                 if (mustCancel(a)) {
@@ -236,10 +237,18 @@ export function setConstant(source, property, value, stack) {
                 this.factValue = a;
                 return true;
             },
-            get() {
-                // .currrentSript script check so we won't trap other scriptlets on the same chain
-                // eslint-disable-next-line compat/compat
-                return document.currentScript === ourScript ? this.factValue : constantValue;
+            get: () => {
+                // These checks are required so we won't trap other scriptlets on the same chain
+                if (this.handlerId) {
+                    // mv3 fallback, as .currentScript is always null
+                    // when injecting with .executeScript
+                    // https://github.com/AdguardTeam/Scriptlets/issues/227
+                    return source.id === this.handlerId ? this.factValue : constantValue;
+                }
+                if (ourScript) {
+                    return document.currentScript === ourScript ? this.factValue : constantValue;
+                }
+                return this.factValue;
             },
             set(a) {
                 if (!mustCancel(a)) {
