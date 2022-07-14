@@ -228,7 +228,7 @@ export function setConstant(source, property, value, stack) {
             },
         };
         const endPropHandler = {
-            handlerId: source.id,
+            sourceId: source.id,
             factValue: undefined,
             init(a) {
                 if (mustCancel(a)) {
@@ -238,17 +238,22 @@ export function setConstant(source, property, value, stack) {
                 return true;
             },
             get: () => {
-                // These checks are required so we won't trap other scriptlets on the same chain
-                if (this.handlerId) {
+                /**
+                 * These checks are required so we won't trap other scriptlets on the same chain
+                 * window.chained.property = { targetA, targetB }
+                 * With 'chained' undefined scriptlets would share property
+                 *
+                 * If source id is provided, use it to distinguish other set-constant scriptlets
+                 * use document.currentScript otherwise
+                 */
+                if (this.sourceId) {
                     // mv3 fallback, as .currentScript is always null
                     // when injecting with .executeScript
                     // https://github.com/AdguardTeam/Scriptlets/issues/227
-                    return source.id === this.handlerId ? this.factValue : constantValue;
+                    return source.id === this.sourceId ? this.factValue : constantValue;
                 }
-                if (ourScript) {
-                    return document.currentScript === ourScript ? this.factValue : constantValue;
-                }
-                return this.factValue;
+                // eslint-disable-next-line compat/compat
+                return document.currentScript === ourScript ? this.factValue : constantValue;
             },
             set(a) {
                 if (!mustCancel(a)) {
