@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.20
+ * Version 1.6.22
  */
 
 (function (factory) {
@@ -218,7 +218,7 @@
      * @returns {boolean}
      */
 
-    var validateStrPattern = function validateStrPattern(input) {
+    var isValidStrPattern = function isValidStrPattern(input) {
       var FORWARD_SLASH = '/';
       var str = input;
 
@@ -348,7 +348,7 @@
      * @returns {boolean}
      */
 
-    var validateMatchStr = function validateMatchStr(match) {
+    var isValidMatchStr = function isValidMatchStr(match) {
       var INVERT_MARKER = '!';
       var str = match;
 
@@ -356,7 +356,25 @@
         str = match.slice(1);
       }
 
-      return validateStrPattern(str);
+      return isValidStrPattern(str);
+    };
+    /**
+     * Validates the match input number,
+     * used for match inputs with possible negation
+     * @param {string} match string of match number
+     * @returns {boolean}
+     */
+
+    var isValidMatchNumber = function isValidMatchNumber(match) {
+      var INVERT_MARKER = '!';
+      var str = match;
+
+      if (startsWith(match, INVERT_MARKER)) {
+        str = match.slice(1);
+      }
+
+      var num = parseFloat(str);
+      return !nativeIsNaN(num) && nativeIsFinite(num);
     };
     /**
      * @typedef {Object} MatchData
@@ -369,7 +387,7 @@
      * Needed for prevent-setTimeout, prevent-setInterval,
      * prevent-requestAnimationFrame and prevent-window-open
      * @param {string} match
-     * @returns {MatchData|null} data obj or null for invalid regexp pattern
+     * @returns {MatchData}
      */
 
     var parseMatchArg = function parseMatchArg(match) {
@@ -449,22 +467,39 @@
       return output;
     };
 
-    function _defineProperty(obj, key, value) {
-      if (key in obj) {
-        Object.defineProperty(obj, key, {
-          value: value,
-          enumerable: true,
-          configurable: true,
-          writable: true
-        });
-      } else {
-        obj[key] = value;
-      }
-
-      return obj;
+    function getDefaultExportFromCjs (x) {
+    	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
     }
 
-    var defineProperty = _defineProperty;
+    function createCommonjsModule(fn) {
+      var module = { exports: {} };
+    	return fn(module, module.exports), module.exports;
+    }
+
+    function commonjsRequire (target) {
+    	throw new Error('Could not dynamically require "' + target + '". Please configure the dynamicRequireTargets option of @rollup/plugin-commonjs appropriately for this require call to behave properly.');
+    }
+
+    var defineProperty = createCommonjsModule(function (module) {
+      function _defineProperty(obj, key, value) {
+        if (key in obj) {
+          Object.defineProperty(obj, key, {
+            value: value,
+            enumerable: true,
+            configurable: true,
+            writable: true
+          });
+        } else {
+          obj[key] = value;
+        }
+
+        return obj;
+      }
+
+      module.exports = _defineProperty;
+      module.exports["default"] = module.exports, module.exports.__esModule = true;
+    });
+    var _defineProperty = /*@__PURE__*/getDefaultExportFromCjs(defineProperty);
 
     /**
      * Iterate over iterable argument and evaluate current state with transitions
@@ -627,7 +662,7 @@
         }
       };
 
-      var transitions = (_transitions = {}, defineProperty(_transitions, TRANSITION.OPENED, opened), defineProperty(_transitions, TRANSITION.PARAM, param), defineProperty(_transitions, TRANSITION.CLOSED, function () {}), _transitions);
+      var transitions = (_transitions = {}, _defineProperty(_transitions, TRANSITION.OPENED, opened), _defineProperty(_transitions, TRANSITION.PARAM, param), _defineProperty(_transitions, TRANSITION.CLOSED, function () {}), _transitions);
       var sep = {
         symb: null
       };
@@ -1380,7 +1415,7 @@
 
     var validateParsedData = function validateParsedData(data) {
       return Object.values(data).every(function (value) {
-        return validateStrPattern(value);
+        return isValidStrPattern(value);
       });
     };
     /**
@@ -1500,6 +1535,66 @@
 
     var listenerToString = function listenerToString(listener) {
       return typeof listener === 'function' ? listener.toString() : listener.handleEvent.toString();
+    };
+
+    /**
+     * Checks whether the passed arg is proper callback
+     * @param {*} callback
+     * @returns {boolean}
+     */
+
+    var isValidCallback = function isValidCallback(callback) {
+      return callback instanceof Function // passing string as 'code' arg is not recommended
+      // but it is possible and not restricted
+      // https://developer.mozilla.org/en-US/docs/Web/API/setTimeout#parameters
+      || typeof callback === 'string';
+    };
+    /**
+     * Checks whether 'callback' and 'delay' are matching
+     * by given parameters 'matchCallback' and 'matchDelay'.
+     * Used for prevent-setTimeout and prevent-setInterval.
+     * @param {Object} { callback, delay, matchCallback, matchDelay }
+     * @returns {boolean}
+     */
+
+    var isPreventionNeeded = function isPreventionNeeded(_ref) {
+      var callback = _ref.callback,
+          delay = _ref.delay,
+          matchCallback = _ref.matchCallback,
+          matchDelay = _ref.matchDelay;
+
+      // if callback is has not valid type
+      // scriptlet can not prevent it
+      // so no need for more checking and do not call hit() later
+      if (!isValidCallback(callback)) {
+        return false;
+      }
+
+      if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
+        return false;
+      }
+
+      var _parseMatchArg = parseMatchArg(matchCallback),
+          isInvertedMatch = _parseMatchArg.isInvertedMatch,
+          matchRegexp = _parseMatchArg.matchRegexp;
+
+      var _parseDelayArg = parseDelayArg(matchDelay),
+          isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
+          delayMatch = _parseDelayArg.delayMatch;
+
+      var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
+
+      var callbackStr = String(callback);
+
+      if (!delayMatch) {
+        shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
+      } else if (!matchCallback) {
+        shouldPrevent = delay === delayMatch !== isInvertedDelayMatch;
+      } else {
+        shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && delay === delayMatch !== isInvertedDelayMatch;
+      }
+
+      return shouldPrevent;
     };
 
     /* eslint-disable max-len */
@@ -1669,30 +1764,31 @@
      *
      * @description
      * Prevents a `setTimeout` call if:
-     * 1) the text of the callback is matching the specified search string/regexp which does not start with `!`;
+     * 1) the text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
      * otherwise mismatched calls should be defused;
-     * 2) the timeout is matching the specified delay; otherwise mismatched calls should be defused.
+     * 2) the delay is matching the specified `matchDelay`; otherwise mismatched calls should be defused.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-settimeout-ifjs-
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('prevent-setTimeout'[, search[, delay]])
+     * example.org#%#//scriptlet('prevent-setTimeout'[, matchCallback[, matchDelay]])
      * ```
      *
      * Call with no arguments will log calls to setTimeout while debugging (`log-setTimeout` superseding),
      * so production filter lists' rules definitely require at least one of the parameters:
-     * - `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
+     * - `matchCallback` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
      * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
      * If do not start with `!`, the stringified callback will be matched.
-     * If not set, prevents all `setTimeout` calls due to specified `delay`.
-     * - `delay` - optional, must be an integer.
+     * If not set, prevents all `setTimeout` calls due to specified `matchDelay`.
+     * - `matchDelay` - optional, must be an integer.
      * If starts with `!`, scriptlet will not match the delay but all other will be defused.
      * If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
      *
-     * > If `prevent-setTimeout` without parameters logs smth like `setTimeout(undefined, 1000)`,
+     * > If `prevent-setTimeout` log looks like `setTimeout(undefined, 1000)`,
      * it means that no callback was passed to setTimeout() and that's not scriptlet issue
+     * and obviously it can not be matched by `matchCallback`.
      *
      * **Examples**
      * 1. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.
@@ -1767,7 +1863,7 @@
 
     /* eslint-enable max-len */
 
-    function preventSetTimeout$1(source, match, delay) {
+    function preventSetTimeout$1(source, matchCallback, matchDelay) {
       // if browser does not support Proxy (e.g. Internet Explorer),
       // we use none-proxy "legacy" wrapper for preventing
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -1776,66 +1872,52 @@
       var log = console.log.bind(console); // eslint-disable-line no-console
       // logs setTimeouts to console if no arguments have been specified
 
-      var shouldLog = typeof match === 'undefined' && typeof delay === 'undefined';
+      var shouldLog = typeof matchCallback === 'undefined' && typeof matchDelay === 'undefined';
 
-      var _parseMatchArg = parseMatchArg(match),
-          isInvertedMatch = _parseMatchArg.isInvertedMatch,
-          matchRegexp = _parseMatchArg.matchRegexp;
-
-      var _parseDelayArg = parseDelayArg(delay),
-          isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
-          delayMatch = _parseDelayArg.delayMatch;
-
-      var getShouldPrevent = function getShouldPrevent(callbackStr, timeout) {
+      var legacyTimeoutWrapper = function legacyTimeoutWrapper(callback, delay) {
         var shouldPrevent = false;
 
-        if (!delayMatch) {
-          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
-        } else if (!match) {
-          shouldPrevent = timeout === delayMatch !== isInvertedDelayMatch;
-        } else {
-          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && timeout === delayMatch !== isInvertedDelayMatch;
-        }
-
-        return shouldPrevent;
-      };
-
-      var legacyTimeoutWrapper = function legacyTimeoutWrapper(callback, timeout) {
-        var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
-
-        var cbString = String(callback);
-
         if (shouldLog) {
-          hit(source);
-          log("setTimeout(".concat(cbString, ", ").concat(timeout, ")"));
+          hit(source); // https://github.com/AdguardTeam/Scriptlets/issues/105
+
+          log("setTimeout(".concat(String(callback), ", ").concat(delay, ")"));
         } else {
-          shouldPrevent = getShouldPrevent(cbString, timeout);
+          shouldPrevent = isPreventionNeeded({
+            callback: callback,
+            delay: delay,
+            matchCallback: matchCallback,
+            matchDelay: matchDelay
+          });
         }
 
         if (shouldPrevent) {
           hit(source);
-          return nativeTimeout(noopFunc, timeout);
+          return nativeTimeout(noopFunc, delay);
         }
 
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
 
-        return nativeTimeout.apply(window, [callback, timeout].concat(args));
+        return nativeTimeout.apply(window, [callback, delay].concat(args));
       };
 
       var handlerWrapper = function handlerWrapper(target, thisArg, args) {
         var callback = args[0];
-        var timeout = args[1];
-        var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
-
-        var cbString = String(callback);
+        var delay = args[1];
+        var shouldPrevent = false;
 
         if (shouldLog) {
-          hit(source);
-          log("setTimeout(".concat(cbString, ", ").concat(timeout, ")"));
+          hit(source); // https://github.com/AdguardTeam/Scriptlets/issues/105
+
+          log("setTimeout(".concat(String(callback), ", ").concat(delay, ")"));
         } else {
-          shouldPrevent = getShouldPrevent(cbString, timeout);
+          shouldPrevent = isPreventionNeeded({
+            callback: callback,
+            delay: delay,
+            matchCallback: matchCallback,
+            matchDelay: matchDelay
+          });
         }
 
         if (shouldPrevent) {
@@ -1858,7 +1940,8 @@
     // should be removed eventually.
     // do not remove until other filter lists maintainers use them
     'setTimeout-defuser.js', 'ubo-setTimeout-defuser.js', 'ubo-setTimeout-defuser', 'std.js', 'ubo-std.js', 'ubo-std'];
-    preventSetTimeout$1.injections = [hit, noopFunc, parseMatchArg, parseDelayArg, toRegExp, startsWith, nativeIsNaN];
+    preventSetTimeout$1.injections = [hit, noopFunc, isPreventionNeeded, // following helpers should be injected as helpers above use them
+    parseMatchArg, parseDelayArg, toRegExp, startsWith, nativeIsNaN, isValidCallback, isValidMatchStr, isValidStrPattern, nativeIsFinite, isValidMatchNumber];
 
     /* eslint-disable max-len */
 
@@ -1867,31 +1950,32 @@
      *
      * @description
      * Prevents a `setInterval` call if:
-     * 1) the text of the callback is matching the specified `search` string/regexp which does not start with `!`;
+     * 1) the text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
      * otherwise mismatched calls should be defused;
-     * 2) the interval is matching the specified `delay`; otherwise mismatched calls should be defused.
+     * 2) the delay is matching the specified `matchDelay`; otherwise mismatched calls should be defused.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-setinterval-ifjs-
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('prevent-setInterval'[, search[, delay]])
+     * example.org#%#//scriptlet('prevent-setInterval'[, matchCallback[, matchDelay]])
      * ```
      *
      * Call with no arguments will log calls to setInterval while debugging (`log-setInterval` superseding),
      * so production filter lists' rules definitely require at least one of the parameters:
-     * - `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
+     * - `matchCallback` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
      * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
      * If do not start with `!`, the stringified callback will be matched.
-     * If not set, prevents all `setInterval` calls due to specified `delay`.
-     * - `delay` - optional, must be an integer.
+     * If not set, prevents all `setInterval` calls due to specified `matchDelay`.
+     * - `matchDelay` - optional, must be an integer.
      * If starts with `!`, scriptlet will not match the delay but all other will be defused.
      * If do not start with `!`, the delay passed to the `setInterval` call will be matched.
      *
-     * > If `prevent-setInterval` without parameters logs smth like `setInterval(undefined, 1000)`,
+     * > If `prevent-setInterval` log looks like `setInterval(undefined, 1000)`,
      * it means that no callback was passed to setInterval() and that's not scriptlet issue
-
+     * and obviously it can not be matched by `matchCallback`.
+     *
      *  **Examples**
      * 1. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the delay.
      *     ```bash
@@ -1965,7 +2049,7 @@
 
     /* eslint-enable max-len */
 
-    function preventSetInterval$1(source, match, delay) {
+    function preventSetInterval$1(source, matchCallback, matchDelay) {
       // if browser does not support Proxy (e.g. Internet Explorer),
       // we use none-proxy "legacy" wrapper for preventing
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -1974,66 +2058,52 @@
       var log = console.log.bind(console); // eslint-disable-line no-console
       // logs setIntervals to console if no arguments have been specified
 
-      var shouldLog = typeof match === 'undefined' && typeof delay === 'undefined';
+      var shouldLog = typeof matchCallback === 'undefined' && typeof matchDelay === 'undefined';
 
-      var _parseMatchArg = parseMatchArg(match),
-          isInvertedMatch = _parseMatchArg.isInvertedMatch,
-          matchRegexp = _parseMatchArg.matchRegexp;
-
-      var _parseDelayArg = parseDelayArg(delay),
-          isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
-          delayMatch = _parseDelayArg.delayMatch;
-
-      var getShouldPrevent = function getShouldPrevent(callbackStr, interval) {
+      var legacyIntervalWrapper = function legacyIntervalWrapper(callback, delay) {
         var shouldPrevent = false;
 
-        if (!delayMatch) {
-          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
-        } else if (!match) {
-          shouldPrevent = interval === delayMatch !== isInvertedDelayMatch;
-        } else {
-          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && interval === delayMatch !== isInvertedDelayMatch;
-        }
-
-        return shouldPrevent;
-      };
-
-      var legacyIntervalWrapper = function legacyIntervalWrapper(callback, interval) {
-        var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
-
-        var cbString = String(callback);
-
         if (shouldLog) {
-          hit(source);
-          log("setInterval(".concat(cbString, ", ").concat(interval, ")"));
+          hit(source); // https://github.com/AdguardTeam/Scriptlets/issues/105
+
+          log("setInterval(".concat(String(callback), ", ").concat(delay, ")"));
         } else {
-          shouldPrevent = getShouldPrevent(cbString, interval);
+          shouldPrevent = isPreventionNeeded({
+            callback: callback,
+            delay: delay,
+            matchCallback: matchCallback,
+            matchDelay: matchDelay
+          });
         }
 
         if (shouldPrevent) {
           hit(source);
-          return nativeInterval(noopFunc, interval);
+          return nativeInterval(noopFunc, delay);
         }
 
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
 
-        return nativeInterval.apply(window, [callback, interval].concat(args));
+        return nativeInterval.apply(window, [callback, delay].concat(args));
       };
 
       var handlerWrapper = function handlerWrapper(target, thisArg, args) {
         var callback = args[0];
-        var interval = args[1];
-        var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
-
-        var cbString = String(callback);
+        var delay = args[1];
+        var shouldPrevent = false;
 
         if (shouldLog) {
-          hit(source);
-          log("setInterval(".concat(cbString, ", ").concat(interval, ")"));
+          hit(source); // https://github.com/AdguardTeam/Scriptlets/issues/105
+
+          log("setInterval(".concat(String(callback), ", ").concat(delay, ")"));
         } else {
-          shouldPrevent = getShouldPrevent(cbString, interval);
+          shouldPrevent = isPreventionNeeded({
+            callback: callback,
+            delay: delay,
+            matchCallback: matchCallback,
+            matchDelay: matchDelay
+          });
         }
 
         if (shouldPrevent) {
@@ -2055,7 +2125,8 @@
     'ubo-setInterval-defuser.js', 'nosiif.js', // new short name of no-setInterval-if
     'ubo-nosiif.js', 'sid.js', // old short scriptlet name
     'ubo-sid.js', 'ubo-no-setInterval-if', 'ubo-setInterval-defuser', 'ubo-nosiif', 'ubo-sid'];
-    preventSetInterval$1.injections = [hit, noopFunc, parseMatchArg, parseDelayArg, toRegExp, startsWith, nativeIsNaN];
+    preventSetInterval$1.injections = [hit, noopFunc, isPreventionNeeded, // following helpers should be injected as helpers above use them
+    toRegExp, startsWith, nativeIsNaN, parseMatchArg, parseDelayArg, isValidCallback, isValidMatchStr, isValidStrPattern, nativeIsFinite, isValidMatchNumber];
 
     /* eslint-disable max-len */
 
@@ -2138,7 +2209,7 @@
           args[_key - 1] = arguments[_key];
         }
 
-        if (!validateStrPattern(delay)) {
+        if (!isValidStrPattern(delay)) {
           // eslint-disable-next-line no-console
           console.log("Invalid parameter: ".concat(delay));
           return nativeOpen.apply(window, [str].concat(args));
@@ -2171,7 +2242,7 @@
 
         if (match === getWildcardSymbol()) {
           shouldPrevent = true;
-        } else if (validateMatchStr(match)) {
+        } else if (isValidMatchStr(match)) {
           var _parseMatchArg = parseMatchArg(match),
               isInvertedMatch = _parseMatchArg.isInvertedMatch,
               matchRegexp = _parseMatchArg.matchRegexp;
@@ -2232,7 +2303,7 @@
     }
     preventWindowOpen$1.names = ['prevent-window-open', // aliases are needed for matching the related scriptlet converted into our syntax
     'window.open-defuser.js', 'ubo-window.open-defuser.js', 'ubo-window.open-defuser', 'nowoif.js', 'ubo-nowoif.js', 'ubo-nowoif'];
-    preventWindowOpen$1.injections = [hit, validateStrPattern, validateMatchStr, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, getWildcardSymbol, noopFunc, trueFunc, startsWith, endsWith, substringBefore, substringAfter$1];
+    preventWindowOpen$1.injections = [hit, isValidStrPattern, isValidMatchStr, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, getWildcardSymbol, noopFunc, trueFunc, startsWith, endsWith, substringBefore, substringAfter$1];
 
     /* eslint-disable max-len */
 
@@ -2547,16 +2618,6 @@
         return;
       }
 
-      var getCurrentScript = function getCurrentScript() {
-        if ('currentScript' in document) {
-          return document.currentScript; // eslint-disable-line compat/compat
-        }
-
-        var scripts = document.getElementsByTagName('script');
-        return scripts[scripts.length - 1];
-      };
-
-      var ourScript = getCurrentScript();
       var canceled = false;
 
       var mustCancel = function mustCancel(value) {
@@ -2574,7 +2635,6 @@
         }
 
         var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
-        var prevGetter;
         var prevSetter; // This is required to prevent scriptlets overwrite each over
 
         if (origDescriptor instanceof Object) {
@@ -2589,10 +2649,6 @@
 
           base[prop] = constantValue;
 
-          if (origDescriptor.get instanceof Function) {
-            prevGetter = origDescriptor.get;
-          }
-
           if (origDescriptor.set instanceof Function) {
             prevSetter = origDescriptor.set;
           }
@@ -2601,10 +2657,6 @@
         Object.defineProperty(base, prop, {
           configurable: configurable,
           get: function get() {
-            if (prevGetter !== undefined) {
-              prevGetter();
-            }
-
             return handler.get();
           },
           set: function set(a) {
@@ -2648,19 +2700,15 @@
           }
         };
         var endPropHandler = {
-          factValue: undefined,
           init: function init(a) {
             if (mustCancel(a)) {
               return false;
             }
 
-            this.factValue = a;
             return true;
           },
           get: function get() {
-            // .currrentSript script check so we won't trap other scriptlets on the same chain
-            // eslint-disable-next-line compat/compat
-            return document.currentScript === ourScript ? this.factValue : constantValue;
+            return constantValue;
           },
           set: function set(a) {
             if (!mustCancel(a)) {
@@ -4161,46 +4209,46 @@
      * @scriptlet adjust-setInterval
      *
      * @description
-     * Adjusts interval for specified setInterval() callbacks.
+     * Adjusts delay for specified setInterval() callbacks.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-setinterval-boosterjs-
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('adjust-setInterval'[, match [, interval[, boost]]])
+     * example.org#%#//scriptlet('adjust-setInterval'[, matchCallback [, matchDelay[, boost]]])
      * ```
      *
-     * - `match` - optional, string or regular expression for stringified callback matching;
+     * - `matchCallback` - optional, string or regular expression for stringified callback matching;
      * defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
-     * - `interval` - optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
-     * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), interval multiplier
+     * - `matchDelay` - optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
+     * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), setInterval delay multiplier
      *
      * **Examples**
-     * 1. Adjust all setInterval() x20 times where interval equal 1000ms:
+     * 1. Adjust all setInterval() x20 times where delay equal 1000ms:
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval')
      *     ```
      *
-     * 2. Adjust all setInterval() x20 times where callback matched with `example` and interval equal 1000ms
+     * 2. Adjust all setInterval() x20 times where callback matched with `example` and delay equal 1000ms
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval', 'example')
      *     ```
      *
-     * 3. Adjust all setInterval() x20 times where callback matched with `example` and interval equal 400ms
+     * 3. Adjust all setInterval() x20 times where callback matched with `example` and delay equal 400ms
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval', 'example', '400')
      *     ```
      *
-     * 4. Slow down setInterval() x2 times where callback matched with `example` and interval equal 1000ms
+     * 4. Slow down setInterval() x2 times where callback matched with `example` and delay equal 1000ms
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval', 'example', '', '2')
      *     ```
-     * 5. Adjust all setInterval() x50 times where interval equal 2000ms
+     * 5. Adjust all setInterval() x50 times where delay equal 2000ms
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval', '', '2000', '0.02')
      *     ```
-     * 6. Adjust all setInterval() x50 times where interval is randomized
+     * 6. Adjust all setInterval() x50 times where delay is randomized
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval', '', '*', '0.02')
      *     ```
@@ -4208,13 +4256,19 @@
 
     /* eslint-enable max-len */
 
-    function adjustSetInterval$1(source, match, interval, boost) {
+    function adjustSetInterval$1(source, matchCallback, matchDelay, boost) {
       var nativeSetInterval = window.setInterval;
-      var matchRegexp = toRegExp(match);
+      var matchRegexp = toRegExp(matchCallback);
 
-      var intervalWrapper = function intervalWrapper(cb, d) {
-        if (matchRegexp.test(cb.toString()) && isDelayMatched(interval, d)) {
-          d *= getBoostMultiplier(boost);
+      var intervalWrapper = function intervalWrapper(callback, delay) {
+        // https://github.com/AdguardTeam/Scriptlets/issues/221
+        if (!isValidCallback(callback)) {
+          if (source.verbose) {
+            // eslint-disable-next-line no-console, max-len
+            console.log("Scriptlet adjust-setInterval can not be applied because of invalid callback: '".concat(String(callback), "'."));
+          }
+        } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
+          delay *= getBoostMultiplier(boost);
           hit(source);
         }
 
@@ -4222,14 +4276,15 @@
           args[_key - 2] = arguments[_key];
         }
 
-        return nativeSetInterval.apply(window, [cb, d].concat(args));
+        return nativeSetInterval.apply(window, [callback, delay].concat(args));
       };
 
       window.setInterval = intervalWrapper;
     }
     adjustSetInterval$1.names = ['adjust-setInterval', // aliases are needed for matching the related scriptlet converted into our syntax
     'nano-setInterval-booster.js', 'ubo-nano-setInterval-booster.js', 'nano-sib.js', 'ubo-nano-sib.js', 'ubo-nano-setInterval-booster', 'ubo-nano-sib'];
-    adjustSetInterval$1.injections = [hit, toRegExp, getBoostMultiplier, isDelayMatched, nativeIsNaN, nativeIsFinite, getMatchDelay, getWildcardSymbol, shouldMatchAnyDelay];
+    adjustSetInterval$1.injections = [hit, isValidCallback, toRegExp, getBoostMultiplier, isDelayMatched, // following helpers should be injected as helpers above use them
+    nativeIsNaN, nativeIsFinite, getMatchDelay, getWildcardSymbol, shouldMatchAnyDelay];
 
     /* eslint-disable max-len */
 
@@ -4237,20 +4292,20 @@
      * @scriptlet adjust-setTimeout
      *
      * @description
-     * Adjusts timeout for specified setTimeout() callbacks.
+     * Adjusts delay for specified setTimeout() callbacks.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-settimeout-boosterjs-
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('adjust-setTimeout'[, match [, timeout[, boost]]])
-     * ```
+     * example.org#%#//scriptlet('adjust-setTimeout'[, matchCallback [, matchDelay[, boost]]])
+     * ```matchCallback, matchDelay
      *
-     * - `match` - optional, string or regular expression for stringified callback matching;
+     * - `matchCallback` - optional, string or regular expression for stringified callback matching;
      * defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
-     * - `timeout` - optional, defaults to 1000, matching setTimeout delay; decimal integer OR '*' for any delay
-     * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), timeout multiplier
+     * - `matchDelay` - optional, defaults to 1000, matching setTimeout delay; decimal integer OR '*' for any delay
+     * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), setTimeout delay multiplier
      *
      * **Examples**
      * 1. Adjust all setTimeout() x20 times where timeout equal 1000ms:
@@ -4284,13 +4339,19 @@
 
     /* eslint-enable max-len */
 
-    function adjustSetTimeout$1(source, match, timeout, boost) {
+    function adjustSetTimeout$1(source, matchCallback, matchDelay, boost) {
       var nativeSetTimeout = window.setTimeout;
-      var matchRegexp = toRegExp(match);
+      var matchRegexp = toRegExp(matchCallback);
 
-      var timeoutWrapper = function timeoutWrapper(cb, d) {
-        if (matchRegexp.test(cb.toString()) && isDelayMatched(timeout, d)) {
-          d *= getBoostMultiplier(boost);
+      var timeoutWrapper = function timeoutWrapper(callback, delay) {
+        // https://github.com/AdguardTeam/Scriptlets/issues/221
+        if (!isValidCallback(callback)) {
+          if (source.verbose) {
+            // eslint-disable-next-line no-console, max-len
+            console.log("Scriptlet adjust-setTimeout can not be applied because of invalid callback: '".concat(String(callback), "'."));
+          }
+        } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
+          delay *= getBoostMultiplier(boost);
           hit(source);
         }
 
@@ -4298,14 +4359,15 @@
           args[_key - 2] = arguments[_key];
         }
 
-        return nativeSetTimeout.apply(window, [cb, d].concat(args));
+        return nativeSetTimeout.apply(window, [callback, delay].concat(args));
       };
 
       window.setTimeout = timeoutWrapper;
     }
     adjustSetTimeout$1.names = ['adjust-setTimeout', // aliases are needed for matching the related scriptlet converted into our syntax
     'nano-setTimeout-booster.js', 'ubo-nano-setTimeout-booster.js', 'nano-stb.js', 'ubo-nano-stb.js', 'ubo-nano-setTimeout-booster', 'ubo-nano-stb'];
-    adjustSetTimeout$1.injections = [hit, toRegExp, getBoostMultiplier, isDelayMatched, nativeIsNaN, nativeIsFinite, getMatchDelay, getWildcardSymbol, shouldMatchAnyDelay];
+    adjustSetTimeout$1.injections = [hit, isValidCallback, toRegExp, getBoostMultiplier, isDelayMatched, // following helpers should be injected as helpers above use them
+    nativeIsNaN, nativeIsFinite, getMatchDelay, getWildcardSymbol, shouldMatchAnyDelay];
 
     /* eslint-disable max-len */
 
@@ -4643,7 +4705,9 @@
     /* eslint-enable max-len */
 
     function preventRequestAnimationFrame$1(source, match) {
-      var nativeRequestAnimationFrame = window.requestAnimationFrame; // logs requestAnimationFrame to console if no arguments have been specified
+      var nativeRequestAnimationFrame = window.requestAnimationFrame;
+      var log = console.log.bind(console); // eslint-disable-line no-console
+      // logs requestAnimationFrame to console if no arguments have been specified
 
       var shouldLog = typeof match === 'undefined';
 
@@ -4655,9 +4719,9 @@
         var shouldPrevent = false;
 
         if (shouldLog) {
-          var logMessage = "log: requestAnimationFrame(\"".concat(callback.toString(), "\")");
-          hit(source, logMessage);
-        } else if (validateStrPattern(match)) {
+          hit(source);
+          log("requestAnimationFrame(".concat(String(callback), ")"));
+        } else if (isValidCallback(callback) && isValidStrPattern(match)) {
           shouldPrevent = matchRegexp.test(callback.toString()) !== isInvertedMatch;
         }
 
@@ -4677,7 +4741,8 @@
     }
     preventRequestAnimationFrame$1.names = ['prevent-requestAnimationFrame', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-requestAnimationFrame-if.js', 'ubo-no-requestAnimationFrame-if.js', 'norafif.js', 'ubo-norafif.js', 'ubo-no-requestAnimationFrame-if', 'ubo-norafif'];
-    preventRequestAnimationFrame$1.injections = [hit, noopFunc, parseMatchArg, validateStrPattern, toRegExp, startsWith];
+    preventRequestAnimationFrame$1.injections = [hit, noopFunc, parseMatchArg, isValidStrPattern, isValidCallback, // following helpers should be injected as helpers above use them
+    toRegExp, startsWith];
 
     /* eslint-disable max-len */
 
@@ -5061,7 +5126,7 @@
     }
     preventFetch$1.names = ['prevent-fetch', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-fetch-if.js', 'ubo-no-fetch-if.js', 'ubo-no-fetch-if'];
-    preventFetch$1.injections = [hit, getFetchData, objectToString, parseMatchProps, validateParsedData, getMatchPropsData, noopPromiseResolve, getWildcardSymbol, toRegExp, validateStrPattern, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries];
+    preventFetch$1.injections = [hit, getFetchData, objectToString, parseMatchProps, validateParsedData, getMatchPropsData, noopPromiseResolve, getWildcardSymbol, toRegExp, isValidStrPattern, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries];
 
     /* eslint-disable max-len */
 
@@ -5328,7 +5393,7 @@
 
         var value = base[prop];
 
-        if (!validateStrPattern(stack)) {
+        if (!isValidStrPattern(stack)) {
           // eslint-disable-next-line no-console
           console.log("Invalid parameter: ".concat(stack));
           return;
@@ -5357,7 +5422,7 @@
     }
     abortOnStackTrace$1.names = ['abort-on-stack-trace', // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-stack-trace.js', 'ubo-abort-on-stack-trace.js', 'aost.js', 'ubo-aost.js', 'ubo-abort-on-stack-trace', 'ubo-aost', 'abp-abort-on-stack-trace'];
-    abortOnStackTrace$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, validateStrPattern, matchStackTrace, toRegExp];
+    abortOnStackTrace$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isValidStrPattern, matchStackTrace, toRegExp];
 
     /* eslint-disable max-len */
 
@@ -5642,7 +5707,7 @@
     }
     preventXHR$1.names = ['prevent-xhr', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-xhr-if.js', 'ubo-no-xhr-if.js', 'ubo-no-xhr-if'];
-    preventXHR$1.injections = [hit, objectToString, getWildcardSymbol, parseMatchProps, validateParsedData, getMatchPropsData, toRegExp, validateStrPattern, isEmptyObject, getObjectEntries];
+    preventXHR$1.injections = [hit, objectToString, getWildcardSymbol, parseMatchProps, validateParsedData, getMatchPropsData, toRegExp, isValidStrPattern, isEmptyObject, getObjectEntries];
 
     /**
      * @scriptlet close-window
@@ -6603,70 +6668,99 @@
       hasValidContentType: hasValidContentType
     };
 
-    function _arrayLikeToArray(arr, len) {
-      if (len == null || len > arr.length) len = arr.length;
+    var arrayLikeToArray = createCommonjsModule(function (module) {
+      function _arrayLikeToArray(arr, len) {
+        if (len == null || len > arr.length) len = arr.length;
 
-      for (var i = 0, arr2 = new Array(len); i < len; i++) {
-        arr2[i] = arr[i];
+        for (var i = 0, arr2 = new Array(len); i < len; i++) {
+          arr2[i] = arr[i];
+        }
+
+        return arr2;
       }
 
-      return arr2;
-    }
+      module.exports = _arrayLikeToArray;
+      module.exports["default"] = module.exports, module.exports.__esModule = true;
+    });
 
-    var arrayLikeToArray = _arrayLikeToArray;
+    var arrayWithoutHoles = createCommonjsModule(function (module) {
+      function _arrayWithoutHoles(arr) {
+        if (Array.isArray(arr)) return arrayLikeToArray(arr);
+      }
 
-    function _arrayWithoutHoles(arr) {
-      if (Array.isArray(arr)) return arrayLikeToArray(arr);
-    }
+      module.exports = _arrayWithoutHoles;
+      module.exports["default"] = module.exports, module.exports.__esModule = true;
+    });
 
-    var arrayWithoutHoles = _arrayWithoutHoles;
+    var iterableToArray = createCommonjsModule(function (module) {
+      function _iterableToArray(iter) {
+        if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
+      }
 
-    function _iterableToArray(iter) {
-      if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
-    }
+      module.exports = _iterableToArray;
+      module.exports["default"] = module.exports, module.exports.__esModule = true;
+    });
 
-    var iterableToArray = _iterableToArray;
+    var unsupportedIterableToArray = createCommonjsModule(function (module) {
+      function _unsupportedIterableToArray(o, minLen) {
+        if (!o) return;
+        if (typeof o === "string") return arrayLikeToArray(o, minLen);
+        var n = Object.prototype.toString.call(o).slice(8, -1);
+        if (n === "Object" && o.constructor) n = o.constructor.name;
+        if (n === "Map" || n === "Set") return Array.from(o);
+        if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
+      }
 
-    function _unsupportedIterableToArray(o, minLen) {
-      if (!o) return;
-      if (typeof o === "string") return arrayLikeToArray(o, minLen);
-      var n = Object.prototype.toString.call(o).slice(8, -1);
-      if (n === "Object" && o.constructor) n = o.constructor.name;
-      if (n === "Map" || n === "Set") return Array.from(o);
-      if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
-    }
+      module.exports = _unsupportedIterableToArray;
+      module.exports["default"] = module.exports, module.exports.__esModule = true;
+    });
 
-    var unsupportedIterableToArray = _unsupportedIterableToArray;
+    var nonIterableSpread = createCommonjsModule(function (module) {
+      function _nonIterableSpread() {
+        throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+      }
 
-    function _nonIterableSpread() {
-      throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-    }
+      module.exports = _nonIterableSpread;
+      module.exports["default"] = module.exports, module.exports.__esModule = true;
+    });
 
-    var nonIterableSpread = _nonIterableSpread;
+    var toConsumableArray = createCommonjsModule(function (module) {
+      function _toConsumableArray(arr) {
+        return arrayWithoutHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableSpread();
+      }
 
-    function _toConsumableArray(arr) {
-      return arrayWithoutHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableSpread();
-    }
+      module.exports = _toConsumableArray;
+      module.exports["default"] = module.exports, module.exports.__esModule = true;
+    });
+    var _toConsumableArray = /*@__PURE__*/getDefaultExportFromCjs(toConsumableArray);
 
-    var toConsumableArray = _toConsumableArray;
+    var arrayWithHoles = createCommonjsModule(function (module) {
+      function _arrayWithHoles(arr) {
+        if (Array.isArray(arr)) return arr;
+      }
 
-    function _arrayWithHoles(arr) {
-      if (Array.isArray(arr)) return arr;
-    }
+      module.exports = _arrayWithHoles;
+      module.exports["default"] = module.exports, module.exports.__esModule = true;
+    });
 
-    var arrayWithHoles = _arrayWithHoles;
+    var nonIterableRest = createCommonjsModule(function (module) {
+      function _nonIterableRest() {
+        throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+      }
 
-    function _nonIterableRest() {
-      throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-    }
+      module.exports = _nonIterableRest;
+      module.exports["default"] = module.exports, module.exports.__esModule = true;
+    });
 
-    var nonIterableRest = _nonIterableRest;
+    var toArray$1 = createCommonjsModule(function (module) {
+      function _toArray(arr) {
+        return arrayWithHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableRest();
+      }
 
-    function _toArray(arr) {
-      return arrayWithHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableRest();
-    }
-
-    var toArray$1 = _toArray;
+      module.exports = _toArray;
+      module.exports["default"] = module.exports, module.exports.__esModule = true;
+    });
+    var _toArray = /*@__PURE__*/getDefaultExportFromCjs(toArray$1);
 
     /**
      * AdGuard scriptlet rule
@@ -6762,7 +6856,7 @@
       // https://github.com/AdguardTeam/Scriptlets/issues/133
       var lastArg = parsedArgs.pop();
 
-      var _parsedArgs = toArray$1(parsedArgs),
+      var _parsedArgs = _toArray(parsedArgs),
           name = _parsedArgs[0],
           value = _parsedArgs[1],
           restArgs = _parsedArgs.slice(2);
@@ -6916,7 +7010,7 @@
         var adgScriptletObject = Object.keys(scriptletList).map(function (el) {
           return scriptletList[el];
         }).map(function (s) {
-          var _s$names = toArray$1(s.names),
+          var _s$names = _toArray(s.names),
               name = _s$names[0],
               aliases = _s$names.slice(1);
 
@@ -7115,7 +7209,7 @@
         }
 
         var additionModifiers = sourceTypesData.TYPES;
-        adgModifiers.push.apply(adgModifiers, toConsumableArray(additionModifiers));
+        adgModifiers.push.apply(adgModifiers, _toConsumableArray(additionModifiers));
       }
 
       var uboModifiers = adgModifiers.map(function (el, index) {
@@ -9161,31 +9255,39 @@
         NaverWcslog: NaverWcslog
     });
 
-    function _classCallCheck(instance, Constructor) {
-      if (!(instance instanceof Constructor)) {
-        throw new TypeError("Cannot call a class as a function");
+    var classCallCheck = createCommonjsModule(function (module) {
+      function _classCallCheck(instance, Constructor) {
+        if (!(instance instanceof Constructor)) {
+          throw new TypeError("Cannot call a class as a function");
+        }
       }
-    }
 
-    var classCallCheck = _classCallCheck;
+      module.exports = _classCallCheck;
+      module.exports["default"] = module.exports, module.exports.__esModule = true;
+    });
+    var _classCallCheck = /*@__PURE__*/getDefaultExportFromCjs(classCallCheck);
 
-    function _defineProperties(target, props) {
-      for (var i = 0; i < props.length; i++) {
-        var descriptor = props[i];
-        descriptor.enumerable = descriptor.enumerable || false;
-        descriptor.configurable = true;
-        if ("value" in descriptor) descriptor.writable = true;
-        Object.defineProperty(target, descriptor.key, descriptor);
+    var createClass = createCommonjsModule(function (module) {
+      function _defineProperties(target, props) {
+        for (var i = 0; i < props.length; i++) {
+          var descriptor = props[i];
+          descriptor.enumerable = descriptor.enumerable || false;
+          descriptor.configurable = true;
+          if ("value" in descriptor) descriptor.writable = true;
+          Object.defineProperty(target, descriptor.key, descriptor);
+        }
       }
-    }
 
-    function _createClass(Constructor, protoProps, staticProps) {
-      if (protoProps) _defineProperties(Constructor.prototype, protoProps);
-      if (staticProps) _defineProperties(Constructor, staticProps);
-      return Constructor;
-    }
+      function _createClass(Constructor, protoProps, staticProps) {
+        if (protoProps) _defineProperties(Constructor.prototype, protoProps);
+        if (staticProps) _defineProperties(Constructor, staticProps);
+        return Constructor;
+      }
 
-    var createClass = _createClass;
+      module.exports = _createClass;
+      module.exports["default"] = module.exports, module.exports.__esModule = true;
+    });
+    var _createClass = /*@__PURE__*/getDefaultExportFromCjs(createClass);
 
     function isNothing(subject) {
       return typeof subject === 'undefined' || subject === null;
@@ -10002,10 +10104,6 @@
       kind: 'scalar',
       resolve: resolveYamlMerge
     });
-
-    function commonjsRequire (target) {
-    	throw new Error('Could not dynamically require "' + target + '". Please configure the dynamicRequireTargets option of @rollup/plugin-commonjs appropriately for this require call to behave properly.');
-    }
 
     /*eslint-disable no-bitwise*/
 
@@ -13067,7 +13165,7 @@
 
     function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-    function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+    function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
     /**
      * Redirect - object used to redirect some requests
      * e.g.
@@ -13094,12 +13192,12 @@
        * in the values
        */
       function Redirects(rawYaml) {
-        classCallCheck(this, Redirects);
+        _classCallCheck(this, Redirects);
 
         try {
           var arrOfRedirects = jsYaml.safeLoad(rawYaml);
           this.redirects = arrOfRedirects.reduce(function (acc, redirect) {
-            return _objectSpread(_objectSpread({}, acc), {}, defineProperty({}, redirect.title, redirect));
+            return _objectSpread(_objectSpread({}, acc), {}, _defineProperty({}, redirect.title, redirect));
           }, {});
         } catch (e) {
           // eslint-disable-next-line no-console
@@ -13114,7 +13212,7 @@
        */
 
 
-      createClass(Redirects, [{
+      _createClass(Redirects, [{
         key: "getRedirect",
         value: function getRedirect(title) {
           var _this = this;
@@ -13957,7 +14055,7 @@
 
           var value = base[prop];
 
-          if (!validateStrPattern(stack)) {
+          if (!isValidStrPattern(stack)) {
             console.log("Invalid parameter: ".concat(stack));
             return;
           }
@@ -14104,7 +14202,7 @@
         }
       }
 
-      function validateStrPattern(input) {
+      function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = input;
 
@@ -14163,13 +14261,17 @@
     }
 
     function adjustSetInterval(source, args) {
-      function adjustSetInterval(source, match, interval, boost) {
+      function adjustSetInterval(source, matchCallback, matchDelay, boost) {
         var nativeSetInterval = window.setInterval;
-        var matchRegexp = toRegExp(match);
+        var matchRegexp = toRegExp(matchCallback);
 
-        var intervalWrapper = function intervalWrapper(cb, d) {
-          if (matchRegexp.test(cb.toString()) && isDelayMatched(interval, d)) {
-            d *= getBoostMultiplier(boost);
+        var intervalWrapper = function intervalWrapper(callback, delay) {
+          if (!isValidCallback(callback)) {
+            if (source.verbose) {
+              console.log("Scriptlet adjust-setInterval can not be applied because of invalid callback: '".concat(String(callback), "'."));
+            }
+          } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
+            delay *= getBoostMultiplier(boost);
             hit(source);
           }
 
@@ -14177,7 +14279,7 @@
             args[_key - 2] = arguments[_key];
           }
 
-          return nativeSetInterval.apply(window, [cb, d].concat(args));
+          return nativeSetInterval.apply(window, [callback, delay].concat(args));
         };
 
         window.setInterval = intervalWrapper;
@@ -14230,6 +14332,10 @@
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
+      }
+
+      function isValidCallback(callback) {
+        return callback instanceof Function || typeof callback === "string";
       }
 
       function toRegExp() {
@@ -14306,13 +14412,17 @@
     }
 
     function adjustSetTimeout(source, args) {
-      function adjustSetTimeout(source, match, timeout, boost) {
+      function adjustSetTimeout(source, matchCallback, matchDelay, boost) {
         var nativeSetTimeout = window.setTimeout;
-        var matchRegexp = toRegExp(match);
+        var matchRegexp = toRegExp(matchCallback);
 
-        var timeoutWrapper = function timeoutWrapper(cb, d) {
-          if (matchRegexp.test(cb.toString()) && isDelayMatched(timeout, d)) {
-            d *= getBoostMultiplier(boost);
+        var timeoutWrapper = function timeoutWrapper(callback, delay) {
+          if (!isValidCallback(callback)) {
+            if (source.verbose) {
+              console.log("Scriptlet adjust-setTimeout can not be applied because of invalid callback: '".concat(String(callback), "'."));
+            }
+          } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
+            delay *= getBoostMultiplier(boost);
             hit(source);
           }
 
@@ -14320,7 +14430,7 @@
             args[_key - 2] = arguments[_key];
           }
 
-          return nativeSetTimeout.apply(window, [cb, d].concat(args));
+          return nativeSetTimeout.apply(window, [callback, delay].concat(args));
         };
 
         window.setTimeout = timeoutWrapper;
@@ -14373,6 +14483,10 @@
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
+      }
+
+      function isValidCallback(callback) {
+        return callback instanceof Function || typeof callback === "string";
       }
 
       function toRegExp() {
@@ -17444,7 +17558,7 @@
 
       function validateParsedData(data) {
         return Object.values(data).every(function (value) {
-          return validateStrPattern(value);
+          return isValidStrPattern(value);
         });
       }
 
@@ -17491,7 +17605,7 @@
         return new RegExp(escaped);
       }
 
-      function validateStrPattern(input) {
+      function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = input;
 
@@ -17808,6 +17922,7 @@
     function preventRequestAnimationFrame(source, args) {
       function preventRequestAnimationFrame(source, match) {
         var nativeRequestAnimationFrame = window.requestAnimationFrame;
+        var log = console.log.bind(console);
         var shouldLog = typeof match === "undefined";
 
         var _parseMatchArg = parseMatchArg(match),
@@ -17818,9 +17933,9 @@
           var shouldPrevent = false;
 
           if (shouldLog) {
-            var logMessage = 'log: requestAnimationFrame("'.concat(callback.toString(), '")');
-            hit(source, logMessage);
-          } else if (validateStrPattern(match)) {
+            hit(source);
+            log("requestAnimationFrame(".concat(String(callback), ")"));
+          } else if (isValidCallback(callback) && isValidStrPattern(match)) {
             shouldPrevent = matchRegexp.test(callback.toString()) !== isInvertedMatch;
           }
 
@@ -17901,7 +18016,7 @@
         };
       }
 
-      function validateStrPattern(input) {
+      function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = input;
 
@@ -17919,6 +18034,10 @@
         }
 
         return isValid;
+      }
+
+      function isValidCallback(callback) {
+        return callback instanceof Function || typeof callback === "string";
       }
 
       function toRegExp() {
@@ -17952,68 +18071,54 @@
     }
 
     function preventSetInterval(source, args) {
-      function preventSetInterval(source, match, delay) {
+      function preventSetInterval(source, matchCallback, matchDelay) {
         var isProxySupported = typeof Proxy !== "undefined";
         var nativeInterval = window.setInterval;
         var log = console.log.bind(console);
-        var shouldLog = typeof match === "undefined" && typeof delay === "undefined";
+        var shouldLog = typeof matchCallback === "undefined" && typeof matchDelay === "undefined";
 
-        var _parseMatchArg = parseMatchArg(match),
-            isInvertedMatch = _parseMatchArg.isInvertedMatch,
-            matchRegexp = _parseMatchArg.matchRegexp;
-
-        var _parseDelayArg = parseDelayArg(delay),
-            isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
-            delayMatch = _parseDelayArg.delayMatch;
-
-        var getShouldPrevent = function getShouldPrevent(callbackStr, interval) {
+        var legacyIntervalWrapper = function legacyIntervalWrapper(callback, delay) {
           var shouldPrevent = false;
-
-          if (!delayMatch) {
-            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
-          } else if (!match) {
-            shouldPrevent = interval === delayMatch !== isInvertedDelayMatch;
-          } else {
-            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && interval === delayMatch !== isInvertedDelayMatch;
-          }
-
-          return shouldPrevent;
-        };
-
-        var legacyIntervalWrapper = function legacyIntervalWrapper(callback, interval) {
-          var shouldPrevent = false;
-          var cbString = String(callback);
 
           if (shouldLog) {
             hit(source);
-            log("setInterval(".concat(cbString, ", ").concat(interval, ")"));
+            log("setInterval(".concat(String(callback), ", ").concat(delay, ")"));
           } else {
-            shouldPrevent = getShouldPrevent(cbString, interval);
+            shouldPrevent = isPreventionNeeded({
+              callback: callback,
+              delay: delay,
+              matchCallback: matchCallback,
+              matchDelay: matchDelay
+            });
           }
 
           if (shouldPrevent) {
             hit(source);
-            return nativeInterval(noopFunc, interval);
+            return nativeInterval(noopFunc, delay);
           }
 
           for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
             args[_key - 2] = arguments[_key];
           }
 
-          return nativeInterval.apply(window, [callback, interval].concat(args));
+          return nativeInterval.apply(window, [callback, delay].concat(args));
         };
 
         var handlerWrapper = function handlerWrapper(target, thisArg, args) {
           var callback = args[0];
-          var interval = args[1];
+          var delay = args[1];
           var shouldPrevent = false;
-          var cbString = String(callback);
 
           if (shouldLog) {
             hit(source);
-            log("setInterval(".concat(cbString, ", ").concat(interval, ")"));
+            log("setInterval(".concat(String(callback), ", ").concat(delay, ")"));
           } else {
-            shouldPrevent = getShouldPrevent(cbString, interval);
+            shouldPrevent = isPreventionNeeded({
+              callback: callback,
+              delay: delay,
+              matchCallback: matchCallback,
+              matchDelay: matchDelay
+            });
           }
 
           if (shouldPrevent) {
@@ -18081,27 +18186,40 @@
 
       function noopFunc() {}
 
-      function parseMatchArg(match) {
-        var INVERT_MARKER = "!";
-        var isInvertedMatch = startsWith(match, INVERT_MARKER);
-        var matchValue = isInvertedMatch ? match.slice(1) : match;
-        var matchRegexp = toRegExp(matchValue);
-        return {
-          isInvertedMatch: isInvertedMatch,
-          matchRegexp: matchRegexp
-        };
-      }
+      function isPreventionNeeded(_ref) {
+        var callback = _ref.callback,
+            delay = _ref.delay,
+            matchCallback = _ref.matchCallback,
+            matchDelay = _ref.matchDelay;
 
-      function parseDelayArg(delay) {
-        var INVERT_MARKER = "!";
-        var isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
-        var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
-        delayValue = parseInt(delayValue, 10);
-        var delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
-        return {
-          isInvertedDelayMatch: isInvertedDelayMatch,
-          delayMatch: delayMatch
-        };
+        if (!isValidCallback(callback)) {
+          return false;
+        }
+
+        if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
+          return false;
+        }
+
+        var _parseMatchArg = parseMatchArg(matchCallback),
+            isInvertedMatch = _parseMatchArg.isInvertedMatch,
+            matchRegexp = _parseMatchArg.matchRegexp;
+
+        var _parseDelayArg = parseDelayArg(matchDelay),
+            isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
+            delayMatch = _parseDelayArg.delayMatch;
+
+        var shouldPrevent = false;
+        var callbackStr = String(callback);
+
+        if (!delayMatch) {
+          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
+        } else if (!matchCallback) {
+          shouldPrevent = delay === delayMatch !== isInvertedDelayMatch;
+        } else {
+          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && delay === delayMatch !== isInvertedDelayMatch;
+        }
+
+        return shouldPrevent;
       }
 
       function toRegExp() {
@@ -18130,6 +18248,81 @@
         return native(num);
       }
 
+      function parseMatchArg(match) {
+        var INVERT_MARKER = "!";
+        var isInvertedMatch = startsWith(match, INVERT_MARKER);
+        var matchValue = isInvertedMatch ? match.slice(1) : match;
+        var matchRegexp = toRegExp(matchValue);
+        return {
+          isInvertedMatch: isInvertedMatch,
+          matchRegexp: matchRegexp
+        };
+      }
+
+      function parseDelayArg(delay) {
+        var INVERT_MARKER = "!";
+        var isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
+        var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
+        delayValue = parseInt(delayValue, 10);
+        var delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
+        return {
+          isInvertedDelayMatch: isInvertedDelayMatch,
+          delayMatch: delayMatch
+        };
+      }
+
+      function isValidCallback(callback) {
+        return callback instanceof Function || typeof callback === "string";
+      }
+
+      function isValidMatchStr(match) {
+        var INVERT_MARKER = "!";
+        var str = match;
+
+        if (startsWith(match, INVERT_MARKER)) {
+          str = match.slice(1);
+        }
+
+        return isValidStrPattern(str);
+      }
+
+      function isValidStrPattern(input) {
+        var FORWARD_SLASH = "/";
+        var str = input;
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          str = input.slice(1, -1);
+        }
+
+        var isValid;
+
+        try {
+          isValid = new RegExp(str);
+          isValid = true;
+        } catch (e) {
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+      function nativeIsFinite(num) {
+        var native = Number.isFinite || window.isFinite;
+        return native(num);
+      }
+
+      function isValidMatchNumber(match) {
+        var INVERT_MARKER = "!";
+        var str = match;
+
+        if (startsWith(match, INVERT_MARKER)) {
+          str = match.slice(1);
+        }
+
+        var num = parseFloat(str);
+        return !nativeIsNaN(num) && nativeIsFinite(num);
+      }
+
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
 
       try {
@@ -18140,68 +18333,54 @@
     }
 
     function preventSetTimeout(source, args) {
-      function preventSetTimeout(source, match, delay) {
+      function preventSetTimeout(source, matchCallback, matchDelay) {
         var isProxySupported = typeof Proxy !== "undefined";
         var nativeTimeout = window.setTimeout;
         var log = console.log.bind(console);
-        var shouldLog = typeof match === "undefined" && typeof delay === "undefined";
+        var shouldLog = typeof matchCallback === "undefined" && typeof matchDelay === "undefined";
 
-        var _parseMatchArg = parseMatchArg(match),
-            isInvertedMatch = _parseMatchArg.isInvertedMatch,
-            matchRegexp = _parseMatchArg.matchRegexp;
-
-        var _parseDelayArg = parseDelayArg(delay),
-            isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
-            delayMatch = _parseDelayArg.delayMatch;
-
-        var getShouldPrevent = function getShouldPrevent(callbackStr, timeout) {
+        var legacyTimeoutWrapper = function legacyTimeoutWrapper(callback, delay) {
           var shouldPrevent = false;
-
-          if (!delayMatch) {
-            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
-          } else if (!match) {
-            shouldPrevent = timeout === delayMatch !== isInvertedDelayMatch;
-          } else {
-            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && timeout === delayMatch !== isInvertedDelayMatch;
-          }
-
-          return shouldPrevent;
-        };
-
-        var legacyTimeoutWrapper = function legacyTimeoutWrapper(callback, timeout) {
-          var shouldPrevent = false;
-          var cbString = String(callback);
 
           if (shouldLog) {
             hit(source);
-            log("setTimeout(".concat(cbString, ", ").concat(timeout, ")"));
+            log("setTimeout(".concat(String(callback), ", ").concat(delay, ")"));
           } else {
-            shouldPrevent = getShouldPrevent(cbString, timeout);
+            shouldPrevent = isPreventionNeeded({
+              callback: callback,
+              delay: delay,
+              matchCallback: matchCallback,
+              matchDelay: matchDelay
+            });
           }
 
           if (shouldPrevent) {
             hit(source);
-            return nativeTimeout(noopFunc, timeout);
+            return nativeTimeout(noopFunc, delay);
           }
 
           for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
             args[_key - 2] = arguments[_key];
           }
 
-          return nativeTimeout.apply(window, [callback, timeout].concat(args));
+          return nativeTimeout.apply(window, [callback, delay].concat(args));
         };
 
         var handlerWrapper = function handlerWrapper(target, thisArg, args) {
           var callback = args[0];
-          var timeout = args[1];
+          var delay = args[1];
           var shouldPrevent = false;
-          var cbString = String(callback);
 
           if (shouldLog) {
             hit(source);
-            log("setTimeout(".concat(cbString, ", ").concat(timeout, ")"));
+            log("setTimeout(".concat(String(callback), ", ").concat(delay, ")"));
           } else {
-            shouldPrevent = getShouldPrevent(cbString, timeout);
+            shouldPrevent = isPreventionNeeded({
+              callback: callback,
+              delay: delay,
+              matchCallback: matchCallback,
+              matchDelay: matchDelay
+            });
           }
 
           if (shouldPrevent) {
@@ -18269,6 +18448,42 @@
 
       function noopFunc() {}
 
+      function isPreventionNeeded(_ref) {
+        var callback = _ref.callback,
+            delay = _ref.delay,
+            matchCallback = _ref.matchCallback,
+            matchDelay = _ref.matchDelay;
+
+        if (!isValidCallback(callback)) {
+          return false;
+        }
+
+        if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
+          return false;
+        }
+
+        var _parseMatchArg = parseMatchArg(matchCallback),
+            isInvertedMatch = _parseMatchArg.isInvertedMatch,
+            matchRegexp = _parseMatchArg.matchRegexp;
+
+        var _parseDelayArg = parseDelayArg(matchDelay),
+            isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
+            delayMatch = _parseDelayArg.delayMatch;
+
+        var shouldPrevent = false;
+        var callbackStr = String(callback);
+
+        if (!delayMatch) {
+          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
+        } else if (!matchCallback) {
+          shouldPrevent = delay === delayMatch !== isInvertedDelayMatch;
+        } else {
+          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && delay === delayMatch !== isInvertedDelayMatch;
+        }
+
+        return shouldPrevent;
+      }
+
       function parseMatchArg(match) {
         var INVERT_MARKER = "!";
         var isInvertedMatch = startsWith(match, INVERT_MARKER);
@@ -18318,6 +18533,58 @@
         return native(num);
       }
 
+      function isValidCallback(callback) {
+        return callback instanceof Function || typeof callback === "string";
+      }
+
+      function isValidMatchStr(match) {
+        var INVERT_MARKER = "!";
+        var str = match;
+
+        if (startsWith(match, INVERT_MARKER)) {
+          str = match.slice(1);
+        }
+
+        return isValidStrPattern(str);
+      }
+
+      function isValidStrPattern(input) {
+        var FORWARD_SLASH = "/";
+        var str = input;
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          str = input.slice(1, -1);
+        }
+
+        var isValid;
+
+        try {
+          isValid = new RegExp(str);
+          isValid = true;
+        } catch (e) {
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+      function nativeIsFinite(num) {
+        var native = Number.isFinite || window.isFinite;
+        return native(num);
+      }
+
+      function isValidMatchNumber(match) {
+        var INVERT_MARKER = "!";
+        var str = match;
+
+        if (startsWith(match, INVERT_MARKER)) {
+          str = match.slice(1);
+        }
+
+        var num = parseFloat(str);
+        return !nativeIsNaN(num) && nativeIsFinite(num);
+      }
+
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
 
       try {
@@ -18342,7 +18609,7 @@
             args[_key - 1] = arguments[_key];
           }
 
-          if (!validateStrPattern(delay)) {
+          if (!isValidStrPattern(delay)) {
             console.log("Invalid parameter: ".concat(delay));
             return nativeOpen.apply(window, [str].concat(args));
           }
@@ -18374,7 +18641,7 @@
 
           if (match === getWildcardSymbol()) {
             shouldPrevent = true;
-          } else if (validateMatchStr(match)) {
+          } else if (isValidMatchStr(match)) {
             var _parseMatchArg = parseMatchArg(match),
                 isInvertedMatch = _parseMatchArg.isInvertedMatch,
                 matchRegexp = _parseMatchArg.matchRegexp;
@@ -18481,7 +18748,7 @@
         }
       }
 
-      function validateStrPattern(input) {
+      function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = input;
 
@@ -18501,7 +18768,7 @@
         return isValid;
       }
 
-      function validateMatchStr(match) {
+      function isValidMatchStr(match) {
         var INVERT_MARKER = "!";
         var str = match;
 
@@ -18509,7 +18776,7 @@
           str = match.slice(1);
         }
 
-        return validateStrPattern(str);
+        return isValidStrPattern(str);
       }
 
       function toRegExp() {
@@ -18856,7 +19123,7 @@
 
       function validateParsedData(data) {
         return Object.values(data).every(function (value) {
-          return validateStrPattern(value);
+          return isValidStrPattern(value);
         });
       }
 
@@ -18885,7 +19152,7 @@
         return new RegExp(escaped);
       }
 
-      function validateStrPattern(input) {
+      function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = input;
 
@@ -19891,16 +20158,6 @@
           return;
         }
 
-        var getCurrentScript = function getCurrentScript() {
-          if ("currentScript" in document) {
-            return document.currentScript;
-          }
-
-          var scripts = document.getElementsByTagName("script");
-          return scripts[scripts.length - 1];
-        };
-
-        var ourScript = getCurrentScript();
         var canceled = false;
 
         var mustCancel = function mustCancel(value) {
@@ -19918,7 +20175,6 @@
           }
 
           var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
-          var prevGetter;
           var prevSetter;
 
           if (origDescriptor instanceof Object) {
@@ -19932,10 +20188,6 @@
 
             base[prop] = constantValue;
 
-            if (origDescriptor.get instanceof Function) {
-              prevGetter = origDescriptor.get;
-            }
-
             if (origDescriptor.set instanceof Function) {
               prevSetter = origDescriptor.set;
             }
@@ -19944,10 +20196,6 @@
           Object.defineProperty(base, prop, {
             configurable: configurable,
             get: function get() {
-              if (prevGetter !== undefined) {
-                prevGetter();
-              }
-
               return handler.get();
             },
             set: function set(a) {
@@ -19988,17 +20236,15 @@
             }
           };
           var endPropHandler = {
-            factValue: undefined,
             init: function init(a) {
               if (mustCancel(a)) {
                 return false;
               }
 
-              this.factValue = a;
               return true;
             },
             get: function get() {
-              return document.currentScript === ourScript ? this.factValue : constantValue;
+              return constantValue;
             },
             set: function set(a) {
               if (!mustCancel(a)) {
