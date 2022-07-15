@@ -40,7 +40,7 @@ Build:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:
           # do not change commitMessage as it does not trigger increment after deploy
-          commitMessage: 'deploy: update dist'
+          commitMessage: 'deploy: update dist v$(bamboo.inject.version)'
           selectedRepository: defaultRepository
     - inject-variables:
         file: dist/build.txt
