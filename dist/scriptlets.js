@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.22
+ * Version 1.6.24
  */
 
 (function () {
@@ -465,39 +465,22 @@
       return output;
     };
 
-    function getDefaultExportFromCjs (x) {
-    	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
-    }
-
-    function createCommonjsModule(fn) {
-      var module = { exports: {} };
-    	return fn(module, module.exports), module.exports;
-    }
-
-    function commonjsRequire (target) {
-    	throw new Error('Could not dynamically require "' + target + '". Please configure the dynamicRequireTargets option of @rollup/plugin-commonjs appropriately for this require call to behave properly.');
-    }
-
-    var defineProperty = createCommonjsModule(function (module) {
-      function _defineProperty(obj, key, value) {
-        if (key in obj) {
-          Object.defineProperty(obj, key, {
-            value: value,
-            enumerable: true,
-            configurable: true,
-            writable: true
-          });
-        } else {
-          obj[key] = value;
-        }
-
-        return obj;
+    function _defineProperty(obj, key, value) {
+      if (key in obj) {
+        Object.defineProperty(obj, key, {
+          value: value,
+          enumerable: true,
+          configurable: true,
+          writable: true
+        });
+      } else {
+        obj[key] = value;
       }
 
-      module.exports = _defineProperty;
-      module.exports["default"] = module.exports, module.exports.__esModule = true;
-    });
-    var _defineProperty = /*@__PURE__*/getDefaultExportFromCjs(defineProperty);
+      return obj;
+    }
+
+    var defineProperty = _defineProperty;
 
     /**
      * Iterate over iterable argument and evaluate current state with transitions
@@ -660,7 +643,7 @@
         }
       };
 
-      var transitions = (_transitions = {}, _defineProperty(_transitions, TRANSITION.OPENED, opened), _defineProperty(_transitions, TRANSITION.PARAM, param), _defineProperty(_transitions, TRANSITION.CLOSED, function () {}), _transitions);
+      var transitions = (_transitions = {}, defineProperty(_transitions, TRANSITION.OPENED, opened), defineProperty(_transitions, TRANSITION.PARAM, param), defineProperty(_transitions, TRANSITION.CLOSED, function () {}), _transitions);
       var sep = {
         symb: null
       };
@@ -6666,99 +6649,70 @@
       hasValidContentType: hasValidContentType
     };
 
-    var arrayLikeToArray = createCommonjsModule(function (module) {
-      function _arrayLikeToArray(arr, len) {
-        if (len == null || len > arr.length) len = arr.length;
+    function _arrayLikeToArray(arr, len) {
+      if (len == null || len > arr.length) len = arr.length;
 
-        for (var i = 0, arr2 = new Array(len); i < len; i++) {
-          arr2[i] = arr[i];
-        }
-
-        return arr2;
+      for (var i = 0, arr2 = new Array(len); i < len; i++) {
+        arr2[i] = arr[i];
       }
 
-      module.exports = _arrayLikeToArray;
-      module.exports["default"] = module.exports, module.exports.__esModule = true;
-    });
+      return arr2;
+    }
 
-    var arrayWithoutHoles = createCommonjsModule(function (module) {
-      function _arrayWithoutHoles(arr) {
-        if (Array.isArray(arr)) return arrayLikeToArray(arr);
-      }
+    var arrayLikeToArray = _arrayLikeToArray;
 
-      module.exports = _arrayWithoutHoles;
-      module.exports["default"] = module.exports, module.exports.__esModule = true;
-    });
+    function _arrayWithoutHoles(arr) {
+      if (Array.isArray(arr)) return arrayLikeToArray(arr);
+    }
 
-    var iterableToArray = createCommonjsModule(function (module) {
-      function _iterableToArray(iter) {
-        if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
-      }
+    var arrayWithoutHoles = _arrayWithoutHoles;
 
-      module.exports = _iterableToArray;
-      module.exports["default"] = module.exports, module.exports.__esModule = true;
-    });
+    function _iterableToArray(iter) {
+      if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
+    }
 
-    var unsupportedIterableToArray = createCommonjsModule(function (module) {
-      function _unsupportedIterableToArray(o, minLen) {
-        if (!o) return;
-        if (typeof o === "string") return arrayLikeToArray(o, minLen);
-        var n = Object.prototype.toString.call(o).slice(8, -1);
-        if (n === "Object" && o.constructor) n = o.constructor.name;
-        if (n === "Map" || n === "Set") return Array.from(o);
-        if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
-      }
+    var iterableToArray = _iterableToArray;
 
-      module.exports = _unsupportedIterableToArray;
-      module.exports["default"] = module.exports, module.exports.__esModule = true;
-    });
+    function _unsupportedIterableToArray(o, minLen) {
+      if (!o) return;
+      if (typeof o === "string") return arrayLikeToArray(o, minLen);
+      var n = Object.prototype.toString.call(o).slice(8, -1);
+      if (n === "Object" && o.constructor) n = o.constructor.name;
+      if (n === "Map" || n === "Set") return Array.from(o);
+      if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
+    }
 
-    var nonIterableSpread = createCommonjsModule(function (module) {
-      function _nonIterableSpread() {
-        throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-      }
+    var unsupportedIterableToArray = _unsupportedIterableToArray;
 
-      module.exports = _nonIterableSpread;
-      module.exports["default"] = module.exports, module.exports.__esModule = true;
-    });
+    function _nonIterableSpread() {
+      throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+    }
 
-    var toConsumableArray = createCommonjsModule(function (module) {
-      function _toConsumableArray(arr) {
-        return arrayWithoutHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableSpread();
-      }
+    var nonIterableSpread = _nonIterableSpread;
 
-      module.exports = _toConsumableArray;
-      module.exports["default"] = module.exports, module.exports.__esModule = true;
-    });
-    var _toConsumableArray = /*@__PURE__*/getDefaultExportFromCjs(toConsumableArray);
+    function _toConsumableArray(arr) {
+      return arrayWithoutHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableSpread();
+    }
 
-    var arrayWithHoles = createCommonjsModule(function (module) {
-      function _arrayWithHoles(arr) {
-        if (Array.isArray(arr)) return arr;
-      }
+    var toConsumableArray = _toConsumableArray;
 
-      module.exports = _arrayWithHoles;
-      module.exports["default"] = module.exports, module.exports.__esModule = true;
-    });
+    function _arrayWithHoles(arr) {
+      if (Array.isArray(arr)) return arr;
+    }
 
-    var nonIterableRest = createCommonjsModule(function (module) {
-      function _nonIterableRest() {
-        throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-      }
+    var arrayWithHoles = _arrayWithHoles;
 
-      module.exports = _nonIterableRest;
-      module.exports["default"] = module.exports, module.exports.__esModule = true;
-    });
+    function _nonIterableRest() {
+      throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+    }
 
-    var toArray$1 = createCommonjsModule(function (module) {
-      function _toArray(arr) {
-        return arrayWithHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableRest();
-      }
+    var nonIterableRest = _nonIterableRest;
 
-      module.exports = _toArray;
-      module.exports["default"] = module.exports, module.exports.__esModule = true;
-    });
-    var _toArray = /*@__PURE__*/getDefaultExportFromCjs(toArray$1);
+    function _toArray(arr) {
+      return arrayWithHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableRest();
+    }
+
+    var toArray$1 = _toArray;
 
     /**
      * AdGuard scriptlet rule
@@ -6854,7 +6808,7 @@
       // https://github.com/AdguardTeam/Scriptlets/issues/133
       var lastArg = parsedArgs.pop();
 
-      var _parsedArgs = _toArray(parsedArgs),
+      var _parsedArgs = toArray$1(parsedArgs),
           name = _parsedArgs[0],
           value = _parsedArgs[1],
           restArgs = _parsedArgs.slice(2);
@@ -7008,7 +6962,7 @@
         var adgScriptletObject = Object.keys(scriptletList).map(function (el) {
           return scriptletList[el];
         }).map(function (s) {
-          var _s$names = _toArray(s.names),
+          var _s$names = toArray$1(s.names),
               name = _s$names[0],
               aliases = _s$names.slice(1);
 
@@ -7207,7 +7161,7 @@
         }
 
         var additionModifiers = sourceTypesData.TYPES;
-        adgModifiers.push.apply(adgModifiers, _toConsumableArray(additionModifiers));
+        adgModifiers.push.apply(adgModifiers, toConsumableArray(additionModifiers));
       }
 
       var uboModifiers = adgModifiers.map(function (el, index) {
@@ -9253,39 +9207,31 @@
         NaverWcslog: NaverWcslog
     });
 
-    var classCallCheck = createCommonjsModule(function (module) {
-      function _classCallCheck(instance, Constructor) {
-        if (!(instance instanceof Constructor)) {
-          throw new TypeError("Cannot call a class as a function");
-        }
+    function _classCallCheck(instance, Constructor) {
+      if (!(instance instanceof Constructor)) {
+        throw new TypeError("Cannot call a class as a function");
       }
+    }
 
-      module.exports = _classCallCheck;
-      module.exports["default"] = module.exports, module.exports.__esModule = true;
-    });
-    var _classCallCheck = /*@__PURE__*/getDefaultExportFromCjs(classCallCheck);
+    var classCallCheck = _classCallCheck;
 
-    var createClass = createCommonjsModule(function (module) {
-      function _defineProperties(target, props) {
-        for (var i = 0; i < props.length; i++) {
-          var descriptor = props[i];
-          descriptor.enumerable = descriptor.enumerable || false;
-          descriptor.configurable = true;
-          if ("value" in descriptor) descriptor.writable = true;
-          Object.defineProperty(target, descriptor.key, descriptor);
-        }
+    function _defineProperties(target, props) {
+      for (var i = 0; i < props.length; i++) {
+        var descriptor = props[i];
+        descriptor.enumerable = descriptor.enumerable || false;
+        descriptor.configurable = true;
+        if ("value" in descriptor) descriptor.writable = true;
+        Object.defineProperty(target, descriptor.key, descriptor);
       }
+    }
 
-      function _createClass(Constructor, protoProps, staticProps) {
-        if (protoProps) _defineProperties(Constructor.prototype, protoProps);
-        if (staticProps) _defineProperties(Constructor, staticProps);
-        return Constructor;
-      }
+    function _createClass(Constructor, protoProps, staticProps) {
+      if (protoProps) _defineProperties(Constructor.prototype, protoProps);
+      if (staticProps) _defineProperties(Constructor, staticProps);
+      return Constructor;
+    }
 
-      module.exports = _createClass;
-      module.exports["default"] = module.exports, module.exports.__esModule = true;
-    });
-    var _createClass = /*@__PURE__*/getDefaultExportFromCjs(createClass);
+    var createClass = _createClass;
 
     function isNothing(subject) {
       return typeof subject === 'undefined' || subject === null;
@@ -10102,6 +10048,10 @@
       kind: 'scalar',
       resolve: resolveYamlMerge
     });
+
+    function commonjsRequire (target) {
+    	throw new Error('Could not dynamically require "' + target + '". Please configure the dynamicRequireTargets option of @rollup/plugin-commonjs appropriately for this require call to behave properly.');
+    }
 
     /*eslint-disable no-bitwise*/
 
@@ -13163,7 +13113,7 @@
 
     function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-    function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+    function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
     /**
      * Redirect - object used to redirect some requests
      * e.g.
@@ -13190,12 +13140,12 @@
        * in the values
        */
       function Redirects(rawYaml) {
-        _classCallCheck(this, Redirects);
+        classCallCheck(this, Redirects);
 
         try {
           var arrOfRedirects = jsYaml.safeLoad(rawYaml);
           this.redirects = arrOfRedirects.reduce(function (acc, redirect) {
-            return _objectSpread(_objectSpread({}, acc), {}, _defineProperty({}, redirect.title, redirect));
+            return _objectSpread(_objectSpread({}, acc), {}, defineProperty({}, redirect.title, redirect));
           }, {});
         } catch (e) {
           // eslint-disable-next-line no-console
@@ -13210,7 +13160,7 @@
        */
 
 
-      _createClass(Redirects, [{
+      createClass(Redirects, [{
         key: "getRedirect",
         value: function getRedirect(title) {
           var _this = this;
