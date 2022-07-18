@@ -254,7 +254,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-settimeout-booster
 **Syntax**
 ```
 example.org#%#//scriptlet('adjust-setTimeout'[, matchCallback [, matchDelay[, boost]]])
-```matchCallback, matchDelay
+```
 
 - `matchCallback` - optional, string or regular expression for stringified callback matching;
 defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
