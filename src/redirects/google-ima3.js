@@ -14,6 +14,8 @@ import { hit, noopFunc } from '../helpers/index';
  */
 
 export function GoogleIma3(source) {
+    const noopFunc = function () { };
+
     const VERSION = '3.453.0';
 
     const ima = {};
@@ -42,53 +44,53 @@ export function GoogleIma3(source) {
         t: '',
         v: '',
         getCompanionBackfill: noopFunc,
-        getDisableCustomPlaybackForIOS10Plus: () => this.i,
+        getDisableCustomPlaybackForIOS10Plus() { return this.i; },
         getDisabledFlashAds: () => true,
-        getFeatureFlags: () => this.f,
-        getLocale: () => this.l,
-        getNumRedirects: () => this.r,
-        getPlayerType: () => this.t,
-        getPlayerVersion: () => this.v,
-        getPpid: () => this.p,
-        getVpaidMode: () => this.C,
-        isCookiesEnabled: () => this.c,
-        isVpaidAdapter: () => this.M,
+        getFeatureFlags() { return this.f; },
+        getLocale() { return this.l; },
+        getNumRedirects() { return this.r; },
+        getPlayerType() { return this.t; },
+        getPlayerVersion() { return this.v; },
+        getPpid() { return this.p; },
+        getVpaidMode() { return this.C; },
+        isCookiesEnabled() { return this.c; },
+        isVpaidAdapter() { return this.M; },
         setCompanionBackfill: noopFunc,
-        setAutoPlayAdBreaks: (a) => {
+        setAutoPlayAdBreaks(a) {
             this.K = a;
         },
-        setCookiesEnabled: (c) => {
+        setCookiesEnabled(c) {
             this.c = !!c;
         },
-        setDisableCustomPlaybackForIOS10Plus: (i) => {
+        setDisableCustomPlaybackForIOS10Plus(i) {
             this.i = !!i;
         },
         setDisableFlashAds: noopFunc,
-        setFeatureFlags: (f) => {
+        setFeatureFlags(f) {
             this.f = !!f;
         },
-        setIsVpaidAdapter: (a) => {
+        setIsVpaidAdapter(a) {
             this.M = a;
         },
-        setLocale: (l) => {
+        setLocale(l) {
             this.l = !!l;
         },
-        setNumRedirects: (r) => {
+        setNumRedirects(r) {
             this.r = !!r;
         },
-        setPageCorrelator: (a) => {
+        setPageCorrelator(a) {
             this.R = a;
         },
-        setPlayerType: (t) => {
+        setPlayerType(t) {
             this.t = !!t;
         },
-        setPlayerVersion: (v) => {
+        setPlayerVersion(v) {
             this.v = !!v;
         },
-        setPpid: (p) => {
+        setPpid(p) {
             this.p = !!p;
         },
-        setVpaidMode: (a) => {
+        setVpaidMode(a) {
             this.C = a;
         },
         setSessionId: noopFunc,
@@ -107,10 +109,9 @@ export function GoogleIma3(source) {
 
     let managerLoaded = false;
 
-    const EventHandler = function () { };
-    EventHandler.prototype = {
-        listeners: new Map(),
-        _dispatch(e) {
+    const EventHandler = function () {
+        this.listeners = new Map();
+        this._dispatch = function (e) {
             const listeners = this.listeners.get(e.type) || [];
             // eslint-disable-next-line no-restricted-syntax
             for (const listener of Array.from(listeners)) {
@@ -121,45 +122,45 @@ export function GoogleIma3(source) {
                     console.error(r);
                 }
             }
-        },
-        addEventListener(t, c) {
+        };
+        this.addEventListener = function (t, c) {
             if (!this.listeners.has(t)) {
                 this.listeners.set(t, new Set());
             }
             this.listeners.get(t).add(c);
-        },
-        removeEventListener(t, c) {
+        };
+        this.removeEventListener = function (t, c) {
             this.listeners.get(t)?.delete(c);
-        },
+        };
     };
 
-    const AdsManager = EventHandler;
+    const AdsManager = new EventHandler();
     /* eslint-disable no-use-before-define */
-    AdsManager.prototype.volume = 1;
-    AdsManager.prototype.collapse = noopFunc;
-    AdsManager.prototype.configureAdsManager = noopFunc;
-    AdsManager.prototype.destroy = noopFunc;
-    AdsManager.prototype.discardAdBreak = noopFunc;
-    AdsManager.prototype.expand = noopFunc;
-    AdsManager.prototype.focus = noopFunc;
-    AdsManager.prototype.getAdSkippableState = () => false;
-    AdsManager.prototype.getCuePoints = () => [0];
-    AdsManager.prototype.getCurrentAd = () => currentAd;
-    AdsManager.prototype.getCurrentAdCuePoints = () => [];
-    AdsManager.prototype.getRemainingTime = () => 0;
-    AdsManager.prototype.getVolume = () => this.volume;
-    AdsManager.prototype.init = noopFunc;
-    AdsManager.prototype.isCustomClickTrackingUsed = () => false;
-    AdsManager.prototype.isCustomPlaybackUsed = () => false;
-    AdsManager.prototype.pause = noopFunc;
-    AdsManager.prototype.requestNextAdBreak = noopFunc;
-    AdsManager.prototype.resize = noopFunc;
-    AdsManager.prototype.resume = noopFunc;
-    AdsManager.prototype.setVolume = (v) => {
+    AdsManager.volume = 1;
+    AdsManager.collapse = noopFunc;
+    AdsManager.configureAdsManager = noopFunc;
+    AdsManager.destroy = noopFunc;
+    AdsManager.discardAdBreak = noopFunc;
+    AdsManager.expand = noopFunc;
+    AdsManager.focus = noopFunc;
+    AdsManager.getAdSkippableState = () => false;
+    AdsManager.getCuePoints = () => [0];
+    AdsManager.getCurrentAd = () => currentAd;
+    AdsManager.getCurrentAdCuePoints = () => [];
+    AdsManager.getRemainingTime = () => 0;
+    AdsManager.getVolume = function () { return this.volume; };
+    AdsManager.init = noopFunc;
+    AdsManager.isCustomClickTrackingUsed = () => false;
+    AdsManager.isCustomPlaybackUsed = () => false;
+    AdsManager.pause = noopFunc;
+    AdsManager.requestNextAdBreak = noopFunc;
+    AdsManager.resize = noopFunc;
+    AdsManager.resume = noopFunc;
+    AdsManager.setVolume = function (v) {
         this.volume = v;
     };
-    AdsManager.prototype.skip = noopFunc;
-    AdsManager.prototype.start = () => {
+    AdsManager.skip = noopFunc;
+    AdsManager.start = function () {
         // eslint-disable-next-line no-restricted-syntax
         for (const type of [
             AdEvent.Type.LOADED,
@@ -170,6 +171,7 @@ export function GoogleIma3(source) {
             AdEvent.Type.THIRD_QUARTILE,
             AdEvent.Type.COMPLETE,
             AdEvent.Type.ALL_ADS_COMPLETED,
+            AdEvent.Type.CONTENT_RESUME_REQUESTED,
         ]) {
             try {
                 this._dispatch(new ima.AdEvent(type));
@@ -179,17 +181,14 @@ export function GoogleIma3(source) {
             }
         }
     };
-    AdsManager.prototype.stop = noopFunc;
-    AdsManager.prototype.updateAdsRenderingSettings = noopFunc;
+    AdsManager.stop = noopFunc;
+    AdsManager.updateAdsRenderingSettings = noopFunc;
     /* eslint-enable no-use-before-define */
 
     const manager = Object.create(AdsManager);
 
-    const AdsManagerLoadedEvent = function () { };
+    const AdsManagerLoadedEvent = function (type) { this.type = type; };
     AdsManagerLoadedEvent.prototype = {
-        constructor: (type) => {
-            this.type = type;
-        },
         getAdsManager: () => manager,
         getUserRequestContext: noopFunc,
     };
@@ -208,10 +207,19 @@ export function GoogleIma3(source) {
     AdsLoader.prototype.requestAds = function () {
         if (!managerLoaded) {
             managerLoaded = true;
-            requestAnimationFrame(() => {
-                const { ADS_MANAGER_LOADED } = AdsManagerLoadedEvent.Type;
-                this._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED));
-            });
+            const e = new ima.AdError(
+                'adPlayError',
+                1205,
+                1205,
+                'The browser prevented playback initiated without user interaction.',
+            );
+            this._dispatch(new ima.AdErrorEvent(e));
+
+            // https://github.com/AdguardTeam/Scriptlets/issues/217
+            // requestAnimationFrame(() => {
+            //     const { ADS_MANAGER_LOADED } = AdsManagerLoadedEvent.Type;
+            //     this._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED));
+            // });
         }
     };
 
@@ -238,7 +246,7 @@ export function GoogleIma3(source) {
     Ad.prototype = {
         pi: new AdPodInfo(),
         getAdId: () => '',
-        getAdPodInfo: () => this.pi,
+        getAdPodInfo() { return this.pi; },
         getAdSystem: () => '',
         getAdvertiserName: () => '',
         getApiFramework: () => null,
@@ -267,6 +275,7 @@ export function GoogleIma3(source) {
         getWrapperAdSystems: () => [''],
         getWrapperCreativeIds: () => [''],
         isLinear: () => true,
+        isSkippable() { return true; },
     };
 
     const CompanionAd = function () { };
@@ -278,15 +287,34 @@ export function GoogleIma3(source) {
         getWidth: () => 1,
     };
 
-    const AdError = function () { };
-    AdError.prototype = {
-        getErrorCode: () => 0,
-        getInnerError: noopFunc,
-        getMessage: () => '',
-        getType: () => 1,
-        getVastErrorCode: () => 0,
-        toString: () => '',
+    const AdError = function (type, code, vast, message) {
+        this.errorCode = code;
+        this.message = message;
+        this.type = type;
+
+        this.getErrorCode = function () {
+            return this.errorCode;
+        };
+
+        this.getInnerError = function () { };
+
+        this.getMessage = function () {
+            return this.message;
+        };
+
+        this.getType = function () {
+            return this.type;
+        };
+
+        this.getVastErrorCode = function () {
+            return this.vastErrorCode;
+        };
+
+        this.toString = function () {
+            return `AdError ${this.errorCode}: ${this.message}`;
+        };
     };
+
     AdError.ErrorCode = {};
     AdError.Type = {};
 
@@ -305,11 +333,8 @@ export function GoogleIma3(source) {
 
     const currentAd = isEngadget() ? undefined : new Ad();
 
-    const AdEvent = function () { };
+    const AdEvent = function (type) { this.type = type; };
     AdEvent.prototype = {
-        constructor: (type) => {
-            this.type = type;
-        },
         getAd: () => currentAd,
         getAdData: () => { },
     };
@@ -348,11 +373,19 @@ export function GoogleIma3(source) {
         VOLUME_MUTED: 'mute',
     };
 
-    const AdErrorEvent = function () { };
-    AdErrorEvent.prototype = {
-        getError: noopFunc,
-        getUserRequestContext: () => { },
+    const AdErrorEvent = function (error) {
+        this.error = error;
+        this.type = 'adError';
+
+        this.getError = function () {
+            return this.error;
+        };
+
+        this.getUserRequestContext = function () {
+            return {};
+        };
     };
+
     AdErrorEvent.Type = {
         AD_ERROR: 'adError',
     };
@@ -434,6 +467,7 @@ export function GoogleIma3(source) {
 
     hit(source);
 }
+
 GoogleIma3.names = ['google-ima3'];
 
 GoogleIma3.injections = [hit, noopFunc];
