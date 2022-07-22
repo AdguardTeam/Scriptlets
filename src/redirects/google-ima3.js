@@ -14,8 +14,6 @@ import { hit, noopFunc } from '../helpers/index';
  */
 
 export function GoogleIma3(source) {
-    const noopFunc = function () { };
-
     const VERSION = '3.453.0';
 
     const ima = {};
