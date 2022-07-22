@@ -330,4 +330,23 @@ if (!isSupported) {
         assert.strictEqual(window.testProp, 5, 'error avoided');
         clearGlobalProps('testProp');
     });
+
+    test('set value after undef object been created by new Function()', (assert) => {
+        function InitFunc() {
+            this.testFunc = () => 5;
+        }
+
+        runScriptletFromTag('window.testProp.a.c.testFunc', 'noopFunc');
+
+        window.testProp = {
+            a: {
+                b: 'test',
+            },
+        };
+        window.testProp.a.c = new InitFunc();
+
+        const result = window.testProp.a.c.testFunc();
+        assert.strictEqual(result, undefined, 'Value was set');
+        clearGlobalProps('testProp');
+    });
 }
