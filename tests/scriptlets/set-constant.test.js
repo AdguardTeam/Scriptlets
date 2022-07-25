@@ -336,17 +336,15 @@ if (!isSupported) {
             this.testFunc = () => 5;
         }
 
-        runScriptletFromTag('window.testProp.a.c.testFunc', 'noopFunc');
+        runScriptletFromTag('window.a.b.c.testFunc', 'noopFunc');
 
-        window.testProp = {
-            a: {
-                b: 'test',
-            },
+        window.a = {
+            b: {},
         };
-        window.testProp.a.c = new InitFunc();
+        window.a.b.c = new InitFunc();
 
-        const result = window.testProp.a.c.testFunc();
+        const result = window.a.b.c.testFunc();
         assert.strictEqual(result, undefined, 'Value was set');
-        clearGlobalProps('testProp');
+        clearGlobalProps('a');
     });
 }
