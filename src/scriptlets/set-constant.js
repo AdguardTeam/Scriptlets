@@ -11,6 +11,8 @@ import {
     setPropertyAccess,
     toRegExp,
     matchStackTrace,
+    shouldAbortStack,
+    setShouldAbortStack,
     nativeIsNaN,
 } from '../helpers/index';
 
@@ -274,5 +276,7 @@ setConstant.injections = [
     setPropertyAccess,
     toRegExp,
     matchStackTrace,
+    shouldAbortStack,
+    setShouldAbortStack,
     nativeIsNaN,
 ];

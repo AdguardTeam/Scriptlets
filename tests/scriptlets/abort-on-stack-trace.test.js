@@ -262,3 +262,36 @@ test('dot notation deferred definition, matches stack of our own script', (asser
 
     assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
 });
+
+test('check if scriptlet do not stuck in a loop (RangeError: Maximum call stack size exceeded)', (assert) => {
+    let check = '';
+    const property = 'RegExp';
+    const stackMatch = 'no_match.js';
+    const scriptletArgs = [property, stackMatch];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(
+        (() => {
+            const test = new RegExp('test');
+            check = test;
+            return check.toString();
+        })(),
+        '/test/',
+        `Property is accessible, value: ${check.toString()}`,
+    );
+
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+});
+
+test('abort RegExp, matches stack', (assert) => {
+    const property = 'RegExp';
+    const stackMatch = 'abort-on-stack';
+    const scriptletArgs = [property, stackMatch];
+    runScriptlet(name, scriptletArgs);
+    assert.throws(
+        () => new RegExp('test'),
+        /ReferenceError/,
+        'Reference error thrown when trying to access property RegExp',
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});

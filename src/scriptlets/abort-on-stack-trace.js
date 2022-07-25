@@ -7,6 +7,8 @@ import {
     isValidStrPattern,
     matchStackTrace,
     // following helpers are needed for helpers above
+    shouldAbortStack,
+    setShouldAbortStack,
     toRegExp,
 } from '../helpers/index';
 
@@ -47,6 +49,10 @@ export function abortOnStackTrace(source, property, stack) {
         return;
     }
 
+    // https://github.com/AdguardTeam/Scriptlets/issues/226
+    // sets shouldAbortStack to true
+    setShouldAbortStack(true);
+
     const rid = randomId();
     const abort = () => {
         hit(source);
@@ -79,15 +85,19 @@ export function abortOnStackTrace(source, property, stack) {
         }
         setPropertyAccess(base, prop, {
             get() {
-                if (matchStackTrace(stack, new Error().stack)) {
+                if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
+                    setShouldAbortStack(true);
                     abort();
                 }
+                setShouldAbortStack(true);
                 return value;
             },
             set(newValue) {
-                if (matchStackTrace(stack, new Error().stack)) {
+                if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
+                    setShouldAbortStack(true);
                     abort();
                 }
+                setShouldAbortStack(true);
                 value = newValue;
             },
         });
@@ -118,5 +128,7 @@ abortOnStackTrace.injections = [
     hit,
     isValidStrPattern,
     matchStackTrace,
+    shouldAbortStack,
+    setShouldAbortStack,
     toRegExp,
 ];
