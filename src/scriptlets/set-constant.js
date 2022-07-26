@@ -244,7 +244,7 @@ export function setConstant(source, property, value, stack) {
         }
 
         // Undefined prop in chain
-        trapProp(owner, prop, true, undefPropHandler);
+        trapProp(base, prop, true, undefPropHandler);
     };
 
     setChainPropAccess(window, property);

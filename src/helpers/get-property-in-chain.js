@@ -37,5 +37,5 @@ export function getPropertyInChain(base, chain) {
     }
 
     Object.defineProperty(base, prop, { configurable: true });
-    return { base: nextBase, prop, chain };
+    return { base, prop, chain };
 }
