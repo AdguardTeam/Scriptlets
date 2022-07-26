@@ -49,8 +49,8 @@ export function abortOnStackTrace(source, property, stack) {
         return;
     }
 
-    // https://github.com/AdguardTeam/Scriptlets/issues/226
     // sets shouldAbortStack to true
+    // https://github.com/AdguardTeam/Scriptlets/issues/226
     setShouldAbortStack(true);
 
     const rid = randomId();
