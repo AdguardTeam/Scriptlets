@@ -694,7 +694,7 @@ Prevents target element source loading without triggering 'onerror' listeners an
 
 **Syntax**
 ```
-example.org#%#//scriptlet('prevent-src', tagName, match)
+example.org#%#//scriptlet('prevent-element-src-loading', tagName, match)
 ```
 
 - `tagName` - required, case-insensitive target element tagName which `src` property resource loading will be silently prevented; possible values:
