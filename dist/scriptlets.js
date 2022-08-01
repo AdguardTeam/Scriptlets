@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.26
+ * Version 1.6.27
  */
 
 (function () {
@@ -1100,8 +1100,19 @@
      * @param {string} stackTrace - script error stack trace
      * @returns {boolean}
      */
+    // https://github.com/AdguardTeam/Scriptlets/issues/226
+    // eslint-disable-next-line import/no-mutable-exports, func-names
 
+    var shouldAbortStack = function shouldAbortStack() {};
+    function setShouldAbortStack(value) {
+      shouldAbortStack = value;
+    }
     var matchStackTrace = function matchStackTrace(stackMatch, stackTrace) {
+      // https://github.com/AdguardTeam/Scriptlets/issues/226
+      // sets shouldAbortStack to false
+      // to avoid checking matchStackTrace from properties used by our script and stucking in a loop
+      setShouldAbortStack(false);
+
       if (!stackMatch || stackMatch === '') {
         return true;
       }
@@ -2725,7 +2736,7 @@
     }
     setConstant$1.names = ['set-constant', // aliases are needed for matching the related scriptlet converted into our syntax
     'set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js', 'ubo-set-constant', 'ubo-set', 'abp-override-property-read'];
-    setConstant$1.injections = [hit, noopArray, noopObject, noopFunc, trueFunc, falseFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, nativeIsNaN];
+    setConstant$1.injections = [hit, noopArray, noopObject, noopFunc, trueFunc, falseFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, shouldAbortStack, setShouldAbortStack, nativeIsNaN];
 
     /* eslint-disable max-len */
 
@@ -4611,7 +4622,7 @@
     }
     jsonPrune$1.names = ['json-prune', // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune.js', 'ubo-json-prune.js', 'ubo-json-prune', 'abp-json-prune'];
-    jsonPrune$1.injections = [hit, matchStackTrace, getWildcardPropertyInChain, toRegExp, getWildcardSymbol];
+    jsonPrune$1.injections = [hit, matchStackTrace, shouldAbortStack, setShouldAbortStack, getWildcardPropertyInChain, toRegExp, getWildcardSymbol];
 
     /* eslint-disable max-len */
 
@@ -5339,8 +5350,11 @@
     function abortOnStackTrace$1(source, property, stack) {
       if (!property || !stack) {
         return;
-      }
+      } // https://github.com/AdguardTeam/Scriptlets/issues/226
+      // sets shouldAbortStack to true
 
+
+      setShouldAbortStack(true);
       var rid = randomId();
 
       var abort = function abort() {
@@ -5382,17 +5396,21 @@
 
         setPropertyAccess(base, prop, {
           get: function get() {
-            if (matchStackTrace(stack, new Error().stack)) {
+            if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
+              setShouldAbortStack(true);
               abort();
             }
 
+            setShouldAbortStack(true);
             return value;
           },
           set: function set(newValue) {
-            if (matchStackTrace(stack, new Error().stack)) {
+            if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
+              setShouldAbortStack(true);
               abort();
             }
 
+            setShouldAbortStack(true);
             value = newValue;
           }
         });
@@ -5403,7 +5421,7 @@
     }
     abortOnStackTrace$1.names = ['abort-on-stack-trace', // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-stack-trace.js', 'ubo-abort-on-stack-trace.js', 'aost.js', 'ubo-aost.js', 'ubo-abort-on-stack-trace', 'ubo-aost', 'abp-abort-on-stack-trace'];
-    abortOnStackTrace$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isValidStrPattern, matchStackTrace, toRegExp];
+    abortOnStackTrace$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isValidStrPattern, matchStackTrace, shouldAbortStack, setShouldAbortStack, toRegExp];
 
     /* eslint-disable max-len */
 
@@ -8313,8 +8331,6 @@
      */
 
     function GoogleIma3(source) {
-      var _this = this;
-
       var VERSION = '3.453.0';
       var ima = {};
 
@@ -8345,75 +8361,75 @@
         v: '',
         getCompanionBackfill: noopFunc,
         getDisableCustomPlaybackForIOS10Plus: function getDisableCustomPlaybackForIOS10Plus() {
-          return _this.i;
+          return this.i;
         },
         getDisabledFlashAds: function getDisabledFlashAds() {
           return true;
         },
         getFeatureFlags: function getFeatureFlags() {
-          return _this.f;
+          return this.f;
         },
         getLocale: function getLocale() {
-          return _this.l;
+          return this.l;
         },
         getNumRedirects: function getNumRedirects() {
-          return _this.r;
+          return this.r;
         },
         getPlayerType: function getPlayerType() {
-          return _this.t;
+          return this.t;
         },
         getPlayerVersion: function getPlayerVersion() {
-          return _this.v;
+          return this.v;
         },
         getPpid: function getPpid() {
-          return _this.p;
+          return this.p;
         },
         getVpaidMode: function getVpaidMode() {
-          return _this.C;
+          return this.C;
         },
         isCookiesEnabled: function isCookiesEnabled() {
-          return _this.c;
+          return this.c;
         },
         isVpaidAdapter: function isVpaidAdapter() {
-          return _this.M;
+          return this.M;
         },
         setCompanionBackfill: noopFunc,
         setAutoPlayAdBreaks: function setAutoPlayAdBreaks(a) {
-          _this.K = a;
+          this.K = a;
         },
         setCookiesEnabled: function setCookiesEnabled(c) {
-          _this.c = !!c;
+          this.c = !!c;
         },
         setDisableCustomPlaybackForIOS10Plus: function setDisableCustomPlaybackForIOS10Plus(i) {
-          _this.i = !!i;
+          this.i = !!i;
         },
         setDisableFlashAds: noopFunc,
         setFeatureFlags: function setFeatureFlags(f) {
-          _this.f = !!f;
+          this.f = !!f;
         },
         setIsVpaidAdapter: function setIsVpaidAdapter(a) {
-          _this.M = a;
+          this.M = a;
         },
         setLocale: function setLocale(l) {
-          _this.l = !!l;
+          this.l = !!l;
         },
         setNumRedirects: function setNumRedirects(r) {
-          _this.r = !!r;
+          this.r = !!r;
         },
         setPageCorrelator: function setPageCorrelator(a) {
-          _this.R = a;
+          this.R = a;
         },
         setPlayerType: function setPlayerType(t) {
-          _this.t = !!t;
+          this.t = !!t;
         },
         setPlayerVersion: function setPlayerVersion(v) {
-          _this.v = !!v;
+          this.v = !!v;
         },
         setPpid: function setPpid(p) {
-          _this.p = !!p;
+          this.p = !!p;
         },
         setVpaidMode: function setVpaidMode(a) {
-          _this.C = a;
+          this.C = a;
         },
         setSessionId: noopFunc,
         setStreamCorrelator: noopFunc,
@@ -8430,11 +8446,10 @@
       };
       var managerLoaded = false;
 
-      var EventHandler = function EventHandler() {};
+      var EventHandler = function EventHandler() {
+        this.listeners = new Map();
 
-      EventHandler.prototype = {
-        listeners: new Map(),
-        _dispatch: function _dispatch(e) {
+        this._dispatch = function (e) {
           var listeners = this.listeners.get(e.type) || []; // eslint-disable-next-line no-restricted-syntax
 
           for (var _i = 0, _Array$from = Array.from(listeners); _i < _Array$from.length; _i++) {
@@ -8447,83 +8462,86 @@
               console.error(r);
             }
           }
-        },
-        addEventListener: function addEventListener(t, c) {
+        };
+
+        this.addEventListener = function (t, c) {
           if (!this.listeners.has(t)) {
             this.listeners.set(t, new Set());
           }
 
           this.listeners.get(t).add(c);
-        },
-        removeEventListener: function removeEventListener(t, c) {
+        };
+
+        this.removeEventListener = function (t, c) {
           var _this$listeners$get;
 
           (_this$listeners$get = this.listeners.get(t)) === null || _this$listeners$get === void 0 ? void 0 : _this$listeners$get.delete(c);
-        }
+        };
       };
-      var AdsManager = EventHandler;
+
+      var AdsManager = new EventHandler();
       /* eslint-disable no-use-before-define */
 
-      AdsManager.prototype.volume = 1;
-      AdsManager.prototype.collapse = noopFunc;
-      AdsManager.prototype.configureAdsManager = noopFunc;
-      AdsManager.prototype.destroy = noopFunc;
-      AdsManager.prototype.discardAdBreak = noopFunc;
-      AdsManager.prototype.expand = noopFunc;
-      AdsManager.prototype.focus = noopFunc;
+      AdsManager.volume = 1;
+      AdsManager.collapse = noopFunc;
+      AdsManager.configureAdsManager = noopFunc;
+      AdsManager.destroy = noopFunc;
+      AdsManager.discardAdBreak = noopFunc;
+      AdsManager.expand = noopFunc;
+      AdsManager.focus = noopFunc;
 
-      AdsManager.prototype.getAdSkippableState = function () {
+      AdsManager.getAdSkippableState = function () {
         return false;
       };
 
-      AdsManager.prototype.getCuePoints = function () {
+      AdsManager.getCuePoints = function () {
         return [0];
       };
 
-      AdsManager.prototype.getCurrentAd = function () {
+      AdsManager.getCurrentAd = function () {
         return currentAd;
       };
 
-      AdsManager.prototype.getCurrentAdCuePoints = function () {
+      AdsManager.getCurrentAdCuePoints = function () {
         return [];
       };
 
-      AdsManager.prototype.getRemainingTime = function () {
+      AdsManager.getRemainingTime = function () {
         return 0;
       };
 
-      AdsManager.prototype.getVolume = function () {
-        return _this.volume;
+      AdsManager.getVolume = function () {
+        return this.volume;
       };
 
-      AdsManager.prototype.init = noopFunc;
+      AdsManager.init = noopFunc;
 
-      AdsManager.prototype.isCustomClickTrackingUsed = function () {
+      AdsManager.isCustomClickTrackingUsed = function () {
         return false;
       };
 
-      AdsManager.prototype.isCustomPlaybackUsed = function () {
+      AdsManager.isCustomPlaybackUsed = function () {
         return false;
       };
 
-      AdsManager.prototype.pause = noopFunc;
-      AdsManager.prototype.requestNextAdBreak = noopFunc;
-      AdsManager.prototype.resize = noopFunc;
-      AdsManager.prototype.resume = noopFunc;
+      AdsManager.pause = noopFunc;
+      AdsManager.requestNextAdBreak = noopFunc;
+      AdsManager.resize = noopFunc;
+      AdsManager.resume = noopFunc;
 
-      AdsManager.prototype.setVolume = function (v) {
-        _this.volume = v;
+      AdsManager.setVolume = function (v) {
+        this.volume = v;
       };
 
-      AdsManager.prototype.skip = noopFunc;
+      AdsManager.skip = noopFunc;
 
-      AdsManager.prototype.start = function () {
+      AdsManager.start = function () {
         // eslint-disable-next-line no-restricted-syntax
-        for (var _i2 = 0, _arr = [AdEvent.Type.LOADED, AdEvent.Type.STARTED, AdEvent.Type.AD_BUFFERING, AdEvent.Type.FIRST_QUARTILE, AdEvent.Type.MIDPOINT, AdEvent.Type.THIRD_QUARTILE, AdEvent.Type.COMPLETE, AdEvent.Type.ALL_ADS_COMPLETED]; _i2 < _arr.length; _i2++) {
+        for (var _i2 = 0, _arr = [AdEvent.Type.LOADED, AdEvent.Type.STARTED, AdEvent.Type.AD_BUFFERING, AdEvent.Type.FIRST_QUARTILE, AdEvent.Type.MIDPOINT, AdEvent.Type.THIRD_QUARTILE, AdEvent.Type.COMPLETE, AdEvent.Type.ALL_ADS_COMPLETED, AdEvent.Type.CONTENT_RESUME_REQUESTED]; _i2 < _arr.length; _i2++) {
           var type = _arr[_i2];
 
           try {
-            _this._dispatch(new ima.AdEvent(type));
+            this._dispatch(new ima.AdEvent(type));
           } catch (e) {
             // eslint-disable-next-line no-console
             console.error(e);
@@ -8531,18 +8549,17 @@
         }
       };
 
-      AdsManager.prototype.stop = noopFunc;
-      AdsManager.prototype.updateAdsRenderingSettings = noopFunc;
+      AdsManager.stop = noopFunc;
+      AdsManager.updateAdsRenderingSettings = noopFunc;
       /* eslint-enable no-use-before-define */
 
       var manager = Object.create(AdsManager);
 
-      var AdsManagerLoadedEvent = function AdsManagerLoadedEvent() {};
+      var AdsManagerLoadedEvent = function AdsManagerLoadedEvent(type) {
+        this.type = type;
+      };
 
       AdsManagerLoadedEvent.prototype = {
-        constructor: function constructor(type) {
-          _this.type = type;
-        },
         getAdsManager: function getAdsManager() {
           return manager;
         },
@@ -8565,15 +8582,16 @@
       };
 
       AdsLoader.prototype.requestAds = function () {
-        var _this2 = this;
-
         if (!managerLoaded) {
           managerLoaded = true;
-          requestAnimationFrame(function () {
-            var ADS_MANAGER_LOADED = AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED;
+          var e = new ima.AdError('adPlayError', 1205, 1205, 'The browser prevented playback initiated without user interaction.');
 
-            _this2._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED));
-          });
+          this._dispatch(new ima.AdErrorEvent(e)); // https://github.com/AdguardTeam/Scriptlets/issues/217
+          // requestAnimationFrame(() => {
+          //     const { ADS_MANAGER_LOADED } = AdsManagerLoadedEvent.Type;
+          //     this._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED));
+          // });
+
         }
       };
 
@@ -8618,7 +8636,7 @@
           return '';
         },
         getAdPodInfo: function getAdPodInfo() {
-          return _this.pi;
+          return this.pi;
         },
         getAdSystem: function getAdSystem() {
           return '';
@@ -8703,6 +8721,9 @@
         },
         isLinear: function isLinear() {
           return true;
+        },
+        isSkippable: function isSkippable() {
+          return true;
         }
       };
 
@@ -8726,26 +8747,34 @@
         }
       };
 
-      var AdError = function AdError() {};
+      var AdError = function AdError(type, code, vast, message) {
+        this.errorCode = code;
+        this.message = message;
+        this.type = type;
 
-      AdError.prototype = {
-        getErrorCode: function getErrorCode() {
-          return 0;
-        },
-        getInnerError: noopFunc,
-        getMessage: function getMessage() {
-          return '';
-        },
-        getType: function getType() {
-          return 1;
-        },
-        getVastErrorCode: function getVastErrorCode() {
-          return 0;
-        },
-        toString: function toString() {
-          return '';
-        }
+        this.getErrorCode = function () {
+          return this.errorCode;
+        };
+
+        this.getInnerError = function () {};
+
+        this.getMessage = function () {
+          return this.message;
+        };
+
+        this.getType = function () {
+          return this.type;
+        };
+
+        this.getVastErrorCode = function () {
+          return this.vastErrorCode;
+        };
+
+        this.toString = function () {
+          return "AdError ".concat(this.errorCode, ": ").concat(this.message);
+        };
       };
+
       AdError.ErrorCode = {};
       AdError.Type = {};
 
@@ -8770,12 +8799,11 @@
 
       var currentAd = isEngadget() ? undefined : new Ad();
 
-      var AdEvent = function AdEvent() {};
+      var AdEvent = function AdEvent(type) {
+        this.type = type;
+      };
 
       AdEvent.prototype = {
-        constructor: function constructor(type) {
-          _this.type = type;
-        },
         getAd: function getAd() {
           return currentAd;
         },
@@ -8816,12 +8844,19 @@
         VOLUME_MUTED: 'mute'
       };
 
-      var AdErrorEvent = function AdErrorEvent() {};
+      var AdErrorEvent = function AdErrorEvent(error) {
+        this.error = error;
+        this.type = 'adError';
 
-      AdErrorEvent.prototype = {
-        getError: noopFunc,
-        getUserRequestContext: function getUserRequestContext() {}
+        this.getError = function () {
+          return this.error;
+        };
+
+        this.getUserRequestContext = function () {
+          return {};
+        };
       };
+
       AdErrorEvent.Type = {
         AD_ERROR: 'adError'
       };
@@ -13970,6 +14005,7 @@
           return;
         }
 
+        setShouldAbortStack(true);
         var rid = randomId();
 
         var abort = function abort() {
@@ -14010,17 +14046,21 @@
 
           setPropertyAccess(base, prop, {
             get: function get() {
-              if (matchStackTrace(stack, new Error().stack)) {
+              if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
+                setShouldAbortStack(true);
                 abort();
               }
 
+              setShouldAbortStack(true);
               return value;
             },
             set: function set(newValue) {
-              if (matchStackTrace(stack, new Error().stack)) {
+              if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
+                setShouldAbortStack(true);
                 abort();
               }
 
+              setShouldAbortStack(true);
               value = newValue;
             }
           });
@@ -14171,6 +14211,8 @@
       }
 
       function matchStackTrace(stackMatch, stackTrace) {
+        setShouldAbortStack(false);
+
         if (!stackMatch || stackMatch === "") {
           return true;
         }
@@ -14180,6 +14222,12 @@
           return line.trim();
         }).join("\n");
         return stackRegexp.test(refinedStackTrace);
+      }
+
+      function shouldAbortStack() {}
+
+      function setShouldAbortStack(value) {
+        shouldAbortStack = value;
       }
 
       function toRegExp() {
@@ -15749,6 +15797,7 @@
       }
 
       function matchStackTrace(stackMatch, stackTrace) {
+
         if (!stackMatch || stackMatch === "") {
           return true;
         }
@@ -20365,6 +20414,7 @@
       }
 
       function matchStackTrace(stackMatch, stackTrace) {
+
         if (!stackMatch || stackMatch === "") {
           return true;
         }

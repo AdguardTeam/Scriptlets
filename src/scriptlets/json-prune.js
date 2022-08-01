@@ -3,6 +3,8 @@ import {
     matchStackTrace,
     getWildcardPropertyInChain,
     // following helpers are needed for helpers above
+    shouldAbortStack,
+    setShouldAbortStack,
     toRegExp,
     getWildcardSymbol,
 } from '../helpers/index';
@@ -227,6 +229,8 @@ jsonPrune.names = [
 jsonPrune.injections = [
     hit,
     matchStackTrace,
+    shouldAbortStack,
+    setShouldAbortStack,
     getWildcardPropertyInChain,
     toRegExp,
     getWildcardSymbol,
