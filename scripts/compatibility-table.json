@@ -68,9 +68,6 @@
             "adg": "log-on-stack-trace"
         },
         {
-            "adg": "naver-wcslog"
-        },
-        {
             "adg": "noeval"
         },
         {
@@ -308,6 +305,9 @@
         },
         {
             "adg": "metrika-yandex-tag"
+        },
+        {
+            "adg": "naver-wcslog"
         },
         {
             "adg": "noeval",
