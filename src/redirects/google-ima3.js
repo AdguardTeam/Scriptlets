@@ -202,7 +202,7 @@ export function GoogleIma3(source) {
         return this.settings;
     };
     AdsLoader.prototype.getVersion = () => VERSION;
-    AdsLoader.prototype.requestAds = function () {
+    AdsLoader.prototype.requestAds = function (adsRequest, userRequestContext) {
         if (!managerLoaded) {
             managerLoaded = true;
             const e = new ima.AdError(
@@ -210,14 +210,10 @@ export function GoogleIma3(source) {
                 1205,
                 1205,
                 'The browser prevented playback initiated without user interaction.',
+                adsRequest,
+                userRequestContext,
             );
             this._dispatch(new ima.AdErrorEvent(e));
-
-            // https://github.com/AdguardTeam/Scriptlets/issues/217
-            // requestAnimationFrame(() => {
-            //     const { ADS_MANAGER_LOADED } = AdsManagerLoadedEvent.Type;
-            //     this._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED));
-            // });
         }
     };
 
@@ -285,10 +281,12 @@ export function GoogleIma3(source) {
         getWidth: () => 1,
     };
 
-    const AdError = function (type, code, vast, message) {
+    const AdError = function (type, code, vast, message, adsRequest, userRequestContext) {
         this.errorCode = code;
         this.message = message;
         this.type = type;
+        this.adsRequest = adsRequest;
+        this.userRequestContext = userRequestContext;
 
         this.getErrorCode = function () {
             return this.errorCode;
@@ -380,6 +378,9 @@ export function GoogleIma3(source) {
         };
 
         this.getUserRequestContext = function () {
+            if (this.error?.userRequestContext) {
+                return this.error.userRequestContext;
+            }
             return {};
         };
     };
