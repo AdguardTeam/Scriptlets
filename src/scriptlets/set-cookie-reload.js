@@ -1,4 +1,8 @@
-import { hit, nativeIsNaN, prepareCookie } from '../helpers/index';
+import {
+    hit,
+    nativeIsNaN,
+    prepareCookie,
+} from '../helpers/index';
 
 /**
  * @scriptlet set-cookie-reload
@@ -30,27 +34,33 @@ import { hit, nativeIsNaN, prepareCookie } from '../helpers/index';
  * ```
  */
 export function setCookieReload(source, name, value) {
-    const isCookieAlreadySet = document.cookie.split(';')
-        .some((cookieStr) => {
-            const pos = cookieStr.indexOf('=');
-            if (pos === -1) {
-                return false;
-            }
-            const cookieName = cookieStr.slice(0, pos).trim();
-            const cookieValue = cookieStr.slice(pos + 1).trim();
+    const isCookieSetWithValue = (name, value) => {
+        return document.cookie.split(';')
+            .some((cookieStr) => {
+                const pos = cookieStr.indexOf('=');
+                if (pos === -1) {
+                    return false;
+                }
+                const cookieName = cookieStr.slice(0, pos).trim();
+                const cookieValue = cookieStr.slice(pos + 1).trim();
 
-            return name === cookieName && value === cookieValue;
-        });
+                return name === cookieName && value === cookieValue;
+            });
+    };
 
-    const shouldReload = !isCookieAlreadySet;
+    if (isCookieSetWithValue(name, value)) {
+        return;
+    }
 
     const cookieData = prepareCookie(name, value);
 
     if (cookieData) {
-        hit(source);
         document.cookie = cookieData;
+        hit(source);
 
-        if (shouldReload) {
+        // Only reload the page if cookie was set
+        // https://github.com/AdguardTeam/Scriptlets/issues/212
+        if (isCookieSetWithValue(name, value)) {
             window.location.reload();
         }
     }
