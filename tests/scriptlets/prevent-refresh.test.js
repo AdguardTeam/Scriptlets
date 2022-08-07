@@ -21,6 +21,11 @@ const createMeta = (contentValue) => {
     document.body.appendChild(meta);
 };
 
+const removeMeta = () => {
+    const meta = document.querySelectorAll('meta[content]');
+    meta.forEach((el) => { el.remove(); });
+};
+
 module(name, { beforeEach, afterEach });
 
 test('Checking if alias name works', (assert) => {
@@ -42,7 +47,7 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('Prevent redirect, delay from meta', (assert) => {
-    const REL_PAGE_PATH = '../scriptlets/test-files/empty.html';
+    const REL_PAGE_PATH = './test-files/empty.html';
     const contentValue = `1;url=${REL_PAGE_PATH}`;
     createMeta(contentValue);
 
@@ -55,8 +60,23 @@ test('Prevent redirect, delay from meta', (assert) => {
     }, 1 * 1000);
 });
 
-test('Prevent redirect, delay from arg', (assert) => {
-    const REL_PAGE_PATH = '../scriptlets/test-files/empty.html';
+test('Prevent redirect, delay from arg (delay 0)', (assert) => {
+    const REL_PAGE_PATH = './test-files/empty.html';
+    const contentValue = `0;url=${REL_PAGE_PATH}`;
+    createMeta(contentValue);
+
+    runScriptlet(name, ['0']);
+    const done = assert.async();
+    setTimeout(() => {
+        assert.ok(location.href.indexOf('prevent-refresh') !== -1, 'Redirect prevented');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
+        removeMeta();
+        done();
+    }, 1 * 1000);
+});
+
+test('Prevent redirect, delay from arg (delay 1)', (assert) => {
+    const REL_PAGE_PATH = './test-files/empty.html';
     const contentValue = `1;url=${REL_PAGE_PATH}`;
     createMeta(contentValue);
 
@@ -65,6 +85,39 @@ test('Prevent redirect, delay from arg', (assert) => {
     setTimeout(() => {
         assert.ok(location.href.indexOf('prevent-refresh') !== -1, 'Redirect prevented');
         assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
+        removeMeta();
+        done();
+    }, 1 * 1000);
+});
+
+test('Prevent redirect, in case of invalid content, checks for - TypeError: Reduce of empty array with no initial value', (assert) => {
+    const REL_PAGE_PATH = './test-files/empty.html';
+    const contentValue = `invalid;url=${REL_PAGE_PATH}`;
+    let testPassed = true;
+    createMeta(contentValue);
+
+    // Check if there is a "Reduce of empty array with no initial value" error in console
+    // if so, then set "testPassed" to "false"
+    const checkConsole = () => {
+        const logMessages = [];
+        const wrapperLog = (target, thisArg, args) => {
+            logMessages.push(...args);
+            if (logMessages[0]?.message?.includes('Reduce of empty array with no initial value')) {
+                testPassed = false;
+            }
+            return Reflect.apply(target, thisArg, args);
+        };
+        const handlerLog = {
+            apply: wrapperLog,
+        };
+        window.console.log = new Proxy(window.console.log, handlerLog);
+    };
+    checkConsole();
+    runScriptlet(name);
+    const done = assert.async();
+    setTimeout(() => {
+        assert.ok(testPassed, 'No error');
+        removeMeta();
         done();
     }, 1 * 1000);
 });

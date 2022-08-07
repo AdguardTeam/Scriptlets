@@ -71,6 +71,9 @@ export function preventRefresh(source, delaySec) {
                 return contentDelay;
             })
             .filter((delay) => delay !== null);
+        // Check if "delays" array is empty, may happens when meta's content is invalid
+        // and reduce() method cannot be used with empty arrays without initial value
+        if (!delays.length) { return; }
         // Get smallest delay of all metas on the page
         const minDelay = delays.reduce((a, b) => Math.min(a, b));
         // eslint-disable-next-line consistent-return
@@ -84,11 +87,11 @@ export function preventRefresh(source, delaySec) {
         }
         let secondsToRun = getNumberFromString(delaySec);
         // Check if argument is provided
-        if (!secondsToRun) {
+        if (secondsToRun == null) {
             secondsToRun = getMetaContentDelay(metaElements);
         }
         // Check if meta tag has delay
-        if (!secondsToRun) {
+        if (secondsToRun == null) {
             return;
         }
         const delayMs = secondsToRun * 1000;
