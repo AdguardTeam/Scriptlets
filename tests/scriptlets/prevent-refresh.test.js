@@ -99,10 +99,8 @@ test('Prevent redirect, in case of invalid content, checks for - TypeError: Redu
     // Check if there is a "Reduce of empty array with no initial value" error in console
     // if so, then set "testPassed" to "false"
     const checkConsole = () => {
-        const logMessages = [];
         const wrapperLog = (target, thisArg, args) => {
-            logMessages.push(...args);
-            if (logMessages[0]?.message?.includes('Reduce of empty array with no initial value')) {
+            if (args[0]?.message?.includes('Reduce of empty array with no initial value')) {
                 testPassed = false;
             }
             return Reflect.apply(target, thisArg, args);
