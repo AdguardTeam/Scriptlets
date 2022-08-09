@@ -7,6 +7,8 @@ import {
     getStringInBraces,
 } from './string-utils';
 
+import { isExisting } from './array-utils';
+
 import { getWildcardSymbol } from './constants';
 
 import validator from './validator';
@@ -199,8 +201,10 @@ export const convertAbpSnippetToAdg = (rule) => {
     const args = substringAfter(rule, mask);
 
     return args.split(SEMICOLON_DIVIDER)
+        // abp-rule may have `;` at the end which makes last array item irrelevant
+        // https://github.com/AdguardTeam/Scriptlets/issues/236
+        .filter(isExisting)
         .map((args) => getSentences(args)
-            .filter((arg) => arg)
             .map((arg, index) => (index === 0 ? `abp-${arg}` : arg))
             .map((arg) => wrapInSingleQuotes(arg))
             .join(`${COMMA_SEPARATOR} `))

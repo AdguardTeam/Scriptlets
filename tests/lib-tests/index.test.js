@@ -161,14 +161,30 @@ test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
 });
 
 test('Test SCRIPTLET converting - ABP -> ADG', (assert) => {
-    const rule = 'esheeq.co#$#abort-on-property-read atob; abort-on-property-write Fingerprint2; abort-on-property-read decodeURIComponent; abort-on-property-read RegExp';
-    const exp = [
-        'esheeq.co#%#//scriptlet(\'abp-abort-on-property-read\', \'atob\')',
-        'esheeq.co#%#//scriptlet(\'abp-abort-on-property-write\', \'Fingerprint2\')',
-        'esheeq.co#%#//scriptlet(\'abp-abort-on-property-read\', \'decodeURIComponent\')',
-        'esheeq.co#%#//scriptlet(\'abp-abort-on-property-read\', \'RegExp\')',
+    let actual;
+    let expected;
+
+    actual = 'esheeq.co#$#abort-on-property-read atob; abort-on-property-write Fingerprint2; abort-on-property-read decodeURIComponent; abort-on-property-read RegExp';
+    expected = [
+        "esheeq.co#%#//scriptlet('abp-abort-on-property-read', 'atob')",
+        "esheeq.co#%#//scriptlet('abp-abort-on-property-write', 'Fingerprint2')",
+        "esheeq.co#%#//scriptlet('abp-abort-on-property-read', 'decodeURIComponent')",
+        "esheeq.co#%#//scriptlet('abp-abort-on-property-read', 'RegExp')",
     ];
-    assert.deepEqual(convertScriptletToAdg(rule), exp);
+    assert.deepEqual(convertScriptletToAdg(actual), expected);
+
+    actual = 'example.com#$#abort-current-inline-script onload;';
+    expected = [
+        "example.com#%#//scriptlet('abp-abort-current-inline-script', 'onload')",
+    ];
+    assert.deepEqual(convertScriptletToAdg(actual), expected);
+
+    actual = 'example.org#$#abort-on-property-read Object.prototype.createHostAsserter; abort-on-property-read Object.prototype.DlEDrf;';
+    expected = [
+        "example.org#%#//scriptlet('abp-abort-on-property-read', 'Object.prototype.createHostAsserter')",
+        "example.org#%#//scriptlet('abp-abort-on-property-read', 'Object.prototype.DlEDrf')",
+    ];
+    assert.deepEqual(convertScriptletToAdg(actual), expected);
 });
 
 test('Test SCRIPTLET converting - multiple ABP -> ADG', (assert) => {
