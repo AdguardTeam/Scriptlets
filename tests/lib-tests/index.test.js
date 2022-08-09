@@ -122,6 +122,11 @@ test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
     expBlockRule = "memo-book.pl#%#//scriptlet('ubo-rc.js', '.locked', 'body, html', 'stay')";
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule, 'specified selectors and applying - OK');
 
+    // just two args for remove-attr/class
+    blockingRule = 'example.com##+js(ra, onselectstart)';
+    expBlockRule = "example.com#%#//scriptlet('ubo-ra.js', 'onselectstart')";
+    assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
+
     // double quotes in scriptlet parameter
     blockingRule = 'example.com#@#+js(remove-attr.js, href, a[data-st-area="Header-back"])';
     expBlockRule = 'example.com#@%#//scriptlet(\'ubo-remove-attr.js\', \'href\', \'a[data-st-area="Header-back"]\')';
