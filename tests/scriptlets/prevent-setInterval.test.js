@@ -138,7 +138,6 @@ test('!match', (assert) => {
     // We need to run our assertion after all timeouts
     setTimeout(() => {
         assert.equal(window.one, 'NEW ONE', '!match-property not changed');
-        // eslint-disable-next-line max-len
         assert.equal(window.two, 'old two', 'Second property should be successfully changed');
         assert.equal(window.three, 'old three', 'Third property should be successfully changed');
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
@@ -160,6 +159,38 @@ test('!match', (assert) => {
 
     const third = () => { window.three = 'NEW THREE'; };
     const intervalTest3 = setInterval(third, 50);
+    testIntervals.push(intervalTest3);
+});
+
+test('match any callback + delay = 0', (assert) => {
+    const done = assert.async();
+    window.one = 'old one';
+    window.two = 'old two';
+    window.three = 'old three';
+    // We need to run our assertion after all timeouts
+    setTimeout(() => {
+        assert.equal(window.one, 'NEW ONE', 'property \'one\' is changed due to none-zero delay');
+        assert.equal(window.two, 'old two', 'property \'two\' should NOT be changed');
+        assert.equal(window.three, 'old three', 'property \'three\' should NOT be changed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        done();
+    }, 100);
+
+    // run scriptlet code
+    const scriptletArgs = ['', '0'];
+    runScriptlet(name, scriptletArgs);
+
+    // only this one SHOULD NOT be prevented because of delay mismatch
+    const one = () => { window.one = 'NEW ONE'; };
+    const intervalTest1 = setInterval(one, 25);
+    testIntervals.push(intervalTest1);
+
+    const second = () => { window.two = 'NEW TWO'; };
+    const intervalTest2 = setInterval(second, 0);
+    testIntervals.push(intervalTest2);
+
+    const third = () => { window.three = 'NEW THREE'; };
+    const intervalTest3 = setInterval(third, 0);
     testIntervals.push(intervalTest3);
 });
 
