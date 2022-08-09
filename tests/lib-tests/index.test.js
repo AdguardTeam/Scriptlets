@@ -262,6 +262,11 @@ test('Test $redirect validation', (assert) => {
     assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);
     assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), true);
 
+    // noopvast-4.0 support
+    inputRule = '||example.org$xmlhttprequest,redirect=noopvast-4.0';
+    assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), true, '$redirect isValidAdgRedirectRule noopvast-4.0');
+    assert.strictEqual(validator.isAdgRedirectRule(inputRule), true, '$redirect isAdgRedirectRule noopvast-4.0');
+
     // old alias for adsbygoogle redirect should be valid
     inputRule = '||example.org^$script,redirect=googlesyndication.com/adsbygoogle.js';
     assert.strictEqual(validator.isAdgRedirectRule(inputRule), true, '$redirect isAdgRedirectRule googlesyndication.com/adsbygoogle.js');

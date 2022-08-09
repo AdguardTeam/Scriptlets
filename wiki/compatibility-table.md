@@ -106,6 +106,7 @@
 | [noopvmap-1.0](../wiki/about-redirects.md#noopvmap-1.0) | noop-vmap1.0.xml |  |
 | [noopvast-2.0](../wiki/about-redirects.md#noopvast-2.0) |  |  |
 | [noopvast-3.0](../wiki/about-redirects.md#noopvast-3.0) |  |  |
+| [noopvast-4.0](../wiki/about-redirects.md#noopvast-4.0) |  |  |
 | [prebid-ads](../wiki/about-redirects.md#prebid-ads) | prebid-ads.js |  |
 | [prevent-bab](../wiki/about-redirects.md#prevent-bab) | nobab.js |  |
 | [prevent-bab2](../wiki/about-redirects.md#prevent-bab2) | nobab2.js |  |
