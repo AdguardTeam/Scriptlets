@@ -115,6 +115,7 @@ test('Prevent redirect, in case of invalid content, checks for - TypeError: Redu
     const done = assert.async();
     setTimeout(() => {
         assert.ok(testPassed, 'No error');
+        assert.strictEqual(window.hit, undefined, 'should not hit');
         removeMeta();
         done();
     }, 1 * 1000);
