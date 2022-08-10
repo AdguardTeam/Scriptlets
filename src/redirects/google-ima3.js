@@ -205,6 +205,7 @@ export function GoogleIma3(source) {
     AdsLoader.prototype.requestAds = function (adsRequest, userRequestContext) {
         if (!managerLoaded) {
             managerLoaded = true;
+
             const e = new ima.AdError(
                 'adPlayError',
                 1205,
@@ -213,7 +214,11 @@ export function GoogleIma3(source) {
                 adsRequest,
                 userRequestContext,
             );
-            this._dispatch(new ima.AdErrorEvent(e));
+            requestAnimationFrame(() => {
+                // using AdErrorEvent is preferred as AdsManagerLoadedEvent causes errors
+                // https://github.com/AdguardTeam/Scriptlets/issues/217
+                this._dispatch(new ima.AdErrorEvent(e));
+            });
         }
     };
 
