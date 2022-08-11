@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.27
+ * Version 1.6.39
  */
 
 (function () {
@@ -408,7 +408,9 @@
      * Parses delay arg with possible negation for no matching.
      * Needed for prevent-setTimeout and prevent-setInterval
      * @param {string} delay
-     * @returns {DelayData}
+     * @returns {DelayData} `{ isInvertedDelayMatch, delayMatch }` where:
+     * `isInvertedDelayMatch` is boolean,
+     * `delayMatch` is number OR null for invalid `delay`
      */
 
     var parseDelayArg = function parseDelayArg(delay) {
@@ -748,7 +750,7 @@
         configurable: true
       });
       return {
-        base: nextBase,
+        base: base,
         prop: prop,
         chain: chain
       };
@@ -1093,6 +1095,12 @@
       connect();
     };
 
+    // eslint-disable-next-line import/no-mutable-exports, func-names
+
+    var shouldAbortStack = function shouldAbortStack() {};
+    function setShouldAbortStack(value) {
+      shouldAbortStack = value;
+    }
     /**
      * Checks if the stackTrace contains stackRegexp
      * https://github.com/AdguardTeam/Scriptlets/issues/82
@@ -1100,17 +1108,11 @@
      * @param {string} stackTrace - script error stack trace
      * @returns {boolean}
      */
-    // https://github.com/AdguardTeam/Scriptlets/issues/226
-    // eslint-disable-next-line import/no-mutable-exports, func-names
 
-    var shouldAbortStack = function shouldAbortStack() {};
-    function setShouldAbortStack(value) {
-      shouldAbortStack = value;
-    }
     var matchStackTrace = function matchStackTrace(stackMatch, stackTrace) {
-      // https://github.com/AdguardTeam/Scriptlets/issues/226
       // sets shouldAbortStack to false
       // to avoid checking matchStackTrace from properties used by our script and stucking in a loop
+      // https://github.com/AdguardTeam/Scriptlets/issues/226
       setShouldAbortStack(false);
 
       if (!stackMatch || stackMatch === '') {
@@ -1155,6 +1157,15 @@
 
 
       return res.reverse();
+    };
+    /**
+     * Predicate method to check if the array item exists
+     * @param {any} item
+     * @returns {boolean}
+     */
+
+    var isExisting = function isExisting(item) {
+      return !!item;
     };
 
     /**
@@ -1578,7 +1589,7 @@
 
       var callbackStr = String(callback);
 
-      if (!delayMatch) {
+      if (delayMatch === null) {
         shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
       } else if (!matchCallback) {
         shouldPrevent = delay === delayMatch !== isInvertedDelayMatch;
@@ -2729,7 +2740,7 @@
         } // Undefined prop in chain
 
 
-        trapProp(owner, prop, true, undefPropHandler);
+        trapProp(base, prop, true, undefPropHandler);
       };
 
       setChainPropAccess(window, property);
@@ -5350,8 +5361,8 @@
     function abortOnStackTrace$1(source, property, stack) {
       if (!property || !stack) {
         return;
-      } // https://github.com/AdguardTeam/Scriptlets/issues/226
-      // sets shouldAbortStack to true
+      } // sets shouldAbortStack to true
+      // https://github.com/AdguardTeam/Scriptlets/issues/226
 
 
       setShouldAbortStack(true);
@@ -5871,7 +5882,13 @@
           return contentDelay;
         }).filter(function (delay) {
           return delay !== null;
-        }); // Get smallest delay of all metas on the page
+        }); // Check if "delays" array is empty, may happens when meta's content is invalid
+        // and reduce() method cannot be used with empty arrays without initial value
+
+        if (!delays.length) {
+          return null;
+        } // Get smallest delay of all metas on the page
+
 
         var minDelay = delays.reduce(function (a, b) {
           return Math.min(a, b);
@@ -5889,12 +5906,12 @@
 
         var secondsToRun = getNumberFromString(delaySec); // Check if argument is provided
 
-        if (!secondsToRun) {
+        if (secondsToRun === null) {
           secondsToRun = getMetaContentDelay(metaElements);
         } // Check if meta tag has delay
 
 
-        if (!secondsToRun) {
+        if (secondsToRun === null) {
           return;
         }
 
@@ -5930,7 +5947,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('prevent-src', tagName, match)
+     * example.org#%#//scriptlet('prevent-element-src-loading', tagName, match)
      * ```
      *
      * - `tagName` - required, case-insensitive target element tagName which `src` property resource loading will be silently prevented; possible values:
@@ -6248,6 +6265,8 @@
       adg: 'noopvast-2.0'
     }, {
       adg: 'noopvast-3.0'
+    }, {
+      adg: 'noopvast-4.0'
     }, {
       adg: 'prebid'
     }, {
@@ -6819,18 +6838,23 @@
 
 
     var validateRemoveAttrClassArgs = function validateRemoveAttrClassArgs(parsedArgs) {
-      // remove-attr/class scriptlet might have multiple selectors separated by comma. so we should:
+      var _parsedArgs = toArray$1(parsedArgs),
+          name = _parsedArgs[0],
+          value = _parsedArgs[1],
+          restArgs = _parsedArgs.slice(2); // no extra checking if there are only scriptlet name and value
+      // https://github.com/AdguardTeam/Scriptlets/issues/235
+
+
+      if (restArgs.length === 0) {
+        return [name, value];
+      } // remove-attr/class scriptlet might have multiple selectors separated by comma. so we should:
       // 1. check if last arg is 'applying' parameter
       // 2. join 'selector' into one arg
       // 3. combine all args
       // https://github.com/AdguardTeam/Scriptlets/issues/133
-      var lastArg = parsedArgs.pop();
 
-      var _parsedArgs = toArray$1(parsedArgs),
-          name = _parsedArgs[0],
-          value = _parsedArgs[1],
-          restArgs = _parsedArgs.slice(2);
 
+      var lastArg = restArgs.pop();
       var applying; // check the last parsed arg for matching possible 'applying' vale
 
       if (REMOVE_ATTR_CLASS_APPLYING.some(function (el) {
@@ -6914,10 +6938,10 @@
       var template = mask === validator.ABP_SCRIPTLET_MASK ? ADGUARD_SCRIPTLET_TEMPLATE : ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
       var domains = substringBefore(rule, mask);
       var args = substringAfter$1(rule, mask);
-      return args.split(SEMICOLON_DIVIDER).map(function (args) {
-        return getSentences(args).filter(function (arg) {
-          return arg;
-        }).map(function (arg, index) {
+      return args.split(SEMICOLON_DIVIDER) // abp-rule may have `;` at the end which makes last array item irrelevant
+      // https://github.com/AdguardTeam/Scriptlets/issues/236
+      .filter(isExisting).map(function (args) {
+        return getSentences(args).map(function (arg, index) {
           return index === 0 ? "abp-".concat(arg) : arg;
         }).map(function (arg) {
           return wrapInSingleQuotes(arg);
@@ -7605,6 +7629,7 @@
       Slot.prototype.getDomId = noopStr;
       Slot.prototype.getSlotElementId = noopStr;
       Slot.prototype.getSlotId = noopThis;
+      Slot.prototype.getSizes = noopArray;
       Slot.prototype.getTargeting = noopArray;
       Slot.prototype.getTargetingKeys = noopArray;
       Slot.prototype.set = noopThis;
@@ -8581,17 +8606,17 @@
         return VERSION;
       };
 
-      AdsLoader.prototype.requestAds = function () {
+      AdsLoader.prototype.requestAds = function (adsRequest, userRequestContext) {
+        var _this = this;
+
         if (!managerLoaded) {
           managerLoaded = true;
-          var e = new ima.AdError('adPlayError', 1205, 1205, 'The browser prevented playback initiated without user interaction.');
-
-          this._dispatch(new ima.AdErrorEvent(e)); // https://github.com/AdguardTeam/Scriptlets/issues/217
-          // requestAnimationFrame(() => {
-          //     const { ADS_MANAGER_LOADED } = AdsManagerLoadedEvent.Type;
-          //     this._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED));
-          // });
-
+          var e = new ima.AdError('adPlayError', 1205, 1205, 'The browser prevented playback initiated without user interaction.', adsRequest, userRequestContext);
+          requestAnimationFrame(function () {
+            // using AdErrorEvent is preferred as AdsManagerLoadedEvent causes errors
+            // https://github.com/AdguardTeam/Scriptlets/issues/217
+            _this._dispatch(new ima.AdErrorEvent(e));
+          });
         }
       };
 
@@ -8747,10 +8772,12 @@
         }
       };
 
-      var AdError = function AdError(type, code, vast, message) {
+      var AdError = function AdError(type, code, vast, message, adsRequest, userRequestContext) {
         this.errorCode = code;
         this.message = message;
         this.type = type;
+        this.adsRequest = adsRequest;
+        this.userRequestContext = userRequestContext;
 
         this.getErrorCode = function () {
           return this.errorCode;
@@ -8853,6 +8880,12 @@
         };
 
         this.getUserRequestContext = function () {
+          var _this$error;
+
+          if ((_this$error = this.error) !== null && _this$error !== void 0 && _this$error.userRequestContext) {
+            return this.error.userRequestContext;
+          }
+
           return {};
         };
       };
@@ -13544,7 +13577,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
@@ -13741,7 +13774,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
@@ -13916,7 +13949,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
@@ -14116,7 +14149,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
@@ -14689,7 +14722,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
@@ -14882,7 +14915,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
@@ -15059,7 +15092,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
@@ -16240,7 +16273,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
@@ -17808,6 +17841,11 @@
           }).filter(function (delay) {
             return delay !== null;
           });
+
+          if (!delays.length) {
+            return null;
+          }
+
           var minDelay = delays.reduce(function (a, b) {
             return Math.min(a, b);
           });
@@ -17823,11 +17861,11 @@
 
           var secondsToRun = getNumberFromString(delaySec);
 
-          if (!secondsToRun) {
+          if (secondsToRun === null) {
             secondsToRun = getMetaContentDelay(metaElements);
           }
 
-          if (!secondsToRun) {
+          if (secondsToRun === null) {
             return;
           }
 
@@ -18208,7 +18246,7 @@
         var shouldPrevent = false;
         var callbackStr = String(callback);
 
-        if (!delayMatch) {
+        if (delayMatch === null) {
           shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
         } else if (!matchCallback) {
           shouldPrevent = delay === delayMatch !== isInvertedDelayMatch;
@@ -18470,7 +18508,7 @@
         var shouldPrevent = false;
         var callbackStr = String(callback);
 
-        if (!delayMatch) {
+        if (delayMatch === null) {
           shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
         } else if (!matchCallback) {
           shouldPrevent = delay === delayMatch !== isInvertedDelayMatch;
@@ -20268,7 +20306,7 @@
             setChainPropAccess(propValue, chain);
           }
 
-          trapProp(owner, prop, true, undefPropHandler);
+          trapProp(base, prop, true, undefPropHandler);
         };
 
         setChainPropAccess(window, property);
@@ -20390,7 +20428,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
