@@ -221,6 +221,36 @@ if (isSupported) {
         };
         xhr.send();
     });
+
+    test('Args, prevent matched - blob', async (assert) => {
+        const createImg = document.createElement('img');
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test-image.jpeg`;
+        const MATCH_DATA = [`test-image.jpeg method:${METHOD}`];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.responseType = 'blob';
+        xhr.onload = () => {
+            try {
+                createImg.setAttribute('src', window.URL.createObjectURL(xhr.response));
+            } catch (error) {
+                console.error(error);
+            }
+            document.body.appendChild(createImg);
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            assert.strictEqual(xhr.response instanceof Blob, true, 'Response data mocked');
+            assert.ok(createImg.src.startsWith('blob:'), 'Image with source blob');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            createImg.remove();
+            done();
+        };
+        xhr.send();
+    });
 } else {
     test('unsupported', (assert) => {
         assert.ok(true, 'Browser does not support it');
