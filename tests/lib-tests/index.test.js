@@ -122,6 +122,11 @@ test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
     expBlockRule = "memo-book.pl#%#//scriptlet('ubo-rc.js', '.locked', 'body, html', 'stay')";
     assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule, 'specified selectors and applying - OK');
 
+    // just two args for remove-attr/class
+    blockingRule = 'example.com##+js(ra, onselectstart)';
+    expBlockRule = "example.com#%#//scriptlet('ubo-ra.js', 'onselectstart')";
+    assert.strictEqual(convertScriptletToAdg(blockingRule)[0], expBlockRule);
+
     // double quotes in scriptlet parameter
     blockingRule = 'example.com#@#+js(remove-attr.js, href, a[data-st-area="Header-back"])';
     expBlockRule = 'example.com#@%#//scriptlet(\'ubo-remove-attr.js\', \'href\', \'a[data-st-area="Header-back"]\')';
@@ -161,14 +166,30 @@ test('Test SCRIPTLET converting - UBO -> ADG', (assert) => {
 });
 
 test('Test SCRIPTLET converting - ABP -> ADG', (assert) => {
-    const rule = 'esheeq.co#$#abort-on-property-read atob; abort-on-property-write Fingerprint2; abort-on-property-read decodeURIComponent; abort-on-property-read RegExp';
-    const exp = [
-        'esheeq.co#%#//scriptlet(\'abp-abort-on-property-read\', \'atob\')',
-        'esheeq.co#%#//scriptlet(\'abp-abort-on-property-write\', \'Fingerprint2\')',
-        'esheeq.co#%#//scriptlet(\'abp-abort-on-property-read\', \'decodeURIComponent\')',
-        'esheeq.co#%#//scriptlet(\'abp-abort-on-property-read\', \'RegExp\')',
+    let actual;
+    let expected;
+
+    actual = 'esheeq.co#$#abort-on-property-read atob; abort-on-property-write Fingerprint2; abort-on-property-read decodeURIComponent; abort-on-property-read RegExp';
+    expected = [
+        "esheeq.co#%#//scriptlet('abp-abort-on-property-read', 'atob')",
+        "esheeq.co#%#//scriptlet('abp-abort-on-property-write', 'Fingerprint2')",
+        "esheeq.co#%#//scriptlet('abp-abort-on-property-read', 'decodeURIComponent')",
+        "esheeq.co#%#//scriptlet('abp-abort-on-property-read', 'RegExp')",
     ];
-    assert.deepEqual(convertScriptletToAdg(rule), exp);
+    assert.deepEqual(convertScriptletToAdg(actual), expected);
+
+    actual = 'example.com#$#abort-current-inline-script onload;';
+    expected = [
+        "example.com#%#//scriptlet('abp-abort-current-inline-script', 'onload')",
+    ];
+    assert.deepEqual(convertScriptletToAdg(actual), expected);
+
+    actual = 'example.org#$#abort-on-property-read Object.prototype.createHostAsserter; abort-on-property-read Object.prototype.DlEDrf;';
+    expected = [
+        "example.org#%#//scriptlet('abp-abort-on-property-read', 'Object.prototype.createHostAsserter')",
+        "example.org#%#//scriptlet('abp-abort-on-property-read', 'Object.prototype.DlEDrf')",
+    ];
+    assert.deepEqual(convertScriptletToAdg(actual), expected);
 });
 
 test('Test SCRIPTLET converting - multiple ABP -> ADG', (assert) => {
@@ -240,6 +261,11 @@ test('Test $redirect validation', (assert) => {
     inputRule = '||example.org/script.js$script,redirect=googletagmanager-gtm';
     assert.strictEqual(validator.isAdgRedirectRule(inputRule), true);
     assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), true);
+
+    // noopvast-4.0 support
+    inputRule = '||example.org$xmlhttprequest,redirect=noopvast-4.0';
+    assert.strictEqual(validator.isValidAdgRedirectRule(inputRule), true, '$redirect isValidAdgRedirectRule noopvast-4.0');
+    assert.strictEqual(validator.isAdgRedirectRule(inputRule), true, '$redirect isAdgRedirectRule noopvast-4.0');
 
     // old alias for adsbygoogle redirect should be valid
     inputRule = '||example.org^$script,redirect=googlesyndication.com/adsbygoogle.js';

@@ -210,11 +210,14 @@
         AdsLoader.prototype.getVersion = function() {
             return VERSION;
         };
-        AdsLoader.prototype.requestAds = function() {
+        AdsLoader.prototype.requestAds = function(adsRequest, userRequestContext) {
+            var _this = this;
             if (!managerLoaded) {
                 managerLoaded = true;
-                var e = new ima.AdError("adPlayError", 1205, 1205, "The browser prevented playback initiated without user interaction.");
-                this._dispatch(new ima.AdErrorEvent(e));
+                var e = new ima.AdError("adPlayError", 1205, 1205, "The browser prevented playback initiated without user interaction.", adsRequest, userRequestContext);
+                requestAnimationFrame((function() {
+                    _this._dispatch(new ima.AdErrorEvent(e));
+                }));
             }
         };
         var AdsRenderingSettings = noopFunc;
@@ -360,10 +363,12 @@
                 return 1;
             }
         };
-        var AdError = function AdError(type, code, vast, message) {
+        var AdError = function AdError(type, code, vast, message, adsRequest, userRequestContext) {
             this.errorCode = code;
             this.message = message;
             this.type = type;
+            this.adsRequest = adsRequest;
+            this.userRequestContext = userRequestContext;
             this.getErrorCode = function() {
                 return this.errorCode;
             };
@@ -446,6 +451,10 @@
                 return this.error;
             };
             this.getUserRequestContext = function() {
+                var _this$error;
+                if ((_this$error = this.error) !== null && _this$error !== void 0 && _this$error.userRequestContext) {
+                    return this.error.userRequestContext;
+                }
                 return {};
             };
         };

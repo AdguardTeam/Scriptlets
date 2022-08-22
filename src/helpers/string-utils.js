@@ -232,7 +232,9 @@ export const parseMatchArg = (match) => {
  * Parses delay arg with possible negation for no matching.
  * Needed for prevent-setTimeout and prevent-setInterval
  * @param {string} delay
- * @returns {DelayData}
+ * @returns {DelayData} `{ isInvertedDelayMatch, delayMatch }` where:
+ * `isInvertedDelayMatch` is boolean,
+ * `delayMatch` is number OR null for invalid `delay`
  */
 export const parseDelayArg = (delay) => {
     const INVERT_MARKER = '!';

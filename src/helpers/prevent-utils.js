@@ -48,7 +48,7 @@ export const isPreventionNeeded = ({
     let shouldPrevent = false;
     // https://github.com/AdguardTeam/Scriptlets/issues/105
     const callbackStr = String(callback);
-    if (!delayMatch) {
+    if (delayMatch === null) {
         shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
     } else if (!matchCallback) {
         shouldPrevent = (delay === delayMatch) !== isInvertedDelayMatch;

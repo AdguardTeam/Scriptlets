@@ -138,7 +138,6 @@ test('!match', (assert) => {
     // We need to run our assertion after all timeouts
     nativeSetTimeout(() => {
         assert.equal(window.one, 'NEW ONE', '!match-property not changed');
-        // eslint-disable-next-line max-len
         assert.equal(window.two, 'two', 'Second property should be successfully changed');
         assert.equal(window.three, 'three', 'Third property should be successfully changed');
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
@@ -160,6 +159,38 @@ test('!match', (assert) => {
 
     const third = () => { window.three = 'NEW THREE'; };
     const timeoutTest3 = setTimeout(third, 50);
+    testTimeouts.push(timeoutTest3);
+});
+
+test('match any callback + delay = 0', (assert) => {
+    const done = assert.async();
+    window.one = 'one';
+    window.two = 'two';
+    window.three = 'three';
+    // We need to run our assertion after all timeouts
+    nativeSetTimeout(() => {
+        assert.equal(window.one, 'NEW ONE', 'property \'one\' is changed due to none-zero delay');
+        assert.equal(window.two, 'two', 'property \'two\' should NOT be changed');
+        assert.equal(window.three, 'three', 'property \'three\' should NOT be changed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        done();
+    }, 100);
+
+    // run scriptlet code
+    const scriptletArgs = ['', '0'];
+    runScriptlet(name, scriptletArgs);
+
+    // only this one SHOULD NOT be prevented because of delay mismatch
+    const first = () => { window.one = 'NEW ONE'; };
+    const timeoutTest1 = setTimeout(first, 30);
+    testTimeouts.push(timeoutTest1);
+
+    const second = () => { window.two = 'NEW TWO'; };
+    const timeoutTest2 = setTimeout(second, 0);
+    testTimeouts.push(timeoutTest2);
+
+    const third = () => { window.three = 'NEW THREE'; };
+    const timeoutTest3 = setTimeout(third, 0);
     testTimeouts.push(timeoutTest3);
 });
 

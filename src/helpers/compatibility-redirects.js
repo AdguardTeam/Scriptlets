@@ -140,6 +140,9 @@ const redirects = [
         adg: 'noopvast-3.0',
     },
     {
+        adg: 'noopvast-4.0',
+    },
+    {
         adg: 'prebid',
     },
     {

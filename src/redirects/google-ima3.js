@@ -161,13 +161,6 @@ export function GoogleIma3(source) {
     AdsManager.start = function () {
         // eslint-disable-next-line no-restricted-syntax
         for (const type of [
-            AdEvent.Type.LOADED,
-            AdEvent.Type.STARTED,
-            AdEvent.Type.AD_BUFFERING,
-            AdEvent.Type.FIRST_QUARTILE,
-            AdEvent.Type.MIDPOINT,
-            AdEvent.Type.THIRD_QUARTILE,
-            AdEvent.Type.COMPLETE,
             AdEvent.Type.ALL_ADS_COMPLETED,
             AdEvent.Type.CONTENT_RESUME_REQUESTED,
         ]) {
@@ -185,10 +178,19 @@ export function GoogleIma3(source) {
 
     const manager = Object.create(AdsManager);
 
-    const AdsManagerLoadedEvent = function (type) { this.type = type; };
+    const AdsManagerLoadedEvent = function (type, adsRequest, userRequestContext) {
+        this.type = type;
+        this.adsRequest = adsRequest;
+        this.userRequestContext = userRequestContext;
+    };
     AdsManagerLoadedEvent.prototype = {
         getAdsManager: () => manager,
-        getUserRequestContext: noopFunc,
+        getUserRequestContext() {
+            if (this.userRequestContext) {
+                return this.userRequestContext;
+            }
+            return {};
+        },
     };
     AdsManagerLoadedEvent.Type = {
         ADS_MANAGER_LOADED: 'adsManagerLoaded',
@@ -205,6 +207,13 @@ export function GoogleIma3(source) {
     AdsLoader.prototype.requestAds = function (adsRequest, userRequestContext) {
         if (!managerLoaded) {
             managerLoaded = true;
+
+            requestAnimationFrame(() => {
+                const { ADS_MANAGER_LOADED } = AdsManagerLoadedEvent.Type;
+                // eslint-disable-next-line max-len
+                this._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED, adsRequest, userRequestContext));
+            });
+
             const e = new ima.AdError(
                 'adPlayError',
                 1205,
@@ -213,7 +222,9 @@ export function GoogleIma3(source) {
                 adsRequest,
                 userRequestContext,
             );
-            this._dispatch(new ima.AdErrorEvent(e));
+            requestAnimationFrame(() => {
+                this._dispatch(new ima.AdErrorEvent(e));
+            });
         }
     };
 
