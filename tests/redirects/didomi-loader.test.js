@@ -41,9 +41,12 @@ test('Didomi-loader works', (assert) => {
         assert.ok(Didomi, 'callback is called');
         done1();
     });
-    __tcfapi((tcData) => {
+    __tcfapi('addEventListener', 1, (tcData) => {
         assert.ok(typeof tcData, 'object', 'callback is called');
         done2();
+    });
+    __tcfapi('removeEventListener', 1, () => {
+        throw new Error();
     });
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
