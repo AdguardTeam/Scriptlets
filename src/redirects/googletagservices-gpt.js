@@ -1,3 +1,4 @@
+/* eslint-disabe func-names */
 import {
     hit,
     noopFunc,
@@ -23,15 +24,74 @@ import {
  * ```
  */
 export function GoogleTagServicesGpt(source) {
+    const slots = new Map();
+    const slotsById = new Map();
+    const eventCallbacks = new Map();
+
+    const addEventListener = function (name, listener) {
+        if (!eventCallbacks.has(name)) {
+            eventCallbacks.set(name, new Set());
+        }
+        eventCallbacks.get(name).add(listener);
+        return this;
+    };
+
+    const removeEventListener = function (name, listener) {
+        if (eventCallbacks.has(name)) {
+            return eventCallbacks.get(name).delete(listener);
+        }
+        return false;
+    };
+
+    const fireSlotEvent = (name, slot) => {
+        // eslint-disable-next-line compat/compat
+        return new Promise((resolve) => {
+            requestAnimationFrame(() => {
+                const size = [0, 0];
+                // for (const cb of callbacks) {
+                //     cb({ isEmpty: true, size, slot });
+                // }
+                const callbacksSet = eventCallbacks.get(name) || [];
+                const callbackArray = Array.from(callbacksSet);
+                for (let i = 0; i < callbackArray.length; i += 1) {
+                    callbackArray[i]({ isEmpty: true, size, slot });
+                }
+                resolve();
+            });
+        });
+    };
+
+    const displaySlot = (slot) => {
+        if (!slot) {
+            return;
+        }
+        const id = slot.getSlotElementId();
+        if (!document.getElementById(id)) {
+            return;
+        }
+
+        const parent = document.getElementById(id);
+        if (parent) {
+            parent.appendChild(document.createElement('div'));
+        }
+
+        fireSlotEvent('slotRenderEnded', slot);
+        fireSlotEvent('slotRequested', slot);
+        fireSlotEvent('slotResponseReceived', slot);
+        fireSlotEvent('slotOnload', slot);
+        fireSlotEvent('impressionViewable', slot);
+    };
+
     const companionAdsService = {
-        addEventListener: noopThis,
-        removeEventListener: noopThis,
+        addEventListener,
+        removeEventListener,
         enableSyncLoading: noopFunc,
         setRefreshUnfilledSlots: noopFunc,
         getSlots: noopArray,
     };
     const contentService = {
-        addEventListener: noopThis,
+        addEventListener,
+        removeEventListener,
         setContent: noopFunc,
     };
     function PassbackSlot() { } // constructor
@@ -48,17 +108,33 @@ export function GoogleTagServicesGpt(source) {
     SizeMappingBuilder.prototype.addSize = noopThis;
     SizeMappingBuilder.prototype.build = noopNull;
 
-    function Slot() { } // constructor
+    function Slot(adUnitPath, creatives, optDiv) {
+        this.adUnitPath = adUnitPath;
+        this.creatives = creatives;
+        this.optDiv = optDiv;
+
+        if (slotsById.has(optDiv)) {
+            document.getElementById(optDiv)?.remove();
+            return slotsById.get(optDiv);
+        }
+        slotsById.set(optDiv, this);
+    } // constructor
     Slot.prototype.addService = noopThis;
     Slot.prototype.clearCategoryExclusions = noopThis;
     Slot.prototype.clearTargeting = noopThis;
     Slot.prototype.defineSizeMapping = noopThis;
     Slot.prototype.get = noopNull;
-    Slot.prototype.getAdUnitPath = noopStr;
+    Slot.prototype.getAdUnitPath = function () {
+        return this.adUnitPath;
+    };
     Slot.prototype.getAttributeKeys = noopArray;
     Slot.prototype.getCategoryExclusions = noopArray;
-    Slot.prototype.getDomId = noopStr;
-    Slot.prototype.getSlotElementId = noopStr;
+    Slot.prototype.getDomId = function () {
+        return this.optDiv;
+    };
+    Slot.prototype.getSlotElementId = function () {
+        return this.optDiv;
+    };
     Slot.prototype.getSlotId = noopThis;
     Slot.prototype.getSizes = noopArray;
     Slot.prototype.getTargeting = noopArray;
@@ -70,8 +146,8 @@ export function GoogleTagServicesGpt(source) {
     Slot.prototype.setTargeting = noopThis;
 
     const pubAdsService = {
-        addEventListener: noopThis,
-        removeEventListener: noopThis,
+        addEventListener,
+        removeEventListener,
         clear: noopFunc,
         clearCategoryExclusions: noopThis,
         clearTagForChildDirectedTreatment: noopThis,
@@ -108,6 +184,8 @@ export function GoogleTagServicesGpt(source) {
         updateCorrelator: noopFunc,
     };
 
+    const getNewSlot = (adUnitPath, creatives, optDiv) => new Slot(adUnitPath, creatives, optDiv);
+
     const { googletag = {} } = window;
     const { cmd = [] } = googletag;
 
@@ -122,11 +200,24 @@ export function GoogleTagServicesGpt(source) {
     };
     googletag.companionAds = () => companionAdsService;
     googletag.content = () => contentService;
-    googletag.defineOutOfPageSlot = () => new Slot();
-    googletag.defineSlot = () => new Slot();
-    googletag.destroySlots = noopFunc;
+    googletag.defineOutOfPageSlot = getNewSlot;
+    googletag.defineSlot = getNewSlot;
+    googletag.destroySlots = function () {
+        slots.clear();
+        slotsById.clear();
+    };
     googletag.disablePublisherConsole = noopFunc;
-    googletag.display = noopFunc;
+    googletag.display = function (arg) {
+        let id;
+        if (arg?.getSlotElementId) {
+            id = arg.getSlotElementId();
+        } else if (arg?.nodeType) {
+            id = arg.id;
+        } else {
+            id = String(arg);
+        }
+        displaySlot(slotsById.get(id));
+    };
     googletag.enableServices = noopFunc;
     googletag.getVersion = noopStr;
     googletag.pubads = () => pubAdsService;

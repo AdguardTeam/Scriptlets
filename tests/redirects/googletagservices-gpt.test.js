@@ -73,8 +73,10 @@ test('Test Slot', (assert) => {
     assert.ok(window.googletag, 'window.googletag have been created');
     assert.strictEqual(typeof window.googletag.defineSlot(), 'object', 'Slot has been mocked');
 
-    const slot = window.googletag.defineSlot();
-    assert.strictEqual(slot.getAdUnitPath(), '', '.getAdUnitPath() has been mocked.');
+    const slot = window.googletag.defineSlot('1', 2, 3);
+    assert.strictEqual(slot.getAdUnitPath(), '1', '.getAdUnitPath() has been mocked.');
+    assert.strictEqual(slot.creatives, 2, 'constructor has been mocked.');
+    assert.strictEqual(slot.optDiv, 3, 'constructor has been mocked.');
     assert.strictEqual(slot.get(), null, '.get() has been mocked.');
     assert.strictEqual(slot.getAttributeKeys().length, 0, '.getAttributeKeys() has been mocked.');
     assert.strictEqual(slot.getSizes().length, 0, '.getSizes() has been mocked.');
