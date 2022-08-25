@@ -68,14 +68,14 @@
             "adg": "log-on-stack-trace"
         },
         {
-            "adg": "naver-wcslog"
-        },
-        {
             "adg": "noeval"
         },
         {
             "adg": "nowebrtc",
             "ubo": "nowebrtc.js"
+        },
+        {
+            "adg": "no-topics"
         },
         {
             "adg": "prevent-addEventListener",
@@ -307,6 +307,9 @@
             "adg": "metrika-yandex-tag"
         },
         {
+            "adg": "naver-wcslog"
+        },
+        {
             "adg": "noeval",
             "ubo": "noeval-silent.js"
         },
@@ -351,6 +354,9 @@
         },
         {
             "adg": "noopvast-3.0"
+        },
+        {
+            "adg": "noopvast-4.0"
         },
         {
             "adg": "prebid-ads",

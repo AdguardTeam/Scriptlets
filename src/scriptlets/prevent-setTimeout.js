@@ -1,12 +1,18 @@
 import {
     hit,
     noopFunc,
+    isPreventionNeeded,
+    // following helpers are needed for helpers above
     parseMatchArg,
     parseDelayArg,
-    // following helpers are needed for helpers above
     toRegExp,
     startsWith,
     nativeIsNaN,
+    isValidCallback,
+    isValidMatchStr,
+    isValidStrPattern,
+    nativeIsFinite,
+    isValidMatchNumber,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -15,30 +21,31 @@ import {
  *
  * @description
  * Prevents a `setTimeout` call if:
- * 1) the text of the callback is matching the specified search string/regexp which does not start with `!`;
+ * 1) the text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
  * otherwise mismatched calls should be defused;
- * 2) the timeout is matching the specified delay; otherwise mismatched calls should be defused.
+ * 2) the delay is matching the specified `matchDelay`; otherwise mismatched calls should be defused.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-settimeout-ifjs-
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('prevent-setTimeout'[, search[, delay]])
+ * example.org#%#//scriptlet('prevent-setTimeout'[, matchCallback[, matchDelay]])
  * ```
  *
  * Call with no arguments will log calls to setTimeout while debugging (`log-setTimeout` superseding),
  * so production filter lists' rules definitely require at least one of the parameters:
- * - `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
+ * - `matchCallback` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
  * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
  * If do not start with `!`, the stringified callback will be matched.
- * If not set, prevents all `setTimeout` calls due to specified `delay`.
- * - `delay` - optional, must be an integer.
+ * If not set, prevents all `setTimeout` calls due to specified `matchDelay`.
+ * - `matchDelay` - optional, must be an integer.
  * If starts with `!`, scriptlet will not match the delay but all other will be defused.
  * If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
  *
- * > If `prevent-setTimeout` without parameters logs smth like `setTimeout(undefined, 1000)`,
+ * > If `prevent-setTimeout` log looks like `setTimeout(undefined, 1000)`,
  * it means that no callback was passed to setTimeout() and that's not scriptlet issue
+ * and obviously it can not be matched by `matchCallback`.
  *
  * **Examples**
  * 1. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.
@@ -111,7 +118,7 @@ import {
  *     ```
  */
 /* eslint-enable max-len */
-export function preventSetTimeout(source, match, delay) {
+export function preventSetTimeout(source, matchCallback, matchDelay) {
     // if browser does not support Proxy (e.g. Internet Explorer),
     // we use none-proxy "legacy" wrapper for preventing
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -121,52 +128,44 @@ export function preventSetTimeout(source, match, delay) {
     const log = console.log.bind(console); // eslint-disable-line no-console
 
     // logs setTimeouts to console if no arguments have been specified
-    const shouldLog = ((typeof match === 'undefined') && (typeof delay === 'undefined'));
+    const shouldLog = ((typeof matchCallback === 'undefined') && (typeof matchDelay === 'undefined'));
 
-    const { isInvertedMatch, matchRegexp } = parseMatchArg(match);
-    const { isInvertedDelayMatch, delayMatch } = parseDelayArg(delay);
-
-    const getShouldPrevent = (callbackStr, timeout) => {
+    const legacyTimeoutWrapper = (callback, delay, ...args) => {
         let shouldPrevent = false;
-        if (!delayMatch) {
-            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
-        } else if (!match) {
-            shouldPrevent = (timeout === delayMatch) !== isInvertedDelayMatch;
-        } else {
-            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch
-                && (timeout === delayMatch) !== isInvertedDelayMatch;
-        }
-        return shouldPrevent;
-    };
-
-    const legacyTimeoutWrapper = (callback, timeout, ...args) => {
-        let shouldPrevent = false;
-        // https://github.com/AdguardTeam/Scriptlets/issues/105
-        const cbString = String(callback);
         if (shouldLog) {
             hit(source);
-            log(`setTimeout(${cbString}, ${timeout})`);
+            // https://github.com/AdguardTeam/Scriptlets/issues/105
+            log(`setTimeout(${String(callback)}, ${delay})`);
         } else {
-            shouldPrevent = getShouldPrevent(cbString, timeout);
+            shouldPrevent = isPreventionNeeded({
+                callback,
+                delay,
+                matchCallback,
+                matchDelay,
+            });
         }
         if (shouldPrevent) {
             hit(source);
-            return nativeTimeout(noopFunc, timeout);
+            return nativeTimeout(noopFunc, delay);
         }
-        return nativeTimeout.apply(window, [callback, timeout, ...args]);
+        return nativeTimeout.apply(window, [callback, delay, ...args]);
     };
 
     const handlerWrapper = (target, thisArg, args) => {
         const callback = args[0];
-        const timeout = args[1];
+        const delay = args[1];
         let shouldPrevent = false;
-        // https://github.com/AdguardTeam/Scriptlets/issues/105
-        const cbString = String(callback);
         if (shouldLog) {
             hit(source);
-            log(`setTimeout(${cbString}, ${timeout})`);
+            // https://github.com/AdguardTeam/Scriptlets/issues/105
+            log(`setTimeout(${String(callback)}, ${delay})`);
         } else {
-            shouldPrevent = getShouldPrevent(cbString, timeout);
+            shouldPrevent = isPreventionNeeded({
+                callback,
+                delay,
+                matchCallback,
+                matchDelay,
+            });
         }
         if (shouldPrevent) {
             hit(source);
@@ -207,9 +206,16 @@ preventSetTimeout.names = [
 preventSetTimeout.injections = [
     hit,
     noopFunc,
+    isPreventionNeeded,
+    // following helpers should be injected as helpers above use them
     parseMatchArg,
     parseDelayArg,
     toRegExp,
     startsWith,
     nativeIsNaN,
+    isValidCallback,
+    isValidMatchStr,
+    isValidStrPattern,
+    nativeIsFinite,
+    isValidMatchNumber,
 ];

@@ -2,7 +2,8 @@ import {
     hit,
     noopFunc,
     parseMatchArg,
-    validateStrPattern,
+    isValidStrPattern,
+    isValidCallback,
     // following helpers are needed for helpers above
     toRegExp,
     startsWith,
@@ -80,6 +81,7 @@ import {
 
 export function preventRequestAnimationFrame(source, match) {
     const nativeRequestAnimationFrame = window.requestAnimationFrame;
+    const log = console.log.bind(console); // eslint-disable-line no-console
 
     // logs requestAnimationFrame to console if no arguments have been specified
     const shouldLog = typeof match === 'undefined';
@@ -89,9 +91,9 @@ export function preventRequestAnimationFrame(source, match) {
     const rafWrapper = (callback, ...args) => {
         let shouldPrevent = false;
         if (shouldLog) {
-            const logMessage = `log: requestAnimationFrame("${callback.toString()}")`;
-            hit(source, logMessage);
-        } else if (validateStrPattern(match)) {
+            hit(source);
+            log(`requestAnimationFrame(${String(callback)})`);
+        } else if (isValidCallback(callback) && isValidStrPattern(match)) {
             shouldPrevent = matchRegexp.test(callback.toString()) !== isInvertedMatch;
         }
 
@@ -121,7 +123,9 @@ preventRequestAnimationFrame.injections = [
     hit,
     noopFunc,
     parseMatchArg,
-    validateStrPattern,
+    isValidStrPattern,
+    isValidCallback,
+    // following helpers should be injected as helpers above use them
     toRegExp,
     startsWith,
 ];

@@ -21,3 +21,10 @@ export const flatten = (input) => {
     // reverse to restore input order
     return res.reverse();
 };
+
+/**
+ * Predicate method to check if the array item exists
+ * @param {any} item
+ * @returns {boolean}
+ */
+export const isExisting = (item) => !!item;

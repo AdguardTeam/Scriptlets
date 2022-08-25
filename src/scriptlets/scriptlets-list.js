@@ -46,3 +46,4 @@ export * from './prevent-xhr';
 export * from './close-window';
 export * from './prevent-refresh';
 export * from './prevent-element-src-loading';
+export * from './no-topics';

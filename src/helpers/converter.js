@@ -7,6 +7,8 @@ import {
     getStringInBraces,
 } from './string-utils';
 
+import { isExisting } from './array-utils';
+
 import { getWildcardSymbol } from './constants';
 
 import validator from './validator';
@@ -104,13 +106,19 @@ const splitArgs = (str) => {
  * @returns {string[]|Error} valid args OR error for invalid selector
  */
 const validateRemoveAttrClassArgs = (parsedArgs) => {
+    const [name, value, ...restArgs] = parsedArgs;
+    // no extra checking if there are only scriptlet name and value
+    // https://github.com/AdguardTeam/Scriptlets/issues/235
+    if (restArgs.length === 0) {
+        return [name, value];
+    }
+
     // remove-attr/class scriptlet might have multiple selectors separated by comma. so we should:
     // 1. check if last arg is 'applying' parameter
     // 2. join 'selector' into one arg
     // 3. combine all args
     // https://github.com/AdguardTeam/Scriptlets/issues/133
-    const lastArg = parsedArgs.pop();
-    const [name, value, ...restArgs] = parsedArgs;
+    const lastArg = restArgs.pop();
     let applying;
     // check the last parsed arg for matching possible 'applying' vale
     if (REMOVE_ATTR_CLASS_APPLYING.some((el) => lastArg.indexOf(el) > -1)) {
@@ -199,8 +207,10 @@ export const convertAbpSnippetToAdg = (rule) => {
     const args = substringAfter(rule, mask);
 
     return args.split(SEMICOLON_DIVIDER)
+        // abp-rule may have `;` at the end which makes last array item irrelevant
+        // https://github.com/AdguardTeam/Scriptlets/issues/236
+        .filter(isExisting)
         .map((args) => getSentences(args)
-            .filter((arg) => arg)
             .map((arg, index) => (index === 0 ? `abp-${arg}` : arg))
             .map((arg) => wrapInSingleQuotes(arg))
             .join(`${COMMA_SEPARATOR} `))

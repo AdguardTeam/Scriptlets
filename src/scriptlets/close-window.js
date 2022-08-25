@@ -6,6 +6,9 @@ import { hit, toRegExp } from '../helpers/index';
  * @description
  * Closes the browser tab immediately.
  *
+ * > `window.close()` usage is restricted in Chrome. In this case
+ * tab will only be closed if using AdGuard browser extension.
+ *
  * **Syntax**
  * ```
  * example.org#%#//scriptlet('close-window'[, path])
@@ -47,14 +50,31 @@ export function forceWindowClose(source, path = '') {
         }
     };
 
-    if (path === '') {
-        closeImmediately();
-    } else {
+    const closeByExtension = () => {
+        const extCall = () => {
+            dispatchEvent(new Event('adguard:scriptlet-close-window'));
+        };
+        window.addEventListener('adguard:subscribed-to-close-window', extCall, { once: true });
+        setTimeout(() => {
+            window.removeEventListener('adguard:subscribed-to-close-window', extCall, { once: true });
+        }, 5000);
+    };
+
+    const shouldClose = () => {
+        if (path === '') {
+            return true;
+        }
+
         const pathRegexp = toRegExp(path);
         const currentPath = `${window.location.pathname}${window.location.search}`;
+        return pathRegexp.test(currentPath);
+    };
 
-        if (pathRegexp.test(currentPath)) {
-            closeImmediately();
+    if (shouldClose()) {
+        closeImmediately();
+
+        if (navigator.userAgent.indexOf('Chrome') > -1) {
+            closeByExtension();
         }
     }
 }

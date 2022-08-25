@@ -4,9 +4,11 @@ import {
     getPropertyInChain,
     createOnErrorHandler,
     hit,
-    validateStrPattern,
+    isValidStrPattern,
     matchStackTrace,
     // following helpers are needed for helpers above
+    shouldAbortStack,
+    setShouldAbortStack,
     toRegExp,
     isEmptyObject,
 } from '../helpers/index';
@@ -48,6 +50,10 @@ export function abortOnStackTrace(source, property, stack) {
         return;
     }
 
+    // sets shouldAbortStack to true
+    // https://github.com/AdguardTeam/Scriptlets/issues/226
+    setShouldAbortStack(true);
+
     const rid = randomId();
     const abort = () => {
         hit(source);
@@ -73,22 +79,26 @@ export function abortOnStackTrace(source, property, stack) {
         }
 
         let value = base[prop];
-        if (!validateStrPattern(stack)) {
+        if (!isValidStrPattern(stack)) {
             // eslint-disable-next-line no-console
             console.log(`Invalid parameter: ${stack}`);
             return;
         }
         setPropertyAccess(base, prop, {
             get() {
-                if (matchStackTrace(stack, new Error().stack)) {
+                if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
+                    setShouldAbortStack(true);
                     abort();
                 }
+                setShouldAbortStack(true);
                 return value;
             },
             set(newValue) {
-                if (matchStackTrace(stack, new Error().stack)) {
+                if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
+                    setShouldAbortStack(true);
                     abort();
                 }
+                setShouldAbortStack(true);
                 value = newValue;
             },
         });
@@ -117,8 +127,10 @@ abortOnStackTrace.injections = [
     getPropertyInChain,
     createOnErrorHandler,
     hit,
-    validateStrPattern,
+    isValidStrPattern,
     matchStackTrace,
+    shouldAbortStack,
+    setShouldAbortStack,
     toRegExp,
     isEmptyObject,
 ];

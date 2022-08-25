@@ -18,6 +18,9 @@ const buildCorelibsJson = async () => {
             const result = await minify(scriptlet, {
                 mangle: false,
                 format: { comments: false },
+                // needed for "debug-" scriptlets
+                // https://github.com/AdguardTeam/Scriptlets/issues/218
+                compress: { drop_debugger: false },
             });
             return {
                 names,

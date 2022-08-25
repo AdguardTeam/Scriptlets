@@ -17,6 +17,7 @@
 * [log-eval](#log-eval)
 * [log-on-stack-trace](#log-on-stack-trace)
 * [log](#log)
+* [no-topics](#no-topics)
 * [noeval](#noeval)
 * [nowebrtc](#nowebrtc)
 * [prevent-addEventListener](#prevent-addEventListener)
@@ -196,46 +197,46 @@ example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexScriptName')
 
 ### <a id="adjust-setInterval"></a> ⚡️ adjust-setInterval
 
-Adjusts interval for specified setInterval() callbacks.
+Adjusts delay for specified setInterval() callbacks.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-setinterval-boosterjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet('adjust-setInterval'[, match [, interval[, boost]]])
+example.org#%#//scriptlet('adjust-setInterval'[, matchCallback [, matchDelay[, boost]]])
 ```
 
-- `match` - optional, string or regular expression for stringified callback matching;
+- `matchCallback` - optional, string or regular expression for stringified callback matching;
 defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
-- `interval` - optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
-- `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), interval multiplier
+- `matchDelay` - optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
+- `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), setInterval delay multiplier
 
 **Examples**
-1. Adjust all setInterval() x20 times where interval equal 1000ms:
+1. Adjust all setInterval() x20 times where delay equal 1000ms:
     ```
     example.org#%#//scriptlet('adjust-setInterval')
     ```
 
-2. Adjust all setInterval() x20 times where callback matched with `example` and interval equal 1000ms
+2. Adjust all setInterval() x20 times where callback matched with `example` and delay equal 1000ms
     ```
     example.org#%#//scriptlet('adjust-setInterval', 'example')
     ```
 
-3. Adjust all setInterval() x20 times where callback matched with `example` and interval equal 400ms
+3. Adjust all setInterval() x20 times where callback matched with `example` and delay equal 400ms
     ```
     example.org#%#//scriptlet('adjust-setInterval', 'example', '400')
     ```
 
-4. Slow down setInterval() x2 times where callback matched with `example` and interval equal 1000ms
+4. Slow down setInterval() x2 times where callback matched with `example` and delay equal 1000ms
     ```
     example.org#%#//scriptlet('adjust-setInterval', 'example', '', '2')
     ```
-5. Adjust all setInterval() x50 times where interval equal 2000ms
+5. Adjust all setInterval() x50 times where delay equal 2000ms
     ```
     example.org#%#//scriptlet('adjust-setInterval', '', '2000', '0.02')
     ```
-6. Adjust all setInterval() x50 times where interval is randomized
+6. Adjust all setInterval() x50 times where delay is randomized
     ```
     example.org#%#//scriptlet('adjust-setInterval', '', '*', '0.02')
     ```
@@ -245,20 +246,20 @@ defaults to match all callbacks; invalid regular expression will cause exit and 
 
 ### <a id="adjust-setTimeout"></a> ⚡️ adjust-setTimeout
 
-Adjusts timeout for specified setTimeout() callbacks.
+Adjusts delay for specified setTimeout() callbacks.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-settimeout-boosterjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet('adjust-setTimeout'[, match [, timeout[, boost]]])
+example.org#%#//scriptlet('adjust-setTimeout'[, matchCallback [, matchDelay[, boost]]])
 ```
 
-- `match` - optional, string or regular expression for stringified callback matching;
+- `matchCallback` - optional, string or regular expression for stringified callback matching;
 defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
-- `timeout` - optional, defaults to 1000, matching setTimeout delay; decimal integer OR '*' for any delay
-- `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), timeout multiplier
+- `matchDelay` - optional, defaults to 1000, matching setTimeout delay; decimal integer OR '*' for any delay
+- `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), setTimeout delay multiplier
 
 **Examples**
 1. Adjust all setTimeout() x20 times where timeout equal 1000ms:
@@ -295,6 +296,9 @@ defaults to match all callbacks; invalid regular expression will cause exit and 
 ### <a id="close-window"></a> ⚡️ close-window
 
 Closes the browser tab immediately.
+
+> `window.close()` usage is restricted in Chrome. In this case
+tab will only be closed if using AdGuard browser extension.
 
 **Syntax**
 ```
@@ -566,6 +570,19 @@ example.org#%#//scriptlet('log', 'arg1', 'arg2')
 [Scriptlet source](../src/scriptlets/log.js)
 * * *
 
+### <a id="no-topics"></a> ⚡️ no-topics
+
+Prevents using The Topics API
+https://developer.chrome.com/docs/privacy-sandbox/topics/
+
+**Syntax**
+```
+example.org#%#//scriptlet('no-topics')
+```
+
+[Scriptlet source](../src/scriptlets/no-topics.js)
+* * *
+
 ### <a id="noeval"></a> ⚡️ noeval
 
 Prevents page to use eval.
@@ -677,7 +694,7 @@ Prevents target element source loading without triggering 'onerror' listeners an
 
 **Syntax**
 ```
-example.org#%#//scriptlet('prevent-src', tagName, match)
+example.org#%#//scriptlet('prevent-element-src-loading', tagName, match)
 ```
 
 - `tagName` - required, case-insensitive target element tagName which `src` property resource loading will be silently prevented; possible values:
@@ -912,30 +929,31 @@ So do not use the scriptlet without any parameter in production filter lists.
 ### <a id="prevent-setInterval"></a> ⚡️ prevent-setInterval
 
 Prevents a `setInterval` call if:
-1) the text of the callback is matching the specified `search` string/regexp which does not start with `!`;
+1) the text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
 otherwise mismatched calls should be defused;
-2) the interval is matching the specified `delay`; otherwise mismatched calls should be defused.
+2) the delay is matching the specified `matchDelay`; otherwise mismatched calls should be defused.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#no-setinterval-ifjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet('prevent-setInterval'[, search[, delay]])
+example.org#%#//scriptlet('prevent-setInterval'[, matchCallback[, matchDelay]])
 ```
 
 Call with no arguments will log calls to setInterval while debugging (`log-setInterval` superseding),
 so production filter lists' rules definitely require at least one of the parameters:
-- `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
+- `matchCallback` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
 If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
 If do not start with `!`, the stringified callback will be matched.
-If not set, prevents all `setInterval` calls due to specified `delay`.
-- `delay` - optional, must be an integer.
+If not set, prevents all `setInterval` calls due to specified `matchDelay`.
+- `matchDelay` - optional, must be an integer.
 If starts with `!`, scriptlet will not match the delay but all other will be defused.
 If do not start with `!`, the delay passed to the `setInterval` call will be matched.
 
-> If `prevent-setInterval` without parameters logs smth like `setInterval(undefined, 1000)`,
+> If `prevent-setInterval` log looks like `setInterval(undefined, 1000)`,
 it means that no callback was passed to setInterval() and that's not scriptlet issue
+and obviously it can not be matched by `matchCallback`.
 
  **Examples**
 1. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the delay.
@@ -1013,30 +1031,31 @@ it means that no callback was passed to setInterval() and that's not scriptlet i
 ### <a id="prevent-setTimeout"></a> ⚡️ prevent-setTimeout
 
 Prevents a `setTimeout` call if:
-1) the text of the callback is matching the specified search string/regexp which does not start with `!`;
+1) the text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
 otherwise mismatched calls should be defused;
-2) the timeout is matching the specified delay; otherwise mismatched calls should be defused.
+2) the delay is matching the specified `matchDelay`; otherwise mismatched calls should be defused.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#no-settimeout-ifjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet('prevent-setTimeout'[, search[, delay]])
+example.org#%#//scriptlet('prevent-setTimeout'[, matchCallback[, matchDelay]])
 ```
 
 Call with no arguments will log calls to setTimeout while debugging (`log-setTimeout` superseding),
 so production filter lists' rules definitely require at least one of the parameters:
-- `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
+- `matchCallback` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
 If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
 If do not start with `!`, the stringified callback will be matched.
-If not set, prevents all `setTimeout` calls due to specified `delay`.
-- `delay` - optional, must be an integer.
+If not set, prevents all `setTimeout` calls due to specified `matchDelay`.
+- `matchDelay` - optional, must be an integer.
 If starts with `!`, scriptlet will not match the delay but all other will be defused.
 If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
 
-> If `prevent-setTimeout` without parameters logs smth like `setTimeout(undefined, 1000)`,
+> If `prevent-setTimeout` log looks like `setTimeout(undefined, 1000)`,
 it means that no callback was passed to setTimeout() and that's not scriptlet issue
+and obviously it can not be matched by `matchCallback`.
 
 **Examples**
 1. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.

@@ -19,9 +19,9 @@
 | [log-addEventListener](../wiki/about-scriptlets.md#log-addEventListener) | addEventListener-logger.js (aell.js) |  |
 | [log-eval](../wiki/about-scriptlets.md#log-eval) |  |  |
 | [log-on-stack-trace](../wiki/about-scriptlets.md#log-on-stack-trace) |  |  |
-| [naver-wcslog](../wiki/about-scriptlets.md#naver-wcslog) |  |  |
 | [noeval](../wiki/about-scriptlets.md#noeval) |  |  |
 | [nowebrtc](../wiki/about-scriptlets.md#nowebrtc) | nowebrtc.js |  |
+| [no-topics](../wiki/about-scriptlets.md#no-topics) |  |  |
 | [prevent-addEventListener](../wiki/about-scriptlets.md#prevent-addEventListener) | addEventListener-defuser.js (aeld.js) |  |
 | [prevent-adfly](../wiki/about-scriptlets.md#prevent-adfly) | adfly-defuser.js |  |
 | [prevent-bab](../wiki/about-scriptlets.md#prevent-bab) |  |  |
@@ -94,6 +94,7 @@
 | [matomo](../wiki/about-redirects.md#matomo) |  |  |
 | [metrika-yandex-watch](../wiki/about-redirects.md#metrika-yandex-watch) |  |  |
 | [metrika-yandex-tag](../wiki/about-redirects.md#metrika-yandex-tag) |  |  |
+| [naver-wcslog](../wiki/about-redirects.md#naver-wcslog) |  |  |
 | [noeval](../wiki/about-redirects.md#noeval) | noeval-silent.js |  |
 | [noopcss](../wiki/about-redirects.md#noopcss) |  | blank-css |
 | [noopframe](../wiki/about-redirects.md#noopframe) | noop.html | blank-html |
@@ -105,6 +106,7 @@
 | [noopvmap-1.0](../wiki/about-redirects.md#noopvmap-1.0) | noop-vmap1.0.xml |  |
 | [noopvast-2.0](../wiki/about-redirects.md#noopvast-2.0) |  |  |
 | [noopvast-3.0](../wiki/about-redirects.md#noopvast-3.0) |  |  |
+| [noopvast-4.0](../wiki/about-redirects.md#noopvast-4.0) |  |  |
 | [prebid-ads](../wiki/about-redirects.md#prebid-ads) | prebid-ads.js |  |
 | [prevent-bab](../wiki/about-redirects.md#prevent-bab) | nobab.js |  |
 | [prevent-bab2](../wiki/about-redirects.md#prevent-bab2) | nobab2.js |  |

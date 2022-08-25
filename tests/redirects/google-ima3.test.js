@@ -19,7 +19,7 @@ const afterEach = () => {
 module(name, { beforeEach, afterEach });
 
 test('Ima mocked', (assert) => {
-    assert.expect(25);
+    assert.expect(28);
 
     runRedirect(name);
 
@@ -29,4 +29,17 @@ test('Ima mocked', (assert) => {
     for (const key of Object.keys(window.google.ima)) {
         assert.ok(window.google.ima[key], `ima.${key} mocked`);
     }
+
+    const adsManagerLoadedEvent = new window.google.ima.AdsManagerLoadedEvent('test');
+    assert.strictEqual(adsManagerLoadedEvent.type, 'test', 'AdsManagerLoadedEvent constructor works properly');
+    const adError = new window.google.ima.AdError(
+        'type',
+        'code',
+        'vast',
+        'message',
+        'adsRequest',
+        'userRequestContext',
+    );
+    assert.strictEqual(adError.adsRequest, 'adsRequest', 'AdError adsRequest saved');
+    assert.strictEqual(adError.userRequestContext, 'userRequestContext', 'AdError request context saved');
 });

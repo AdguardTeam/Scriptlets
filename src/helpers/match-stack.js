@@ -1,5 +1,12 @@
 import { toRegExp } from './string-utils';
 
+// https://github.com/AdguardTeam/Scriptlets/issues/226
+// eslint-disable-next-line import/no-mutable-exports, func-names
+export let shouldAbortStack = function () { };
+export function setShouldAbortStack(value) {
+    shouldAbortStack = value;
+}
+
 /**
  * Checks if the stackTrace contains stackRegexp
  * https://github.com/AdguardTeam/Scriptlets/issues/82
@@ -8,6 +15,10 @@ import { toRegExp } from './string-utils';
  * @returns {boolean}
  */
 export const matchStackTrace = (stackMatch, stackTrace) => {
+    // sets shouldAbortStack to false
+    // to avoid checking matchStackTrace from properties used by our script and stucking in a loop
+    // https://github.com/AdguardTeam/Scriptlets/issues/226
+    setShouldAbortStack(false);
     if (!stackMatch || stackMatch === '') {
         return true;
     }

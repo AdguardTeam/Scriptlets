@@ -8,7 +8,7 @@ import {
     // following helpers should be imported and injected
     // because they are used by helpers above
     toRegExp,
-    validateStrPattern,
+    isValidStrPattern,
     isEmptyObject,
     getObjectEntries,
 } from '../helpers/index';
@@ -79,6 +79,7 @@ export function preventXHR(source, propsToMatch, randomize) {
     }
 
     let shouldPrevent = false;
+    let response = '';
     let responseText = '';
     let responseUrl;
     const openWrapper = (target, thisArg, args) => {
@@ -121,6 +122,10 @@ export function preventXHR(source, propsToMatch, randomize) {
             return Reflect.apply(target, thisArg, args);
         }
 
+        if (thisArg.responseType === 'blob') {
+            response = new Blob();
+        }
+
         if (randomize === 'true') {
             // Generate random alphanumeric string of 10 symbols
             responseText = Math.random().toString(36).slice(-10);
@@ -128,7 +133,7 @@ export function preventXHR(source, propsToMatch, randomize) {
         // Mock response object
         Object.defineProperties(thisArg, {
             readyState: { value: 4, writable: false },
-            response: { value: '', writable: false },
+            response: { value: response, writable: false },
             responseText: { value: responseText, writable: false },
             responseURL: { value: responseUrl, writable: false },
             responseXML: { value: '', writable: false },
@@ -179,7 +184,7 @@ preventXHR.injections = [
     validateParsedData,
     getMatchPropsData,
     toRegExp,
-    validateStrPattern,
+    isValidStrPattern,
     isEmptyObject,
     getObjectEntries,
 ];

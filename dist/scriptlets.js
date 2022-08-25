@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.15
+ * Version 1.6.39
  */
 
 (function () {
@@ -216,7 +216,7 @@
      * @returns {boolean}
      */
 
-    var validateStrPattern = function validateStrPattern(input) {
+    var isValidStrPattern = function isValidStrPattern(input) {
       var FORWARD_SLASH = '/';
       var str = input;
 
@@ -346,7 +346,7 @@
      * @returns {boolean}
      */
 
-    var validateMatchStr = function validateMatchStr(match) {
+    var isValidMatchStr = function isValidMatchStr(match) {
       var INVERT_MARKER = '!';
       var str = match;
 
@@ -354,7 +354,25 @@
         str = match.slice(1);
       }
 
-      return validateStrPattern(str);
+      return isValidStrPattern(str);
+    };
+    /**
+     * Validates the match input number,
+     * used for match inputs with possible negation
+     * @param {string} match string of match number
+     * @returns {boolean}
+     */
+
+    var isValidMatchNumber = function isValidMatchNumber(match) {
+      var INVERT_MARKER = '!';
+      var str = match;
+
+      if (startsWith(match, INVERT_MARKER)) {
+        str = match.slice(1);
+      }
+
+      var num = parseFloat(str);
+      return !nativeIsNaN(num) && nativeIsFinite(num);
     };
     /**
      * @typedef {Object} MatchData
@@ -367,7 +385,7 @@
      * Needed for prevent-setTimeout, prevent-setInterval,
      * prevent-requestAnimationFrame and prevent-window-open
      * @param {string} match
-     * @returns {MatchData|null} data obj or null for invalid regexp pattern
+     * @returns {MatchData}
      */
 
     var parseMatchArg = function parseMatchArg(match) {
@@ -390,7 +408,9 @@
      * Parses delay arg with possible negation for no matching.
      * Needed for prevent-setTimeout and prevent-setInterval
      * @param {string} delay
-     * @returns {DelayData}
+     * @returns {DelayData} `{ isInvertedDelayMatch, delayMatch }` where:
+     * `isInvertedDelayMatch` is boolean,
+     * `delayMatch` is number OR null for invalid `delay`
      */
 
     var parseDelayArg = function parseDelayArg(delay) {
@@ -730,7 +750,7 @@
         configurable: true
       });
       return {
-        base: nextBase,
+        base: base,
         prop: prop,
         chain: chain
       };
@@ -1075,6 +1095,12 @@
       connect();
     };
 
+    // eslint-disable-next-line import/no-mutable-exports, func-names
+
+    var shouldAbortStack = function shouldAbortStack() {};
+    function setShouldAbortStack(value) {
+      shouldAbortStack = value;
+    }
     /**
      * Checks if the stackTrace contains stackRegexp
      * https://github.com/AdguardTeam/Scriptlets/issues/82
@@ -1084,6 +1110,11 @@
      */
 
     var matchStackTrace = function matchStackTrace(stackMatch, stackTrace) {
+      // sets shouldAbortStack to false
+      // to avoid checking matchStackTrace from properties used by our script and stucking in a loop
+      // https://github.com/AdguardTeam/Scriptlets/issues/226
+      setShouldAbortStack(false);
+
       if (!stackMatch || stackMatch === '') {
         return true;
       }
@@ -1126,6 +1157,15 @@
 
 
       return res.reverse();
+    };
+    /**
+     * Predicate method to check if the array item exists
+     * @param {any} item
+     * @returns {boolean}
+     */
+
+    var isExisting = function isExisting(item) {
+      return !!item;
     };
 
     /**
@@ -1378,7 +1418,7 @@
 
     var validateParsedData = function validateParsedData(data) {
       return Object.values(data).every(function (value) {
-        return validateStrPattern(value);
+        return isValidStrPattern(value);
       });
     };
     /**
@@ -1498,6 +1538,66 @@
 
     var listenerToString = function listenerToString(listener) {
       return typeof listener === 'function' ? listener.toString() : listener.handleEvent.toString();
+    };
+
+    /**
+     * Checks whether the passed arg is proper callback
+     * @param {*} callback
+     * @returns {boolean}
+     */
+
+    var isValidCallback = function isValidCallback(callback) {
+      return callback instanceof Function // passing string as 'code' arg is not recommended
+      // but it is possible and not restricted
+      // https://developer.mozilla.org/en-US/docs/Web/API/setTimeout#parameters
+      || typeof callback === 'string';
+    };
+    /**
+     * Checks whether 'callback' and 'delay' are matching
+     * by given parameters 'matchCallback' and 'matchDelay'.
+     * Used for prevent-setTimeout and prevent-setInterval.
+     * @param {Object} { callback, delay, matchCallback, matchDelay }
+     * @returns {boolean}
+     */
+
+    var isPreventionNeeded = function isPreventionNeeded(_ref) {
+      var callback = _ref.callback,
+          delay = _ref.delay,
+          matchCallback = _ref.matchCallback,
+          matchDelay = _ref.matchDelay;
+
+      // if callback is has not valid type
+      // scriptlet can not prevent it
+      // so no need for more checking and do not call hit() later
+      if (!isValidCallback(callback)) {
+        return false;
+      }
+
+      if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
+        return false;
+      }
+
+      var _parseMatchArg = parseMatchArg(matchCallback),
+          isInvertedMatch = _parseMatchArg.isInvertedMatch,
+          matchRegexp = _parseMatchArg.matchRegexp;
+
+      var _parseDelayArg = parseDelayArg(matchDelay),
+          isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
+          delayMatch = _parseDelayArg.delayMatch;
+
+      var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
+
+      var callbackStr = String(callback);
+
+      if (delayMatch === null) {
+        shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
+      } else if (!matchCallback) {
+        shouldPrevent = delay === delayMatch !== isInvertedDelayMatch;
+      } else {
+        shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && delay === delayMatch !== isInvertedDelayMatch;
+      }
+
+      return shouldPrevent;
     };
 
     /* eslint-disable max-len */
@@ -1667,30 +1767,31 @@
      *
      * @description
      * Prevents a `setTimeout` call if:
-     * 1) the text of the callback is matching the specified search string/regexp which does not start with `!`;
+     * 1) the text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
      * otherwise mismatched calls should be defused;
-     * 2) the timeout is matching the specified delay; otherwise mismatched calls should be defused.
+     * 2) the delay is matching the specified `matchDelay`; otherwise mismatched calls should be defused.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-settimeout-ifjs-
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('prevent-setTimeout'[, search[, delay]])
+     * example.org#%#//scriptlet('prevent-setTimeout'[, matchCallback[, matchDelay]])
      * ```
      *
      * Call with no arguments will log calls to setTimeout while debugging (`log-setTimeout` superseding),
      * so production filter lists' rules definitely require at least one of the parameters:
-     * - `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
+     * - `matchCallback` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
      * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
      * If do not start with `!`, the stringified callback will be matched.
-     * If not set, prevents all `setTimeout` calls due to specified `delay`.
-     * - `delay` - optional, must be an integer.
+     * If not set, prevents all `setTimeout` calls due to specified `matchDelay`.
+     * - `matchDelay` - optional, must be an integer.
      * If starts with `!`, scriptlet will not match the delay but all other will be defused.
      * If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
      *
-     * > If `prevent-setTimeout` without parameters logs smth like `setTimeout(undefined, 1000)`,
+     * > If `prevent-setTimeout` log looks like `setTimeout(undefined, 1000)`,
      * it means that no callback was passed to setTimeout() and that's not scriptlet issue
+     * and obviously it can not be matched by `matchCallback`.
      *
      * **Examples**
      * 1. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.
@@ -1765,7 +1866,7 @@
 
     /* eslint-enable max-len */
 
-    function preventSetTimeout$1(source, match, delay) {
+    function preventSetTimeout$1(source, matchCallback, matchDelay) {
       // if browser does not support Proxy (e.g. Internet Explorer),
       // we use none-proxy "legacy" wrapper for preventing
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -1774,66 +1875,52 @@
       var log = console.log.bind(console); // eslint-disable-line no-console
       // logs setTimeouts to console if no arguments have been specified
 
-      var shouldLog = typeof match === 'undefined' && typeof delay === 'undefined';
+      var shouldLog = typeof matchCallback === 'undefined' && typeof matchDelay === 'undefined';
 
-      var _parseMatchArg = parseMatchArg(match),
-          isInvertedMatch = _parseMatchArg.isInvertedMatch,
-          matchRegexp = _parseMatchArg.matchRegexp;
-
-      var _parseDelayArg = parseDelayArg(delay),
-          isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
-          delayMatch = _parseDelayArg.delayMatch;
-
-      var getShouldPrevent = function getShouldPrevent(callbackStr, timeout) {
+      var legacyTimeoutWrapper = function legacyTimeoutWrapper(callback, delay) {
         var shouldPrevent = false;
 
-        if (!delayMatch) {
-          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
-        } else if (!match) {
-          shouldPrevent = timeout === delayMatch !== isInvertedDelayMatch;
-        } else {
-          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && timeout === delayMatch !== isInvertedDelayMatch;
-        }
-
-        return shouldPrevent;
-      };
-
-      var legacyTimeoutWrapper = function legacyTimeoutWrapper(callback, timeout) {
-        var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
-
-        var cbString = String(callback);
-
         if (shouldLog) {
-          hit(source);
-          log("setTimeout(".concat(cbString, ", ").concat(timeout, ")"));
+          hit(source); // https://github.com/AdguardTeam/Scriptlets/issues/105
+
+          log("setTimeout(".concat(String(callback), ", ").concat(delay, ")"));
         } else {
-          shouldPrevent = getShouldPrevent(cbString, timeout);
+          shouldPrevent = isPreventionNeeded({
+            callback: callback,
+            delay: delay,
+            matchCallback: matchCallback,
+            matchDelay: matchDelay
+          });
         }
 
         if (shouldPrevent) {
           hit(source);
-          return nativeTimeout(noopFunc, timeout);
+          return nativeTimeout(noopFunc, delay);
         }
 
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
 
-        return nativeTimeout.apply(window, [callback, timeout].concat(args));
+        return nativeTimeout.apply(window, [callback, delay].concat(args));
       };
 
       var handlerWrapper = function handlerWrapper(target, thisArg, args) {
         var callback = args[0];
-        var timeout = args[1];
-        var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
-
-        var cbString = String(callback);
+        var delay = args[1];
+        var shouldPrevent = false;
 
         if (shouldLog) {
-          hit(source);
-          log("setTimeout(".concat(cbString, ", ").concat(timeout, ")"));
+          hit(source); // https://github.com/AdguardTeam/Scriptlets/issues/105
+
+          log("setTimeout(".concat(String(callback), ", ").concat(delay, ")"));
         } else {
-          shouldPrevent = getShouldPrevent(cbString, timeout);
+          shouldPrevent = isPreventionNeeded({
+            callback: callback,
+            delay: delay,
+            matchCallback: matchCallback,
+            matchDelay: matchDelay
+          });
         }
 
         if (shouldPrevent) {
@@ -1856,7 +1943,8 @@
     // should be removed eventually.
     // do not remove until other filter lists maintainers use them
     'setTimeout-defuser.js', 'ubo-setTimeout-defuser.js', 'ubo-setTimeout-defuser', 'std.js', 'ubo-std.js', 'ubo-std'];
-    preventSetTimeout$1.injections = [hit, noopFunc, parseMatchArg, parseDelayArg, toRegExp, startsWith, nativeIsNaN];
+    preventSetTimeout$1.injections = [hit, noopFunc, isPreventionNeeded, // following helpers should be injected as helpers above use them
+    parseMatchArg, parseDelayArg, toRegExp, startsWith, nativeIsNaN, isValidCallback, isValidMatchStr, isValidStrPattern, nativeIsFinite, isValidMatchNumber];
 
     /* eslint-disable max-len */
 
@@ -1865,31 +1953,32 @@
      *
      * @description
      * Prevents a `setInterval` call if:
-     * 1) the text of the callback is matching the specified `search` string/regexp which does not start with `!`;
+     * 1) the text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
      * otherwise mismatched calls should be defused;
-     * 2) the interval is matching the specified `delay`; otherwise mismatched calls should be defused.
+     * 2) the delay is matching the specified `matchDelay`; otherwise mismatched calls should be defused.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-setinterval-ifjs-
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('prevent-setInterval'[, search[, delay]])
+     * example.org#%#//scriptlet('prevent-setInterval'[, matchCallback[, matchDelay]])
      * ```
      *
      * Call with no arguments will log calls to setInterval while debugging (`log-setInterval` superseding),
      * so production filter lists' rules definitely require at least one of the parameters:
-     * - `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
+     * - `matchCallback` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
      * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
      * If do not start with `!`, the stringified callback will be matched.
-     * If not set, prevents all `setInterval` calls due to specified `delay`.
-     * - `delay` - optional, must be an integer.
+     * If not set, prevents all `setInterval` calls due to specified `matchDelay`.
+     * - `matchDelay` - optional, must be an integer.
      * If starts with `!`, scriptlet will not match the delay but all other will be defused.
      * If do not start with `!`, the delay passed to the `setInterval` call will be matched.
      *
-     * > If `prevent-setInterval` without parameters logs smth like `setInterval(undefined, 1000)`,
+     * > If `prevent-setInterval` log looks like `setInterval(undefined, 1000)`,
      * it means that no callback was passed to setInterval() and that's not scriptlet issue
-
+     * and obviously it can not be matched by `matchCallback`.
+     *
      *  **Examples**
      * 1. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the delay.
      *     ```bash
@@ -1963,7 +2052,7 @@
 
     /* eslint-enable max-len */
 
-    function preventSetInterval$1(source, match, delay) {
+    function preventSetInterval$1(source, matchCallback, matchDelay) {
       // if browser does not support Proxy (e.g. Internet Explorer),
       // we use none-proxy "legacy" wrapper for preventing
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -1972,66 +2061,52 @@
       var log = console.log.bind(console); // eslint-disable-line no-console
       // logs setIntervals to console if no arguments have been specified
 
-      var shouldLog = typeof match === 'undefined' && typeof delay === 'undefined';
+      var shouldLog = typeof matchCallback === 'undefined' && typeof matchDelay === 'undefined';
 
-      var _parseMatchArg = parseMatchArg(match),
-          isInvertedMatch = _parseMatchArg.isInvertedMatch,
-          matchRegexp = _parseMatchArg.matchRegexp;
-
-      var _parseDelayArg = parseDelayArg(delay),
-          isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
-          delayMatch = _parseDelayArg.delayMatch;
-
-      var getShouldPrevent = function getShouldPrevent(callbackStr, interval) {
+      var legacyIntervalWrapper = function legacyIntervalWrapper(callback, delay) {
         var shouldPrevent = false;
 
-        if (!delayMatch) {
-          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
-        } else if (!match) {
-          shouldPrevent = interval === delayMatch !== isInvertedDelayMatch;
-        } else {
-          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && interval === delayMatch !== isInvertedDelayMatch;
-        }
-
-        return shouldPrevent;
-      };
-
-      var legacyIntervalWrapper = function legacyIntervalWrapper(callback, interval) {
-        var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
-
-        var cbString = String(callback);
-
         if (shouldLog) {
-          hit(source);
-          log("setInterval(".concat(cbString, ", ").concat(interval, ")"));
+          hit(source); // https://github.com/AdguardTeam/Scriptlets/issues/105
+
+          log("setInterval(".concat(String(callback), ", ").concat(delay, ")"));
         } else {
-          shouldPrevent = getShouldPrevent(cbString, interval);
+          shouldPrevent = isPreventionNeeded({
+            callback: callback,
+            delay: delay,
+            matchCallback: matchCallback,
+            matchDelay: matchDelay
+          });
         }
 
         if (shouldPrevent) {
           hit(source);
-          return nativeInterval(noopFunc, interval);
+          return nativeInterval(noopFunc, delay);
         }
 
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
 
-        return nativeInterval.apply(window, [callback, interval].concat(args));
+        return nativeInterval.apply(window, [callback, delay].concat(args));
       };
 
       var handlerWrapper = function handlerWrapper(target, thisArg, args) {
         var callback = args[0];
-        var interval = args[1];
-        var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
-
-        var cbString = String(callback);
+        var delay = args[1];
+        var shouldPrevent = false;
 
         if (shouldLog) {
-          hit(source);
-          log("setInterval(".concat(cbString, ", ").concat(interval, ")"));
+          hit(source); // https://github.com/AdguardTeam/Scriptlets/issues/105
+
+          log("setInterval(".concat(String(callback), ", ").concat(delay, ")"));
         } else {
-          shouldPrevent = getShouldPrevent(cbString, interval);
+          shouldPrevent = isPreventionNeeded({
+            callback: callback,
+            delay: delay,
+            matchCallback: matchCallback,
+            matchDelay: matchDelay
+          });
         }
 
         if (shouldPrevent) {
@@ -2053,7 +2128,8 @@
     'ubo-setInterval-defuser.js', 'nosiif.js', // new short name of no-setInterval-if
     'ubo-nosiif.js', 'sid.js', // old short scriptlet name
     'ubo-sid.js', 'ubo-no-setInterval-if', 'ubo-setInterval-defuser', 'ubo-nosiif', 'ubo-sid'];
-    preventSetInterval$1.injections = [hit, noopFunc, parseMatchArg, parseDelayArg, toRegExp, startsWith, nativeIsNaN];
+    preventSetInterval$1.injections = [hit, noopFunc, isPreventionNeeded, // following helpers should be injected as helpers above use them
+    toRegExp, startsWith, nativeIsNaN, parseMatchArg, parseDelayArg, isValidCallback, isValidMatchStr, isValidStrPattern, nativeIsFinite, isValidMatchNumber];
 
     /* eslint-disable max-len */
 
@@ -2136,7 +2212,7 @@
           args[_key - 1] = arguments[_key];
         }
 
-        if (!validateStrPattern(delay)) {
+        if (!isValidStrPattern(delay)) {
           // eslint-disable-next-line no-console
           console.log("Invalid parameter: ".concat(delay));
           return nativeOpen.apply(window, [str].concat(args));
@@ -2169,7 +2245,7 @@
 
         if (match === getWildcardSymbol()) {
           shouldPrevent = true;
-        } else if (validateMatchStr(match)) {
+        } else if (isValidMatchStr(match)) {
           var _parseMatchArg = parseMatchArg(match),
               isInvertedMatch = _parseMatchArg.isInvertedMatch,
               matchRegexp = _parseMatchArg.matchRegexp;
@@ -2230,7 +2306,7 @@
     }
     preventWindowOpen$1.names = ['prevent-window-open', // aliases are needed for matching the related scriptlet converted into our syntax
     'window.open-defuser.js', 'ubo-window.open-defuser.js', 'ubo-window.open-defuser', 'nowoif.js', 'ubo-nowoif.js', 'ubo-nowoif'];
-    preventWindowOpen$1.injections = [hit, validateStrPattern, validateMatchStr, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, getWildcardSymbol, noopFunc, trueFunc, startsWith, endsWith, substringBefore, substringAfter$1];
+    preventWindowOpen$1.injections = [hit, isValidStrPattern, isValidMatchStr, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, getWildcardSymbol, noopFunc, trueFunc, startsWith, endsWith, substringBefore, substringAfter$1];
 
     /* eslint-disable max-len */
 
@@ -2545,16 +2621,6 @@
         return;
       }
 
-      var getCurrentScript = function getCurrentScript() {
-        if ('currentScript' in document) {
-          return document.currentScript; // eslint-disable-line compat/compat
-        }
-
-        var scripts = document.getElementsByTagName('script');
-        return scripts[scripts.length - 1];
-      };
-
-      var ourScript = getCurrentScript();
       var canceled = false;
 
       var mustCancel = function mustCancel(value) {
@@ -2572,7 +2638,6 @@
         }
 
         var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
-        var prevGetter;
         var prevSetter; // This is required to prevent scriptlets overwrite each over
 
         if (origDescriptor instanceof Object) {
@@ -2587,10 +2652,6 @@
 
           base[prop] = constantValue;
 
-          if (origDescriptor.get instanceof Function) {
-            prevGetter = origDescriptor.get;
-          }
-
           if (origDescriptor.set instanceof Function) {
             prevSetter = origDescriptor.set;
           }
@@ -2599,10 +2660,6 @@
         Object.defineProperty(base, prop, {
           configurable: configurable,
           get: function get() {
-            if (prevGetter !== undefined) {
-              prevGetter();
-            }
-
             return handler.get();
           },
           set: function set(a) {
@@ -2646,19 +2703,15 @@
           }
         };
         var endPropHandler = {
-          factValue: undefined,
           init: function init(a) {
             if (mustCancel(a)) {
               return false;
             }
 
-            this.factValue = a;
             return true;
           },
           get: function get() {
-            // .currrentSript script check so we won't trap other scriptlets on the same chain
-            // eslint-disable-next-line compat/compat
-            return document.currentScript === ourScript ? this.factValue : constantValue;
+            return constantValue;
           },
           set: function set(a) {
             if (!mustCancel(a)) {
@@ -2687,14 +2740,14 @@
         } // Undefined prop in chain
 
 
-        trapProp(owner, prop, true, undefPropHandler);
+        trapProp(base, prop, true, undefPropHandler);
       };
 
       setChainPropAccess(window, property);
     }
     setConstant$1.names = ['set-constant', // aliases are needed for matching the related scriptlet converted into our syntax
     'set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js', 'ubo-set-constant', 'ubo-set', 'abp-override-property-read'];
-    setConstant$1.injections = [hit, noopArray, noopObject, noopFunc, trueFunc, falseFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, nativeIsNaN];
+    setConstant$1.injections = [hit, noopArray, noopObject, noopFunc, trueFunc, falseFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, shouldAbortStack, setShouldAbortStack, nativeIsNaN];
 
     /* eslint-disable max-len */
 
@@ -4159,46 +4212,46 @@
      * @scriptlet adjust-setInterval
      *
      * @description
-     * Adjusts interval for specified setInterval() callbacks.
+     * Adjusts delay for specified setInterval() callbacks.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-setinterval-boosterjs-
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('adjust-setInterval'[, match [, interval[, boost]]])
+     * example.org#%#//scriptlet('adjust-setInterval'[, matchCallback [, matchDelay[, boost]]])
      * ```
      *
-     * - `match` - optional, string or regular expression for stringified callback matching;
+     * - `matchCallback` - optional, string or regular expression for stringified callback matching;
      * defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
-     * - `interval` - optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
-     * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), interval multiplier
+     * - `matchDelay` - optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
+     * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), setInterval delay multiplier
      *
      * **Examples**
-     * 1. Adjust all setInterval() x20 times where interval equal 1000ms:
+     * 1. Adjust all setInterval() x20 times where delay equal 1000ms:
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval')
      *     ```
      *
-     * 2. Adjust all setInterval() x20 times where callback matched with `example` and interval equal 1000ms
+     * 2. Adjust all setInterval() x20 times where callback matched with `example` and delay equal 1000ms
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval', 'example')
      *     ```
      *
-     * 3. Adjust all setInterval() x20 times where callback matched with `example` and interval equal 400ms
+     * 3. Adjust all setInterval() x20 times where callback matched with `example` and delay equal 400ms
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval', 'example', '400')
      *     ```
      *
-     * 4. Slow down setInterval() x2 times where callback matched with `example` and interval equal 1000ms
+     * 4. Slow down setInterval() x2 times where callback matched with `example` and delay equal 1000ms
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval', 'example', '', '2')
      *     ```
-     * 5. Adjust all setInterval() x50 times where interval equal 2000ms
+     * 5. Adjust all setInterval() x50 times where delay equal 2000ms
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval', '', '2000', '0.02')
      *     ```
-     * 6. Adjust all setInterval() x50 times where interval is randomized
+     * 6. Adjust all setInterval() x50 times where delay is randomized
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval', '', '*', '0.02')
      *     ```
@@ -4206,13 +4259,19 @@
 
     /* eslint-enable max-len */
 
-    function adjustSetInterval$1(source, match, interval, boost) {
+    function adjustSetInterval$1(source, matchCallback, matchDelay, boost) {
       var nativeSetInterval = window.setInterval;
-      var matchRegexp = toRegExp(match);
+      var matchRegexp = toRegExp(matchCallback);
 
-      var intervalWrapper = function intervalWrapper(cb, d) {
-        if (matchRegexp.test(cb.toString()) && isDelayMatched(interval, d)) {
-          d *= getBoostMultiplier(boost);
+      var intervalWrapper = function intervalWrapper(callback, delay) {
+        // https://github.com/AdguardTeam/Scriptlets/issues/221
+        if (!isValidCallback(callback)) {
+          if (source.verbose) {
+            // eslint-disable-next-line no-console, max-len
+            console.log("Scriptlet adjust-setInterval can not be applied because of invalid callback: '".concat(String(callback), "'."));
+          }
+        } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
+          delay *= getBoostMultiplier(boost);
           hit(source);
         }
 
@@ -4220,14 +4279,15 @@
           args[_key - 2] = arguments[_key];
         }
 
-        return nativeSetInterval.apply(window, [cb, d].concat(args));
+        return nativeSetInterval.apply(window, [callback, delay].concat(args));
       };
 
       window.setInterval = intervalWrapper;
     }
     adjustSetInterval$1.names = ['adjust-setInterval', // aliases are needed for matching the related scriptlet converted into our syntax
     'nano-setInterval-booster.js', 'ubo-nano-setInterval-booster.js', 'nano-sib.js', 'ubo-nano-sib.js', 'ubo-nano-setInterval-booster', 'ubo-nano-sib'];
-    adjustSetInterval$1.injections = [hit, toRegExp, getBoostMultiplier, isDelayMatched, nativeIsNaN, nativeIsFinite, getMatchDelay, getWildcardSymbol, shouldMatchAnyDelay];
+    adjustSetInterval$1.injections = [hit, isValidCallback, toRegExp, getBoostMultiplier, isDelayMatched, // following helpers should be injected as helpers above use them
+    nativeIsNaN, nativeIsFinite, getMatchDelay, getWildcardSymbol, shouldMatchAnyDelay];
 
     /* eslint-disable max-len */
 
@@ -4235,20 +4295,20 @@
      * @scriptlet adjust-setTimeout
      *
      * @description
-     * Adjusts timeout for specified setTimeout() callbacks.
+     * Adjusts delay for specified setTimeout() callbacks.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-settimeout-boosterjs-
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('adjust-setTimeout'[, match [, timeout[, boost]]])
+     * example.org#%#//scriptlet('adjust-setTimeout'[, matchCallback [, matchDelay[, boost]]])
      * ```
      *
-     * - `match` - optional, string or regular expression for stringified callback matching;
+     * - `matchCallback` - optional, string or regular expression for stringified callback matching;
      * defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
-     * - `timeout` - optional, defaults to 1000, matching setTimeout delay; decimal integer OR '*' for any delay
-     * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), timeout multiplier
+     * - `matchDelay` - optional, defaults to 1000, matching setTimeout delay; decimal integer OR '*' for any delay
+     * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), setTimeout delay multiplier
      *
      * **Examples**
      * 1. Adjust all setTimeout() x20 times where timeout equal 1000ms:
@@ -4282,13 +4342,19 @@
 
     /* eslint-enable max-len */
 
-    function adjustSetTimeout$1(source, match, timeout, boost) {
+    function adjustSetTimeout$1(source, matchCallback, matchDelay, boost) {
       var nativeSetTimeout = window.setTimeout;
-      var matchRegexp = toRegExp(match);
+      var matchRegexp = toRegExp(matchCallback);
 
-      var timeoutWrapper = function timeoutWrapper(cb, d) {
-        if (matchRegexp.test(cb.toString()) && isDelayMatched(timeout, d)) {
-          d *= getBoostMultiplier(boost);
+      var timeoutWrapper = function timeoutWrapper(callback, delay) {
+        // https://github.com/AdguardTeam/Scriptlets/issues/221
+        if (!isValidCallback(callback)) {
+          if (source.verbose) {
+            // eslint-disable-next-line no-console, max-len
+            console.log("Scriptlet adjust-setTimeout can not be applied because of invalid callback: '".concat(String(callback), "'."));
+          }
+        } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
+          delay *= getBoostMultiplier(boost);
           hit(source);
         }
 
@@ -4296,14 +4362,15 @@
           args[_key - 2] = arguments[_key];
         }
 
-        return nativeSetTimeout.apply(window, [cb, d].concat(args));
+        return nativeSetTimeout.apply(window, [callback, delay].concat(args));
       };
 
       window.setTimeout = timeoutWrapper;
     }
     adjustSetTimeout$1.names = ['adjust-setTimeout', // aliases are needed for matching the related scriptlet converted into our syntax
     'nano-setTimeout-booster.js', 'ubo-nano-setTimeout-booster.js', 'nano-stb.js', 'ubo-nano-stb.js', 'ubo-nano-setTimeout-booster', 'ubo-nano-stb'];
-    adjustSetTimeout$1.injections = [hit, toRegExp, getBoostMultiplier, isDelayMatched, nativeIsNaN, nativeIsFinite, getMatchDelay, getWildcardSymbol, shouldMatchAnyDelay];
+    adjustSetTimeout$1.injections = [hit, isValidCallback, toRegExp, getBoostMultiplier, isDelayMatched, // following helpers should be injected as helpers above use them
+    nativeIsNaN, nativeIsFinite, getMatchDelay, getWildcardSymbol, shouldMatchAnyDelay];
 
     /* eslint-disable max-len */
 
@@ -4566,7 +4633,7 @@
     }
     jsonPrune$1.names = ['json-prune', // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune.js', 'ubo-json-prune.js', 'ubo-json-prune', 'abp-json-prune'];
-    jsonPrune$1.injections = [hit, matchStackTrace, getWildcardPropertyInChain, toRegExp, getWildcardSymbol];
+    jsonPrune$1.injections = [hit, matchStackTrace, shouldAbortStack, setShouldAbortStack, getWildcardPropertyInChain, toRegExp, getWildcardSymbol];
 
     /* eslint-disable max-len */
 
@@ -4641,7 +4708,9 @@
     /* eslint-enable max-len */
 
     function preventRequestAnimationFrame$1(source, match) {
-      var nativeRequestAnimationFrame = window.requestAnimationFrame; // logs requestAnimationFrame to console if no arguments have been specified
+      var nativeRequestAnimationFrame = window.requestAnimationFrame;
+      var log = console.log.bind(console); // eslint-disable-line no-console
+      // logs requestAnimationFrame to console if no arguments have been specified
 
       var shouldLog = typeof match === 'undefined';
 
@@ -4653,9 +4722,9 @@
         var shouldPrevent = false;
 
         if (shouldLog) {
-          var logMessage = "log: requestAnimationFrame(\"".concat(callback.toString(), "\")");
-          hit(source, logMessage);
-        } else if (validateStrPattern(match)) {
+          hit(source);
+          log("requestAnimationFrame(".concat(String(callback), ")"));
+        } else if (isValidCallback(callback) && isValidStrPattern(match)) {
           shouldPrevent = matchRegexp.test(callback.toString()) !== isInvertedMatch;
         }
 
@@ -4675,7 +4744,8 @@
     }
     preventRequestAnimationFrame$1.names = ['prevent-requestAnimationFrame', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-requestAnimationFrame-if.js', 'ubo-no-requestAnimationFrame-if.js', 'norafif.js', 'ubo-norafif.js', 'ubo-no-requestAnimationFrame-if', 'ubo-norafif'];
-    preventRequestAnimationFrame$1.injections = [hit, noopFunc, parseMatchArg, validateStrPattern, toRegExp, startsWith];
+    preventRequestAnimationFrame$1.injections = [hit, noopFunc, parseMatchArg, isValidStrPattern, isValidCallback, // following helpers should be injected as helpers above use them
+    toRegExp, startsWith];
 
     /* eslint-disable max-len */
 
@@ -5059,7 +5129,7 @@
     }
     preventFetch$1.names = ['prevent-fetch', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-fetch-if.js', 'ubo-no-fetch-if.js', 'ubo-no-fetch-if'];
-    preventFetch$1.injections = [hit, getFetchData, objectToString, parseMatchProps, validateParsedData, getMatchPropsData, noopPromiseResolve, getWildcardSymbol, toRegExp, validateStrPattern, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries];
+    preventFetch$1.injections = [hit, getFetchData, objectToString, parseMatchProps, validateParsedData, getMatchPropsData, noopPromiseResolve, getWildcardSymbol, toRegExp, isValidStrPattern, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries];
 
     /* eslint-disable max-len */
 
@@ -5291,8 +5361,11 @@
     function abortOnStackTrace$1(source, property, stack) {
       if (!property || !stack) {
         return;
-      }
+      } // sets shouldAbortStack to true
+      // https://github.com/AdguardTeam/Scriptlets/issues/226
 
+
+      setShouldAbortStack(true);
       var rid = randomId();
 
       var abort = function abort() {
@@ -5326,7 +5399,7 @@
 
         var value = base[prop];
 
-        if (!validateStrPattern(stack)) {
+        if (!isValidStrPattern(stack)) {
           // eslint-disable-next-line no-console
           console.log("Invalid parameter: ".concat(stack));
           return;
@@ -5334,17 +5407,21 @@
 
         setPropertyAccess(base, prop, {
           get: function get() {
-            if (matchStackTrace(stack, new Error().stack)) {
+            if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
+              setShouldAbortStack(true);
               abort();
             }
 
+            setShouldAbortStack(true);
             return value;
           },
           set: function set(newValue) {
-            if (matchStackTrace(stack, new Error().stack)) {
+            if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
+              setShouldAbortStack(true);
               abort();
             }
 
+            setShouldAbortStack(true);
             value = newValue;
           }
         });
@@ -5355,7 +5432,7 @@
     }
     abortOnStackTrace$1.names = ['abort-on-stack-trace', // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-stack-trace.js', 'ubo-abort-on-stack-trace.js', 'aost.js', 'ubo-aost.js', 'ubo-abort-on-stack-trace', 'ubo-aost', 'abp-abort-on-stack-trace'];
-    abortOnStackTrace$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, validateStrPattern, matchStackTrace, toRegExp];
+    abortOnStackTrace$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isValidStrPattern, matchStackTrace, shouldAbortStack, setShouldAbortStack, toRegExp];
 
     /* eslint-disable max-len */
 
@@ -5640,13 +5717,16 @@
     }
     preventXHR$1.names = ['prevent-xhr', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-xhr-if.js', 'ubo-no-xhr-if.js', 'ubo-no-xhr-if'];
-    preventXHR$1.injections = [hit, objectToString, getWildcardSymbol, parseMatchProps, validateParsedData, getMatchPropsData, toRegExp, validateStrPattern, isEmptyObject, getObjectEntries];
+    preventXHR$1.injections = [hit, objectToString, getWildcardSymbol, parseMatchProps, validateParsedData, getMatchPropsData, toRegExp, isValidStrPattern, isEmptyObject, getObjectEntries];
 
     /**
      * @scriptlet close-window
      *
      * @description
      * Closes the browser tab immediately.
+     *
+     * > `window.close()` usage is restricted in Chrome. In this case
+     * tab will only be closed if using AdGuard browser extension.
      *
      * **Syntax**
      * ```
@@ -5691,14 +5771,36 @@
         }
       };
 
-      if (path === '') {
-        closeImmediately();
-      } else {
+      var closeByExtension = function closeByExtension() {
+        var extCall = function extCall() {
+          dispatchEvent(new Event('adguard:scriptlet-close-window'));
+        };
+
+        window.addEventListener('adguard:subscribed-to-close-window', extCall, {
+          once: true
+        });
+        setTimeout(function () {
+          window.removeEventListener('adguard:subscribed-to-close-window', extCall, {
+            once: true
+          });
+        }, 5000);
+      };
+
+      var shouldClose = function shouldClose() {
+        if (path === '') {
+          return true;
+        }
+
         var pathRegexp = toRegExp(path);
         var currentPath = "".concat(window.location.pathname).concat(window.location.search);
+        return pathRegexp.test(currentPath);
+      };
 
-        if (pathRegexp.test(currentPath)) {
-          closeImmediately();
+      if (shouldClose()) {
+        closeImmediately();
+
+        if (navigator.userAgent.indexOf('Chrome') > -1) {
+          closeByExtension();
         }
       }
     }
@@ -5780,7 +5882,13 @@
           return contentDelay;
         }).filter(function (delay) {
           return delay !== null;
-        }); // Get smallest delay of all metas on the page
+        }); // Check if "delays" array is empty, may happens when meta's content is invalid
+        // and reduce() method cannot be used with empty arrays without initial value
+
+        if (!delays.length) {
+          return null;
+        } // Get smallest delay of all metas on the page
+
 
         var minDelay = delays.reduce(function (a, b) {
           return Math.min(a, b);
@@ -5798,12 +5906,12 @@
 
         var secondsToRun = getNumberFromString(delaySec); // Check if argument is provided
 
-        if (!secondsToRun) {
+        if (secondsToRun === null) {
           secondsToRun = getMetaContentDelay(metaElements);
         } // Check if meta tag has delay
 
 
-        if (!secondsToRun) {
+        if (secondsToRun === null) {
           return;
         }
 
@@ -5839,7 +5947,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('prevent-src', tagName, match)
+     * example.org#%#//scriptlet('prevent-element-src-loading', tagName, match)
      * ```
      *
      * - `tagName` - required, case-insensitive target element tagName which `src` property resource loading will be silently prevented; possible values:
@@ -5962,6 +6070,41 @@
     preventElementSrcLoading$1.injections = [hit, toRegExp, safeGetDescriptor];
 
     /**
+     * @scriptlet no-topics
+     *
+     * @description
+     * Prevents using The Topics API
+     * https://developer.chrome.com/docs/privacy-sandbox/topics/
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('no-topics')
+     * ```
+     */
+
+    function noTopics$1(source) {
+      var TOPICS_PROPERTY_NAME = 'browsingTopics';
+
+      if (Document instanceof Object === false) {
+        return;
+      }
+
+      if (!Object.prototype.hasOwnProperty.call(Document.prototype, TOPICS_PROPERTY_NAME) || Document.prototype[TOPICS_PROPERTY_NAME] instanceof Function === false) {
+        return;
+      } // document.browsingTopics() is async function so it's better to return noopPromiseResolve()
+      // https://github.com/patcg-individual-drafts/topics#the-api-and-how-it-works
+
+
+      Document.prototype[TOPICS_PROPERTY_NAME] = function () {
+        return noopPromiseResolve('[]');
+      };
+
+      hit(source);
+    }
+    noTopics$1.names = ['no-topics'];
+    noTopics$1.injections = [hit, noopPromiseResolve];
+
+    /**
      * This file must export all scriptlets which should be accessible
      */
 
@@ -6011,7 +6154,8 @@
         preventXHR: preventXHR$1,
         forceWindowClose: forceWindowClose$1,
         preventRefresh: preventRefresh$1,
-        preventElementSrcLoading: preventElementSrcLoading$1
+        preventElementSrcLoading: preventElementSrcLoading$1,
+        noTopics: noTopics$1
     });
 
     /**
@@ -6121,6 +6265,8 @@
       adg: 'noopvast-2.0'
     }, {
       adg: 'noopvast-3.0'
+    }, {
+      adg: 'noopvast-4.0'
     }, {
       adg: 'prebid'
     }, {
@@ -6692,18 +6838,23 @@
 
 
     var validateRemoveAttrClassArgs = function validateRemoveAttrClassArgs(parsedArgs) {
-      // remove-attr/class scriptlet might have multiple selectors separated by comma. so we should:
+      var _parsedArgs = toArray$1(parsedArgs),
+          name = _parsedArgs[0],
+          value = _parsedArgs[1],
+          restArgs = _parsedArgs.slice(2); // no extra checking if there are only scriptlet name and value
+      // https://github.com/AdguardTeam/Scriptlets/issues/235
+
+
+      if (restArgs.length === 0) {
+        return [name, value];
+      } // remove-attr/class scriptlet might have multiple selectors separated by comma. so we should:
       // 1. check if last arg is 'applying' parameter
       // 2. join 'selector' into one arg
       // 3. combine all args
       // https://github.com/AdguardTeam/Scriptlets/issues/133
-      var lastArg = parsedArgs.pop();
 
-      var _parsedArgs = toArray$1(parsedArgs),
-          name = _parsedArgs[0],
-          value = _parsedArgs[1],
-          restArgs = _parsedArgs.slice(2);
 
+      var lastArg = restArgs.pop();
       var applying; // check the last parsed arg for matching possible 'applying' vale
 
       if (REMOVE_ATTR_CLASS_APPLYING.some(function (el) {
@@ -6787,10 +6938,10 @@
       var template = mask === validator.ABP_SCRIPTLET_MASK ? ADGUARD_SCRIPTLET_TEMPLATE : ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
       var domains = substringBefore(rule, mask);
       var args = substringAfter$1(rule, mask);
-      return args.split(SEMICOLON_DIVIDER).map(function (args) {
-        return getSentences(args).filter(function (arg) {
-          return arg;
-        }).map(function (arg, index) {
+      return args.split(SEMICOLON_DIVIDER) // abp-rule may have `;` at the end which makes last array item irrelevant
+      // https://github.com/AdguardTeam/Scriptlets/issues/236
+      .filter(isExisting).map(function (args) {
+        return getSentences(args).map(function (arg, index) {
           return index === 0 ? "abp-".concat(arg) : arg;
         }).map(function (arg) {
           return wrapInSingleQuotes(arg);
@@ -7478,6 +7629,7 @@
       Slot.prototype.getDomId = noopStr;
       Slot.prototype.getSlotElementId = noopStr;
       Slot.prototype.getSlotId = noopThis;
+      Slot.prototype.getSizes = noopArray;
       Slot.prototype.getTargeting = noopArray;
       Slot.prototype.getTargetingKeys = noopArray;
       Slot.prototype.set = noopThis;
@@ -8204,8 +8356,6 @@
      */
 
     function GoogleIma3(source) {
-      var _this = this;
-
       var VERSION = '3.453.0';
       var ima = {};
 
@@ -8236,75 +8386,75 @@
         v: '',
         getCompanionBackfill: noopFunc,
         getDisableCustomPlaybackForIOS10Plus: function getDisableCustomPlaybackForIOS10Plus() {
-          return _this.i;
+          return this.i;
         },
         getDisabledFlashAds: function getDisabledFlashAds() {
           return true;
         },
         getFeatureFlags: function getFeatureFlags() {
-          return _this.f;
+          return this.f;
         },
         getLocale: function getLocale() {
-          return _this.l;
+          return this.l;
         },
         getNumRedirects: function getNumRedirects() {
-          return _this.r;
+          return this.r;
         },
         getPlayerType: function getPlayerType() {
-          return _this.t;
+          return this.t;
         },
         getPlayerVersion: function getPlayerVersion() {
-          return _this.v;
+          return this.v;
         },
         getPpid: function getPpid() {
-          return _this.p;
+          return this.p;
         },
         getVpaidMode: function getVpaidMode() {
-          return _this.C;
+          return this.C;
         },
         isCookiesEnabled: function isCookiesEnabled() {
-          return _this.c;
+          return this.c;
         },
         isVpaidAdapter: function isVpaidAdapter() {
-          return _this.M;
+          return this.M;
         },
         setCompanionBackfill: noopFunc,
         setAutoPlayAdBreaks: function setAutoPlayAdBreaks(a) {
-          _this.K = a;
+          this.K = a;
         },
         setCookiesEnabled: function setCookiesEnabled(c) {
-          _this.c = !!c;
+          this.c = !!c;
         },
         setDisableCustomPlaybackForIOS10Plus: function setDisableCustomPlaybackForIOS10Plus(i) {
-          _this.i = !!i;
+          this.i = !!i;
         },
         setDisableFlashAds: noopFunc,
         setFeatureFlags: function setFeatureFlags(f) {
-          _this.f = !!f;
+          this.f = !!f;
         },
         setIsVpaidAdapter: function setIsVpaidAdapter(a) {
-          _this.M = a;
+          this.M = a;
         },
         setLocale: function setLocale(l) {
-          _this.l = !!l;
+          this.l = !!l;
         },
         setNumRedirects: function setNumRedirects(r) {
-          _this.r = !!r;
+          this.r = !!r;
         },
         setPageCorrelator: function setPageCorrelator(a) {
-          _this.R = a;
+          this.R = a;
         },
         setPlayerType: function setPlayerType(t) {
-          _this.t = !!t;
+          this.t = !!t;
         },
         setPlayerVersion: function setPlayerVersion(v) {
-          _this.v = !!v;
+          this.v = !!v;
         },
         setPpid: function setPpid(p) {
-          _this.p = !!p;
+          this.p = !!p;
         },
         setVpaidMode: function setVpaidMode(a) {
-          _this.C = a;
+          this.C = a;
         },
         setSessionId: noopFunc,
         setStreamCorrelator: noopFunc,
@@ -8321,11 +8471,10 @@
       };
       var managerLoaded = false;
 
-      var EventHandler = function EventHandler() {};
+      var EventHandler = function EventHandler() {
+        this.listeners = new Map();
 
-      EventHandler.prototype = {
-        listeners: new Map(),
-        _dispatch: function _dispatch(e) {
+        this._dispatch = function (e) {
           var listeners = this.listeners.get(e.type) || []; // eslint-disable-next-line no-restricted-syntax
 
           for (var _i = 0, _Array$from = Array.from(listeners); _i < _Array$from.length; _i++) {
@@ -8338,83 +8487,86 @@
               console.error(r);
             }
           }
-        },
-        addEventListener: function addEventListener(t, c) {
+        };
+
+        this.addEventListener = function (t, c) {
           if (!this.listeners.has(t)) {
             this.listeners.set(t, new Set());
           }
 
           this.listeners.get(t).add(c);
-        },
-        removeEventListener: function removeEventListener(t, c) {
+        };
+
+        this.removeEventListener = function (t, c) {
           var _this$listeners$get;
 
           (_this$listeners$get = this.listeners.get(t)) === null || _this$listeners$get === void 0 ? void 0 : _this$listeners$get.delete(c);
-        }
+        };
       };
-      var AdsManager = EventHandler;
+
+      var AdsManager = new EventHandler();
       /* eslint-disable no-use-before-define */
 
-      AdsManager.prototype.volume = 1;
-      AdsManager.prototype.collapse = noopFunc;
-      AdsManager.prototype.configureAdsManager = noopFunc;
-      AdsManager.prototype.destroy = noopFunc;
-      AdsManager.prototype.discardAdBreak = noopFunc;
-      AdsManager.prototype.expand = noopFunc;
-      AdsManager.prototype.focus = noopFunc;
+      AdsManager.volume = 1;
+      AdsManager.collapse = noopFunc;
+      AdsManager.configureAdsManager = noopFunc;
+      AdsManager.destroy = noopFunc;
+      AdsManager.discardAdBreak = noopFunc;
+      AdsManager.expand = noopFunc;
+      AdsManager.focus = noopFunc;
 
-      AdsManager.prototype.getAdSkippableState = function () {
+      AdsManager.getAdSkippableState = function () {
         return false;
       };
 
-      AdsManager.prototype.getCuePoints = function () {
+      AdsManager.getCuePoints = function () {
         return [0];
       };
 
-      AdsManager.prototype.getCurrentAd = function () {
+      AdsManager.getCurrentAd = function () {
         return currentAd;
       };
 
-      AdsManager.prototype.getCurrentAdCuePoints = function () {
+      AdsManager.getCurrentAdCuePoints = function () {
         return [];
       };
 
-      AdsManager.prototype.getRemainingTime = function () {
+      AdsManager.getRemainingTime = function () {
         return 0;
       };
 
-      AdsManager.prototype.getVolume = function () {
-        return _this.volume;
+      AdsManager.getVolume = function () {
+        return this.volume;
       };
 
-      AdsManager.prototype.init = noopFunc;
+      AdsManager.init = noopFunc;
 
-      AdsManager.prototype.isCustomClickTrackingUsed = function () {
+      AdsManager.isCustomClickTrackingUsed = function () {
         return false;
       };
 
-      AdsManager.prototype.isCustomPlaybackUsed = function () {
+      AdsManager.isCustomPlaybackUsed = function () {
         return false;
       };
 
-      AdsManager.prototype.pause = noopFunc;
-      AdsManager.prototype.requestNextAdBreak = noopFunc;
-      AdsManager.prototype.resize = noopFunc;
-      AdsManager.prototype.resume = noopFunc;
+      AdsManager.pause = noopFunc;
+      AdsManager.requestNextAdBreak = noopFunc;
+      AdsManager.resize = noopFunc;
+      AdsManager.resume = noopFunc;
 
-      AdsManager.prototype.setVolume = function (v) {
-        _this.volume = v;
+      AdsManager.setVolume = function (v) {
+        this.volume = v;
       };
 
-      AdsManager.prototype.skip = noopFunc;
+      AdsManager.skip = noopFunc;
 
-      AdsManager.prototype.start = function () {
+      AdsManager.start = function () {
         // eslint-disable-next-line no-restricted-syntax
-        for (var _i2 = 0, _arr = [AdEvent.Type.LOADED, AdEvent.Type.STARTED, AdEvent.Type.AD_BUFFERING, AdEvent.Type.FIRST_QUARTILE, AdEvent.Type.MIDPOINT, AdEvent.Type.THIRD_QUARTILE, AdEvent.Type.COMPLETE, AdEvent.Type.ALL_ADS_COMPLETED]; _i2 < _arr.length; _i2++) {
+        for (var _i2 = 0, _arr = [AdEvent.Type.LOADED, AdEvent.Type.STARTED, AdEvent.Type.AD_BUFFERING, AdEvent.Type.FIRST_QUARTILE, AdEvent.Type.MIDPOINT, AdEvent.Type.THIRD_QUARTILE, AdEvent.Type.COMPLETE, AdEvent.Type.ALL_ADS_COMPLETED, AdEvent.Type.CONTENT_RESUME_REQUESTED]; _i2 < _arr.length; _i2++) {
           var type = _arr[_i2];
 
           try {
-            _this._dispatch(new ima.AdEvent(type));
+            this._dispatch(new ima.AdEvent(type));
           } catch (e) {
             // eslint-disable-next-line no-console
             console.error(e);
@@ -8422,18 +8574,17 @@
         }
       };
 
-      AdsManager.prototype.stop = noopFunc;
-      AdsManager.prototype.updateAdsRenderingSettings = noopFunc;
+      AdsManager.stop = noopFunc;
+      AdsManager.updateAdsRenderingSettings = noopFunc;
       /* eslint-enable no-use-before-define */
 
       var manager = Object.create(AdsManager);
 
-      var AdsManagerLoadedEvent = function AdsManagerLoadedEvent() {};
+      var AdsManagerLoadedEvent = function AdsManagerLoadedEvent(type) {
+        this.type = type;
+      };
 
       AdsManagerLoadedEvent.prototype = {
-        constructor: function constructor(type) {
-          _this.type = type;
-        },
         getAdsManager: function getAdsManager() {
           return manager;
         },
@@ -8455,15 +8606,16 @@
         return VERSION;
       };
 
-      AdsLoader.prototype.requestAds = function () {
-        var _this2 = this;
+      AdsLoader.prototype.requestAds = function (adsRequest, userRequestContext) {
+        var _this = this;
 
         if (!managerLoaded) {
           managerLoaded = true;
+          var e = new ima.AdError('adPlayError', 1205, 1205, 'The browser prevented playback initiated without user interaction.', adsRequest, userRequestContext);
           requestAnimationFrame(function () {
-            var ADS_MANAGER_LOADED = AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED;
-
-            _this2._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED));
+            // using AdErrorEvent is preferred as AdsManagerLoadedEvent causes errors
+            // https://github.com/AdguardTeam/Scriptlets/issues/217
+            _this._dispatch(new ima.AdErrorEvent(e));
           });
         }
       };
@@ -8509,7 +8661,7 @@
           return '';
         },
         getAdPodInfo: function getAdPodInfo() {
-          return _this.pi;
+          return this.pi;
         },
         getAdSystem: function getAdSystem() {
           return '';
@@ -8594,6 +8746,9 @@
         },
         isLinear: function isLinear() {
           return true;
+        },
+        isSkippable: function isSkippable() {
+          return true;
         }
       };
 
@@ -8617,26 +8772,36 @@
         }
       };
 
-      var AdError = function AdError() {};
+      var AdError = function AdError(type, code, vast, message, adsRequest, userRequestContext) {
+        this.errorCode = code;
+        this.message = message;
+        this.type = type;
+        this.adsRequest = adsRequest;
+        this.userRequestContext = userRequestContext;
 
-      AdError.prototype = {
-        getErrorCode: function getErrorCode() {
-          return 0;
-        },
-        getInnerError: noopFunc,
-        getMessage: function getMessage() {
-          return '';
-        },
-        getType: function getType() {
-          return 1;
-        },
-        getVastErrorCode: function getVastErrorCode() {
-          return 0;
-        },
-        toString: function toString() {
-          return '';
-        }
+        this.getErrorCode = function () {
+          return this.errorCode;
+        };
+
+        this.getInnerError = function () {};
+
+        this.getMessage = function () {
+          return this.message;
+        };
+
+        this.getType = function () {
+          return this.type;
+        };
+
+        this.getVastErrorCode = function () {
+          return this.vastErrorCode;
+        };
+
+        this.toString = function () {
+          return "AdError ".concat(this.errorCode, ": ").concat(this.message);
+        };
       };
+
       AdError.ErrorCode = {};
       AdError.Type = {};
 
@@ -8661,12 +8826,11 @@
 
       var currentAd = isEngadget() ? undefined : new Ad();
 
-      var AdEvent = function AdEvent() {};
+      var AdEvent = function AdEvent(type) {
+        this.type = type;
+      };
 
       AdEvent.prototype = {
-        constructor: function constructor(type) {
-          _this.type = type;
-        },
         getAd: function getAd() {
           return currentAd;
         },
@@ -8707,12 +8871,25 @@
         VOLUME_MUTED: 'mute'
       };
 
-      var AdErrorEvent = function AdErrorEvent() {};
+      var AdErrorEvent = function AdErrorEvent(error) {
+        this.error = error;
+        this.type = 'adError';
 
-      AdErrorEvent.prototype = {
-        getError: noopFunc,
-        getUserRequestContext: function getUserRequestContext() {}
+        this.getError = function () {
+          return this.error;
+        };
+
+        this.getUserRequestContext = function () {
+          var _this$error;
+
+          if ((_this$error = this.error) !== null && _this$error !== void 0 && _this$error.userRequestContext) {
+            return this.error.userRequestContext;
+          }
+
+          return {};
+        };
       };
+
       AdErrorEvent.Type = {
         AD_ERROR: 'adError'
       };
@@ -13400,7 +13577,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
@@ -13597,7 +13774,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
@@ -13772,7 +13949,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
@@ -13861,6 +14038,7 @@
           return;
         }
 
+        setShouldAbortStack(true);
         var rid = randomId();
 
         var abort = function abort() {
@@ -13894,24 +14072,28 @@
 
           var value = base[prop];
 
-          if (!validateStrPattern(stack)) {
+          if (!isValidStrPattern(stack)) {
             console.log("Invalid parameter: ".concat(stack));
             return;
           }
 
           setPropertyAccess(base, prop, {
             get: function get() {
-              if (matchStackTrace(stack, new Error().stack)) {
+              if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
+                setShouldAbortStack(true);
                 abort();
               }
 
+              setShouldAbortStack(true);
               return value;
             },
             set: function set(newValue) {
-              if (matchStackTrace(stack, new Error().stack)) {
+              if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
+                setShouldAbortStack(true);
                 abort();
               }
 
+              setShouldAbortStack(true);
               value = newValue;
             }
           });
@@ -13967,7 +14149,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
@@ -14041,7 +14223,7 @@
         }
       }
 
-      function validateStrPattern(input) {
+      function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = input;
 
@@ -14062,6 +14244,8 @@
       }
 
       function matchStackTrace(stackMatch, stackTrace) {
+        setShouldAbortStack(false);
+
         if (!stackMatch || stackMatch === "") {
           return true;
         }
@@ -14071,6 +14255,12 @@
           return line.trim();
         }).join("\n");
         return stackRegexp.test(refinedStackTrace);
+      }
+
+      function shouldAbortStack() {}
+
+      function setShouldAbortStack(value) {
+        shouldAbortStack = value;
       }
 
       function toRegExp() {
@@ -14100,13 +14290,17 @@
     }
 
     function adjustSetInterval(source, args) {
-      function adjustSetInterval(source, match, interval, boost) {
+      function adjustSetInterval(source, matchCallback, matchDelay, boost) {
         var nativeSetInterval = window.setInterval;
-        var matchRegexp = toRegExp(match);
+        var matchRegexp = toRegExp(matchCallback);
 
-        var intervalWrapper = function intervalWrapper(cb, d) {
-          if (matchRegexp.test(cb.toString()) && isDelayMatched(interval, d)) {
-            d *= getBoostMultiplier(boost);
+        var intervalWrapper = function intervalWrapper(callback, delay) {
+          if (!isValidCallback(callback)) {
+            if (source.verbose) {
+              console.log("Scriptlet adjust-setInterval can not be applied because of invalid callback: '".concat(String(callback), "'."));
+            }
+          } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
+            delay *= getBoostMultiplier(boost);
             hit(source);
           }
 
@@ -14114,7 +14308,7 @@
             args[_key - 2] = arguments[_key];
           }
 
-          return nativeSetInterval.apply(window, [cb, d].concat(args));
+          return nativeSetInterval.apply(window, [callback, delay].concat(args));
         };
 
         window.setInterval = intervalWrapper;
@@ -14167,6 +14361,10 @@
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
+      }
+
+      function isValidCallback(callback) {
+        return callback instanceof Function || typeof callback === "string";
       }
 
       function toRegExp() {
@@ -14243,13 +14441,17 @@
     }
 
     function adjustSetTimeout(source, args) {
-      function adjustSetTimeout(source, match, timeout, boost) {
+      function adjustSetTimeout(source, matchCallback, matchDelay, boost) {
         var nativeSetTimeout = window.setTimeout;
-        var matchRegexp = toRegExp(match);
+        var matchRegexp = toRegExp(matchCallback);
 
-        var timeoutWrapper = function timeoutWrapper(cb, d) {
-          if (matchRegexp.test(cb.toString()) && isDelayMatched(timeout, d)) {
-            d *= getBoostMultiplier(boost);
+        var timeoutWrapper = function timeoutWrapper(callback, delay) {
+          if (!isValidCallback(callback)) {
+            if (source.verbose) {
+              console.log("Scriptlet adjust-setTimeout can not be applied because of invalid callback: '".concat(String(callback), "'."));
+            }
+          } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
+            delay *= getBoostMultiplier(boost);
             hit(source);
           }
 
@@ -14257,7 +14459,7 @@
             args[_key - 2] = arguments[_key];
           }
 
-          return nativeSetTimeout.apply(window, [cb, d].concat(args));
+          return nativeSetTimeout.apply(window, [callback, delay].concat(args));
         };
 
         window.setTimeout = timeoutWrapper;
@@ -14310,6 +14512,10 @@
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
+      }
+
+      function isValidCallback(callback) {
+        return callback instanceof Function || typeof callback === "string";
       }
 
       function toRegExp() {
@@ -14516,7 +14722,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
@@ -14709,7 +14915,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
@@ -14886,7 +15092,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
@@ -15148,14 +15354,36 @@
           }
         };
 
-        if (path === "") {
-          closeImmediately();
-        } else {
+        var closeByExtension = function closeByExtension() {
+          var extCall = function extCall() {
+            dispatchEvent(new Event("adguard:scriptlet-close-window"));
+          };
+
+          window.addEventListener("adguard:subscribed-to-close-window", extCall, {
+            once: true
+          });
+          setTimeout(function () {
+            window.removeEventListener("adguard:subscribed-to-close-window", extCall, {
+              once: true
+            });
+          }, 5e3);
+        };
+
+        var shouldClose = function shouldClose() {
+          if (path === "") {
+            return true;
+          }
+
           var pathRegexp = toRegExp(path);
           var currentPath = "".concat(window.location.pathname).concat(window.location.search);
+          return pathRegexp.test(currentPath);
+        };
 
-          if (pathRegexp.test(currentPath)) {
-            closeImmediately();
+        if (shouldClose()) {
+          closeImmediately();
+
+          if (navigator.userAgent.indexOf("Chrome") > -1) {
+            closeByExtension();
           }
         }
       }
@@ -15602,6 +15830,7 @@
       }
 
       function matchStackTrace(stackMatch, stackTrace) {
+
         if (!stackMatch || stackMatch === "") {
           return true;
         }
@@ -16044,7 +16273,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
@@ -16114,6 +16343,97 @@
 
       try {
         logOnStacktrace.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function noTopics(source, args) {
+      function noTopics(source) {
+        var TOPICS_PROPERTY_NAME = "browsingTopics";
+
+        if (Document instanceof Object === false) {
+          return;
+        }
+
+        if (!Object.prototype.hasOwnProperty.call(Document.prototype, TOPICS_PROPERTY_NAME) || Document.prototype[TOPICS_PROPERTY_NAME] instanceof Function === false) {
+          return;
+        }
+
+        Document.prototype[TOPICS_PROPERTY_NAME] = function () {
+          return noopPromiseResolve("[]");
+        };
+
+        hit(source);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function noopPromiseResolve() {
+        var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
+
+        if (typeof Response === "undefined") {
+          return;
+        }
+
+        var response = new Response(responseBody, {
+          status: 200,
+          statusText: "OK"
+        });
+        return Promise.resolve(response);
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        noTopics.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
@@ -17268,7 +17588,7 @@
 
       function validateParsedData(data) {
         return Object.values(data).every(function (value) {
-          return validateStrPattern(value);
+          return isValidStrPattern(value);
         });
       }
 
@@ -17315,7 +17635,7 @@
         return new RegExp(escaped);
       }
 
-      function validateStrPattern(input) {
+      function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = input;
 
@@ -17521,6 +17841,11 @@
           }).filter(function (delay) {
             return delay !== null;
           });
+
+          if (!delays.length) {
+            return null;
+          }
+
           var minDelay = delays.reduce(function (a, b) {
             return Math.min(a, b);
           });
@@ -17536,11 +17861,11 @@
 
           var secondsToRun = getNumberFromString(delaySec);
 
-          if (!secondsToRun) {
+          if (secondsToRun === null) {
             secondsToRun = getMetaContentDelay(metaElements);
           }
 
-          if (!secondsToRun) {
+          if (secondsToRun === null) {
             return;
           }
 
@@ -17632,6 +17957,7 @@
     function preventRequestAnimationFrame(source, args) {
       function preventRequestAnimationFrame(source, match) {
         var nativeRequestAnimationFrame = window.requestAnimationFrame;
+        var log = console.log.bind(console);
         var shouldLog = typeof match === "undefined";
 
         var _parseMatchArg = parseMatchArg(match),
@@ -17642,9 +17968,9 @@
           var shouldPrevent = false;
 
           if (shouldLog) {
-            var logMessage = 'log: requestAnimationFrame("'.concat(callback.toString(), '")');
-            hit(source, logMessage);
-          } else if (validateStrPattern(match)) {
+            hit(source);
+            log("requestAnimationFrame(".concat(String(callback), ")"));
+          } else if (isValidCallback(callback) && isValidStrPattern(match)) {
             shouldPrevent = matchRegexp.test(callback.toString()) !== isInvertedMatch;
           }
 
@@ -17725,7 +18051,7 @@
         };
       }
 
-      function validateStrPattern(input) {
+      function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = input;
 
@@ -17743,6 +18069,10 @@
         }
 
         return isValid;
+      }
+
+      function isValidCallback(callback) {
+        return callback instanceof Function || typeof callback === "string";
       }
 
       function toRegExp() {
@@ -17776,68 +18106,54 @@
     }
 
     function preventSetInterval(source, args) {
-      function preventSetInterval(source, match, delay) {
+      function preventSetInterval(source, matchCallback, matchDelay) {
         var isProxySupported = typeof Proxy !== "undefined";
         var nativeInterval = window.setInterval;
         var log = console.log.bind(console);
-        var shouldLog = typeof match === "undefined" && typeof delay === "undefined";
+        var shouldLog = typeof matchCallback === "undefined" && typeof matchDelay === "undefined";
 
-        var _parseMatchArg = parseMatchArg(match),
-            isInvertedMatch = _parseMatchArg.isInvertedMatch,
-            matchRegexp = _parseMatchArg.matchRegexp;
-
-        var _parseDelayArg = parseDelayArg(delay),
-            isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
-            delayMatch = _parseDelayArg.delayMatch;
-
-        var getShouldPrevent = function getShouldPrevent(callbackStr, interval) {
+        var legacyIntervalWrapper = function legacyIntervalWrapper(callback, delay) {
           var shouldPrevent = false;
-
-          if (!delayMatch) {
-            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
-          } else if (!match) {
-            shouldPrevent = interval === delayMatch !== isInvertedDelayMatch;
-          } else {
-            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && interval === delayMatch !== isInvertedDelayMatch;
-          }
-
-          return shouldPrevent;
-        };
-
-        var legacyIntervalWrapper = function legacyIntervalWrapper(callback, interval) {
-          var shouldPrevent = false;
-          var cbString = String(callback);
 
           if (shouldLog) {
             hit(source);
-            log("setInterval(".concat(cbString, ", ").concat(interval, ")"));
+            log("setInterval(".concat(String(callback), ", ").concat(delay, ")"));
           } else {
-            shouldPrevent = getShouldPrevent(cbString, interval);
+            shouldPrevent = isPreventionNeeded({
+              callback: callback,
+              delay: delay,
+              matchCallback: matchCallback,
+              matchDelay: matchDelay
+            });
           }
 
           if (shouldPrevent) {
             hit(source);
-            return nativeInterval(noopFunc, interval);
+            return nativeInterval(noopFunc, delay);
           }
 
           for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
             args[_key - 2] = arguments[_key];
           }
 
-          return nativeInterval.apply(window, [callback, interval].concat(args));
+          return nativeInterval.apply(window, [callback, delay].concat(args));
         };
 
         var handlerWrapper = function handlerWrapper(target, thisArg, args) {
           var callback = args[0];
-          var interval = args[1];
+          var delay = args[1];
           var shouldPrevent = false;
-          var cbString = String(callback);
 
           if (shouldLog) {
             hit(source);
-            log("setInterval(".concat(cbString, ", ").concat(interval, ")"));
+            log("setInterval(".concat(String(callback), ", ").concat(delay, ")"));
           } else {
-            shouldPrevent = getShouldPrevent(cbString, interval);
+            shouldPrevent = isPreventionNeeded({
+              callback: callback,
+              delay: delay,
+              matchCallback: matchCallback,
+              matchDelay: matchDelay
+            });
           }
 
           if (shouldPrevent) {
@@ -17905,27 +18221,40 @@
 
       function noopFunc() {}
 
-      function parseMatchArg(match) {
-        var INVERT_MARKER = "!";
-        var isInvertedMatch = startsWith(match, INVERT_MARKER);
-        var matchValue = isInvertedMatch ? match.slice(1) : match;
-        var matchRegexp = toRegExp(matchValue);
-        return {
-          isInvertedMatch: isInvertedMatch,
-          matchRegexp: matchRegexp
-        };
-      }
+      function isPreventionNeeded(_ref) {
+        var callback = _ref.callback,
+            delay = _ref.delay,
+            matchCallback = _ref.matchCallback,
+            matchDelay = _ref.matchDelay;
 
-      function parseDelayArg(delay) {
-        var INVERT_MARKER = "!";
-        var isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
-        var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
-        delayValue = parseInt(delayValue, 10);
-        var delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
-        return {
-          isInvertedDelayMatch: isInvertedDelayMatch,
-          delayMatch: delayMatch
-        };
+        if (!isValidCallback(callback)) {
+          return false;
+        }
+
+        if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
+          return false;
+        }
+
+        var _parseMatchArg = parseMatchArg(matchCallback),
+            isInvertedMatch = _parseMatchArg.isInvertedMatch,
+            matchRegexp = _parseMatchArg.matchRegexp;
+
+        var _parseDelayArg = parseDelayArg(matchDelay),
+            isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
+            delayMatch = _parseDelayArg.delayMatch;
+
+        var shouldPrevent = false;
+        var callbackStr = String(callback);
+
+        if (delayMatch === null) {
+          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
+        } else if (!matchCallback) {
+          shouldPrevent = delay === delayMatch !== isInvertedDelayMatch;
+        } else {
+          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && delay === delayMatch !== isInvertedDelayMatch;
+        }
+
+        return shouldPrevent;
       }
 
       function toRegExp() {
@@ -17954,6 +18283,81 @@
         return native(num);
       }
 
+      function parseMatchArg(match) {
+        var INVERT_MARKER = "!";
+        var isInvertedMatch = startsWith(match, INVERT_MARKER);
+        var matchValue = isInvertedMatch ? match.slice(1) : match;
+        var matchRegexp = toRegExp(matchValue);
+        return {
+          isInvertedMatch: isInvertedMatch,
+          matchRegexp: matchRegexp
+        };
+      }
+
+      function parseDelayArg(delay) {
+        var INVERT_MARKER = "!";
+        var isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
+        var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
+        delayValue = parseInt(delayValue, 10);
+        var delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
+        return {
+          isInvertedDelayMatch: isInvertedDelayMatch,
+          delayMatch: delayMatch
+        };
+      }
+
+      function isValidCallback(callback) {
+        return callback instanceof Function || typeof callback === "string";
+      }
+
+      function isValidMatchStr(match) {
+        var INVERT_MARKER = "!";
+        var str = match;
+
+        if (startsWith(match, INVERT_MARKER)) {
+          str = match.slice(1);
+        }
+
+        return isValidStrPattern(str);
+      }
+
+      function isValidStrPattern(input) {
+        var FORWARD_SLASH = "/";
+        var str = input;
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          str = input.slice(1, -1);
+        }
+
+        var isValid;
+
+        try {
+          isValid = new RegExp(str);
+          isValid = true;
+        } catch (e) {
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+      function nativeIsFinite(num) {
+        var native = Number.isFinite || window.isFinite;
+        return native(num);
+      }
+
+      function isValidMatchNumber(match) {
+        var INVERT_MARKER = "!";
+        var str = match;
+
+        if (startsWith(match, INVERT_MARKER)) {
+          str = match.slice(1);
+        }
+
+        var num = parseFloat(str);
+        return !nativeIsNaN(num) && nativeIsFinite(num);
+      }
+
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
 
       try {
@@ -17964,68 +18368,54 @@
     }
 
     function preventSetTimeout(source, args) {
-      function preventSetTimeout(source, match, delay) {
+      function preventSetTimeout(source, matchCallback, matchDelay) {
         var isProxySupported = typeof Proxy !== "undefined";
         var nativeTimeout = window.setTimeout;
         var log = console.log.bind(console);
-        var shouldLog = typeof match === "undefined" && typeof delay === "undefined";
+        var shouldLog = typeof matchCallback === "undefined" && typeof matchDelay === "undefined";
 
-        var _parseMatchArg = parseMatchArg(match),
-            isInvertedMatch = _parseMatchArg.isInvertedMatch,
-            matchRegexp = _parseMatchArg.matchRegexp;
-
-        var _parseDelayArg = parseDelayArg(delay),
-            isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
-            delayMatch = _parseDelayArg.delayMatch;
-
-        var getShouldPrevent = function getShouldPrevent(callbackStr, timeout) {
+        var legacyTimeoutWrapper = function legacyTimeoutWrapper(callback, delay) {
           var shouldPrevent = false;
-
-          if (!delayMatch) {
-            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
-          } else if (!match) {
-            shouldPrevent = timeout === delayMatch !== isInvertedDelayMatch;
-          } else {
-            shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && timeout === delayMatch !== isInvertedDelayMatch;
-          }
-
-          return shouldPrevent;
-        };
-
-        var legacyTimeoutWrapper = function legacyTimeoutWrapper(callback, timeout) {
-          var shouldPrevent = false;
-          var cbString = String(callback);
 
           if (shouldLog) {
             hit(source);
-            log("setTimeout(".concat(cbString, ", ").concat(timeout, ")"));
+            log("setTimeout(".concat(String(callback), ", ").concat(delay, ")"));
           } else {
-            shouldPrevent = getShouldPrevent(cbString, timeout);
+            shouldPrevent = isPreventionNeeded({
+              callback: callback,
+              delay: delay,
+              matchCallback: matchCallback,
+              matchDelay: matchDelay
+            });
           }
 
           if (shouldPrevent) {
             hit(source);
-            return nativeTimeout(noopFunc, timeout);
+            return nativeTimeout(noopFunc, delay);
           }
 
           for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
             args[_key - 2] = arguments[_key];
           }
 
-          return nativeTimeout.apply(window, [callback, timeout].concat(args));
+          return nativeTimeout.apply(window, [callback, delay].concat(args));
         };
 
         var handlerWrapper = function handlerWrapper(target, thisArg, args) {
           var callback = args[0];
-          var timeout = args[1];
+          var delay = args[1];
           var shouldPrevent = false;
-          var cbString = String(callback);
 
           if (shouldLog) {
             hit(source);
-            log("setTimeout(".concat(cbString, ", ").concat(timeout, ")"));
+            log("setTimeout(".concat(String(callback), ", ").concat(delay, ")"));
           } else {
-            shouldPrevent = getShouldPrevent(cbString, timeout);
+            shouldPrevent = isPreventionNeeded({
+              callback: callback,
+              delay: delay,
+              matchCallback: matchCallback,
+              matchDelay: matchDelay
+            });
           }
 
           if (shouldPrevent) {
@@ -18093,6 +18483,42 @@
 
       function noopFunc() {}
 
+      function isPreventionNeeded(_ref) {
+        var callback = _ref.callback,
+            delay = _ref.delay,
+            matchCallback = _ref.matchCallback,
+            matchDelay = _ref.matchDelay;
+
+        if (!isValidCallback(callback)) {
+          return false;
+        }
+
+        if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
+          return false;
+        }
+
+        var _parseMatchArg = parseMatchArg(matchCallback),
+            isInvertedMatch = _parseMatchArg.isInvertedMatch,
+            matchRegexp = _parseMatchArg.matchRegexp;
+
+        var _parseDelayArg = parseDelayArg(matchDelay),
+            isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
+            delayMatch = _parseDelayArg.delayMatch;
+
+        var shouldPrevent = false;
+        var callbackStr = String(callback);
+
+        if (delayMatch === null) {
+          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
+        } else if (!matchCallback) {
+          shouldPrevent = delay === delayMatch !== isInvertedDelayMatch;
+        } else {
+          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && delay === delayMatch !== isInvertedDelayMatch;
+        }
+
+        return shouldPrevent;
+      }
+
       function parseMatchArg(match) {
         var INVERT_MARKER = "!";
         var isInvertedMatch = startsWith(match, INVERT_MARKER);
@@ -18142,6 +18568,58 @@
         return native(num);
       }
 
+      function isValidCallback(callback) {
+        return callback instanceof Function || typeof callback === "string";
+      }
+
+      function isValidMatchStr(match) {
+        var INVERT_MARKER = "!";
+        var str = match;
+
+        if (startsWith(match, INVERT_MARKER)) {
+          str = match.slice(1);
+        }
+
+        return isValidStrPattern(str);
+      }
+
+      function isValidStrPattern(input) {
+        var FORWARD_SLASH = "/";
+        var str = input;
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          str = input.slice(1, -1);
+        }
+
+        var isValid;
+
+        try {
+          isValid = new RegExp(str);
+          isValid = true;
+        } catch (e) {
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+      function nativeIsFinite(num) {
+        var native = Number.isFinite || window.isFinite;
+        return native(num);
+      }
+
+      function isValidMatchNumber(match) {
+        var INVERT_MARKER = "!";
+        var str = match;
+
+        if (startsWith(match, INVERT_MARKER)) {
+          str = match.slice(1);
+        }
+
+        var num = parseFloat(str);
+        return !nativeIsNaN(num) && nativeIsFinite(num);
+      }
+
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
 
       try {
@@ -18166,7 +18644,7 @@
             args[_key - 1] = arguments[_key];
           }
 
-          if (!validateStrPattern(delay)) {
+          if (!isValidStrPattern(delay)) {
             console.log("Invalid parameter: ".concat(delay));
             return nativeOpen.apply(window, [str].concat(args));
           }
@@ -18198,7 +18676,7 @@
 
           if (match === getWildcardSymbol()) {
             shouldPrevent = true;
-          } else if (validateMatchStr(match)) {
+          } else if (isValidMatchStr(match)) {
             var _parseMatchArg = parseMatchArg(match),
                 isInvertedMatch = _parseMatchArg.isInvertedMatch,
                 matchRegexp = _parseMatchArg.matchRegexp;
@@ -18305,7 +18783,7 @@
         }
       }
 
-      function validateStrPattern(input) {
+      function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = input;
 
@@ -18325,7 +18803,7 @@
         return isValid;
       }
 
-      function validateMatchStr(match) {
+      function isValidMatchStr(match) {
         var INVERT_MARKER = "!";
         var str = match;
 
@@ -18333,7 +18811,7 @@
           str = match.slice(1);
         }
 
-        return validateStrPattern(str);
+        return isValidStrPattern(str);
       }
 
       function toRegExp() {
@@ -18680,7 +19158,7 @@
 
       function validateParsedData(data) {
         return Object.values(data).every(function (value) {
-          return validateStrPattern(value);
+          return isValidStrPattern(value);
         });
       }
 
@@ -18709,7 +19187,7 @@
         return new RegExp(escaped);
       }
 
-      function validateStrPattern(input) {
+      function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = input;
 
@@ -19715,16 +20193,6 @@
           return;
         }
 
-        var getCurrentScript = function getCurrentScript() {
-          if ("currentScript" in document) {
-            return document.currentScript;
-          }
-
-          var scripts = document.getElementsByTagName("script");
-          return scripts[scripts.length - 1];
-        };
-
-        var ourScript = getCurrentScript();
         var canceled = false;
 
         var mustCancel = function mustCancel(value) {
@@ -19742,7 +20210,6 @@
           }
 
           var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
-          var prevGetter;
           var prevSetter;
 
           if (origDescriptor instanceof Object) {
@@ -19756,10 +20223,6 @@
 
             base[prop] = constantValue;
 
-            if (origDescriptor.get instanceof Function) {
-              prevGetter = origDescriptor.get;
-            }
-
             if (origDescriptor.set instanceof Function) {
               prevSetter = origDescriptor.set;
             }
@@ -19768,10 +20231,6 @@
           Object.defineProperty(base, prop, {
             configurable: configurable,
             get: function get() {
-              if (prevGetter !== undefined) {
-                prevGetter();
-              }
-
               return handler.get();
             },
             set: function set(a) {
@@ -19812,17 +20271,15 @@
             }
           };
           var endPropHandler = {
-            factValue: undefined,
             init: function init(a) {
               if (mustCancel(a)) {
                 return false;
               }
 
-              this.factValue = a;
               return true;
             },
             get: function get() {
-              return document.currentScript === ourScript ? this.factValue : constantValue;
+              return constantValue;
             },
             set: function set(a) {
               if (!mustCancel(a)) {
@@ -19849,7 +20306,7 @@
             setChainPropAccess(propValue, chain);
           }
 
-          trapProp(owner, prop, true, undefPropHandler);
+          trapProp(base, prop, true, undefPropHandler);
         };
 
         setChainPropAccess(window, property);
@@ -19971,7 +20428,7 @@
           configurable: true
         });
         return {
-          base: nextBase,
+          base: base,
           prop: prop,
           chain: chain
         };
@@ -19995,6 +20452,7 @@
       }
 
       function matchStackTrace(stackMatch, stackTrace) {
+
         if (!stackMatch || stackMatch === "") {
           return true;
         }
@@ -20674,6 +21132,7 @@
       "ubo-aell": logAddEventListener,
       "log-eval": logEval,
       "log-on-stack-trace": logOnStacktrace,
+      "no-topics": noTopics,
       noeval: noeval,
       "noeval.js": noeval,
       "silent-noeval.js": noeval,

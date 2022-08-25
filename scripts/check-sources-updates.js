@@ -294,14 +294,17 @@ async function checkForABPScriptletssUpdates() {
 /**
  * ABP redirects github raw resource
  */
-const ABP_REDIRECTS_FILE = 'https://raw.githubusercontent.com/adblockplus/adblockpluscore/master/data/resources.json';
+const ABP_REDIRECTS_FILE_PATH = 'https://raw.githubusercontent.com/adblockplus/adblockpluscore/master/data/resources.js';
+
+const ABP_REDIRECTS_FILE_SKIP_START = 'exports.resources = ';
 
 /**
- * Checks for snippets updates
+ * Gets ABP redirects
  */
 async function getCurrentABPRedirects() {
     console.log('Downloading ABP file...');
-    const { data } = await axios.get(ABP_REDIRECTS_FILE);
+    const { data: rawData } = await axios.get(ABP_REDIRECTS_FILE_PATH);
+    const data = JSON.parse(rawData.replace(ABP_REDIRECTS_FILE_SKIP_START, ''));
     console.log('ABP done.');
 
     const names = Object.keys(data);
@@ -310,7 +313,7 @@ async function getCurrentABPRedirects() {
 }
 
 /**
- * Checks for ABP Snippets updates
+ * Checks for ABP redirects updates
  */
 async function checkForABPRedirectsUpdates() {
     const oldList = getRedirectsFromTable('abp');

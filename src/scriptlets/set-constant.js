@@ -11,6 +11,8 @@ import {
     setPropertyAccess,
     toRegExp,
     matchStackTrace,
+    shouldAbortStack,
+    setShouldAbortStack,
     nativeIsNaN,
     isEmptyObject,
 } from '../helpers/index';
@@ -137,16 +139,6 @@ export function setConstant(source, property, value, stack) {
         return;
     }
 
-    const getCurrentScript = () => {
-        if ('currentScript' in document) {
-            return document.currentScript; // eslint-disable-line compat/compat
-        }
-        const scripts = document.getElementsByTagName('script');
-        return scripts[scripts.length - 1];
-    };
-
-    const ourScript = getCurrentScript();
-
     let canceled = false;
     const mustCancel = (value) => {
         if (canceled) {
@@ -165,7 +157,6 @@ export function setConstant(source, property, value, stack) {
         }
 
         const origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
-        let prevGetter;
         let prevSetter;
         // This is required to prevent scriptlets overwrite each over
         if (origDescriptor instanceof Object) {
@@ -178,9 +169,6 @@ export function setConstant(source, property, value, stack) {
             }
 
             base[prop] = constantValue;
-            if (origDescriptor.get instanceof Function) {
-                prevGetter = origDescriptor.get;
-            }
             if (origDescriptor.set instanceof Function) {
                 prevSetter = origDescriptor.set;
             }
@@ -188,9 +176,6 @@ export function setConstant(source, property, value, stack) {
         Object.defineProperty(base, prop, {
             configurable,
             get() {
-                if (prevGetter !== undefined) {
-                    prevGetter();
-                }
                 return handler.get();
             },
             set(a) {
@@ -232,18 +217,14 @@ export function setConstant(source, property, value, stack) {
             },
         };
         const endPropHandler = {
-            factValue: undefined,
             init(a) {
                 if (mustCancel(a)) {
                     return false;
                 }
-                this.factValue = a;
                 return true;
             },
             get() {
-                // .currrentSript script check so we won't trap other scriptlets on the same chain
-                // eslint-disable-next-line compat/compat
-                return document.currentScript === ourScript ? this.factValue : constantValue;
+                return constantValue;
             },
             set(a) {
                 if (!mustCancel(a)) {
@@ -280,7 +261,7 @@ export function setConstant(source, property, value, stack) {
         }
 
         // Undefined prop in chain
-        trapProp(owner, prop, true, inChainPropHandler);
+        trapProp(base, prop, true, inChainPropHandler);
     };
     setChainPropAccess(window, property);
 }
@@ -309,6 +290,8 @@ setConstant.injections = [
     setPropertyAccess,
     toRegExp,
     matchStackTrace,
+    shouldAbortStack,
+    setShouldAbortStack,
     nativeIsNaN,
     isEmptyObject,
 ];

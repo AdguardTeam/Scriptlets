@@ -1,4 +1,4 @@
-import { nativeIsNaN } from './number-utils';
+import { nativeIsFinite, nativeIsNaN } from './number-utils';
 import { isEmptyObject, getObjectEntries } from './object-utils';
 
 /**
@@ -48,7 +48,7 @@ export const toRegExp = (input = '') => {
  * @param {RawStrPattern} input literal string or regexp pattern
  * @returns {boolean}
  */
-export const validateStrPattern = (input) => {
+export const isValidStrPattern = (input) => {
     const FORWARD_SLASH = '/';
     let str = input;
     if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
@@ -176,13 +176,29 @@ export const convertRtcConfigToString = (config) => {
  * @param {string} match literal string or regexp pattern
  * @returns {boolean}
  */
-export const validateMatchStr = (match) => {
+export const isValidMatchStr = (match) => {
     const INVERT_MARKER = '!';
     let str = match;
     if (startsWith(match, INVERT_MARKER)) {
         str = match.slice(1);
     }
-    return validateStrPattern(str);
+    return isValidStrPattern(str);
+};
+
+/**
+ * Validates the match input number,
+ * used for match inputs with possible negation
+ * @param {string} match string of match number
+ * @returns {boolean}
+ */
+export const isValidMatchNumber = (match) => {
+    const INVERT_MARKER = '!';
+    let str = match;
+    if (startsWith(match, INVERT_MARKER)) {
+        str = match.slice(1);
+    }
+    const num = parseFloat(str);
+    return !nativeIsNaN(num) && nativeIsFinite(num);
 };
 
 /**
@@ -196,7 +212,7 @@ export const validateMatchStr = (match) => {
  * Needed for prevent-setTimeout, prevent-setInterval,
  * prevent-requestAnimationFrame and prevent-window-open
  * @param {string} match
- * @returns {MatchData|null} data obj or null for invalid regexp pattern
+ * @returns {MatchData}
  */
 export const parseMatchArg = (match) => {
     const INVERT_MARKER = '!';
@@ -216,7 +232,9 @@ export const parseMatchArg = (match) => {
  * Parses delay arg with possible negation for no matching.
  * Needed for prevent-setTimeout and prevent-setInterval
  * @param {string} delay
- * @returns {DelayData}
+ * @returns {DelayData} `{ isInvertedDelayMatch, delayMatch }` where:
+ * `isInvertedDelayMatch` is boolean,
+ * `delayMatch` is number OR null for invalid `delay`
  */
 export const parseDelayArg = (delay) => {
     const INVERT_MARKER = '!';
