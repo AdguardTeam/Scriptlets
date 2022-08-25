@@ -1,4 +1,4 @@
-/* eslint-disabe func-names */
+/* eslint-disable func-names */
 import {
     hit,
     noopFunc,
