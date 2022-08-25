@@ -97,17 +97,13 @@ export function DidomiLoader(source) {
             consents: [],
         },
     };
-    const __tcfapiWrapper = function (...args) {
-        // eslint-disable-next-line no-restricted-syntax
-        for (const arg of args) {
-            if (typeof arg === 'function') {
-                try {
-                    setTimeout(arg(tcData, true));
-                } catch (ex) {
-                    /* empty */
-                }
-            }
+
+    // https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#how-does-the-cmp-provide-the-api
+    const __tcfapiWrapper = function (command, version, callback) {
+        if (typeof callback !== 'function' || command === 'removeEventListener') {
+            return;
         }
+        callback(tcData, true);
     };
     window.__tcfapi = __tcfapiWrapper;
 
