@@ -40,11 +40,18 @@ test('Checking if alias name works', (assert) => {
         engine: 'test',
         verbose: true,
     };
+    const uboParams2 = {
+        name: 'fuckadblock.js-3.2.0',
+        engine: 'test',
+        verbose: true,
+    };
 
     const codeByAdgParams = window.scriptlets.invoke(adgParams);
     const codeByUboParams = window.scriptlets.invoke(uboParams);
+    const codeByUboParams2 = window.scriptlets.invoke(uboParams2);
 
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
+    assert.strictEqual(codeByAdgParams, codeByUboParams2, 'ubo name - ok');
 });
 
 test('ag works', (assert) => {
