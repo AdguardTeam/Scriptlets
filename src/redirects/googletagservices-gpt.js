@@ -48,9 +48,6 @@ export function GoogleTagServicesGpt(source) {
         return new Promise((resolve) => {
             requestAnimationFrame(() => {
                 const size = [0, 0];
-                // for (const cb of callbacks) {
-                //     cb({ isEmpty: true, size, slot });
-                // }
                 const callbacksSet = eventCallbacks.get(name) || [];
                 const callbackArray = Array.from(callbacksSet);
                 for (let i = 0; i < callbackArray.length; i += 1) {
