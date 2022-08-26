@@ -158,6 +158,11 @@ const redirects = [
         ubo: 'nofab.js',
     },
     {
+        // AG-15917
+        adg: 'prevent-fab-3.2.0',
+        ubo: 'fuckadblock.js-3.2.0',
+    },
+    {
         adg: 'prevent-popads-net',
         ubo: 'popads.js',
     },
