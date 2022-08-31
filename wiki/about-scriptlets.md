@@ -1200,7 +1200,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#no-xhr-ifjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
+example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, customResponseText]])
 ```
 
 - propsToMatch - optional, string of space-separated properties to match; possible props:
@@ -1208,7 +1208,11 @@ example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
   - colon-separated pairs name:value where
     - name is XMLHttpRequest object property name
     - value is string or regular expression for matching the value of the option passed to `.open()` call
-- randomize - optional, defaults to `false`, boolean to randomize responseText of matched XMLHttpRequest's response,
+- randomize - defaults to `false` for empty responseText, optional argument to randomize responseText of matched XMLHttpRequest's response; possible values:
+  - boolean 'true' to randomize responseText, random alphanumeric string of 10 symbols
+  - string value to customize responseText data, colon-separated pairs name:value where
+      - name — only `length` supported for now
+      - value — range on numbers, for example `100-300`, limited to 500000 characters
 
 > Usage with no arguments will log XMLHttpRequest objects to browser console;
 which is useful for debugging but permitted for production filter lists.
@@ -1243,6 +1247,11 @@ which is useful for debugging but permitted for production filter lists.
 6. Prevent XMLHttpRequests for specific url and randomize it's response text
     ```
     example.org#%#//scriptlet('prevent-xhr', 'example.org', 'true')
+    ```
+
+7. Prevent XMLHttpRequests for specific url and randomize it's response text with range
+    ```
+   example.org#%#//scriptlet('prevent-xhr', 'example.org', 'length:100-300')
     ```
 
 [Scriptlet source](../src/scriptlets/prevent-xhr.js)
