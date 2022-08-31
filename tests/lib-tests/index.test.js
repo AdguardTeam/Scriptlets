@@ -404,6 +404,10 @@ test('Test REDIRECT converting - UBO -> ADG', (assert) => {
     uboRule = '||googlesyndication.com^$script,redirect=googlesyndication_adsbygoogle.js,domain=darmowa-tv.ws';
     expectedAdgRule = '||googlesyndication.com^$script,redirect=googlesyndication-adsbygoogle,domain=darmowa-tv.ws';
     assert.strictEqual(convertRedirectToAdg(uboRule), expectedAdgRule);
+
+    uboRule = '||g9g.eu^*fa.js$script,redirect=fuckadblock.js-3.2.0';
+    expectedAdgRule = '||g9g.eu^*fa.js$script,redirect=prevent-fab-3.2.0';
+    assert.strictEqual(convertRedirectToAdg(uboRule), expectedAdgRule);
 });
 
 test('Test REDIRECT-RULE converting - UBO -> ADG', (assert) => {

@@ -5,12 +5,18 @@ import {
     parseMatchProps,
     validateParsedData,
     getMatchPropsData,
+    getRandomIntInclusive,
+    getRandomStrByLength,
+    generateRandomResponse,
     // following helpers should be imported and injected
     // because they are used by helpers above
     toRegExp,
     isValidStrPattern,
     isEmptyObject,
     getObjectEntries,
+    getNumberFromString,
+    nativeIsFinite,
+    nativeIsNaN,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -33,7 +39,11 @@ import {
  *   - colon-separated pairs name:value where
  *     - name is XMLHttpRequest object property name
  *     - value is string or regular expression for matching the value of the option passed to `.open()` call
- * - randomize - optional, defaults to `false`, boolean to randomize responseText of matched XMLHttpRequest's response,
+ * - randomize - defaults to `false` for empty responseText, optional argument to randomize responseText of matched XMLHttpRequest's response; possible values:
+ *   - boolean 'true' to randomize responseText, random alphanumeric string of 10 symbols
+ *   - string value to customize responseText data, colon-separated pairs name:value where
+ *       - name — only `length` supported for now
+ *       - value — range on numbers, for example `100-300`, limited to 500000 characters
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
  * which is useful for debugging but permitted for production filter lists.
@@ -69,9 +79,14 @@ import {
  *     ```
  *     example.org#%#//scriptlet('prevent-xhr', 'example.org', 'true')
  *     ```
+ *
+ * 7. Prevent XMLHttpRequests for specific url and randomize it's response text with range
+ *     ```
+ *    example.org#%#//scriptlet('prevent-xhr', 'example.org', 'length:100-300')
+ *     ```
  */
 /* eslint-enable max-len */
-export function preventXHR(source, propsToMatch, randomize) {
+export function preventXHR(source, propsToMatch, customResponseText) {
     // do nothing if browser does not support Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
     if (typeof Proxy === 'undefined') {
@@ -126,9 +141,18 @@ export function preventXHR(source, propsToMatch, randomize) {
             response = new Blob();
         }
 
-        if (randomize === 'true') {
-            // Generate random alphanumeric string of 10 symbols
-            responseText = Math.random().toString(36).slice(-10);
+        if (thisArg.responseType === 'arraybuffer') {
+            response = new ArrayBuffer();
+        }
+
+        if (customResponseText) {
+            const randomText = generateRandomResponse(customResponseText);
+            if (randomText) {
+                responseText = randomText;
+            } else {
+                // eslint-disable-next-line no-console
+                console.log(`Invalid range: ${customResponseText}`);
+            }
         }
         // Mock response object
         Object.defineProperties(thisArg, {
@@ -183,8 +207,14 @@ preventXHR.injections = [
     parseMatchProps,
     validateParsedData,
     getMatchPropsData,
+    getRandomIntInclusive,
+    getRandomStrByLength,
+    generateRandomResponse,
     toRegExp,
     isValidStrPattern,
     isEmptyObject,
     getObjectEntries,
+    getNumberFromString,
+    nativeIsFinite,
+    nativeIsNaN,
 ];
