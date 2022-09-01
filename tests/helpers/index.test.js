@@ -2,6 +2,7 @@ import {
     toRegExp,
     getNumberFromString,
     noopPromiseResolve,
+    matchStackTrace,
 } from '../../src/helpers';
 
 const { test, module } = QUnit;
@@ -100,4 +101,10 @@ test('Test noopPromiseResolve for valid response.body values', async (assert) =>
 
     assert.ok(typeof objBody === 'object' && !objBody.length);
     assert.ok(Array.isArray(arrBody) && !arrBody.length);
+});
+
+test('Test matchStackTrace for working with getNativeRegexpTest helper', async (assert) => {
+    const match = matchStackTrace('stack', new Error().stack);
+
+    assert.ok(!match);
 });

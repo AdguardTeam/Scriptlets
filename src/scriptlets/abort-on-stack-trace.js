@@ -10,6 +10,7 @@ import {
     shouldAbortStack,
     setShouldAbortStack,
     toRegExp,
+    getNativeRegexpTest,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -131,4 +132,5 @@ abortOnStackTrace.injections = [
     shouldAbortStack,
     setShouldAbortStack,
     toRegExp,
+    getNativeRegexpTest,
 ];

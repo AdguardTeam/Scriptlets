@@ -7,6 +7,7 @@ import {
     setShouldAbortStack,
     toRegExp,
     getWildcardSymbol,
+    getNativeRegexpTest,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -234,4 +235,5 @@ jsonPrune.injections = [
     getWildcardPropertyInChain,
     toRegExp,
     getWildcardSymbol,
+    getNativeRegexpTest,
 ];
