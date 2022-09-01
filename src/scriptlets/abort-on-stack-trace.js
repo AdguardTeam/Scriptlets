@@ -11,6 +11,7 @@ import {
     setShouldAbortStack,
     toRegExp,
     isEmptyObject,
+    getNativeRegexpTest,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -133,4 +134,5 @@ abortOnStackTrace.injections = [
     setShouldAbortStack,
     toRegExp,
     isEmptyObject,
+    getNativeRegexpTest,
 ];

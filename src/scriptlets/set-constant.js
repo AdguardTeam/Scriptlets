@@ -15,6 +15,7 @@ import {
     setShouldAbortStack,
     nativeIsNaN,
     isEmptyObject,
+    getNativeRegexpTest,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -294,4 +295,5 @@ setConstant.injections = [
     setShouldAbortStack,
     nativeIsNaN,
     isEmptyObject,
+    getNativeRegexpTest,
 ];

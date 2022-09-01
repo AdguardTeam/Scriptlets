@@ -1,4 +1,5 @@
 import { toRegExp } from './string-utils';
+import { getNativeRegexpTest } from './regexp-utils';
 
 // https://github.com/AdguardTeam/Scriptlets/issues/226
 // eslint-disable-next-line import/no-mutable-exports, func-names
@@ -30,5 +31,5 @@ export const matchStackTrace = (stackMatch, stackTrace) => {
         .map((line) => line.trim()) // trim the lines
         .join('\n');
 
-    return stackRegexp.test(refinedStackTrace);
+    return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
 };
