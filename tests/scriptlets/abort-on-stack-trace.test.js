@@ -263,23 +263,15 @@ test('dot notation deferred definition, matches stack of our own script', (asser
     assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
 });
 
-test('check if scriptlet do not stuck in a loop (RangeError: Maximum call stack size exceeded)', (assert) => {
-    let check = '';
+test('Protected from infinite loop when prop is used in a helper', (assert) => {
     const property = 'RegExp';
     const stackMatch = 'no_match.js';
     const scriptletArgs = [property, stackMatch];
     runScriptlet(name, scriptletArgs);
 
-    assert.strictEqual(
-        (() => {
-            const test = new RegExp('test');
-            check = test;
-            return check.toString();
-        })(),
-        '/test/',
-        `Property is accessible, value: ${check.toString()}`,
-    );
+    const regExpStr = new RegExp('test').toString();
 
+    assert.strictEqual(regExpStr, '/test/', 'Property is accessible');
     assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
 });
 

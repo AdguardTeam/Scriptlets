@@ -7,8 +7,6 @@ import {
     isValidStrPattern,
     matchStackTrace,
     // following helpers are needed for helpers above
-    shouldAbortStack,
-    setShouldAbortStack,
     toRegExp,
     getNativeRegexpTest,
 } from '../helpers/index';
@@ -50,10 +48,6 @@ export function abortOnStackTrace(source, property, stack) {
         return;
     }
 
-    // sets shouldAbortStack to true
-    // https://github.com/AdguardTeam/Scriptlets/issues/226
-    setShouldAbortStack(true);
-
     const rid = randomId();
     const abort = () => {
         hit(source);
@@ -78,28 +72,49 @@ export function abortOnStackTrace(source, property, stack) {
             return;
         }
 
-        let value = base[prop];
         if (!isValidStrPattern(stack)) {
             // eslint-disable-next-line no-console
             console.log(`Invalid parameter: ${stack}`);
             return;
         }
-        setPropertyAccess(base, prop, {
+
+        // https://github.com/AdguardTeam/Scriptlets/issues/226
+        // Prevent infinite loops when trapping prop used by helper
+        // Example: window.RegExp, that is used by matchStackTrace > toRegExp
+        const descriptorWrapper = {
+            isAbortingSuspended: false,
+            isolateCall(cb, ...args) {
+                // Toggle isAbortingSuspended before and after callback
+                // that is being protected from infinite matching
+                this.isAbortingSuspended = true;
+                const result = cb(...args);
+                this.isAbortingSuspended = false;
+                return result;
+            },
+            value: base[prop],
             get() {
-                if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
-                    setShouldAbortStack(true);
+                if (!this.isAbortingSuspended
+                    && this.isolateCall(matchStackTrace, stack, new Error().stack)) {
                     abort();
                 }
-                setShouldAbortStack(true);
-                return value;
+                return this.value;
             },
             set(newValue) {
-                if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
-                    setShouldAbortStack(true);
+                if (!this.isAbortingSuspended
+                    && this.isolateCall(matchStackTrace, stack, new Error().stack)) {
                     abort();
                 }
-                setShouldAbortStack(true);
-                value = newValue;
+                this.value = newValue;
+            },
+        };
+
+        setPropertyAccess(base, prop, {
+            // Call wrapped getter and setter to keep isAbortingSuspended & isolateCall values
+            get() {
+                return descriptorWrapper.get.call(descriptorWrapper);
+            },
+            set(newValue) {
+                descriptorWrapper.set.call(descriptorWrapper, newValue);
             },
         });
     };
@@ -129,8 +144,6 @@ abortOnStackTrace.injections = [
     hit,
     isValidStrPattern,
     matchStackTrace,
-    shouldAbortStack,
-    setShouldAbortStack,
     toRegExp,
     getNativeRegexpTest,
 ];
