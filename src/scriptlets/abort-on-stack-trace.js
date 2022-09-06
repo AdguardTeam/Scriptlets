@@ -6,6 +6,7 @@ import {
     hit,
     isValidStrPattern,
     matchStackTrace,
+    getDescriptorAddon,
     // following helpers are needed for helpers above
     toRegExp,
     getNativeRegexpTest,
@@ -78,38 +79,27 @@ export function abortOnStackTrace(source, property, stack) {
             return;
         }
 
-        // https://github.com/AdguardTeam/Scriptlets/issues/226
-        // Prevent infinite loops when trapping prop used by helper
-        // Example: window.RegExp, that is used by matchStackTrace > toRegExp
-        const descriptorWrapper = {
-            isAbortingSuspended: false,
-            isolateCall(cb, ...args) {
-                // Toggle isAbortingSuspended before and after callback
-                // that is being protected from infinite matching
-                this.isAbortingSuspended = true;
-                const result = cb(...args);
-                this.isAbortingSuspended = false;
-                return result;
-            },
+        // Prevent infinite loops when trapping prop used by helpers in getter/setter
+        const descriptorWrapper = Object.assign(getDescriptorAddon(), {
             value: base[prop],
             get() {
                 if (!this.isAbortingSuspended
-                    && this.isolateCall(matchStackTrace, stack, new Error().stack)) {
+                    && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
                     abort();
                 }
                 return this.value;
             },
             set(newValue) {
                 if (!this.isAbortingSuspended
-                    && this.isolateCall(matchStackTrace, stack, new Error().stack)) {
+                    && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
                     abort();
                 }
                 this.value = newValue;
             },
-        };
+        });
 
         setPropertyAccess(base, prop, {
-            // Call wrapped getter and setter to keep isAbortingSuspended & isolateCall values
+            // Call wrapped getter and setter to keep isAbortingSuspended & isolateCallback values
             get() {
                 return descriptorWrapper.get.call(descriptorWrapper);
             },
@@ -144,6 +134,7 @@ abortOnStackTrace.injections = [
     hit,
     isValidStrPattern,
     matchStackTrace,
+    getDescriptorAddon,
     toRegExp,
     getNativeRegexpTest,
 ];
