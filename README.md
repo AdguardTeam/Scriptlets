@@ -12,6 +12,7 @@ AdGuard's Scriptlets and Redirect resources library which provides extended capa
     * [Redirect resources compatibility table](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/compatibility-table.md#redirects)
 * [How to build](#how-to-build)
 * [How to test](#how-to-test)
+* [How to update wiki](#how-to-update-wiki)
 * [Browser compatibility](#browser-compatibility)
 * [Projects using Scriptlets](#used-by)
 
@@ -480,6 +481,13 @@ Use `debugger;` statement where you need it, run
 yarn test
 ```
 and open needed HTML file from `tests/dist` in your browser with devtools
+
+## <a id="how-to-update-wiki"></a> How to update wiki
+
+```
+yarn wiki:update
+```
+`about-scriptlets.md` and `about-redirects.md` are being built from JSDoc notation of corresponding scriptlets and redirects source files with `@scriptlet/@redirect` and `@description` tags.
 
 ## <a id="browser-compatibility"> Browser Compatibility
 | Chrome | Edge | Firefox | IE  | Opera | Safari |
