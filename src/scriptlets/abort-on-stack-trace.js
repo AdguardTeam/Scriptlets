@@ -8,6 +8,7 @@ import {
     matchStackTrace,
     getDescriptorAddon,
     // following helpers are needed for helpers above
+    escapeRegExp,
     toRegExp,
     getNativeRegexpTest,
 } from '../helpers/index';
@@ -133,6 +134,7 @@ abortOnStackTrace.injections = [
     createOnErrorHandler,
     hit,
     isValidStrPattern,
+    escapeRegExp,
     matchStackTrace,
     getDescriptorAddon,
     toRegExp,

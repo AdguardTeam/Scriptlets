@@ -11,6 +11,7 @@ import {
     noopNull,
     getWildcardSymbol,
     // following helpers are needed for helpers above
+    escapeRegExp,
     noopFunc,
     trueFunc,
     startsWith,
@@ -177,6 +178,7 @@ preventWindowOpen.names = [
 preventWindowOpen.injections = [
     hit,
     isValidStrPattern,
+    escapeRegExp,
     isValidMatchStr,
     toRegExp,
     nativeIsNaN,

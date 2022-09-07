@@ -321,3 +321,50 @@ test('prevent-setInterval: null as callback', (assert) => {
     const testInterval = setInterval(callback, 10);
     testIntervals.push(testInterval);
 });
+
+test('prevent-setInterval: single round bracket in matchCallback', (assert) => {
+    const done = assert.async();
+    window.one = 1;
+
+    setTimeout(() => {
+        assert.equal(window.one, 1, 'property should not be changed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        done();
+    }, 100);
+
+    const scriptletArgs = ['baitFunc('];
+    runScriptlet(name, scriptletArgs);
+
+    const callback = () => {
+        const baitFunc = (value) => {
+            window.one = value;
+        };
+        baitFunc('new value');
+    };
+    const testInterval = setInterval(callback, 10);
+    testIntervals.push(testInterval);
+});
+
+test('prevent-setInterval: single square bracket in matchCallback', (assert) => {
+    const done = assert.async();
+    window.one = 1;
+
+    setTimeout(() => {
+        assert.equal(window.one, 1, 'property should not be changed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        done();
+    }, 100);
+
+    const scriptletArgs = ['[1'];
+    runScriptlet(name, scriptletArgs);
+
+    const callback = () => {
+        const baitFunc = () => {
+            const bait = [1];
+            window.one = bait;
+        };
+        baitFunc();
+    };
+    const testInterval = setInterval(callback, 10);
+    testIntervals.push(testInterval);
+});

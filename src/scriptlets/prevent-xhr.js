@@ -12,6 +12,7 @@ import {
     // because they are used by helpers above
     toRegExp,
     isValidStrPattern,
+    escapeRegExp,
     isEmptyObject,
     getObjectEntries,
     getNumberFromString,
@@ -212,6 +213,7 @@ preventXHR.injections = [
     generateRandomResponse,
     toRegExp,
     isValidStrPattern,
+    escapeRegExp,
     isEmptyObject,
     getObjectEntries,
     getNumberFromString,
