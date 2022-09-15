@@ -72,27 +72,27 @@ export const parseRule = (ruleText) => {
         const char = rule[index];
         let transition;
         switch (char) {
-        case ' ':
-        case '(':
-        case ',': {
-            transition = TRANSITION.OPENED;
-            break;
-        }
-        case '\'':
-        case '"': {
-            sep.symb = char;
-            transition = TRANSITION.PARAM;
-            break;
-        }
-        case ')': {
-            transition = index === rule.length - 1
-                ? TRANSITION.CLOSED
-                : TRANSITION.OPENED;
-            break;
-        }
-        default: {
-            throw new Error('The rule is not a scriptlet');
-        }
+            case ' ':
+            case '(':
+            case ',': {
+                transition = TRANSITION.OPENED;
+                break;
+            }
+            case '\'':
+            case '"': {
+                sep.symb = char;
+                transition = TRANSITION.PARAM;
+                break;
+            }
+            case ')': {
+                transition = index === rule.length - 1
+                    ? TRANSITION.CLOSED
+                    : TRANSITION.OPENED;
+                break;
+            }
+            default: {
+                throw new Error('The rule is not a scriptlet');
+            }
         }
 
         return transition;
@@ -108,21 +108,21 @@ export const parseRule = (ruleText) => {
     const param = (rule, index, { saver, sep }) => {
         const char = rule[index];
         switch (char) {
-        case '\'':
-        case '"': {
-            const preIndex = index - 1;
-            const before = rule[preIndex];
-            if (char === sep.symb && before !== '\\') {
-                sep.symb = null;
-                saver.saveStr();
-                return TRANSITION.OPENED;
+            case '\'':
+            case '"': {
+                const preIndex = index - 1;
+                const before = rule[preIndex];
+                if (char === sep.symb && before !== '\\') {
+                    sep.symb = null;
+                    saver.saveStr();
+                    return TRANSITION.OPENED;
+                }
             }
-        }
-        // eslint-disable-next-line no-fallthrough
-        default: {
-            saver.saveSymb(char);
-            return TRANSITION.PARAM;
-        }
+            // eslint-disable-next-line no-fallthrough
+            default: {
+                saver.saveSymb(char);
+                return TRANSITION.PARAM;
+            }
         }
     };
     const transitions = {
