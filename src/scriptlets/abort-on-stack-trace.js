@@ -6,9 +6,9 @@ import {
     hit,
     isValidStrPattern,
     matchStackTrace,
+    getDescriptorAddon,
     // following helpers are needed for helpers above
-    shouldAbortStack,
-    setShouldAbortStack,
+    escapeRegExp,
     toRegExp,
     isEmptyObject,
     getNativeRegexpTest,
@@ -51,10 +51,6 @@ export function abortOnStackTrace(source, property, stack) {
         return;
     }
 
-    // sets shouldAbortStack to true
-    // https://github.com/AdguardTeam/Scriptlets/issues/226
-    setShouldAbortStack(true);
-
     const rid = randomId();
     const abort = () => {
         hit(source);
@@ -79,28 +75,38 @@ export function abortOnStackTrace(source, property, stack) {
             return;
         }
 
-        let value = base[prop];
         if (!isValidStrPattern(stack)) {
             // eslint-disable-next-line no-console
             console.log(`Invalid parameter: ${stack}`);
             return;
         }
-        setPropertyAccess(base, prop, {
+
+        // Prevent infinite loops when trapping prop used by helpers in getter/setter
+        const descriptorWrapper = Object.assign(getDescriptorAddon(), {
+            value: base[prop],
             get() {
-                if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
-                    setShouldAbortStack(true);
+                if (!this.isAbortingSuspended
+                    && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
                     abort();
                 }
-                setShouldAbortStack(true);
-                return value;
+                return this.value;
             },
             set(newValue) {
-                if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
-                    setShouldAbortStack(true);
+                if (!this.isAbortingSuspended
+                    && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
                     abort();
                 }
-                setShouldAbortStack(true);
-                value = newValue;
+                this.value = newValue;
+            },
+        });
+
+        setPropertyAccess(base, prop, {
+            // Call wrapped getter and setter to keep isAbortingSuspended & isolateCallback values
+            get() {
+                return descriptorWrapper.get.call(descriptorWrapper);
+            },
+            set(newValue) {
+                descriptorWrapper.set.call(descriptorWrapper, newValue);
             },
         });
     };
@@ -129,9 +135,9 @@ abortOnStackTrace.injections = [
     createOnErrorHandler,
     hit,
     isValidStrPattern,
+    escapeRegExp,
     matchStackTrace,
-    shouldAbortStack,
-    setShouldAbortStack,
+    getDescriptorAddon,
     toRegExp,
     isEmptyObject,
     getNativeRegexpTest,

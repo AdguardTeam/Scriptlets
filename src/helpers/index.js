@@ -24,3 +24,4 @@ export * from './add-event-listener-utils';
 export * from './prevent-utils';
 export * from './regexp-utils';
 export * from './random-response';
+export * from './get-descriptor-addon';

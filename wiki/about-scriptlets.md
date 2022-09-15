@@ -1200,7 +1200,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#no-xhr-ifjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, customResponseText]])
+example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
 ```
 
 - propsToMatch - optional, string of space-separated properties to match; possible props:

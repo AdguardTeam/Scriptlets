@@ -9,6 +9,7 @@ import {
     // following helpers should be imported and injected
     // because they are used by helpers above
     isEmptyObject,
+    getDescriptorAddon,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -163,21 +164,37 @@ export function abortCurrentInlineScript(source, property, search) {
             currentValue = base[prop];
             origDescriptor = undefined;
         }
-        setPropertyAccess(base, prop, {
-            set: (value) => {
-                abort();
-                if (origDescriptor instanceof Object) {
-                    origDescriptor.set.call(base, value);
-                } else {
-                    currentValue = value;
+
+        const descriptorWrapper = Object.assign(getDescriptorAddon(), {
+            currentValue,
+            get() {
+                if (!this.isAbortingSuspended) {
+                    this.isolateCallback(abort);
                 }
-            },
-            get: () => {
-                abort();
                 if (origDescriptor instanceof Object) {
                     return origDescriptor.get.call(base);
                 }
                 return currentValue;
+            },
+            set(newValue) {
+                if (!this.isAbortingSuspended) {
+                    this.isolateCallback(abort);
+                }
+                if (origDescriptor instanceof Object) {
+                    origDescriptor.set.call(base, newValue);
+                } else {
+                    this.currentValue = newValue;
+                }
+            },
+        });
+
+        setPropertyAccess(base, prop, {
+            // Call wrapped getter and setter to keep isAbortingSuspended & isolateCallback values
+            get() {
+                return descriptorWrapper.get.call(descriptorWrapper);
+            },
+            set(newValue) {
+                descriptorWrapper.set.call(descriptorWrapper, newValue);
             },
         });
     };
@@ -217,4 +234,5 @@ abortCurrentInlineScript.injections = [
     createOnErrorHandler,
     hit,
     isEmptyObject,
+    getDescriptorAddon,
 ];

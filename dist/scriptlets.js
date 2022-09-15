@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.39
+ * Version 1.6.51
  */
 
 (function () {
@@ -181,6 +181,15 @@
       return input.split(substr).join(newSubstr);
     };
     /**
+     * Escapes special chars in string
+     * @param {string} str
+     * @returns {string}
+     */
+
+    var escapeRegExp = function escapeRegExp(str) {
+      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    };
+    /**
      * A literal string or regexp pattern wrapped in forward slashes.
      * For example, 'simpleStr' or '/adblock|_0x/'.
      * @typedef {string} RawStrPattern
@@ -218,7 +227,7 @@
 
     var isValidStrPattern = function isValidStrPattern(input) {
       var FORWARD_SLASH = '/';
-      var str = input;
+      var str = escapeRegExp(input);
 
       if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
         str = input.slice(1, -1);
@@ -1095,12 +1104,10 @@
       connect();
     };
 
-    // eslint-disable-next-line import/no-mutable-exports, func-names
+    var getNativeRegexpTest = function getNativeRegexpTest() {
+      return Object.getOwnPropertyDescriptor(RegExp.prototype, 'test').value;
+    };
 
-    var shouldAbortStack = function shouldAbortStack() {};
-    function setShouldAbortStack(value) {
-      shouldAbortStack = value;
-    }
     /**
      * Checks if the stackTrace contains stackRegexp
      * https://github.com/AdguardTeam/Scriptlets/issues/82
@@ -1110,11 +1117,6 @@
      */
 
     var matchStackTrace = function matchStackTrace(stackMatch, stackTrace) {
-      // sets shouldAbortStack to false
-      // to avoid checking matchStackTrace from properties used by our script and stucking in a loop
-      // https://github.com/AdguardTeam/Scriptlets/issues/226
-      setShouldAbortStack(false);
-
       if (!stackMatch || stackMatch === '') {
         return true;
       }
@@ -1125,7 +1127,7 @@
         return line.trim();
       }) // trim the lines
       .join('\n');
-      return stackRegexp.test(refinedStackTrace);
+      return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
     };
 
     /**
@@ -1600,6 +1602,109 @@
       return shouldPrevent;
     };
 
+    /**
+     * Generate a random integer between two values, inclusive
+     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#getting_a_random_integer_between_two_values_inclusive
+     * @param {number} min
+     * @param {number} max
+     * @returns {number}
+     */
+
+    function getRandomIntInclusive(min, max) {
+      min = Math.ceil(min);
+      max = Math.floor(max);
+      return Math.floor(Math.random() * (max - min + 1) + min);
+    }
+    /**
+     * Generate a random string, a length of the string is provided as an argument
+     * @param {number} length
+     * @returns {string}
+     */
+
+    function getRandomStrByLength(length) {
+      var result = '';
+      var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~';
+      var charactersLength = characters.length;
+
+      for (var i = 0; i < length; i += 1) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      }
+
+      return result;
+    }
+    /**
+     * Generate a random string
+     * @param {string} customResponseText
+     * @returns {string|null} random string or null if passed argument is invalid
+     */
+
+    function generateRandomResponse(customResponseText) {
+      var customResponse = customResponseText;
+
+      if (customResponse === 'true') {
+        // Generate random alphanumeric string of 10 symbols
+        customResponse = Math.random().toString(36).slice(-10);
+        return customResponse;
+      }
+
+      customResponse = customResponse.replace('length:', '');
+      var rangeRegex = /^\d+-\d+$/; // Return empty string if range is invalid
+
+      if (!rangeRegex.test(customResponse)) {
+        return null;
+      }
+
+      var rangeMin = getNumberFromString(customResponse.split('-')[0]);
+      var rangeMax = getNumberFromString(customResponse.split('-')[1]);
+
+      if (!nativeIsFinite(rangeMin) || !nativeIsFinite(rangeMax)) {
+        return null;
+      } // If rangeMin > rangeMax, swap variables
+
+
+      if (rangeMin > rangeMax) {
+        var temp = rangeMin;
+        rangeMin = rangeMax;
+        rangeMax = temp;
+      }
+
+      var LENGTH_RANGE_LIMIT = 500 * 1000;
+
+      if (rangeMax > LENGTH_RANGE_LIMIT) {
+        return null;
+      }
+
+      var length = getRandomIntInclusive(rangeMin, rangeMax);
+      customResponse = getRandomStrByLength(length);
+      return customResponse;
+    }
+
+    /**
+     * Prevent infinite loops when trapping props that could be used by scriptlet's own helpers
+     * Example: window.RegExp, that is used by matchStackTrace > toRegExp
+     *
+     * https://github.com/AdguardTeam/Scriptlets/issues/226
+     * https://github.com/AdguardTeam/Scriptlets/issues/232
+     *
+     * @return {Object}
+     */
+    function getDescriptorAddon() {
+      return {
+        isAbortingSuspended: false,
+        isolateCallback: function isolateCallback(cb) {
+          this.isAbortingSuspended = true;
+
+          for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+            args[_key - 1] = arguments[_key];
+          }
+
+          var result = cb.apply(void 0, args);
+          this.isAbortingSuspended = false;
+          return result;
+        }
+      };
+    }
+
     /* eslint-disable max-len */
 
     /**
@@ -1944,7 +2049,7 @@
     // do not remove until other filter lists maintainers use them
     'setTimeout-defuser.js', 'ubo-setTimeout-defuser.js', 'ubo-setTimeout-defuser', 'std.js', 'ubo-std.js', 'ubo-std'];
     preventSetTimeout$1.injections = [hit, noopFunc, isPreventionNeeded, // following helpers should be injected as helpers above use them
-    parseMatchArg, parseDelayArg, toRegExp, startsWith, nativeIsNaN, isValidCallback, isValidMatchStr, isValidStrPattern, nativeIsFinite, isValidMatchNumber];
+    parseMatchArg, parseDelayArg, toRegExp, startsWith, nativeIsNaN, isValidCallback, isValidMatchStr, escapeRegExp, isValidStrPattern, nativeIsFinite, isValidMatchNumber];
 
     /* eslint-disable max-len */
 
@@ -2129,7 +2234,7 @@
     'ubo-nosiif.js', 'sid.js', // old short scriptlet name
     'ubo-sid.js', 'ubo-no-setInterval-if', 'ubo-setInterval-defuser', 'ubo-nosiif', 'ubo-sid'];
     preventSetInterval$1.injections = [hit, noopFunc, isPreventionNeeded, // following helpers should be injected as helpers above use them
-    toRegExp, startsWith, nativeIsNaN, parseMatchArg, parseDelayArg, isValidCallback, isValidMatchStr, isValidStrPattern, nativeIsFinite, isValidMatchNumber];
+    toRegExp, startsWith, nativeIsNaN, parseMatchArg, parseDelayArg, isValidCallback, isValidMatchStr, isValidStrPattern, escapeRegExp, nativeIsFinite, isValidMatchNumber];
 
     /* eslint-disable max-len */
 
@@ -2306,7 +2411,7 @@
     }
     preventWindowOpen$1.names = ['prevent-window-open', // aliases are needed for matching the related scriptlet converted into our syntax
     'window.open-defuser.js', 'ubo-window.open-defuser.js', 'ubo-window.open-defuser', 'nowoif.js', 'ubo-nowoif.js', 'ubo-nowoif'];
-    preventWindowOpen$1.injections = [hit, isValidStrPattern, isValidMatchStr, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, getWildcardSymbol, noopFunc, trueFunc, startsWith, endsWith, substringBefore, substringAfter$1];
+    preventWindowOpen$1.injections = [hit, isValidStrPattern, escapeRegExp, isValidMatchStr, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, getWildcardSymbol, noopFunc, trueFunc, startsWith, endsWith, substringBefore, substringAfter$1];
 
     /* eslint-disable max-len */
 
@@ -2466,24 +2571,38 @@
           origDescriptor = undefined;
         }
 
-        setPropertyAccess(base, prop, {
-          set: function set(value) {
-            abort();
-
-            if (origDescriptor instanceof Object) {
-              origDescriptor.set.call(base, value);
-            } else {
-              currentValue = value;
-            }
-          },
+        var descriptorWrapper = Object.assign(getDescriptorAddon(), {
+          currentValue: currentValue,
           get: function get() {
-            abort();
+            if (!this.isAbortingSuspended) {
+              this.isolateCallback(abort);
+            }
 
             if (origDescriptor instanceof Object) {
               return origDescriptor.get.call(base);
             }
 
             return currentValue;
+          },
+          set: function set(newValue) {
+            if (!this.isAbortingSuspended) {
+              this.isolateCallback(abort);
+            }
+
+            if (origDescriptor instanceof Object) {
+              origDescriptor.set.call(base, newValue);
+            } else {
+              this.currentValue = newValue;
+            }
+          }
+        });
+        setPropertyAccess(base, prop, {
+          // Call wrapped getter and setter to keep isAbortingSuspended & isolateCallback values
+          get: function get() {
+            return descriptorWrapper.get.call(descriptorWrapper);
+          },
+          set: function set(newValue) {
+            descriptorWrapper.set.call(descriptorWrapper, newValue);
           }
         });
       };
@@ -2495,7 +2614,7 @@
     'abort-current-script.js', 'ubo-abort-current-script.js', 'acs.js', 'ubo-acs.js', // "ubo"-aliases with no "js"-ending
     'ubo-abort-current-script', 'ubo-acs', // obsolete but supported aliases
     'abort-current-inline-script.js', 'ubo-abort-current-inline-script.js', 'acis.js', 'ubo-acis.js', 'ubo-abort-current-inline-script', 'ubo-acis', 'abp-abort-current-inline-script'];
-    abortCurrentInlineScript$1.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, startsWith, createOnErrorHandler, hit];
+    abortCurrentInlineScript$1.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, startsWith, createOnErrorHandler, hit, getDescriptorAddon];
 
     /* eslint-disable max-len */
 
@@ -2747,7 +2866,7 @@
     }
     setConstant$1.names = ['set-constant', // aliases are needed for matching the related scriptlet converted into our syntax
     'set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js', 'ubo-set-constant', 'ubo-set', 'abp-override-property-read'];
-    setConstant$1.injections = [hit, noopArray, noopObject, noopFunc, trueFunc, falseFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, shouldAbortStack, setShouldAbortStack, nativeIsNaN];
+    setConstant$1.injections = [hit, noopArray, noopObject, noopFunc, trueFunc, falseFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, nativeIsNaN, getNativeRegexpTest];
 
     /* eslint-disable max-len */
 
@@ -4633,7 +4752,7 @@
     }
     jsonPrune$1.names = ['json-prune', // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune.js', 'ubo-json-prune.js', 'ubo-json-prune', 'abp-json-prune'];
-    jsonPrune$1.injections = [hit, matchStackTrace, shouldAbortStack, setShouldAbortStack, getWildcardPropertyInChain, toRegExp, getWildcardSymbol];
+    jsonPrune$1.injections = [hit, matchStackTrace, getWildcardPropertyInChain, toRegExp, getWildcardSymbol, getNativeRegexpTest];
 
     /* eslint-disable max-len */
 
@@ -4745,7 +4864,7 @@
     preventRequestAnimationFrame$1.names = ['prevent-requestAnimationFrame', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-requestAnimationFrame-if.js', 'ubo-no-requestAnimationFrame-if.js', 'norafif.js', 'ubo-norafif.js', 'ubo-no-requestAnimationFrame-if', 'ubo-norafif'];
     preventRequestAnimationFrame$1.injections = [hit, noopFunc, parseMatchArg, isValidStrPattern, isValidCallback, // following helpers should be injected as helpers above use them
-    toRegExp, startsWith];
+    escapeRegExp, toRegExp, startsWith];
 
     /* eslint-disable max-len */
 
@@ -4822,25 +4941,32 @@
      */
 
     function setCookieReload$1(source, name, value) {
-      var isCookieAlreadySet = document.cookie.split(';').some(function (cookieStr) {
-        var pos = cookieStr.indexOf('=');
+      var isCookieSetWithValue = function isCookieSetWithValue(name, value) {
+        return document.cookie.split(';').some(function (cookieStr) {
+          var pos = cookieStr.indexOf('=');
 
-        if (pos === -1) {
-          return false;
-        }
+          if (pos === -1) {
+            return false;
+          }
 
-        var cookieName = cookieStr.slice(0, pos).trim();
-        var cookieValue = cookieStr.slice(pos + 1).trim();
-        return name === cookieName && value === cookieValue;
-      });
-      var shouldReload = !isCookieAlreadySet;
+          var cookieName = cookieStr.slice(0, pos).trim();
+          var cookieValue = cookieStr.slice(pos + 1).trim();
+          return name === cookieName && value === cookieValue;
+        });
+      };
+
+      if (isCookieSetWithValue(name, value)) {
+        return;
+      }
+
       var cookieData = prepareCookie(name, value);
 
       if (cookieData) {
-        hit(source);
         document.cookie = cookieData;
+        hit(source); // Only reload the page if cookie was set
+        // https://github.com/AdguardTeam/Scriptlets/issues/212
 
-        if (shouldReload) {
+        if (isCookieSetWithValue(name, value)) {
           window.location.reload();
         }
       }
@@ -5129,7 +5255,7 @@
     }
     preventFetch$1.names = ['prevent-fetch', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-fetch-if.js', 'ubo-no-fetch-if.js', 'ubo-no-fetch-if'];
-    preventFetch$1.injections = [hit, getFetchData, objectToString, parseMatchProps, validateParsedData, getMatchPropsData, noopPromiseResolve, getWildcardSymbol, toRegExp, isValidStrPattern, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries];
+    preventFetch$1.injections = [hit, getFetchData, objectToString, parseMatchProps, validateParsedData, getMatchPropsData, noopPromiseResolve, getWildcardSymbol, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries];
 
     /* eslint-disable max-len */
 
@@ -5361,11 +5487,8 @@
     function abortOnStackTrace$1(source, property, stack) {
       if (!property || !stack) {
         return;
-      } // sets shouldAbortStack to true
-      // https://github.com/AdguardTeam/Scriptlets/issues/226
+      }
 
-
-      setShouldAbortStack(true);
       var rid = randomId();
 
       var abort = function abort() {
@@ -5397,32 +5520,37 @@
           return;
         }
 
-        var value = base[prop];
-
         if (!isValidStrPattern(stack)) {
           // eslint-disable-next-line no-console
           console.log("Invalid parameter: ".concat(stack));
           return;
-        }
+        } // Prevent infinite loops when trapping prop used by helpers in getter/setter
 
-        setPropertyAccess(base, prop, {
+
+        var descriptorWrapper = Object.assign(getDescriptorAddon(), {
+          value: base[prop],
           get: function get() {
-            if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
-              setShouldAbortStack(true);
+            if (!this.isAbortingSuspended && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
               abort();
             }
 
-            setShouldAbortStack(true);
-            return value;
+            return this.value;
           },
           set: function set(newValue) {
-            if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
-              setShouldAbortStack(true);
+            if (!this.isAbortingSuspended && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
               abort();
             }
 
-            setShouldAbortStack(true);
-            value = newValue;
+            this.value = newValue;
+          }
+        });
+        setPropertyAccess(base, prop, {
+          // Call wrapped getter and setter to keep isAbortingSuspended & isolateCallback values
+          get: function get() {
+            return descriptorWrapper.get.call(descriptorWrapper);
+          },
+          set: function set(newValue) {
+            descriptorWrapper.set.call(descriptorWrapper, newValue);
           }
         });
       };
@@ -5432,7 +5560,7 @@
     }
     abortOnStackTrace$1.names = ['abort-on-stack-trace', // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-stack-trace.js', 'ubo-abort-on-stack-trace.js', 'aost.js', 'ubo-aost.js', 'ubo-abort-on-stack-trace', 'ubo-aost', 'abp-abort-on-stack-trace'];
-    abortOnStackTrace$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isValidStrPattern, matchStackTrace, shouldAbortStack, setShouldAbortStack, toRegExp];
+    abortOnStackTrace$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isValidStrPattern, escapeRegExp, matchStackTrace, getDescriptorAddon, toRegExp, getNativeRegexpTest];
 
     /* eslint-disable max-len */
 
@@ -5566,7 +5694,11 @@
      *   - colon-separated pairs name:value where
      *     - name is XMLHttpRequest object property name
      *     - value is string or regular expression for matching the value of the option passed to `.open()` call
-     * - randomize - optional, defaults to `false`, boolean to randomize responseText of matched XMLHttpRequest's response,
+     * - randomize - defaults to `false` for empty responseText, optional argument to randomize responseText of matched XMLHttpRequest's response; possible values:
+     *   - boolean 'true' to randomize responseText, random alphanumeric string of 10 symbols
+     *   - string value to customize responseText data, colon-separated pairs name:value where
+     *       - name — only `length` supported for now
+     *       - value — range on numbers, for example `100-300`, limited to 500000 characters
      *
      * > Usage with no arguments will log XMLHttpRequest objects to browser console;
      * which is useful for debugging but permitted for production filter lists.
@@ -5602,11 +5734,16 @@
      *     ```
      *     example.org#%#//scriptlet('prevent-xhr', 'example.org', 'true')
      *     ```
+     *
+     * 7. Prevent XMLHttpRequests for specific url and randomize it's response text with range
+     *     ```
+     *    example.org#%#//scriptlet('prevent-xhr', 'example.org', 'length:100-300')
+     *     ```
      */
 
     /* eslint-enable max-len */
 
-    function preventXHR$1(source, propsToMatch, randomize) {
+    function preventXHR$1(source, propsToMatch, customResponseText) {
       // do nothing if browser does not support Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
       if (typeof Proxy === 'undefined') {
@@ -5614,6 +5751,7 @@
       }
 
       var shouldPrevent = false;
+      var response = '';
       var responseText = '';
       var responseUrl;
 
@@ -5657,9 +5795,23 @@
           return Reflect.apply(target, thisArg, args);
         }
 
-        if (randomize === 'true') {
-          // Generate random alphanumeric string of 10 symbols
-          responseText = Math.random().toString(36).slice(-10);
+        if (thisArg.responseType === 'blob') {
+          response = new Blob();
+        }
+
+        if (thisArg.responseType === 'arraybuffer') {
+          response = new ArrayBuffer();
+        }
+
+        if (customResponseText) {
+          var randomText = generateRandomResponse(customResponseText);
+
+          if (randomText) {
+            responseText = randomText;
+          } else {
+            // eslint-disable-next-line no-console
+            console.log("Invalid range: ".concat(customResponseText));
+          }
         } // Mock response object
 
 
@@ -5669,7 +5821,7 @@
             writable: false
           },
           response: {
-            value: '',
+            value: response,
             writable: false
           },
           responseText: {
@@ -5717,7 +5869,7 @@
     }
     preventXHR$1.names = ['prevent-xhr', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-xhr-if.js', 'ubo-no-xhr-if.js', 'ubo-no-xhr-if'];
-    preventXHR$1.injections = [hit, objectToString, getWildcardSymbol, parseMatchProps, validateParsedData, getMatchPropsData, toRegExp, isValidStrPattern, isEmptyObject, getObjectEntries];
+    preventXHR$1.injections = [hit, objectToString, getWildcardSymbol, parseMatchProps, validateParsedData, getMatchPropsData, getRandomIntInclusive, getRandomStrByLength, generateRandomResponse, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getObjectEntries, getNumberFromString, nativeIsFinite, nativeIsNaN];
 
     /**
      * @scriptlet close-window
@@ -6278,6 +6430,10 @@
     }, {
       adg: 'prevent-fab-3.2.0',
       ubo: 'nofab.js'
+    }, {
+      // AG-15917
+      adg: 'prevent-fab-3.2.0',
+      ubo: 'fuckadblock.js-3.2.0'
     }, {
       adg: 'prevent-popads-net',
       ubo: 'popads.js'
@@ -7570,6 +7726,7 @@
     GoogleSyndicationAdsByGoogle.names = ['googlesyndication-adsbygoogle', 'ubo-googlesyndication_adsbygoogle.js', 'googlesyndication_adsbygoogle.js'];
     GoogleSyndicationAdsByGoogle.injections = [hit];
 
+    /* eslint-disable func-names */
     /**
      * @redirect googletagservices-gpt
      *
@@ -7586,15 +7743,82 @@
      */
 
     function GoogleTagServicesGpt(source) {
+      var slots = new Map();
+      var slotsById = new Map();
+      var eventCallbacks = new Map();
+
+      var addEventListener = function addEventListener(name, listener) {
+        if (!eventCallbacks.has(name)) {
+          eventCallbacks.set(name, new Set());
+        }
+
+        eventCallbacks.get(name).add(listener);
+        return this;
+      };
+
+      var removeEventListener = function removeEventListener(name, listener) {
+        if (eventCallbacks.has(name)) {
+          return eventCallbacks.get(name).delete(listener);
+        }
+
+        return false;
+      };
+
+      var fireSlotEvent = function fireSlotEvent(name, slot) {
+        // eslint-disable-next-line compat/compat
+        return new Promise(function (resolve) {
+          requestAnimationFrame(function () {
+            var size = [0, 0];
+            var callbacksSet = eventCallbacks.get(name) || [];
+            var callbackArray = Array.from(callbacksSet);
+
+            for (var i = 0; i < callbackArray.length; i += 1) {
+              callbackArray[i]({
+                isEmpty: true,
+                size: size,
+                slot: slot
+              });
+            }
+
+            resolve();
+          });
+        });
+      };
+
+      var displaySlot = function displaySlot(slot) {
+        if (!slot) {
+          return;
+        }
+
+        var id = slot.getSlotElementId();
+
+        if (!document.getElementById(id)) {
+          return;
+        }
+
+        var parent = document.getElementById(id);
+
+        if (parent) {
+          parent.appendChild(document.createElement('div'));
+        }
+
+        fireSlotEvent('slotRenderEnded', slot);
+        fireSlotEvent('slotRequested', slot);
+        fireSlotEvent('slotResponseReceived', slot);
+        fireSlotEvent('slotOnload', slot);
+        fireSlotEvent('impressionViewable', slot);
+      };
+
       var companionAdsService = {
-        addEventListener: noopThis,
-        removeEventListener: noopThis,
+        addEventListener: addEventListener,
+        removeEventListener: removeEventListener,
         enableSyncLoading: noopFunc,
         setRefreshUnfilledSlots: noopFunc,
         getSlots: noopArray
       };
       var contentService = {
-        addEventListener: noopThis,
+        addEventListener: addEventListener,
+        removeEventListener: removeEventListener,
         setContent: noopFunc
       };
 
@@ -7615,7 +7839,20 @@
       SizeMappingBuilder.prototype.addSize = noopThis;
       SizeMappingBuilder.prototype.build = noopNull;
 
-      function Slot() {} // constructor
+      function Slot(adUnitPath, creatives, optDiv) {
+        this.adUnitPath = adUnitPath;
+        this.creatives = creatives;
+        this.optDiv = optDiv;
+
+        if (slotsById.has(optDiv)) {
+          var _document$getElementB;
+
+          (_document$getElementB = document.getElementById(optDiv)) === null || _document$getElementB === void 0 ? void 0 : _document$getElementB.remove();
+          return slotsById.get(optDiv);
+        }
+
+        slotsById.set(optDiv, this);
+      } // constructor
 
 
       Slot.prototype.addService = noopThis;
@@ -7623,11 +7860,22 @@
       Slot.prototype.clearTargeting = noopThis;
       Slot.prototype.defineSizeMapping = noopThis;
       Slot.prototype.get = noopNull;
-      Slot.prototype.getAdUnitPath = noopStr;
+
+      Slot.prototype.getAdUnitPath = function () {
+        return this.adUnitPath;
+      };
+
       Slot.prototype.getAttributeKeys = noopArray;
       Slot.prototype.getCategoryExclusions = noopArray;
-      Slot.prototype.getDomId = noopStr;
-      Slot.prototype.getSlotElementId = noopStr;
+
+      Slot.prototype.getDomId = function () {
+        return this.optDiv;
+      };
+
+      Slot.prototype.getSlotElementId = function () {
+        return this.optDiv;
+      };
+
       Slot.prototype.getSlotId = noopThis;
       Slot.prototype.getSizes = noopArray;
       Slot.prototype.getTargeting = noopArray;
@@ -7638,8 +7886,8 @@
       Slot.prototype.setCollapseEmptyDiv = noopThis;
       Slot.prototype.setTargeting = noopThis;
       var pubAdsService = {
-        addEventListener: noopThis,
-        removeEventListener: noopThis,
+        addEventListener: addEventListener,
+        removeEventListener: removeEventListener,
         clear: noopFunc,
         clearCategoryExclusions: noopThis,
         clearTagForChildDirectedTreatment: noopThis,
@@ -7679,6 +7927,11 @@
         setVideoContent: noopThis,
         updateCorrelator: noopFunc
       };
+
+      var getNewSlot = function getNewSlot(adUnitPath, creatives, optDiv) {
+        return new Slot(adUnitPath, creatives, optDiv);
+      };
+
       var _window = window,
           _window$googletag = _window.googletag,
           googletag = _window$googletag === void 0 ? {} : _window$googletag;
@@ -7703,17 +7956,30 @@
         return contentService;
       };
 
-      googletag.defineOutOfPageSlot = function () {
-        return new Slot();
+      googletag.defineOutOfPageSlot = getNewSlot;
+      googletag.defineSlot = getNewSlot;
+
+      googletag.destroySlots = function () {
+        slots.clear();
+        slotsById.clear();
       };
 
-      googletag.defineSlot = function () {
-        return new Slot();
-      };
-
-      googletag.destroySlots = noopFunc;
       googletag.disablePublisherConsole = noopFunc;
-      googletag.display = noopFunc;
+
+      googletag.display = function (arg) {
+        var id;
+
+        if (arg !== null && arg !== void 0 && arg.getSlotElementId) {
+          id = arg.getSlotElementId();
+        } else if (arg !== null && arg !== void 0 && arg.nodeType) {
+          id = arg.id;
+        } else {
+          id = String(arg);
+        }
+
+        displaySlot(slotsById.get(id));
+      };
+
       googletag.enableServices = noopFunc;
       googletag.getVersion = noopStr;
 
@@ -8562,7 +8828,7 @@
 
       AdsManager.start = function () {
         // eslint-disable-next-line no-restricted-syntax
-        for (var _i2 = 0, _arr = [AdEvent.Type.LOADED, AdEvent.Type.STARTED, AdEvent.Type.AD_BUFFERING, AdEvent.Type.FIRST_QUARTILE, AdEvent.Type.MIDPOINT, AdEvent.Type.THIRD_QUARTILE, AdEvent.Type.COMPLETE, AdEvent.Type.ALL_ADS_COMPLETED, AdEvent.Type.CONTENT_RESUME_REQUESTED]; _i2 < _arr.length; _i2++) {
+        for (var _i2 = 0, _arr = [AdEvent.Type.ALL_ADS_COMPLETED, AdEvent.Type.CONTENT_RESUME_REQUESTED]; _i2 < _arr.length; _i2++) {
           var type = _arr[_i2];
 
           try {
@@ -8580,15 +8846,23 @@
 
       var manager = Object.create(AdsManager);
 
-      var AdsManagerLoadedEvent = function AdsManagerLoadedEvent(type) {
+      var AdsManagerLoadedEvent = function AdsManagerLoadedEvent(type, adsRequest, userRequestContext) {
         this.type = type;
+        this.adsRequest = adsRequest;
+        this.userRequestContext = userRequestContext;
       };
 
       AdsManagerLoadedEvent.prototype = {
         getAdsManager: function getAdsManager() {
           return manager;
         },
-        getUserRequestContext: noopFunc
+        getUserRequestContext: function getUserRequestContext() {
+          if (this.userRequestContext) {
+            return this.userRequestContext;
+          }
+
+          return {};
+        }
       };
       AdsManagerLoadedEvent.Type = {
         ADS_MANAGER_LOADED: 'adsManagerLoaded'
@@ -8611,10 +8885,13 @@
 
         if (!managerLoaded) {
           managerLoaded = true;
+          requestAnimationFrame(function () {
+            var ADS_MANAGER_LOADED = AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED; // eslint-disable-next-line max-len
+
+            _this._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED, adsRequest, userRequestContext));
+          });
           var e = new ima.AdError('adPlayError', 1205, 1205, 'The browser prevented playback initiated without user interaction.', adsRequest, userRequestContext);
           requestAnimationFrame(function () {
-            // using AdErrorEvent is preferred as AdsManagerLoadedEvent causes errors
-            // https://github.com/AdguardTeam/Scriptlets/issues/217
             _this._dispatch(new ima.AdErrorEvent(e));
           });
         }
@@ -9075,25 +9352,14 @@
         purpose: {
           consents: []
         }
-      };
+      }; // https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#how-does-the-cmp-provide-the-api
 
-      var __tcfapiWrapper = function __tcfapiWrapper() {
-        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-          args[_key] = arguments[_key];
+      var __tcfapiWrapper = function __tcfapiWrapper(command, version, callback) {
+        if (typeof callback !== 'function' || command === 'removeEventListener') {
+          return;
         }
 
-        // eslint-disable-next-line no-restricted-syntax
-        for (var _i = 0, _args = args; _i < _args.length; _i++) {
-          var arg = _args[_i];
-
-          if (typeof arg === 'function') {
-            try {
-              setTimeout(arg(tcData, true));
-            } catch (ex) {
-              /* empty */
-            }
-          }
-        }
+        callback(tcData, true);
       };
 
       window.__tcfapi = __tcfapiWrapper;
@@ -13505,24 +13771,37 @@
             origDescriptor = undefined;
           }
 
-          setPropertyAccess(base, prop, {
-            set: function set(value) {
-              abort();
-
-              if (origDescriptor instanceof Object) {
-                origDescriptor.set.call(base, value);
-              } else {
-                currentValue = value;
-              }
-            },
+          var descriptorWrapper = Object.assign(getDescriptorAddon(), {
+            currentValue: currentValue,
             get: function get() {
-              abort();
+              if (!this.isAbortingSuspended) {
+                this.isolateCallback(abort);
+              }
 
               if (origDescriptor instanceof Object) {
                 return origDescriptor.get.call(base);
               }
 
               return currentValue;
+            },
+            set: function set(newValue) {
+              if (!this.isAbortingSuspended) {
+                this.isolateCallback(abort);
+              }
+
+              if (origDescriptor instanceof Object) {
+                origDescriptor.set.call(base, newValue);
+              } else {
+                this.currentValue = newValue;
+              }
+            }
+          });
+          setPropertyAccess(base, prop, {
+            get: function get() {
+              return descriptorWrapper.get.call(descriptorWrapper);
+            },
+            set: function set(newValue) {
+              descriptorWrapper.set.call(descriptorWrapper, newValue);
             }
           });
         };
@@ -13670,6 +13949,23 @@
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
+      }
+
+      function getDescriptorAddon() {
+        return {
+          isAbortingSuspended: false,
+          isolateCallback: function isolateCallback(cb) {
+            this.isAbortingSuspended = true;
+
+            for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+              args[_key - 1] = arguments[_key];
+            }
+
+            var result = cb.apply(void 0, args);
+            this.isAbortingSuspended = false;
+            return result;
+          }
+        };
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -14038,7 +14334,6 @@
           return;
         }
 
-        setShouldAbortStack(true);
         var rid = randomId();
 
         var abort = function abort() {
@@ -14070,31 +14365,34 @@
             return;
           }
 
-          var value = base[prop];
-
           if (!isValidStrPattern(stack)) {
             console.log("Invalid parameter: ".concat(stack));
             return;
           }
 
-          setPropertyAccess(base, prop, {
+          var descriptorWrapper = Object.assign(getDescriptorAddon(), {
+            value: base[prop],
             get: function get() {
-              if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
-                setShouldAbortStack(true);
+              if (!this.isAbortingSuspended && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
                 abort();
               }
 
-              setShouldAbortStack(true);
-              return value;
+              return this.value;
             },
             set: function set(newValue) {
-              if (shouldAbortStack && matchStackTrace(stack, new Error().stack)) {
-                setShouldAbortStack(true);
+              if (!this.isAbortingSuspended && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
                 abort();
               }
 
-              setShouldAbortStack(true);
-              value = newValue;
+              this.value = newValue;
+            }
+          });
+          setPropertyAccess(base, prop, {
+            get: function get() {
+              return descriptorWrapper.get.call(descriptorWrapper);
+            },
+            set: function set(newValue) {
+              descriptorWrapper.set.call(descriptorWrapper, newValue);
             }
           });
         };
@@ -14225,7 +14523,7 @@
 
       function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
-        var str = input;
+        var str = escapeRegExp(input);
 
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
@@ -14243,9 +14541,11 @@
         return isValid;
       }
 
-      function matchStackTrace(stackMatch, stackTrace) {
-        setShouldAbortStack(false);
+      function escapeRegExp(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      }
 
+      function matchStackTrace(stackMatch, stackTrace) {
         if (!stackMatch || stackMatch === "") {
           return true;
         }
@@ -14254,13 +14554,24 @@
         var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         }).join("\n");
-        return stackRegexp.test(refinedStackTrace);
+        return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
       }
 
-      function shouldAbortStack() {}
+      function getDescriptorAddon() {
+        return {
+          isAbortingSuspended: false,
+          isolateCallback: function isolateCallback(cb) {
+            this.isAbortingSuspended = true;
 
-      function setShouldAbortStack(value) {
-        shouldAbortStack = value;
+            for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+              args[_key - 1] = arguments[_key];
+            }
+
+            var result = cb.apply(void 0, args);
+            this.isAbortingSuspended = false;
+            return result;
+          }
+        };
       }
 
       function toRegExp() {
@@ -14278,6 +14589,10 @@
 
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
+      }
+
+      function getNativeRegexpTest() {
+        return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -15830,7 +16145,6 @@
       }
 
       function matchStackTrace(stackMatch, stackTrace) {
-
         if (!stackMatch || stackMatch === "") {
           return true;
         }
@@ -15839,7 +16153,7 @@
         var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         }).join("\n");
-        return stackRegexp.test(refinedStackTrace);
+        return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
       }
 
       function getWildcardPropertyInChain(base, chain) {
@@ -15908,6 +16222,10 @@
 
       function getWildcardSymbol() {
         return "*";
+      }
+
+      function getNativeRegexpTest() {
+        return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -17637,7 +17955,7 @@
 
       function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
-        var str = input;
+        var str = escapeRegExp(input);
 
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
@@ -17653,6 +17971,10 @@
         }
 
         return isValid;
+      }
+
+      function escapeRegExp(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
 
       function isEmptyObject(obj) {
@@ -18053,7 +18375,7 @@
 
       function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
-        var str = input;
+        var str = escapeRegExp(input);
 
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
@@ -18073,6 +18395,10 @@
 
       function isValidCallback(callback) {
         return callback instanceof Function || typeof callback === "string";
+      }
+
+      function escapeRegExp(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
 
       function toRegExp() {
@@ -18323,7 +18649,7 @@
 
       function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
-        var str = input;
+        var str = escapeRegExp(input);
 
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
@@ -18339,6 +18665,10 @@
         }
 
         return isValid;
+      }
+
+      function escapeRegExp(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
 
       function nativeIsFinite(num) {
@@ -18583,9 +18913,13 @@
         return isValidStrPattern(str);
       }
 
+      function escapeRegExp(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      }
+
       function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
-        var str = input;
+        var str = escapeRegExp(input);
 
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
@@ -18785,7 +19119,7 @@
 
       function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
-        var str = input;
+        var str = escapeRegExp(input);
 
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
@@ -18801,6 +19135,10 @@
         }
 
         return isValid;
+      }
+
+      function escapeRegExp(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
 
       function isValidMatchStr(match) {
@@ -18970,12 +19308,13 @@
     }
 
     function preventXHR(source, args) {
-      function preventXHR(source, propsToMatch, randomize) {
+      function preventXHR(source, propsToMatch, customResponseText) {
         if (typeof Proxy === "undefined") {
           return;
         }
 
         var shouldPrevent = false;
+        var response = "";
         var responseText = "";
         var responseUrl;
 
@@ -19014,8 +19353,22 @@
             return Reflect.apply(target, thisArg, args);
           }
 
-          if (randomize === "true") {
-            responseText = Math.random().toString(36).slice(-10);
+          if (thisArg.responseType === "blob") {
+            response = new Blob();
+          }
+
+          if (thisArg.responseType === "arraybuffer") {
+            response = new ArrayBuffer();
+          }
+
+          if (customResponseText) {
+            var randomText = generateRandomResponse(customResponseText);
+
+            if (randomText) {
+              responseText = randomText;
+            } else {
+              console.log("Invalid range: ".concat(customResponseText));
+            }
           }
 
           Object.defineProperties(thisArg, {
@@ -19024,7 +19377,7 @@
               writable: false
             },
             response: {
-              value: "",
+              value: response,
               writable: false
             },
             responseText: {
@@ -19170,6 +19523,63 @@
         return matchData;
       }
 
+      function getRandomIntInclusive(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min + 1) + min);
+      }
+
+      function getRandomStrByLength(length) {
+        var result = "";
+        var characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~";
+        var charactersLength = characters.length;
+
+        for (var i = 0; i < length; i += 1) {
+          result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+
+        return result;
+      }
+
+      function generateRandomResponse(customResponseText) {
+        var customResponse = customResponseText;
+
+        if (customResponse === "true") {
+          customResponse = Math.random().toString(36).slice(-10);
+          return customResponse;
+        }
+
+        customResponse = customResponse.replace("length:", "");
+        var rangeRegex = /^\d+-\d+$/;
+
+        if (!rangeRegex.test(customResponse)) {
+          return null;
+        }
+
+        var rangeMin = getNumberFromString(customResponse.split("-")[0]);
+        var rangeMax = getNumberFromString(customResponse.split("-")[1]);
+
+        if (!nativeIsFinite(rangeMin) || !nativeIsFinite(rangeMax)) {
+          return null;
+        }
+
+        if (rangeMin > rangeMax) {
+          var temp = rangeMin;
+          rangeMin = rangeMax;
+          rangeMax = temp;
+        }
+
+        var LENGTH_RANGE_LIMIT = 500 * 1e3;
+
+        if (rangeMax > LENGTH_RANGE_LIMIT) {
+          return null;
+        }
+
+        var length = getRandomIntInclusive(rangeMin, rangeMax);
+        customResponse = getRandomStrByLength(length);
+        return customResponse;
+      }
+
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
@@ -19189,7 +19599,7 @@
 
       function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
-        var str = input;
+        var str = escapeRegExp(input);
 
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
@@ -19207,6 +19617,10 @@
         return isValid;
       }
 
+      function escapeRegExp(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      }
+
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0;
       }
@@ -19218,6 +19632,22 @@
           return entries.push([key, object[key]]);
         });
         return entries;
+      }
+
+      function getNumberFromString(rawString) {
+        var parsedDelay = parseInt(rawString, 10);
+        var validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
+        return validDelay;
+      }
+
+      function nativeIsFinite(num) {
+        var native = Number.isFinite || window.isFinite;
+        return native(num);
+      }
+
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -20452,7 +20882,6 @@
       }
 
       function matchStackTrace(stackMatch, stackTrace) {
-
         if (!stackMatch || stackMatch === "") {
           return true;
         }
@@ -20461,12 +20890,16 @@
         var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         }).join("\n");
-        return stackRegexp.test(refinedStackTrace);
+        return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
       }
 
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
+      }
+
+      function getNativeRegexpTest() {
+        return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -20599,25 +21032,31 @@
 
     function setCookieReload(source, args) {
       function setCookieReload(source, name, value) {
-        var isCookieAlreadySet = document.cookie.split(";").some(function (cookieStr) {
-          var pos = cookieStr.indexOf("=");
+        var isCookieSetWithValue = function isCookieSetWithValue(name, value) {
+          return document.cookie.split(";").some(function (cookieStr) {
+            var pos = cookieStr.indexOf("=");
 
-          if (pos === -1) {
-            return false;
-          }
+            if (pos === -1) {
+              return false;
+            }
 
-          var cookieName = cookieStr.slice(0, pos).trim();
-          var cookieValue = cookieStr.slice(pos + 1).trim();
-          return name === cookieName && value === cookieValue;
-        });
-        var shouldReload = !isCookieAlreadySet;
+            var cookieName = cookieStr.slice(0, pos).trim();
+            var cookieValue = cookieStr.slice(pos + 1).trim();
+            return name === cookieName && value === cookieValue;
+          });
+        };
+
+        if (isCookieSetWithValue(name, value)) {
+          return;
+        }
+
         var cookieData = prepareCookie(name, value);
 
         if (cookieData) {
-          hit(source);
           document.cookie = cookieData;
+          hit(source);
 
-          if (shouldReload) {
+          if (isCookieSetWithValue(name, value)) {
             window.location.reload();
           }
         }

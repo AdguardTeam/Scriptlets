@@ -11,6 +11,7 @@ import {
     // because they are used by helpers above
     toRegExp,
     isValidStrPattern,
+    escapeRegExp,
     isEmptyObject,
     getRequestData,
     getObjectEntries,
@@ -162,6 +163,7 @@ preventFetch.injections = [
     getWildcardSymbol,
     toRegExp,
     isValidStrPattern,
+    escapeRegExp,
     isEmptyObject,
     getRequestData,
     getObjectEntries,

@@ -231,3 +231,18 @@ test('works with src data script - iife', (assert) => {
         done();
     }, 50);
 });
+
+test('Protected from infinite loop when prop is used in a helper', (assert) => {
+    const property = 'atob';
+    const stackMatch = 'any';
+    const scriptletArgs = [property, stackMatch];
+    runScriptlet(name, scriptletArgs);
+
+    try {
+        window.atob('VGVzdA==');
+    } catch {
+        assert.ok(false);
+    }
+
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+});

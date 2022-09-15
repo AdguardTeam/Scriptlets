@@ -11,6 +11,7 @@ import {
     isValidCallback,
     isValidMatchStr,
     isValidStrPattern,
+    escapeRegExp,
     nativeIsFinite,
     isValidMatchNumber,
 } from '../helpers/index';
@@ -213,6 +214,7 @@ preventSetInterval.injections = [
     isValidCallback,
     isValidMatchStr,
     isValidStrPattern,
+    escapeRegExp,
     nativeIsFinite,
     isValidMatchNumber,
 ];
