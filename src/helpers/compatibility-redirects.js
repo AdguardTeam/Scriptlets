@@ -146,6 +146,9 @@ const redirects = [
         adg: 'prebid',
     },
     {
+        adg: 'pardot-1.0',
+    },
+    {
         adg: 'prevent-bab',
         ubo: 'nobab.js',
     },

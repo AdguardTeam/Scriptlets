@@ -17,3 +17,4 @@ import './prebid.test';
 import './didomi-loader.test';
 import './prebid-ads.test';
 import './naver-wcslog.test';
+import './pardot-1.0.test';
