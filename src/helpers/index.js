@@ -25,3 +25,4 @@ export * from './prevent-utils';
 export * from './regexp-utils';
 export * from './random-response';
 export * from './get-descriptor-addon';
+export * from './parse-flags';
