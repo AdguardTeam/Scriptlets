@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.51
+ * Version 1.6.55
  */
 
 (function (factory) {
@@ -1707,6 +1707,30 @@
       };
     }
 
+    /**
+     * Behaviour flags string parser
+     * @param {string} flags required, 'applying' argument string
+     * @return {Object}
+     */
+    var parseFlags = function parseFlags(flags) {
+      var FLAGS_DIVIDER = ' ';
+      var ASAP_FLAG = 'asap';
+      var COMPLETE_FLAG = 'complete';
+      var STAY_FLAG = 'stay';
+      var VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
+      var passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
+        return VALID_FLAGS.indexOf(f) !== -1;
+      });
+      return {
+        ASAP: ASAP_FLAG,
+        COMPLETE: COMPLETE_FLAG,
+        STAY: STAY_FLAG,
+        hasFlag: function hasFlag(flag) {
+          return passedFlags.indexOf(flag) !== -1;
+        }
+      };
+    };
+
     /* eslint-disable max-len */
 
     /**
@@ -2584,7 +2608,7 @@
               return origDescriptor.get.call(base);
             }
 
-            return currentValue;
+            return this.currentValue;
           },
           set: function set(newValue) {
             if (!this.isAbortingSuspended) {
@@ -3995,21 +4019,12 @@
         }
       };
 
-      var FLAGS_DIVIDER = ' ';
-      var ASAP_FLAG = 'asap';
-      var COMPLETE_FLAG = 'complete';
-      var STAY_FLAG = 'stay';
-      var VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
-      /* eslint-disable no-restricted-properties */
-
-      var passedFlags = applying.trim().split(FLAGS_DIVIDER).filter(function (f) {
-        return VALID_FLAGS.indexOf(f) !== -1;
-      });
+      var flags = parseFlags(applying);
 
       var run = function run() {
         rmattr();
 
-        if (!passedFlags.indexOf(STAY_FLAG) !== -1) {
+        if (!flags.hasFlag(flags.STAY)) {
           return;
         } // 'true' for observing attributes
 
@@ -4017,17 +4032,26 @@
         observeDOMChanges(rmattr, true);
       };
 
-      if (passedFlags.indexOf(ASAP_FLAG) !== -1) {
-        rmattr();
+      if (flags.hasFlag(flags.ASAP)) {
+        // https://github.com/AdguardTeam/Scriptlets/issues/245
+        // Call rmattr on DOM content loaded
+        // to ensure that target node is present on the page
+        if (document.readyState === 'loading') {
+          window.addEventListener('DOMContentLoaded', rmattr, {
+            once: true
+          });
+        } else {
+          rmattr();
+        }
       }
 
-      if (document.readyState !== 'complete' && passedFlags.indexOf(COMPLETE_FLAG) !== -1) {
+      if (document.readyState !== 'complete' && flags.hasFlag(flags.COMPLETE)) {
         window.addEventListener('load', run, {
           once: true
         });
-      } else if (passedFlags.indexOf(STAY_FLAG) !== -1) {
-        // Do not call rmattr() twice for 'asap stay' flag
-        if (passedFlags.length === 1) {
+      } else if (flags.hasFlag(flags.STAY)) {
+        // Only call rmattr for single 'stay' flag
+        if (!applying.indexOf(' ') !== -1) {
           rmattr();
         } // 'true' for observing attributes
 
@@ -4037,7 +4061,7 @@
     }
     removeAttr$1.names = ['remove-attr', // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-attr.js', 'ubo-remove-attr.js', 'ra.js', 'ubo-ra.js', 'ubo-remove-attr', 'ubo-ra'];
-    removeAttr$1.injections = [hit, observeDOMChanges];
+    removeAttr$1.injections = [hit, observeDOMChanges, parseFlags];
 
     /* eslint-disable max-len */
 
@@ -4246,21 +4270,12 @@
       };
 
       var CLASS_ATTR_NAME = ['class'];
-      var FLAGS_DIVIDER = ' ';
-      var ASAP_FLAG = 'asap';
-      var COMPLETE_FLAG = 'complete';
-      var STAY_FLAG = 'stay';
-      var VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
-      /* eslint-disable no-restricted-properties */
-
-      var passedFlags = applying.trim().split(FLAGS_DIVIDER).filter(function (f) {
-        return VALID_FLAGS.indexOf(f) !== -1;
-      });
+      var flags = parseFlags(applying);
 
       var run = function run() {
         removeClassHandler();
 
-        if (!passedFlags.indexOf(STAY_FLAG) !== -1) {
+        if (!flags.hasFlag(flags.STAY)) {
           return;
         } // 'true' for observing attributes
         // 'class' for observing only classes
@@ -4269,28 +4284,35 @@
         observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
       };
 
-      if (passedFlags.indexOf(ASAP_FLAG) !== -1) {
-        removeClassHandler();
+      if (flags.hasFlag(flags.ASAP)) {
+        // https://github.com/AdguardTeam/Scriptlets/issues/245
+        // Call removeClassHandler on DOM content loaded
+        // to ensure that target node is present on the page
+        if (document.readyState === 'loading') {
+          window.addEventListener('DOMContentLoaded', removeClassHandler, {
+            once: true
+          });
+        } else {
+          removeClassHandler();
+        }
       }
 
-      if (document.readyState !== 'complete' && passedFlags.indexOf(COMPLETE_FLAG) !== -1) {
+      if (document.readyState !== 'complete' && flags.hasFlag(flags.COMPLETE)) {
         window.addEventListener('load', run, {
           once: true
         });
-      } else if (passedFlags.indexOf(STAY_FLAG) !== -1) {
-        // Do not call removeClassHandler() twice for 'asap stay' flag
-        if (passedFlags.length === 1) {
+      } else if (flags.hasFlag(flags.STAY)) {
+        // Only call removeClassHandler for single 'stay' flag
+        if (!applying.indexOf(' ') !== -1) {
           removeClassHandler();
-        } // 'true' for observing attributes
-        // 'class' for observing only classes
-
+        }
 
         observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
       }
     }
     removeClass$1.names = ['remove-class', // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-class.js', 'ubo-remove-class.js', 'rc.js', 'ubo-rc.js', 'ubo-remove-class', 'ubo-rc'];
-    removeClass$1.injections = [hit, observeDOMChanges];
+    removeClass$1.injections = [hit, observeDOMChanges, parseFlags];
 
     /**
      * @scriptlet disable-newtab-links
@@ -6424,6 +6446,8 @@
     }, {
       adg: 'prebid'
     }, {
+      adg: 'pardot-1.0'
+    }, {
       adg: 'prevent-bab',
       ubo: 'nobab.js'
     }, {
@@ -8267,6 +8291,51 @@
     metrikaYandexWatch.names = ['metrika-yandex-watch'];
     metrikaYandexWatch.injections = [hit, noopFunc, noopArray];
 
+    /* eslint-disable func-names */
+    /**
+     * @redirect pardot-1.0
+     *
+     * @description
+     * Mocks the pd.js file of Salesforce
+     * https://pi.pardot.com/pd.js
+     * https://developer.salesforce.com/docs/marketing/pardot/overview
+     * **Example**
+     * ```
+     * ||pi.pardot.com/pd.js$script,redirect=pardot
+     * ||pacedg.com.au/pd.js$redirect=pardot
+     * ```
+     */
+
+    function Pardot(source) {
+      window.piVersion = '1.0.2';
+      window.piScriptNum = 0;
+      window.piScriptObj = [];
+      window.checkNamespace = noopFunc;
+      window.getPardotUrl = noopStr;
+      window.piGetParameter = noopNull;
+      window.piSetCookie = noopFunc;
+      window.piGetCookie = noopStr;
+
+      function piTracker() {
+        window.pi = {
+          tracker: {
+            visitor_id: '',
+            visitor_id_sign: '',
+            pi_opt_in: '',
+            campaign_id: ''
+          }
+        };
+        window.piScriptNum += 1;
+      }
+
+      window.piResponse = noopFunc;
+      window.piTracker = piTracker;
+      piTracker();
+      hit(source);
+    }
+    Pardot.names = ['pardot-1.0'];
+    Pardot.injections = [hit, noopFunc, noopStr, noopNull];
+
     /**
      * @redirect amazon-apstag
      *
@@ -9525,6 +9594,7 @@
         ScoreCardResearchBeacon: ScoreCardResearchBeacon,
         metrikaYandexTag: metrikaYandexTag,
         metrikaYandexWatch: metrikaYandexWatch,
+        Pardot: Pardot,
         preventFab: preventFab$1,
         preventBab: preventBab$1,
         setPopadsDummy: setPopadsDummy$1,
@@ -13601,6 +13671,7 @@
       "ubo-silent-noeval.js": "noeval.js",
       "ubo-noeval": "noeval.js",
       "ubo-silent-noeval": "noeval.js",
+      "pardot-1.0": "pardot-1.0.js",
       "prebid-ads": "prebid-ads.js",
       "ubo-prebid-ads.js": "prebid-ads.js",
       "prebid-ads.js": "prebid-ads.js",
@@ -13784,7 +13855,7 @@
                 return origDescriptor.get.call(base);
               }
 
-              return currentValue;
+              return this.currentValue;
             },
             set: function set(newValue) {
               if (!this.isAbortingSuspended) {
@@ -19697,35 +19768,34 @@
           }
         };
 
-        var FLAGS_DIVIDER = " ";
-        var ASAP_FLAG = "asap";
-        var COMPLETE_FLAG = "complete";
-        var STAY_FLAG = "stay";
-        var VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
-        var passedFlags = applying.trim().split(FLAGS_DIVIDER).filter(function (f) {
-          return VALID_FLAGS.indexOf(f) !== -1;
-        });
+        var flags = parseFlags(applying);
 
         var run = function run() {
           rmattr();
 
-          if (!passedFlags.indexOf(STAY_FLAG) !== -1) {
+          if (!flags.hasFlag(flags.STAY)) {
             return;
           }
 
           observeDOMChanges(rmattr, true);
         };
 
-        if (passedFlags.indexOf(ASAP_FLAG) !== -1) {
-          rmattr();
+        if (flags.hasFlag(flags.ASAP)) {
+          if (document.readyState === "loading") {
+            window.addEventListener("DOMContentLoaded", rmattr, {
+              once: true
+            });
+          } else {
+            rmattr();
+          }
         }
 
-        if (document.readyState !== "complete" && passedFlags.indexOf(COMPLETE_FLAG) !== -1) {
+        if (document.readyState !== "complete" && flags.hasFlag(flags.COMPLETE)) {
           window.addEventListener("load", run, {
             once: true
           });
-        } else if (passedFlags.indexOf(STAY_FLAG) !== -1) {
-          if (passedFlags.length === 1) {
+        } else if (flags.hasFlag(flags.STAY)) {
+          if (!applying.indexOf(" ") !== -1) {
             rmattr();
           }
 
@@ -19848,6 +19918,25 @@
         connect();
       }
 
+      function parseFlags(flags) {
+        var FLAGS_DIVIDER = " ";
+        var ASAP_FLAG = "asap";
+        var COMPLETE_FLAG = "complete";
+        var STAY_FLAG = "stay";
+        var VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
+        var passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
+          return VALID_FLAGS.indexOf(f) !== -1;
+        });
+        return {
+          ASAP: ASAP_FLAG,
+          COMPLETE: COMPLETE_FLAG,
+          STAY: STAY_FLAG,
+          hasFlag: function hasFlag(flag) {
+            return passedFlags.indexOf(flag) !== -1;
+          }
+        };
+      }
+
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
 
       try {
@@ -19916,35 +20005,34 @@
         };
 
         var CLASS_ATTR_NAME = ["class"];
-        var FLAGS_DIVIDER = " ";
-        var ASAP_FLAG = "asap";
-        var COMPLETE_FLAG = "complete";
-        var STAY_FLAG = "stay";
-        var VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
-        var passedFlags = applying.trim().split(FLAGS_DIVIDER).filter(function (f) {
-          return VALID_FLAGS.indexOf(f) !== -1;
-        });
+        var flags = parseFlags(applying);
 
         var run = function run() {
           removeClassHandler();
 
-          if (!passedFlags.indexOf(STAY_FLAG) !== -1) {
+          if (!flags.hasFlag(flags.STAY)) {
             return;
           }
 
           observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
         };
 
-        if (passedFlags.indexOf(ASAP_FLAG) !== -1) {
-          removeClassHandler();
+        if (flags.hasFlag(flags.ASAP)) {
+          if (document.readyState === "loading") {
+            window.addEventListener("DOMContentLoaded", removeClassHandler, {
+              once: true
+            });
+          } else {
+            removeClassHandler();
+          }
         }
 
-        if (document.readyState !== "complete" && passedFlags.indexOf(COMPLETE_FLAG) !== -1) {
+        if (document.readyState !== "complete" && flags.hasFlag(flags.COMPLETE)) {
           window.addEventListener("load", run, {
             once: true
           });
-        } else if (passedFlags.indexOf(STAY_FLAG) !== -1) {
-          if (passedFlags.length === 1) {
+        } else if (flags.hasFlag(flags.STAY)) {
+          if (!applying.indexOf(" ") !== -1) {
             removeClassHandler();
           }
 
@@ -20065,6 +20153,25 @@
         }
 
         connect();
+      }
+
+      function parseFlags(flags) {
+        var FLAGS_DIVIDER = " ";
+        var ASAP_FLAG = "asap";
+        var COMPLETE_FLAG = "complete";
+        var STAY_FLAG = "stay";
+        var VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
+        var passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
+          return VALID_FLAGS.indexOf(f) !== -1;
+        });
+        return {
+          ASAP: ASAP_FLAG,
+          COMPLETE: COMPLETE_FLAG,
+          STAY: STAY_FLAG,
+          hasFlag: function hasFlag(flag) {
+            return passedFlags.indexOf(flag) !== -1;
+          }
+        };
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
