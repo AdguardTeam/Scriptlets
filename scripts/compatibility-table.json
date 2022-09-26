@@ -236,6 +236,12 @@
         },
         {
             "ubo": "no-floc.js"
+        },
+        {
+            "ubo": "window.name-defuser.js"
+        },
+        {
+            "ubo": "xml-prune.js"
         }
     ],
     "redirects": [
@@ -434,6 +440,12 @@
         },
         {
             "ubo": "mxpnl_mixpanel.js"
+        },
+        {
+            "ubo": "google-ima.js"
+        },
+        {
+            "ubo": "noop-0.5s.mp3"
         }
     ]
 }

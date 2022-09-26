@@ -31,6 +31,7 @@
 * [metrika-yandex-watch](#metrika-yandex-watch)
 * [naver-wcslog](#naver-wcslog)
 * [noeval](#noeval)
+* [pardot-1.0](#pardot-1.0)
 * [prebid-ads](#prebid-ads)
 * [prebid](#prebid)
 * [prevent-bab](#prevent-bab)
@@ -408,6 +409,20 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-silentjs-
 ```
 
 [Redirect source](../src/redirects/noeval.js)
+* * *
+
+### <a id="pardot-1.0"></a> ⚡️ pardot-1.0
+
+Mocks the pd.js file of Salesforce
+https://pi.pardot.com/pd.js
+https://developer.salesforce.com/docs/marketing/pardot/overview
+**Example**
+```
+||pi.pardot.com/pd.js$script,redirect=pardot
+||pacedg.com.au/pd.js$redirect=pardot
+```
+
+[Redirect source](../src/redirects/pardot-1.0.js)
 * * *
 
 ### <a id="prebid-ads"></a> ⚡️ prebid-ads
