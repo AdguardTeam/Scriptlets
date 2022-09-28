@@ -1,4 +1,8 @@
-import { hit, observeDOMChanges } from '../helpers/index';
+import {
+    hit,
+    observeDOMChanges,
+    parseFlags,
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**
@@ -116,22 +120,11 @@ export function removeClass(source, classNames, selector, applying = 'asap stay'
     };
 
     const CLASS_ATTR_NAME = ['class'];
-
-    const FLAGS_DIVIDER = ' ';
-    const ASAP_FLAG = 'asap';
-    const COMPLETE_FLAG = 'complete';
-    const STAY_FLAG = 'stay';
-
-    const VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
-
-    /* eslint-disable no-restricted-properties */
-    const passedFlags = applying.trim()
-        .split(FLAGS_DIVIDER)
-        .filter((f) => VALID_FLAGS.indexOf(f) !== -1);
+    const flags = parseFlags(applying);
 
     const run = () => {
         removeClassHandler();
-        if (!passedFlags.indexOf(STAY_FLAG) !== -1) {
+        if (!flags.hasFlag(flags.STAY)) {
             return;
         }
         // 'true' for observing attributes
@@ -139,19 +132,24 @@ export function removeClass(source, classNames, selector, applying = 'asap stay'
         observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
     };
 
-    if (passedFlags.indexOf(ASAP_FLAG) !== -1) {
-        removeClassHandler();
-    }
-
-    if (document.readyState !== 'complete' && passedFlags.indexOf(COMPLETE_FLAG) !== -1) {
-        window.addEventListener('load', run, { once: true });
-    } else if (passedFlags.indexOf(STAY_FLAG) !== -1) {
-        // Do not call removeClassHandler() twice for 'asap stay' flag
-        if (passedFlags.length === 1) {
+    if (flags.hasFlag(flags.ASAP)) {
+        // https://github.com/AdguardTeam/Scriptlets/issues/245
+        // Call removeClassHandler on DOM content loaded
+        // to ensure that target node is present on the page
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', removeClassHandler, { once: true });
+        } else {
             removeClassHandler();
         }
-        // 'true' for observing attributes
-        // 'class' for observing only classes
+    }
+
+    if (document.readyState !== 'complete' && flags.hasFlag(flags.COMPLETE)) {
+        window.addEventListener('load', run, { once: true });
+    } else if (flags.hasFlag(flags.STAY)) {
+        // Only call removeClassHandler for single 'stay' flag
+        if (!applying.indexOf(' ') !== -1) {
+            removeClassHandler();
+        }
         observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
     }
 }
@@ -167,4 +165,8 @@ removeClass.names = [
     'ubo-rc',
 ];
 
-removeClass.injections = [hit, observeDOMChanges];
+removeClass.injections = [
+    hit,
+    observeDOMChanges,
+    parseFlags,
+];

@@ -174,7 +174,7 @@ export function abortCurrentInlineScript(source, property, search) {
                 if (origDescriptor instanceof Object) {
                     return origDescriptor.get.call(base);
                 }
-                return currentValue;
+                return this.currentValue;
             },
             set(newValue) {
                 if (!this.isAbortingSuspended) {

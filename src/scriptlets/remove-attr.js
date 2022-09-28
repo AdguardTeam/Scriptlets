@@ -1,4 +1,8 @@
-import { hit, observeDOMChanges } from '../helpers/index';
+import {
+    hit,
+    observeDOMChanges,
+    parseFlags,
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**
@@ -90,36 +94,33 @@ export function removeAttr(source, attrs, selector, applying = 'asap stay') {
         }
     };
 
-    const FLAGS_DIVIDER = ' ';
-    const ASAP_FLAG = 'asap';
-    const COMPLETE_FLAG = 'complete';
-    const STAY_FLAG = 'stay';
-
-    const VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
-
-    /* eslint-disable no-restricted-properties */
-    const passedFlags = applying.trim()
-        .split(FLAGS_DIVIDER)
-        .filter((f) => VALID_FLAGS.indexOf(f) !== -1);
+    const flags = parseFlags(applying);
 
     const run = () => {
         rmattr();
-        if (!passedFlags.indexOf(STAY_FLAG) !== -1) {
+        if (!flags.hasFlag(flags.STAY)) {
             return;
         }
         // 'true' for observing attributes
         observeDOMChanges(rmattr, true);
     };
 
-    if (passedFlags.indexOf(ASAP_FLAG) !== -1) {
-        rmattr();
+    if (flags.hasFlag(flags.ASAP)) {
+        // https://github.com/AdguardTeam/Scriptlets/issues/245
+        // Call rmattr on DOM content loaded
+        // to ensure that target node is present on the page
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', rmattr, { once: true });
+        } else {
+            rmattr();
+        }
     }
 
-    if (document.readyState !== 'complete' && passedFlags.indexOf(COMPLETE_FLAG) !== -1) {
+    if (document.readyState !== 'complete' && flags.hasFlag(flags.COMPLETE)) {
         window.addEventListener('load', run, { once: true });
-    } else if (passedFlags.indexOf(STAY_FLAG) !== -1) {
-        // Do not call rmattr() twice for 'asap stay' flag
-        if (passedFlags.length === 1) {
+    } else if (flags.hasFlag(flags.STAY)) {
+        // Only call rmattr for single 'stay' flag
+        if (!applying.indexOf(' ') !== -1) {
             rmattr();
         }
         // 'true' for observing attributes
@@ -138,4 +139,8 @@ removeAttr.names = [
     'ubo-ra',
 ];
 
-removeAttr.injections = [hit, observeDOMChanges];
+removeAttr.injections = [
+    hit,
+    observeDOMChanges,
+    parseFlags,
+];

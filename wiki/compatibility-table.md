@@ -71,6 +71,8 @@
 |  | abort-current-script.js (acs.js, abort-current-inline-script.js, acis.js) |  |
 |  | refresh-defuser.js |  |
 |  | no-floc.js |  |
+|  | window.name-defuser.js |  |
+|  | xml-prune.js |  |
 
 
 # <a id="redirects"></a> Redirects compatibility table
@@ -106,6 +108,7 @@
 | [noopvmap-1.0](../wiki/about-redirects.md#noopvmap-1.0) | noop-vmap1.0.xml |  |
 | [noopvast-2.0](../wiki/about-redirects.md#noopvast-2.0) |  |  |
 | [noopvast-3.0](../wiki/about-redirects.md#noopvast-3.0) |  |  |
+| [pardot-1.0](../wiki/about-redirects.md#pardot-1.0) |  |  |
 | [noopvast-4.0](../wiki/about-redirects.md#noopvast-4.0) |  |  |
 | [prebid-ads](../wiki/about-redirects.md#prebid-ads) | prebid-ads.js |  |
 | [prevent-bab](../wiki/about-redirects.md#prevent-bab) | nobab.js |  |
@@ -129,3 +132,5 @@
 |  | window.open-defuser.js |  |
 |  | noeval.js |  |
 |  | mxpnl_mixpanel.js |  |
+|  | google-ima.js |  |
+|  | noop-0.5s.mp3 |  |
