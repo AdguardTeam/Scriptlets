@@ -17,6 +17,7 @@
 * [log-eval](#log-eval)
 * [log-on-stack-trace](#log-on-stack-trace)
 * [log](#log)
+* [m3u-prune](#m3u-prune)
 * [no-topics](#no-topics)
 * [noeval](#noeval)
 * [nowebrtc](#nowebrtc)
@@ -45,6 +46,7 @@
 * [set-local-storage-item](#set-local-storage-item)
 * [set-popads-dummy](#set-popads-dummy)
 * [set-session-storage-item](#set-session-storage-item)
+* [xml-prune](#xml-prune)
 * * *
 ### <a id="abort-current-inline-script"></a> ⚡️ abort-current-inline-script
 
@@ -568,6 +570,39 @@ example.org#%#//scriptlet('log', 'arg1', 'arg2')
 ```
 
 [Scriptlet source](../src/scriptlets/log.js)
+* * *
+
+### <a id="m3u-prune"></a> ⚡️ m3u-prune
+
+Removes content from the specified M3U file.
+
+
+**Syntax**
+```
+example.org#%#//scriptlet('m3u-prune'[, propsToRemove[, urlToMatch[, optionalRegExp]]])
+```
+
+- `propsToRemove` - required, selector of elements which will be removed from M3U file
+- `urlToMatch` - optional, string or regular expression for matching the request's URL
+- `optionalRegExp` - optional, string or regular expression for matching a content which will be removed from response
+
+**Examples**
+1. Removes a tag which contains `tvessaiprod.nbcuni.com/video/`, from all requests
+    ```
+    example.org#%#//scriptlet('m3u-prune', 'tvessaiprod.nbcuni.com/video/')
+    ```
+
+2. Removes a tag which contains `tvessaiprod.nbcuni.com/video/`, only if request's URL contains `.m3u8`
+    ```
+    example.org#%#//scriptlet('m3u-prune', 'tvessaiprod.nbcuni.com/video/', '.m3u8')
+    ```
+
+2. Removes everything from response what is matched by RegExp, only if request's URL contains `.m3u8`
+    ```
+    example.org#%#//scriptlet('m3u-prune', 'VMAP-AD', '.m3u8', '/#EXTINF:.*\\n.*tvessaiprod\\.nbcuni\\.com\\/video\\/[\\s\\S]*?#EXT-X-DISCONTINUITY|#EXT-X-VMAP-AD-BREAK[\\s\\S]*?#EXT-X-ENDLIST/')
+    ```
+
+[Scriptlet source](../src/scriptlets/m3u-prune.js)
 * * *
 
 ### <a id="no-topics"></a> ⚡️ no-topics
@@ -1493,6 +1528,8 @@ Creates a constant property and assigns it one of the values from the predefined
 
 > Actually, it's not a constant. Please note, that it can be rewritten with a value of a different type.
 
+> If empty object is present in chain it will be trapped until chain leftovers appear.
+
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#set-constantjs-
 
@@ -1690,5 +1727,38 @@ example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '
 ```
 
 [Scriptlet source](../src/scriptlets/set-session-storage-item.js)
+* * *
+
+### <a id="xml-prune"></a> ⚡️ xml-prune
+
+Removes an element from the specified XML.
+
+
+**Syntax**
+```
+example.org#%#//scriptlet('xml-prune'[, propsToMatch[, optionalProp[, urlToMatch]]])
+```
+
+- `propsToMatch` - required, selector of elements which will be removed from XML
+- `optionalProp` - optional, selector of elements that must occur in XML document
+- `urlToMatch` - optional, string or regular expression for matching the request's URL
+
+**Examples**
+1. Removes `Period` tag which `id` contains `-ad-` from all requests
+    ```
+    example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]')
+    ```
+
+2. Removes `Period` tag which `id` contains `-ad-`, only if XML contains `SegmentTemplate`
+    ```
+    example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', 'SegmentTemplate')
+    ```
+
+3. Removes `Period` tag which `id` contains `-ad-`, only if request's URL contains `.mpd`
+    ```
+    example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', '', '.mpd')
+    ```
+
+[Scriptlet source](../src/scriptlets/xml-prune.js)
 * * *
 
