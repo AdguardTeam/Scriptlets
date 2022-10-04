@@ -46,7 +46,6 @@
 * [set-local-storage-item](#set-local-storage-item)
 * [set-popads-dummy](#set-popads-dummy)
 * [set-session-storage-item](#set-session-storage-item)
-* [xml-prune](#xml-prune)
 * * *
 ### <a id="abort-current-inline-script"></a> ⚡️ abort-current-inline-script
 
@@ -1727,38 +1726,5 @@ example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '
 ```
 
 [Scriptlet source](../src/scriptlets/set-session-storage-item.js)
-* * *
-
-### <a id="xml-prune"></a> ⚡️ xml-prune
-
-Removes an element from the specified XML.
-
-
-**Syntax**
-```
-example.org#%#//scriptlet('xml-prune'[, propsToMatch[, optionalProp[, urlToMatch]]])
-```
-
-- `propsToMatch` - required, selector of elements which will be removed from XML
-- `optionalProp` - optional, selector of elements that must occur in XML document
-- `urlToMatch` - optional, string or regular expression for matching the request's URL
-
-**Examples**
-1. Removes `Period` tag which `id` contains `-ad-` from all requests
-    ```
-    example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]')
-    ```
-
-2. Removes `Period` tag which `id` contains `-ad-`, only if XML contains `SegmentTemplate`
-    ```
-    example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', 'SegmentTemplate')
-    ```
-
-3. Removes `Period` tag which `id` contains `-ad-`, only if request's URL contains `.mpd`
-    ```
-    example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', '', '.mpd')
-    ```
-
-[Scriptlet source](../src/scriptlets/xml-prune.js)
 * * *
 
