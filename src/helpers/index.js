@@ -26,3 +26,4 @@ export * from './regexp-utils';
 export * from './random-response';
 export * from './get-descriptor-addon';
 export * from './parse-flags';
+export * from './url-utils';
