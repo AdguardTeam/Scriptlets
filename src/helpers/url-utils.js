@@ -1,5 +1,5 @@
 /**
- * Validates URL string by creating URL object
+ * Creates URL object if input string `url` is valid OR returns null for invalid input string
  * @param {string} url
  * @returns {URL | null}
  */
