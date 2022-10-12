@@ -30,7 +30,7 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('trusted-replace-xhr-response'[, propsToMatch[, pattern, replacement]])
+ * example.org#%#//scriptlet('trusted-replace-xhr-response'[, propsToMatch, pattern[, replacement]])
  * ```
  *
  * - propsToMatch - optional, string of space-separated properties to match; possible props:
@@ -38,11 +38,12 @@ import {
  *   - colon-separated pairs name:value where
  *     - name is XMLHttpRequest object property name
  *     - value is string or regular expression for matching the value of the option passed to `.open()` call
- * - pattern - optional, argument for matching contents of responseText that should be replaced
+ * - pattern - required, if `propsToMatch` is passed, optional otherwise, argument for matching contents of responseText that should be replaced.
+ * Possible values:
  *   - string
  *   - regular expression
  *   - '*' to match all text content
- * - replacement - optional, string to replace matched content with. Empty string to remove content.
+ * - replacement - optional, string to replace matched content with. Empty string to remove content. Defaults to empty string
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
  * which is useful for debugging but permitted for production filter lists.
