@@ -80,7 +80,6 @@ export function trustedReplaceXhrResponse(source, propsToMatch, pattern, replace
     const MATCH_ALL_CHARACTERS_REGEX = /[\s\S]/;
 
     let shouldReplace = false;
-    let response = '';
     let responseUrl;
     const openWrapper = (target, thisArg, args) => {
         // Get method and url from .open()
@@ -122,23 +121,16 @@ export function trustedReplaceXhrResponse(source, propsToMatch, pattern, replace
             return Reflect.apply(target, thisArg, args);
         }
 
-        if (thisArg.responseType === 'blob') {
-            response = new Blob();
-        }
-
-        if (thisArg.responseType === 'arraybuffer') {
-            response = new ArrayBuffer();
-        }
-
         const parsedPattern = pattern === getWildcardSymbol()
             ? MATCH_ALL_CHARACTERS_REGEX
             : pattern;
+        const modifiedResponse = thisArg.responseText.replace(parsedPattern, replacement);
         const modifiedResponseText = thisArg.responseText.replace(parsedPattern, replacement);
 
         // Mock response object
         Object.defineProperties(thisArg, {
             readyState: { value: 4, writable: false },
-            response: { value: response, writable: false },
+            response: { value: modifiedResponse, writable: false },
             responseText: { value: modifiedResponseText, writable: false },
             responseURL: { value: responseUrl, writable: false },
             responseXML: { value: '', writable: false },
