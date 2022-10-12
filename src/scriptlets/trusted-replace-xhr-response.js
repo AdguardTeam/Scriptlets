@@ -5,19 +5,13 @@ import {
     parseMatchProps,
     validateParsedData,
     getMatchPropsData,
-    getRandomIntInclusive,
-    getRandomStrByLength,
-    generateRandomResponse,
     // following helpers should be imported and injected
     // because they are used by helpers above
     toRegExp,
     isValidStrPattern,
-    escapeRegExp,
     isEmptyObject,
     getObjectEntries,
-    getNumberFromString,
-    nativeIsFinite,
-    nativeIsNaN,
+
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -177,15 +171,8 @@ trustedReplaceXhrResponse.injections = [
     parseMatchProps,
     validateParsedData,
     getMatchPropsData,
-    getRandomIntInclusive,
-    getRandomStrByLength,
-    generateRandomResponse,
     toRegExp,
     isValidStrPattern,
-    escapeRegExp,
     isEmptyObject,
     getObjectEntries,
-    getNumberFromString,
-    nativeIsFinite,
-    nativeIsNaN,
 ];
