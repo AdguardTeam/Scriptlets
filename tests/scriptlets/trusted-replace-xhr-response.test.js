@@ -80,75 +80,59 @@ if (isSupported) {
         xhr.send();
     });
 
-    // test('Not matched, response and responseText are intact', async (assert) => {
+    test('Not matched, response and responseText are intact', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const PATTERN = 'a1';
+        const REPLACEMENT = 'x';
+        const MATCH_DATA = [
+            `${FETCH_OBJECTS_PATH}/not_test01.json method:${METHOD}`,
+            PATTERN,
+            REPLACEMENT,
+        ];
 
-    // });
+        runScriptlet(name, MATCH_DATA);
 
-    // test('Matched, listeners after .send work', async (assert) => {
-    //     const METHOD = 'GET';
-    //     const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
-    //     const MATCH_DATA = [`test01.json method:${METHOD}`];
+        const done = assert.async();
 
-    //     runScriptlet(name, MATCH_DATA);
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            assert.ok(xhr.response.includes('PATTERN'), 'Response is intact');
+            assert.ok(xhr.responseText.includes(PATTERN), 'Response text is intact');
 
-    //     const done1 = assert.async();
-    //     const done2 = assert.async();
-    //     const done3 = assert.async();
-    //     assert.expect(0);
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
 
-    //     const xhr = new XMLHttpRequest();
-    //     xhr.open(METHOD, URL);
-    //     xhr.send();
-    //     xhr.addEventListener('load', () => {
-    //         done1();
-    //     });
-    //     xhr.onload = () => {
-    //         done2();
-    //     };
-    //     xhr.addEventListener('loadend', () => {
-    //         done3();
-    //     });
-    // });
+    test('Matched, listeners after .send work', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = [`test01.json method:${METHOD}`];
 
-    // test('Args, pass partly matched', async (assert) => {
-    //     const METHOD = 'GET';
-    //     const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
-    //     const MATCH_DATA = ['not-example.org method:GET'];
+        runScriptlet(name, MATCH_DATA);
 
-    //     runScriptlet(name, MATCH_DATA);
+        const done1 = assert.async();
+        const done2 = assert.async();
+        const done3 = assert.async();
+        assert.expect(0);
 
-    //     const done = assert.async();
-
-    //     const xhr = new XMLHttpRequest();
-    //     xhr.open(METHOD, URL);
-    //     xhr.onload = () => {
-    //         assert.strictEqual(xhr.readyState, 4, 'Response done');
-    //         assert.ok(xhr.response, 'Response data exists');
-    //         assert.strictEqual(window.hit, undefined, 'hit should not fire');
-    //         done();
-    //     };
-    //     xhr.send();
-    // });
-
-    // test('Args, pass unmatched - invalid regexp', async (assert) => {
-    //     const METHOD = 'GET';
-    //     const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
-    //     const MATCH_DATA = ['/\\/'];
-
-    //     runScriptlet(name, MATCH_DATA);
-
-    //     const done = assert.async();
-
-    //     const xhr = new XMLHttpRequest();
-    //     xhr.open(METHOD, URL);
-    //     xhr.onload = () => {
-    //         assert.strictEqual(xhr.readyState, 4, 'Response done');
-    //         assert.ok(xhr.response, 'Response data exists');
-    //         assert.strictEqual(window.hit, undefined, 'hit should not fire');
-    //         done();
-    //     };
-    //     xhr.send();
-    // });
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.send();
+        xhr.addEventListener('load', () => {
+            done1();
+        });
+        xhr.onload = () => {
+            done2();
+        };
+        xhr.addEventListener('loadend', () => {
+            done3();
+        });
+    });
 } else {
     test('unsupported', (assert) => {
         assert.ok(true, 'Browser does not support it');
