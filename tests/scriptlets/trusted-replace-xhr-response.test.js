@@ -56,7 +56,31 @@ if (isSupported) {
         xhr.send();
     });
 
-    test('Matched, response and responseText been modified by string pattern', async (assert) => {
+    test('Matched, string pattern', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const PATTERN = /[-0-9]+/;
+        const REPLACEMENT = 'a';
+        const MATCH_DATA = [`${URL} method:${METHOD}`, PATTERN, REPLACEMENT];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            assert.ok(!PATTERN.test(xhr.response), 'Response has been modified');
+            assert.ok(!PATTERN.test(xhr.responseText), 'Response text has been modified');
+
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
+    test('Matched, regex pattern', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
         const PATTERN = 'a1';
@@ -111,7 +135,9 @@ if (isSupported) {
     test('Matched, listeners after .send work', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
-        const MATCH_DATA = [`test01.json method:${METHOD}`];
+        const PATTERN = 'a1';
+        const REPLACEMENT = 'x';
+        const MATCH_DATA = [`${URL} method:${METHOD}`, PATTERN, REPLACEMENT];
 
         runScriptlet(name, MATCH_DATA);
 
