@@ -22,7 +22,7 @@ import {
 
 /* eslint-disable max-len */
 /**
- * @scriptlet trusted-replace-xhr-content
+ * @scriptlet trusted-replace-xhr-response
  *
  * @description
  * Replaces response content of `xhr` requests if **all** given parameters match.
@@ -30,7 +30,7 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('trusted-replace-xhr-content'[, propsToMatch[, pattern, replacement]])
+ * example.org#%#//scriptlet('trusted-replace-xhr-response'[, propsToMatch[, pattern, replacement]])
  * ```
  *
  * - propsToMatch - optional, string of space-separated properties to match; possible props:
@@ -50,27 +50,27 @@ import {
  * **Examples**
  * 1. Log all XMLHttpRequests
  *     ```
- *     example.org#%#//scriptlet('trusted-replace-xhr-content')
+ *     example.org#%#//scriptlet('trusted-replace-xhr-response')
  *     ```
  *
  * 2. Replace text content of XMLHttpRequests with specific url
  *     ```
- *     example.org#%#//scriptlet('prevent-xhr', 'example.org', 'adb_detect:true', 'adb_detect:false')
- *     example.org#%#//scriptlet('prevent-xhr', 'example.org', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST')
+ *     example.org#%#//scriptlet('trusted-replace-xhr-response', 'example.org', 'adb_detect:true', 'adb_detect:false')
+ *     example.org#%#//scriptlet('trusted-replace-xhr-response', 'example.org', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST')
  *     ```
  *
  * 3. Remove all text content of XMLHttpRequests with specific request method
  *     ```
- *     example.org#%#//scriptlet('prevent-xhr', 'method:GET', '*', '')
+ *     example.org#%#//scriptlet('trusted-replace-xhr-response', 'method:GET', '*', '')
  *     ```
  *
  * 4. Replace text content of XMLHttpRequests matching by URL regex and request methods
  *     ```
- *     example.org#%#//scriptlet('prevent-xhr', '/\.m3u8/ method:/GET|HEAD/', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST')
+ *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/\.m3u8/ method:/GET|HEAD/', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST')
  *     ```
  */
 /* eslint-enable max-len */
-export function trustedReplaceXhrContent(source, propsToMatch, pattern, replacement = '') {
+export function trustedReplaceXhrResponse(source, propsToMatch, pattern, replacement = '') {
     // do nothing if browser does not support Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
     if (typeof Proxy === 'undefined') {
@@ -173,11 +173,11 @@ export function trustedReplaceXhrContent(source, propsToMatch, pattern, replacem
     XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
 }
 
-trustedReplaceXhrContent.names = [
-    'trusted-replace-xhr-content',
+trustedReplaceXhrResponse.names = [
+    'trusted-replace-xhr-response',
 ];
 
-trustedReplaceXhrContent.injections = [
+trustedReplaceXhrResponse.injections = [
     hit,
     objectToString,
     getWildcardSymbol,
