@@ -39,7 +39,7 @@ import {
  * - replacement - optional, string to replace matched content with. Empty string to remove content. Defaults to empty string
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
- * which is useful for debugging but permitted for production filter lists.
+ * which is useful for debugging but not allowed permitted for production filter lists.
  *
  * **Examples**
  * 1. Log all XMLHttpRequests
