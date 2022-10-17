@@ -49,3 +49,33 @@ export const prepareCookie = (name, value) => {
 
     return cookieData;
 };
+
+/**
+ * Parses cookie string into object
+ * @param {string} cookieString string that conforms to document.cookie format
+ * @returns {Object} key:value object that corresponds with incoming cookies keys and values
+ */
+export const parseCookieString = (cookieString) => {
+    const COOKIE_DELIMITER = '=';
+    const COOKIE_PAIRS_DELIMITER = ';';
+
+    // Get raw cookies
+    const cookieChunks = cookieString.split(COOKIE_PAIRS_DELIMITER);
+    const cookieData = {};
+
+    cookieChunks.forEach((singleCookie) => {
+        let cookieKey;
+        let cookieValue;
+        const delimiterIndex = singleCookie.indexOf(COOKIE_DELIMITER);
+        if (delimiterIndex === -1) {
+            cookieKey = singleCookie.trim();
+        } else {
+            cookieKey = singleCookie.slice(0, delimiterIndex).trim();
+            cookieValue = singleCookie.slice(delimiterIndex + 1);
+        }
+        // Save cookie key=value data with null instead of empty ('') values
+        cookieData[cookieKey] = cookieValue || null;
+    });
+
+    return cookieData;
+};
