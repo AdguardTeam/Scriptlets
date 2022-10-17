@@ -42,8 +42,10 @@ if (isSupported) {
             const EXPECTED_LOG_STR = `xhr( method:"${METHOD}" url:"${URL}" )`;
             assert.ok(startsWith(input, EXPECTED_LOG_STR), 'console.hit input');
         };
+        const PATTERN = '';
+        const REPLACEMENT = '';
 
-        runScriptlet(name);
+        runScriptlet(name, [PATTERN, REPLACEMENT]);
 
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, URL);
@@ -61,7 +63,7 @@ if (isSupported) {
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
         const PATTERN = /[-0-9]+/;
         const REPLACEMENT = 'a';
-        const MATCH_DATA = [`${URL} method:${METHOD}`, PATTERN, REPLACEMENT];
+        const MATCH_DATA = [PATTERN, REPLACEMENT, `${URL} method:${METHOD}`];
 
         runScriptlet(name, MATCH_DATA);
 
@@ -83,9 +85,9 @@ if (isSupported) {
     test('Matched, regex pattern', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
-        const PATTERN = 'a1';
+        const PATTERN = '/a1/';
         const REPLACEMENT = 'x';
-        const MATCH_DATA = [`${URL} method:${METHOD}`, PATTERN, REPLACEMENT];
+        const MATCH_DATA = [PATTERN, REPLACEMENT, `${URL} method:${METHOD}`];
 
         runScriptlet(name, MATCH_DATA);
 
@@ -95,8 +97,8 @@ if (isSupported) {
         xhr.open(METHOD, URL);
         xhr.onload = () => {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
-            assert.ok(xhr.response.includes('REPLACEMENT') && !xhr.response.includes(PATTERN), 'Response has been modified');
-            assert.ok(xhr.responseText.includes('REPLACEMENT') && !xhr.responseText.includes(PATTERN), 'Response text has been modified');
+            assert.ok(xhr.response.includes(REPLACEMENT) && !xhr.response.includes(PATTERN), 'Response has been modified');
+            assert.ok(xhr.responseText.includes(REPLACEMENT) && !xhr.responseText.includes(PATTERN), 'Response text has been modified');
 
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
@@ -110,9 +112,9 @@ if (isSupported) {
         const PATTERN = 'a1';
         const REPLACEMENT = 'x';
         const MATCH_DATA = [
-            `${FETCH_OBJECTS_PATH}/not_test01.json method:${METHOD}`,
             PATTERN,
             REPLACEMENT,
+            `${FETCH_OBJECTS_PATH}/not_test01.json method:${METHOD}`,
         ];
 
         runScriptlet(name, MATCH_DATA);
@@ -123,8 +125,8 @@ if (isSupported) {
         xhr.open(METHOD, URL);
         xhr.onload = () => {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
-            assert.ok(xhr.response.includes('PATTERN'), 'Response is intact');
-            assert.ok(xhr.responseText.includes(PATTERN), 'Response text is intact');
+            assert.notOk(xhr.response.includes(REPLACEMENT), 'Response is intact');
+            assert.notOk(xhr.responseText.includes(REPLACEMENT), 'Response text is intact');
 
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
@@ -137,7 +139,7 @@ if (isSupported) {
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
         const PATTERN = 'a1';
         const REPLACEMENT = 'x';
-        const MATCH_DATA = [`${URL} method:${METHOD}`, PATTERN, REPLACEMENT];
+        const MATCH_DATA = [PATTERN, REPLACEMENT, `${URL} method:${METHOD}`];
 
         runScriptlet(name, MATCH_DATA);
 

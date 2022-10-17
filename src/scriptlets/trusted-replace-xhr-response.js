@@ -9,6 +9,7 @@ import {
     // because they are used by helpers above
     toRegExp,
     isValidStrPattern,
+    escapeRegExp,
     isEmptyObject,
     getObjectEntries,
 } from '../helpers/index';
@@ -26,17 +27,17 @@ import {
  * example.org#%#//scriptlet('trusted-replace-xhr-response'[, propsToMatch, pattern[, replacement]])
  * ```
  *
- * - propsToMatch - optional, string of space-separated properties to match; possible props:
- *   - string or regular expression for matching the URL passed to `.open()` call;
- *   - colon-separated pairs name:value where
- *     - name is XMLHttpRequest object property name
- *     - value is string or regular expression for matching the value of the option passed to `.open()` call
- * - pattern - required, if `propsToMatch` is passed, optional otherwise, argument for matching contents of responseText that should be replaced.
+* - pattern - required, argument for matching contents of responseText that should be replaced.
  * Possible values:
  *   - string
  *   - regular expression
  *   - '*' to match all text content
- * - replacement - optional, string to replace matched content with. Empty string to remove content. Defaults to empty string
+ * - replacement - required, string to replace matched content with. Empty string to remove content.
+ * - propsToMatch — optional, string of space-separated properties to match for extra condition; possible props:
+ *   - string or regular expression for matching the URL passed to `.open()` call;
+ *   - colon-separated pairs name:value where
+ *     - name is XMLHttpRequest object property name
+ *     - value is string or regular expression for matching the value of the option passed to `.open()` call
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
  * which is useful for debugging but not allowed permitted for production filter lists.
@@ -49,8 +50,8 @@ import {
  *
  * 2. Replace text content of XMLHttpRequests with specific url
  *     ```
- *     example.org#%#//scriptlet('trusted-replace-xhr-response', 'example.org', 'adb_detect:true', 'adb_detect:false')
- *     example.org#%#//scriptlet('trusted-replace-xhr-response', 'example.org', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST')
+ *     example.org#%#//scriptlet('trusted-replace-xhr-response', 'adb_detect:true', 'adb_detect:false', 'example.org')
+ *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', 'example.org')
  *     ```
  *
  * 3. Remove all text content of XMLHttpRequests with specific request method
@@ -60,14 +61,22 @@ import {
  *
  * 4. Replace text content of XMLHttpRequests matching by URL regex and request methods
  *     ```
- *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/\.m3u8/ method:/GET|HEAD/', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST')
+ *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', '/\.m3u8/ method:/GET|HEAD/')
+ *     ```
+ * 5. Remove all text content of XMLHttpRequest
+ *     ```
+ *     example.org#%#//scriptlet('trusted-replace-xhr-response', '*', '', 'example.com')
  *     ```
  */
 /* eslint-enable max-len */
-export function trustedReplaceXhrResponse(source, propsToMatch, pattern, replacement = '') {
+export function trustedReplaceXhrResponse(source, pattern, replacement, propsToMatch) {
     // do nothing if browser does not support Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
     if (typeof Proxy === 'undefined') {
+        return;
+    }
+
+    if (typeof pattern === 'undefined' || typeof replacement === 'undefined') {
         return;
     }
 
@@ -82,7 +91,7 @@ export function trustedReplaceXhrResponse(source, propsToMatch, pattern, replace
             url: args[1],
         };
         responseUrl = xhrData.url;
-        if (typeof propsToMatch === 'undefined') {
+        if (pattern === '' && replacement === '') {
             // Log if no propsToMatch given
             const logMessage = `log: xhr( ${objectToString(xhrData)} )`;
             hit(source, logMessage);
@@ -172,6 +181,7 @@ trustedReplaceXhrResponse.injections = [
     getMatchPropsData,
     toRegExp,
     isValidStrPattern,
+    escapeRegExp,
     isEmptyObject,
     getObjectEntries,
 ];
