@@ -24,7 +24,7 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('trusted-replace-xhr-response'[, propsToMatch, pattern[, replacement]])
+ * example.org#%#//scriptlet('trusted-replace-xhr-response', pattern, replacement[, propsToMatch])
  * ```
  *
 * - pattern - required, argument for matching contents of responseText that should be replaced.
