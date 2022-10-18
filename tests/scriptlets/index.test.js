@@ -44,4 +44,5 @@ import './close-window.test';
 import './prevent-refresh.test';
 import './prevent-element-src-loading.test';
 import './no-topics.test';
+import './xml-prune.test';
 import './trusted-click-element.test';
