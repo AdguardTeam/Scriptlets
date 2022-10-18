@@ -96,7 +96,7 @@ export const startsWith = (str, prefix) => {
 export const endsWith = (str, ending) => {
     // if str === '', (str && false) will return ''
     // that's why it has to be !!str
-    return !!str && str.indexOf(ending) === str.length - ending.length;
+    return !!str && str.lastIndexOf(ending) === str.length - ending.length;
 };
 
 export const substringAfter = (str, separator) => {

@@ -45,3 +45,5 @@ import './prevent-refresh.test';
 import './prevent-element-src-loading.test';
 import './no-topics.test';
 import './trusted-replace-xhr-response.test';
+import './xml-prune.test';
+import './trusted-click-element.test';

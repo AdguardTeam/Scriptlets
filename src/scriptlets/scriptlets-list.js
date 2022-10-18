@@ -1,6 +1,7 @@
 /**
  * This file must export all scriptlets which should be accessible
  */
+export * from './trusted-click-element';
 export * from './abort-on-property-read';
 export * from './abort-on-property-write';
 export * from './prevent-setTimeout';
@@ -48,3 +49,4 @@ export * from './prevent-refresh';
 export * from './prevent-element-src-loading';
 export * from './no-topics';
 export * from './trusted-replace-xhr-response';
+export * from './xml-prune';
