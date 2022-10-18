@@ -127,14 +127,14 @@ export function trustedReplaceXhrResponse(source, pattern, replacement, propsToM
         const parsedPattern = pattern === getWildcardSymbol()
             ? MATCH_ALL_CHARACTERS_REGEX
             : pattern;
-        const modifiedResponse = thisArg.responseText.replace(parsedPattern, replacement);
-        const modifiedResponseText = thisArg.responseText.replace(parsedPattern, replacement);
+
+        const modifiedContent = thisArg.responseText.replace(parsedPattern, replacement);
 
         // Mock response object
         Object.defineProperties(thisArg, {
             readyState: { value: 4, writable: false },
-            response: { value: modifiedResponse, writable: false },
-            responseText: { value: modifiedResponseText, writable: false },
+            response: { value: modifiedContent, writable: false },
+            responseText: { value: modifiedContent, writable: false },
             responseURL: { value: responseUrl, writable: false },
             responseXML: { value: '', writable: false },
             status: { value: 200, writable: false },
@@ -170,6 +170,7 @@ export function trustedReplaceXhrResponse(source, pattern, replacement, propsToM
 
 trustedReplaceXhrResponse.names = [
     'trusted-replace-xhr-response',
+    // trusted scriptlets support no aliases
 ];
 
 trustedReplaceXhrResponse.injections = [
