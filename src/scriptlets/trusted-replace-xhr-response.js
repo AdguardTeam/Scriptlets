@@ -117,10 +117,7 @@ export function trustedReplaceXhrResponse(source, pattern, replacement, propsToM
     };
 
     const sendWrapper = (target, thisArg, args) => {
-        if (!shouldReplace
-            || !pattern
-            || (!replacement && replacement !== '')
-        ) {
+        if (!shouldReplace) {
             return Reflect.apply(target, thisArg, args);
         }
 
