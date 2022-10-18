@@ -56,7 +56,7 @@ import {
  *
  * 3. Remove all text content of XMLHttpRequests with specific request method
  *     ```
- *     example.org#%#//scriptlet('trusted-replace-xhr-response', 'method:GET', '*', '')
+ *     example.org#%#//scriptlet('trusted-replace-xhr-response', '*', '', 'method:GET')
  *     ```
  *
  * 4. Replace text content of XMLHttpRequests matching by URL regex and request methods
