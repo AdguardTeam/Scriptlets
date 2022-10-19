@@ -59,7 +59,7 @@ if (!isSupported) {
         const response = await fetch(M3U8_PATH);
         const responseM3U8 = await response.text();
 
-        assert.ok(responseM3U8.includes('tvessaiprod.nbcuni.com/video/'));
+        assert.ok(responseM3U8.indexOf('tvessaiprod.nbcuni.com/video/') > -1);
         assert.strictEqual(window.hit, undefined, 'should not hit');
         done();
     });
@@ -73,7 +73,7 @@ if (!isSupported) {
         const response = await fetch(M3U8_PATH);
         const responseM3U8 = await response.text();
 
-        assert.ok(responseM3U8.includes('#EXT-X-VMAP-AD-BREAK'));
+        assert.ok(responseM3U8.indexOf('#EXT-X-VMAP-AD-BREAK') > -1);
         assert.strictEqual(window.hit, undefined, 'should not hit');
         done();
     });
@@ -90,8 +90,8 @@ if (!isSupported) {
 
         const response = await fetch(M3U8_PATH);
         const responseM3U8 = await response.text();
-        assert.ok(responseM3U8.includes('tvessaiprod.nbcuni.com/video/'));
-        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        assert.ok(responseM3U8.indexOf('tvessaiprod.nbcuni.com/video/') > -1);
+        assert.strictEqual(window.hit, undefined, 'should not hit');
         done();
     });
 
@@ -108,8 +108,8 @@ if (!isSupported) {
         const response = await fetch(M3U8_PATH);
         const responseM3U8 = await response.text();
 
-        assert.ok(responseM3U8.includes('#EXT-X-VMAP-AD-BREAK'));
-        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        assert.ok(responseM3U8.indexOf('#EXT-X-VMAP-AD-BREAK') > -1);
+        assert.strictEqual(window.hit, undefined, 'should not hit');
         done();
     });
 
@@ -123,8 +123,7 @@ if (!isSupported) {
 
         const response = await fetch(M3U8_PATH);
         const responseMPD = await response.text();
-
-        assert.ok(!responseMPD.includes('tvessaiprod.nbcuni.com/video/'));
+        assert.notOk(responseMPD.indexOf('tvessaiprod.nbcuni.com/video/') > -1);
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -140,7 +139,7 @@ if (!isSupported) {
         const response = await fetch(M3U8_PATH);
         const responseMPD = await response.text();
 
-        assert.ok(!responseMPD.includes('#EXT-X-VMAP-AD-BREAK'));
+        assert.notOk(responseMPD.indexOf('#EXT-X-VMAP-AD-BREAK') > -1);
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -157,7 +156,7 @@ if (!isSupported) {
 
         const response = await fetch(M3U8_PATH);
         const responseM3U8 = await response.text();
-        assert.ok(!responseM3U8.includes('tvessaiprod.nbcuni.com/video/'));
+        assert.notOk(responseM3U8.indexOf('tvessaiprod.nbcuni.com/video/') > -1);
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -174,7 +173,7 @@ if (!isSupported) {
 
         const response = await fetch(M3U8_PATH);
         const responseM3U8 = await response.text();
-        assert.ok(!responseM3U8.includes('#EXT-X-VMAP-AD-BREAK'));
+        assert.notOk(responseM3U8.indexOf('#EXT-X-VMAP-AD-BREAK') > -1);
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -192,7 +191,7 @@ if (!isSupported) {
 
         const response = await fetch(M3U8_PATH);
         const responseM3U8 = await response.text();
-        assert.ok(!responseM3U8.includes('tvessaiprod.nbcuni.com/video/'));
+        assert.notOk(responseM3U8.indexOf('tvessaiprod.nbcuni.com/video/') > -1);
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -210,7 +209,7 @@ if (!isSupported) {
 
         const response = await fetch(M3U8_PATH);
         const responseM3U8 = await response.text();
-        assert.ok(!responseM3U8.includes('#EXT-X-VMAP-AD-BREAK'));
+        assert.notOk(responseM3U8.indexOf('#EXT-X-VMAP-AD-BREAK') > -1);
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -225,7 +224,7 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.ok(xhr.responseText.includes('tvessaiprod.nbcuni.com/video/'));
+            assert.ok(xhr.responseText.indexOf('tvessaiprod.nbcuni.com/video/') > -1);
             assert.strictEqual(window.hit, undefined, 'should not hit');
             done();
         };
@@ -242,7 +241,7 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.ok(xhr.responseText.includes('#EXT-X-VMAP-AD-BREAK'));
+            assert.ok(xhr.responseText.indexOf('#EXT-X-VMAP-AD-BREAK') > -1);
             assert.strictEqual(window.hit, undefined, 'should not hit');
             done();
         };
@@ -263,8 +262,8 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.ok(xhr.responseText.includes('tvessaiprod.nbcuni.com/video/'));
-            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            assert.ok(xhr.responseText.indexOf('tvessaiprod.nbcuni.com/video/') > -1);
+            assert.strictEqual(window.hit, undefined, 'should not hit');
             done();
         };
         xhr.send();
@@ -284,8 +283,8 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.ok(xhr.responseText.includes('#EXT-X-VMAP-AD-BREAK'));
-            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            assert.ok(xhr.responseText.indexOf('#EXT-X-VMAP-AD-BREAK') > -1);
+            assert.strictEqual(window.hit, undefined, 'should not hit');
             done();
         };
         xhr.send();
@@ -303,7 +302,7 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.ok(!xhr.responseText.includes('tvessaiprod.nbcuni.com/video/'));
+            assert.notOk(xhr.responseText.indexOf('tvessaiprod.nbcuni.com/video/') > -1);
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -322,7 +321,7 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.ok(!xhr.responseText.includes('#EXT-X-VMAP-AD-BREAK'));
+            assert.notOk(xhr.responseText.indexOf('#EXT-X-VMAP-AD-BREAK') > -1);
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -343,7 +342,7 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.ok(!xhr.responseText.includes('tvessaiprod.nbcuni.com/video/'));
+            assert.notOk(xhr.responseText.indexOf('tvessaiprod.nbcuni.com/video/') > -1);
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -364,7 +363,7 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.ok(!xhr.responseText.includes('#EXT-X-VMAP-AD-BREAK'));
+            assert.notOk(xhr.responseText.indexOf('#EXT-X-VMAP-AD-BREAK') > -1);
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -386,7 +385,7 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.ok(!xhr.responseText.includes('tvessaiprod.nbcuni.com/video/'));
+            assert.notOk(xhr.responseText.indexOf('tvessaiprod.nbcuni.com/video/') > -1);
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -408,7 +407,7 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.ok(!xhr.responseText.includes('#EXT-X-VMAP-AD-BREAK'));
+            assert.notOk(xhr.responseText.indexOf('#EXT-X-VMAP-AD-BREAK') > -1);
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
