@@ -5,6 +5,8 @@ import {
     parseMatchProps,
     validateParsedData,
     getMatchPropsData,
+    matchRequestProps,
+    getXhrData,
     // following helpers should be imported and injected
     // because they are used by helpers above
     toRegExp,
@@ -69,7 +71,7 @@ import {
  *     ```
  */
 /* eslint-enable max-len */
-export function trustedReplaceXhrResponse(source, pattern, replacement, propsToMatch) {
+export function trustedReplaceXhrResponse(source, pattern = '', replacement = '', propsToMatch) {
     // do nothing if browser does not support Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
     if (typeof Proxy === 'undefined') {
@@ -80,37 +82,38 @@ export function trustedReplaceXhrResponse(source, pattern, replacement, propsToM
         return;
     }
 
+    const origOpen = window.XMLHttpRequest.prototype.open;
+    const origSend = window.XMLHttpRequest.prototype.send;
+
     const MATCH_ALL_CHARACTERS_REGEX = /[\s\S]/;
 
     let shouldReplace = false;
-    let responseUrl;
+    let xhrData;
+    const requestHeaders = [];
+
     const openWrapper = (target, thisArg, args) => {
-        // Get method and url from .open()
-        const xhrData = {
-            method: args[0],
-            url: args[1],
-        };
-        responseUrl = xhrData.url;
+        xhrData = getXhrData(...args);
+
         if (pattern === '' && replacement === '') {
             // Log if no propsToMatch given
             const logMessage = `log: xhr( ${objectToString(xhrData)} )`;
             hit(source, logMessage);
         } else {
-            const parsedData = parseMatchProps(propsToMatch);
-            if (!validateParsedData(parsedData)) {
-                // eslint-disable-next-line no-console
-                console.log(`Invalid parameter: ${propsToMatch}`);
-                shouldReplace = false;
-            } else {
-                const matchData = getMatchPropsData(parsedData);
-                // prevent only if all props match
-                shouldReplace = Object.keys(matchData)
-                    .every((matchKey) => {
-                        const matchValue = matchData[matchKey];
-                        return Object.prototype.hasOwnProperty.call(xhrData, matchKey)
-                            && matchValue.test(xhrData[matchKey]);
-                    });
-            }
+            shouldReplace = matchRequestProps(propsToMatch, xhrData);
+        }
+
+        // Trap setRequestHeader  of target xhr object to mimic request headers later
+        if (shouldReplace) {
+            const setRequestHeaderWrapper = (target, thisArg, args) => {
+                requestHeaders.push(args);
+                return Reflect.apply(target, thisArg, args);
+            };
+
+            const setRequestHeaderHandler = {
+                apply: setRequestHeaderWrapper,
+            };
+
+            thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
         }
 
         return Reflect.apply(target, thisArg, args);
@@ -121,35 +124,68 @@ export function trustedReplaceXhrResponse(source, pattern, replacement, propsToM
             return Reflect.apply(target, thisArg, args);
         }
 
-        const parsedPattern = pattern === getWildcardSymbol()
-            ? MATCH_ALL_CHARACTERS_REGEX
-            : pattern;
+        const secretXhr = new XMLHttpRequest();
+        secretXhr.addEventListener('readystatechange', () => {
+            if (secretXhr.readyState !== 4) {
+                return;
+            }
 
-        const modifiedContent = thisArg.responseText.replace(parsedPattern, replacement);
+            const {
+                readyState,
+                response,
+                responseText,
+                responseURL,
+                responseXML,
+                status,
+                statusText,
+            } = secretXhr;
 
-        // Mock response object
-        Object.defineProperties(thisArg, {
-            readyState: { value: 4, writable: false },
-            response: { value: modifiedContent, writable: false },
-            responseText: { value: modifiedContent, writable: false },
-            responseURL: { value: responseUrl, writable: false },
-            responseXML: { value: '', writable: false },
-            status: { value: 200, writable: false },
-            statusText: { value: 'OK', writable: false },
+            const parsedPattern = pattern === getWildcardSymbol()
+                ? MATCH_ALL_CHARACTERS_REGEX
+                : pattern;
+            const content = response || responseText;
+
+            const modifiedContent = content.replace(parsedPattern, replacement);
+
+            // Manually put required values into target XHR object
+            // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
+            Object.defineProperties(thisArg, {
+                readyState: { value: readyState },
+                response: { value: modifiedContent },
+                responseText: { value: modifiedContent },
+                responseURL: { value: responseURL },
+                responseXML: { value: responseXML },
+                status: { value: status },
+                statusText: { value: statusText },
+            });
+
+            // Mock events
+            setTimeout(() => {
+                const stateEvent = new Event('readystatechange');
+                thisArg.dispatchEvent(stateEvent);
+
+                const loadEvent = new Event('load');
+                thisArg.dispatchEvent(loadEvent);
+
+                const loadEndEvent = new Event('loadend');
+                thisArg.dispatchEvent(loadEndEvent);
+            }, 1);
+
+            hit(source);
         });
-        // Mock events
-        setTimeout(() => {
-            const stateEvent = new Event('readystatechange');
-            thisArg.dispatchEvent(stateEvent);
 
-            const loadEvent = new Event('load');
-            thisArg.dispatchEvent(loadEvent);
+        origOpen.apply(secretXhr, [xhrData.method, xhrData.url]);
 
-            const loadEndEvent = new Event('loadend');
-            thisArg.dispatchEvent(loadEndEvent);
-        }, 1);
+        // Mimic request headers before sending
+        // setRequestHeader can only be called on open xhrs
+        requestHeaders.forEach((header) => {
+            const name = header[0];
+            const value = header[1];
 
-        hit(source);
+            secretXhr.setRequestHeader(name, value);
+        });
+
+        origSend.call(secretXhr, args);
         return undefined;
     };
 
@@ -175,6 +211,8 @@ trustedReplaceXhrResponse.injections = [
     objectToString,
     getWildcardSymbol,
     parseMatchProps,
+    matchRequestProps,
+    getXhrData,
     validateParsedData,
     getMatchPropsData,
     toRegExp,
