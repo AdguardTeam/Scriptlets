@@ -29,8 +29,8 @@ import {
  * example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[, propsToMatch]])
  * ```
  *
-* - pattern - optional, argument for matching contents of responseText that should be replaced. If set, replacement is required.
- * Possible values:
+ * - pattern - optional, argument for matching contents of responseText that should be replaced. If set, replacement is required;
+ * possible values:
  *   - string
  *   - regular expression
  *   - '*' to match all text content
@@ -38,7 +38,7 @@ import {
  * - propsToMatch — optional, string of space-separated properties to match for extra condition; possible props:
  *   - string or regular expression for matching the URL passed to `.open()` call;
  *   - colon-separated pairs name:value where
- *     - name is XMLHttpRequest object property name
+ *     - name - name is string or regular expression for matching XMLHttpRequest property name
  *     - value is string or regular expression for matching the value of the option passed to `.open()` call
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
@@ -65,13 +65,13 @@ import {
  *     ```
  *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', '/\.m3u8/ method:/GET|HEAD/')
  *     ```
- * 5. Remove all text content of XMLHttpRequest
+ * 5. Remove all text content of  all XMLHttpRequests for example.com
  *     ```
  *     example.org#%#//scriptlet('trusted-replace-xhr-response', '*', '', 'example.com')
  *     ```
  */
 /* eslint-enable max-len */
-export function trustedReplaceXhrResponse(source, pattern = '', replacement = '', propsToMatch) {
+export function trustedReplaceXhrResponse(source, pattern = '', replacement = '', propsToMatch = '') {
     // do nothing if browser does not support Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
     if (typeof Proxy === 'undefined') {
@@ -82,6 +82,8 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
         return;
     }
 
+    // eslint-disable-next-line no-console
+    const log = console.log.bind(console);
     const origOpen = window.XMLHttpRequest.prototype.open;
     const origSend = window.XMLHttpRequest.prototype.send;
 
@@ -97,7 +99,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
         if (pattern === '' && replacement === '') {
             // Log if no propsToMatch given
             const logMessage = `log: xhr( ${objectToString(xhrData)} )`;
-            hit(source, logMessage);
+            log(source, logMessage);
         } else {
             shouldReplace = matchRequestProps(propsToMatch, xhrData);
         }
@@ -177,7 +179,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
         origOpen.apply(secretXhr, [xhrData.method, xhrData.url]);
 
         // Mimic request headers before sending
-        // setRequestHeader can only be called on open xhrs
+        // setRequestHeader can only be called on open request objects
         requestHeaders.forEach((header) => {
             const name = header[0];
             const value = header[1];
