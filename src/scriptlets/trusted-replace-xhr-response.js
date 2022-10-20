@@ -91,7 +91,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
 
     let shouldReplace = false;
     let xhrData;
-    const requestHeaders = [];
+    let requestHeaders = [];
 
     const openWrapper = (target, thisArg, args) => {
         xhrData = getXhrData(...args);
@@ -186,6 +186,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
 
             secretXhr.setRequestHeader(name, value);
         });
+        requestHeaders = [];
 
         origSend.call(secretXhr, args);
         return undefined;
