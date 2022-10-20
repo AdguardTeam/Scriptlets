@@ -10,9 +10,10 @@ import {
  * @redirect pardot-1.0
  *
  * @description
- * Mocks the pd.js file of Salesforce
+ * Mocks the pd.js file of Salesforce.
  * https://pi.pardot.com/pd.js
  * https://developer.salesforce.com/docs/marketing/pardot/overview
+ *
  * **Example**
  * ```
  * ||pi.pardot.com/pd.js$script,redirect=pardot

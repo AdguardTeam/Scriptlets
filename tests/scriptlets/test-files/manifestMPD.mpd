@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MPD xmlns="urn:mpeg:dash:schema:mpd:2011" xmlns:_XMLSchema-instance="http://www.w3.org/2001/XMLSchema-instance" _XMLSchema-instance:schemaLocation="urn:mpeg:dash:schema:mpd:2011 DASH-MPD.xsd" profiles="urn:mpeg:dash:profile:isoff-live:2011" type="static" mediaPresentationDuration="PT49M2.272666664S" minBufferTime="PT2S">
+	<BaseURL>https://vod-gcs-cedexis.cbsaavideo.com/intl_vms/2017/02/17/879659075884/609941_cenc_precon_dash/</BaseURL>
+	<Period id="pre-roll-1-ad-1" duration="PT20.02S">
+		<BaseURL>https://dai.google.com/segments/redirect/c/</BaseURL>
+	</Period>
+	<Period id="0" duration="PT21M23.282S">
+		<AdaptationSet id="0" lang="en" contentType="text" segmentAlignment="true">
+			<Role schemeIdUri="urn:mpeg:dash:role:2011" value="subtitle"/>
+		</AdaptationSet>
+	</Period>
+	<Period id="1" duration="PT12M48.768S">
+		<AdaptationSet id="0" lang="en" contentType="text" segmentAlignment="true">
+			<Role schemeIdUri="urn:mpeg:dash:role:2011" value="subtitle"/>
+		</AdaptationSet>
+	</Period>
+	<Period id="2" duration="PT6M26.385999999S">
+		<AdaptationSet id="0" lang="en" contentType="text" segmentAlignment="true">
+			<Role schemeIdUri="urn:mpeg:dash:role:2011" value="subtitle"/>
+		</AdaptationSet>
+	</Period>
+	<Period id="3" duration="PT7M12.431999999S">
+		<AdaptationSet id="0" lang="en" contentType="text" segmentAlignment="true">
+			<Role schemeIdUri="urn:mpeg:dash:role:2011" value="subtitle"/>
+		</AdaptationSet>
+	</Period>
+	<Period id="4" duration="PT51.384666666S">
+		<AdaptationSet id="0" lang="en" contentType="text" segmentAlignment="true">
+			<Role schemeIdUri="urn:mpeg:dash:role:2011" value="subtitle"/>
+		</AdaptationSet>
+	</Period>
+</MPD>
