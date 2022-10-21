@@ -84,8 +84,8 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
 
     // eslint-disable-next-line no-console
     const log = console.log.bind(console);
-    const origOpen = window.XMLHttpRequest.prototype.open;
-    const origSend = window.XMLHttpRequest.prototype.send;
+    const nativeOpen = window.XMLHttpRequest.prototype.open;
+    const nativeSend = window.XMLHttpRequest.prototype.send;
 
     const MATCH_ALL_CHARACTERS_REGEX = /[\s\S]/;
 
@@ -176,7 +176,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
             hit(source);
         });
 
-        origOpen.apply(secretXhr, [xhrData.method, xhrData.url]);
+        nativeOpen.apply(secretXhr, [xhrData.method, xhrData.url]);
 
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
@@ -188,7 +188,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
         });
         requestHeaders = [];
 
-        origSend.call(secretXhr, args);
+        nativeSend.call(secretXhr, args);
         return undefined;
     };
 
