@@ -121,7 +121,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
         return Reflect.apply(target, thisArg, args);
     };
 
-    const sendWrapper = (target, thisArg, args) => {
+    const sendWrapper = async (target, thisArg, args) => {
         if (!shouldReplace) {
             return Reflect.apply(target, thisArg, args);
         }
@@ -142,10 +142,15 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
                 statusText,
             } = secretXhr;
 
+            // Extract content from response
+            const content = responseText || response;
+            if (typeof content !== 'string') {
+                return;
+            }
+
             const parsedPattern = pattern === getWildcardSymbol()
                 ? MATCH_ALL_CHARACTERS_REGEX
                 : pattern;
-            const content = response || responseText;
 
             const modifiedContent = content.replace(parsedPattern, replacement);
 
@@ -188,7 +193,11 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
         });
         requestHeaders = [];
 
-        nativeSend.call(secretXhr, args);
+        try {
+            nativeSend.call(secretXhr, args);
+        } catch {
+            return Reflect.apply(target, thisArg, args);
+        }
         return undefined;
     };
 
