@@ -29,12 +29,12 @@ import {
  * example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[, propsToMatch]])
  * ```
  *
- * - pattern - optional, argument for matching contents of responseText that should be replaced. If set, replacement is required;
+ * - pattern - optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
  * possible values:
  *   - string
  *   - regular expression
  *   - '*' to match all text content
- * - replacement - optional, required, if pattern is set. String to replace matched content with. Empty string to remove content.
+ * - replacement — optional, should be set if `pattern` is set. String to replace matched content with. Empty string to remove content.
  * - propsToMatch — optional, string of space-separated properties to match for extra condition; possible props:
  *   - string or regular expression for matching the URL passed to `.open()` call;
  *   - colon-separated pairs name:value where
