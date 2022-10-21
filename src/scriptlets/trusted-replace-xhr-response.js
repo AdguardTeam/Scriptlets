@@ -104,9 +104,10 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
             shouldReplace = matchRequestProps(propsToMatch, xhrData);
         }
 
-        // Trap setRequestHeader  of target xhr object to mimic request headers later
+        // Trap setRequestHeader of target xhr object to mimic request headers later
         if (shouldReplace) {
             const setRequestHeaderWrapper = (target, thisArg, args) => {
+                // Collect headers
                 requestHeaders.push(args);
                 return Reflect.apply(target, thisArg, args);
             };
@@ -115,6 +116,8 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
                 apply: setRequestHeaderWrapper,
             };
 
+            // setRequestHeader can only be called on open xhr object,
+            // so we can safely proxy it here
             thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
         }
 
@@ -126,6 +129,11 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
             return Reflect.apply(target, thisArg, args);
         }
 
+        /**
+         * Create separate XHR request with original request's input
+         * to be able to collect response data without triggering
+         * listeners on original XHR object
+         */
         const secretXhr = new XMLHttpRequest();
         secretXhr.addEventListener('readystatechange', () => {
             if (secretXhr.readyState !== 4) {
