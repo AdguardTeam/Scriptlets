@@ -1,5 +1,6 @@
 import {
     hit,
+    toRegExp,
     objectToString,
     getWildcardSymbol,
     matchRequestProps,
@@ -9,7 +10,6 @@ import {
     getMatchPropsData,
     validateParsedData,
     parseMatchProps,
-    toRegExp,
     isValidStrPattern,
     escapeRegExp,
     isEmptyObject,
@@ -31,9 +31,9 @@ import {
  *
  * - pattern - optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
  * possible values:
+ *   - '*' to match all text content
  *   - string
  *   - regular expression
- *   - '*' to match all text content
  * - replacement — optional, should be set if `pattern` is set. String to replace matched content with. Empty string to remove content.
  * - propsToMatch — optional, string of space-separated properties to match for extra condition; possible props:
  *   - string or regular expression for matching the URL passed to `.open()` call;
@@ -86,8 +86,6 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
     const log = console.log.bind(console);
     const nativeOpen = window.XMLHttpRequest.prototype.open;
     const nativeSend = window.XMLHttpRequest.prototype.send;
-
-    const MATCH_ALL_CHARACTERS_REGEX = toRegExp();
 
     let shouldReplace = false;
     let xhrData;
@@ -156,11 +154,11 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
                 return;
             }
 
-            const parsedPattern = pattern === getWildcardSymbol()
-                ? MATCH_ALL_CHARACTERS_REGEX
-                : pattern;
+            const patternRegexp = pattern === getWildcardSymbol()
+                ? toRegExp
+                : toRegExp(pattern);
 
-            const modifiedContent = content.replace(parsedPattern, replacement);
+            const modifiedContent = content.replace(patternRegexp, replacement);
 
             // Manually put required values into target XHR object
             // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
@@ -228,6 +226,7 @@ trustedReplaceXhrResponse.names = [
 
 trustedReplaceXhrResponse.injections = [
     hit,
+    toRegExp,
     objectToString,
     getWildcardSymbol,
     matchRequestProps,
@@ -235,7 +234,6 @@ trustedReplaceXhrResponse.injections = [
     getMatchPropsData,
     validateParsedData,
     parseMatchProps,
-    toRegExp,
     isValidStrPattern,
     escapeRegExp,
     isEmptyObject,
