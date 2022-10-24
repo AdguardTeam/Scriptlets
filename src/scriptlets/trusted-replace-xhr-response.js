@@ -23,7 +23,6 @@ import {
  * @description
  * Replaces response content of `xhr` requests if **all** given parameters match.
  *
- *
  * **Syntax**
  * ```
  * example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[, propsToMatch]])
@@ -42,7 +41,7 @@ import {
  *     - value is string or regular expression for matching the value of the option passed to `.open()` call
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
- * which is useful for debugging but not allowed permitted for production filter lists.
+ * which is useful for debugging but only allowed for production filter lists.
  *
  * **Examples**
  * 1. Log all XMLHttpRequests
