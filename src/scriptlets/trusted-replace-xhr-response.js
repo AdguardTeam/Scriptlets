@@ -87,7 +87,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
     const nativeOpen = window.XMLHttpRequest.prototype.open;
     const nativeSend = window.XMLHttpRequest.prototype.send;
 
-    const MATCH_ALL_CHARACTERS_REGEX = /[\s\S]/;
+    const MATCH_ALL_CHARACTERS_REGEX = toRegExp();
 
     let shouldReplace = false;
     let xhrData;
