@@ -134,9 +134,9 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
          * to be able to collect response data without triggering
          * listeners on original XHR object
          */
-        const secretXhr = new XMLHttpRequest();
-        secretXhr.addEventListener('readystatechange', () => {
-            if (secretXhr.readyState !== 4) {
+        const replacingRequest = new XMLHttpRequest();
+        replacingRequest.addEventListener('readystatechange', () => {
+            if (replacingRequest.readyState !== 4) {
                 return;
             }
 
@@ -148,7 +148,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
                 responseXML,
                 status,
                 statusText,
-            } = secretXhr;
+            } = replacingRequest;
 
             // Extract content from response
             const content = responseText || response;
@@ -189,7 +189,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
             hit(source);
         });
 
-        nativeOpen.apply(secretXhr, [xhrData.method, xhrData.url]);
+        nativeOpen.apply(replacingRequest, [xhrData.method, xhrData.url]);
 
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
@@ -197,12 +197,12 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
             const name = header[0];
             const value = header[1];
 
-            secretXhr.setRequestHeader(name, value);
+            replacingRequest.setRequestHeader(name, value);
         });
         requestHeaders = [];
 
         try {
-            nativeSend.call(secretXhr, args);
+            nativeSend.call(replacingRequest, args);
         } catch {
             return Reflect.apply(target, thisArg, args);
         }
