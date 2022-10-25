@@ -1554,12 +1554,13 @@ example.org#%#//scriptlet('set-constant', 'document.third', 'trueFunc', 'checkin
 
 ### <a id="set-cookie-reload"></a> ⚡️ set-cookie-reload
 
-Sets a cookie with the specified name and value, and then reloads the current page.
+Sets a cookie with the specified name and value, and path,
+and reloads the current page after the cookie setting.
 If reloading option is not needed, use [set-cookie](#set-cookie) scriptlet.
 
 **Syntax**
 ```
-example.org#%#//scriptlet('set-cookie-reload', name, value)
+example.org#%#//scriptlet('set-cookie-reload', name, value[, path])
 ```
 
 - `name` - required, cookie name to be set
@@ -1571,12 +1572,17 @@ example.org#%#//scriptlet('set-cookie-reload', name, value)
         - `yes` / `Yes` / `Y`
         - `no`
         - `ok` / `OK`
+- `path` - optional, cookie path, defaults to `/`; possible values:
+    - `/` — root path
+    - `none` — to set no path at all
 
 **Examples**
 ```
 example.org#%#//scriptlet('set-cookie-reload', 'checking', 'ok')
 
 example.org#%#//scriptlet('set-cookie-reload', 'gdpr-settings-cookie', '1')
+
+example.org#%#//scriptlet('set-cookie-reload', 'cookie-set', 'true', 'none')
 ```
 
 [Scriptlet source](../src/scriptlets/set-cookie-reload.js)
@@ -1584,11 +1590,11 @@ example.org#%#//scriptlet('set-cookie-reload', 'gdpr-settings-cookie', '1')
 
 ### <a id="set-cookie"></a> ⚡️ set-cookie
 
-Sets a cookie with the specified name and value. Cookie path defaults to root.
+Sets a cookie with the specified name, value, and path.
 
 **Syntax**
 ```
-example.org#%#//scriptlet('set-cookie', name, value)
+example.org#%#//scriptlet('set-cookie', name, value[, path])
 ```
 
 - `name` - required, cookie name to be set
@@ -1600,12 +1606,17 @@ example.org#%#//scriptlet('set-cookie', name, value)
         - `yes` / `Yes` / `Y`
         - `no`
         - `ok` / `OK`
+- `path` - optional, cookie path, defaults to `/`; possible values:
+    - `/` — root path
+    - `none` — to set no path at all
 
 **Examples**
 ```
-example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1')
+example.org#%#//scriptlet('set-cookie', 'CookieConsent', '1')
 
 example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', 'true')
+
+example.org#%#//scriptlet('set-cookie', 'cookie_consent', 'ok', 'none')
 ```
 
 [Scriptlet source](../src/scriptlets/set-cookie.js)

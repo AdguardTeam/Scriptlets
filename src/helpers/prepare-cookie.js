@@ -3,10 +3,11 @@ import { nativeIsNaN } from './number-utils';
  * Prepares cookie string if given parameters are ok
  * @param {string} name cookie name to set
  * @param {string} value cookie value to set
+ * @param {string} path cookie path to set, no set for 'none'
  * @returns {string|null} cookie string if ok OR null if not
  */
-export const prepareCookie = (name, value) => {
-    if (!name || !value) {
+export const prepareCookie = (name, value, path) => {
+    if (!name || !value || !path) {
         return null;
     }
 
@@ -43,7 +44,9 @@ export const prepareCookie = (name, value) => {
         return null;
     }
 
-    const pathToSet = 'path=/;';
+    const pathToSet = path === 'none'
+        ? ''
+        : `path=${path}`;
     // eslint-disable-next-line max-len
     const cookieData = `${encodeURIComponent(name)}=${encodeURIComponent(valueToSet)}; ${pathToSet}`;
 
