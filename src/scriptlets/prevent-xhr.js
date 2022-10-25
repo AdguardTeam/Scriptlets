@@ -47,7 +47,7 @@ import {
  *       - value — range on numbers, for example `100-300`, limited to 500000 characters
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
- * which is useful for debugging but permitted for production filter lists.
+ * which is useful for debugging but not allowed for production filter lists.
  *
  * **Examples**
  * 1. Log all XMLHttpRequests

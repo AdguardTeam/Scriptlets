@@ -292,6 +292,7 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
 
 trustedClickElement.names = [
     'trusted-click-element',
+    // trusted scriptlets support no aliases
 ];
 
 trustedClickElement.injections = [

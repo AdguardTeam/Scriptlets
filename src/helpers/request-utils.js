@@ -59,6 +59,25 @@ export const getFetchData = (args) => {
 };
 
 /**
+ * Collect xhr.open arguments to object
+ * @param {string} method
+ * @param {string} url
+ * @param {string} async
+ * @param {string} user
+ * @param {string} password
+ * @returns {Object}
+ */
+export const getXhrData = (method, url, async, user, password) => {
+    return {
+        method,
+        url,
+        async,
+        user,
+        password,
+    };
+};
+
+/**
  * Parse propsToMatch input string into object;
  * used for prevent-fetch and prevent-xhr
  * @param {string} propsToMatchStr
