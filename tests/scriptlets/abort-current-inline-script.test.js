@@ -20,9 +20,9 @@ module(name, { beforeEach, afterEach });
 
 const onError = (assert) => (message) => {
     const browserErrorMessage = 'Script error.';
-    const nodePuppeteerErrorMessageRgx = /Reference error/g;
+    const nodePuppeteerErrorMessageRgx = /Reference error|ReferenceError/g;
     const checkResult = message === browserErrorMessage
-        || message.test(nodePuppeteerErrorMessageRgx);
+        || nodePuppeteerErrorMessageRgx.test(message);
     assert.ok(checkResult);
 };
 
@@ -245,4 +245,25 @@ test('Protected from infinite loop when prop is used in a helper', (assert) => {
     }
 
     assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+});
+
+test('searches script by regexp - abort few inline scripts', (assert) => {
+    window.onerror = onError(assert);
+    window.shouldBeAborted = true;
+    window.shouldNotBeAborted = false;
+    const property = 'console.log';
+    const shouldBeAborted = 'shouldBeAborted';
+    const shouldNotBeAborted = 'shouldNotBeAborted';
+    const search = '/test|abcd|1234|qwerty/';
+    const scriptletArgs = [property, search];
+    runScriptlet(name, scriptletArgs);
+    addAndRemoveInlineScript(`window.${property}('test'); window.${shouldBeAborted} = false;`);
+    addAndRemoveInlineScript(`window.${property}('abcd'); window.${shouldBeAborted} = false;`);
+    addAndRemoveInlineScript(`window.${property}('1234'); window.${shouldBeAborted} = false;`);
+    addAndRemoveInlineScript(`window.${property}('should not be aborted'); window.${shouldNotBeAborted} = true;`);
+    addAndRemoveInlineScript(`window.${property}('qwerty'); window.${shouldBeAborted} = false;`);
+
+    assert.strictEqual(window.shouldBeAborted, true, 'initial value of shouldBeAborted has not changed');
+    assert.strictEqual(window.shouldNotBeAborted, true, 'value of shouldBeAborted has been changed from false to true');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
