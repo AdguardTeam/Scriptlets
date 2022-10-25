@@ -53,10 +53,11 @@ export const noopObject = () => ({});
 export const noopPromiseReject = () => Promise.reject(); // eslint-disable-line compat/compat
 
 /**
- * Returns Promise object that is resolved with a response
- * @param {string} [responseBody='{}'] value of response body
+ * Returns Promise object that is resolved  value of response body
+ * @param {string} [url=''] value of response url to set on response object
+ * @param {string} [response='default'] value of response type to set on response object
  */
-export const noopPromiseResolve = (responseBody = '{}') => {
+export const noopPromiseResolve = (responseBody = '{}', responseUrl = '', responseType = 'default') => {
     if (typeof Response === 'undefined') {
         return;
     }
@@ -65,6 +66,14 @@ export const noopPromiseResolve = (responseBody = '{}') => {
         status: 200,
         statusText: 'OK',
     });
+
+    // Mock response' url & type to avoid adb checks
+    // https://github.com/AdguardTeam/Scriptlets/issues/216
+    Object.defineProperties(response, {
+        url: { value: responseUrl },
+        type: { value: responseType },
+    });
+
     // eslint-disable-next-line compat/compat, consistent-return
     return Promise.resolve(response);
 };
