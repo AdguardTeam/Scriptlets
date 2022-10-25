@@ -287,4 +287,48 @@ if (!isSupported) {
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
+
+    test('simple fetch - valid response type', async (assert) => {
+        const OPAQUE_RESPONSE_TYPE = 'opaque';
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const init = {
+            method: 'GET',
+        };
+
+        runScriptlet(name, ['*', '', OPAQUE_RESPONSE_TYPE]);
+        const done = assert.async();
+
+        const response = await fetch(INPUT_JSON_PATH, init);
+
+        assert.strictEqual(response.type, OPAQUE_RESPONSE_TYPE, 'Response type is set');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('simple fetch - invalid response type', async (assert) => {
+        const INVALID_RESPONSE_TYPE = 'invalid_type';
+        const BASIC_RESPONSE_TYPE = 'basic';
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const init = {
+            method: 'GET',
+        };
+
+        const expectedJson = {
+            a1: 1,
+            b2: 'test',
+            c3: 3,
+        };
+
+        runScriptlet(name, ['*', '', INVALID_RESPONSE_TYPE]);
+        const done = assert.async();
+
+        const response = await fetch(INPUT_JSON_PATH, init);
+        const actualJson = await response.json();
+
+        assert.deepEqual(actualJson, expectedJson, 'Request is not modified');
+
+        assert.strictEqual(response.type, BASIC_RESPONSE_TYPE, 'Response type is not modified');
+        assert.strictEqual(window.hit, undefined, 'hit function fired');
+        done();
+    });
 }

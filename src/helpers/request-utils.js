@@ -86,18 +86,40 @@ export const getXhrData = (method, url, async, user, password) => {
 export const parseMatchProps = (propsToMatchStr) => {
     const PROPS_DIVIDER = ' ';
     const PAIRS_MARKER = ':';
+    const LEGAL_MATCH_PROPS = [
+        'method',
+        'url',
+        'headers',
+        'body',
+        'mode',
+        'credentials',
+        'cache',
+        'redirect',
+        'referrer',
+        'referrerPolicy',
+        'integrity',
+        'keepalive',
+        'signal',
+        'async',
+    ];
 
     const propsObj = {};
     const props = propsToMatchStr.split(PROPS_DIVIDER);
 
     props.forEach((prop) => {
         const dividerInd = prop.indexOf(PAIRS_MARKER);
-        if (dividerInd === -1) {
-            propsObj.url = prop;
-        } else {
-            const key = prop.slice(0, dividerInd);
+
+        const key = prop.slice(0, dividerInd);
+        const hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+
+        if (hasLegalMatchProp) {
             const value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
+        } else {
+            // Escape multiple colons in prop
+            // i.e regex value and/or url with protocol specified, with or without 'url:' match prop
+            // https://github.com/AdguardTeam/Scriptlets/issues/216#issuecomment-1178591463
+            propsObj.url = prop;
         }
     });
 
