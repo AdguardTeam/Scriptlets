@@ -17,7 +17,7 @@ import {
  * example.org#%#//scriptlet('m3u-prune'[, propsToRemove[, urlToMatch]])
  * ```
  *
- * - `propsToRemove` - optional, selector of elements which will be removed from M3U file
+ * - `propsToRemove` - optional, string or regular expression to match the directives content of M3U file which will be removed
  * - `urlToMatch` - optional, string or regular expression for matching the request's URL
  * > Usage with no arguments will log response payload and URL to browser console;
  * which is useful for debugging but prohibited for production filter lists.
@@ -28,7 +28,7 @@ import {
  *     example.org#%#//scriptlet('m3u-prune', 'tvessaiprod.nbcuni.com/video/')
  *     ```
  *
- * 2. Removes a tag which contains `tvessaiprod.nbcuni.com/video/`, only if request's URL contains `.m3u8`
+ * 2. Removes a line which contains `tvessaiprod.nbcuni.com/video/`, only if request's URL contains `.m3u8`
  *     ```
  *     example.org#%#//scriptlet('m3u-prune', 'tvessaiprod.nbcuni.com/video/', '.m3u8')
  *     ```
@@ -68,64 +68,105 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
 
     const urlMatchRegexp = toRegExp(urlToMatch);
 
-    const AD_MARKERS = {
-        EXTM3U: '#EXTM3U',
+    const AD_MARKER = {
+        AD: '-AD-',
+        ASSET: '#EXT-X-ASSET:CAID',
         CUE: '#EXT-X-CUE:TYPE="SpliceOut"',
         CUE_IN: '#EXT-X-CUE-IN',
-        ASSET: '#EXT-X-ASSET:CAID',
-        SCTE35: '#EXT-X-SCTE35:',
-        EXTINF: '#EXTINF',
         DISCONTINUITY: '#EXT-X-DISCONTINUITY',
+        EXTINF: '#EXTINF',
+        EXTM3U: '#EXTM3U',
+        SCTE35: '#EXT-X-SCTE35:',
+        VAST: '-VAST-',
+        VMAP_AD: '-VMAP-AD-',
         VMAP_AD_BREAK: '#EXT-X-VMAP-AD-BREAK:',
     };
 
-    const reM3u = toRegExp(propsToRemove);
-    const pruneSpliceoutBlock = (lines, i) => {
-        if (startsWith(lines[i], AD_MARKERS.CUE) === false) {
-            return false;
+    const pruneExtinfFromVmapBlock = (lines, i) => {
+        let array = lines.slice();
+        let index = i;
+        if (array[index].indexOf(AD_MARKER.EXTINF) > -1) {
+            array[index] = undefined;
+            index += 1;
+            if (array[index].indexOf(AD_MARKER.DISCONTINUITY) > -1) {
+                array[index] = undefined;
+                index += 1;
+                const pruneExtinf = pruneExtinfFromVmapBlock(array, index);
+                array = pruneExtinf.array;
+                index = pruneExtinf.index;
+            }
         }
-        lines[i] = undefined;
-        i += 1;
-        if (startsWith(lines[i], AD_MARKERS.ASSET)) {
-            lines[i] = undefined;
-            i += 1;
+        return { array, index };
+    };
+    const pruneVmapBlock = (lines) => {
+        let array = lines.slice();
+        for (let i = 0; i < array.length - 1; i += 1) {
+            // eslint-disable-next-line max-len
+            if (array[i].indexOf(AD_MARKER.VMAP_AD) > -1 || array[i].indexOf(AD_MARKER.VAST) > -1 || array[i].indexOf(AD_MARKER.AD) > -1) {
+                array[i] = undefined;
+                if (array[i + 1].indexOf(AD_MARKER.EXTINF) > -1) {
+                    i += 1;
+                    const pruneExtinf = pruneExtinfFromVmapBlock(array, i);
+                    array = pruneExtinf.array;
+                    // It's necessary to subtract 1 from "i",
+                    // otherwise one line will be skipped
+                    i = pruneExtinf.index - 1;
+                }
+            }
         }
-        if (startsWith(lines[i], AD_MARKERS.SCTE35)) {
-            lines[i] = undefined;
-            i += 1;
-        }
-        if (startsWith(lines[i], AD_MARKERS.CUE_IN)) {
-            lines[i] = undefined;
-            i += 1;
-        }
-        if (startsWith(lines[i], AD_MARKERS.SCTE35)) {
-            lines[i] = undefined;
-        }
-        return true;
+        return array;
     };
 
+    const pruneSpliceoutBlock = (lines, i) => {
+        const array = lines.slice();
+        if (!startsWith(array[i], AD_MARKER.CUE)) {
+            return array;
+        }
+        array[i] = undefined;
+        i += 1;
+        if (startsWith(array[i], AD_MARKER.ASSET)) {
+            array[i] = undefined;
+            i += 1;
+        }
+        if (startsWith(array[i], AD_MARKER.SCTE35)) {
+            array[i] = undefined;
+            i += 1;
+        }
+        if (startsWith(array[i], AD_MARKER.CUE_IN)) {
+            array[i] = undefined;
+            i += 1;
+        }
+        if (startsWith(array[i], AD_MARKER.SCTE35)) {
+            array[i] = undefined;
+        }
+        return array;
+    };
+
+    const removeM3ULineRegexp = toRegExp(propsToRemove);
+
     const pruneInfBlock = (lines, i) => {
-        if (startsWith(lines[i], AD_MARKERS.EXTINF) === false) {
-            return false;
+        const array = lines.slice();
+        if (!startsWith(array[i], AD_MARKER.EXTINF)) {
+            return array;
         }
-        if (reM3u.test(lines[i + 1]) === false) {
-            return false;
+        if (!removeM3ULineRegexp.test(array[i + 1])) {
+            return array;
         }
-        lines[i] = undefined;
-        lines[i + 1] = undefined;
+        array[i] = undefined;
+        array[i + 1] = undefined;
         i += 2;
-        if (startsWith(lines[i], AD_MARKERS.DISCONTINUITY)) {
-            lines[i] = undefined;
+        if (startsWith(array[i], AD_MARKER.DISCONTINUITY)) {
+            array[i] = undefined;
         }
-        return true;
+        return array;
     };
 
     const isM3U = (text) => {
         // Check if "text" starts with "#EXTM3U" or with "VMAP_AD_BREAK"
         // If so, then it might be an M3U file and should be pruned or logged
-        const trimedText = text.trim();
+        const trimmedText = text.trim();
         // eslint-disable-next-line max-len
-        if (startsWith(trimedText, AD_MARKERS.EXTM3U) || startsWith(trimedText, AD_MARKERS.VMAP_AD_BREAK)) {
+        if (startsWith(trimmedText, AD_MARKER.EXTM3U) || startsWith(trimmedText, AD_MARKER.VMAP_AD_BREAK)) {
             return true;
         }
         return false;
@@ -140,19 +181,17 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
             shouldPruneResponse = false;
             return text;
         }
-        if (text.indexOf(AD_MARKERS.VMAP_AD_BREAK) > -1) {
-            text = '';
-            return text;
+
+        let lines = text.split(/\n\r|\n|\r/);
+
+        if (text.indexOf(AD_MARKER.VMAP_AD_BREAK) > -1) {
+            lines = pruneVmapBlock(lines);
+            return lines.filter((l) => l !== undefined).join('\n');
         }
 
-        const lines = text.split(/\n\r|\n|\r/);
-
         for (let i = 0; i < lines.length; i += 1) {
-            if (lines[i] !== undefined) {
-                if (!pruneSpliceoutBlock(lines, i)) {
-                    pruneInfBlock(lines, i);
-                }
-            }
+            lines = pruneSpliceoutBlock(lines, i);
+            lines = pruneInfBlock(lines, i);
         }
         return lines.filter((l) => l !== undefined).join('\n');
     };
@@ -172,6 +211,8 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
                             log(`XMLHttpRequest.open() URL: ${xhrURL}\nresponse: ${response}`);
                         }
                     } else {
+                        // In case if response shouldn't be pruned
+                        // pruneM3U sets shouldPruneResponse to false
                         const prunedResponseContent = pruneM3U(response);
                         if (shouldPruneResponse) {
                             Object.defineProperty(thisArg, 'response', {
@@ -183,7 +224,7 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
                             hit(source);
                         }
                         // In case if response shouldn't be pruned
-                        // pruneXML sets shouldPruneResponse to false
+                        // pruneM3U sets shouldPruneResponse to false
                         // so it's necessary to set it to true again
                         // otherwise response will be only logged
                         shouldPruneResponse = true;
@@ -227,7 +268,7 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
                         });
                     }
                     // In case if response shouldn't be pruned
-                    // pruneXML sets shouldPruneResponse to false
+                    // pruneM3U sets shouldPruneResponse to false
                     // so it's necessary to set it to true again
                     // otherwise response will be only logged
                     shouldPruneResponse = true;
