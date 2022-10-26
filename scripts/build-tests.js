@@ -81,10 +81,10 @@ const getTestConfigs = () => {
     const MULTIPLE_TEST_FILES_DIRS = [
         'scriptlets',
         'redirects',
+        'helpers',
     ];
     const ONE_TEST_FILE_DIRS = [
         'lib-tests',
-        'helpers',
     ];
 
     const multipleFilesConfigs = MULTIPLE_TEST_FILES_DIRS

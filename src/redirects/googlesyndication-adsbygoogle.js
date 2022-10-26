@@ -32,7 +32,9 @@ export function GoogleSyndicationAdsByGoogle(source) {
                 for (const key of Object.keys(arg)) {
                     if (typeof arg[key] === 'function') {
                         try {
-                            arg[key].call();
+                            // https://github.com/AdguardTeam/Scriptlets/issues/252
+                            // argument "{}" is needed to fix issue with undefined argument
+                            arg[key].call(this, {});
                         } catch {
                             /* empty */
                         }
