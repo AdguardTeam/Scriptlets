@@ -57,14 +57,9 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
         return;
     }
 
-    let shouldPruneResponse = true;
+    let shouldPruneResponse = false;
     // eslint-disable-next-line no-console
     const log = console.log.bind(console);
-    if (!propsToRemove) {
-        // If "propsToRemove" is not defined, then response shouldn't be pruned
-        // but it should be logged in browser console
-        shouldPruneResponse = false;
-    }
 
     const urlMatchRegexp = toRegExp(urlToMatch);
 
@@ -172,16 +167,12 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
         return false;
     };
 
-    const pruneM3U = (text) => {
-        if (!isM3U(text)) {
-            shouldPruneResponse = false;
-            return text;
-        }
-        if (text.indexOf(propsToRemove) === -1) {
-            shouldPruneResponse = false;
-            return text;
-        }
+    const isPruningNeeded = (text, propsToRemove) => {
+        return isM3U(text)
+            && propsToRemove.test(text);
+    };
 
+    const pruneM3U = (text) => {
         let lines = text.split(/\n\r|\n|\r/);
 
         if (text.indexOf(AD_MARKER.VMAP_AD_BREAK) > -1) {
@@ -206,28 +197,23 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
                 if (thisArg.readyState === 4) {
                     const { response } = thisArg;
                     thisArg.removeEventListener('readystatechange', pruneResponse);
-                    if (!shouldPruneResponse) {
+                    // If "propsToRemove" is not defined, then response should be logged only
+                    if (!propsToRemove) {
                         if (isM3U(response)) {
                             log(`XMLHttpRequest.open() URL: ${xhrURL}\nresponse: ${response}`);
                         }
                     } else {
-                        // In case if response shouldn't be pruned
-                        // pruneM3U sets shouldPruneResponse to false
+                        shouldPruneResponse = isPruningNeeded(response, removeM3ULineRegexp);
+                    }
+                    if (shouldPruneResponse) {
                         const prunedResponseContent = pruneM3U(response);
-                        if (shouldPruneResponse) {
-                            Object.defineProperty(thisArg, 'response', {
-                                value: prunedResponseContent,
-                            });
-                            Object.defineProperty(thisArg, 'responseText', {
-                                value: prunedResponseContent,
-                            });
-                            hit(source);
-                        }
-                        // In case if response shouldn't be pruned
-                        // pruneM3U sets shouldPruneResponse to false
-                        // so it's necessary to set it to true again
-                        // otherwise response will be only logged
-                        shouldPruneResponse = true;
+                        Object.defineProperty(thisArg, 'response', {
+                            value: prunedResponseContent,
+                        });
+                        Object.defineProperty(thisArg, 'responseText', {
+                            value: prunedResponseContent,
+                        });
+                        hit(source);
                     }
                 }
             });
@@ -252,14 +238,16 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
         if (urlMatchRegexp.test(fetchURL)) {
             return nativeFetch.apply(this, args).then((response) => {
                 return response.text().then((text) => {
-                    if (!shouldPruneResponse) {
+                    // If "propsToRemove" is not defined, then response should be logged only
+                    if (!propsToRemove) {
                         if (isM3U(text)) {
                             log(`fetch URL: ${fetchURL}\nresponse text: ${text}`);
                         }
                         return Reflect.apply(target, thisArg, args);
                     }
-                    const prunedText = pruneM3U(text);
+                    shouldPruneResponse = isPruningNeeded(text, removeM3ULineRegexp);
                     if (shouldPruneResponse) {
+                        const prunedText = pruneM3U(text);
                         hit(source);
                         return new Response(prunedText, {
                             status: response.status,
@@ -267,11 +255,6 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
                             headers: response.headers,
                         });
                     }
-                    // In case if response shouldn't be pruned
-                    // pruneM3U sets shouldPruneResponse to false
-                    // so it's necessary to set it to true again
-                    // otherwise response will be only logged
-                    shouldPruneResponse = true;
                     return Reflect.apply(target, thisArg, args);
                 });
             });

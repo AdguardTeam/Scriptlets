@@ -149,6 +149,40 @@ if (!isSupported) {
         done();
     });
 
+    test('fetch regexp propsToRemove - remove ads 1', async (assert) => {
+        const M3U8_PATH = `${M3U8_OBJECTS_PATH_01}`;
+        const MATCH_DATA = '/tvessaiprod\\.nbcuni\\.com/video//';
+
+        runScriptlet(name, [MATCH_DATA]);
+
+        const done = assert.async();
+
+        const response = await fetch(M3U8_PATH);
+        const responseM3U8 = await response.text();
+        assert.notOk(responseM3U8.indexOf('tvessaiprod.nbcuni.com/video/') > -1, 'check if "tvessaiprod.nbcuni.com/video/" has been removed');
+        assert.notOk(responseM3U8.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1, 'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed');
+        assert.notOk(responseM3U8.indexOf('#EXT-X-CUE-IN') > -1, 'check if "#EXT-X-CUE-IN" has been removed');
+        assert.notOk(responseM3U8.indexOf('#EXT-X-ASSET:CAID') > -1, 'check if "#EXT-X-ASSET:CAID" has been removed');
+        assert.notOk(responseM3U8.indexOf('#EXT-X-SCTE35:') > -1, 'check if "#EXT-X-SCTE35:" has been removed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('fetch regexp propsToRemove - remove ads 2', async (assert) => {
+        const M3U8_PATH = `${M3U8_OBJECTS_PATH_02}`;
+        const MATCH_DATA = '/VMAP.AD.BREAK/';
+
+        runScriptlet(name, [MATCH_DATA]);
+
+        const done = assert.async();
+
+        const response = await fetch(M3U8_PATH);
+        const responseM3U8 = await response.text();
+        assert.notOk(responseM3U8.indexOf('#EXT-X-VMAP-AD-BREAK') > -1, 'check if "#EXT-X-VMAP-AD-BREAK" has been removed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
     test('fetch match URL - remove ads 1', async (assert) => {
         const M3U8_PATH = `${M3U8_OBJECTS_PATH_01}`;
         const MATCH_DATA = 'tvessaiprod.nbcuni.com/video/';
@@ -175,46 +209,6 @@ if (!isSupported) {
         const MATCH_DATA = 'VMAP-AD-BREAK';
         const MATCH_URL = '.m3u8';
         const scriptletArgs = [MATCH_DATA, MATCH_URL];
-
-        runScriptlet(name, scriptletArgs);
-
-        const done = assert.async();
-
-        const response = await fetch(M3U8_PATH);
-        const responseM3U8 = await response.text();
-        assert.notOk(responseM3U8.indexOf('#EXT-X-VMAP-AD-BREAK') > -1, 'check if "#EXT-X-VMAP-AD-BREAK" has been removed');
-        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
-        done();
-    });
-
-    test('fetch match URL, optional regexp - remove ads 1', async (assert) => {
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_01}`;
-        const MATCH_DATA = 'tvessaiprod.nbcuni.com/video/';
-        const MATCH_URL = '.m3u8';
-        const OPTIONAL_REGEXP = '/#EXTINF:.*\\n.*tvessaiprod\\.nbcuni\\.com\\/video\\/[\\s\\S]*?#EXT-X-DISCONTINUITY|#EXT-X-VMAP-AD-BREAK[\\s\\S]*?#EXT-X-ENDLIST/';
-        const scriptletArgs = [MATCH_DATA, MATCH_URL, OPTIONAL_REGEXP];
-
-        runScriptlet(name, scriptletArgs);
-
-        const done = assert.async();
-
-        const response = await fetch(M3U8_PATH);
-        const responseM3U8 = await response.text();
-        assert.notOk(responseM3U8.indexOf('tvessaiprod.nbcuni.com/video/') > -1, 'check if "tvessaiprod.nbcuni.com/video/" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1, 'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-CUE-IN') > -1, 'check if "#EXT-X-CUE-IN" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-ASSET:CAID') > -1, 'check if "#EXT-X-ASSET:CAID" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-SCTE35:') > -1, 'check if "#EXT-X-SCTE35:" has been removed');
-        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
-        done();
-    });
-
-    test('fetch match URL, optional regexp - remove ads 2', async (assert) => {
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_02}`;
-        const MATCH_DATA = 'VMAP-AD-BREAK';
-        const MATCH_URL = '.m3u8';
-        const OPTIONAL_REGEXP = '/#EXTINF:.*\\n.*tvessaiprod\\.nbcuni\\.com\\/video\\/[\\s\\S]*?#EXT-X-DISCONTINUITY|#EXT-X-VMAP-AD-BREAK[\\s\\S]*?#EXT-X-ENDLIST/';
-        const scriptletArgs = [MATCH_DATA, MATCH_URL, OPTIONAL_REGEXP];
 
         runScriptlet(name, scriptletArgs);
 
@@ -345,6 +339,48 @@ if (!isSupported) {
         xhr.send();
     });
 
+    test('xhr regexp propsToRemove - remove ads 1', async (assert) => {
+        const METHOD = 'GET';
+        const M3U8_PATH = `${M3U8_OBJECTS_PATH_01}`;
+        const MATCH_DATA = '/tvessaiprod\\.nbcuni\\.com/video//';
+
+        runScriptlet(name, [MATCH_DATA]);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, M3U8_PATH);
+        xhr.onload = () => {
+            assert.notOk(xhr.responseText.indexOf('tvessaiprod.nbcuni.com/video/') > -1, 'check if "tvessaiprod.nbcuni.com/video/" has been removed');
+            assert.notOk(xhr.responseText.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1, 'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed');
+            assert.notOk(xhr.responseText.indexOf('#EXT-X-CUE-IN') > -1, 'check if "#EXT-X-CUE-IN" has been removed');
+            assert.notOk(xhr.responseText.indexOf('#EXT-X-ASSET:CAID') > -1, 'check if "#EXT-X-ASSET:CAID" has been removed');
+            assert.notOk(xhr.responseText.indexOf('#EXT-X-SCTE35:') > -1, 'check if "#EXT-X-SCTE35:" has been removed');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
+    test('xhr regexp propsToRemove - remove ads 2', async (assert) => {
+        const METHOD = 'GET';
+        const M3U8_PATH = `${M3U8_OBJECTS_PATH_02}`;
+        const MATCH_DATA = '/VMAP.AD.BREAK/';
+
+        runScriptlet(name, [MATCH_DATA]);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, M3U8_PATH);
+        xhr.onload = () => {
+            assert.notOk(xhr.responseText.indexOf('#EXT-X-VMAP-AD-BREAK') > -1, 'check if "#EXT-X-VMAP-AD-BREAK" has been removed');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
     test('xhr match URL - remove ads 1', async (assert) => {
         const METHOD = 'GET';
         const M3U8_PATH = `${M3U8_OBJECTS_PATH_01}`;
@@ -376,54 +412,6 @@ if (!isSupported) {
         const MATCH_DATA = 'VMAP-AD-BREAK';
         const MATCH_URL = '.m3u8';
         const scriptletArgs = [MATCH_DATA, MATCH_URL];
-
-        runScriptlet(name, scriptletArgs);
-
-        const done = assert.async();
-
-        const xhr = new XMLHttpRequest();
-        xhr.open(METHOD, M3U8_PATH);
-        xhr.onload = () => {
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-VMAP-AD-BREAK') > -1, 'check if "#EXT-X-VMAP-AD-BREAK" has been removed');
-            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
-            done();
-        };
-        xhr.send();
-    });
-
-    test('xhr match URL, optional regexp - remove ads 1', async (assert) => {
-        const METHOD = 'GET';
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_01}`;
-        const MATCH_DATA = 'tvessaiprod.nbcuni.com/video/';
-        const MATCH_URL = '.m3u8';
-        const OPTIONAL_REGEXP = '/#EXTINF:.*\\n.*tvessaiprod\\.nbcuni\\.com\\/video\\/[\\s\\S]*?#EXT-X-DISCONTINUITY|#EXT-X-VMAP-AD-BREAK[\\s\\S]*?#EXT-X-ENDLIST/';
-        const scriptletArgs = [MATCH_DATA, MATCH_URL, OPTIONAL_REGEXP];
-
-        runScriptlet(name, scriptletArgs);
-
-        const done = assert.async();
-
-        const xhr = new XMLHttpRequest();
-        xhr.open(METHOD, M3U8_PATH);
-        xhr.onload = () => {
-            assert.notOk(xhr.responseText.indexOf('tvessaiprod.nbcuni.com/video/') > -1, 'check if "tvessaiprod.nbcuni.com/video/" has been removed');
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1, 'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed');
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-CUE-IN') > -1, 'check if "#EXT-X-CUE-IN" has been removed');
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-ASSET:CAID') > -1, 'check if "#EXT-X-ASSET:CAID" has been removed');
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-SCTE35:') > -1, 'check if "#EXT-X-SCTE35:" has been removed');
-            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
-            done();
-        };
-        xhr.send();
-    });
-
-    test('xhr match URL, optional regexp - remove ads 2', async (assert) => {
-        const METHOD = 'GET';
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_02}`;
-        const MATCH_DATA = 'VMAP-AD-BREAK';
-        const MATCH_URL = '.m3u8';
-        const OPTIONAL_REGEXP = '/#EXTINF:.*\\n.*tvessaiprod\\.nbcuni\\.com\\/video\\/[\\s\\S]*?#EXT-X-DISCONTINUITY|#EXT-X-VMAP-AD-BREAK[\\s\\S]*?#EXT-X-ENDLIST/';
-        const scriptletArgs = [MATCH_DATA, MATCH_URL, OPTIONAL_REGEXP];
 
         runScriptlet(name, scriptletArgs);
 
