@@ -8,12 +8,13 @@ import {
  * @scriptlet set-cookie-reload
  *
  * @description
- * Sets a cookie with the specified name and value, and then reloads the current page.
+ * Sets a cookie with the specified name and value, and path,
+ * and reloads the current page after the cookie setting.
  * If reloading option is not needed, use [set-cookie](#set-cookie) scriptlet.
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('set-cookie-reload', name, value)
+ * example.org#%#//scriptlet('set-cookie-reload', name, value[, path])
  * ```
  *
  * - `name` - required, cookie name to be set
@@ -25,15 +26,20 @@ import {
  *         - `yes` / `Yes` / `Y`
  *         - `no`
  *         - `ok` / `OK`
+ * - `path` - optional, cookie path, defaults to `/`; possible values:
+ *     - `/` — root path
+ *     - `none` — to set no path at all
  *
  * **Examples**
  * ```
  * example.org#%#//scriptlet('set-cookie-reload', 'checking', 'ok')
  *
  * example.org#%#//scriptlet('set-cookie-reload', 'gdpr-settings-cookie', '1')
+ *
+ * example.org#%#//scriptlet('set-cookie-reload', 'cookie-set', 'true', 'none')
  * ```
  */
-export function setCookieReload(source, name, value) {
+export function setCookieReload(source, name, value, path = '/') {
     const isCookieSetWithValue = (name, value) => {
         return document.cookie.split(';')
             .some((cookieStr) => {
@@ -52,7 +58,7 @@ export function setCookieReload(source, name, value) {
         return;
     }
 
-    const cookieData = prepareCookie(name, value);
+    const cookieData = prepareCookie(name, value, path);
 
     if (cookieData) {
         document.cookie = cookieData;

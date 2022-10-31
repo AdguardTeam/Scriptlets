@@ -1,14 +1,18 @@
 import { nativeIsNaN } from './number-utils';
+
 /**
  * Prepares cookie string if given parameters are ok
  * @param {string} name cookie name to set
  * @param {string} value cookie value to set
+ * @param {string} path cookie path to set, 'none' for no path
  * @returns {string|null} cookie string if ok OR null if not
  */
-export const prepareCookie = (name, value) => {
+export const prepareCookie = (name, value, path) => {
     if (!name || !value) {
         return null;
     }
+
+    const log = console.log.bind(console); // eslint-disable-line no-console
 
     let valueToSet;
     if (value === 'true') {
@@ -34,16 +38,27 @@ export const prepareCookie = (name, value) => {
     } else if (/^\d+$/.test(value)) {
         valueToSet = parseFloat(value);
         if (nativeIsNaN(valueToSet)) {
+            log(`Invalid cookie value: '${value}'`);
             return null;
         }
         if (Math.abs(valueToSet) < 0 || Math.abs(valueToSet) > 15) {
+            log(`Invalid cookie value: '${value}'`);
             return null;
         }
     } else {
         return null;
     }
 
-    const pathToSet = 'path=/;';
+    let pathToSet;
+    if (path === '/') {
+        pathToSet = 'path=/';
+    } else if (path === 'none') {
+        pathToSet = '';
+    } else {
+        log(`Invalid cookie path: '${path}'`);
+        return null;
+    }
+
     // eslint-disable-next-line max-len
     const cookieData = `${encodeURIComponent(name)}=${encodeURIComponent(valueToSet)}; ${pathToSet}`;
 
