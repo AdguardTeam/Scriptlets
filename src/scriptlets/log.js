@@ -12,5 +12,11 @@
  */
 export function log(...args) {
     console.log(args); // eslint-disable-line no-console
+
+    (async () => {
+        const a = await fetch('https://example.org');
+
+        return a;
+    })();
 }
 log.names = ['log'];

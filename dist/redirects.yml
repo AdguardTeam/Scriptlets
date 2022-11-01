@@ -1,6 +1,6 @@
 #
 #    AdGuard Scriptlets (Redirects Source)
-#    Version 1.6.55
+#    Version 1.6.56
 #
 - title: 1x1-transparent.gif
   description: |-
@@ -2934,7 +2934,7 @@
   file: noeval.js
 
 - title: pardot-1.0
-  comment: Mocks the pd.js file of Salesforce
+  comment: Mocks the pd.js file of Salesforce.
   aliases: []
   contentType: application/javascript
   content: |-

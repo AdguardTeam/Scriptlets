@@ -30,7 +30,7 @@ export const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
  * @returns {RegExp} regular expression; defaults to /.?/
  * @throws {SyntaxError} Throw an error for invalid regex pattern
  */
-export const toRegExp = (input = '') => {
+export function toRegExp(input = '') {
     const DEFAULT_VALUE = '.?';
     const FORWARD_SLASH = '/';
     if (input === '') {
@@ -48,7 +48,7 @@ export const toRegExp = (input = '') => {
  * @param {RawStrPattern} input literal string or regexp pattern
  * @returns {boolean}
  */
-export const isValidStrPattern = (input) => {
+export function isValidStrPattern(input) {
     const FORWARD_SLASH = '/';
     let str = escapeRegExp(input);
     if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {

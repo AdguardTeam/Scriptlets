@@ -38,6 +38,7 @@ const getScriptletFunctionsString = () => {
     const scriptletsStrings = scriptletsFunctions.map((scriptlet) => {
         const scriptletWithDeps = attachDependencies(scriptlet);
         const scriptletWithCall = addCall(scriptlet, scriptletWithDeps);
+        console.log('qwerty', scriptlet.name);
         return wrapInFunc(scriptlet.name, scriptletWithCall);
     });
 
@@ -61,6 +62,8 @@ export const buildScriptletsFunc = async () => {
     console.log('Start building scriptlets functions...');
 
     const scriptletFunctions = getScriptletFunctionsString();
+    await writeFile(path.resolve(__dirname, '../kek.js'), scriptletFunctions);
+
     const beautifiedScriptletFunctions = await minify(scriptletFunctions, {
         mangle: false,
         compress: false,
@@ -68,6 +71,6 @@ export const buildScriptletsFunc = async () => {
     });
 
     await writeFile(path.resolve(__dirname, '../tmp/scriptlets-func.js'), beautifiedScriptletFunctions.code);
-
+   
     console.log('Scriptlets functions built successfully');
 };
