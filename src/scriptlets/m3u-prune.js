@@ -77,6 +77,13 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
         VMAP_AD_BREAK: '#EXT-X-VMAP-AD-BREAK:',
     };
 
+    /**
+    * Sets an item in array to undefined, if it contains one of the
+    * AD_MARKER: AD_MARKER.EXTINF, AD_MARKER.DISCONTINUITY
+    * @param {Array} lines
+    * @param {number} i
+    * @returns {Object} { array, index }
+    */
     const pruneExtinfFromVmapBlock = (lines, i) => {
         let array = lines.slice();
         let index = i;
@@ -86,92 +93,128 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
             if (array[index].indexOf(AD_MARKER.DISCONTINUITY) > -1) {
                 array[index] = undefined;
                 index += 1;
-                const pruneExtinf = pruneExtinfFromVmapBlock(array, index);
-                array = pruneExtinf.array;
-                index = pruneExtinf.index;
+                const prunedExtinf = pruneExtinfFromVmapBlock(array, index);
+                array = prunedExtinf.array;
+                index = prunedExtinf.index;
             }
         }
         return { array, index };
     };
+
+    /**
+    * Sets an item in array to undefined, if it contains one of the
+    * AD_MARKER: AD_MARKER.VMAP_AD, AD_MARKER.VAST, AD_MARKER.AD
+    * @param {Array} lines
+    * @returns {Array}
+    */
     const pruneVmapBlock = (lines) => {
         let array = lines.slice();
         for (let i = 0; i < array.length - 1; i += 1) {
-            // eslint-disable-next-line max-len
-            if (array[i].indexOf(AD_MARKER.VMAP_AD) > -1 || array[i].indexOf(AD_MARKER.VAST) > -1 || array[i].indexOf(AD_MARKER.AD) > -1) {
+            if (array[i].indexOf(AD_MARKER.VMAP_AD) > -1
+                || array[i].indexOf(AD_MARKER.VAST) > -1
+                || array[i].indexOf(AD_MARKER.AD) > -1) {
                 array[i] = undefined;
                 if (array[i + 1].indexOf(AD_MARKER.EXTINF) > -1) {
                     i += 1;
-                    const pruneExtinf = pruneExtinfFromVmapBlock(array, i);
-                    array = pruneExtinf.array;
+                    const prunedExtinf = pruneExtinfFromVmapBlock(array, i);
+                    array = prunedExtinf.array;
                     // It's necessary to subtract 1 from "i",
                     // otherwise one line will be skipped
-                    i = pruneExtinf.index - 1;
+                    i = prunedExtinf.index - 1;
                 }
             }
         }
         return array;
     };
 
+    /**
+    * Sets an item in array to undefined, if it contains one of the
+    * AD_MARKER: AD_MARKER.CUE, AD_MARKER.ASSET, AD_MARKER.SCTE35, AD_MARKER.CUE_IN
+    * @param {Array} lines
+    * @param {number} i
+    * @returns {Array}
+    */
     const pruneSpliceoutBlock = (lines, i) => {
-        const array = lines.slice();
-        if (!startsWith(array[i], AD_MARKER.CUE)) {
-            return array;
+        if (!startsWith(lines[i], AD_MARKER.CUE)) {
+            return lines;
         }
-        array[i] = undefined;
+        lines[i] = undefined;
         i += 1;
-        if (startsWith(array[i], AD_MARKER.ASSET)) {
-            array[i] = undefined;
+        if (startsWith(lines[i], AD_MARKER.ASSET)) {
+            lines[i] = undefined;
             i += 1;
         }
-        if (startsWith(array[i], AD_MARKER.SCTE35)) {
-            array[i] = undefined;
+        if (startsWith(lines[i], AD_MARKER.SCTE35)) {
+            lines[i] = undefined;
             i += 1;
         }
-        if (startsWith(array[i], AD_MARKER.CUE_IN)) {
-            array[i] = undefined;
+        if (startsWith(lines[i], AD_MARKER.CUE_IN)) {
+            lines[i] = undefined;
             i += 1;
         }
-        if (startsWith(array[i], AD_MARKER.SCTE35)) {
-            array[i] = undefined;
+        if (startsWith(lines[i], AD_MARKER.SCTE35)) {
+            lines[i] = undefined;
         }
-        return array;
+        return lines;
     };
 
     const removeM3ULineRegexp = toRegExp(propsToRemove);
 
+    /**
+    * Sets an item in array to undefined, if it contains removeM3ULineRegexp and one of the
+    * AD_MARKER: AD_MARKER.EXTINF, AD_MARKER.DISCONTINUITY
+    * @param {Array} lines
+    * @param {number} i
+    * @returns {Array}
+    */
     const pruneInfBlock = (lines, i) => {
-        const array = lines.slice();
-        if (!startsWith(array[i], AD_MARKER.EXTINF)) {
-            return array;
+        if (!startsWith(lines[i], AD_MARKER.EXTINF)) {
+            return lines;
         }
-        if (!removeM3ULineRegexp.test(array[i + 1])) {
-            return array;
+        if (!removeM3ULineRegexp.test(lines[i + 1])) {
+            return lines;
         }
-        array[i] = undefined;
-        array[i + 1] = undefined;
+        lines[i] = undefined;
+        lines[i + 1] = undefined;
         i += 2;
-        if (startsWith(array[i], AD_MARKER.DISCONTINUITY)) {
-            array[i] = undefined;
+        if (startsWith(lines[i], AD_MARKER.DISCONTINUITY)) {
+            lines[i] = undefined;
         }
-        return array;
+        return lines;
     };
 
+    /**
+    * Determines if text contains "#EXTM3U" or "VMAP_AD_BREAK"
+    * @param {string} text
+    * @returns {boolean}
+    */
     const isM3U = (text) => {
         // Check if "text" starts with "#EXTM3U" or with "VMAP_AD_BREAK"
         // If so, then it might be an M3U file and should be pruned or logged
         const trimmedText = text.trim();
-        // eslint-disable-next-line max-len
-        if (startsWith(trimmedText, AD_MARKER.EXTM3U) || startsWith(trimmedText, AD_MARKER.VMAP_AD_BREAK)) {
+        if (startsWith(trimmedText, AD_MARKER.EXTM3U)
+            || startsWith(trimmedText, AD_MARKER.VMAP_AD_BREAK)) {
             return true;
         }
         return false;
     };
 
-    const isPruningNeeded = (text, propsToRemove) => {
+    /**
+    * Determines if pruning is needed
+    * @param {string} text
+    * @param {RegExp} regexp
+    * @returns {boolean}
+    */
+    const isPruningNeeded = (text, regexp) => {
         return isM3U(text)
-            && propsToRemove.test(text);
+            && regexp.test(text);
     };
 
+    /**
+    * Prunes lines which contain removeM3ULineRegexp and specific AD_MARKER
+    * @param {string} text
+    * @returns {string}
+    */
     const pruneM3U = (text) => {
         let lines = text.split(/\n\r|\n|\r/);
 
@@ -239,10 +282,8 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
             return nativeFetch.apply(this, args).then((response) => {
                 return response.text().then((text) => {
                     // If "propsToRemove" is not defined, then response should be logged only
-                    if (!propsToRemove) {
-                        if (isM3U(text)) {
-                            log(`fetch URL: ${fetchURL}\nresponse text: ${text}`);
-                        }
+                    if (!propsToRemove && isM3U(text)) {
+                        log(`fetch URL: ${fetchURL}\nresponse text: ${text}`);
                         return Reflect.apply(target, thisArg, args);
                     }
                     shouldPruneResponse = isPruningNeeded(text, removeM3ULineRegexp);
