@@ -13,6 +13,10 @@ import {
  * @returns {boolean}
  */
 export const matchRequestProps = (propsToMatch, requestData) => {
+    if (propsToMatch === '' || propsToMatch === '*') {
+        return true;
+    }
+
     let isMatched;
 
     const parsedData = parseMatchProps(propsToMatch);

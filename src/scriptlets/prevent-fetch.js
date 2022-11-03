@@ -2,11 +2,9 @@ import {
     hit,
     getFetchData,
     objectToString,
-    parseMatchProps,
-    validateParsedData,
-    getMatchPropsData,
     noopPromiseResolve,
     getWildcardSymbol,
+    matchRequestProps,
     // following helpers should be imported and injected
     // because they are used by helpers above
     toRegExp,
@@ -16,6 +14,9 @@ import {
     getRequestData,
     getObjectEntries,
     getObjectFromEntries,
+    parseMatchProps,
+    validateParsedData,
+    getMatchPropsData,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -96,6 +97,9 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
         return;
     }
 
+    // eslint-disable-next-line no-console
+    const log = console.log.bind(console);
+
     let strResponseBody;
     if (responseBody === 'emptyObj') {
         strResponseBody = '{}';
@@ -108,7 +112,7 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
     // Skip disallowed response types
     if (!(responseType === 'default' || responseType === 'opaque')) {
         // eslint-disable-next-line no-console
-        console.log(`Invalid parameter: ${responseType}`);
+        log(`Invalid parameter: ${responseType}`);
         return;
     }
 
@@ -117,28 +121,12 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
         const fetchData = getFetchData(args);
         if (typeof propsToMatch === 'undefined') {
             // log if no propsToMatch given
-            const logMessage = `log: fetch( ${objectToString(fetchData)} )`;
-            hit(source, logMessage);
-        } else if (propsToMatch === '' || propsToMatch === getWildcardSymbol()) {
-            // prevent all fetch calls
-            shouldPrevent = true;
-        } else {
-            const parsedData = parseMatchProps(propsToMatch);
-            if (!validateParsedData(parsedData)) {
-                // eslint-disable-next-line no-console
-                console.log(`Invalid parameter: ${propsToMatch}`);
-                shouldPrevent = false;
-            } else {
-                const matchData = getMatchPropsData(parsedData);
-                // prevent only if all props match
-                shouldPrevent = Object.keys(matchData)
-                    .every((matchKey) => {
-                        const matchValue = matchData[matchKey];
-                        return Object.prototype.hasOwnProperty.call(fetchData, matchKey)
-                        && matchValue.test(fetchData[matchKey]);
-                    });
-            }
+            log(`fetch( ${objectToString(fetchData)} )`);
+            hit(source);
+            return Reflect.apply(target, thisArg, args);
         }
+
+        shouldPrevent = matchRequestProps(propsToMatch);
 
         if (shouldPrevent) {
             hit(source);
@@ -167,11 +155,9 @@ preventFetch.injections = [
     hit,
     getFetchData,
     objectToString,
-    parseMatchProps,
-    validateParsedData,
-    getMatchPropsData,
     noopPromiseResolve,
     getWildcardSymbol,
+    matchRequestProps,
     toRegExp,
     isValidStrPattern,
     escapeRegExp,
@@ -179,4 +165,7 @@ preventFetch.injections = [
     getRequestData,
     getObjectEntries,
     getObjectFromEntries,
+    parseMatchProps,
+    validateParsedData,
+    getMatchPropsData,
 ];

@@ -1,0 +1,211 @@
+import {
+    hit,
+    getFetchData,
+    objectToString,
+    getWildcardSymbol,
+    matchRequestProps,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    toRegExp,
+    isValidStrPattern,
+    escapeRegExp,
+    isEmptyObject,
+    getRequestData,
+    getObjectEntries,
+    getObjectFromEntries,
+    parseMatchProps,
+    validateParsedData,
+    getMatchPropsData,
+} from '../helpers/index';
+
+/* eslint-disable max-len */
+/**
+ * @scriptlet trusted-replace-fetch-response
+ *
+ * @description
+ * Replaces response text content of `fetch` requests if **all** given parameters match.
+ *
+ * **Syntax**
+ * ```
+ * example.org#%#//scriptlet('trusted-replace-fetch-response'[, pattern, replacement[, propsToMatch]])
+ * ```
+ *
+ * - pattern - optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
+ * possible values:
+ *   - '*' to match all text content
+ *   - non-empty string
+ *   - regular expression
+ * - replacement — optional, should be set if `pattern` is set. String to replace the response text content matched by `pattern`.
+ * Empty string to remove content. Defaults to empty string.
+ * - propsToMatch - optional, string of space-separated properties to match; possible props:
+ *   - string or regular expression for matching the URL passed to fetch call; empty string, wildcard `*` or invalid regular expression will match all fetch calls
+ *   - colon-separated pairs `name:value` where
+ *     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
+ *     - `value` is string or regular expression for matching the value of the option passed to fetch call; invalid regular expression will cause any value matching
+ *
+ * > Usage with no arguments will log fetch calls to browser console;
+ * which is useful for debugging but only allowed for production filter lists.
+ *
+ * > Scriptlet does nothing if response body can't be converted to text.
+ *
+ * **Examples**
+ * 1. Log all fetch calls
+ *     ```
+ *     example.org#%#//scriptlet('trusted-replace-fetch-response')
+ *     ```
+ *
+ * 2. Replace response text content of fetch requests with specific url
+ *     ```
+ *     example.org#%#//scriptlet('trusted-replace-fetch-response', 'adb_detect:true', 'adb_detect:false', 'example.org')
+ *     example.org#%#//scriptlet('trusted-replace-fetch-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', 'example.org')
+ *     ```
+ *
+ * 3. Remove all text content of fetch responses with specific request method
+ *     ```
+ *     example.org#%#//scriptlet('trusted-replace-fetch-response', '*', '', 'method:GET')
+ *     ```
+ *
+ * 4. Replace response text content of fetch requests matching by URL regex and request methods
+ *     ```
+ *     example.org#%#//scriptlet('trusted-replace-fetch-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', '/\.m3u8/ method:/GET|HEAD/')
+ *     ```
+ * 5. Remove text content of all fetch responses for example.com
+ *     ```
+ *     example.org#%#//scriptlet('trusted-replace-fetch-response', '*', '', 'example.com')
+ *     ```
+ */
+/* eslint-enable max-len */
+export function trustedReplaceFetchResponse(source, pattern = '', replacement = '', propsToMatch = '') {
+    // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
+    // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+    if (typeof fetch === 'undefined'
+        || typeof Proxy === 'undefined'
+        || typeof Response === 'undefined') {
+        return;
+    }
+
+    // eslint-disable-next-line no-console
+    const log = console.log.bind(console);
+
+    // Only allow pattern as empty string for logging purposes
+    if (pattern === '' && replacement !== '') {
+        const logMessage = 'log: Pattern argument should not be empty string.';
+        log(source, logMessage);
+        return;
+    }
+    const shouldLog = pattern === '' && replacement === '';
+
+    const nativeFetch = fetch;
+
+    let shouldReplace = false;
+    let fetchData;
+
+    const handlerWrapper = async (target, thisArg, args) => {
+        fetchData = getFetchData(args);
+
+        if (shouldLog) {
+            // log if no propsToMatch given
+            log(`fetch( ${objectToString(fetchData)} )`);
+            hit(source);
+            return Reflect.apply(target, thisArg, args);
+        }
+
+        shouldReplace = matchRequestProps(propsToMatch, fetchData);
+
+        if (!shouldReplace) {
+            return Reflect.apply(target, thisArg, args);
+        }
+
+        /**
+         * Create new Response object using original response' properties
+         * and given text as body content
+         * @param {Response} response original response to copy properties from
+         * @param {string} textContent text to set as body content
+         * @returns {Response}
+         */
+        const forgeResponse = (response, textContent) => {
+            const {
+                bodyUsed,
+                headers,
+                ok,
+                redirected,
+                status,
+                statusText,
+                type,
+                url,
+            } = response;
+
+            // eslint-disable-next-line compat/compat
+            const forgedResponse = new Response(textContent, {
+                status,
+                statusText,
+                headers,
+            });
+
+            // Manually set properties which can't be set by Response constructor
+            Object.defineProperties(forgedResponse, {
+                url: { value: url },
+                type: { value: type },
+                ok: { value: ok },
+                bodyUsed: { value: bodyUsed },
+                redirected: { value: redirected },
+            });
+
+            return forgedResponse;
+        };
+
+        return nativeFetch(...args)
+            .then((response) => {
+                return response.text()
+                    .then((bodyText) => {
+                        const patternRegexp = pattern === getWildcardSymbol()
+                            ? toRegExp()
+                            : toRegExp(pattern);
+
+                        const modifiedTextContent = bodyText.replace(patternRegexp, replacement);
+                        const forgedResponse = forgeResponse(response, modifiedTextContent);
+
+                        hit(source);
+                        return forgedResponse;
+                    })
+                    .catch(() => {
+                        // log if response body can't be converted to a string
+                        const fetchDataStr = objectToString(fetchData);
+                        const logMessage = `log: Response body can't be converted to text: ${fetchDataStr}`;
+                        log(source, logMessage);
+                        return Reflect.apply(target, thisArg, args);
+                    });
+            })
+            .catch(() => Reflect.apply(target, thisArg, args));
+    };
+
+    const fetchHandler = {
+        apply: handlerWrapper,
+    };
+
+    fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
+}
+
+trustedReplaceFetchResponse.names = [
+    'trusted-replace-fetch-response',
+
+];
+
+trustedReplaceFetchResponse.injections = [
+    hit,
+    getFetchData,
+    objectToString,
+    getWildcardSymbol,
+    matchRequestProps,
+    toRegExp,
+    isValidStrPattern,
+    escapeRegExp,
+    isEmptyObject,
+    getRequestData,
+    getObjectEntries,
+    getObjectFromEntries,
+    parseMatchProps,
+    validateParsedData,
+    getMatchPropsData,
+];

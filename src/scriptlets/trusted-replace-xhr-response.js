@@ -31,7 +31,7 @@ import {
  * - pattern - optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
  * possible values:
  *   - '*' to match all text content
- *   - string
+ *   - non-empty string
  *   - regular expression
  * - replacement — optional, should be set if `pattern` is set. String to replace matched content with. Empty string to remove content.
  * - propsToMatch — optional, string of space-separated properties to match for extra condition; possible props:
@@ -77,12 +77,18 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
         return;
     }
 
-    if (typeof pattern === 'undefined' || typeof replacement === 'undefined') {
+    // eslint-disable-next-line no-console
+    const log = console.log.bind(console);
+
+    // Only allow pattern as empty string for logging purposes
+    if (pattern === '' && replacement !== '') {
+        const logMessage = 'log: Pattern argument should not be empty string.';
+        log(source, logMessage);
         return;
     }
 
-    // eslint-disable-next-line no-console
-    const log = console.log.bind(console);
+    const shouldLog = pattern === '' && replacement === '';
+
     const nativeOpen = window.XMLHttpRequest.prototype.open;
     const nativeSend = window.XMLHttpRequest.prototype.send;
 
@@ -93,13 +99,15 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
     const openWrapper = (target, thisArg, args) => {
         xhrData = getXhrData(...args);
 
-        if (pattern === '' && replacement === '') {
+        if (shouldLog) {
             // Log if no propsToMatch given
             const logMessage = `log: xhr( ${objectToString(xhrData)} )`;
-            log(source, logMessage);
-        } else {
-            shouldReplace = matchRequestProps(propsToMatch, xhrData);
+            log(logMessage);
+            hit(source);
+            return Reflect.apply(target, thisArg, args);
         }
+
+        shouldReplace = matchRequestProps(propsToMatch, xhrData);
 
         // Trap setRequestHeader of target xhr object to mimic request headers later
         if (shouldReplace) {
@@ -131,9 +139,9 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
          * to be able to collect response data without triggering
          * listeners on original XHR object
          */
-        const replacingRequest = new XMLHttpRequest();
-        replacingRequest.addEventListener('readystatechange', () => {
-            if (replacingRequest.readyState !== 4) {
+        const forgedRequest = new XMLHttpRequest();
+        forgedRequest.addEventListener('readystatechange', () => {
+            if (forgedRequest.readyState !== 4) {
                 return;
             }
 
@@ -145,7 +153,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
                 responseXML,
                 status,
                 statusText,
-            } = replacingRequest;
+            } = forgedRequest;
 
             // Extract content from response
             const content = responseText || response;
@@ -154,7 +162,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
             }
 
             const patternRegexp = pattern === getWildcardSymbol()
-                ? toRegExp
+                ? toRegExp()
                 : toRegExp(pattern);
 
             const modifiedContent = content.replace(patternRegexp, replacement);
@@ -186,7 +194,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
             hit(source);
         });
 
-        nativeOpen.apply(replacingRequest, [xhrData.method, xhrData.url]);
+        nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
 
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
@@ -194,12 +202,12 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
             const name = header[0];
             const value = header[1];
 
-            replacingRequest.setRequestHeader(name, value);
+            forgedRequest.setRequestHeader(name, value);
         });
         requestHeaders = [];
 
         try {
-            nativeSend.call(replacingRequest, args);
+            nativeSend.call(forgedRequest, args);
         } catch {
             return Reflect.apply(target, thisArg, args);
         }
