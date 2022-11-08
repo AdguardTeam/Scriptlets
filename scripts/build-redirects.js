@@ -13,19 +13,20 @@ import generateHtml from 'rollup-plugin-generate-html';
 import { minify } from 'terser';
 import * as redirectsList from '../src/redirects/redirects-list';
 import { version } from '../package.json';
-import { redirectsFilesList, getDataFromFiles } from './build-docs';
-import { writeFile } from './helpers';
 import { rollupStandard } from './rollup-runners';
+import { writeFileAsync, getDataFromFiles } from './helpers';
+import { redirectsFilenames, REDIRECTS_SRC_RELATIVE_DIR_PATH } from './constants';
 
 const FILE_NAME = 'redirects.yml';
 const CORELIBS_FILE_NAME = 'redirects.json';
 const PATH_TO_DIST = './dist';
+
 const RESULT_PATH = path.resolve(PATH_TO_DIST, FILE_NAME);
 const REDIRECT_FILES_PATH = path.resolve(PATH_TO_DIST, 'redirect-files');
 const CORELIBS_RESULT_PATH = path.resolve(PATH_TO_DIST, CORELIBS_FILE_NAME);
 
+// TODO: check if constants may be used
 const DIST_REDIRECT_FILES = 'dist/redirect-files';
-const REDIRECTS_DIRECTORY = '../src/redirects';
 const STATIC_REDIRECTS_PATH = './src/redirects/static-redirects.yml';
 const BLOCKING_REDIRECTS_PATH = './src/redirects/blocking-redirects.yml';
 const banner = `#
@@ -134,9 +135,12 @@ const getJsRedirects = async (options = {}) => {
         };
     }));
 
-    const redirectsDescriptions = getDataFromFiles(redirectsFilesList, REDIRECTS_DIRECTORY)
-        .flat(1);
+    const redirectsDescriptions = getDataFromFiles(
+        redirectsFilenames,
+        REDIRECTS_SRC_RELATIVE_DIR_PATH,
+    ).flat(1);
 
+    // TODO: seems like duplicate of already existed code
     /**
      * Returns first line of describing comment from redirect resource file
      * @param {string} rrName redirect resource name
@@ -166,7 +170,7 @@ const getJsRedirects = async (options = {}) => {
         throw new Error(`Couldn't find source for non-static redirect: ${fileName}`);
     };
 
-    const jsRedirects = redirectsFilesList.map((filename) => complementJsRedirects(filename));
+    const jsRedirects = redirectsFilenames.map((filename) => complementJsRedirects(filename));
 
     return jsRedirects;
 };
@@ -198,7 +202,7 @@ export const getPreparedRedirects = async (options) => {
 const buildJsRedirectFiles = async (redirectsData) => {
     const saveRedirectData = async (redirect) => {
         const redirectPath = `${REDIRECT_FILES_PATH}/${redirect.file}`;
-        await writeFile(redirectPath, redirect.content);
+        await writeFileAsync(redirectPath, redirect.content);
     };
 
     await Promise.all(Object.values(redirectsData)
@@ -226,9 +230,9 @@ const buildStaticRedirectFiles = async (redirectsData) => {
             // replace them all because base64 isn't supposed to have them
             contentToWrite = content.replace(/(\r\n|\n|\r|\s)/gm, '');
             const buff = Buffer.from(contentToWrite, 'base64');
-            await writeFile(redirectPath, buff);
+            await writeFileAsync(redirectPath, buff);
         } else {
-            await writeFile(redirectPath, contentToWrite);
+            await writeFileAsync(redirectPath, contentToWrite);
         }
     };
 
@@ -247,7 +251,7 @@ const buildRedirectsYamlFile = async (mergedRedirects) => {
     // add version and title to the top
     yamlRedirects = `${banner}${yamlRedirects}`;
 
-    await writeFile(RESULT_PATH, yamlRedirects);
+    await writeFileAsync(RESULT_PATH, yamlRedirects);
 };
 
 export const prebuildRedirects = async () => {
@@ -368,7 +372,7 @@ export const buildRedirectsForCorelibs = async () => {
 
     try {
         const jsonString = JSON.stringify(base64Redirects, null, 4);
-        await writeFile(CORELIBS_RESULT_PATH, jsonString);
+        await writeFileAsync(CORELIBS_RESULT_PATH, jsonString);
     } catch (e) {
         // eslint-disable-next-line no-console
         console.log(`Couldn't save to ${CORELIBS_RESULT_PATH}, because of: ${e.message}`);

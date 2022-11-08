@@ -484,10 +484,9 @@ and open needed HTML file from `tests/dist` in your browser with devtools
 
 ## <a id="how-to-update-wiki"></a> How to update wiki
 
-```
-yarn wiki:update
-```
-`about-scriptlets.md` and `about-redirects.md` are being built from JSDoc notation of corresponding scriptlets and redirects source files with `@scriptlet/@redirect` and `@description` tags.
+There are two scripts to update wiki:
+1. `yarn wiki:build-table` — checks compatibility data updates and updates the compatibility table. Should be run manually while the release preparation.
+2. `yarn wiki:build-docs` — updates wiki pages `about-scriptlets.md` and `about-redirects.md`. They are being generated from JSDoc-type comments of corresponding scriptlets and redirects source files due to `@scriptlet`/`@redirect` and `@description` tags. Runs automatically while the release build.
 
 ## <a id="browser-compatibility"> Browser Compatibility
 | Chrome | Edge | Firefox | IE  | Opera | Safari |

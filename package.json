@@ -10,9 +10,8 @@
         "gui-test": "babel-node scripts/build-tests.js && open http://localhost:8585 && node ./tests/server.js",
         "lint": "eslint .",
         "lint-staged": "lint-staged",
+        "wiki:build-table": "node ./scripts/check-sources-updates.js && node ./scripts/build-compatibility-table.js",
         "wiki:build-docs": "node scripts/build-docs.js",
-        "wiki:check-updates": "node ./scripts/check-sources-updates.js",
-        "wiki:update": "yarn wiki:check-updates && node ./scripts/build-compatibility-table.js",
         "prepublishOnly": "yarn build",
         "increment": "yarn version --patch --no-git-tag-version"
     },

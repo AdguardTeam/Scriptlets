@@ -1,80 +1,115 @@
+const path = require('path');
 const fs = require('fs');
-const os = require('os');
+const { EOL } = require('os');
+
 const {
     REMOVED_MARKER,
+    WIKI_DIR_PATH,
     COMPATIBILITY_TABLE_DATA_PATH,
-    WIKI_COMPATIBILITY_TABLE_PATH,
 } = require('./constants');
 
+const COMPATIBILITY_TABLE_OUTPUT_FILENAME = 'compatibility-table.md';
+
 /**
- * Returns data for compatibility tables
+ * Path to **output** wiki compatibility table file
  */
-function getTableData() {
+const WIKI_COMPATIBILITY_TABLE_PATH = path.resolve(
+    __dirname,
+    WIKI_DIR_PATH,
+    COMPATIBILITY_TABLE_OUTPUT_FILENAME,
+);
+
+/**
+ * @typedef {Object} CompatibilityItem
+ * @property {string} adg
+ * @property {string} abp
+ * @property {string} ubo
+ */
+
+/**
+ * @typedef {Object} CompatibilityData
+ * @property {CompatibilityItem[]} scriptlets
+ * @property {CompatibilityItem[]} redirects
+ */
+
+/**
+ * Returns data for compatibility table
+ *
+ * @returns {CompatibilityData} input compatibility data from json
+ */
+const getTableData = () => {
     const rawData = fs.readFileSync(COMPATIBILITY_TABLE_DATA_PATH);
-    const parsed = JSON.parse(rawData);
-    return parsed;
-}
+    return JSON.parse(rawData);
+};
 
 /**
  * Returns markdown row of compatibility table
- * @param {{
- * adg: string,
- * ubo: string,
- * abp: string
- * }} item { an }
+ *
+ * @param {'scriptlets'|'redirects'} id
+ * @param {CompatibilityItem} item params object
+ * @param {string} item.adg AdGuard name
+ * @param {string} item.abp Adblock Plus name
+ * @param {string} item.ubo uBlock name
+ *
+ * @returns {string} markdown table row
  */
-const getRow = (id, item) => {
+const getRow = (id, { adg, abp, ubo }) => {
     let adgCell = '';
-    if (item.adg) {
-        adgCell = item.adg.includes(REMOVED_MARKER)
-            ? item.adg
-            : `[${item.adg}](../wiki/about-${id}.md#${item.adg})`;
+    if (adg) {
+        adgCell = adg.includes(REMOVED_MARKER)
+            ? adg
+            : `[${adg}](${WIKI_DIR_PATH}/about-${id}.md#${adg})`;
     }
 
-    return `| ${adgCell} | ${item.ubo || ''} | ${item.abp || ''} |${os.EOL}`;
+    return `| ${adgCell} | ${ubo || ''} | ${abp || ''} |${EOL}`;
 };
 
 /**
  * Generates table header
+ *
+ * @returns {string}
  */
 const getTableHeader = () => {
-    let res = `| AdGuard | uBO | Adblock Plus |${os.EOL}`;
-    res += `|---|---|---|${os.EOL}`;
+    let res = `| AdGuard | uBO | Adblock Plus |${EOL}`;
+    res += `|---|---|---|${EOL}`;
     return res;
 };
 
 /**
- * Builds markdown string with scriptlets compatibility table
- * @param {Array} data array with scriptlets names
+ * Builds markdown string of scriptlets/redirect compatibility table
+ * @param {string} title title for scriptlets or redirects
+ * @param {CompatibilityItem[]} data array of scriptlets or redirects compatibility data items
+ * @param {'scriptlets'|'redirects'} id
+ *
+ * @returns {string} scriptlets or redirects compatibility table
  */
-function buildTable(title, data = [], id = '') {
+const buildTable = (title, data = [], id = '') => {
     // title
-    let res = `# <a id="${id}"></a> ${title}${os.EOL}${os.EOL}`;
+    let res = `# <a id="${id}"></a> ${title}${EOL}${EOL}`;
     // header
     res += getTableHeader();
     // rows
     res += data
-        .map((item) => {
-            const row = getRow(id, item);
-            return row;
-        })
+        .map((item) => getRow(id, item))
         .join('');
 
     return res;
-}
+};
 
 /**
- * Save tables to compatibility table
+ * Saves tables to compatibility table
+ *
+ * @param {string[]} args
  */
-function saveTables(...args) {
-    const res = args.join(`${os.EOL}${os.EOL}`);
+const saveTables = (...args) => {
+    const res = args.join(`${EOL}${EOL}`);
     fs.writeFileSync(WIKI_COMPATIBILITY_TABLE_PATH, res);
-}
+};
 
 /**
- * Entry function
+ * Builds full compatibility table
  */
-function init() {
+const buildCompatibilityTable = () => {
     const { scriptlets, redirects } = getTableData();
 
     const scriptletsTable = buildTable(
@@ -89,6 +124,6 @@ function init() {
     );
 
     saveTables(scriptletsTable, redirectsTable);
-}
+};
 
-init();
+buildCompatibilityTable();
