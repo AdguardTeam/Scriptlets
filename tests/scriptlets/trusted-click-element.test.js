@@ -1,6 +1,6 @@
 /* eslint-disable no-underscore-dangle, no-console */
 import { runScriptlet, clearGlobalProps } from '../helpers';
-import { prepareCookie } from '../../src/helpers';
+import { concatCookieNameValuePath } from '../../src/helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-click-element';
@@ -162,7 +162,7 @@ test('Multiple elements clicked, non-ordered render', (assert) => {
 
 test('extraMatch - single cookie match, matched', (assert) => {
     const cookieKey1 = 'first';
-    const cookieData = prepareCookie(cookieKey1, 'true');
+    const cookieData = concatCookieNameValuePath(cookieKey1, 'true', '/');
     document.cookie = cookieData;
     const EXTRA_MATCH_STR = `cookie:${cookieKey1}`;
 
@@ -190,7 +190,7 @@ test('extraMatch - single cookie match, matched', (assert) => {
 test('extraMatch - single cookie match, not matched', (assert) => {
     const cookieKey1 = 'first';
     const cookieKey2 = 'second';
-    const cookieData = prepareCookie(cookieKey1, 'true');
+    const cookieData = concatCookieNameValuePath(cookieKey1, 'true', '/');
     document.cookie = cookieData;
     const EXTRA_MATCH_STR = `cookie:${cookieKey2}`;
 
@@ -218,7 +218,7 @@ test('extraMatch - single cookie match, not matched', (assert) => {
 test('extraMatch - string+regex cookie input, matched', (assert) => {
     const cookieKey1 = 'first';
     const cookieVal1 = 'true';
-    const cookieData1 = prepareCookie(cookieKey1, cookieVal1);
+    const cookieData1 = concatCookieNameValuePath(cookieKey1, cookieVal1, '/');
     document.cookie = cookieData1;
     const EXTRA_MATCH_STR = 'cookie:/firs/=true';
 
@@ -299,13 +299,13 @@ test('extraMatch - single localStorage match, not matched', (assert) => {
 test('extraMatch - complex string+regex cookie input & whitespaces & comma in regex, matched', (assert) => {
     const cookieKey1 = 'first';
     const cookieVal1 = 'true';
-    const cookieData1 = prepareCookie(cookieKey1, cookieVal1);
+    const cookieData1 = concatCookieNameValuePath(cookieKey1, cookieVal1, '/');
     const cookieKey2 = 'sec';
     const cookieVal2 = '1-1';
-    const cookieData2 = prepareCookie(cookieKey2, cookieVal2);
+    const cookieData2 = concatCookieNameValuePath(cookieKey2, cookieVal2, '/');
     const cookieKey3 = 'third';
     const cookieVal3 = 'true';
-    const cookieData3 = prepareCookie(cookieKey3, cookieVal3);
+    const cookieData3 = concatCookieNameValuePath(cookieKey3, cookieVal3, '/');
 
     document.cookie = cookieData1;
     document.cookie = cookieData2;

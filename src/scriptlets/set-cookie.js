@@ -1,4 +1,14 @@
-import { hit, nativeIsNaN, prepareCookie } from '../helpers/index';
+import {
+    hit,
+    nativeIsNaN,
+    isCookieSetWithValue,
+    getLimitedCookieValue,
+    concatCookieNameValuePath,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    isValidCookieRawPath,
+    getCookiePath,
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**
@@ -36,7 +46,16 @@ import { hit, nativeIsNaN, prepareCookie } from '../helpers/index';
  */
 /* eslint-enable max-len */
 export function setCookie(source, name, value, path = '/') {
-    const cookieData = prepareCookie(name, value, path);
+    // eslint-disable-next-line no-console
+    const log = console.log.bind(console);
+
+    const validValue = getLimitedCookieValue(value);
+    if (validValue === null) {
+        log(`Invalid cookie value: '${validValue}'`);
+        return;
+    }
+
+    const cookieData = concatCookieNameValuePath(name, validValue, path);
 
     if (cookieData) {
         hit(source);
@@ -48,4 +67,12 @@ setCookie.names = [
     'set-cookie',
 ];
 
-setCookie.injections = [hit, nativeIsNaN, prepareCookie];
+setCookie.injections = [
+    hit,
+    nativeIsNaN,
+    isCookieSetWithValue,
+    getLimitedCookieValue,
+    concatCookieNameValuePath,
+    isValidCookieRawPath,
+    getCookiePath,
+];

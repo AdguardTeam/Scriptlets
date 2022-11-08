@@ -50,4 +50,5 @@ export * from './prevent-element-src-loading';
 export * from './no-topics';
 export * from './trusted-replace-xhr-response';
 export * from './xml-prune';
+export * from './trusted-set-cookie';
 export * from './trusted-replace-fetch-response';

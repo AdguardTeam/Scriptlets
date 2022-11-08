@@ -1,7 +1,13 @@
 import {
     hit,
     nativeIsNaN,
-    prepareCookie,
+    isCookieSetWithValue,
+    getLimitedCookieValue,
+    concatCookieNameValuePath,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    isValidCookieRawPath,
+    getCookiePath,
 } from '../helpers/index';
 
 /**
@@ -40,25 +46,20 @@ import {
  * ```
  */
 export function setCookieReload(source, name, value, path = '/') {
-    const isCookieSetWithValue = (name, value) => {
-        return document.cookie.split(';')
-            .some((cookieStr) => {
-                const pos = cookieStr.indexOf('=');
-                if (pos === -1) {
-                    return false;
-                }
-                const cookieName = cookieStr.slice(0, pos).trim();
-                const cookieValue = cookieStr.slice(pos + 1).trim();
-
-                return name === cookieName && value === cookieValue;
-            });
-    };
-
     if (isCookieSetWithValue(name, value)) {
         return;
     }
 
-    const cookieData = prepareCookie(name, value, path);
+    // eslint-disable-next-line no-console
+    const log = console.log.bind(console);
+
+    const validValue = getLimitedCookieValue(value);
+    if (validValue === null) {
+        log(`Invalid cookie value: '${validValue}'`);
+        return;
+    }
+
+    const cookieData = concatCookieNameValuePath(name, validValue, path);
 
     if (cookieData) {
         document.cookie = cookieData;
@@ -66,7 +67,7 @@ export function setCookieReload(source, name, value, path = '/') {
 
         // Only reload the page if cookie was set
         // https://github.com/AdguardTeam/Scriptlets/issues/212
-        if (isCookieSetWithValue(name, value)) {
+        if (isCookieSetWithValue(document.cookie, name, value)) {
             window.location.reload();
         }
     }
@@ -76,4 +77,12 @@ setCookieReload.names = [
     'set-cookie-reload',
 ];
 
-setCookieReload.injections = [hit, nativeIsNaN, prepareCookie];
+setCookieReload.injections = [
+    hit,
+    nativeIsNaN,
+    isCookieSetWithValue,
+    getLimitedCookieValue,
+    concatCookieNameValuePath,
+    isValidCookieRawPath,
+    getCookiePath,
+];

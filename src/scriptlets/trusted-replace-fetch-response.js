@@ -172,8 +172,7 @@ export function trustedReplaceFetchResponse(source, pattern = '', replacement = 
                     .catch(() => {
                         // log if response body can't be converted to a string
                         const fetchDataStr = objectToString(fetchData);
-                        const logMessage = `log: Response body can't be converted to text: ${fetchDataStr}`;
-                        log(source, logMessage);
+                        log(`Response body can't be converted to text: ${fetchDataStr}`);
                         return Reflect.apply(target, thisArg, args);
                     });
             })
