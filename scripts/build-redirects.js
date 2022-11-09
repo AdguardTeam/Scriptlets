@@ -14,7 +14,7 @@ import { minify } from 'terser';
 import * as redirectsList from '../src/redirects/redirects-list';
 import { version } from '../package.json';
 import { rollupStandard } from './rollup-runners';
-import { writeFileAsync, getDataFromFiles } from './helpers';
+import { writeFile, getDataFromFiles } from './helpers';
 import { redirectsFilenames, REDIRECTS_SRC_RELATIVE_DIR_PATH } from './constants';
 
 const FILE_NAME = 'redirects.yml';
@@ -202,7 +202,7 @@ export const getPreparedRedirects = async (options) => {
 const buildJsRedirectFiles = async (redirectsData) => {
     const saveRedirectData = async (redirect) => {
         const redirectPath = `${REDIRECT_FILES_PATH}/${redirect.file}`;
-        await writeFileAsync(redirectPath, redirect.content);
+        await writeFile(redirectPath, redirect.content);
     };
 
     await Promise.all(Object.values(redirectsData)
@@ -230,9 +230,9 @@ const buildStaticRedirectFiles = async (redirectsData) => {
             // replace them all because base64 isn't supposed to have them
             contentToWrite = content.replace(/(\r\n|\n|\r|\s)/gm, '');
             const buff = Buffer.from(contentToWrite, 'base64');
-            await writeFileAsync(redirectPath, buff);
+            await writeFile(redirectPath, buff);
         } else {
-            await writeFileAsync(redirectPath, contentToWrite);
+            await writeFile(redirectPath, contentToWrite);
         }
     };
 
@@ -251,7 +251,7 @@ const buildRedirectsYamlFile = async (mergedRedirects) => {
     // add version and title to the top
     yamlRedirects = `${banner}${yamlRedirects}`;
 
-    await writeFileAsync(RESULT_PATH, yamlRedirects);
+    await writeFile(RESULT_PATH, yamlRedirects);
 };
 
 export const prebuildRedirects = async () => {
@@ -372,7 +372,7 @@ export const buildRedirectsForCorelibs = async () => {
 
     try {
         const jsonString = JSON.stringify(base64Redirects, null, 4);
-        await writeFileAsync(CORELIBS_RESULT_PATH, jsonString);
+        await writeFile(CORELIBS_RESULT_PATH, jsonString);
     } catch (e) {
         // eslint-disable-next-line no-console
         console.log(`Couldn't save to ${CORELIBS_RESULT_PATH}, because of: ${e.message}`);
