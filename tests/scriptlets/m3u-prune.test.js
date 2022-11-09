@@ -6,6 +6,8 @@ const name = 'm3u-prune';
 
 const M3U8_OBJECTS_PATH_01 = './test-files/manifestM3U8-01.m3u8';
 const M3U8_OBJECTS_PATH_02 = './test-files/manifestM3U8-02.m3u8';
+const M3U8_OBJECTS_PATH_03 = './test-files/manifestM3U8-03.m3u8';
+const M3U8_OBJECTS_PATH_04 = './test-files/manifestM3U8-04.m3u8';
 const nativeFetch = fetch;
 const nativeXhrOpen = XMLHttpRequest.prototype.open;
 const nativeConsole = console.log;
@@ -51,7 +53,7 @@ if (!isSupported) {
     });
 
     test('fetch - no prune 1', async (assert) => {
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_01}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_01;
         const done = assert.async();
 
         runScriptlet(name);
@@ -65,7 +67,7 @@ if (!isSupported) {
     });
 
     test('fetch - no prune 2', async (assert) => {
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_02}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_02;
         const done = assert.async();
 
         runScriptlet(name);
@@ -79,7 +81,7 @@ if (!isSupported) {
     });
 
     test('fetch URL does not match - no prune 1', async (assert) => {
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_01}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_01;
         const MATCH_DATA = 'tvessaiprod.nbcuni.com/video/';
         const MATCH_URL = 'noPrune';
         const scriptletArgs = [MATCH_DATA, MATCH_URL];
@@ -96,7 +98,7 @@ if (!isSupported) {
     });
 
     test('fetch URL does not match - no prune 2', async (assert) => {
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_02}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_02;
         const MATCH_DATA = 'tvessaiprod.nbcuni.com/video/';
         const MATCH_URL = 'noPrune';
         const scriptletArgs = [MATCH_DATA, MATCH_URL];
@@ -114,7 +116,7 @@ if (!isSupported) {
     });
 
     test('fetch - remove ads 1', async (assert) => {
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_01}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_01;
         const MATCH_DATA = 'tvessaiprod.nbcuni.com/video/';
 
         runScriptlet(name, [MATCH_DATA]);
@@ -133,8 +135,8 @@ if (!isSupported) {
         done();
     });
 
-    test('fetch - remove ads 2', async (assert) => {
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_02}`;
+    test('fetch - remove ads 2 (COMCAST)', async (assert) => {
+        const M3U8_PATH = M3U8_OBJECTS_PATH_02;
         const MATCH_DATA = 'VMAP-AD-BREAK';
 
         runScriptlet(name, [MATCH_DATA]);
@@ -149,8 +151,40 @@ if (!isSupported) {
         done();
     });
 
+    test('fetch - remove ads 3 (UPLYNK)', async (assert) => {
+        const M3U8_PATH = M3U8_OBJECTS_PATH_03;
+        const MATCH_DATA = '/#UPLYNK-SEGMENT:.*,ad/';
+
+        runScriptlet(name, [MATCH_DATA]);
+
+        const done = assert.async();
+
+        const response = await fetch(M3U8_PATH);
+        const responseM3U8 = await response.text();
+
+        assert.notOk(responseM3U8.indexOf(',ad') > -1, 'check if "UPLYNK" ad segment has been removed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('fetch - remove ads 4', async (assert) => {
+        const M3U8_PATH = M3U8_OBJECTS_PATH_04;
+        const MATCH_DATA = '/videoplayback.*&source=dclk_video_ads/';
+
+        runScriptlet(name, [MATCH_DATA]);
+
+        const done = assert.async();
+
+        const response = await fetch(M3U8_PATH);
+        const responseM3U8 = await response.text();
+
+        assert.notOk(responseM3U8.indexOf('dclk_video_ads') > -1, 'check if "dclk_video_ads" ad segment has been removed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
     test('fetch regexp propsToRemove - remove ads 1', async (assert) => {
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_01}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_01;
         const MATCH_DATA = '/tvessaiprod\\.nbcuni\\.com/video//';
 
         runScriptlet(name, [MATCH_DATA]);
@@ -169,7 +203,7 @@ if (!isSupported) {
     });
 
     test('fetch regexp propsToRemove - remove ads 2', async (assert) => {
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_02}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_02;
         const MATCH_DATA = '/VMAP.AD.BREAK/';
 
         runScriptlet(name, [MATCH_DATA]);
@@ -184,7 +218,7 @@ if (!isSupported) {
     });
 
     test('fetch match URL - remove ads 1', async (assert) => {
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_01}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_01;
         const MATCH_DATA = 'tvessaiprod.nbcuni.com/video/';
         const MATCH_URL = '.m3u8';
         const scriptletArgs = [MATCH_DATA, MATCH_URL];
@@ -205,7 +239,7 @@ if (!isSupported) {
     });
 
     test('fetch match URL - remove ads 2', async (assert) => {
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_02}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_02;
         const MATCH_DATA = 'VMAP-AD-BREAK';
         const MATCH_URL = '.m3u8';
         const scriptletArgs = [MATCH_DATA, MATCH_URL];
@@ -223,7 +257,7 @@ if (!isSupported) {
 
     test('xhr - no prune 1', async (assert) => {
         const METHOD = 'GET';
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_01}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_01;
         const done = assert.async();
 
         runScriptlet(name);
@@ -240,7 +274,7 @@ if (!isSupported) {
 
     test('xhr - no prune 2', async (assert) => {
         const METHOD = 'GET';
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_02}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_02;
         const done = assert.async();
 
         runScriptlet(name);
@@ -257,7 +291,7 @@ if (!isSupported) {
 
     test('xhr match URL but do not match element to remove - no prune 1', async (assert) => {
         const METHOD = 'GET';
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_01}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_01;
         const MATCH_DATA = 'DO-NOT-MATCH';
         const MATCH_URL = '.m3u8';
         const scriptletArgs = [MATCH_DATA, MATCH_URL];
@@ -278,7 +312,7 @@ if (!isSupported) {
 
     test('xhr match URL but do not match element to remove - no prune 2', async (assert) => {
         const METHOD = 'GET';
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_02}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_02;
         const MATCH_DATA = 'DO-NOT-MATCH';
         const MATCH_URL = '.m3u8';
         const scriptletArgs = [MATCH_DATA, MATCH_URL];
@@ -299,7 +333,7 @@ if (!isSupported) {
 
     test('xhr - remove ads 1', async (assert) => {
         const METHOD = 'GET';
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_01}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_01;
         const MATCH_DATA = 'tvessaiprod.nbcuni.com/video/';
 
         runScriptlet(name, [MATCH_DATA]);
@@ -320,9 +354,9 @@ if (!isSupported) {
         xhr.send();
     });
 
-    test('xhr - remove ads 2', async (assert) => {
+    test('xhr - remove ads 2 (COMCAST)', async (assert) => {
         const METHOD = 'GET';
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_02}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_02;
         const MATCH_DATA = 'VMAP-AD-BREAK';
 
         runScriptlet(name, [MATCH_DATA]);
@@ -339,9 +373,28 @@ if (!isSupported) {
         xhr.send();
     });
 
+    test('xhr - remove ads 3 (UPLYNK)', async (assert) => {
+        const METHOD = 'GET';
+        const M3U8_PATH = M3U8_OBJECTS_PATH_03;
+        const MATCH_DATA = '/#UPLYNK-SEGMENT:.*,ad/';
+
+        runScriptlet(name, [MATCH_DATA]);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, M3U8_PATH);
+        xhr.onload = () => {
+            assert.notOk(xhr.responseText.indexOf(',ad') > -1, 'check if "UPLYNK" ad segment has been removed');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
     test('xhr regexp propsToRemove - remove ads 1', async (assert) => {
         const METHOD = 'GET';
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_01}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_01;
         const MATCH_DATA = '/tvessaiprod\\.nbcuni\\.com/video//';
 
         runScriptlet(name, [MATCH_DATA]);
@@ -364,7 +417,7 @@ if (!isSupported) {
 
     test('xhr regexp propsToRemove - remove ads 2', async (assert) => {
         const METHOD = 'GET';
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_02}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_02;
         const MATCH_DATA = '/VMAP.AD.BREAK/';
 
         runScriptlet(name, [MATCH_DATA]);
@@ -383,7 +436,7 @@ if (!isSupported) {
 
     test('xhr match URL - remove ads 1', async (assert) => {
         const METHOD = 'GET';
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_01}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_01;
         const MATCH_DATA = 'tvessaiprod.nbcuni.com/video/';
         const MATCH_URL = '.m3u8';
         const scriptletArgs = [MATCH_DATA, MATCH_URL];
@@ -408,7 +461,7 @@ if (!isSupported) {
 
     test('xhr match URL - remove ads 2', async (assert) => {
         const METHOD = 'GET';
-        const M3U8_PATH = `${M3U8_OBJECTS_PATH_02}`;
+        const M3U8_PATH = M3U8_OBJECTS_PATH_02;
         const MATCH_DATA = 'VMAP-AD-BREAK';
         const MATCH_URL = '.m3u8';
         const scriptletArgs = [MATCH_DATA, MATCH_URL];

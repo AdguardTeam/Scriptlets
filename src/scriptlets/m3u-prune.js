@@ -17,7 +17,7 @@ import {
  * example.org#%#//scriptlet('m3u-prune'[, propsToRemove[, urlToMatch]])
  * ```
  *
- * - `propsToRemove` - optional, string or regular expression to match the directives content of M3U file which will be removed
+ * - `propsToRemove` - optional, string or regular expression to match the URL line (segment) which will be removed alongside with its tags
  * - `urlToMatch` - optional, string or regular expression for matching the request's URL
  * > Usage with no arguments will log response payload and URL to browser console;
  * which is useful for debugging but prohibited for production filter lists.
@@ -64,17 +64,25 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
     const urlMatchRegexp = toRegExp(urlToMatch);
 
     const AD_MARKER = {
-        AD: '-AD-',
-        ASSET: '#EXT-X-ASSET:CAID',
-        CUE: '#EXT-X-CUE:TYPE="SpliceOut"',
+        ASSET: '#EXT-X-ASSET:',
+        CUE: '#EXT-X-CUE:',
         CUE_IN: '#EXT-X-CUE-IN',
         DISCONTINUITY: '#EXT-X-DISCONTINUITY',
+        EXT_X_KEY: '#EXT-X-KEY:METHOD=NONE',
         EXTINF: '#EXTINF',
         EXTM3U: '#EXTM3U',
         SCTE35: '#EXT-X-SCTE35:',
+    };
+
+    const COMCAST_AD_MARKER = {
+        AD: '-AD-',
         VAST: '-VAST-',
         VMAP_AD: '-VMAP-AD-',
         VMAP_AD_BREAK: '#EXT-X-VMAP-AD-BREAK:',
+    };
+
+    const UPLYNK_AD_MARKER = {
+        SEGMENT: '#UPLYNK-SEGMENT',
     };
 
     /**
@@ -103,16 +111,16 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
 
     /**
     * Sets an item in array to undefined, if it contains one of the
-    * AD_MARKER: AD_MARKER.VMAP_AD, AD_MARKER.VAST, AD_MARKER.AD
+    * COMCAST_AD_MARKER: COMCAST_AD_MARKER.VMAP_AD, COMCAST_AD_MARKER.VAST, COMCAST_AD_MARKER.AD
     * @param {Array} lines
     * @returns {Array}
     */
     const pruneVmapBlock = (lines) => {
         let array = lines.slice();
         for (let i = 0; i < array.length - 1; i += 1) {
-            if (array[i].indexOf(AD_MARKER.VMAP_AD) > -1
-                || array[i].indexOf(AD_MARKER.VAST) > -1
-                || array[i].indexOf(AD_MARKER.AD) > -1) {
+            if (array[i].indexOf(COMCAST_AD_MARKER.VMAP_AD) > -1
+                || array[i].indexOf(COMCAST_AD_MARKER.VAST) > -1
+                || array[i].indexOf(COMCAST_AD_MARKER.AD) > -1) {
                 array[i] = undefined;
                 if (array[i + 1].indexOf(AD_MARKER.EXTINF) > -1) {
                     i += 1;
@@ -162,7 +170,7 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
 
     /**
     * Sets an item in array to undefined, if it contains removeM3ULineRegexp and one of the
-    * AD_MARKER: AD_MARKER.EXTINF, AD_MARKER.DISCONTINUITY
+    * AD_MARKER: AD_MARKER.EXTINF, AD_MARKER.DISCONTINUITY, AD_MARKER.EXT_X_KEY
     * @param {Array} lines
     * @param {number} i
     * @returns {Array}
@@ -180,6 +188,34 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
         if (startsWith(lines[i], AD_MARKER.DISCONTINUITY)) {
             lines[i] = undefined;
         }
+        i += 1;
+        if (startsWith(lines[i], AD_MARKER.EXT_X_KEY)) {
+            lines[i] = undefined;
+        }
+        return lines;
+    };
+
+    /**
+    * Sets an item in array to undefined, if it contains removeM3ULineRegexp
+    * and UPLYNK_AD_MARKER.SEGMENT
+    * @param {Array} lines
+    * @returns {Array}
+    */
+    const pruneUplynkSegments = (lines) => {
+        for (let i = 0; i < lines.length - 1; i += 1) {
+            if (removeM3ULineRegexp.test(lines[i])) {
+                lines[i] = undefined;
+                i += 1;
+                for (let j = i; j < lines.length; j += 1) {
+                    if (lines[j].indexOf(UPLYNK_AD_MARKER.SEGMENT) < 0) {
+                        lines[j] = undefined;
+                    } else {
+                        i = j - 1;
+                        break;
+                    }
+                }
+            }
+        }
         return lines;
     };
 
@@ -193,7 +229,7 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
         // If so, then it might be an M3U file and should be pruned or logged
         const trimmedText = text.trim();
         if (startsWith(trimmedText, AD_MARKER.EXTM3U)
-            || startsWith(trimmedText, AD_MARKER.VMAP_AD_BREAK)) {
+            || startsWith(trimmedText, COMCAST_AD_MARKER.VMAP_AD_BREAK)) {
             return true;
         }
         return false;
@@ -218,11 +254,15 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
     const pruneM3U = (text) => {
         let lines = text.split(/\n\r|\n|\r/);
 
-        if (text.indexOf(AD_MARKER.VMAP_AD_BREAK) > -1) {
+        if (text.indexOf(COMCAST_AD_MARKER.VMAP_AD_BREAK) > -1) {
             lines = pruneVmapBlock(lines);
             return lines.filter((l) => l !== undefined).join('\n');
         }
 
+        if (text.indexOf(UPLYNK_AD_MARKER.SEGMENT) > -1) {
+            lines = pruneUplynkSegments(lines);
+            return lines.filter((l) => l !== undefined).join('\n');
+        }
         for (let i = 0; i < lines.length; i += 1) {
             lines = pruneSpliceoutBlock(lines, i);
             lines = pruneInfBlock(lines, i);
