@@ -1,6 +1,7 @@
 import {
     hit,
     nativeIsNaN,
+    setStorageItem,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -9,6 +10,7 @@ import {
  *
  * @description
  * Adds specified key and its value to localStorage object, or updates the value of the key if it already exists.
+ * Scriptlet won't set item if storage is full.
  *
  * **Syntax**
  * ```
@@ -39,7 +41,16 @@ import {
 /* eslint-enable max-len */
 
 export function setLocalStorageItem(source, key, value) {
-    if (!key || (!value && value !== '')) {
+    // eslint-disable-next-line no-console
+    const log = console.log.bind(console);
+
+    if (typeof key === 'undefined') {
+        log('Item key should be specified.');
+        return;
+    }
+
+    if (typeof value === 'undefined') {
+        log('Item value should be specified.');
         return;
     }
 
@@ -74,21 +85,9 @@ export function setLocalStorageItem(source, key, value) {
         return;
     }
 
-    const setItem = (key, value) => {
-        const { localStorage } = window;
-        // setItem() may throw an exception if the storage is full.
-        try {
-            localStorage.setItem(key, value);
-            hit(source);
-        } catch (e) {
-            if (source.verbose) {
-                // eslint-disable-next-line no-console
-                console.log(`Was unable to set localStorage item due to: ${e.message}`);
-            }
-        }
-    };
-
-    setItem(key, keyValue);
+    const { localStorage } = window;
+    setStorageItem(localStorage, key, keyValue, source.verbose);
+    hit(source);
 }
 
 setLocalStorageItem.names = [
@@ -98,4 +97,5 @@ setLocalStorageItem.names = [
 setLocalStorageItem.injections = [
     hit,
     nativeIsNaN,
+    setStorageItem,
 ];

@@ -27,3 +27,5 @@ export * from './random-response';
 export * from './get-descriptor-addon';
 export * from './parse-flags';
 export * from './match-request-props';
+export * from './storage-utils';
+export * from './parse-keyword-value';

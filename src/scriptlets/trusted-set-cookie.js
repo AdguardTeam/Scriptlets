@@ -3,6 +3,7 @@ import {
     nativeIsNaN,
     isCookieSetWithValue,
     concatCookieNameValuePath,
+    parseKeywordValue,
     // following helpers should be imported and injected
     // because they are used by helpers above
     isValidCookieRawPath,
@@ -90,21 +91,10 @@ export function trustedSetCookie(source, name, value, offsetExpiresSec = '', rel
         return;
     }
 
-    const NOW_VALUE_KEYWORD = '$now$';
     const ONE_YEAR_EXPIRATION_KEYWORD = '1year';
     const ONE_DAY_EXPIRATION_KEYWORD = '1day';
 
-    let parsedValue;
-
-    if (value === NOW_VALUE_KEYWORD) {
-        // Set cookie value to current time if corresponding keyword was passed
-        const date = new Date();
-        const currentTime = date.getTime();
-
-        parsedValue = currentTime.toString();
-    } else {
-        parsedValue = value;
-    }
+    const parsedValue = parseKeywordValue(value);
 
     let cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
     if (!cookieToSet) {
@@ -161,5 +151,6 @@ trustedSetCookie.injections = [
     isCookieSetWithValue,
     concatCookieNameValuePath,
     isValidCookieRawPath,
+    parseKeywordValue,
     getCookiePath,
 ];
