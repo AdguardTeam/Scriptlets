@@ -6,6 +6,9 @@ AdGuard's Scriptlets and Redirect resources library which provides extended capa
     * [Syntax](#scriptlet-syntax)
     * [Available scriptlets](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#scriptlets)
     * [Scriptlets compatibility table](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/compatibility-table.md#scriptlets)
+    * [Trusted scriptlets](#trusted-scriptlets)
+        * [Restriction](#trusted-scriptlets-restriction)
+        * [Available trusted scriptlets](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-scriptlets)
 * [Redirect resources](#redirect-resources)
     * [Syntax](#redirect-syntax)
     * [Available redirect resources](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-redirects.md#redirect-resources)
@@ -49,10 +52,27 @@ example.org#%#//scriptlet('abort-on-property-read', 'alert')
 example.org#%#//scriptlet('remove-class', 'branding', 'div[class^="inner"]')
 ```
 
-This rule applies the `abort-on-property-read` scriptlet on all pages of `example.org` and its subdomains, and passes one orgument to it (`alert`).
+This rule applies the `abort-on-property-read` scriptlet on all pages of `example.org` and its subdomains, and passes one argument to it (`alert`).
 
 * **[Scriptlets list](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#scriptlets)**
 * **[Scriptlets compatibility table](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/compatibility-table.md#scriptlets)**
+
+
+### <a id="trusted-scriptlets"></a> Trusted scriptlets
+
+Trusted scriptlets are scriptlets with extended functionality. Their names are prefixed with `trusted-`, e.g `trusted-click-element`, to be easily distinguished from common scriptlets.
+
+#### <a id="trusted-scriptlets-restriction"></a> Restriction
+
+Trusted scriptlets application must be restricted due to dangerous nature of their capabilities. 
+Allowed sources of trusted scriptlets are:
+* filters created by AdGuard Team,
+* custom filters which were installed as `trusted`,
+* user rules.
+
+> Trusted scriptlets has no compatibility table as they are not compatible with any other blocker.
+
+**[Trusted scriptlets list](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-scriptlets)**
 
 
 ## Redirect resources

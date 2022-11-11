@@ -22,6 +22,8 @@ const SRC_REDIRECTS_SUB_DIR = 'redirects';
 const SCRIPTLETS_SRC_RELATIVE_DIR_PATH = `${SRC_RELATIVE_DIR}/${SRC_SCRIPTLETS_SUB_DIR}`;
 const REDIRECTS_SRC_RELATIVE_DIR_PATH = `${SRC_RELATIVE_DIR}/${SRC_REDIRECTS_SUB_DIR}`;
 
+const TRUSTED_SCRIPTLETS_PREFIX = 'trusted-';
+
 // files which are not scriptlets in the source directory
 const NON_SCRIPTLETS_FILES = [
     'index.js',
@@ -30,8 +32,15 @@ const NON_SCRIPTLETS_FILES = [
     'scriptlets-wrapper.js',
     'scriptlets-umd-wrapper.js',
 ];
+
+const isUtilityFileName = (filename) => NON_SCRIPTLETS_FILES.includes(filename);
+const isTrustedScriptletsFilename = (filename) => filename.startsWith(TRUSTED_SCRIPTLETS_PREFIX);
+
 const scriptletsFilenames = getFilesList(SCRIPTLETS_SRC_RELATIVE_DIR_PATH)
-    .filter((el) => !NON_SCRIPTLETS_FILES.includes(el));
+    .filter((el) => !isUtilityFileName(el) && !isTrustedScriptletsFilename(el));
+
+const trustedScriptletsFilenames = getFilesList(SCRIPTLETS_SRC_RELATIVE_DIR_PATH)
+    .filter((el) => isTrustedScriptletsFilename(el));
 
 // files which are not redirects in the source directory
 const NON_REDIRECTS_FILES = [
@@ -49,5 +58,6 @@ module.exports = {
     SCRIPTLETS_SRC_RELATIVE_DIR_PATH,
     REDIRECTS_SRC_RELATIVE_DIR_PATH,
     scriptletsFilenames,
+    trustedScriptletsFilenames,
     redirectsFilenames,
 };

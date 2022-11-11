@@ -18,7 +18,7 @@ import {
 
 /* eslint-disable max-len */
 /**
- * @scriptlet trusted-replace-xhr-response
+ * @trustedScriptlet trusted-replace-xhr-response
  *
  * @description
  * Replaces response content of `xhr` requests if **all** given parameters match.

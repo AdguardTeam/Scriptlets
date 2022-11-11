@@ -7,7 +7,7 @@ import {
 
 /* eslint-disable max-len */
 /**
- * @scriptlet trusted-set-local-storage-item
+ * @trustedScriptlet trusted-set-local-storage-item
  *
  * @description
  * Adds item with arbitrary key and value to localStorage object, or updates the value of the key if it already exists.

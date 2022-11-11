@@ -2,6 +2,10 @@ const path = require('path');
 const fs = require('fs-extra');
 const dox = require('dox');
 
+const SCRIPTLET_TYPE = 'scriptlet';
+const TRUSTED_SCRIPTLET_TYPE = 'trustedScriptlet';
+const REDIRECT_TYPE = 'redirect';
+
 /**
  * Asynchronously writes data to a file, replacing the file if it already exists.
  *
@@ -33,7 +37,7 @@ const getFilesList = (relativeDirPath) => {
 
 /**
  * Returns parsed tags data which we use to describe the sources:
- * - `@scriptlet`/`@redirect` to describe the type and name of source;
+ * - `@scriptlet`/`trustedScriptlet`/`@redirect` to describe the type and name of source;
  * - `@description` actual description for scriptlet or redirect.
  * required comments from file.
  * In one file might be comments describing scriptlet and redirect as well.
@@ -54,8 +58,9 @@ const getDescribingCommentTags = (filePath) => {
                 return false;
             }
             const [base] = tags;
-            return base?.type === 'scriptlet'
-                || base?.type === 'redirect';
+            return base?.type === SCRIPTLET_TYPE
+                || base?.type === TRUSTED_SCRIPTLET_TYPE
+                || base?.type === REDIRECT_TYPE;
         });
 
     if (describingComment.length === 0) {
@@ -122,4 +127,7 @@ module.exports = {
     writeFile,
     getFilesList,
     getDataFromFiles,
+    SCRIPTLET_TYPE,
+    TRUSTED_SCRIPTLET_TYPE,
+    REDIRECT_TYPE,
 };

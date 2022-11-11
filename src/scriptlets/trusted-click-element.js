@@ -6,7 +6,7 @@ import {
 
 /* eslint-disable max-len */
 /**
- * @scriptlet trusted-click-element
+ * @trustedScriptlet trusted-click-element
  *
  * @description
  * Clicks selected elements in a strict sequence, ordered by selectors passed, and waiting for them to render in the DOM first.

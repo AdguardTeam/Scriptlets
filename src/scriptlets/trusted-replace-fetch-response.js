@@ -20,7 +20,7 @@ import {
 
 /* eslint-disable max-len */
 /**
- * @scriptlet trusted-replace-fetch-response
+ * @trustedScriptlet trusted-replace-fetch-response
  *
  * @description
  * Replaces response text content of `fetch` requests if **all** given parameters match.

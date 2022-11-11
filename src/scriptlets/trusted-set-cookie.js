@@ -12,7 +12,7 @@ import {
 
 /* eslint-disable max-len */
 /**
- * @scriptlet trusted-set-cookie
+ * @trustedScriptlet trusted-set-cookie
  *
  * @description
  * Sets a cookie with arbitrary name and value, with optional path
