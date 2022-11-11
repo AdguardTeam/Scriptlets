@@ -64,7 +64,7 @@ Trusted scriptlets are scriptlets with extended functionality. Their names are p
 
 #### <a id="trusted-scriptlets-restriction"></a> Restriction
 
-Trusted scriptlets application must be restricted due to dangerous nature of their capabilities. 
+Trusted scriptlets application must be restricted due to dangerous nature of their capabilities.
 Allowed sources of trusted scriptlets are:
 * filters created by AdGuard Team,
 * custom filters which were installed as `trusted`,
