@@ -4,9 +4,16 @@ import { runScriptlet, clearGlobalProps } from '../helpers';
 const { test, module } = QUnit;
 const name = 'm3u-prune';
 
+// From nbc.com - https://github.com/AdguardTeam/AdguardFilters/issues/124745
+// https://regex101.com/r/Kup9IL/1
 const M3U8_OBJECTS_PATH_01 = './test-files/manifestM3U8-01.m3u8';
+// From nbc.com - https://github.com/AdguardTeam/AdguardFilters/issues/124745
 const M3U8_OBJECTS_PATH_02 = './test-files/manifestM3U8-02.m3u8';
+// From fox.com, discovery.com and related - https://github.com/AdguardTeam/AdguardFilters/issues/20290
+// https://regex101.com/r/ogqRZQ/1 - from https://www.fox.com/watch/1df49c86f927f5c840e8856c335e188b/
 const M3U8_OBJECTS_PATH_03 = './test-files/manifestM3U8-03.m3u8';
+// From sbs.com - https://github.com/AdguardTeam/AdguardFilters/issues/88692
+// https://regex101.com/r/Kxtnng/1
 const M3U8_OBJECTS_PATH_04 = './test-files/manifestM3U8-04.m3u8';
 const nativeFetch = fetch;
 const nativeXhrOpen = XMLHttpRequest.prototype.open;
