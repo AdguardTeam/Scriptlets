@@ -1,4 +1,5 @@
 import { toRegExp } from './string-utils';
+import { shouldAbortInlineOrInjectedScript } from './script-source-utils';
 import { getNativeRegexpTest } from './regexp-utils';
 
 /**
@@ -10,6 +11,10 @@ import { getNativeRegexpTest } from './regexp-utils';
  */
 export const matchStackTrace = (stackMatch, stackTrace) => {
     if (!stackMatch || stackMatch === '') {
+        return true;
+    }
+
+    if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
         return true;
     }
 

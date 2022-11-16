@@ -23,8 +23,8 @@ export function getDescriptorAddon() {
                 this.isAbortingSuspended = false;
                 return result;
             } catch {
-                this.isAbortingSuspended = false;
                 const rid = randomId();
+                this.isAbortingSuspended = false;
                 // It's necessary to throw error
                 // otherwise script will be not aborted
                 throw new ReferenceError(rid);

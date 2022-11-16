@@ -297,6 +297,77 @@ test('Protected from infinite loop when prop is used in a helper', (assert) => {
     assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
 });
 
+test('abort Math.random, injected script', (assert) => {
+    const property = 'Math.random';
+    const stackMatch = 'injectedScript';
+    const scriptletArgs = [property, stackMatch];
+    runScriptlet(name, scriptletArgs);
+
+    window.testPassed = false;
+    const scriptElement = document.createElement('script');
+    scriptElement.type = 'text/javascript';
+    // set window.testPassed to true if script is aborted
+    scriptElement.innerText = 'try { Math.random(); } catch(error) { window.testPassed = true; console.log("Script aborted:", error); }';
+    document.body.appendChild(scriptElement);
+    scriptElement.parentNode.removeChild(scriptElement);
+
+    assert.strictEqual(window.testPassed, true, 'testPassed set to true, script has been aborted');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
+
+test('abort String.fromCharCode, inline script', (assert) => {
+    const property = 'String.fromCharCode';
+    const stackMatch = 'inlineScript';
+    const scriptletArgs = [property, stackMatch];
+    runScriptlet(name, scriptletArgs);
+    assert.throws(
+        () => String.fromCharCode(65),
+        /ReferenceError/,
+        'Reference error thrown when trying to access property String.fromCharCode',
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
+
+test('do NOT abort Math.round, test for injected script', (assert) => {
+    const property = 'Math.round';
+    const stackMatch = 'injectedScript';
+    const scriptletArgs = [property, stackMatch];
+    runScriptlet(name, scriptletArgs);
+
+    let testPassed = false;
+    try {
+        const testNumber = Math.round(1.5);
+        // eslint-disable-next-line no-console
+        console.log('Number:', testNumber);
+        testPassed = true;
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.log('Something went wrong', error);
+    }
+    assert.strictEqual(testPassed, true, 'testPassed set to true, script has been aborted');
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+});
+
+test('abort Math.max in injected script, but not abort inline script', (assert) => {
+    const property = 'Math.max';
+    const stackMatch = 'injectedScript';
+    const scriptletArgs = [property, stackMatch];
+    runScriptlet(name, scriptletArgs);
+
+    window.testPassed = false;
+    const number = Math.max(20, 10);
+    if (number) {
+        const scriptElement = document.createElement('script');
+        scriptElement.type = 'text/javascript';
+        // set window.testPassed to true if script is aborted
+        scriptElement.innerText = 'try { debugger; Math.max(10, 20); } catch(error) { window.testPassed = true; console.log("Script aborted:", error); }';
+        document.body.appendChild(scriptElement);
+        scriptElement.parentNode.removeChild(scriptElement);
+    }
+    assert.strictEqual(window.testPassed, true, 'testPassed set to true, script has been aborted');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
+
 test('abort RegExp, matches stack', (assert) => {
     const property = 'RegExp';
     const stackMatch = 'abort-on-stack';

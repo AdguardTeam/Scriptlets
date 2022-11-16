@@ -5,6 +5,7 @@ const { test, module } = QUnit;
 const name = 'log-on-stack-trace';
 const PROPERTY = 'testMe';
 const nativeConsole = console.log;
+const tableConsole = console.table;
 
 const changingProps = [PROPERTY, 'hit', '__debug'];
 
@@ -17,6 +18,7 @@ const beforeEach = () => {
 const afterEach = () => {
     clearGlobalProps(...changingProps);
     console.log = nativeConsole;
+    console.table = tableConsole;
 };
 
 module(name, { beforeEach, afterEach });
@@ -63,6 +65,23 @@ test('logs specific message', (assert) => {
             return;
         }
         assert.strictEqual(input, `%cSet %c${PROPERTY}`, 'Log message is correct');
+    };
+    setProp(PROPERTY);
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
+
+test('check if message is not empty', (assert) => {
+    const scriptletArgs = [PROPERTY];
+    const setProp = (prop) => {
+        window[prop] = 'init';
+    };
+    runScriptlet(name, scriptletArgs);
+
+    console.table = function log(input) {
+        const inputString = JSON.stringify(input);
+        const checkString = 'log-on-stack-trace';
+        assert.ok(inputString.indexOf(checkString) > -1, 'Log message is not empty');
     };
     setProp(PROPERTY);
 
