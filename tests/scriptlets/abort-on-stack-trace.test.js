@@ -65,6 +65,28 @@ test('simple, matches stack', (assert) => {
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
+test('simple, matches stack with an empty object in chain', (assert) => {
+    const PROPERTY = 'window.aaa.bbb';
+    window.aaa = {};
+    const scriptletArgs = [PROPERTY];
+    runScriptlet(name, scriptletArgs);
+
+    window.aaa.bbb = 'value';
+
+    assert.throws(
+        () => window.aaa.bbb,
+        /ReferenceError/,
+        `Reference error thrown when trying to access property ${PROPERTY}`,
+    );
+    assert.throws(
+        // eslint-disable-next-line no-return-assign
+        () => window.aaa.bbb = 'new value',
+        /ReferenceError/,
+        `Reference error thrown when trying to reassign property ${PROPERTY}`,
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
+
 test('simple, does NOT match stack', (assert) => {
     window[PROPERTY] = 'value';
     const noStackMatch = 'no_match.js';

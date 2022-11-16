@@ -49,3 +49,14 @@ test('dot notation deferred defenition', (assert) => {
     console.log(window.aaa.bbb);
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
+
+test('works with an empty object in chain', (assert) => {
+    const scriptletArgs = [CHAIN_PROPERTY];
+
+    window.aaa = {};
+    runScriptlet(name, scriptletArgs);
+    window.aaa.bbb = 'value';
+
+    console.log(window.aaa.bbb);
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});

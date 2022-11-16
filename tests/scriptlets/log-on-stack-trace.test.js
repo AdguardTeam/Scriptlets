@@ -68,3 +68,27 @@ test('logs specific message', (assert) => {
 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
+
+test('works with an empty object in chain', (assert) => {
+    const PROPERTY = 'window.aaa.bbb';
+    const scriptletArgs = [PROPERTY];
+
+    window.aaa = {};
+    runScriptlet(name, scriptletArgs);
+    window.aaa.bbb = 'value';
+
+    assert.strictEqual(
+        window.aaa.bbb,
+        'value',
+        'Property is accessible',
+    );
+
+    window.aaa.bbb = 'new value';
+    assert.strictEqual(
+        window.aaa.bbb,
+        'new value',
+        'Property is writeable',
+    );
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});

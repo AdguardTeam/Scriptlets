@@ -92,6 +92,20 @@ test('works with chained properties', (assert) => {
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
+test('Works with an empty object in chain', (assert) => {
+    const scriptletArgs = ['window.aaa.bbb'];
+
+    window.onerror = onError(assert);
+    window.aaa = {};
+
+    runScriptlet(name, scriptletArgs);
+
+    window.aaa.bbb = 1;
+    addAndRemoveInlineScript('window.aaa.bbb = 4');
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
+
 test('should not work if chained properties are undefined', (assert) => {
     window.onerror = onError(assert);
     const chainProperty = 'a.b.c';
