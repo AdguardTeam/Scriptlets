@@ -73,6 +73,7 @@
 |  | no-floc.js |  |
 |  | window.name-defuser.js |  |
 |  | xml-prune.js |  |
+|  | m3u-prune.js |  |
 
 
 # <a id="redirects"></a> Redirects compatibility table

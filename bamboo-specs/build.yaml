@@ -35,7 +35,9 @@ Build:
 
             yarn install ${bamboo.varsYarn}
             yarn build
+
             yarn wiki:build-docs
+            yarn wiki:build-table
 
             rm -rf node_modules
     - inject-variables:

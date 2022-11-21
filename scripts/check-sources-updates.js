@@ -368,6 +368,6 @@ async function checkForABPRedirectsUpdates() {
             ${added.length ? `Added: ${added}.` : ''}
         `;
 
-        console.log(message);
+        throw new Error(message);
     }
 }());

@@ -3,7 +3,12 @@ const path = require('path');
 const yaml = require('js-yaml');
 const { EOL } = require('os');
 
-const { getDataFromFiles } = require('./helpers');
+const {
+    getDataFromFiles,
+    SCRIPTLET_TYPE,
+    TRUSTED_SCRIPTLET_TYPE,
+    REDIRECT_TYPE,
+} = require('./helpers');
 
 const {
     WIKI_DIR_PATH,
@@ -12,9 +17,6 @@ const {
     redirectsFilenames,
     SCRIPTLETS_SRC_RELATIVE_DIR_PATH,
     REDIRECTS_SRC_RELATIVE_DIR_PATH,
-    SCRIPTLET_TYPE,
-    TRUSTED_SCRIPTLET_TYPE,
-    REDIRECT_TYPE,
 } = require('./constants');
 
 const STATIC_REDIRECTS_FILENAME = 'static-redirects.yml';
