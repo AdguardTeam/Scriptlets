@@ -1,6 +1,6 @@
 # Scriptlets and Redirect Resources Changelog
 
-## v1.7.2
+## v1.7.3
 
 ### Added
 
