@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.6.55
+ * Version 1.7.1
  */
 
 (function () {
@@ -77,41 +77,6 @@
     }
 
     /**
-     * Determines whether the passed value is NaN
-     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isNaN
-     * @param {*} num
-     * @returns {boolean}
-     */
-    var nativeIsNaN = function nativeIsNaN(num) {
-      // eslint-disable-next-line no-restricted-properties
-      var native = Number.isNaN || window.isNaN;
-      return native(num);
-    };
-    /**
-     * Determines whether the passed value is a finite number
-     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isFinite
-     * @param {*} num
-     * @returns {boolean}
-     */
-
-    var nativeIsFinite = function nativeIsFinite(num) {
-      // eslint-disable-next-line no-restricted-properties
-      var native = Number.isFinite || window.isFinite;
-      return native(num);
-    };
-    /**
-     * Parses string for a number, if possible, otherwise returns null.
-     * @param {*} rawString
-     * @returns {number|null}
-     */
-
-    var getNumberFromString = function getNumberFromString(rawString) {
-      var parsedDelay = parseInt(rawString, 10);
-      var validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
-      return validDelay;
-    };
-
-    /**
      * Converts object to array of pairs.
      * Object.entries() polyfill because it is not supported by IE
      * https://caniuse.com/?search=Object.entries
@@ -168,6 +133,72 @@
 
       return null;
     };
+    /**
+     * Set getter and setter to property if it's configurable
+     * @param {Object} object target object with property
+     * @param {string} property property name
+     * @param {PropertyDescriptor} descriptor contains getter and setter functions
+     * @returns {boolean} is operation successful
+     */
+
+    function setPropertyAccess(object, property, descriptor) {
+      var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+
+      if (currentDescriptor && !currentDescriptor.configurable) {
+        return false;
+      }
+
+      Object.defineProperty(object, property, descriptor);
+      return true;
+    }
+
+    /**
+     * Determines whether the passed value is NaN
+     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isNaN
+     * @param {*} num
+     * @returns {boolean}
+     */
+    var nativeIsNaN = function nativeIsNaN(num) {
+      // eslint-disable-next-line no-restricted-properties
+      var native = Number.isNaN || window.isNaN;
+      return native(num);
+    };
+    /**
+     * Determines whether the passed value is a finite number
+     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isFinite
+     * @param {*} num
+     * @returns {boolean}
+     */
+
+    var nativeIsFinite = function nativeIsFinite(num) {
+      // eslint-disable-next-line no-restricted-properties
+      var native = Number.isFinite || window.isFinite;
+      return native(num);
+    };
+    /**
+     * Parses string for a number, if possible, otherwise returns null.
+     * @param {*} rawString
+     * @returns {number|null}
+     */
+
+    var getNumberFromString = function getNumberFromString(rawString) {
+      var parsedDelay = parseInt(rawString, 10);
+      var validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
+      return validDelay;
+    };
+    /**
+     * Generate a random integer between two values, inclusive
+     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#getting_a_random_integer_between_two_values_inclusive
+     * @param {number} min
+     * @param {number} max
+     * @returns {number}
+     */
+
+    function getRandomIntInclusive(min, max) {
+      min = Math.ceil(min);
+      max = Math.floor(max);
+      return Math.floor(Math.random() * (max - min + 1) + min);
+    }
 
     /**
      * String.prototype.replaceAll polyfill
@@ -276,7 +307,7 @@
     var endsWith = function endsWith(str, ending) {
       // if str === '', (str && false) will return ''
       // that's why it has to be !!str
-      return !!str && str.indexOf(ending) === str.length - ending.length;
+      return !!str && str.lastIndexOf(ending) === str.length - ending.length;
     };
     var substringAfter$1 = function substringAfter(str, separator) {
       if (!str) {
@@ -475,6 +506,69 @@
 
       return output;
     };
+    /**
+     * Generate a random string, a length of the string is provided as an argument
+     * @param {number} length
+     * @returns {string}
+     */
+
+    function getRandomStrByLength(length) {
+      var result = '';
+      var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~';
+      var charactersLength = characters.length;
+
+      for (var i = 0; i < length; i += 1) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      }
+
+      return result;
+    }
+    /**
+     * Generate a random string
+     * @param {string} customResponseText
+     * @returns {string|null} random string or null if passed argument is invalid
+     */
+
+    function generateRandomResponse(customResponseText) {
+      var customResponse = customResponseText;
+
+      if (customResponse === 'true') {
+        // Generate random alphanumeric string of 10 symbols
+        customResponse = Math.random().toString(36).slice(-10);
+        return customResponse;
+      }
+
+      customResponse = customResponse.replace('length:', '');
+      var rangeRegex = /^\d+-\d+$/; // Return empty string if range is invalid
+
+      if (!rangeRegex.test(customResponse)) {
+        return null;
+      }
+
+      var rangeMin = getNumberFromString(customResponse.split('-')[0]);
+      var rangeMax = getNumberFromString(customResponse.split('-')[1]);
+
+      if (!nativeIsFinite(rangeMin) || !nativeIsFinite(rangeMax)) {
+        return null;
+      } // If rangeMin > rangeMax, swap variables
+
+
+      if (rangeMin > rangeMax) {
+        var temp = rangeMin;
+        rangeMin = rangeMax;
+        rangeMax = temp;
+      }
+
+      var LENGTH_RANGE_LIMIT = 500 * 1000;
+
+      if (rangeMax > LENGTH_RANGE_LIMIT) {
+        return null;
+      }
+
+      var length = getRandomIntInclusive(rangeMin, rangeMax);
+      customResponse = getRandomStrByLength(length);
+      return customResponse;
+    }
 
     function _defineProperty(obj, key, value) {
       if (key in obj) {
@@ -676,192 +770,307 @@
     };
 
     /**
-     * Returns wildcard symbol
-     * @returns {string} '*'
+     * Validates event type
+     * @param {*} type
+     * @returns {boolean}
      */
-    var getWildcardSymbol = function getWildcardSymbol() {
-      return '*';
+    var validateType = function validateType(type) {
+      // https://github.com/AdguardTeam/Scriptlets/issues/125
+      return typeof type !== 'undefined';
+    };
+    /**
+     * Validates event listener
+     * @param {*} listener
+     * @returns {boolean}
+     */
+
+    var validateListener = function validateListener(listener) {
+      // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#parameters
+      return typeof listener !== 'undefined' && (typeof listener === 'function' || typeof listener === 'object' // https://github.com/AdguardTeam/Scriptlets/issues/76
+      && listener !== null && typeof listener.handleEvent === 'function');
+    };
+    /**
+     * Serialize valid event listener
+     * https://developer.mozilla.org/en-US/docs/Web/API/EventListener
+     * @param {EventListener} listener valid listener
+     * @returns {string}
+     */
+
+    var listenerToString = function listenerToString(listener) {
+      return typeof listener === 'function' ? listener.toString() : listener.handleEvent.toString();
+    };
+
+    var shouldMatchAnyDelay = function shouldMatchAnyDelay(delay) {
+      return delay === '*';
+    };
+    /**
+     * Handles input delay value
+     * @param {*} delay
+     * @returns {number} proper number delay value
+     */
+
+    var getMatchDelay = function getMatchDelay(delay) {
+      var DEFAULT_DELAY = 1000;
+      var parsedDelay = parseInt(delay, 10);
+      var delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY // default scriptlet value
+      : parsedDelay;
+      return delayMatch;
+    };
+    /**
+     * Checks delay match condition
+     * @param {*} inputDelay
+     * @param {number} realDelay
+     * @returns {boolean}
+     */
+
+    var isDelayMatched = function isDelayMatched(inputDelay, realDelay) {
+      return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
+    };
+    /**
+     * Handles input boost value
+     * @param {*} boost
+     * @returns {number} proper number boost multiplier value
+     */
+
+    var getBoostMultiplier = function getBoostMultiplier(boost) {
+      var DEFAULT_MULTIPLIER = 0.05;
+      var MIN_MULTIPLIER = 0.02;
+      var MAX_MULTIPLIER = 50;
+      var parsedBoost = parseFloat(boost);
+      var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER // default scriptlet value
+      : parsedBoost;
+
+      if (boostMultiplier < MIN_MULTIPLIER) {
+        boostMultiplier = MIN_MULTIPLIER;
+      }
+
+      if (boostMultiplier > MAX_MULTIPLIER) {
+        boostMultiplier = MAX_MULTIPLIER;
+      }
+
+      return boostMultiplier;
     };
 
     /**
-     * Generate random six symbols id
+     * Some browsers do not support Array.prototype.flat()
+     * for example, Opera 42 which is used for browserstack tests
+     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flat
+     * @param {Array} input
      */
-    function randomId() {
-      return Math.random().toString(36).substr(2, 9);
-    }
-
-    /**
-     * Set getter and setter to property if it's configurable
-     * @param {Object} object target object with property
-     * @param {string} property property name
-     * @param {Object} descriptor contains getter and setter functions
-     * @returns {boolean} is operation successful
-     */
-    function setPropertyAccess(object, property, descriptor) {
-      var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
-
-      if (currentDescriptor && !currentDescriptor.configurable) {
-        return false;
-      }
-
-      Object.defineProperty(object, property, descriptor);
-      return true;
-    }
-
-    /**
-     * @typedef Chain
-     * @property {Object} base
-     * @property {string} prop
-     * @property {string} [chain]
-     */
-
-    /**
-     * Check if the property exists in the base object (recursively)
-     *
-     * If property doesn't exist in base object,
-     * defines this property as 'undefined'
-     * and returns base, property name and remaining part of property chain
-     *
-     * @param {Object} base
-     * @param {string} chain
-     * @returns {Chain}
-     */
-    function getPropertyInChain(base, chain) {
-      var pos = chain.indexOf('.');
-
-      if (pos === -1) {
-        return {
-          base: base,
-          prop: chain
-        };
-      }
-
-      var prop = chain.slice(0, pos); // https://github.com/AdguardTeam/Scriptlets/issues/128
-
-      if (base === null) {
-        // if base is null, return 'null' as base.
-        // it's needed for triggering the reason logging while debugging
-        return {
-          base: base,
-          prop: prop,
-          chain: chain
-        };
-      }
-
-      var nextBase = base[prop];
-      chain = chain.slice(pos + 1);
-
-      if (nextBase !== undefined) {
-        return getPropertyInChain(nextBase, chain);
-      }
-
-      Object.defineProperty(base, prop, {
-        configurable: true
+    var flatten = function flatten(input) {
+      var stack = [];
+      input.forEach(function (el) {
+        return stack.push(el);
       });
-      return {
-        base: base,
-        prop: prop,
-        chain: chain
-      };
-    }
+      var res = [];
 
-    /**
-     * @typedef Chain
-     * @property {Object} base
-     * @property {string} prop
-     * @property {string} [chain]
-     */
+      while (stack.length) {
+        // pop value from stack
+        var next = stack.pop();
 
-    /**
-     * Check if the property exists in the base object (recursively).
-     * Similar to getPropertyInChain but upgraded for json-prune:
-     * handle wildcard properties and does not define nonexistent base property as 'undefined'
-     *
-     * @param {Object} base
-     * @param {string} chain
-     * @param {boolean} [lookThrough=false]
-     * should the method look through it's props in order to wildcard
-     * @param {Array} [output=[]] result acc
-     * @returns {Chain[]} array of objects
-     */
-
-    function getWildcardPropertyInChain(base, chain) {
-      var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-      var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
-      var pos = chain.indexOf('.');
-
-      if (pos === -1) {
-        // for paths like 'a.b.*' every final nested prop should be processed
-        if (chain === getWildcardSymbol() || chain === '[]') {
-          // eslint-disable-next-line no-restricted-syntax
-          for (var key in base) {
-            // to process each key in base except inherited ones
-            if (Object.prototype.hasOwnProperty.call(base, key)) {
-              output.push({
-                base: base,
-                prop: key
-              });
-            }
-          }
-        } else {
-          output.push({
-            base: base,
-            prop: chain
+        if (Array.isArray(next)) {
+          // push back array items, won't modify the original input
+          next.forEach(function (el) {
+            return stack.push(el);
           });
+        } else {
+          res.push(next);
         }
+      } // reverse to restore input order
 
-        return output;
-      }
 
-      var prop = chain.slice(0, pos);
-      var shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === getWildcardSymbol() && base instanceof Object;
+      return res.reverse();
+    };
+    /**
+     * Predicate method to check if the array item exists
+     * @param {any} item
+     * @returns {boolean}
+     */
 
-      if (shouldLookThrough) {
-        var nextProp = chain.slice(pos + 1);
-        var baseKeys = Object.keys(base); // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src ad.1.src'),
-        // each one of base keys should be considered as a potential chain prop in final path
-
-        baseKeys.forEach(function (key) {
-          var item = base[key];
-          getWildcardPropertyInChain(item, nextProp, lookThrough, output);
-        });
-      }
-
-      var nextBase = base[prop];
-      chain = chain.slice(pos + 1);
-
-      if (nextBase !== undefined) {
-        getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
-      }
-
-      return output;
-    }
+    var isExisting = function isExisting(item) {
+      return !!item;
+    };
 
     /**
-     * Generates function which silents global errors on page generated by scriptlet
-     * If error doesn't belong to our error we transfer it to the native onError handler
-     * @param {string} rid - unique identifier of scriptlet
-     * @return {onError}
+     * @typedef { import('../scriptlets/index').Source } Source
      */
-    function createOnErrorHandler(rid) {
-      // eslint-disable-next-line consistent-return
-      var nativeOnError = window.onerror;
-      return function onError(error) {
-        if (typeof error === 'string' && error.indexOf(rid) !== -1) {
-          return true;
+
+    /**
+     * Conditionally logs message to console.
+     * Convention is to log messages by source.verbose if such log
+     * is not a part of scriptlet's functionality, eg on invalid input,
+     * and use 'forced' argument otherwise.
+     * @param {Source} source required
+     * @param {string} message required, message to log
+     * @param {boolean} [forced=false] to log message unconditionally
+     */
+    var logMessage = function logMessage(source, message) {
+      var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+      if (forced || source.verbose) {
+        // eslint-disable-next-line no-console
+        console.log("".concat(source.name, ": ").concat(message));
+      }
+    };
+
+    /**
+     * @typedef { import('../scriptlets/index').Source } Source
+     */
+
+    /**
+     * Checks whether the input path is supported
+     *
+     * @param {string} rawPath input path
+     *
+     * @returns {boolean}
+     */
+
+    var isValidCookieRawPath = function isValidCookieRawPath(rawPath) {
+      return rawPath === '/' || rawPath === 'none';
+    };
+    /**
+     * Returns 'path=/' if rawPath is '/'
+     * or empty string '' for other cases, `rawPath === 'none'` included
+     *
+     * @param {string} rawPath
+     *
+     * @returns {string}
+     */
+
+    var getCookiePath = function getCookiePath(rawPath) {
+      if (rawPath === '/') {
+        return 'path=/';
+      } // otherwise do not set path as invalid
+      // the same for pathArg === 'none'
+      //
+
+
+      return '';
+    };
+    /**
+     * Combines input cookie name, value, and path into string.
+     *
+     * @param {Source} source
+     * @param {string} rawName
+     * @param {string} rawValue
+     * @param {string} rawPath
+     *
+     * @returns {string} string OR `null` if path is not supported
+     */
+
+    var concatCookieNameValuePath = function concatCookieNameValuePath(source, rawName, rawValue, rawPath) {
+      if (!isValidCookieRawPath(rawPath)) {
+        logMessage(source, "Invalid cookie path: '".concat(rawPath, "'"));
+        return null;
+      } // eslint-disable-next-line max-len
+
+
+      return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath));
+    };
+    /**
+     * Gets supported cookie value
+     *
+     * @param {Source} source
+     * @param {string} value input cookie value
+     *
+     * @returns {string|null} valid cookie string if ok OR null if not
+     */
+
+    var getLimitedCookieValue = function getLimitedCookieValue(source, value) {
+      if (!value) {
+        return null;
+      }
+
+      var validValue;
+
+      if (value === 'true') {
+        validValue = 'true';
+      } else if (value === 'True') {
+        validValue = 'True';
+      } else if (value === 'false') {
+        validValue = 'false';
+      } else if (value === 'False') {
+        validValue = 'False';
+      } else if (value === 'yes') {
+        validValue = 'yes';
+      } else if (value === 'Yes') {
+        validValue = 'Yes';
+      } else if (value === 'Y') {
+        validValue = 'Y';
+      } else if (value === 'no') {
+        validValue = 'no';
+      } else if (value === 'ok') {
+        validValue = 'ok';
+      } else if (value === 'OK') {
+        validValue = 'OK';
+      } else if (/^\d+$/.test(value)) {
+        validValue = parseFloat(value);
+
+        if (nativeIsNaN(validValue)) {
+          logMessage(source, "Invalid cookie value: '".concat(value, "'"));
+          return null;
         }
 
-        if (nativeOnError instanceof Function) {
-          for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-            args[_key - 1] = arguments[_key];
-          }
+        if (Math.abs(validValue) < 0 || Math.abs(validValue) > 15) {
+          logMessage(source, "Invalid cookie value: '".concat(value, "'"));
+          return null;
+        }
+      } else {
+        return null;
+      }
 
-          return nativeOnError.apply(this, [error].concat(args));
+      return validValue;
+    };
+    /**
+     * Parses cookie string into object
+     * @param {string} cookieString string that conforms to document.cookie format
+     * @returns {Object} key:value object that corresponds with incoming cookies keys and values
+     */
+
+    var parseCookieString = function parseCookieString(cookieString) {
+      var COOKIE_DELIMITER = '=';
+      var COOKIE_PAIRS_DELIMITER = ';'; // Get raw cookies
+
+      var cookieChunks = cookieString.split(COOKIE_PAIRS_DELIMITER);
+      var cookieData = {};
+      cookieChunks.forEach(function (singleCookie) {
+        var cookieKey;
+        var cookieValue;
+        var delimiterIndex = singleCookie.indexOf(COOKIE_DELIMITER);
+
+        if (delimiterIndex === -1) {
+          cookieKey = singleCookie.trim();
+        } else {
+          cookieKey = singleCookie.slice(0, delimiterIndex).trim();
+          cookieValue = singleCookie.slice(delimiterIndex + 1);
+        } // Save cookie key=value data with null instead of empty ('') values
+
+
+        cookieData[cookieKey] = cookieValue || null;
+      });
+      return cookieData;
+    };
+    /**
+     * Check if cookie with specified name and value is present in a cookie string
+     * @param {string} cookieString
+     * @param {string} name
+     * @param {string} value
+     * @returns {boolean}
+     */
+
+    var isCookieSetWithValue = function isCookieSetWithValue(cookieString, name, value) {
+      return cookieString.split(';').some(function (cookieStr) {
+        var pos = cookieStr.indexOf('=');
+
+        if (pos === -1) {
+          return false;
         }
 
-        return false;
-      };
-    }
+        var cookieName = cookieStr.slice(0, pos).trim();
+        var cookieValue = cookieStr.slice(pos + 1).trim();
+        return name === cookieName && value === cookieValue;
+      });
+    };
 
     /**
      * Noop function
@@ -932,12 +1141,15 @@
     }; // eslint-disable-line compat/compat
 
     /**
-     * Returns Promise object that is resolved with a response
-     * @param {string} [responseBody='{}'] value of response body
+     * Returns Promise object that is resolved  value of response body
+     * @param {string} [url=''] value of response url to set on response object
+     * @param {string} [response='default'] value of response type to set on response object
      */
 
     var noopPromiseResolve = function noopPromiseResolve() {
       var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '{}';
+      var responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+      var responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'default';
 
       if (typeof Response === 'undefined') {
         return;
@@ -947,227 +1159,107 @@
       var response = new Response(responseBody, {
         status: 200,
         statusText: 'OK'
+      }); // Mock response' url & type to avoid adb checks
+      // https://github.com/AdguardTeam/Scriptlets/issues/216
+
+      Object.defineProperties(response, {
+        url: {
+          value: responseUrl
+        },
+        type: {
+          value: responseType
+        }
       }); // eslint-disable-next-line compat/compat, consistent-return
 
       return Promise.resolve(response);
     };
 
-    /* eslint-disable no-console, no-underscore-dangle */
-
     /**
-     * Hit used only for debug purposes now
-     * @param {Source} source
-     * @param {string} [message] - optional message;
-     * use LOG_MARKER = 'log: ' at the start of a message
-     * for logging scriptlets
-     */
-    var hit = function hit(source, message) {
-      if (source.verbose !== true) {
-        return;
-      }
-
-      try {
-        var log = console.log.bind(console);
-        var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-        var prefix = source.ruleText || '';
-
-        if (source.domainName) {
-          var AG_SCRIPTLET_MARKER = '#%#//';
-          var UBO_SCRIPTLET_MARKER = '##+js';
-          var ruleStartIndex;
-
-          if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
-            ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-          } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
-            ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-          } // delete all domains from ruleText and leave just rule part
-
-
-          var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
-          prefix = "".concat(source.domainName).concat(rulePart);
-        } // Used to check if scriptlet uses 'hit' function for logging
-
-
-        var LOG_MARKER = 'log: ';
-
-        if (message) {
-          if (message.indexOf(LOG_MARKER) === -1) {
-            log("".concat(prefix, " message:\n").concat(message));
-          } else {
-            log(message.slice(LOG_MARKER.length));
-          }
-        }
-
-        log("".concat(prefix, " trace start"));
-
-        if (trace) {
-          trace();
-        }
-
-        log("".concat(prefix, " trace end"));
-      } catch (e) {// try catch for Edge 15
-        // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-        // console.log throws an error
-      } // This is necessary for unit-tests only!
-
-
-      if (typeof window.__debug === 'function') {
-        window.__debug(source);
-      }
-    };
-
-    /**
-     * DOM tree changes observer. Used for 'remove-attr' and 'remove-class' scriptlets
-     * @param {Function} callback
-     * @param {Boolean} observeAttrs - optional parameter - should observer check attributes changes
-     */
-    var observeDOMChanges = function observeDOMChanges(callback) {
-      var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-      var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-
-      /**
-       * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
-       * Those calls that fall into the "cooldown" period, are ignored
-       * @param {Function} method
-       * @param {Number} delay - milliseconds
-       */
-      var throttle = function throttle(method, delay) {
-        var wait = false;
-        var savedArgs;
-
-        var wrapper = function wrapper() {
-          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-            args[_key] = arguments[_key];
-          }
-
-          if (wait) {
-            savedArgs = args;
-            return;
-          }
-
-          method.apply(void 0, args);
-          wait = true;
-          setTimeout(function () {
-            wait = false;
-
-            if (savedArgs) {
-              wrapper(savedArgs);
-              savedArgs = null;
-            }
-          }, delay);
-        };
-
-        return wrapper;
-      };
-      /**
-       * 'delay' in milliseconds for 'throttle' method
-       */
-
-
-      var THROTTLE_DELAY_MS = 20;
-      /**
-       * Used for remove-class
-       */
-      // eslint-disable-next-line no-use-before-define, compat/compat
-
-      var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-
-      var connect = function connect() {
-        if (attrsToObserve.length > 0) {
-          observer.observe(document.documentElement, {
-            childList: true,
-            subtree: true,
-            attributes: observeAttrs,
-            attributeFilter: attrsToObserve
-          });
-        } else {
-          observer.observe(document.documentElement, {
-            childList: true,
-            subtree: true,
-            attributes: observeAttrs
-          });
-        }
-      };
-
-      var disconnect = function disconnect() {
-        observer.disconnect();
-      };
-
-      function callbackWrapper() {
-        disconnect();
-        callback();
-        connect();
-      }
-
-      connect();
-    };
-
-    var getNativeRegexpTest = function getNativeRegexpTest() {
-      return Object.getOwnPropertyDescriptor(RegExp.prototype, 'test').value;
-    };
-
-    /**
-     * Checks if the stackTrace contains stackRegexp
-     * https://github.com/AdguardTeam/Scriptlets/issues/82
+     * Determines if type of script is inline or injected
+     * and when it's one of them then return true, otherwise false
+     * https://github.com/AdguardTeam/Scriptlets/issues/201
      * @param {string|undefined} stackMatch - input stack value to match
      * @param {string} stackTrace - script error stack trace
      * @returns {boolean}
      */
 
-    var matchStackTrace = function matchStackTrace(stackMatch, stackTrace) {
-      if (!stackMatch || stackMatch === '') {
-        return true;
+    var shouldAbortInlineOrInjectedScript$1 = function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
+      var INLINE_SCRIPT_STRING = 'inlineScript';
+      var INJECTED_SCRIPT_STRING = 'injectedScript';
+      var INJECTED_SCRIPT_MARKER = '<anonymous>';
+
+      var isInlineScript = function isInlineScript(stackMatch) {
+        return stackMatch.indexOf(INLINE_SCRIPT_STRING) > -1;
+      };
+
+      var isInjectedScript = function isInjectedScript(stackMatch) {
+        return stackMatch.indexOf(INJECTED_SCRIPT_STRING) > -1;
+      };
+
+      if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
+        return false;
       }
 
-      var stackRegexp = toRegExp(stackMatch);
-      var refinedStackTrace = stackTrace.split('\n').slice(2) // get rid of our own functions in the stack trace
-      .map(function (line) {
+      var documentURL = window.location.href;
+      var pos = documentURL.indexOf('#'); // Remove URL hash
+      // in Chrome, URL in stackTrace doesn't contain hash
+      // so, it's necessary to remove it, otherwise location.href
+      // will not match with location from stackTrace
+
+      if (pos !== -1) {
+        documentURL = documentURL.slice(0, pos);
+      }
+
+      var stackSteps = stackTrace.split('\n').slice(2).map(function (line) {
         return line.trim();
-      }) // trim the lines
-      .join('\n');
-      return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
-    };
-
-    /**
-     * Some browsers do not support Array.prototype.flat()
-     * for example, Opera 42 which is used for browserstack tests
-     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flat
-     * @param {Array} input
-     */
-    var flatten = function flatten(input) {
-      var stack = [];
-      input.forEach(function (el) {
-        return stack.push(el);
       });
-      var res = [];
+      var stackLines = stackSteps.map(function (line) {
+        var stack; // Get stack trace URL
+        // in Firefox stack trace looks like this: advanceTaskQueue@http://127.0.0.1:8080/scriptlets/tests/dist/qunit.js:1834:20
+        // in Chrome like this: at Assert.throws (http://127.0.0.1:8080/scriptlets/tests/dist/qunit.js:3178:16)
+        // so, first group "(.*?@)" is required for Firefox, second group contains URL
 
-      while (stack.length) {
-        // pop value from stack
-        var next = stack.pop();
+        var getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
 
-        if (Array.isArray(next)) {
-          // push back array items, won't modify the original input
-          next.forEach(function (el) {
-            return stack.push(el);
-          });
+        if (getStackTraceURL) {
+          var stackURL = getStackTraceURL[2];
+
+          if (startsWith(stackURL, '(')) {
+            stackURL = stackURL.slice(1);
+          }
+
+          if (startsWith(stackURL, INJECTED_SCRIPT_MARKER)) {
+            stackURL = INJECTED_SCRIPT_STRING;
+            var stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
+
+            if (startsWith(stackFunction, 'at')) {
+              stackFunction = stackFunction.slice(2).trim();
+            }
+
+            stack = "".concat(stackFunction, " ").concat(stackURL).trim();
+          } else {
+            stack = stackURL;
+          }
         } else {
-          res.push(next);
+          stack = line;
         }
-      } // reverse to restore input order
 
+        return stack;
+      });
 
-      return res.reverse();
-    };
-    /**
-     * Predicate method to check if the array item exists
-     * @param {any} item
-     * @returns {boolean}
-     */
+      if (stackLines) {
+        for (var index = 0; index < stackLines.length; index += 1) {
+          if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
+            return true;
+          }
 
-    var isExisting = function isExisting(item) {
-      return !!item;
+          if (isInjectedScript(stackMatch) && startsWith(stackLines[index], INJECTED_SCRIPT_STRING)) {
+            return true;
+          }
+        }
+      }
+
+      return false;
     };
 
     /**
@@ -1236,205 +1328,63 @@
     };
 
     /**
-     * Prepares cookie string if given parameters are ok
-     * @param {string} name cookie name to set
-     * @param {string} value cookie value to set
-     * @returns {string|null} cookie string if ok OR null if not
-     */
-
-    var prepareCookie = function prepareCookie(name, value) {
-      if (!name || !value) {
-        return null;
-      }
-
-      var valueToSet;
-
-      if (value === 'true') {
-        valueToSet = 'true';
-      } else if (value === 'True') {
-        valueToSet = 'True';
-      } else if (value === 'false') {
-        valueToSet = 'false';
-      } else if (value === 'False') {
-        valueToSet = 'False';
-      } else if (value === 'yes') {
-        valueToSet = 'yes';
-      } else if (value === 'Yes') {
-        valueToSet = 'Yes';
-      } else if (value === 'Y') {
-        valueToSet = 'Y';
-      } else if (value === 'no') {
-        valueToSet = 'no';
-      } else if (value === 'ok') {
-        valueToSet = 'ok';
-      } else if (value === 'OK') {
-        valueToSet = 'OK';
-      } else if (/^\d+$/.test(value)) {
-        valueToSet = parseFloat(value);
-
-        if (nativeIsNaN(valueToSet)) {
-          return null;
-        }
-
-        if (Math.abs(valueToSet) < 0 || Math.abs(valueToSet) > 15) {
-          return null;
-        }
-      } else {
-        return null;
-      }
-
-      var pathToSet = 'path=/;'; // eslint-disable-next-line max-len
-
-      var cookieData = "".concat(encodeURIComponent(name), "=").concat(encodeURIComponent(valueToSet), "; ").concat(pathToSet);
-      return cookieData;
-    };
-
-    var shouldMatchAnyDelay = function shouldMatchAnyDelay(delay) {
-      return delay === getWildcardSymbol();
-    };
-    /**
-     * Handles input delay value
-     * @param {*} delay
-     * @returns {number} proper number delay value
-     */
-
-    var getMatchDelay = function getMatchDelay(delay) {
-      var DEFAULT_DELAY = 1000;
-      var parsedDelay = parseInt(delay, 10);
-      var delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY // default scriptlet value
-      : parsedDelay;
-      return delayMatch;
-    };
-    /**
-     * Checks delay match condition
-     * @param {*} inputDelay
-     * @param {number} realDelay
+     * Checks whether the passed arg is proper callback
+     * @param {*} callback
      * @returns {boolean}
      */
 
-    var isDelayMatched = function isDelayMatched(inputDelay, realDelay) {
-      return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
+    var isValidCallback = function isValidCallback(callback) {
+      return callback instanceof Function // passing string as 'code' arg is not recommended
+      // but it is possible and not restricted
+      // https://developer.mozilla.org/en-US/docs/Web/API/setTimeout#parameters
+      || typeof callback === 'string';
     };
     /**
-     * Handles input boost value
-     * @param {*} boost
-     * @returns {number} proper number boost multiplier value
-     */
-
-    var getBoostMultiplier = function getBoostMultiplier(boost) {
-      var DEFAULT_MULTIPLIER = 0.05;
-      var MIN_MULTIPLIER = 0.02;
-      var MAX_MULTIPLIER = 50;
-      var parsedBoost = parseFloat(boost);
-      var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER // default scriptlet value
-      : parsedBoost;
-
-      if (boostMultiplier < MIN_MULTIPLIER) {
-        boostMultiplier = MIN_MULTIPLIER;
-      }
-
-      if (boostMultiplier > MAX_MULTIPLIER) {
-        boostMultiplier = MAX_MULTIPLIER;
-      }
-
-      return boostMultiplier;
-    };
-
-    /**
-     * Collects Request options to object
-     * @param {Request} request
-     * @returns {Object} data object
-     */
-
-    var getRequestData = function getRequestData(request) {
-      var REQUEST_INIT_OPTIONS = ['url', 'method', 'headers', 'body', 'mode', 'credentials', 'cache', 'redirect', 'referrer', 'integrity'];
-      var entries = REQUEST_INIT_OPTIONS.map(function (key) {
-        // if request has no such option, value will be undefined
-        var value = request[key];
-        return [key, value];
-      });
-      return getObjectFromEntries(entries);
-    };
-    /**
-     * Collects fetch args to object
-     * @param {*} args fetch args
-     * @returns {Object} data object
-     */
-
-    var getFetchData = function getFetchData(args) {
-      var fetchPropsObj = {};
-      var fetchUrl;
-      var fetchInit;
-
-      if (args[0] instanceof Request) {
-        // if Request passed to fetch, it will be in array
-        var requestData = getRequestData(args[0]);
-        fetchUrl = requestData.url;
-        fetchInit = requestData;
-      } else {
-        fetchUrl = args[0]; // eslint-disable-line prefer-destructuring
-
-        fetchInit = args[1]; // eslint-disable-line prefer-destructuring
-      }
-
-      fetchPropsObj.url = fetchUrl;
-
-      if (fetchInit instanceof Object) {
-        Object.keys(fetchInit).forEach(function (prop) {
-          fetchPropsObj[prop] = fetchInit[prop];
-        });
-      }
-
-      return fetchPropsObj;
-    };
-    /**
-     * Parse propsToMatch input string into object;
-     * used for prevent-fetch and prevent-xhr
-     * @param {string} propsToMatchStr
-     * @returns {Object} object where 'key' is prop name and 'value' is prop value
-     */
-
-    var parseMatchProps = function parseMatchProps(propsToMatchStr) {
-      var PROPS_DIVIDER = ' ';
-      var PAIRS_MARKER = ':';
-      var propsObj = {};
-      var props = propsToMatchStr.split(PROPS_DIVIDER);
-      props.forEach(function (prop) {
-        var dividerInd = prop.indexOf(PAIRS_MARKER);
-
-        if (dividerInd === -1) {
-          propsObj.url = prop;
-        } else {
-          var key = prop.slice(0, dividerInd);
-          var value = prop.slice(dividerInd + 1);
-          propsObj[key] = value;
-        }
-      });
-      return propsObj;
-    };
-    /**
-     * Validates parsed data values
-     * @param {Object} data
+     * Checks whether 'callback' and 'delay' are matching
+     * by given parameters 'matchCallback' and 'matchDelay'.
+     * Used for prevent-setTimeout and prevent-setInterval.
+     * @param {Object} { callback, delay, matchCallback, matchDelay }
      * @returns {boolean}
      */
 
-    var validateParsedData = function validateParsedData(data) {
-      return Object.values(data).every(function (value) {
-        return isValidStrPattern(value);
-      });
-    };
-    /**
-     * Converts valid parsed data to data obj for further matching
-     * @param {Object} data
-     * @returns {Object}
-     */
+    var isPreventionNeeded = function isPreventionNeeded(_ref) {
+      var callback = _ref.callback,
+          delay = _ref.delay,
+          matchCallback = _ref.matchCallback,
+          matchDelay = _ref.matchDelay;
 
-    var getMatchPropsData = function getMatchPropsData(data) {
-      var matchData = {};
-      Object.keys(data).forEach(function (key) {
-        matchData[key] = toRegExp(data[key]);
-      });
-      return matchData;
+      // if callback is has not valid type
+      // scriptlet can not prevent it
+      // so no need for more checking and do not call hit() later
+      if (!isValidCallback(callback)) {
+        return false;
+      }
+
+      if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
+        return false;
+      }
+
+      var _parseMatchArg = parseMatchArg(matchCallback),
+          isInvertedMatch = _parseMatchArg.isInvertedMatch,
+          matchRegexp = _parseMatchArg.matchRegexp;
+
+      var _parseDelayArg = parseDelayArg(matchDelay),
+          isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
+          delayMatch = _parseDelayArg.delayMatch;
+
+      var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
+
+      var callbackStr = String(callback);
+
+      if (delayMatch === null) {
+        shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
+      } else if (!matchCallback) {
+        shouldPrevent = delay === delayMatch !== isInvertedDelayMatch;
+      } else {
+        shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && delay === delayMatch !== isInvertedDelayMatch;
+      }
+
+      return shouldPrevent;
     };
 
     var handleOldReplacement = function handleOldReplacement(replacement) {
@@ -1511,199 +1461,647 @@
       return preventGetter;
     };
 
-    /**
-     * Validates event type
-     * @param {*} type
-     * @returns {boolean}
-     */
-    var validateType = function validateType(type) {
-      // https://github.com/AdguardTeam/Scriptlets/issues/125
-      return typeof type !== 'undefined';
-    };
-    /**
-     * Validates event listener
-     * @param {*} listener
-     * @returns {boolean}
-     */
-
-    var validateListener = function validateListener(listener) {
-      // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#parameters
-      return typeof listener !== 'undefined' && (typeof listener === 'function' || typeof listener === 'object' // https://github.com/AdguardTeam/Scriptlets/issues/76
-      && listener !== null && typeof listener.handleEvent === 'function');
-    };
-    /**
-     * Serialize valid event listener
-     * https://developer.mozilla.org/en-US/docs/Web/API/EventListener
-     * @param {EventListener} listener valid listener
-     * @returns {string}
-     */
-
-    var listenerToString = function listenerToString(listener) {
-      return typeof listener === 'function' ? listener.toString() : listener.handleEvent.toString();
+    var getNativeRegexpTest = function getNativeRegexpTest() {
+      return Object.getOwnPropertyDescriptor(RegExp.prototype, 'test').value;
     };
 
     /**
-     * Checks whether the passed arg is proper callback
-     * @param {*} callback
-     * @returns {boolean}
+     * Returns array of request props that are supported by fetch/xhr scriptlets.
+     * Includes common 'url' and 'method' props and all other fetch-specific props
+     * @returns {string[]}
      */
 
-    var isValidCallback = function isValidCallback(callback) {
-      return callback instanceof Function // passing string as 'code' arg is not recommended
-      // but it is possible and not restricted
-      // https://developer.mozilla.org/en-US/docs/Web/API/setTimeout#parameters
-      || typeof callback === 'string';
+    var getRequestProps$1 = function getRequestProps() {
+      return ['url', 'method', 'headers', 'body', 'mode', 'credentials', 'cache', 'redirect', 'referrer', 'referrerPolicy', 'integrity', 'keepalive', 'signal'];
     };
     /**
-     * Checks whether 'callback' and 'delay' are matching
-     * by given parameters 'matchCallback' and 'matchDelay'.
-     * Used for prevent-setTimeout and prevent-setInterval.
-     * @param {Object} { callback, delay, matchCallback, matchDelay }
-     * @returns {boolean}
+     * Collects Request options to object
+     * @param {Request} request
+     * @returns {Object} data object
      */
 
-    var isPreventionNeeded = function isPreventionNeeded(_ref) {
-      var callback = _ref.callback,
-          delay = _ref.delay,
-          matchCallback = _ref.matchCallback,
-          matchDelay = _ref.matchDelay;
 
-      // if callback is has not valid type
-      // scriptlet can not prevent it
-      // so no need for more checking and do not call hit() later
-      if (!isValidCallback(callback)) {
-        return false;
-      }
+    var getRequestData = function getRequestData(request) {
+      var requestInitOptions = getRequestProps$1();
+      var entries = requestInitOptions.map(function (key) {
+        // if request has no such option, value will be undefined
+        var value = request[key];
+        return [key, value];
+      });
+      return getObjectFromEntries(entries);
+    };
+    /**
+     * Collects fetch args to object
+     * @param {*} args fetch args
+     * @returns {Object} data object
+     */
 
-      if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
-        return false;
-      }
+    var getFetchData = function getFetchData(args) {
+      var fetchPropsObj = {};
+      var fetchUrl;
+      var fetchInit;
 
-      var _parseMatchArg = parseMatchArg(matchCallback),
-          isInvertedMatch = _parseMatchArg.isInvertedMatch,
-          matchRegexp = _parseMatchArg.matchRegexp;
-
-      var _parseDelayArg = parseDelayArg(matchDelay),
-          isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
-          delayMatch = _parseDelayArg.delayMatch;
-
-      var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
-
-      var callbackStr = String(callback);
-
-      if (delayMatch === null) {
-        shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
-      } else if (!matchCallback) {
-        shouldPrevent = delay === delayMatch !== isInvertedDelayMatch;
+      if (args[0] instanceof Request) {
+        // if Request passed to fetch, it will be in array
+        var requestData = getRequestData(args[0]);
+        fetchUrl = requestData.url;
+        fetchInit = requestData;
       } else {
-        shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && delay === delayMatch !== isInvertedDelayMatch;
+        fetchUrl = args[0]; // eslint-disable-line prefer-destructuring
+
+        fetchInit = args[1]; // eslint-disable-line prefer-destructuring
       }
 
-      return shouldPrevent;
+      fetchPropsObj.url = fetchUrl;
+
+      if (fetchInit instanceof Object) {
+        Object.keys(fetchInit).forEach(function (prop) {
+          fetchPropsObj[prop] = fetchInit[prop];
+        });
+      }
+
+      return fetchPropsObj;
+    };
+    /**
+     * Collect xhr.open arguments to object
+     * @param {string} method
+     * @param {string} url
+     * @param {string} async
+     * @param {string} user
+     * @param {string} password
+     * @returns {Object}
+     */
+
+    var getXhrData = function getXhrData(method, url, async, user, password) {
+      return {
+        method: method,
+        url: url,
+        async: async,
+        user: user,
+        password: password
+      };
+    };
+    /**
+     * Parse propsToMatch input string into object;
+     * used for prevent-fetch and prevent-xhr
+     * @param {string} propsToMatchStr
+     * @returns {Object} object where 'key' is prop name and 'value' is prop value
+     */
+
+    var parseMatchProps = function parseMatchProps(propsToMatchStr) {
+      var PROPS_DIVIDER = ' ';
+      var PAIRS_MARKER = ':';
+      var LEGAL_MATCH_PROPS = getRequestProps$1();
+      var propsObj = {};
+      var props = propsToMatchStr.split(PROPS_DIVIDER);
+      props.forEach(function (prop) {
+        var dividerInd = prop.indexOf(PAIRS_MARKER);
+        var key = prop.slice(0, dividerInd);
+        var hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+
+        if (hasLegalMatchProp) {
+          var value = prop.slice(dividerInd + 1);
+          propsObj[key] = value;
+        } else {
+          // Escape multiple colons in prop
+          // i.e regex value and/or url with protocol specified, with or without 'url:' match prop
+          // https://github.com/AdguardTeam/Scriptlets/issues/216#issuecomment-1178591463
+          propsObj.url = prop;
+        }
+      });
+      return propsObj;
+    };
+    /**
+     * Validates parsed data values
+     * @param {Object} data
+     * @returns {boolean}
+     */
+
+    var validateParsedData = function validateParsedData(data) {
+      return Object.values(data).every(function (value) {
+        return isValidStrPattern(value);
+      });
+    };
+    /**
+     * Converts valid parsed data to data obj for further matching
+     * @param {Object} data
+     * @returns {Object}
+     */
+
+    var getMatchPropsData = function getMatchPropsData(data) {
+      var matchData = {};
+      Object.keys(data).forEach(function (key) {
+        matchData[key] = toRegExp(data[key]);
+      });
+      return matchData;
     };
 
     /**
-     * Generate a random integer between two values, inclusive
-     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#getting_a_random_integer_between_two_values_inclusive
-     * @param {number} min
-     * @param {number} max
-     * @returns {number}
+     * @typedef { import('../scriptlets/index').Source } Source
      */
 
-    function getRandomIntInclusive(min, max) {
-      min = Math.ceil(min);
-      max = Math.floor(max);
-      return Math.floor(Math.random() * (max - min + 1) + min);
-    }
     /**
-     * Generate a random string, a length of the string is provided as an argument
-     * @param {number} length
-     * @returns {string}
+     * Sets item to a specified storage, if storage isn't full.
+     * @param {Source} source
+     * @param {Storage} storage storage instance to set item into
+     * @param {string} key
+     * @param {string} value
+     * @param {boolean} shouldLog determines if helper should log on a failed set attempt
      */
 
-    function getRandomStrByLength(length) {
-      var result = '';
-      var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~';
-      var charactersLength = characters.length;
-
-      for (var i = 0; i < length; i += 1) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    var setStorageItem = function setStorageItem(source, storage, key, value) {
+      // setItem() may throw an exception if the storage is full.
+      try {
+        storage.setItem(key, value);
+      } catch (e) {
+        var message = "Unable to set sessionStorage item due to: ".concat(e.message);
+        logMessage(source, message);
       }
-
-      return result;
-    }
+    };
     /**
-     * Generate a random string
-     * @param {string} customResponseText
-     * @returns {string|null} random string or null if passed argument is invalid
+     * Gets supported storage item value
+     * @param {Source} source
+     * @param {string} value input item value
+     * @param {boolean} verbose if logging invalid values is required
+     * @returns {string|null|undefined|boolean} valid item value if ok OR null if not
      */
 
-    function generateRandomResponse(customResponseText) {
-      var customResponse = customResponseText;
-
-      if (customResponse === 'true') {
-        // Generate random alphanumeric string of 10 symbols
-        customResponse = Math.random().toString(36).slice(-10);
-        return customResponse;
-      }
-
-      customResponse = customResponse.replace('length:', '');
-      var rangeRegex = /^\d+-\d+$/; // Return empty string if range is invalid
-
-      if (!rangeRegex.test(customResponse)) {
+    var getLimitedStorageItemValue = function getLimitedStorageItemValue(source, value) {
+      if (!value) {
         return null;
       }
 
-      var rangeMin = getNumberFromString(customResponse.split('-')[0]);
-      var rangeMax = getNumberFromString(customResponse.split('-')[1]);
+      var validValue;
 
-      if (!nativeIsFinite(rangeMin) || !nativeIsFinite(rangeMax)) {
+      if (value === 'undefined') {
+        validValue = undefined;
+      } else if (value === 'false') {
+        validValue = false;
+      } else if (value === 'true') {
+        validValue = true;
+      } else if (value === 'null') {
+        validValue = null;
+      } else if (value === 'emptyArr') {
+        validValue = '[]';
+      } else if (value === 'emptyObj') {
+        validValue = '{}';
+      } else if (value === '') {
+        validValue = '';
+      } else if (/^\d+$/.test(value)) {
+        validValue = parseFloat(value);
+
+        if (nativeIsNaN(validValue)) {
+          logMessage(source, "Invalid storage item value: '".concat(value, "'"));
+          return null;
+        }
+
+        if (Math.abs(validValue) > 0x7FFF) {
+          logMessage(source, "Invalid storage item value: '".concat(value, "'"));
+          return null;
+        }
+      } else if (value === 'yes') {
+        validValue = 'yes';
+      } else if (value === 'no') {
+        validValue = 'no';
+      } else {
         return null;
-      } // If rangeMin > rangeMax, swap variables
-
-
-      if (rangeMin > rangeMax) {
-        var temp = rangeMin;
-        rangeMin = rangeMax;
-        rangeMax = temp;
       }
 
-      var LENGTH_RANGE_LIMIT = 500 * 1000;
+      return validValue;
+    };
 
-      if (rangeMax > LENGTH_RANGE_LIMIT) {
-        return null;
-      }
+    /**
+     * Generates function which silents global errors on page generated by scriptlet
+     * If error doesn't belong to our error we transfer it to the native onError handler
+     * @param {string} rid - unique identifier of scriptlet
+     * @return {onError}
+     */
+    function createOnErrorHandler(rid) {
+      // eslint-disable-next-line consistent-return
+      var nativeOnError = window.onerror;
+      return function onError(error) {
+        if (typeof error === 'string' && error.indexOf(rid) !== -1) {
+          return true;
+        }
 
-      var length = getRandomIntInclusive(rangeMin, rangeMax);
-      customResponse = getRandomStrByLength(length);
-      return customResponse;
+        if (nativeOnError instanceof Function) {
+          for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+            args[_key - 1] = arguments[_key];
+          }
+
+          return nativeOnError.apply(this, [error].concat(args));
+        }
+
+        return false;
+      };
+    }
+
+    /**
+     * Generate random six symbols id
+     */
+    function randomId() {
+      return Math.random().toString(36).substr(2, 9);
     }
 
     /**
      * Prevent infinite loops when trapping props that could be used by scriptlet's own helpers
      * Example: window.RegExp, that is used by matchStackTrace > toRegExp
      *
+     * https://github.com/AdguardTeam/Scriptlets/issues/251
      * https://github.com/AdguardTeam/Scriptlets/issues/226
      * https://github.com/AdguardTeam/Scriptlets/issues/232
      *
      * @return {Object}
      */
+
     function getDescriptorAddon() {
       return {
         isAbortingSuspended: false,
         isolateCallback: function isolateCallback(cb) {
-          this.isAbortingSuspended = true;
+          this.isAbortingSuspended = true; // try...catch is required in case if there are more than one inline scripts
+          // which should be aborted.
+          // so after the first successful abortion, `cb(...args);` will throw error,
+          // and we should not stop on that and continue to abort other scripts
 
-          for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-            args[_key - 1] = arguments[_key];
+          try {
+            for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+              args[_key - 1] = arguments[_key];
+            }
+
+            var result = cb.apply(void 0, args);
+            this.isAbortingSuspended = false;
+            return result;
+          } catch (_unused) {
+            var rid = randomId();
+            this.isAbortingSuspended = false; // It's necessary to throw error
+            // otherwise script will be not aborted
+
+            throw new ReferenceError(rid);
           }
-
-          var result = cb.apply(void 0, args);
-          this.isAbortingSuspended = false;
-          return result;
         }
       };
     }
+
+    /**
+     * @typedef Chain
+     * @property {Object} base
+     * @property {string} prop
+     * @property {string} [chain]
+     */
+
+    /**
+     * Check if the property exists in the base object (recursively)
+     *
+     * If property doesn't exist in base object,
+     * defines this property as 'undefined'
+     * and returns base, property name and remaining part of property chain
+     *
+     * @param {Object} base
+     * @param {string} chain
+     * @returns {Chain}
+     */
+
+    function getPropertyInChain(base, chain) {
+      var pos = chain.indexOf('.');
+
+      if (pos === -1) {
+        return {
+          base: base,
+          prop: chain
+        };
+      }
+
+      var prop = chain.slice(0, pos); // https://github.com/AdguardTeam/Scriptlets/issues/128
+
+      if (base === null) {
+        // if base is null, return 'null' as base.
+        // it's needed for triggering the reason logging while debugging
+        return {
+          base: base,
+          prop: prop,
+          chain: chain
+        };
+      }
+
+      var nextBase = base[prop];
+      chain = chain.slice(pos + 1);
+
+      if ((base instanceof Object || typeof base === 'object') && isEmptyObject(base)) {
+        // for empty objects in chain
+        return {
+          base: base,
+          prop: prop,
+          chain: chain
+        };
+      }
+
+      if (nextBase === null) {
+        return {
+          base: base,
+          prop: prop,
+          chain: chain
+        };
+      }
+
+      if (nextBase !== undefined) {
+        return getPropertyInChain(nextBase, chain);
+      }
+
+      Object.defineProperty(base, prop, {
+        configurable: true
+      });
+      return {
+        base: base,
+        prop: prop,
+        chain: chain
+      };
+    }
+
+    /**
+     * @typedef Chain
+     * @property {Object} base
+     * @property {string} prop
+     * @property {string} [chain]
+     */
+
+    /**
+     * Check if the property exists in the base object (recursively).
+     * Similar to getPropertyInChain but upgraded for json-prune:
+     * handle wildcard properties and does not define nonexistent base property as 'undefined'
+     *
+     * @param {Object} base
+     * @param {string} chain
+     * @param {boolean} [lookThrough=false]
+     * should the method look through it's props in order to wildcard
+     * @param {Array} [output=[]] result acc
+     * @returns {Chain[]} array of objects
+     */
+    function getWildcardPropertyInChain(base, chain) {
+      var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+      var pos = chain.indexOf('.');
+
+      if (pos === -1) {
+        // for paths like 'a.b.*' every final nested prop should be processed
+        if (chain === '*' || chain === '[]') {
+          // eslint-disable-next-line no-restricted-syntax
+          for (var key in base) {
+            // to process each key in base except inherited ones
+            if (Object.prototype.hasOwnProperty.call(base, key)) {
+              output.push({
+                base: base,
+                prop: key
+              });
+            }
+          }
+        } else {
+          output.push({
+            base: base,
+            prop: chain
+          });
+        }
+
+        return output;
+      }
+
+      var prop = chain.slice(0, pos);
+      var shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === '*' && base instanceof Object;
+
+      if (shouldLookThrough) {
+        var nextProp = chain.slice(pos + 1);
+        var baseKeys = Object.keys(base); // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src ad.1.src'),
+        // each one of base keys should be considered as a potential chain prop in final path
+
+        baseKeys.forEach(function (key) {
+          var item = base[key];
+          getWildcardPropertyInChain(item, nextProp, lookThrough, output);
+        });
+      }
+
+      var nextBase = base[prop];
+      chain = chain.slice(pos + 1);
+
+      if (nextBase !== undefined) {
+        getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
+      }
+
+      return output;
+    }
+
+    /* eslint-disable no-console, no-underscore-dangle */
+
+    /**
+     * Hit used only for debug purposes now
+     * @param {Source} source
+     * @param {string} [message] - optional message;
+     * use LOG_MARKER = 'log: ' at the start of a message
+     * for logging scriptlets
+     */
+    var hit = function hit(source, message) {
+      if (source.verbose !== true) {
+        return;
+      }
+
+      try {
+        var log = console.log.bind(console);
+        var trace = console.trace.bind(console); // eslint-disable-line compat/compat
+
+        var prefix = source.ruleText || '';
+
+        if (source.domainName) {
+          var AG_SCRIPTLET_MARKER = '#%#//';
+          var UBO_SCRIPTLET_MARKER = '##+js';
+          var ruleStartIndex;
+
+          if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+          } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+          } // delete all domains from ruleText and leave just rule part
+
+
+          var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
+
+          prefix = "".concat(source.domainName).concat(rulePart);
+        } // Used to check if scriptlet uses 'hit' function for logging
+
+
+        var LOG_MARKER = 'log: ';
+
+        if (message) {
+          if (message.indexOf(LOG_MARKER) === -1) {
+            log("".concat(prefix, " message:\n").concat(message));
+          } else {
+            log(message.slice(LOG_MARKER.length));
+          }
+        }
+
+        log("".concat(prefix, " trace start"));
+
+        if (trace) {
+          trace();
+        }
+
+        log("".concat(prefix, " trace end"));
+      } catch (e) {// try catch for Edge 15
+        // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
+        // console.log throws an error
+      } // This is necessary for unit-tests only!
+
+
+      if (typeof window.__debug === 'function') {
+        window.__debug(source);
+      }
+    };
+
+    /**
+     * @typedef { import('../scriptlets/index').Source } Source
+     */
+
+    /**
+     * Checks if given propsToMatch string matches with given request data
+     * This is used by prevent-xhr, prevent-fetch, trusted-replace-xhr-response
+     * and  trusted-replace-fetch-response scriptlets
+     * @param {Source} source
+     * @param {string} propsToMatch
+     * @param {Object} requestData object with standard properties of fetch/xhr like url, method etc
+     * @returns {boolean}
+     */
+
+    var matchRequestProps = function matchRequestProps(source, propsToMatch, requestData) {
+      if (propsToMatch === '' || propsToMatch === '*') {
+        return true;
+      }
+
+      var isMatched;
+      var parsedData = parseMatchProps(propsToMatch);
+
+      if (!validateParsedData(parsedData)) {
+        logMessage(source, "Invalid parameter: ".concat(propsToMatch));
+        isMatched = false;
+      } else {
+        var matchData = getMatchPropsData(parsedData); // prevent only if all props match
+
+        isMatched = Object.keys(matchData).every(function (matchKey) {
+          var matchValue = matchData[matchKey];
+          return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
+        });
+      }
+
+      return isMatched;
+    };
+
+    /**
+     * Checks if the stackTrace contains stackRegexp
+     * https://github.com/AdguardTeam/Scriptlets/issues/82
+     * @param {string|undefined} stackMatch - input stack value to match
+     * @param {string} stackTrace - script error stack trace
+     * @returns {boolean}
+     */
+
+    var matchStackTrace = function matchStackTrace(stackMatch, stackTrace) {
+      if (!stackMatch || stackMatch === '') {
+        return true;
+      }
+
+      if (shouldAbortInlineOrInjectedScript$1(stackMatch, stackTrace)) {
+        return true;
+      }
+
+      var stackRegexp = toRegExp(stackMatch);
+      var refinedStackTrace = stackTrace.split('\n').slice(2) // get rid of our own functions in the stack trace
+      .map(function (line) {
+        return line.trim();
+      }) // trim the lines
+      .join('\n');
+      return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
+    };
+
+    /**
+     * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
+     * Those calls that fall into the "cooldown" period, are ignored
+     * @param {Function} method
+     * @param {Number} delay - milliseconds
+     */
+    var throttle = function throttle(cb, delay) {
+      var wait = false;
+      var savedArgs;
+
+      var wrapper = function wrapper() {
+        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        if (wait) {
+          savedArgs = args;
+          return;
+        }
+
+        cb.apply(void 0, args);
+        wait = true;
+        setTimeout(function () {
+          wait = false;
+
+          if (savedArgs) {
+            wrapper(savedArgs);
+            savedArgs = null;
+          }
+        }, delay);
+      };
+
+      return wrapper;
+    };
+
+    /**
+     * DOM tree changes observer. Used for 'remove-attr' and 'remove-class' scriptlets
+     * @param {Function} callback
+     * @param {boolean} observeAttrs - optional parameter - should observer check attributes changes
+     */
+
+    var observeDOMChanges = function observeDOMChanges(callback) {
+      var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+
+      /**
+       * 'delay' in milliseconds for 'throttle' method
+       */
+      var THROTTLE_DELAY_MS = 20;
+      /**
+       * Used for remove-class
+       */
+      // eslint-disable-next-line no-use-before-define, compat/compat
+
+      var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+
+      var connect = function connect() {
+        if (attrsToObserve.length > 0) {
+          observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            attributes: observeAttrs,
+            attributeFilter: attrsToObserve
+          });
+        } else {
+          observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            attributes: observeAttrs
+          });
+        }
+      };
+
+      var disconnect = function disconnect() {
+        observer.disconnect();
+      };
+
+      function callbackWrapper() {
+        disconnect();
+        callback();
+        connect();
+      }
+
+      connect();
+    };
 
     /**
      * Behaviour flags string parser
@@ -1728,6 +2126,312 @@
         }
       };
     };
+
+    /**
+     * Modifies passed keyword value according to its purpose.
+     * Returns initial value if it's not a keyword.
+     * @param {string} rawValue
+     * @returns {string}
+     */
+    var parseKeywordValue = function parseKeywordValue(rawValue) {
+      var NOW_VALUE_KEYWORD = '$now$';
+      var CURRENT_DATE_KEYWORD = '$currentDate$';
+      var parsedValue = rawValue;
+
+      if (rawValue === NOW_VALUE_KEYWORD) {
+        // Set to current time in ms, e.g 1667915146503
+        parsedValue = Date.now().toString();
+      } else if (rawValue === CURRENT_DATE_KEYWORD) {
+        // Set to current date e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+        parsedValue = Date();
+      }
+
+      return parsedValue;
+    };
+
+    /* eslint-disable max-len */
+
+    /**
+     * @trustedScriptlet trusted-click-element
+     *
+     * @description
+     * Clicks selected elements in a strict sequence, ordered by selectors passed, and waiting for them to render in the DOM first.
+     * Deactivates after all elements have been clicked or by 10s timeout.
+     *
+     * **Syntax**
+     * ```
+     * example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, delay]])
+     * ```
+     *
+     * - `selectors` — required, string with query selectors delimited by comma
+     * - `extraMatch` — optional, extra condition to check on a page; allows to match `cookie` and `localStorage`; can be set as `name:key[=value]` where `value` is optional.
+     * Multiple conditions are allowed inside one `extraMatch` but they should be delimited by comma and each of them should match the syntax. Possible `name`s:
+     *    - `cookie` - test string or regex against cookies on a page
+     *    - `localStorage` - check if localStorage item is present
+     * - 'delay' - optional, time in ms to delay scriptlet execution, defaults to instant execution.
+     * **Examples**
+     * 1. Click single element by selector
+     * ```
+     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]')
+     * ```
+     *
+     * 2. Delay click execution by 500ms
+     * ```
+     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '', '500')
+     * ```
+     *
+     * 3. Click multiple elements by selector with a delay
+     * ```
+     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name='check"], input[type="submit"][value="akkoord"]', '', '500')
+     * ```
+     *
+     * 4. Match cookies by keys using regex and string
+     * ```
+     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'cookie:userConsentCommunity, cookie:/cmpconsent|cmp/')
+     * ```
+     *
+     * 5. Match by cookie key=value pairs using regex and string
+     * ```
+     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'cookie:userConsentCommunity=true, cookie:/cmpconsent|cmp/=/[a-z]{1,5}/')
+     * ```
+     *
+     * 6. Match by localStorage item 'promo' key
+     * ```
+     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'localStorage:promo')
+     * ```
+     *
+     * 7. Click multiple elements with delay and matching by both cookie string and localStorage item
+     * ```
+     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], input[type="submit"][value="akkoord"]', 'cookie:cmpconsent, localStorage:promo', '250')
+     * ```
+     */
+
+    /* eslint-enable max-len */
+
+    function trustedClickElement$1(source, selectors) {
+      var extraMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+      var delay = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : NaN;
+
+      if (!selectors) {
+        return;
+      }
+
+      var OBSERVER_TIMEOUT_MS = 10000;
+      var THROTTLE_DELAY_MS = 20;
+      var COOKIE_MATCH_MARKER = 'cookie:';
+      var LOCAL_STORAGE_MATCH_MARKER = 'localStorage:';
+      var SELECTORS_DELIMITER = ',';
+      var COOKIE_STRING_DELIMITER = ';'; // Regex to split match pairs by commas, avoiding the ones included in regexes
+
+      var EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=cookie:|localStorage:)/;
+      var parsedDelay;
+
+      if (delay) {
+        parsedDelay = parseInt(delay, 10);
+        var isValidDelay = !Number.isNaN(parsedDelay) || parsedDelay < OBSERVER_TIMEOUT_MS;
+
+        if (!isValidDelay) {
+          // eslint-disable-next-line max-len
+          var message = "Passed delay '".concat(delay, "' is invalid or bigger than ").concat(OBSERVER_TIMEOUT_MS, " ms");
+          logMessage(source, message);
+          return;
+        }
+      }
+
+      var canClick = !parsedDelay;
+      var cookieMatches = [];
+      var localStorageMatches = [];
+
+      if (extraMatch) {
+        // Get all match marker:value pairs from argument
+        var parsedExtraMatch = extraMatch.split(EXTRA_MATCH_DELIMITER).map(function (matchStr) {
+          return matchStr.trim();
+        }); // Filter match pairs by marker
+
+        parsedExtraMatch.forEach(function (matchStr) {
+          if (matchStr.indexOf(COOKIE_MATCH_MARKER) > -1) {
+            var cookieMatch = matchStr.replace(COOKIE_MATCH_MARKER, '');
+            cookieMatches.push(cookieMatch);
+          }
+
+          if (matchStr.indexOf(LOCAL_STORAGE_MATCH_MARKER) > -1) {
+            var localStorageMatch = matchStr.replace(LOCAL_STORAGE_MATCH_MARKER, '');
+            localStorageMatches.push(localStorageMatch);
+          }
+        });
+      }
+
+      if (cookieMatches.length > 0) {
+        var parsedCookieMatches = parseCookieString(cookieMatches.join(COOKIE_STRING_DELIMITER));
+        var parsedCookies = parseCookieString(document.cookie);
+        var cookieKeys = Object.keys(parsedCookies);
+
+        if (cookieKeys.length === 0) {
+          return;
+        }
+
+        var cookiesMatched = Object.keys(parsedCookieMatches).every(function (key) {
+          // Avoid getting /.?/ result from toRegExp on undefined
+          // as cookie may be set without value,
+          // on which cookie parsing will return cookieKey:undefined pair
+          var valueMatch = parsedCookieMatches[key] ? toRegExp(parsedCookieMatches[key]) : null;
+          var keyMatch = toRegExp(key);
+          return cookieKeys.some(function (key) {
+            var keysMatched = keyMatch.test(key);
+
+            if (!keysMatched) {
+              return false;
+            } // Key matching is enough if cookie value match is not specified
+
+
+            if (!valueMatch) {
+              return true;
+            }
+
+            return valueMatch.test(parsedCookies[key]);
+          });
+        });
+
+        if (!cookiesMatched) {
+          return;
+        }
+      }
+
+      if (localStorageMatches.length > 0) {
+        var localStorageMatched = localStorageMatches.every(function (str) {
+          var itemValue = window.localStorage.getItem(str);
+          return itemValue || itemValue === '';
+        });
+
+        if (!localStorageMatched) {
+          return;
+        }
+      }
+      /**
+       * Create selectors array and swap selectors to null on finding it's element
+       *
+       * Selectors / nulls should not be (re)moved from array to:
+       * - keep track of selectors order
+       * - always know on what index corresponding element should be put
+       * - prevent selectors from being queried multiple times
+       */
+
+
+      var selectorsSequence = selectors.split(SELECTORS_DELIMITER).map(function (selector) {
+        return selector.trim();
+      });
+
+      var createElementObj = function createElementObj(element) {
+        return {
+          element: element || null,
+          clicked: false
+        };
+      };
+
+      var elementsSequence = Array(selectorsSequence.length).fill(createElementObj());
+      /**
+       * Go through elementsSequence from left to right, clicking on found elements
+       *
+       * Element should not be clicked if it is already clicked,
+       * or a previous element is not found or clicked yet
+       */
+
+      var clickElementsBySequence = function clickElementsBySequence() {
+        for (var i = 0; i < elementsSequence.length; i += 1) {
+          var elementObj = elementsSequence[i]; // Stop clicking if that pos element is not found yet
+
+          if (!elementObj.element) {
+            break;
+          } // Skip already clicked elements
+
+
+          if (!elementObj.clicked) {
+            elementObj.element.click();
+            elementObj.clicked = true;
+          }
+        }
+
+        var allElementsClicked = elementsSequence.every(function (elementObj) {
+          return elementObj.clicked === true;
+        });
+
+        if (allElementsClicked) {
+          // At this stage observer is already disconnected
+          hit(source);
+        }
+      };
+
+      var handleElement = function handleElement(element, i) {
+        var elementObj = createElementObj(element);
+        elementsSequence[i] = elementObj;
+
+        if (canClick) {
+          clickElementsBySequence();
+        }
+      };
+      /**
+       * Query all selectors from queue on each mutation
+       * Each selector is swapped to null in selectorsSequence on founding corresponding element
+       *
+       * We start looking for elements before possible delay is over, to avoid cases
+       * when delay is getting off after the last mutation took place.
+       *
+       */
+
+
+      var findElements = function findElements(mutations, observer) {
+        var fulfilledSelectors = [];
+        selectorsSequence.forEach(function (selector, i) {
+          if (!selector) {
+            return;
+          }
+
+          var element = document.querySelector(selector);
+
+          if (!element) {
+            return;
+          }
+
+          handleElement(element, i);
+          fulfilledSelectors.push(selector);
+        }); // selectorsSequence should be modified after the loop to not break loop indexation
+
+        selectorsSequence = selectorsSequence.map(function (selector) {
+          return fulfilledSelectors.indexOf(selector) === -1 ? selector : null;
+        }); // Disconnect observer after finding all elements
+
+        var allSelectorsFulfilled = selectorsSequence.every(function (selector) {
+          return selector === null;
+        });
+
+        if (allSelectorsFulfilled) {
+          observer.disconnect();
+        }
+      }; // eslint-disable-next-line compat/compat
+
+
+      var observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
+      observer.observe(document.documentElement, {
+        attributes: true,
+        childList: true,
+        subtree: true
+      });
+
+      if (parsedDelay) {
+        setTimeout(function () {
+          // Click previously collected elements
+          clickElementsBySequence();
+          canClick = true;
+        }, parsedDelay);
+      }
+
+      setTimeout(function () {
+        return observer.disconnect();
+      }, OBSERVER_TIMEOUT_MS);
+    }
+    trustedClickElement$1.names = ['trusted-click-element' // trusted scriptlets support no aliases
+    ];
+    trustedClickElement$1.injections = [hit, toRegExp, parseCookieString, throttle, logMessage];
 
     /* eslint-disable max-len */
 
@@ -1809,7 +2513,7 @@
     }
     abortOnPropertyRead$1.names = ['abort-on-property-read', // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-property-read.js', 'ubo-abort-on-property-read.js', 'aopr.js', 'ubo-aopr.js', 'ubo-abort-on-property-read', 'ubo-aopr', 'abp-abort-on-property-read'];
-    abortOnPropertyRead$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
+    abortOnPropertyRead$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isEmptyObject];
 
     /* eslint-disable max-len */
 
@@ -1887,7 +2591,7 @@
     }
     abortOnPropertyWrite$1.names = ['abort-on-property-write', // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-property-write.js', 'ubo-abort-on-property-write.js', 'aopw.js', 'ubo-aopw.js', 'ubo-abort-on-property-write', 'ubo-aopw', 'abp-abort-on-property-write'];
-    abortOnPropertyWrite$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
+    abortOnPropertyWrite$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isEmptyObject];
 
     /* eslint-disable max-len */
 
@@ -2000,9 +2704,7 @@
       // we use none-proxy "legacy" wrapper for preventing
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
       var isProxySupported = typeof Proxy !== 'undefined';
-      var nativeTimeout = window.setTimeout;
-      var log = console.log.bind(console); // eslint-disable-line no-console
-      // logs setTimeouts to console if no arguments have been specified
+      var nativeTimeout = window.setTimeout; // logs setTimeouts to console if no arguments have been specified
 
       var shouldLog = typeof matchCallback === 'undefined' && typeof matchDelay === 'undefined';
 
@@ -2012,7 +2714,7 @@
         if (shouldLog) {
           hit(source); // https://github.com/AdguardTeam/Scriptlets/issues/105
 
-          log("setTimeout(".concat(String(callback), ", ").concat(delay, ")"));
+          logMessage(source, "setTimeout(".concat(String(callback), ", ").concat(delay, ")"), true);
         } else {
           shouldPrevent = isPreventionNeeded({
             callback: callback,
@@ -2042,7 +2744,7 @@
         if (shouldLog) {
           hit(source); // https://github.com/AdguardTeam/Scriptlets/issues/105
 
-          log("setTimeout(".concat(String(callback), ", ").concat(delay, ")"));
+          logMessage(source, "setTimeout(".concat(String(callback), ", ").concat(delay, ")"), true);
         } else {
           shouldPrevent = isPreventionNeeded({
             callback: callback,
@@ -2072,7 +2774,7 @@
     // should be removed eventually.
     // do not remove until other filter lists maintainers use them
     'setTimeout-defuser.js', 'ubo-setTimeout-defuser.js', 'ubo-setTimeout-defuser', 'std.js', 'ubo-std.js', 'ubo-std'];
-    preventSetTimeout$1.injections = [hit, noopFunc, isPreventionNeeded, // following helpers should be injected as helpers above use them
+    preventSetTimeout$1.injections = [hit, noopFunc, isPreventionNeeded, logMessage, // following helpers should be injected as helpers above use them
     parseMatchArg, parseDelayArg, toRegExp, startsWith, nativeIsNaN, isValidCallback, isValidMatchStr, escapeRegExp, isValidStrPattern, nativeIsFinite, isValidMatchNumber];
 
     /* eslint-disable max-len */
@@ -2186,9 +2888,7 @@
       // we use none-proxy "legacy" wrapper for preventing
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
       var isProxySupported = typeof Proxy !== 'undefined';
-      var nativeInterval = window.setInterval;
-      var log = console.log.bind(console); // eslint-disable-line no-console
-      // logs setIntervals to console if no arguments have been specified
+      var nativeInterval = window.setInterval; // logs setIntervals to console if no arguments have been specified
 
       var shouldLog = typeof matchCallback === 'undefined' && typeof matchDelay === 'undefined';
 
@@ -2198,7 +2898,7 @@
         if (shouldLog) {
           hit(source); // https://github.com/AdguardTeam/Scriptlets/issues/105
 
-          log("setInterval(".concat(String(callback), ", ").concat(delay, ")"));
+          logMessage(source, "setInterval(".concat(String(callback), ", ").concat(delay, ")"), true);
         } else {
           shouldPrevent = isPreventionNeeded({
             callback: callback,
@@ -2228,7 +2928,7 @@
         if (shouldLog) {
           hit(source); // https://github.com/AdguardTeam/Scriptlets/issues/105
 
-          log("setInterval(".concat(String(callback), ", ").concat(delay, ")"));
+          logMessage(source, "setInterval(".concat(String(callback), ", ").concat(delay, ")"), true);
         } else {
           shouldPrevent = isPreventionNeeded({
             callback: callback,
@@ -2257,7 +2957,7 @@
     'ubo-setInterval-defuser.js', 'nosiif.js', // new short name of no-setInterval-if
     'ubo-nosiif.js', 'sid.js', // old short scriptlet name
     'ubo-sid.js', 'ubo-no-setInterval-if', 'ubo-setInterval-defuser', 'ubo-nosiif', 'ubo-sid'];
-    preventSetInterval$1.injections = [hit, noopFunc, isPreventionNeeded, // following helpers should be injected as helpers above use them
+    preventSetInterval$1.injections = [hit, noopFunc, isPreventionNeeded, logMessage, // following helpers should be injected as helpers above use them
     toRegExp, startsWith, nativeIsNaN, parseMatchArg, parseDelayArg, isValidCallback, isValidMatchStr, isValidStrPattern, escapeRegExp, nativeIsFinite, isValidMatchNumber];
 
     /* eslint-disable max-len */
@@ -2326,7 +3026,7 @@
     /* eslint-enable max-len */
 
     function preventWindowOpen$1(source) {
-      var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : getWildcardSymbol();
+      var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '*';
       var delay = arguments.length > 2 ? arguments[2] : undefined;
       var replacement = arguments.length > 3 ? arguments[3] : undefined;
       // default match value is needed for preventing all window.open calls
@@ -2342,8 +3042,7 @@
         }
 
         if (!isValidStrPattern(delay)) {
-          // eslint-disable-next-line no-console
-          console.log("Invalid parameter: ".concat(delay));
+          logMessage(source, "Invalid parameter: ".concat(delay));
           return nativeOpen.apply(window, [str].concat(args));
         }
 
@@ -2366,13 +3065,14 @@
 
         if (shouldLog) {
           var argsStr = args && args.length > 0 ? ", ".concat(args.join(', ')) : '';
-          var logMessage = "log: window-open: ".concat(url).concat(argsStr);
-          hit(source, logMessage);
+          var message = "window-open: ".concat(url).concat(argsStr);
+          logMessage(source, message, true);
+          hit(source);
         }
 
         var shouldPrevent = false;
 
-        if (match === getWildcardSymbol()) {
+        if (match === '*') {
           shouldPrevent = true;
         } else if (isValidMatchStr(match)) {
           var _parseMatchArg = parseMatchArg(match),
@@ -2381,8 +3081,7 @@
 
           shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
         } else {
-          // eslint-disable-next-line no-console
-          console.log("Invalid parameter: ".concat(match));
+          logMessage(source, "Invalid parameter: ".concat(match));
           shouldPrevent = false;
         }
 
@@ -2435,7 +3134,7 @@
     }
     preventWindowOpen$1.names = ['prevent-window-open', // aliases are needed for matching the related scriptlet converted into our syntax
     'window.open-defuser.js', 'ubo-window.open-defuser.js', 'ubo-window.open-defuser', 'nowoif.js', 'ubo-nowoif.js', 'ubo-nowoif'];
-    preventWindowOpen$1.injections = [hit, isValidStrPattern, escapeRegExp, isValidMatchStr, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, getWildcardSymbol, noopFunc, trueFunc, startsWith, endsWith, substringBefore, substringAfter$1];
+    preventWindowOpen$1.injections = [hit, isValidStrPattern, escapeRegExp, isValidMatchStr, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, logMessage, noopFunc, trueFunc, startsWith, endsWith, substringBefore, substringAfter$1];
 
     /* eslint-disable max-len */
 
@@ -2564,8 +3263,8 @@
           var props = property.split('.');
           var propIndex = props.indexOf(prop);
           var baseName = props[propIndex - 1];
-          console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded.")); // eslint-disable-line no-console, max-len
-
+          var message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
+          logMessage(source, message);
           return;
         }
 
@@ -2638,7 +3337,7 @@
     'abort-current-script.js', 'ubo-abort-current-script.js', 'acs.js', 'ubo-acs.js', // "ubo"-aliases with no "js"-ending
     'ubo-abort-current-script', 'ubo-acs', // obsolete but supported aliases
     'abort-current-inline-script.js', 'ubo-abort-current-inline-script.js', 'acis.js', 'ubo-acis.js', 'ubo-abort-current-inline-script', 'ubo-acis', 'abp-abort-current-inline-script'];
-    abortCurrentInlineScript$1.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, startsWith, createOnErrorHandler, hit, getDescriptorAddon];
+    abortCurrentInlineScript$1.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, startsWith, createOnErrorHandler, hit, logMessage, isEmptyObject, getDescriptorAddon];
 
     /* eslint-disable max-len */
 
@@ -2649,6 +3348,8 @@
      * Creates a constant property and assigns it one of the values from the predefined list.
      *
      * > Actually, it's not a constant. Please note, that it can be rewritten with a value of a different type.
+     *
+     * > If empty object is present in chain it will be trapped until chain leftovers appear.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#set-constantjs-
@@ -2712,10 +3413,8 @@
     function setConstant$1(source, property, value, stack) {
       if (!property || !matchStackTrace(stack, new Error().stack)) {
         return;
-      } // eslint-disable-next-line no-console
+      }
 
-
-      var log = console.log.bind(console);
       var emptyArr = noopArray();
       var emptyObj = noopObject();
       var constantValue;
@@ -2771,7 +3470,7 @@
           return canceled;
         }
 
-        canceled = value !== undefined && constantValue !== undefined && typeof value !== typeof constantValue;
+        canceled = value !== undefined && constantValue !== undefined && typeof value !== typeof constantValue && value !== null;
         return canceled;
       };
 
@@ -2786,10 +3485,8 @@
         if (origDescriptor instanceof Object) {
           // This check is required to avoid defining non-configurable props
           if (!origDescriptor.configurable) {
-            if (source.verbose) {
-              log("set-constant: property '".concat(prop, "' is not configurable"));
-            }
-
+            var message = "set-constant: property '".concat(prop, "' is not configurable");
+            logMessage(source, message);
             return false;
           }
 
@@ -2823,7 +3520,7 @@
             chain = chainInfo.chain; // Handler method init is used to keep track of factual value
         // and apply mustCancel() check only on end prop
 
-        var undefPropHandler = {
+        var inChainPropHandler = {
           factValue: undefined,
           init: function init(a) {
             this.factValue = a;
@@ -2873,6 +3570,17 @@
           }
 
           return;
+        } // Null prop in chain
+
+
+        if (base !== undefined && base[prop] === null) {
+          trapProp(base, prop, true, inChainPropHandler);
+          return;
+        } // Empty object prop in chain
+
+
+        if ((base instanceof Object || typeof base === 'object') && isEmptyObject(base)) {
+          trapProp(base, prop, true, inChainPropHandler);
         } // Defined prop in chain
 
 
@@ -2883,14 +3591,14 @@
         } // Undefined prop in chain
 
 
-        trapProp(base, prop, true, undefPropHandler);
+        trapProp(base, prop, true, inChainPropHandler);
       };
 
       setChainPropAccess(window, property);
     }
     setConstant$1.names = ['set-constant', // aliases are needed for matching the related scriptlet converted into our syntax
     'set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js', 'ubo-set-constant', 'ubo-set', 'abp-override-property-read'];
-    setConstant$1.injections = [hit, noopArray, noopObject, noopFunc, trueFunc, falseFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, nativeIsNaN, getNativeRegexpTest];
+    setConstant$1.injections = [hit, logMessage, noopArray, noopObject, noopFunc, trueFunc, falseFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, nativeIsNaN, isEmptyObject, getNativeRegexpTest];
 
     /* eslint-disable max-len */
 
@@ -3046,10 +3754,18 @@
         return nativeAddEventListener.apply(this, [type, listener].concat(args));
       }
 
-      window.EventTarget.prototype.addEventListener = addEventListenerWrapper; // https://github.com/AdguardTeam/Scriptlets/issues/143
+      var descriptor = {
+        configurable: true,
+        set: function set() {},
+        get: function get() {
+          return addEventListenerWrapper;
+        }
+      }; // https://github.com/AdguardTeam/Scriptlets/issues/215
+      // https://github.com/AdguardTeam/Scriptlets/issues/143
 
-      window.addEventListener = addEventListenerWrapper;
-      document.addEventListener = addEventListenerWrapper;
+      Object.defineProperty(window.EventTarget.prototype, 'addEventListener', descriptor);
+      Object.defineProperty(window, 'addEventListener', descriptor);
+      Object.defineProperty(document, 'addEventListener', descriptor);
     }
     preventAddEventListener$1.names = ['prevent-addEventListener', // aliases are needed for matching the related scriptlet converted into our syntax
     'addEventListener-defuser.js', 'ubo-addEventListener-defuser.js', 'aeld.js', 'ubo-aeld.js', 'ubo-addEventListener-defuser', 'ubo-aeld'];
@@ -3181,7 +3897,9 @@
 
       var rtcReplacement = function rtcReplacement(config) {
         // eslint-disable-next-line max-len
-        hit(source, "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config)));
+        var message = "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config));
+        logMessage(source, message);
+        hit(source);
       };
 
       rtcReplacement.prototype = {
@@ -3204,7 +3922,7 @@
     }
     nowebrtc$1.names = ['nowebrtc', // aliases are needed for matching the related scriptlet converted into our syntax
     'nowebrtc.js', 'ubo-nowebrtc.js', 'ubo-nowebrtc'];
-    nowebrtc$1.injections = [hit, noopFunc, convertRtcConfigToString];
+    nowebrtc$1.injections = [hit, noopFunc, logMessage, convertRtcConfigToString];
 
     /**
      * @scriptlet log-addEventListener
@@ -3222,21 +3940,19 @@
      */
 
     function logAddEventListener$1(source) {
-      // eslint-disable-next-line no-console
-      var log = console.log.bind(console);
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
       function addEventListenerWrapper(type, listener) {
         if (validateType(type) && validateListener(listener)) {
-          var logMessage = "addEventListener(\"".concat(type, "\", ").concat(listenerToString(listener), ")");
-          log(logMessage);
-          hit(source);
-        } else if (source.verbose) {
-          // logging while debugging
-          var _logMessage = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
+          var _message = "addEventListener(\"".concat(type, "\", ").concat(listenerToString(listener), ")");
 
-          log(_logMessage);
-        }
+          logMessage(source, _message, true);
+          hit(source);
+        } // logging while debugging
+
+
+        var message = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
+        logMessage(source, message, true);
 
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
@@ -3245,13 +3961,24 @@
         return nativeAddEventListener.apply(this, [type, listener].concat(args));
       }
 
-      window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
+      var descriptor = {
+        configurable: true,
+        set: function set() {},
+        get: function get() {
+          return addEventListenerWrapper;
+        }
+      }; // https://github.com/AdguardTeam/Scriptlets/issues/215
+      // https://github.com/AdguardTeam/Scriptlets/issues/143
+
+      Object.defineProperty(window.EventTarget.prototype, 'addEventListener', descriptor);
+      Object.defineProperty(window, 'addEventListener', descriptor);
+      Object.defineProperty(document, 'addEventListener', descriptor);
     }
     logAddEventListener$1.names = ['log-addEventListener', // aliases are needed for matching the related scriptlet converted into our syntax
     'addEventListener-logger.js', 'ubo-addEventListener-logger.js', 'aell.js', 'ubo-aell.js', 'ubo-addEventListener-logger', 'ubo-aell'];
-    logAddEventListener$1.injections = [hit, validateType, validateListener, listenerToString, convertTypeToString, objectToString, isEmptyObject, getObjectEntries];
+    logAddEventListener$1.injections = [hit, validateType, validateListener, listenerToString, convertTypeToString, logMessage, objectToString, isEmptyObject, getObjectEntries];
 
-    /* eslint-disable no-console, no-eval */
+    /* eslint-disable no-eval */
     /**
      * @scriptlet log-eval
      *
@@ -3265,13 +3992,12 @@
      */
 
     function logEval$1(source) {
-      var log = console.log.bind(console); // wrap eval function
-
+      // wrap eval function
       var nativeEval = window.eval;
 
       function evalWrapper(str) {
         hit(source);
-        log("eval(\"".concat(str, "\")"));
+        logMessage(source, "eval(\"".concat(str, "\")"), true);
         return nativeEval(str);
       }
 
@@ -3286,7 +4012,7 @@
           args[_key] = arguments[_key];
         }
 
-        log("new Function(".concat(args.join(', '), ")"));
+        logMessage(source, "new Function(".concat(args.join(', '), ")"), true);
         return nativeFunction.apply(this, [].concat(args));
       }
 
@@ -3295,7 +4021,7 @@
       window.Function = FunctionWrapper;
     }
     logEval$1.names = ['log-eval'];
-    logEval$1.injections = [hit];
+    logEval$1.injections = [hit, logMessage];
 
     /**
      * @scriptlet log
@@ -3390,7 +4116,7 @@
     'noeval-if.js', 'ubo-noeval-if.js', 'ubo-noeval-if'];
     preventEvalIf$1.injections = [toRegExp, hit];
 
-    /* eslint-disable no-console, func-names, no-multi-assign */
+    /* eslint-disable func-names, no-multi-assign */
     /**
      * @scriptlet prevent-fab-3.2.0
      *
@@ -3490,7 +4216,7 @@
     'nofab.js', 'ubo-nofab.js', 'fuckadblock.js-3.2.0', 'ubo-fuckadblock.js-3.2.0', 'ubo-nofab'];
     preventFab$1.injections = [hit, noopFunc, noopThis];
 
-    /* eslint-disable no-console, func-names, no-multi-assign */
+    /* eslint-disable func-names, no-multi-assign */
     /**
      * @scriptlet set-popads-dummy
      *
@@ -3661,12 +4387,12 @@
       if (result) {
         hit(source);
       } else {
-        window.console.error('Failed to set up prevent-adfly scriptlet');
+        logMessage(source, 'Failed to set up prevent-adfly scriptlet');
       }
     }
     preventAdfly$1.names = ['prevent-adfly', // aliases are needed for matching the related scriptlet converted into our syntax
     'adfly-defuser.js', 'ubo-adfly-defuser.js', 'ubo-adfly-defuser'];
-    preventAdfly$1.injections = [setPropertyAccess, hit];
+    preventAdfly$1.injections = [setPropertyAccess, hit, logMessage];
 
     /* eslint-disable max-len */
 
@@ -3735,7 +4461,7 @@
       window.onerror = createOnErrorHandler(rid).bind();
     }
     debugOnPropertyRead$1.names = ['debug-on-property-read'];
-    debugOnPropertyRead$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, noopFunc];
+    debugOnPropertyRead$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, noopFunc, isEmptyObject];
 
     /* eslint-disable max-len */
 
@@ -3801,7 +4527,7 @@
       window.onerror = createOnErrorHandler(rid).bind();
     }
     debugOnPropertyWrite$1.names = ['debug-on-property-write'];
-    debugOnPropertyWrite$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit];
+    debugOnPropertyWrite$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isEmptyObject];
 
     /* eslint-disable max-len */
 
@@ -3875,8 +4601,8 @@
           var props = property.split('.');
           var propIndex = props.indexOf(prop);
           var baseName = props[propIndex - 1];
-          console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded.")); // eslint-disable-line no-console, max-len
-
+          var message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
+          logMessage(message, source.verbose);
           return;
         }
 
@@ -3915,7 +4641,7 @@
       window.onerror = createOnErrorHandler(rid).bind();
     }
     debugCurrentInlineScript$1.names = ['debug-current-inline-script'];
-    debugCurrentInlineScript$1.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit];
+    debugCurrentInlineScript$1.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit, logMessage, isEmptyObject];
 
     /* eslint-disable max-len */
 
@@ -4000,8 +4726,7 @@
         try {
           nodes = [].slice.call(document.querySelectorAll(selector));
         } catch (e) {
-          // eslint-disable-next-line no-console
-          console.log("Invalid remove-attr selector arg: '".concat(selector, "'"));
+          logMessage(source, "Invalid selector arg: '".concat(selector, "'"));
         }
 
         var removed = false;
@@ -4059,7 +4784,9 @@
     }
     removeAttr$1.names = ['remove-attr', // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-attr.js', 'ubo-remove-attr.js', 'ra.js', 'ubo-ra.js', 'ubo-remove-attr', 'ubo-ra'];
-    removeAttr$1.injections = [hit, observeDOMChanges, parseFlags];
+    removeAttr$1.injections = [hit, observeDOMChanges, parseFlags, logMessage, // following helpers should be imported and injected
+    // because they are used by helpers above
+    throttle];
 
     /* eslint-disable max-len */
 
@@ -4139,7 +4866,9 @@
       observeDOMChanges(setAttr, true);
     }
     setAttr$1.names = ['set-attr'];
-    setAttr$1.injections = [hit, observeDOMChanges, nativeIsNaN];
+    setAttr$1.injections = [hit, observeDOMChanges, nativeIsNaN, // following helpers should be imported and injected
+    // because they are used by helpers above
+    throttle];
 
     /* eslint-disable max-len */
 
@@ -4234,8 +4963,7 @@
           try {
             foundNodes = [].slice.call(document.querySelectorAll(selector));
           } catch (e) {
-            // eslint-disable-next-line no-console
-            console.log("Invalid remove-class selector arg: '".concat(selector, "'"));
+            logMessage(source, "Invalid selector arg: '".concat(selector, "'"));
           }
 
           foundNodes.forEach(function (n) {
@@ -4310,7 +5038,9 @@
     }
     removeClass$1.names = ['remove-class', // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-class.js', 'ubo-remove-class.js', 'rc.js', 'ubo-rc.js', 'ubo-remove-class', 'ubo-rc'];
-    removeClass$1.injections = [hit, observeDOMChanges, parseFlags];
+    removeClass$1.injections = [hit, logMessage, observeDOMChanges, parseFlags, // following helpers should be imported and injected
+    // because they are used by helpers above
+    throttle];
 
     /**
      * @scriptlet disable-newtab-links
@@ -4407,10 +5137,9 @@
       var intervalWrapper = function intervalWrapper(callback, delay) {
         // https://github.com/AdguardTeam/Scriptlets/issues/221
         if (!isValidCallback(callback)) {
-          if (source.verbose) {
-            // eslint-disable-next-line no-console, max-len
-            console.log("Scriptlet adjust-setInterval can not be applied because of invalid callback: '".concat(String(callback), "'."));
-          }
+          // eslint-disable-next-line max-len
+          var message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'.");
+          logMessage(source, message);
         } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
           delay *= getBoostMultiplier(boost);
           hit(source);
@@ -4427,8 +5156,8 @@
     }
     adjustSetInterval$1.names = ['adjust-setInterval', // aliases are needed for matching the related scriptlet converted into our syntax
     'nano-setInterval-booster.js', 'ubo-nano-setInterval-booster.js', 'nano-sib.js', 'ubo-nano-sib.js', 'ubo-nano-setInterval-booster', 'ubo-nano-sib'];
-    adjustSetInterval$1.injections = [hit, isValidCallback, toRegExp, getBoostMultiplier, isDelayMatched, // following helpers should be injected as helpers above use them
-    nativeIsNaN, nativeIsFinite, getMatchDelay, getWildcardSymbol, shouldMatchAnyDelay];
+    adjustSetInterval$1.injections = [hit, isValidCallback, toRegExp, getBoostMultiplier, isDelayMatched, logMessage, // following helpers should be injected as helpers above use them
+    nativeIsNaN, nativeIsFinite, getMatchDelay, shouldMatchAnyDelay];
 
     /* eslint-disable max-len */
 
@@ -4490,10 +5219,9 @@
       var timeoutWrapper = function timeoutWrapper(callback, delay) {
         // https://github.com/AdguardTeam/Scriptlets/issues/221
         if (!isValidCallback(callback)) {
-          if (source.verbose) {
-            // eslint-disable-next-line no-console, max-len
-            console.log("Scriptlet adjust-setTimeout can not be applied because of invalid callback: '".concat(String(callback), "'."));
-          }
+          // eslint-disable-next-line max-len
+          var message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'.");
+          logMessage(source, message);
         } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
           delay *= getBoostMultiplier(boost);
           hit(source);
@@ -4510,8 +5238,8 @@
     }
     adjustSetTimeout$1.names = ['adjust-setTimeout', // aliases are needed for matching the related scriptlet converted into our syntax
     'nano-setTimeout-booster.js', 'ubo-nano-setTimeout-booster.js', 'nano-stb.js', 'ubo-nano-stb.js', 'ubo-nano-setTimeout-booster', 'ubo-nano-stb'];
-    adjustSetTimeout$1.injections = [hit, isValidCallback, toRegExp, getBoostMultiplier, isDelayMatched, // following helpers should be injected as helpers above use them
-    nativeIsNaN, nativeIsFinite, getMatchDelay, getWildcardSymbol, shouldMatchAnyDelay];
+    adjustSetTimeout$1.injections = [hit, isValidCallback, toRegExp, getBoostMultiplier, isDelayMatched, logMessage, // following helpers should be injected as helpers above use them
+    nativeIsNaN, nativeIsFinite, getMatchDelay, shouldMatchAnyDelay];
 
     /* eslint-disable max-len */
 
@@ -4653,10 +5381,8 @@
     function jsonPrune$1(source, propsToRemove, requiredInitialProps, stack) {
       if (!!stack && !matchStackTrace(stack, new Error().stack)) {
         return;
-      } // eslint-disable-next-line no-console
+      }
 
-
-      var log = console.log.bind(console);
       var prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
       var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
 
@@ -4673,7 +5399,7 @@
           var shouldLog = matchRegex.test(rootString);
 
           if (shouldLog) {
-            log(window.location.hostname, root);
+            logMessage(source, "".concat(window.location.hostname, " ").concat(root), true);
             shouldProcess = false;
             return shouldProcess;
           }
@@ -4710,7 +5436,7 @@
 
       var jsonPruner = function jsonPruner(root) {
         if (prunePaths.length === 0 && requiredPaths.length === 0) {
-          log(window.location.hostname, root);
+          logMessage(source, "".concat(window.location.hostname, " ").concat(root), true);
           return root;
         }
 
@@ -4731,7 +5457,7 @@
             });
           });
         } catch (e) {
-          log(e.toString());
+          logMessage(source, e);
         }
 
         return root;
@@ -4774,7 +5500,7 @@
     }
     jsonPrune$1.names = ['json-prune', // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune.js', 'ubo-json-prune.js', 'ubo-json-prune', 'abp-json-prune'];
-    jsonPrune$1.injections = [hit, matchStackTrace, getWildcardPropertyInChain, toRegExp, getWildcardSymbol, getNativeRegexpTest];
+    jsonPrune$1.injections = [hit, matchStackTrace, getWildcardPropertyInChain, logMessage, toRegExp, getNativeRegexpTest];
 
     /* eslint-disable max-len */
 
@@ -4849,9 +5575,7 @@
     /* eslint-enable max-len */
 
     function preventRequestAnimationFrame$1(source, match) {
-      var nativeRequestAnimationFrame = window.requestAnimationFrame;
-      var log = console.log.bind(console); // eslint-disable-line no-console
-      // logs requestAnimationFrame to console if no arguments have been specified
+      var nativeRequestAnimationFrame = window.requestAnimationFrame; // logs requestAnimationFrame to console if no arguments have been specified
 
       var shouldLog = typeof match === 'undefined';
 
@@ -4864,7 +5588,7 @@
 
         if (shouldLog) {
           hit(source);
-          log("requestAnimationFrame(".concat(String(callback), ")"));
+          logMessage(source, "requestAnimationFrame(".concat(String(callback), ")"), true);
         } else if (isValidCallback(callback) && isValidStrPattern(match)) {
           shouldPrevent = matchRegexp.test(callback.toString()) !== isInvertedMatch;
         }
@@ -4885,7 +5609,7 @@
     }
     preventRequestAnimationFrame$1.names = ['prevent-requestAnimationFrame', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-requestAnimationFrame-if.js', 'ubo-no-requestAnimationFrame-if.js', 'norafif.js', 'ubo-norafif.js', 'ubo-no-requestAnimationFrame-if', 'ubo-norafif'];
-    preventRequestAnimationFrame$1.injections = [hit, noopFunc, parseMatchArg, isValidStrPattern, isValidCallback, // following helpers should be injected as helpers above use them
+    preventRequestAnimationFrame$1.injections = [hit, noopFunc, parseMatchArg, isValidStrPattern, isValidCallback, logMessage, // following helpers should be injected as helpers above use them
     escapeRegExp, toRegExp, startsWith];
 
     /* eslint-disable max-len */
@@ -4894,11 +5618,11 @@
      * @scriptlet set-cookie
      *
      * @description
-     * Sets a cookie with the specified name and value. Cookie path defaults to root.
+     * Sets a cookie with the specified name, value, and path.
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('set-cookie', name, value)
+     * example.org#%#//scriptlet('set-cookie', name, value[, path])
      * ```
      *
      * - `name` - required, cookie name to be set
@@ -4910,19 +5634,32 @@
      *         - `yes` / `Yes` / `Y`
      *         - `no`
      *         - `ok` / `OK`
+     * - `path` - optional, cookie path, defaults to `/`; possible values:
+     *     - `/` — root path
+     *     - `none` — to set no path at all
      *
      * **Examples**
      * ```
-     * example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1')
+     * example.org#%#//scriptlet('set-cookie', 'CookieConsent', '1')
      *
      * example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', 'true')
+     *
+     * example.org#%#//scriptlet('set-cookie', 'cookie_consent', 'ok', 'none')
      * ```
      */
 
     /* eslint-enable max-len */
 
     function setCookie$1(source, name, value) {
-      var cookieData = prepareCookie(name, value);
+      var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '/';
+      var validValue = getLimitedCookieValue(source, value);
+
+      if (validValue === null) {
+        logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
+        return;
+      }
+
+      var cookieData = concatCookieNameValuePath(source, name, validValue, path);
 
       if (cookieData) {
         hit(source);
@@ -4930,18 +5667,19 @@
       }
     }
     setCookie$1.names = ['set-cookie'];
-    setCookie$1.injections = [hit, nativeIsNaN, prepareCookie];
+    setCookie$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, getLimitedCookieValue, concatCookieNameValuePath, isValidCookieRawPath, getCookiePath];
 
     /**
      * @scriptlet set-cookie-reload
      *
      * @description
-     * Sets a cookie with the specified name and value, and then reloads the current page.
+     * Sets a cookie with the specified name and value, and path,
+     * and reloads the current page after the cookie setting.
      * If reloading option is not needed, use [set-cookie](#set-cookie) scriptlet.
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('set-cookie-reload', name, value)
+     * example.org#%#//scriptlet('set-cookie-reload', name, value[, path])
      * ```
      *
      * - `name` - required, cookie name to be set
@@ -4953,48 +5691,48 @@
      *         - `yes` / `Yes` / `Y`
      *         - `no`
      *         - `ok` / `OK`
+     * - `path` - optional, cookie path, defaults to `/`; possible values:
+     *     - `/` — root path
+     *     - `none` — to set no path at all
      *
      * **Examples**
      * ```
      * example.org#%#//scriptlet('set-cookie-reload', 'checking', 'ok')
      *
      * example.org#%#//scriptlet('set-cookie-reload', 'gdpr-settings-cookie', '1')
+     *
+     * example.org#%#//scriptlet('set-cookie-reload', 'cookie-set', 'true', 'none')
      * ```
      */
 
     function setCookieReload$1(source, name, value) {
-      var isCookieSetWithValue = function isCookieSetWithValue(name, value) {
-        return document.cookie.split(';').some(function (cookieStr) {
-          var pos = cookieStr.indexOf('=');
-
-          if (pos === -1) {
-            return false;
-          }
-
-          var cookieName = cookieStr.slice(0, pos).trim();
-          var cookieValue = cookieStr.slice(pos + 1).trim();
-          return name === cookieName && value === cookieValue;
-        });
-      };
+      var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '/';
 
       if (isCookieSetWithValue(name, value)) {
         return;
       }
 
-      var cookieData = prepareCookie(name, value);
+      var validValue = getLimitedCookieValue(source, value);
+
+      if (validValue === null) {
+        logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
+        return;
+      }
+
+      var cookieData = concatCookieNameValuePath(source, name, validValue, path);
 
       if (cookieData) {
         document.cookie = cookieData;
         hit(source); // Only reload the page if cookie was set
         // https://github.com/AdguardTeam/Scriptlets/issues/212
 
-        if (isCookieSetWithValue(name, value)) {
+        if (isCookieSetWithValue(document.cookie, name, value)) {
           window.location.reload();
         }
       }
     }
     setCookieReload$1.names = ['set-cookie-reload'];
-    setCookieReload$1.injections = [hit, nativeIsNaN, prepareCookie];
+    setCookieReload$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, getLimitedCookieValue, concatCookieNameValuePath, isValidCookieRawPath, getCookiePath];
 
     /**
      * @scriptlet hide-in-shadow-dom
@@ -5070,7 +5808,9 @@
       observeDOMChanges(hideHandler, true);
     }
     hideInShadowDom$1.names = ['hide-in-shadow-dom'];
-    hideInShadowDom$1.injections = [hit, observeDOMChanges, flatten, findHostElements, pierceShadowDom];
+    hideInShadowDom$1.injections = [hit, observeDOMChanges, findHostElements, pierceShadowDom, // following helpers should be imported and injected
+    // because they are used by helpers above
+    flatten, throttle];
 
     /**
      * @scriptlet remove-in-shadow-dom
@@ -5145,7 +5885,9 @@
       observeDOMChanges(removeHandler, true);
     }
     removeInShadowDom$1.names = ['remove-in-shadow-dom'];
-    removeInShadowDom$1.injections = [hit, observeDOMChanges, flatten, findHostElements, pierceShadowDom];
+    removeInShadowDom$1.injections = [hit, observeDOMChanges, findHostElements, pierceShadowDom, // following helpers should be imported and injected
+    // because they are used by helpers above
+    flatten, throttle];
 
     /* eslint-disable max-len */
 
@@ -5160,7 +5902,7 @@
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody]])
+     * example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, responseType]]])
      * ```
      *
      * - `propsToMatch` - optional, string of space-separated properties to match; possible props:
@@ -5171,8 +5913,12 @@
      * - responseBody - optional, string for defining response body value, defaults to `emptyObj`. Possible values:
      *    - `emptyObj` - empty object
      *    - `emptyArr` - empty array
+     * - responseType - optional, string for defining response type, defaults to `default`. Possible values:
+     *    - default
+     *    - opaque
+     *
      * > Usage with no arguments will log fetch calls to browser console;
-     * which is useful for debugging but permitted for production filter lists.
+     * which is useful for debugging but not permitted for production filter lists.
      *
      * **Examples**
      * 1. Log all fetch calls
@@ -5216,6 +5962,7 @@
 
     function preventFetch$1(source, propsToMatch) {
       var responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'emptyObj';
+      var responseType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'default';
 
       // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
@@ -5232,6 +5979,12 @@
         strResponseBody = '[]';
       } else {
         return;
+      } // Skip disallowed response types
+
+
+      if (!(responseType === 'default' || responseType === 'opaque')) {
+        logMessage(source, "Invalid parameter: ".concat(responseType));
+        return;
       }
 
       var handlerWrapper = function handlerWrapper(target, thisArg, args) {
@@ -5239,32 +5992,16 @@
         var fetchData = getFetchData(args);
 
         if (typeof propsToMatch === 'undefined') {
-          // log if no propsToMatch given
-          var logMessage = "log: fetch( ".concat(objectToString(fetchData), " )");
-          hit(source, logMessage);
-        } else if (propsToMatch === '' || propsToMatch === getWildcardSymbol()) {
-          // prevent all fetch calls
-          shouldPrevent = true;
-        } else {
-          var parsedData = parseMatchProps(propsToMatch);
-
-          if (!validateParsedData(parsedData)) {
-            // eslint-disable-next-line no-console
-            console.log("Invalid parameter: ".concat(propsToMatch));
-            shouldPrevent = false;
-          } else {
-            var matchData = getMatchPropsData(parsedData); // prevent only if all props match
-
-            shouldPrevent = Object.keys(matchData).every(function (matchKey) {
-              var matchValue = matchData[matchKey];
-              return Object.prototype.hasOwnProperty.call(fetchData, matchKey) && matchValue.test(fetchData[matchKey]);
-            });
-          }
+          logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
+          hit(source);
+          return Reflect.apply(target, thisArg, args);
         }
+
+        shouldPrevent = matchRequestProps(source, propsToMatch, fetchData);
 
         if (shouldPrevent) {
           hit(source);
-          return noopPromiseResolve(strResponseBody);
+          return noopPromiseResolve(strResponseBody, fetchData.url, responseType);
         }
 
         return Reflect.apply(target, thisArg, args);
@@ -5277,7 +6014,7 @@
     }
     preventFetch$1.names = ['prevent-fetch', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-fetch-if.js', 'ubo-no-fetch-if.js', 'ubo-no-fetch-if'];
-    preventFetch$1.injections = [hit, getFetchData, objectToString, parseMatchProps, validateParsedData, getMatchPropsData, noopPromiseResolve, getWildcardSymbol, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries];
+    preventFetch$1.injections = [hit, getFetchData, objectToString, noopPromiseResolve, matchRequestProps, logMessage, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries, parseMatchProps, validateParsedData, getMatchPropsData];
 
     /* eslint-disable max-len */
 
@@ -5286,6 +6023,7 @@
      *
      * @description
      * Adds specified key and its value to localStorage object, or updates the value of the key if it already exists.
+     * Scriptlet won't set item if storage is full.
      *
      * **Syntax**
      * ```
@@ -5317,63 +6055,25 @@
     /* eslint-enable max-len */
 
     function setLocalStorageItem$1(source, key, value) {
-      if (!key || !value && value !== '') {
+      if (typeof key === 'undefined') {
+        logMessage(source, 'Item key should be specified.');
         return;
       }
 
-      var keyValue;
+      var validValue = getLimitedStorageItemValue(source, value);
 
-      if (value === 'undefined') {
-        keyValue = undefined;
-      } else if (value === 'false') {
-        keyValue = false;
-      } else if (value === 'true') {
-        keyValue = true;
-      } else if (value === 'null') {
-        keyValue = null;
-      } else if (value === 'emptyArr') {
-        keyValue = '[]';
-      } else if (value === 'emptyObj') {
-        keyValue = '{}';
-      } else if (value === '') {
-        keyValue = '';
-      } else if (/^\d+$/.test(value)) {
-        keyValue = parseFloat(value);
-
-        if (nativeIsNaN(keyValue)) {
-          return;
-        }
-
-        if (Math.abs(keyValue) > 0x7FFF) {
-          return;
-        }
-      } else if (value === 'yes') {
-        keyValue = 'yes';
-      } else if (value === 'no') {
-        keyValue = 'no';
-      } else {
+      if (validValue === null) {
+        logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
         return;
       }
 
-      var setItem = function setItem(key, value) {
-        var _window = window,
-            localStorage = _window.localStorage; // setItem() may throw an exception if the storage is full.
-
-        try {
-          localStorage.setItem(key, value);
-          hit(source);
-        } catch (e) {
-          if (source.verbose) {
-            // eslint-disable-next-line no-console
-            console.log("Was unable to set localStorage item due to: ".concat(e.message));
-          }
-        }
-      };
-
-      setItem(key, keyValue);
+      var _window = window,
+          localStorage = _window.localStorage;
+      setStorageItem(source, localStorage, key, validValue);
+      hit(source);
     }
     setLocalStorageItem$1.names = ['set-local-storage-item'];
-    setLocalStorageItem$1.injections = [hit, nativeIsNaN];
+    setLocalStorageItem$1.injections = [hit, logMessage, nativeIsNaN, setStorageItem, getLimitedStorageItemValue];
 
     /* eslint-disable max-len */
 
@@ -5382,6 +6082,7 @@
      *
      * @description
      * Adds specified key and its value to sessionStorage object, or updates the value of the key if it already exists.
+     * Scriptlet won't set item if storage is full.
      *
      * **Syntax**
      * ```
@@ -5413,63 +6114,24 @@
     /* eslint-enable max-len */
 
     function setSessionStorageItem$1(source, key, value) {
-      if (!key || !value && value !== '') {
+      if (typeof key === 'undefined') {
+        logMessage(source, 'Item key should be specified.');
         return;
       }
 
-      var keyValue;
+      var validValue = getLimitedStorageItemValue(source, value);
 
-      if (value === 'undefined') {
-        keyValue = undefined;
-      } else if (value === 'false') {
-        keyValue = false;
-      } else if (value === 'true') {
-        keyValue = true;
-      } else if (value === 'null') {
-        keyValue = null;
-      } else if (value === 'emptyArr') {
-        keyValue = '[]';
-      } else if (value === 'emptyObj') {
-        keyValue = '{}';
-      } else if (value === '') {
-        keyValue = '';
-      } else if (/^\d+$/.test(value)) {
-        keyValue = parseFloat(value);
-
-        if (nativeIsNaN(keyValue)) {
-          return;
-        }
-
-        if (Math.abs(keyValue) > 0x7FFF) {
-          return;
-        }
-      } else if (value === 'yes') {
-        keyValue = 'yes';
-      } else if (value === 'no') {
-        keyValue = 'no';
-      } else {
+      if (validValue === null) {
+        logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
         return;
       }
 
-      var setItem = function setItem(key, value) {
-        var _window = window,
-            sessionStorage = _window.sessionStorage; // setItem() may throw an exception if the storage is full.
-
-        try {
-          sessionStorage.setItem(key, value);
-          hit(source);
-        } catch (e) {
-          if (source.verbose) {
-            // eslint-disable-next-line no-console
-            console.log("Was unable to set sessionStorage item due to: ".concat(e.message));
-          }
-        }
-      };
-
-      setItem(key, keyValue);
+      var _window = window,
+          sessionStorage = _window.sessionStorage;
+      setStorageItem(source, sessionStorage, key, validValue);
     }
     setSessionStorageItem$1.names = ['set-session-storage-item'];
-    setSessionStorageItem$1.injections = [hit, nativeIsNaN];
+    setSessionStorageItem$1.injections = [hit, logMessage, nativeIsNaN, setStorageItem, getLimitedStorageItemValue];
 
     /* eslint-disable max-len */
 
@@ -5489,6 +6151,9 @@
      *
      * - `property` - required, path to a property. The property must be attached to window.
      * - `stack` - required, string that must match the current function call stack trace.
+     *     - values to abort inline or injected script, accordingly:
+     *         - `inlineScript`
+     *         - `injectedScript`
      *
      * **Examples**
      * ```
@@ -5501,6 +6166,12 @@
      * ! Aborts script when stack trace matches with any of these parameters
      * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexFuncName')
      * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexScriptName')
+     *
+     * ! Aborts script when it tries to access `window.Ya` and it's an inline script
+     * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'inlineScript')
+     *
+     * ! Aborts script when it tries to access `window.Ya` and it's an injected script
+     * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'injectedScript')
      * ```
      */
 
@@ -5542,9 +6213,8 @@
           return;
         }
 
-        if (!isValidStrPattern(stack)) {
-          // eslint-disable-next-line no-console
-          console.log("Invalid parameter: ".concat(stack));
+        if (!stack.match(/^(inlineScript|injectedScript)$/) && !isValidStrPattern(stack)) {
+          logMessage(source, "Invalid parameter: ".concat(stack));
           return;
         } // Prevent infinite loops when trapping prop used by helpers in getter/setter
 
@@ -5582,7 +6252,7 @@
     }
     abortOnStackTrace$1.names = ['abort-on-stack-trace', // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-stack-trace.js', 'ubo-abort-on-stack-trace.js', 'aost.js', 'ubo-aost.js', 'ubo-abort-on-stack-trace', 'ubo-aost', 'abp-abort-on-stack-trace'];
-    abortOnStackTrace$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isValidStrPattern, escapeRegExp, matchStackTrace, getDescriptorAddon, toRegExp, getNativeRegexpTest];
+    abortOnStackTrace$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isValidStrPattern, escapeRegExp, matchStackTrace, getDescriptorAddon, logMessage, toRegExp, isEmptyObject, getNativeRegexpTest, startsWith, shouldAbortInlineOrInjectedScript$1];
 
     /* eslint-disable max-len */
 
@@ -5623,12 +6293,18 @@
           /* eslint-disable-next-line no-useless-escape */
 
           var reg = /\(([^\)]+)\)/;
+          var regFirefox = /(.*?@)(\S+)(:\d+):\d+\)?$/;
 
           if (line.match(reg)) {
             funcName = line.split(' ').slice(0, -1).join(' ');
-            /* eslint-disable-next-line prefer-destructuring, no-useless-escape */
+            /* eslint-disable-next-line prefer-destructuring */
 
             funcFullPath = line.match(reg)[1];
+          } else if (line.match(regFirefox)) {
+            funcName = line.split('@').slice(0, -1).join(' ');
+            /* eslint-disable-next-line prefer-destructuring */
+
+            funcFullPath = line.match(regFirefox)[2];
           } else {
             // For when func name is not available
             funcName = 'function name is not available';
@@ -5676,13 +6352,13 @@
         setPropertyAccess(base, prop, {
           get: function get() {
             hit(source);
-            console.log("%cGet %c".concat(prop), 'color:red;', 'color:green;');
+            logMessage(source, "Get ".concat(prop), true);
             console.table(refineStackTrace(new Error().stack));
             return value;
           },
           set: function set(newValue) {
             hit(source);
-            console.log("%cSet %c".concat(prop), 'color:red;', 'color:green;');
+            logMessage(source, "Set ".concat(prop), true);
             console.table(refineStackTrace(new Error().stack));
             value = newValue;
           }
@@ -5693,7 +6369,7 @@
       setChainPropAccess(window, property);
     }
     logOnStacktrace$1.names = ['log-on-stack-trace'];
-    logOnStacktrace$1.injections = [getPropertyInChain, setPropertyAccess, hit];
+    logOnStacktrace$1.injections = [getPropertyInChain, setPropertyAccess, hit, logMessage, isEmptyObject];
 
     /* eslint-disable max-len */
 
@@ -5723,7 +6399,7 @@
      *       - value — range on numbers, for example `100-300`, limited to 500000 characters
      *
      * > Usage with no arguments will log XMLHttpRequest objects to browser console;
-     * which is useful for debugging but permitted for production filter lists.
+     * which is useful for debugging but not allowed for production filter lists.
      *
      * **Examples**
      * 1. Log all XMLHttpRequests
@@ -5787,26 +6463,10 @@
 
         if (typeof propsToMatch === 'undefined') {
           // Log if no propsToMatch given
-          var logMessage = "log: xhr( ".concat(objectToString(xhrData), " )");
-          hit(source, logMessage);
-        } else if (propsToMatch === '' || propsToMatch === getWildcardSymbol()) {
-          // Prevent all fetch calls
-          shouldPrevent = true;
+          logMessage(source, "xhr( ".concat(objectToString(xhrData), " )"), true);
+          hit(source);
         } else {
-          var parsedData = parseMatchProps(propsToMatch);
-
-          if (!validateParsedData(parsedData)) {
-            // eslint-disable-next-line no-console
-            console.log("Invalid parameter: ".concat(propsToMatch));
-            shouldPrevent = false;
-          } else {
-            var matchData = getMatchPropsData(parsedData); // prevent only if all props match
-
-            shouldPrevent = Object.keys(matchData).every(function (matchKey) {
-              var matchValue = matchData[matchKey];
-              return Object.prototype.hasOwnProperty.call(xhrData, matchKey) && matchValue.test(xhrData[matchKey]);
-            });
-          }
+          shouldPrevent = matchRequestProps(source, propsToMatch, xhrData);
         }
 
         return Reflect.apply(target, thisArg, args);
@@ -5831,8 +6491,7 @@
           if (randomText) {
             responseText = randomText;
           } else {
-            // eslint-disable-next-line no-console
-            console.log("Invalid range: ".concat(customResponseText));
+            logMessage(source, "Invalid range: ".concat(customResponseText));
           }
         } // Mock response object
 
@@ -5891,7 +6550,7 @@
     }
     preventXHR$1.names = ['prevent-xhr', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-xhr-if.js', 'ubo-no-xhr-if.js', 'ubo-no-xhr-if'];
-    preventXHR$1.injections = [hit, objectToString, getWildcardSymbol, parseMatchProps, validateParsedData, getMatchPropsData, getRandomIntInclusive, getRandomStrByLength, generateRandomResponse, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getObjectEntries, getNumberFromString, nativeIsFinite, nativeIsNaN];
+    preventXHR$1.injections = [hit, logMessage, objectToString, matchRequestProps, generateRandomResponse, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getObjectEntries, getNumberFromString, nativeIsFinite, nativeIsNaN, parseMatchProps, validateParsedData, getMatchPropsData, getRandomIntInclusive, getRandomStrByLength];
 
     /**
      * @scriptlet close-window
@@ -5923,15 +6582,11 @@
 
     function forceWindowClose$1(source) {
       var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
-      // eslint-disable-next-line no-console
-      var log = console.log.bind(console); // https://github.com/AdguardTeam/Scriptlets/issues/158#issuecomment-993423036
 
+      // https://github.com/AdguardTeam/Scriptlets/issues/158#issuecomment-993423036
       if (typeof window.close !== 'function') {
-        if (source.verbose) {
-          log('window.close() is not a function so \'close-window\' scriptlet is unavailable');
-        }
-
-        return;
+        var message = 'window.close() is not a function so \'close-window\' scriptlet is unavailable';
+        logMessage(source, message);
       }
 
       var closeImmediately = function closeImmediately() {
@@ -5941,7 +6596,7 @@
         } catch (e) {
           // log the error if window closing is impossible
           // https://developer.mozilla.org/en-US/docs/Web/API/Window/close
-          log(e);
+          logMessage(source, e);
         }
       };
 
@@ -5979,7 +6634,7 @@
       }
     }
     forceWindowClose$1.names = ['close-window', 'window-close-if.js', 'ubo-window-close-if.js', 'ubo-window-close-if'];
-    forceWindowClose$1.injections = [hit, toRegExp];
+    forceWindowClose$1.injections = [hit, toRegExp, logMessage];
 
     /* eslint-disable max-len */
 
@@ -6024,10 +6679,7 @@
           try {
             metaNodes = document.querySelectorAll('meta[http-equiv="refresh"][content]');
           } catch (e) {
-            if (source.verbose) {
-              // eslint-disable-next-line no-console
-              console.log(e);
-            }
+            logMessage(source, e);
           }
         }
 
@@ -6109,7 +6761,7 @@
     // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
     'refresh-defuser.js', 'refresh-defuser', // Prefix 'ubo-' is required to run converted rules
     'ubo-refresh-defuser.js', 'ubo-refresh-defuser'];
-    preventRefresh$1.injections = [hit, getNumberFromString, nativeIsNaN];
+    preventRefresh$1.injections = [hit, getNumberFromString, logMessage, nativeIsNaN];
 
     /* eslint-disable max-len, consistent-return */
 
@@ -6179,7 +6831,13 @@
       }
 
       var SOURCE_PROPERTY_NAME = 'src';
-      var searchRegexp = toRegExp(match);
+      var ONERROR_PROPERTY_NAME = 'onerror';
+      var searchRegexp = toRegExp(match); // This will be needed to silent error events on matched element,
+      // as url wont be available
+
+      var setMatchedAttribute = function setMatchedAttribute(elem) {
+        return elem.setAttribute(source.name, 'matched');
+      };
 
       var setAttributeWrapper = function setAttributeWrapper(target, thisArg, args) {
         // Check if arguments are present
@@ -6196,7 +6854,8 @@
           return Reflect.apply(target, thisArg, args);
         }
 
-        hit(source); // Forward the URI that corresponds with element's MIME type
+        hit(source);
+        setMatchedAttribute(thisArg); // Forward the URI that corresponds with element's MIME type
 
         return Reflect.apply(target, thisArg, [attrName, srcMockData[nodeName]]);
       };
@@ -6206,9 +6865,9 @@
       }; // eslint-disable-next-line max-len
 
       instance.prototype.setAttribute = new Proxy(Element.prototype.setAttribute, setAttributeHandler);
-      var origDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
+      var origSrcDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
 
-      if (!origDescriptor) {
+      if (!origSrcDescriptor) {
         return;
       }
 
@@ -6216,32 +6875,81 @@
         enumerable: true,
         configurable: true,
         get: function get() {
-          return origDescriptor.get.call(this);
+          return origSrcDescriptor.get.call(this);
         },
         set: function set(urlValue) {
           var nodeName = this.nodeName.toLowerCase();
           var isMatched = tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(urlValue);
 
           if (!isMatched) {
-            origDescriptor.set.call(this, urlValue);
-            return;
+            origSrcDescriptor.set.call(this, urlValue);
+            return true;
           } // eslint-disable-next-line no-undef
 
 
           if (policy && urlValue instanceof TrustedScriptURL) {
             var trustedSrc = policy.createScriptURL(urlValue);
-            origDescriptor.set.call(this, trustedSrc);
+            origSrcDescriptor.set.call(this, trustedSrc);
             hit(source);
             return;
           }
 
-          origDescriptor.set.call(this, srcMockData[nodeName]);
+          setMatchedAttribute(this);
+          origSrcDescriptor.set.call(this, srcMockData[nodeName]);
           hit(source);
         }
+      }); // https://github.com/AdguardTeam/Scriptlets/issues/228
+      // Prevent error event being triggered by other sources
+
+      var origOnerrorDescriptor = safeGetDescriptor(HTMLElement.prototype, ONERROR_PROPERTY_NAME);
+
+      if (!origOnerrorDescriptor) {
+        return;
+      }
+
+      Object.defineProperty(HTMLElement.prototype, ONERROR_PROPERTY_NAME, {
+        enumerable: true,
+        configurable: true,
+        get: function get() {
+          return origOnerrorDescriptor.get.call(this);
+        },
+        set: function set(cb) {
+          var isMatched = this.getAttribute(source.name) === 'matched';
+
+          if (!isMatched) {
+            origOnerrorDescriptor.set.call(this, cb);
+            return true;
+          }
+
+          origOnerrorDescriptor.set.call(this, noopFunc);
+          return true;
+        }
       });
+
+      var addEventListenerWrapper = function addEventListenerWrapper(target, thisArg, args) {
+        // Check if arguments are present
+        if (!args[0] || !args[1]) {
+          return Reflect.apply(target, thisArg, args);
+        }
+
+        var eventName = args[0];
+        var isMatched = thisArg.getAttribute(source.name) === 'matched' && eventName === 'error';
+
+        if (isMatched) {
+          return Reflect.apply(target, thisArg, [eventName, noopFunc]);
+        }
+
+        return Reflect.apply(target, thisArg, args);
+      };
+
+      var addEventListenerHandler = {
+        apply: addEventListenerWrapper
+      }; // eslint-disable-next-line max-len
+
+      EventTarget.prototype.addEventListener = new Proxy(EventTarget.prototype.addEventListener, addEventListenerHandler);
     }
     preventElementSrcLoading$1.names = ['prevent-element-src-loading'];
-    preventElementSrcLoading$1.injections = [hit, toRegExp, safeGetDescriptor];
+    preventElementSrcLoading$1.injections = [hit, toRegExp, safeGetDescriptor, noopFunc];
 
     /**
      * @scriptlet no-topics
@@ -6278,12 +6986,1695 @@
     noTopics$1.names = ['no-topics'];
     noTopics$1.injections = [hit, noopPromiseResolve];
 
+    function createCommonjsModule(fn) {
+      var module = { exports: {} };
+    	return fn(module, module.exports), module.exports;
+    }
+
+    function commonjsRequire (target) {
+    	throw new Error('Could not dynamically require "' + target + '". Please configure the dynamicRequireTargets option of @rollup/plugin-commonjs appropriately for this require call to behave properly.');
+    }
+
+    /**
+     * Copyright (c) 2014-present, Facebook, Inc.
+     *
+     * This source code is licensed under the MIT license found in the
+     * LICENSE file in the root directory of this source tree.
+     */
+    var runtime_1 = createCommonjsModule(function (module) {
+      var runtime = function (exports) {
+
+        var Op = Object.prototype;
+        var hasOwn = Op.hasOwnProperty;
+        var undefined$1; // More compressible than void 0.
+
+        var $Symbol = typeof Symbol === "function" ? Symbol : {};
+        var iteratorSymbol = $Symbol.iterator || "@@iterator";
+        var asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator";
+        var toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
+
+        function define(obj, key, value) {
+          Object.defineProperty(obj, key, {
+            value: value,
+            enumerable: true,
+            configurable: true,
+            writable: true
+          });
+          return obj[key];
+        }
+
+        try {
+          // IE 8 has a broken Object.defineProperty that only works on DOM objects.
+          define({}, "");
+        } catch (err) {
+          define = function define(obj, key, value) {
+            return obj[key] = value;
+          };
+        }
+
+        function wrap(innerFn, outerFn, self, tryLocsList) {
+          // If outerFn provided and outerFn.prototype is a Generator, then outerFn.prototype instanceof Generator.
+          var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator;
+          var generator = Object.create(protoGenerator.prototype);
+          var context = new Context(tryLocsList || []); // The ._invoke method unifies the implementations of the .next,
+          // .throw, and .return methods.
+
+          generator._invoke = makeInvokeMethod(innerFn, self, context);
+          return generator;
+        }
+
+        exports.wrap = wrap; // Try/catch helper to minimize deoptimizations. Returns a completion
+        // record like context.tryEntries[i].completion. This interface could
+        // have been (and was previously) designed to take a closure to be
+        // invoked without arguments, but in all the cases we care about we
+        // already have an existing method we want to call, so there's no need
+        // to create a new function object. We can even get away with assuming
+        // the method takes exactly one argument, since that happens to be true
+        // in every case, so we don't have to touch the arguments object. The
+        // only additional allocation required is the completion record, which
+        // has a stable shape and so hopefully should be cheap to allocate.
+
+        function tryCatch(fn, obj, arg) {
+          try {
+            return {
+              type: "normal",
+              arg: fn.call(obj, arg)
+            };
+          } catch (err) {
+            return {
+              type: "throw",
+              arg: err
+            };
+          }
+        }
+
+        var GenStateSuspendedStart = "suspendedStart";
+        var GenStateSuspendedYield = "suspendedYield";
+        var GenStateExecuting = "executing";
+        var GenStateCompleted = "completed"; // Returning this object from the innerFn has the same effect as
+        // breaking out of the dispatch switch statement.
+
+        var ContinueSentinel = {}; // Dummy constructor functions that we use as the .constructor and
+        // .constructor.prototype properties for functions that return Generator
+        // objects. For full spec compliance, you may wish to configure your
+        // minifier not to mangle the names of these two functions.
+
+        function Generator() {}
+
+        function GeneratorFunction() {}
+
+        function GeneratorFunctionPrototype() {} // This is a polyfill for %IteratorPrototype% for environments that
+        // don't natively support it.
+
+
+        var IteratorPrototype = {};
+
+        IteratorPrototype[iteratorSymbol] = function () {
+          return this;
+        };
+
+        var getProto = Object.getPrototypeOf;
+        var NativeIteratorPrototype = getProto && getProto(getProto(values([])));
+
+        if (NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol)) {
+          // This environment has a native %IteratorPrototype%; use it instead
+          // of the polyfill.
+          IteratorPrototype = NativeIteratorPrototype;
+        }
+
+        var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype);
+        GeneratorFunction.prototype = Gp.constructor = GeneratorFunctionPrototype;
+        GeneratorFunctionPrototype.constructor = GeneratorFunction;
+        GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"); // Helper for defining the .next, .throw, and .return methods of the
+        // Iterator interface in terms of a single ._invoke method.
+
+        function defineIteratorMethods(prototype) {
+          ["next", "throw", "return"].forEach(function (method) {
+            define(prototype, method, function (arg) {
+              return this._invoke(method, arg);
+            });
+          });
+        }
+
+        exports.isGeneratorFunction = function (genFun) {
+          var ctor = typeof genFun === "function" && genFun.constructor;
+          return ctor ? ctor === GeneratorFunction || // For the native GeneratorFunction constructor, the best we can
+          // do is to check its .name property.
+          (ctor.displayName || ctor.name) === "GeneratorFunction" : false;
+        };
+
+        exports.mark = function (genFun) {
+          if (Object.setPrototypeOf) {
+            Object.setPrototypeOf(genFun, GeneratorFunctionPrototype);
+          } else {
+            genFun.__proto__ = GeneratorFunctionPrototype;
+            define(genFun, toStringTagSymbol, "GeneratorFunction");
+          }
+
+          genFun.prototype = Object.create(Gp);
+          return genFun;
+        }; // Within the body of any async function, `await x` is transformed to
+        // `yield regeneratorRuntime.awrap(x)`, so that the runtime can test
+        // `hasOwn.call(value, "__await")` to determine if the yielded value is
+        // meant to be awaited.
+
+
+        exports.awrap = function (arg) {
+          return {
+            __await: arg
+          };
+        };
+
+        function AsyncIterator(generator, PromiseImpl) {
+          function invoke(method, arg, resolve, reject) {
+            var record = tryCatch(generator[method], generator, arg);
+
+            if (record.type === "throw") {
+              reject(record.arg);
+            } else {
+              var result = record.arg;
+              var value = result.value;
+
+              if (value && typeof value === "object" && hasOwn.call(value, "__await")) {
+                return PromiseImpl.resolve(value.__await).then(function (value) {
+                  invoke("next", value, resolve, reject);
+                }, function (err) {
+                  invoke("throw", err, resolve, reject);
+                });
+              }
+
+              return PromiseImpl.resolve(value).then(function (unwrapped) {
+                // When a yielded Promise is resolved, its final value becomes
+                // the .value of the Promise<{value,done}> result for the
+                // current iteration.
+                result.value = unwrapped;
+                resolve(result);
+              }, function (error) {
+                // If a rejected Promise was yielded, throw the rejection back
+                // into the async generator function so it can be handled there.
+                return invoke("throw", error, resolve, reject);
+              });
+            }
+          }
+
+          var previousPromise;
+
+          function enqueue(method, arg) {
+            function callInvokeWithMethodAndArg() {
+              return new PromiseImpl(function (resolve, reject) {
+                invoke(method, arg, resolve, reject);
+              });
+            }
+
+            return previousPromise = // If enqueue has been called before, then we want to wait until
+            // all previous Promises have been resolved before calling invoke,
+            // so that results are always delivered in the correct order. If
+            // enqueue has not been called before, then it is important to
+            // call invoke immediately, without waiting on a callback to fire,
+            // so that the async generator function has the opportunity to do
+            // any necessary setup in a predictable way. This predictability
+            // is why the Promise constructor synchronously invokes its
+            // executor callback, and why async functions synchronously
+            // execute code before the first await. Since we implement simple
+            // async functions in terms of async generators, it is especially
+            // important to get this right, even though it requires care.
+            previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, // Avoid propagating failures to Promises returned by later
+            // invocations of the iterator.
+            callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg();
+          } // Define the unified helper method that is used to implement .next,
+          // .throw, and .return (see defineIteratorMethods).
+
+
+          this._invoke = enqueue;
+        }
+
+        defineIteratorMethods(AsyncIterator.prototype);
+
+        AsyncIterator.prototype[asyncIteratorSymbol] = function () {
+          return this;
+        };
+
+        exports.AsyncIterator = AsyncIterator; // Note that simple async functions are implemented on top of
+        // AsyncIterator objects; they just return a Promise for the value of
+        // the final result produced by the iterator.
+
+        exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) {
+          if (PromiseImpl === void 0) PromiseImpl = Promise;
+          var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl);
+          return exports.isGeneratorFunction(outerFn) ? iter // If outerFn is a generator, return the full iterator.
+          : iter.next().then(function (result) {
+            return result.done ? result.value : iter.next();
+          });
+        };
+
+        function makeInvokeMethod(innerFn, self, context) {
+          var state = GenStateSuspendedStart;
+          return function invoke(method, arg) {
+            if (state === GenStateExecuting) {
+              throw new Error("Generator is already running");
+            }
+
+            if (state === GenStateCompleted) {
+              if (method === "throw") {
+                throw arg;
+              } // Be forgiving, per 25.3.3.3.3 of the spec:
+              // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-generatorresume
+
+
+              return doneResult();
+            }
+
+            context.method = method;
+            context.arg = arg;
+
+            while (true) {
+              var delegate = context.delegate;
+
+              if (delegate) {
+                var delegateResult = maybeInvokeDelegate(delegate, context);
+
+                if (delegateResult) {
+                  if (delegateResult === ContinueSentinel) continue;
+                  return delegateResult;
+                }
+              }
+
+              if (context.method === "next") {
+                // Setting context._sent for legacy support of Babel's
+                // function.sent implementation.
+                context.sent = context._sent = context.arg;
+              } else if (context.method === "throw") {
+                if (state === GenStateSuspendedStart) {
+                  state = GenStateCompleted;
+                  throw context.arg;
+                }
+
+                context.dispatchException(context.arg);
+              } else if (context.method === "return") {
+                context.abrupt("return", context.arg);
+              }
+
+              state = GenStateExecuting;
+              var record = tryCatch(innerFn, self, context);
+
+              if (record.type === "normal") {
+                // If an exception is thrown from innerFn, we leave state ===
+                // GenStateExecuting and loop back for another invocation.
+                state = context.done ? GenStateCompleted : GenStateSuspendedYield;
+
+                if (record.arg === ContinueSentinel) {
+                  continue;
+                }
+
+                return {
+                  value: record.arg,
+                  done: context.done
+                };
+              } else if (record.type === "throw") {
+                state = GenStateCompleted; // Dispatch the exception by looping back around to the
+                // context.dispatchException(context.arg) call above.
+
+                context.method = "throw";
+                context.arg = record.arg;
+              }
+            }
+          };
+        } // Call delegate.iterator[context.method](context.arg) and handle the
+        // result, either by returning a { value, done } result from the
+        // delegate iterator, or by modifying context.method and context.arg,
+        // setting context.delegate to null, and returning the ContinueSentinel.
+
+
+        function maybeInvokeDelegate(delegate, context) {
+          var method = delegate.iterator[context.method];
+
+          if (method === undefined$1) {
+            // A .throw or .return when the delegate iterator has no .throw
+            // method always terminates the yield* loop.
+            context.delegate = null;
+
+            if (context.method === "throw") {
+              // Note: ["return"] must be used for ES3 parsing compatibility.
+              if (delegate.iterator["return"]) {
+                // If the delegate iterator has a return method, give it a
+                // chance to clean up.
+                context.method = "return";
+                context.arg = undefined$1;
+                maybeInvokeDelegate(delegate, context);
+
+                if (context.method === "throw") {
+                  // If maybeInvokeDelegate(context) changed context.method from
+                  // "return" to "throw", let that override the TypeError below.
+                  return ContinueSentinel;
+                }
+              }
+
+              context.method = "throw";
+              context.arg = new TypeError("The iterator does not provide a 'throw' method");
+            }
+
+            return ContinueSentinel;
+          }
+
+          var record = tryCatch(method, delegate.iterator, context.arg);
+
+          if (record.type === "throw") {
+            context.method = "throw";
+            context.arg = record.arg;
+            context.delegate = null;
+            return ContinueSentinel;
+          }
+
+          var info = record.arg;
+
+          if (!info) {
+            context.method = "throw";
+            context.arg = new TypeError("iterator result is not an object");
+            context.delegate = null;
+            return ContinueSentinel;
+          }
+
+          if (info.done) {
+            // Assign the result of the finished delegate to the temporary
+            // variable specified by delegate.resultName (see delegateYield).
+            context[delegate.resultName] = info.value; // Resume execution at the desired location (see delegateYield).
+
+            context.next = delegate.nextLoc; // If context.method was "throw" but the delegate handled the
+            // exception, let the outer generator proceed normally. If
+            // context.method was "next", forget context.arg since it has been
+            // "consumed" by the delegate iterator. If context.method was
+            // "return", allow the original .return call to continue in the
+            // outer generator.
+
+            if (context.method !== "return") {
+              context.method = "next";
+              context.arg = undefined$1;
+            }
+          } else {
+            // Re-yield the result returned by the delegate method.
+            return info;
+          } // The delegate iterator is finished, so forget it and continue with
+          // the outer generator.
+
+
+          context.delegate = null;
+          return ContinueSentinel;
+        } // Define Generator.prototype.{next,throw,return} in terms of the
+        // unified ._invoke helper method.
+
+
+        defineIteratorMethods(Gp);
+        define(Gp, toStringTagSymbol, "Generator"); // A Generator should always return itself as the iterator object when the
+        // @@iterator function is called on it. Some browsers' implementations of the
+        // iterator prototype chain incorrectly implement this, causing the Generator
+        // object to not be returned from this call. This ensures that doesn't happen.
+        // See https://github.com/facebook/regenerator/issues/274 for more details.
+
+        Gp[iteratorSymbol] = function () {
+          return this;
+        };
+
+        Gp.toString = function () {
+          return "[object Generator]";
+        };
+
+        function pushTryEntry(locs) {
+          var entry = {
+            tryLoc: locs[0]
+          };
+
+          if (1 in locs) {
+            entry.catchLoc = locs[1];
+          }
+
+          if (2 in locs) {
+            entry.finallyLoc = locs[2];
+            entry.afterLoc = locs[3];
+          }
+
+          this.tryEntries.push(entry);
+        }
+
+        function resetTryEntry(entry) {
+          var record = entry.completion || {};
+          record.type = "normal";
+          delete record.arg;
+          entry.completion = record;
+        }
+
+        function Context(tryLocsList) {
+          // The root entry object (effectively a try statement without a catch
+          // or a finally block) gives us a place to store values thrown from
+          // locations where there is no enclosing try statement.
+          this.tryEntries = [{
+            tryLoc: "root"
+          }];
+          tryLocsList.forEach(pushTryEntry, this);
+          this.reset(true);
+        }
+
+        exports.keys = function (object) {
+          var keys = [];
+
+          for (var key in object) {
+            keys.push(key);
+          }
+
+          keys.reverse(); // Rather than returning an object with a next method, we keep
+          // things simple and return the next function itself.
+
+          return function next() {
+            while (keys.length) {
+              var key = keys.pop();
+
+              if (key in object) {
+                next.value = key;
+                next.done = false;
+                return next;
+              }
+            } // To avoid creating an additional object, we just hang the .value
+            // and .done properties off the next function object itself. This
+            // also ensures that the minifier will not anonymize the function.
+
+
+            next.done = true;
+            return next;
+          };
+        };
+
+        function values(iterable) {
+          if (iterable) {
+            var iteratorMethod = iterable[iteratorSymbol];
+
+            if (iteratorMethod) {
+              return iteratorMethod.call(iterable);
+            }
+
+            if (typeof iterable.next === "function") {
+              return iterable;
+            }
+
+            if (!isNaN(iterable.length)) {
+              var i = -1,
+                  next = function next() {
+                while (++i < iterable.length) {
+                  if (hasOwn.call(iterable, i)) {
+                    next.value = iterable[i];
+                    next.done = false;
+                    return next;
+                  }
+                }
+
+                next.value = undefined$1;
+                next.done = true;
+                return next;
+              };
+
+              return next.next = next;
+            }
+          } // Return an iterator with no values.
+
+
+          return {
+            next: doneResult
+          };
+        }
+
+        exports.values = values;
+
+        function doneResult() {
+          return {
+            value: undefined$1,
+            done: true
+          };
+        }
+
+        Context.prototype = {
+          constructor: Context,
+          reset: function reset(skipTempReset) {
+            this.prev = 0;
+            this.next = 0; // Resetting context._sent for legacy support of Babel's
+            // function.sent implementation.
+
+            this.sent = this._sent = undefined$1;
+            this.done = false;
+            this.delegate = null;
+            this.method = "next";
+            this.arg = undefined$1;
+            this.tryEntries.forEach(resetTryEntry);
+
+            if (!skipTempReset) {
+              for (var name in this) {
+                // Not sure about the optimal order of these conditions:
+                if (name.charAt(0) === "t" && hasOwn.call(this, name) && !isNaN(+name.slice(1))) {
+                  this[name] = undefined$1;
+                }
+              }
+            }
+          },
+          stop: function stop() {
+            this.done = true;
+            var rootEntry = this.tryEntries[0];
+            var rootRecord = rootEntry.completion;
+
+            if (rootRecord.type === "throw") {
+              throw rootRecord.arg;
+            }
+
+            return this.rval;
+          },
+          dispatchException: function dispatchException(exception) {
+            if (this.done) {
+              throw exception;
+            }
+
+            var context = this;
+
+            function handle(loc, caught) {
+              record.type = "throw";
+              record.arg = exception;
+              context.next = loc;
+
+              if (caught) {
+                // If the dispatched exception was caught by a catch block,
+                // then let that catch block handle the exception normally.
+                context.method = "next";
+                context.arg = undefined$1;
+              }
+
+              return !!caught;
+            }
+
+            for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+              var entry = this.tryEntries[i];
+              var record = entry.completion;
+
+              if (entry.tryLoc === "root") {
+                // Exception thrown outside of any try block that could handle
+                // it, so set the completion value of the entire function to
+                // throw the exception.
+                return handle("end");
+              }
+
+              if (entry.tryLoc <= this.prev) {
+                var hasCatch = hasOwn.call(entry, "catchLoc");
+                var hasFinally = hasOwn.call(entry, "finallyLoc");
+
+                if (hasCatch && hasFinally) {
+                  if (this.prev < entry.catchLoc) {
+                    return handle(entry.catchLoc, true);
+                  } else if (this.prev < entry.finallyLoc) {
+                    return handle(entry.finallyLoc);
+                  }
+                } else if (hasCatch) {
+                  if (this.prev < entry.catchLoc) {
+                    return handle(entry.catchLoc, true);
+                  }
+                } else if (hasFinally) {
+                  if (this.prev < entry.finallyLoc) {
+                    return handle(entry.finallyLoc);
+                  }
+                } else {
+                  throw new Error("try statement without catch or finally");
+                }
+              }
+            }
+          },
+          abrupt: function abrupt(type, arg) {
+            for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+              var entry = this.tryEntries[i];
+
+              if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) {
+                var finallyEntry = entry;
+                break;
+              }
+            }
+
+            if (finallyEntry && (type === "break" || type === "continue") && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc) {
+              // Ignore the finally entry if control is not jumping to a
+              // location outside the try/catch block.
+              finallyEntry = null;
+            }
+
+            var record = finallyEntry ? finallyEntry.completion : {};
+            record.type = type;
+            record.arg = arg;
+
+            if (finallyEntry) {
+              this.method = "next";
+              this.next = finallyEntry.finallyLoc;
+              return ContinueSentinel;
+            }
+
+            return this.complete(record);
+          },
+          complete: function complete(record, afterLoc) {
+            if (record.type === "throw") {
+              throw record.arg;
+            }
+
+            if (record.type === "break" || record.type === "continue") {
+              this.next = record.arg;
+            } else if (record.type === "return") {
+              this.rval = this.arg = record.arg;
+              this.method = "return";
+              this.next = "end";
+            } else if (record.type === "normal" && afterLoc) {
+              this.next = afterLoc;
+            }
+
+            return ContinueSentinel;
+          },
+          finish: function finish(finallyLoc) {
+            for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+              var entry = this.tryEntries[i];
+
+              if (entry.finallyLoc === finallyLoc) {
+                this.complete(entry.completion, entry.afterLoc);
+                resetTryEntry(entry);
+                return ContinueSentinel;
+              }
+            }
+          },
+          "catch": function _catch(tryLoc) {
+            for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+              var entry = this.tryEntries[i];
+
+              if (entry.tryLoc === tryLoc) {
+                var record = entry.completion;
+
+                if (record.type === "throw") {
+                  var thrown = record.arg;
+                  resetTryEntry(entry);
+                }
+
+                return thrown;
+              }
+            } // The context.catch method must only be called with a location
+            // argument that corresponds to a known catch block.
+
+
+            throw new Error("illegal catch attempt");
+          },
+          delegateYield: function delegateYield(iterable, resultName, nextLoc) {
+            this.delegate = {
+              iterator: values(iterable),
+              resultName: resultName,
+              nextLoc: nextLoc
+            };
+
+            if (this.method === "next") {
+              // Deliberately forget the last sent value so that we don't
+              // accidentally pass it on to the delegate.
+              this.arg = undefined$1;
+            }
+
+            return ContinueSentinel;
+          }
+        }; // Regardless of whether this script is executing as a CommonJS module
+        // or not, return the runtime object so that we can declare the variable
+        // regeneratorRuntime in the outer scope, which allows this module to be
+        // injected easily by `bin/regenerator --include-runtime script.js`.
+
+        return exports;
+      }( // If this script is executing as a CommonJS module, use module.exports
+      // as the regeneratorRuntime namespace. Otherwise create a new empty
+      // object. Either way, the resulting object will be used to initialize
+      // the regeneratorRuntime variable at the top of this file.
+      module.exports );
+
+      try {
+        regeneratorRuntime = runtime;
+      } catch (accidentalStrictMode) {
+        // This module should not be running in strict mode, so the above
+        // assignment should always work unless something is misconfigured. Just
+        // in case runtime.js accidentally runs in strict mode, we can escape
+        // strict mode using a global Function call. This could conceivably fail
+        // if a Content Security Policy forbids using Function, but in that case
+        // the proper solution is to fix the accidental strict mode problem. If
+        // you've misconfigured your bundler to force strict mode and applied a
+        // CSP to forbid Function, and you're not willing to fix either of those
+        // problems, please detail your unique predicament in a GitHub issue.
+        Function("r", "regeneratorRuntime = r")(runtime);
+      }
+    });
+
+    var regenerator$1 = runtime_1;
+
+    function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) {
+      try {
+        var info = gen[key](arg);
+        var value = info.value;
+      } catch (error) {
+        reject(error);
+        return;
+      }
+
+      if (info.done) {
+        resolve(value);
+      } else {
+        Promise.resolve(value).then(_next, _throw);
+      }
+    }
+
+    function _asyncToGenerator(fn) {
+      return function () {
+        var self = this,
+            args = arguments;
+        return new Promise(function (resolve, reject) {
+          var gen = fn.apply(self, args);
+
+          function _next(value) {
+            asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value);
+          }
+
+          function _throw(err) {
+            asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err);
+          }
+
+          _next(undefined);
+        });
+      };
+    }
+
+    var asyncToGenerator$1 = _asyncToGenerator;
+
+    function _arrayLikeToArray(arr, len) {
+      if (len == null || len > arr.length) len = arr.length;
+
+      for (var i = 0, arr2 = new Array(len); i < len; i++) {
+        arr2[i] = arr[i];
+      }
+
+      return arr2;
+    }
+
+    var arrayLikeToArray = _arrayLikeToArray;
+
+    function _arrayWithoutHoles(arr) {
+      if (Array.isArray(arr)) return arrayLikeToArray(arr);
+    }
+
+    var arrayWithoutHoles = _arrayWithoutHoles;
+
+    function _iterableToArray(iter) {
+      if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
+    }
+
+    var iterableToArray = _iterableToArray;
+
+    function _unsupportedIterableToArray(o, minLen) {
+      if (!o) return;
+      if (typeof o === "string") return arrayLikeToArray(o, minLen);
+      var n = Object.prototype.toString.call(o).slice(8, -1);
+      if (n === "Object" && o.constructor) n = o.constructor.name;
+      if (n === "Map" || n === "Set") return Array.from(o);
+      if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
+    }
+
+    var unsupportedIterableToArray = _unsupportedIterableToArray;
+
+    function _nonIterableSpread() {
+      throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+    }
+
+    var nonIterableSpread = _nonIterableSpread;
+
+    function _toConsumableArray(arr) {
+      return arrayWithoutHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableSpread();
+    }
+
+    var toConsumableArray$1 = _toConsumableArray;
+
+    /* eslint-disable max-len */
+
+    /**
+     * @trustedScriptlet trusted-replace-xhr-response
+     *
+     * @description
+     * Replaces response content of `xhr` requests if **all** given parameters match.
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[, propsToMatch]])
+     * ```
+     *
+     * - pattern - optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
+     * possible values:
+     *   - '*' to match all text content
+     *   - non-empty string
+     *   - regular expression
+     * - replacement — optional, should be set if `pattern` is set. String to replace matched content with. Empty string to remove content.
+     * - propsToMatch — optional, string of space-separated properties to match for extra condition; possible props:
+     *   - string or regular expression for matching the URL passed to `.open()` call;
+     *   - colon-separated pairs name:value where
+     *     - name - name is string or regular expression for matching XMLHttpRequest property name
+     *     - value is string or regular expression for matching the value of the option passed to `.open()` call
+     *
+     * > Usage with no arguments will log XMLHttpRequest objects to browser console;
+     * which is useful for debugging but not permitted for production filter lists.
+     *
+     * **Examples**
+     * 1. Log all XMLHttpRequests
+     *     ```
+     *     example.org#%#//scriptlet('trusted-replace-xhr-response')
+     *     ```
+     *
+     * 2. Replace text content of XMLHttpRequests with specific url
+     *     ```
+     *     example.org#%#//scriptlet('trusted-replace-xhr-response', 'adb_detect:true', 'adb_detect:false', 'example.org')
+     *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', 'example.org')
+     *     ```
+     *
+     * 3. Remove all text content of XMLHttpRequests with specific request method
+     *     ```
+     *     example.org#%#//scriptlet('trusted-replace-xhr-response', '*', '', 'method:GET')
+     *     ```
+     *
+     * 4. Replace text content of XMLHttpRequests matching by URL regex and request methods
+     *     ```
+     *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', '/\.m3u8/ method:/GET|HEAD/')
+     *     ```
+     * 5. Remove all text content of  all XMLHttpRequests for example.com
+     *     ```
+     *     example.org#%#//scriptlet('trusted-replace-xhr-response', '*', '', 'example.com')
+     *     ```
+     */
+
+    /* eslint-enable max-len */
+
+    function trustedReplaceXhrResponse$1(source) {
+      var pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+      var replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+      var propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+
+      // do nothing if browser does not support Proxy (e.g. Internet Explorer)
+      // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+      if (typeof Proxy === 'undefined') {
+        return;
+      } // Only allow pattern as empty string for logging purposes
+
+
+      if (pattern === '' && replacement !== '') {
+        var message = 'Pattern argument should not be empty string.';
+        logMessage(source, message);
+        return;
+      }
+
+      var shouldLog = pattern === '' && replacement === '';
+      var nativeOpen = window.XMLHttpRequest.prototype.open;
+      var nativeSend = window.XMLHttpRequest.prototype.send;
+      var shouldReplace = false;
+      var xhrData;
+      var requestHeaders = [];
+
+      var openWrapper = function openWrapper(target, thisArg, args) {
+        xhrData = getXhrData.apply(void 0, toConsumableArray$1(args));
+
+        if (shouldLog) {
+          // Log if no propsToMatch given
+          var _message = "log: xhr( ".concat(objectToString(xhrData), " )");
+
+          logMessage(source, _message, true);
+          hit(source);
+          return Reflect.apply(target, thisArg, args);
+        }
+
+        shouldReplace = matchRequestProps(source, propsToMatch, xhrData); // Trap setRequestHeader of target xhr object to mimic request headers later
+
+        if (shouldReplace) {
+          var setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+            // Collect headers
+            requestHeaders.push(args);
+            return Reflect.apply(target, thisArg, args);
+          };
+
+          var setRequestHeaderHandler = {
+            apply: setRequestHeaderWrapper
+          }; // setRequestHeader can only be called on open xhr object,
+          // so we can safely proxy it here
+
+          thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
+        }
+
+        return Reflect.apply(target, thisArg, args);
+      };
+
+      var sendWrapper = /*#__PURE__*/function () {
+        var _ref = asyncToGenerator$1( /*#__PURE__*/regenerator$1.mark(function _callee(target, thisArg, args) {
+          var forgedRequest;
+          return regenerator$1.wrap(function _callee$(_context) {
+            while (1) {
+              switch (_context.prev = _context.next) {
+                case 0:
+                  if (shouldReplace) {
+                    _context.next = 2;
+                    break;
+                  }
+
+                  return _context.abrupt("return", Reflect.apply(target, thisArg, args));
+
+                case 2:
+                  /**
+                   * Create separate XHR request with original request's input
+                   * to be able to collect response data without triggering
+                   * listeners on original XHR object
+                   */
+                  forgedRequest = new XMLHttpRequest();
+                  forgedRequest.addEventListener('readystatechange', function () {
+                    if (forgedRequest.readyState !== 4) {
+                      return;
+                    }
+
+                    var readyState = forgedRequest.readyState,
+                        response = forgedRequest.response,
+                        responseText = forgedRequest.responseText,
+                        responseURL = forgedRequest.responseURL,
+                        responseXML = forgedRequest.responseXML,
+                        status = forgedRequest.status,
+                        statusText = forgedRequest.statusText; // Extract content from response
+
+                    var content = responseText || response;
+
+                    if (typeof content !== 'string') {
+                      return;
+                    }
+
+                    var patternRegexp = pattern === '*' ? toRegExp() : toRegExp(pattern);
+                    var modifiedContent = content.replace(patternRegexp, replacement); // Manually put required values into target XHR object
+                    // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
+
+                    Object.defineProperties(thisArg, {
+                      readyState: {
+                        value: readyState
+                      },
+                      response: {
+                        value: modifiedContent
+                      },
+                      responseText: {
+                        value: modifiedContent
+                      },
+                      responseURL: {
+                        value: responseURL
+                      },
+                      responseXML: {
+                        value: responseXML
+                      },
+                      status: {
+                        value: status
+                      },
+                      statusText: {
+                        value: statusText
+                      }
+                    }); // Mock events
+
+                    setTimeout(function () {
+                      var stateEvent = new Event('readystatechange');
+                      thisArg.dispatchEvent(stateEvent);
+                      var loadEvent = new Event('load');
+                      thisArg.dispatchEvent(loadEvent);
+                      var loadEndEvent = new Event('loadend');
+                      thisArg.dispatchEvent(loadEndEvent);
+                    }, 1);
+                    hit(source);
+                  });
+                  nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]); // Mimic request headers before sending
+                  // setRequestHeader can only be called on open request objects
+
+                  requestHeaders.forEach(function (header) {
+                    var name = header[0];
+                    var value = header[1];
+                    forgedRequest.setRequestHeader(name, value);
+                  });
+                  requestHeaders = [];
+                  _context.prev = 7;
+                  nativeSend.call(forgedRequest, args);
+                  _context.next = 14;
+                  break;
+
+                case 11:
+                  _context.prev = 11;
+                  _context.t0 = _context["catch"](7);
+                  return _context.abrupt("return", Reflect.apply(target, thisArg, args));
+
+                case 14:
+                  return _context.abrupt("return", undefined);
+
+                case 15:
+                case "end":
+                  return _context.stop();
+              }
+            }
+          }, _callee, null, [[7, 11]]);
+        }));
+
+        return function sendWrapper(_x, _x2, _x3) {
+          return _ref.apply(this, arguments);
+        };
+      }();
+
+      var openHandler = {
+        apply: openWrapper
+      };
+      var sendHandler = {
+        apply: sendWrapper
+      };
+      XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
+      XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
+    }
+    trustedReplaceXhrResponse$1.names = ['trusted-replace-xhr-response' // trusted scriptlets support no aliases
+    ];
+    trustedReplaceXhrResponse$1.injections = [hit, logMessage, toRegExp, objectToString, matchRequestProps, getXhrData, getMatchPropsData, validateParsedData, parseMatchProps, isValidStrPattern, escapeRegExp, isEmptyObject, getObjectEntries];
+
+    /* eslint-disable max-len */
+
+    /**
+     * @scriptlet xml-prune
+     *
+     * @description
+     * Removes an element from the specified XML.
+     *
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('xml-prune'[, propsToMatch[, optionalProp[, urlToMatch]]])
+     * ```
+     *
+     * - `propsToMatch` - optional, selector of elements which will be removed from XML
+     * - `optionalProp` - optional, selector of elements that must occur in XML document
+     * - `urlToMatch` - optional, string or regular expression for matching the request's URL
+     * > Usage with no arguments will log response payload and URL to browser console;
+     * which is useful for debugging but prohibited for production filter lists.
+     *
+     * **Examples**
+     * 1. Remove `Period` tag whose `id` contains `-ad-` from all requests
+     *     ```
+     *     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]')
+     *     ```
+     *
+     * 2. Remove `Period` tag whose `id` contains `-ad-`, only if XML contains `SegmentTemplate`
+     *     ```
+     *     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', 'SegmentTemplate')
+     *     ```
+     *
+     * 3. Remove `Period` tag whose `id` contains `-ad-`, only if request's URL contains `.mpd`
+     *     ```
+     *     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', '', '.mpd')
+     *     ```
+     *
+     * 4. Call with no arguments will log response payload and URL at the console
+     *     ```
+     *     example.org#%#//scriptlet('xml-prune')
+     *     ```
+     *
+     * 5. Call with only `urlToMatch` argument will log response payload and URL only for the matched URL
+     *     ```
+     *     example.org#%#//scriptlet('xml-prune', '', '', '.mpd')
+     *     ```
+     */
+
+    /* eslint-enable max-len */
+
+    function xmlPrune$1(source, propsToRemove) {
+      var _this = this;
+
+      var optionalProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+      var urlToMatch = arguments.length > 3 ? arguments[3] : undefined;
+
+      // do nothing if browser does not support Reflect, fetch or Proxy (e.g. Internet Explorer)
+      // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
+      // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+      // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Reflect
+      if (typeof Reflect === 'undefined' || typeof fetch === 'undefined' || typeof Proxy === 'undefined' || typeof Response === 'undefined') {
+        return;
+      }
+
+      var shouldPruneResponse = true;
+
+      if (!propsToRemove) {
+        // If "propsToRemove" is not defined, then response shouldn't be pruned
+        // but it should be logged in browser console
+        shouldPruneResponse = false;
+      }
+
+      var urlMatchRegexp = toRegExp(urlToMatch);
+
+      var isXML = function isXML(text) {
+        // Check if "text" starts with "<" and check if it ends with ">"
+        // If so, then it might be an XML file and should be pruned or logged
+        var trimedText = text.trim();
+
+        if (startsWith(trimedText, '<') && endsWith(trimedText, '>')) {
+          return true;
+        }
+
+        return false;
+      };
+
+      var pruneXML = function pruneXML(text) {
+        if (!isXML(text)) {
+          shouldPruneResponse = false;
+          return text;
+        }
+
+        var xmlParser = new DOMParser();
+        var xmlDoc = xmlParser.parseFromString(text, 'text/xml');
+        var errorNode = xmlDoc.querySelector('parsererror');
+
+        if (errorNode) {
+          return text;
+        }
+
+        if (optionalProp !== '' && xmlDoc.querySelector(optionalProp) === null) {
+          shouldPruneResponse = false;
+          return text;
+        }
+
+        var elems = xmlDoc.querySelectorAll(propsToRemove);
+
+        if (!elems.length) {
+          shouldPruneResponse = false;
+          return text;
+        }
+
+        elems.forEach(function (elem) {
+          elem.remove();
+        });
+        var serializer = new XMLSerializer();
+        text = serializer.serializeToString(xmlDoc);
+        return text;
+      };
+
+      var xhrWrapper = function xhrWrapper(target, thisArg, args) {
+        var xhrURL = args[1];
+
+        if (typeof xhrURL !== 'string' || xhrURL.length === 0) {
+          return Reflect.apply(target, thisArg, args);
+        }
+
+        if (urlMatchRegexp.test(xhrURL)) {
+          thisArg.addEventListener('readystatechange', function pruneResponse() {
+            if (thisArg.readyState === 4) {
+              var response = thisArg.response;
+              thisArg.removeEventListener('readystatechange', pruneResponse);
+
+              if (!shouldPruneResponse) {
+                if (isXML(response)) {
+                  // eslint-disable-next-line max-len
+                  var message = "XMLHttpRequest.open() URL: ".concat(xhrURL, "\nresponse: ").concat(response);
+                  logMessage(message);
+                }
+              } else {
+                var prunedResponseContent = pruneXML(response);
+
+                if (shouldPruneResponse) {
+                  Object.defineProperty(thisArg, 'response', {
+                    value: prunedResponseContent
+                  });
+                  Object.defineProperty(thisArg, 'responseText', {
+                    value: prunedResponseContent
+                  });
+                  hit(source);
+                } // In case if response shouldn't be pruned
+                // pruneXML sets shouldPruneResponse to false
+                // so it's necessary to set it to true again
+                // otherwise response will be only logged
+
+
+                shouldPruneResponse = true;
+              }
+            }
+          });
+        }
+
+        return Reflect.apply(target, thisArg, args);
+      };
+
+      var xhrHandler = {
+        apply: xhrWrapper
+      }; // eslint-disable-next-line max-len
+
+      window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler); // eslint-disable-next-line compat/compat
+
+      var nativeFetch = window.fetch;
+
+      var fetchWrapper = function fetchWrapper(target, thisArg, args) {
+        var fetchURL = args[0];
+
+        if (typeof fetchURL !== 'string' || fetchURL.length === 0) {
+          return Reflect.apply(target, thisArg, args);
+        }
+
+        if (urlMatchRegexp.test(fetchURL)) {
+          return nativeFetch.apply(_this, args).then(function (response) {
+            return response.text().then(function (text) {
+              if (!shouldPruneResponse) {
+                if (isXML(text)) {
+                  logMessage("fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(text));
+                }
+
+                return Reflect.apply(target, thisArg, args);
+              }
+
+              var prunedText = pruneXML(text);
+
+              if (shouldPruneResponse) {
+                hit(source);
+                return new Response(prunedText, {
+                  status: response.status,
+                  statusText: response.statusText,
+                  headers: response.headers
+                });
+              } // If response shouldn't be pruned
+              // pruneXML sets shouldPruneResponse to false
+              // so it's necessary to set it to true again
+              // otherwise response will be only logged
+
+
+              shouldPruneResponse = true;
+              return Reflect.apply(target, thisArg, args);
+            });
+          });
+        }
+
+        return Reflect.apply(target, thisArg, args);
+      };
+
+      var fetchHandler = {
+        apply: fetchWrapper
+      }; // eslint-disable-next-line compat/compat
+
+      window.fetch = new Proxy(window.fetch, fetchHandler);
+    }
+    xmlPrune$1.names = ['xml-prune', // aliases are needed for matching the related scriptlet converted into our syntax
+    'xml-prune.js', 'ubo-xml-prune.js', 'ubo-xml-prune'];
+    xmlPrune$1.injections = [hit, logMessage, toRegExp, startsWith, endsWith];
+
+    /* eslint-disable max-len */
+
+    /**
+     * @trustedScriptlet trusted-set-cookie
+     *
+     * @description
+     * Sets a cookie with arbitrary name and value, with optional path
+     * and the ability to reload the page after cookie was set.
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[, reload[, path]]])
+     * ```
+     *
+     * - `name` - required, cookie name to be set
+     * - `value` - required, cookie value. Possible values:
+     *   - arbitrary value
+     *   - empty string for no value
+     *   - `$now$` keyword for setting current time
+     * - 'offsetExpiresSec' - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
+     * Possible values:
+     *   - positive integer in seconds
+     *   - `1year` keyword for setting expiration date to one year
+     *   - `1day` keyword for setting expiration date to one day
+     * - 'reload' - optional, boolean. Argument for reloading page after cookie is set. Defaults to `false`
+     * - `path` - optional, argument for setting cookie path, defaults to `/`; possible values:
+     *   - `/` — root path
+     *   - `none` — to set no path at all
+     *
+     * **Examples**
+     * 1. Set cookie
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept')
+     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '1-accept_1')
+     * ```
+     *
+     * 2. Set cookie with `new Date().getTime()` value
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '$now')
+     * ```
+     *
+     * 3. Set cookie which will expire in 3 days
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept', '259200')
+     * ```
+     *
+     * 4. Set cookie which will expire in one year
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept', '1year')
+     * ```
+     * 5. Reload the page if cookie was successfully set
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'true')
+     * ```
+     *
+     * 6. Set cookie with no path
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', '', 'none')
+     * ```
+     */
+
+    /* eslint-enable max-len */
+
+    function trustedSetCookie$1(source, name, value) {
+      var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+      var reload = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 'false';
+      var path = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : '/';
+
+      if (typeof name === 'undefined') {
+        logMessage(source, 'Cookie name should be specified.');
+        return;
+      }
+
+      if (typeof value === 'undefined') {
+        logMessage(source, 'Cookie value should be specified.');
+        return;
+      } // Prevent infinite reloads if cookie was already set or blocked by the browser
+      // https://github.com/AdguardTeam/Scriptlets/issues/212
+
+
+      if (reload === 'true' && isCookieSetWithValue(document.cookie, name, value)) {
+        return;
+      }
+
+      var ONE_YEAR_EXPIRATION_KEYWORD = '1year';
+      var ONE_DAY_EXPIRATION_KEYWORD = '1day';
+      var parsedValue = parseKeywordValue(value);
+      var cookieToSet = concatCookieNameValuePath(source, name, parsedValue, path);
+
+      if (!cookieToSet) {
+        return;
+      } // Set expiration date if offsetExpiresSec was passed
+
+
+      if (offsetExpiresSec) {
+        var MS_IN_SEC = 1000;
+        var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
+        var SECONDS_IN_DAY = 24 * 60 * 60;
+        var parsedOffsetExpiresSec; // Set predefined expire value if corresponding keyword was passed
+
+        if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
+          parsedOffsetExpiresSec = SECONDS_IN_YEAR;
+        } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
+          parsedOffsetExpiresSec = SECONDS_IN_DAY;
+        } else {
+          parsedOffsetExpiresSec = Number.parseInt(offsetExpiresSec, 10); // If offsetExpiresSec has been parsed to NaN - do not set cookie at all
+
+          if (Number.isNaN(parsedOffsetExpiresSec)) {
+            var message = "log: Invalid offsetExpiresSec value: ".concat(offsetExpiresSec);
+            logMessage(source, message);
+            return;
+          }
+        }
+
+        var expires = Date.now() + parsedOffsetExpiresSec * MS_IN_SEC;
+        cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
+      }
+
+      if (cookieToSet) {
+        document.cookie = cookieToSet;
+        hit(source); // Only reload the page if cookie was set
+        // https://github.com/AdguardTeam/Scriptlets/issues/212
+
+        if (reload === 'true' && isCookieSetWithValue(document.cookie, name, value)) {
+          window.location.reload();
+        }
+      }
+    }
+    trustedSetCookie$1.names = ['trusted-set-cookie' // trusted scriptlets support no aliases
+    ];
+    trustedSetCookie$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, concatCookieNameValuePath, isValidCookieRawPath, parseKeywordValue, getCookiePath];
+
+    /* eslint-disable max-len */
+
+    /**
+     * @trustedScriptlet trusted-replace-fetch-response
+     *
+     * @description
+     * Replaces response text content of `fetch` requests if **all** given parameters match.
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('trusted-replace-fetch-response'[, pattern, replacement[, propsToMatch]])
+     * ```
+     *
+     * - pattern - optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
+     * possible values:
+     *   - '*' to match all text content
+     *   - non-empty string
+     *   - regular expression
+     * - replacement — optional, should be set if `pattern` is set. String to replace the response text content matched by `pattern`.
+     * Empty string to remove content. Defaults to empty string.
+     * - propsToMatch - optional, string of space-separated properties to match; possible props:
+     *   - string or regular expression for matching the URL passed to fetch call; empty string, wildcard `*` or invalid regular expression will match all fetch calls
+     *   - colon-separated pairs `name:value` where
+     *     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
+     *     - `value` is string or regular expression for matching the value of the option passed to fetch call; invalid regular expression will cause any value matching
+     *
+     * > Usage with no arguments will log fetch calls to browser console;
+     * which is useful for debugging but only allowed for production filter lists.
+     *
+     * > Scriptlet does nothing if response body can't be converted to text.
+     *
+     * **Examples**
+     * 1. Log all fetch calls
+     *     ```
+     *     example.org#%#//scriptlet('trusted-replace-fetch-response')
+     *     ```
+     *
+     * 2. Replace response text content of fetch requests with specific url
+     *     ```
+     *     example.org#%#//scriptlet('trusted-replace-fetch-response', 'adb_detect:true', 'adb_detect:false', 'example.org')
+     *     example.org#%#//scriptlet('trusted-replace-fetch-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', 'example.org')
+     *     ```
+     *
+     * 3. Remove all text content of fetch responses with specific request method
+     *     ```
+     *     example.org#%#//scriptlet('trusted-replace-fetch-response', '*', '', 'method:GET')
+     *     ```
+     *
+     * 4. Replace response text content of fetch requests matching by URL regex and request methods
+     *     ```
+     *     example.org#%#//scriptlet('trusted-replace-fetch-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', '/\.m3u8/ method:/GET|HEAD/')
+     *     ```
+     * 5. Remove text content of all fetch responses for example.com
+     *     ```
+     *     example.org#%#//scriptlet('trusted-replace-fetch-response', '*', '', 'example.com')
+     *     ```
+     */
+
+    /* eslint-enable max-len */
+
+    function trustedReplaceFetchResponse$1(source) {
+      var pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+      var replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+      var propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+
+      // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
+      // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
+      // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+      if (typeof fetch === 'undefined' || typeof Proxy === 'undefined' || typeof Response === 'undefined') {
+        return;
+      } // Only allow pattern as empty string for logging purposes
+
+
+      if (pattern === '' && replacement !== '') {
+        logMessage(source, 'Pattern argument should not be empty string.');
+        return;
+      }
+
+      var shouldLog = pattern === '' && replacement === '';
+      var nativeFetch = fetch;
+      var shouldReplace = false;
+      var fetchData;
+
+      var handlerWrapper = /*#__PURE__*/function () {
+        var _ref = asyncToGenerator$1( /*#__PURE__*/regenerator$1.mark(function _callee(target, thisArg, args) {
+          var forgeResponse;
+          return regenerator$1.wrap(function _callee$(_context) {
+            while (1) {
+              switch (_context.prev = _context.next) {
+                case 0:
+                  fetchData = getFetchData(args);
+
+                  if (!shouldLog) {
+                    _context.next = 5;
+                    break;
+                  }
+
+                  // log if no propsToMatch given
+                  logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
+                  hit(source);
+                  return _context.abrupt("return", Reflect.apply(target, thisArg, args));
+
+                case 5:
+                  shouldReplace = matchRequestProps(source, propsToMatch, fetchData);
+
+                  if (shouldReplace) {
+                    _context.next = 8;
+                    break;
+                  }
+
+                  return _context.abrupt("return", Reflect.apply(target, thisArg, args));
+
+                case 8:
+                  /**
+                   * Create new Response object using original response' properties
+                   * and given text as body content
+                   * @param {Response} response original response to copy properties from
+                   * @param {string} textContent text to set as body content
+                   * @returns {Response}
+                   */
+                  forgeResponse = function forgeResponse(response, textContent) {
+                    var bodyUsed = response.bodyUsed,
+                        headers = response.headers,
+                        ok = response.ok,
+                        redirected = response.redirected,
+                        status = response.status,
+                        statusText = response.statusText,
+                        type = response.type,
+                        url = response.url; // eslint-disable-next-line compat/compat
+
+                    var forgedResponse = new Response(textContent, {
+                      status: status,
+                      statusText: statusText,
+                      headers: headers
+                    }); // Manually set properties which can't be set by Response constructor
+
+                    Object.defineProperties(forgedResponse, {
+                      url: {
+                        value: url
+                      },
+                      type: {
+                        value: type
+                      },
+                      ok: {
+                        value: ok
+                      },
+                      bodyUsed: {
+                        value: bodyUsed
+                      },
+                      redirected: {
+                        value: redirected
+                      }
+                    });
+                    return forgedResponse;
+                  };
+
+                  return _context.abrupt("return", nativeFetch.apply(void 0, toConsumableArray$1(args)).then(function (response) {
+                    return response.text().then(function (bodyText) {
+                      var patternRegexp = pattern === '*' ? toRegExp() : toRegExp(pattern);
+                      var modifiedTextContent = bodyText.replace(patternRegexp, replacement);
+                      var forgedResponse = forgeResponse(response, modifiedTextContent);
+                      hit(source);
+                      return forgedResponse;
+                    }).catch(function () {
+                      // log if response body can't be converted to a string
+                      var fetchDataStr = objectToString(fetchData);
+                      var message = "Response body can't be converted to text: ".concat(fetchDataStr);
+                      logMessage(source, message);
+                      return Reflect.apply(target, thisArg, args);
+                    });
+                  }).catch(function () {
+                    return Reflect.apply(target, thisArg, args);
+                  }));
+
+                case 10:
+                case "end":
+                  return _context.stop();
+              }
+            }
+          }, _callee);
+        }));
+
+        return function handlerWrapper(_x, _x2, _x3) {
+          return _ref.apply(this, arguments);
+        };
+      }();
+
+      var fetchHandler = {
+        apply: handlerWrapper
+      };
+      fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
+    }
+    trustedReplaceFetchResponse$1.names = ['trusted-replace-fetch-response'];
+    trustedReplaceFetchResponse$1.injections = [hit, logMessage, getFetchData, objectToString, matchRequestProps, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries, parseMatchProps, validateParsedData, getMatchPropsData];
+
+    /* eslint-disable max-len */
+
+    /**
+     * @trustedScriptlet trusted-set-local-storage-item
+     *
+     * @description
+     * Adds item with arbitrary key and value to localStorage object, or updates the value of the key if it already exists.
+     * Scriptlet won't set item if storage is full.
+     *
+     * **Syntax**
+     * ```
+     * example.com#%#//scriptlet('trusted-set-local-storage-item', 'key', 'value')
+     * ```
+     *
+     * - `key` — required, key name to be set.
+     * - `value` - required, key value; possible values:
+     *   - arbitrary value
+     *   - `$now$` keyword for setting current time in ms, corresponds to `Date.now()` and `(new Date).getTime()` calls
+     *   - `$currentDate$` keyword for setting string representation of the current date and time, corresponds to `Date()` and `(new Date).toString()` calls
+     *
+     * **Examples**
+     * 1. Set local storage item
+     * ```
+     * example.org#%#//scriptlet('trusted-set-local-storage-item', 'player.live.current.mute', 'false')
+     *
+     * example.org#%#//scriptlet('trusted-set-local-storage-item', 'COOKIE_CONSENTS', '{"preferences":3,"marketing":false}')
+     *
+     * example.org#%#//scriptlet('trusted-set-local-storage-item', 'providers', '[16364,88364]')
+     *
+     * example.org#%#//scriptlet('trusted-set-local-storage-item', 'providers', '{"providers":[16364,88364],"consent":"all"}')
+     * ```
+     *
+     * 2. Set item with current time since unix epoch in ms
+     * ```
+     * example.org#%#//scriptlet('trusted-set-local-storage-item', 'player.live.current.play', '$now$')
+     * ```
+     *
+     * 3. Set item with current date, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+     * ```
+     * example.org#%#//scriptlet('trusted-set-local-storage-item', 'player.live.current.play', '$currentDate$')
+     * ```
+     *
+     * 4. Set item without value
+     * ```
+     * example.org#%#//scriptlet('trusted-set-local-storage-item', 'ppu_main_none', '')
+     * ```
+     */
+
+    /* eslint-enable max-len */
+
+    function trustedSetLocalStorageItem$1(source, key, value) {
+      if (typeof key === 'undefined') {
+        logMessage(source, 'Item key should be specified.');
+        return;
+      }
+
+      if (typeof value === 'undefined') {
+        logMessage(source, 'Item value should be specified.');
+        return;
+      }
+
+      var parsedValue = parseKeywordValue(value);
+      var _window = window,
+          localStorage = _window.localStorage;
+      setStorageItem(source, localStorage, key, parsedValue);
+      hit(source);
+    }
+    trustedSetLocalStorageItem$1.names = ['trusted-set-local-storage-item' // trusted scriptlets support no aliases
+    ];
+    trustedSetLocalStorageItem$1.injections = [hit, logMessage, nativeIsNaN, setStorageItem, parseKeywordValue];
+
     /**
      * This file must export all scriptlets which should be accessible
      */
 
     var scriptletList = /*#__PURE__*/Object.freeze({
         __proto__: null,
+        trustedClickElement: trustedClickElement$1,
         abortOnPropertyRead: abortOnPropertyRead$1,
         abortOnPropertyWrite: abortOnPropertyWrite$1,
         preventSetTimeout: preventSetTimeout$1,
@@ -6329,7 +8720,12 @@
         forceWindowClose: forceWindowClose$1,
         preventRefresh: preventRefresh$1,
         preventElementSrcLoading: preventElementSrcLoading$1,
-        noTopics: noTopics$1
+        noTopics: noTopics$1,
+        trustedReplaceXhrResponse: trustedReplaceXhrResponse$1,
+        xmlPrune: xmlPrune$1,
+        trustedSetCookie: trustedSetCookie$1,
+        trustedReplaceFetchResponse: trustedReplaceFetchResponse$1,
+        trustedSetLocalStorageItem: trustedSetLocalStorageItem$1
     });
 
     /**
@@ -6866,53 +9262,6 @@
       hasValidContentType: hasValidContentType
     };
 
-    function _arrayLikeToArray(arr, len) {
-      if (len == null || len > arr.length) len = arr.length;
-
-      for (var i = 0, arr2 = new Array(len); i < len; i++) {
-        arr2[i] = arr[i];
-      }
-
-      return arr2;
-    }
-
-    var arrayLikeToArray = _arrayLikeToArray;
-
-    function _arrayWithoutHoles(arr) {
-      if (Array.isArray(arr)) return arrayLikeToArray(arr);
-    }
-
-    var arrayWithoutHoles = _arrayWithoutHoles;
-
-    function _iterableToArray(iter) {
-      if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
-    }
-
-    var iterableToArray = _iterableToArray;
-
-    function _unsupportedIterableToArray(o, minLen) {
-      if (!o) return;
-      if (typeof o === "string") return arrayLikeToArray(o, minLen);
-      var n = Object.prototype.toString.call(o).slice(8, -1);
-      if (n === "Object" && o.constructor) n = o.constructor.name;
-      if (n === "Map" || n === "Set") return Array.from(o);
-      if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
-    }
-
-    var unsupportedIterableToArray = _unsupportedIterableToArray;
-
-    function _nonIterableSpread() {
-      throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-    }
-
-    var nonIterableSpread = _nonIterableSpread;
-
-    function _toConsumableArray(arr) {
-      return arrayWithoutHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableSpread();
-    }
-
-    var toConsumableArray = _toConsumableArray;
-
     function _arrayWithHoles(arr) {
       if (Array.isArray(arr)) return arr;
     }
@@ -6958,7 +9307,7 @@
     var UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
     var ADG_PREVENT_FETCH_NAME = 'prevent-fetch';
     var ADG_PREVENT_FETCH_EMPTY_STRING = '';
-    var ADG_PREVENT_FETCH_WILDCARD = getWildcardSymbol();
+    var ADG_PREVENT_FETCH_WILDCARD = '*';
     var UBO_NO_FETCH_IF_WILDCARD = '/^/';
     var ESCAPED_COMMA_SEPARATOR = '\\,';
     var COMMA_SEPARATOR = ',';
@@ -7383,7 +9732,7 @@
         }
 
         var additionModifiers = sourceTypesData.TYPES;
-        adgModifiers.push.apply(adgModifiers, toConsumableArray(additionModifiers));
+        adgModifiers.push.apply(adgModifiers, toConsumableArray$1(additionModifiers));
       }
 
       var uboModifiers = adgModifiers.map(function (el, index) {
@@ -7619,11 +9968,7 @@
         try {
           window.location.assign(url);
         } catch (e) {
-          // log the error only while debugging
-          if (source.verbose) {
-            // eslint-disable-next-line no-console
-            console.log(e);
-          }
+          logMessage(source, e);
         }
       };
 
@@ -7653,7 +9998,7 @@
       hit(source);
     }
     GoogleAnalyticsGa.names = ['google-analytics-ga', 'ubo-google-analytics_ga.js', 'google-analytics_ga.js'];
-    GoogleAnalyticsGa.injections = [hit, noopFunc];
+    GoogleAnalyticsGa.injections = [hit, noopFunc, logMessage];
 
     /* eslint-disable max-len */
 
@@ -7693,7 +10038,9 @@
 
               if (typeof arg[key] === 'function') {
                 try {
-                  arg[key].call();
+                  // https://github.com/AdguardTeam/Scriptlets/issues/252
+                  // argument "{}" is needed to fix issue with undefined argument
+                  arg[key].call(this, {});
                 } catch (_unused) {
                   /* empty */
                 }
@@ -8176,8 +10523,6 @@
         return api[funcName] && api[funcName].apply(api, [id].concat(args));
       }
 
-      ym.a = [];
-
       function init(id) {
         // yaCounter object should provide api
         window["yaCounter".concat(id)] = api;
@@ -8186,11 +10531,12 @@
 
       if (typeof window.ym === 'undefined') {
         window.ym = ym;
+        ym.a = [];
       } else if (window.ym && window.ym.a) {
-        // Get id for yaCounter object
-        var counters = window.ym.a;
+        // Keep initial counters array intact
+        ym.a = window.ym.a;
         window.ym = ym;
-        counters.forEach(function (params) {
+        window.ym.a.forEach(function (params) {
           var id = params[0];
           init(id);
         });
@@ -8294,9 +10640,10 @@
      * @redirect pardot-1.0
      *
      * @description
-     * Mocks the pd.js file of Salesforce
+     * Mocks the pd.js file of Salesforce.
      * https://pi.pardot.com/pd.js
      * https://developer.salesforce.com/docs/marketing/pardot/overview
+     *
      * **Example**
      * ```
      * ||pi.pardot.com/pd.js$script,redirect=pardot
@@ -8804,7 +11151,6 @@
           INSECURE: 2
         }
       };
-      var managerLoaded = false;
 
       var EventHandler = function EventHandler() {
         this.listeners = new Map();
@@ -8818,8 +11164,7 @@
             try {
               listener(e);
             } catch (r) {
-              // eslint-disable-next-line no-console
-              console.error(r);
+              logMessage(source, r);
             }
           }
         };
@@ -8903,8 +11248,7 @@
           try {
             this._dispatch(new ima.AdEvent(type));
           } catch (e) {
-            // eslint-disable-next-line no-console
-            console.error(e);
+            logMessage(source, e);
           }
         }
       };
@@ -8952,18 +11296,16 @@
       AdsLoader.prototype.requestAds = function (adsRequest, userRequestContext) {
         var _this = this;
 
-        if (!managerLoaded) {
-          managerLoaded = true;
-          requestAnimationFrame(function () {
-            var ADS_MANAGER_LOADED = AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED; // eslint-disable-next-line max-len
+        requestAnimationFrame(function () {
+          var ADS_MANAGER_LOADED = AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED;
+          var event = new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED, adsRequest, userRequestContext);
 
-            _this._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED, adsRequest, userRequestContext));
-          });
-          var e = new ima.AdError('adPlayError', 1205, 1205, 'The browser prevented playback initiated without user interaction.', adsRequest, userRequestContext);
-          requestAnimationFrame(function () {
-            _this._dispatch(new ima.AdErrorEvent(e));
-          });
-        }
+          _this._dispatch(event);
+        });
+        var e = new ima.AdError('adPlayError', 1205, 1205, 'The browser prevented playback initiated without user interaction.', adsRequest, userRequestContext);
+        requestAnimationFrame(function () {
+          _this._dispatch(new ima.AdErrorEvent(e));
+        });
       };
 
       var AdsRenderingSettings = noopFunc;
@@ -9326,7 +11668,7 @@
       hit(source);
     }
     GoogleIma3.names = ['google-ima3'];
-    GoogleIma3.injections = [hit, noopFunc];
+    GoogleIma3.injections = [hit, noopFunc, logMessage];
 
     /* eslint-disable func-names, no-underscore-dangle */
     /**
@@ -10452,10 +12794,6 @@
       kind: 'scalar',
       resolve: resolveYamlMerge
     });
-
-    function commonjsRequire (target) {
-    	throw new Error('Could not dynamically require "' + target + '". Please configure the dynamicRequireTargets option of @rollup/plugin-commonjs appropriately for this require call to behave properly.');
-    }
 
     /*eslint-disable no-bitwise*/
 
@@ -13812,7 +16150,8 @@
             var props = property.split(".");
             var propIndex = props.indexOf(prop);
             var baseName = props[propIndex - 1];
-            console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded."));
+            var message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
+            logMessage(source, message);
             return;
           }
 
@@ -13919,6 +16258,22 @@
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
 
+        if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        if (nextBase === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
         }
@@ -14022,19 +16377,37 @@
         }
       }
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0;
+      }
+
       function getDescriptorAddon() {
         return {
           isAbortingSuspended: false,
           isolateCallback: function isolateCallback(cb) {
             this.isAbortingSuspended = true;
 
-            for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-              args[_key - 1] = arguments[_key];
-            }
+            try {
+              for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+                args[_key - 1] = arguments[_key];
+              }
 
-            var result = cb.apply(void 0, args);
-            this.isAbortingSuspended = false;
-            return result;
+              var result = cb.apply(void 0, args);
+              this.isAbortingSuspended = false;
+              return result;
+            } catch (_unused) {
+              var rid = randomId();
+              this.isAbortingSuspended = false;
+              throw new ReferenceError(rid);
+            }
           }
         };
       }
@@ -14133,6 +16506,22 @@
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
 
+        if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        if (nextBase === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
         }
@@ -14213,6 +16602,10 @@
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
+      }
+
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0;
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -14308,6 +16701,22 @@
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
 
+        if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        if (nextBase === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
         }
@@ -14390,6 +16799,10 @@
         }
       }
 
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0;
+      }
+
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
 
       try {
@@ -14436,8 +16849,8 @@
             return;
           }
 
-          if (!isValidStrPattern(stack)) {
-            console.log("Invalid parameter: ".concat(stack));
+          if (!stack.match(/^(inlineScript|injectedScript)$/) && !isValidStrPattern(stack)) {
+            logMessage(source, "Invalid parameter: ".concat(stack));
             return;
           }
 
@@ -14509,6 +16922,22 @@
 
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
+
+        if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        if (nextBase === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
 
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
@@ -14621,6 +17050,10 @@
           return true;
         }
 
+        if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
+          return true;
+        }
+
         var stackRegexp = toRegExp(stackMatch);
         var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
@@ -14634,15 +17067,29 @@
           isolateCallback: function isolateCallback(cb) {
             this.isAbortingSuspended = true;
 
-            for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-              args[_key - 1] = arguments[_key];
-            }
+            try {
+              for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+                args[_key - 1] = arguments[_key];
+              }
 
-            var result = cb.apply(void 0, args);
-            this.isAbortingSuspended = false;
-            return result;
+              var result = cb.apply(void 0, args);
+              this.isAbortingSuspended = false;
+              return result;
+            } catch (_unused) {
+              var rid = randomId();
+              this.isAbortingSuspended = false;
+              throw new ReferenceError(rid);
+            }
           }
         };
+      }
+
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
       }
 
       function toRegExp() {
@@ -14662,8 +17109,88 @@
         return new RegExp(escaped);
       }
 
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0;
+      }
+
       function getNativeRegexpTest() {
         return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
+      }
+
+      function startsWith(str, prefix) {
+        return !!str && str.indexOf(prefix) === 0;
+      }
+
+      function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
+        var INLINE_SCRIPT_STRING = "inlineScript";
+        var INJECTED_SCRIPT_STRING = "injectedScript";
+        var INJECTED_SCRIPT_MARKER = "<anonymous>";
+
+        var isInlineScript = function isInlineScript(stackMatch) {
+          return stackMatch.indexOf(INLINE_SCRIPT_STRING) > -1;
+        };
+
+        var isInjectedScript = function isInjectedScript(stackMatch) {
+          return stackMatch.indexOf(INJECTED_SCRIPT_STRING) > -1;
+        };
+
+        if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
+          return false;
+        }
+
+        var documentURL = window.location.href;
+        var pos = documentURL.indexOf("#");
+
+        if (pos !== -1) {
+          documentURL = documentURL.slice(0, pos);
+        }
+
+        var stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
+          return line.trim();
+        });
+        var stackLines = stackSteps.map(function (line) {
+          var stack;
+          var getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
+
+          if (getStackTraceURL) {
+            var stackURL = getStackTraceURL[2];
+
+            if (startsWith(stackURL, "(")) {
+              stackURL = stackURL.slice(1);
+            }
+
+            if (startsWith(stackURL, INJECTED_SCRIPT_MARKER)) {
+              stackURL = INJECTED_SCRIPT_STRING;
+              var stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
+
+              if (startsWith(stackFunction, "at")) {
+                stackFunction = stackFunction.slice(2).trim();
+              }
+
+              stack = "".concat(stackFunction, " ").concat(stackURL).trim();
+            } else {
+              stack = stackURL;
+            }
+          } else {
+            stack = line;
+          }
+
+          return stack;
+        });
+
+        if (stackLines) {
+          for (var index = 0; index < stackLines.length; index += 1) {
+            if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
+              return true;
+            }
+
+            if (isInjectedScript(stackMatch) && startsWith(stackLines[index], INJECTED_SCRIPT_STRING)) {
+              return true;
+            }
+          }
+        }
+
+        return false;
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -14682,9 +17209,8 @@
 
         var intervalWrapper = function intervalWrapper(callback, delay) {
           if (!isValidCallback(callback)) {
-            if (source.verbose) {
-              console.log("Scriptlet adjust-setInterval can not be applied because of invalid callback: '".concat(String(callback), "'."));
-            }
+            var message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'.");
+            logMessage(source, message);
           } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
             delay *= getBoostMultiplier(boost);
             hit(source);
@@ -14792,6 +17318,14 @@
         return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
       }
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
@@ -14809,12 +17343,8 @@
         return delayMatch;
       }
 
-      function getWildcardSymbol() {
-        return "*";
-      }
-
       function shouldMatchAnyDelay(delay) {
-        return delay === getWildcardSymbol();
+        return delay === "*";
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -14833,9 +17363,8 @@
 
         var timeoutWrapper = function timeoutWrapper(callback, delay) {
           if (!isValidCallback(callback)) {
-            if (source.verbose) {
-              console.log("Scriptlet adjust-setTimeout can not be applied because of invalid callback: '".concat(String(callback), "'."));
-            }
+            var message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'.");
+            logMessage(source, message);
           } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
             delay *= getBoostMultiplier(boost);
             hit(source);
@@ -14943,6 +17472,14 @@
         return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
       }
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
@@ -14960,12 +17497,8 @@
         return delayMatch;
       }
 
-      function getWildcardSymbol() {
-        return "*";
-      }
-
       function shouldMatchAnyDelay(delay) {
-        return delay === getWildcardSymbol();
+        return delay === "*";
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -15023,7 +17556,8 @@
             var props = property.split(".");
             var propIndex = props.indexOf(prop);
             var baseName = props[propIndex - 1];
-            console.log("The scriptlet had been executed before the ".concat(baseName, " was loaded."));
+            var message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
+            logMessage(message, source.verbose);
             return;
           }
 
@@ -15099,6 +17633,22 @@
 
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
+
+        if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        if (nextBase === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
 
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
@@ -15199,6 +17749,18 @@
         }
       }
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0;
+      }
+
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
 
       try {
@@ -15293,6 +17855,22 @@
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
 
+        if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        if (nextBase === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
         }
@@ -15376,6 +17954,10 @@
       }
 
       function noopFunc() {}
+
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0;
+      }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
 
@@ -15470,6 +18052,22 @@
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
 
+        if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        if (nextBase === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
         }
@@ -15550,6 +18148,10 @@
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
+      }
+
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0;
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -15721,14 +18323,10 @@
     function forceWindowClose(source, args) {
       function forceWindowClose(source) {
         var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
-        var log = console.log.bind(console);
 
         if (typeof window.close !== "function") {
-          if (source.verbose) {
-            log("window.close() is not a function so 'close-window' scriptlet is unavailable");
-          }
-
-          return;
+          var message = "window.close() is not a function so 'close-window' scriptlet is unavailable";
+          logMessage(source, message);
         }
 
         var closeImmediately = function closeImmediately() {
@@ -15736,7 +18334,7 @@
             hit(source);
             window.close();
           } catch (e) {
-            log(e);
+            logMessage(source, e);
           }
         };
 
@@ -15840,6 +18438,14 @@
         return new RegExp(escaped);
       }
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
 
       try {
@@ -15939,36 +18545,6 @@
       function observeDOMChanges(callback) {
         var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
         var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-
-        var throttle = function throttle(method, delay) {
-          var wait = false;
-          var savedArgs;
-
-          var wrapper = function wrapper() {
-            for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-              args[_key] = arguments[_key];
-            }
-
-            if (wait) {
-              savedArgs = args;
-              return;
-            }
-
-            method.apply(void 0, args);
-            wait = true;
-            setTimeout(function () {
-              wait = false;
-
-              if (savedArgs) {
-                wrapper(savedArgs);
-                savedArgs = null;
-              }
-            }, delay);
-          };
-
-          return wrapper;
-        };
-
         var THROTTLE_DELAY_MS = 20;
         var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
 
@@ -16002,28 +18578,6 @@
         connect();
       }
 
-      function flatten(input) {
-        var stack = [];
-        input.forEach(function (el) {
-          return stack.push(el);
-        });
-        var res = [];
-
-        while (stack.length) {
-          var next = stack.pop();
-
-          if (Array.isArray(next)) {
-            next.forEach(function (el) {
-              return stack.push(el);
-            });
-          } else {
-            res.push(next);
-          }
-        }
-
-        return res.reverse();
-      }
-
       function findHostElements(rootElement) {
         var hosts = [];
         var domElems = rootElement.querySelectorAll("*");
@@ -16053,6 +18607,57 @@
         };
       }
 
+      function flatten(input) {
+        var stack = [];
+        input.forEach(function (el) {
+          return stack.push(el);
+        });
+        var res = [];
+
+        while (stack.length) {
+          var next = stack.pop();
+
+          if (Array.isArray(next)) {
+            next.forEach(function (el) {
+              return stack.push(el);
+            });
+          } else {
+            res.push(next);
+          }
+        }
+
+        return res.reverse();
+      }
+
+      function throttle(cb, delay) {
+        var wait = false;
+        var savedArgs;
+
+        var wrapper = function wrapper() {
+          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+
+          if (wait) {
+            savedArgs = args;
+            return;
+          }
+
+          cb.apply(void 0, args);
+          wait = true;
+          setTimeout(function () {
+            wait = false;
+
+            if (savedArgs) {
+              wrapper(savedArgs);
+              savedArgs = null;
+            }
+          }, delay);
+        };
+
+        return wrapper;
+      }
+
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
 
       try {
@@ -16068,7 +18673,6 @@
           return;
         }
 
-        var log = console.log.bind(console);
         var prunePaths = propsToRemove !== undefined && propsToRemove !== "" ? propsToRemove.split(/ +/) : [];
         var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== "" ? requiredInitialProps.split(/ +/) : [];
 
@@ -16085,7 +18689,7 @@
             var shouldLog = matchRegex.test(rootString);
 
             if (shouldLog) {
-              log(window.location.hostname, root);
+              logMessage(source, "".concat(window.location.hostname, " ").concat(root), true);
               shouldProcess = false;
               return shouldProcess;
             }
@@ -16112,7 +18716,7 @@
 
         var jsonPruner = function jsonPruner(root) {
           if (prunePaths.length === 0 && requiredPaths.length === 0) {
-            log(window.location.hostname, root);
+            logMessage(source, "".concat(window.location.hostname, " ").concat(root), true);
             return root;
           }
 
@@ -16131,7 +18735,7 @@
               });
             });
           } catch (e) {
-            log(e.toString());
+            logMessage(source, e);
           }
 
           return root;
@@ -16220,6 +18824,10 @@
           return true;
         }
 
+        if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
+          return true;
+        }
+
         var stackRegexp = toRegExp(stackMatch);
         var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
@@ -16233,7 +18841,7 @@
         var pos = chain.indexOf(".");
 
         if (pos === -1) {
-          if (chain === getWildcardSymbol() || chain === "[]") {
+          if (chain === "*" || chain === "[]") {
             for (var key in base) {
               if (Object.prototype.hasOwnProperty.call(base, key)) {
                 output.push({
@@ -16253,7 +18861,7 @@
         }
 
         var prop = chain.slice(0, pos);
-        var shouldLookThrough = prop === "[]" && Array.isArray(base) || prop === getWildcardSymbol() && base instanceof Object;
+        var shouldLookThrough = prop === "[]" && Array.isArray(base) || prop === "*" && base instanceof Object;
 
         if (shouldLookThrough) {
           var nextProp = chain.slice(pos + 1);
@@ -16274,6 +18882,14 @@
         return output;
       }
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
@@ -16289,10 +18905,6 @@
 
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
-      }
-
-      function getWildcardSymbol() {
-        return "*";
       }
 
       function getNativeRegexpTest() {
@@ -16328,19 +18940,18 @@
 
     function logAddEventListener(source, args) {
       function logAddEventListener(source) {
-        var log = console.log.bind(console);
         var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
         function addEventListenerWrapper(type, listener) {
           if (validateType(type) && validateListener(listener)) {
-            var logMessage = 'addEventListener("'.concat(type, '", ').concat(listenerToString(listener), ")");
-            log(logMessage);
-            hit(source);
-          } else if (source.verbose) {
-            var _logMessage = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
+            var _message = 'addEventListener("'.concat(type, '", ').concat(listenerToString(listener), ")");
 
-            log(_logMessage);
+            logMessage(source, _message, true);
+            hit(source);
           }
+
+          var message = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
+          logMessage(source, message, true);
 
           for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
             args[_key - 2] = arguments[_key];
@@ -16349,7 +18960,16 @@
           return nativeAddEventListener.apply(this, [type, listener].concat(args));
         }
 
-        window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
+        var descriptor = {
+          configurable: true,
+          set: function set() {},
+          get: function get() {
+            return addEventListenerWrapper;
+          }
+        };
+        Object.defineProperty(window.EventTarget.prototype, "addEventListener", descriptor);
+        Object.defineProperty(window, "addEventListener", descriptor);
+        Object.defineProperty(document, "addEventListener", descriptor);
       }
 
       function hit(source, message) {
@@ -16431,6 +19051,14 @@
         return output;
       }
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
       function objectToString(obj) {
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
           var key = pair[0];
@@ -16469,12 +19097,11 @@
 
     function logEval(source, args) {
       function logEval(source) {
-        var log = console.log.bind(console);
         var nativeEval = window.eval;
 
         function evalWrapper(str) {
           hit(source);
-          log('eval("'.concat(str, '")'));
+          logMessage(source, 'eval("'.concat(str, '")'), true);
           return nativeEval(str);
         }
 
@@ -16488,7 +19115,7 @@
             args[_key] = arguments[_key];
           }
 
-          log("new Function(".concat(args.join(", "), ")"));
+          logMessage(source, "new Function(".concat(args.join(", "), ")"), true);
           return nativeFunction.apply(this, [].concat(args));
         }
 
@@ -16546,6 +19173,14 @@
         }
       }
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
 
       try {
@@ -16569,10 +19204,14 @@
             var funcName;
             var funcFullPath;
             var reg = /\(([^\)]+)\)/;
+            var regFirefox = /(.*?@)(\S+)(:\d+):\d+\)?$/;
 
             if (line.match(reg)) {
               funcName = line.split(" ").slice(0, -1).join(" ");
               funcFullPath = line.match(reg)[1];
+            } else if (line.match(regFirefox)) {
+              funcName = line.split("@").slice(0, -1).join(" ");
+              funcFullPath = line.match(regFirefox)[2];
             } else {
               funcName = "function name is not available";
               funcFullPath = line;
@@ -16615,13 +19254,13 @@
           setPropertyAccess(base, prop, {
             get: function get() {
               hit(source);
-              console.log("%cGet %c".concat(prop), "color:red;", "color:green;");
+              logMessage(source, "Get ".concat(prop), true);
               console.table(refineStackTrace(new Error().stack));
               return value;
             },
             set: function set(newValue) {
               hit(source);
-              console.log("%cSet %c".concat(prop), "color:red;", "color:green;");
+              logMessage(source, "Set ".concat(prop), true);
               console.table(refineStackTrace(new Error().stack));
               value = newValue;
             }
@@ -16653,6 +19292,22 @@
 
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
+
+        if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        if (nextBase === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
 
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
@@ -16726,6 +19381,18 @@
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
+      }
+
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0;
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -16807,6 +19474,8 @@
 
       function noopPromiseResolve() {
         var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
+        var responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        var responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
 
         if (typeof Response === "undefined") {
           return;
@@ -16815,6 +19484,14 @@
         var response = new Response(responseBody, {
           status: 200,
           statusText: "OK"
+        });
+        Object.defineProperties(response, {
+          url: {
+            value: responseUrl
+          },
+          type: {
+            value: responseType
+          }
         });
         return Promise.resolve(response);
       }
@@ -16908,7 +19585,9 @@
         }
 
         var rtcReplacement = function rtcReplacement(config) {
-          hit(source, "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config)));
+          var message = "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config));
+          logMessage(source, message);
+          hit(source);
         };
 
         rtcReplacement.prototype = {
@@ -16981,6 +19660,14 @@
 
       function noopFunc() {}
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
       function convertRtcConfigToString(config) {
         var UNDEF_STR = "undefined";
         var str = UNDEF_STR;
@@ -17033,9 +19720,16 @@
           return nativeAddEventListener.apply(this, [type, listener].concat(args));
         }
 
-        window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
-        window.addEventListener = addEventListenerWrapper;
-        document.addEventListener = addEventListenerWrapper;
+        var descriptor = {
+          configurable: true,
+          set: function set() {},
+          get: function get() {
+            return addEventListenerWrapper;
+          }
+        };
+        Object.defineProperty(window.EventTarget.prototype, "addEventListener", descriptor);
+        Object.defineProperty(window, "addEventListener", descriptor);
+        Object.defineProperty(document, "addEventListener", descriptor);
       }
 
       function hit(source, message) {
@@ -17198,7 +19892,7 @@
         if (result) {
           hit(source);
         } else {
-          window.console.error("Failed to set up prevent-adfly scriptlet");
+          logMessage(source, "Failed to set up prevent-adfly scriptlet");
         }
       }
 
@@ -17259,6 +19953,14 @@
 
         if (typeof window.__debug === "function") {
           window.__debug(source);
+        }
+      }
+
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
         }
       }
 
@@ -17434,7 +20136,12 @@
         }
 
         var SOURCE_PROPERTY_NAME = "src";
+        var ONERROR_PROPERTY_NAME = "onerror";
         var searchRegexp = toRegExp(match);
+
+        var setMatchedAttribute = function setMatchedAttribute(elem) {
+          return elem.setAttribute(source.name, "matched");
+        };
 
         var setAttributeWrapper = function setAttributeWrapper(target, thisArg, args) {
           if (!args[0] || !args[1]) {
@@ -17451,6 +20158,7 @@
           }
 
           hit(source);
+          setMatchedAttribute(thisArg);
           return Reflect.apply(target, thisArg, [attrName, srcMockData[nodeName]]);
         };
 
@@ -17458,9 +20166,9 @@
           apply: setAttributeWrapper
         };
         instance.prototype.setAttribute = new Proxy(Element.prototype.setAttribute, setAttributeHandler);
-        var origDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
+        var origSrcDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
 
-        if (!origDescriptor) {
+        if (!origSrcDescriptor) {
           return;
         }
 
@@ -17468,28 +20176,73 @@
           enumerable: true,
           configurable: true,
           get: function get() {
-            return origDescriptor.get.call(this);
+            return origSrcDescriptor.get.call(this);
           },
           set: function set(urlValue) {
             var nodeName = this.nodeName.toLowerCase();
             var isMatched = tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(urlValue);
 
             if (!isMatched) {
-              origDescriptor.set.call(this, urlValue);
-              return;
+              origSrcDescriptor.set.call(this, urlValue);
+              return true;
             }
 
             if (policy && urlValue instanceof TrustedScriptURL) {
               var trustedSrc = policy.createScriptURL(urlValue);
-              origDescriptor.set.call(this, trustedSrc);
+              origSrcDescriptor.set.call(this, trustedSrc);
               hit(source);
               return;
             }
 
-            origDescriptor.set.call(this, srcMockData[nodeName]);
+            setMatchedAttribute(this);
+            origSrcDescriptor.set.call(this, srcMockData[nodeName]);
             hit(source);
           }
         });
+        var origOnerrorDescriptor = safeGetDescriptor(HTMLElement.prototype, ONERROR_PROPERTY_NAME);
+
+        if (!origOnerrorDescriptor) {
+          return;
+        }
+
+        Object.defineProperty(HTMLElement.prototype, ONERROR_PROPERTY_NAME, {
+          enumerable: true,
+          configurable: true,
+          get: function get() {
+            return origOnerrorDescriptor.get.call(this);
+          },
+          set: function set(cb) {
+            var isMatched = this.getAttribute(source.name) === "matched";
+
+            if (!isMatched) {
+              origOnerrorDescriptor.set.call(this, cb);
+              return true;
+            }
+
+            origOnerrorDescriptor.set.call(this, noopFunc);
+            return true;
+          }
+        });
+
+        var addEventListenerWrapper = function addEventListenerWrapper(target, thisArg, args) {
+          if (!args[0] || !args[1]) {
+            return Reflect.apply(target, thisArg, args);
+          }
+
+          var eventName = args[0];
+          var isMatched = thisArg.getAttribute(source.name) === "matched" && eventName === "error";
+
+          if (isMatched) {
+            return Reflect.apply(target, thisArg, [eventName, noopFunc]);
+          }
+
+          return Reflect.apply(target, thisArg, args);
+        };
+
+        var addEventListenerHandler = {
+          apply: addEventListenerWrapper
+        };
+        EventTarget.prototype.addEventListener = new Proxy(EventTarget.prototype.addEventListener, addEventListenerHandler);
       }
 
       function hit(source, message) {
@@ -17567,6 +20320,8 @@
 
         return null;
       }
+
+      function noopFunc() {}
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
 
@@ -17815,6 +20570,7 @@
     function preventFetch(source, args) {
       function preventFetch(source, propsToMatch) {
         var responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "emptyObj";
+        var responseType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "default";
 
         if (typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
           return;
@@ -17830,33 +20586,26 @@
           return;
         }
 
+        if (!(responseType === "default" || responseType === "opaque")) {
+          logMessage(source, "Invalid parameter: ".concat(responseType));
+          return;
+        }
+
         var handlerWrapper = function handlerWrapper(target, thisArg, args) {
           var shouldPrevent = false;
           var fetchData = getFetchData(args);
 
           if (typeof propsToMatch === "undefined") {
-            var logMessage = "log: fetch( ".concat(objectToString(fetchData), " )");
-            hit(source, logMessage);
-          } else if (propsToMatch === "" || propsToMatch === getWildcardSymbol()) {
-            shouldPrevent = true;
-          } else {
-            var parsedData = parseMatchProps(propsToMatch);
-
-            if (!validateParsedData(parsedData)) {
-              console.log("Invalid parameter: ".concat(propsToMatch));
-              shouldPrevent = false;
-            } else {
-              var matchData = getMatchPropsData(parsedData);
-              shouldPrevent = Object.keys(matchData).every(function (matchKey) {
-                var matchValue = matchData[matchKey];
-                return Object.prototype.hasOwnProperty.call(fetchData, matchKey) && matchValue.test(fetchData[matchKey]);
-              });
-            }
+            logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
+            hit(source);
+            return Reflect.apply(target, thisArg, args);
           }
+
+          shouldPrevent = matchRequestProps(source, propsToMatch, fetchData);
 
           if (shouldPrevent) {
             hit(source);
-            return noopPromiseResolve(strResponseBody);
+            return noopPromiseResolve(strResponseBody, fetchData.url, responseType);
           }
 
           return Reflect.apply(target, thisArg, args);
@@ -17956,41 +20705,10 @@
         }).join(" ");
       }
 
-      function parseMatchProps(propsToMatchStr) {
-        var PROPS_DIVIDER = " ";
-        var PAIRS_MARKER = ":";
-        var propsObj = {};
-        var props = propsToMatchStr.split(PROPS_DIVIDER);
-        props.forEach(function (prop) {
-          var dividerInd = prop.indexOf(PAIRS_MARKER);
-
-          if (dividerInd === -1) {
-            propsObj.url = prop;
-          } else {
-            var key = prop.slice(0, dividerInd);
-            var value = prop.slice(dividerInd + 1);
-            propsObj[key] = value;
-          }
-        });
-        return propsObj;
-      }
-
-      function validateParsedData(data) {
-        return Object.values(data).every(function (value) {
-          return isValidStrPattern(value);
-        });
-      }
-
-      function getMatchPropsData(data) {
-        var matchData = {};
-        Object.keys(data).forEach(function (key) {
-          matchData[key] = toRegExp(data[key]);
-        });
-        return matchData;
-      }
-
       function noopPromiseResolve() {
         var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
+        var responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        var responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
 
         if (typeof Response === "undefined") {
           return;
@@ -18000,11 +20718,45 @@
           status: 200,
           statusText: "OK"
         });
+        Object.defineProperties(response, {
+          url: {
+            value: responseUrl
+          },
+          type: {
+            value: responseType
+          }
+        });
         return Promise.resolve(response);
       }
 
-      function getWildcardSymbol() {
-        return "*";
+      function matchRequestProps(source, propsToMatch, requestData) {
+        if (propsToMatch === "" || propsToMatch === "*") {
+          return true;
+        }
+
+        var isMatched;
+        var parsedData = parseMatchProps(propsToMatch);
+
+        if (!validateParsedData(parsedData)) {
+          logMessage(source, "Invalid parameter: ".concat(propsToMatch));
+          isMatched = false;
+        } else {
+          var matchData = getMatchPropsData(parsedData);
+          isMatched = Object.keys(matchData).every(function (matchKey) {
+            var matchValue = matchData[matchKey];
+            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
+          });
+        }
+
+        return isMatched;
+      }
+
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
       }
 
       function toRegExp() {
@@ -18053,8 +20805,8 @@
       }
 
       function getRequestData(request) {
-        var REQUEST_INIT_OPTIONS = ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "integrity"];
-        var entries = REQUEST_INIT_OPTIONS.map(function (key) {
+        var requestInitOptions = getRequestProps();
+        var entries = requestInitOptions.map(function (key) {
           var value = request[key];
           return [key, value];
         });
@@ -18078,6 +20830,41 @@
           return acc;
         }, {});
         return output;
+      }
+
+      function parseMatchProps(propsToMatchStr) {
+        var PROPS_DIVIDER = " ";
+        var PAIRS_MARKER = ":";
+        var LEGAL_MATCH_PROPS = getRequestProps();
+        var propsObj = {};
+        var props = propsToMatchStr.split(PROPS_DIVIDER);
+        props.forEach(function (prop) {
+          var dividerInd = prop.indexOf(PAIRS_MARKER);
+          var key = prop.slice(0, dividerInd);
+          var hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+
+          if (hasLegalMatchProp) {
+            var value = prop.slice(dividerInd + 1);
+            propsObj[key] = value;
+          } else {
+            propsObj.url = prop;
+          }
+        });
+        return propsObj;
+      }
+
+      function validateParsedData(data) {
+        return Object.values(data).every(function (value) {
+          return isValidStrPattern(value);
+        });
+      }
+
+      function getMatchPropsData(data) {
+        var matchData = {};
+        Object.keys(data).forEach(function (key) {
+          matchData[key] = toRegExp(data[key]);
+        });
+        return matchData;
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -18203,9 +20990,7 @@
             try {
               metaNodes = document.querySelectorAll('meta[http-equiv="refresh"][content]');
             } catch (e) {
-              if (source.verbose) {
-                console.log(e);
-              }
+              logMessage(source, e);
             }
           }
 
@@ -18333,6 +21118,14 @@
         return validDelay;
       }
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
@@ -18350,7 +21143,6 @@
     function preventRequestAnimationFrame(source, args) {
       function preventRequestAnimationFrame(source, match) {
         var nativeRequestAnimationFrame = window.requestAnimationFrame;
-        var log = console.log.bind(console);
         var shouldLog = typeof match === "undefined";
 
         var _parseMatchArg = parseMatchArg(match),
@@ -18362,7 +21154,7 @@
 
           if (shouldLog) {
             hit(source);
-            log("requestAnimationFrame(".concat(String(callback), ")"));
+            logMessage(source, "requestAnimationFrame(".concat(String(callback), ")"), true);
           } else if (isValidCallback(callback) && isValidStrPattern(match)) {
             shouldPrevent = matchRegexp.test(callback.toString()) !== isInvertedMatch;
           }
@@ -18468,6 +21260,14 @@
         return callback instanceof Function || typeof callback === "string";
       }
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
       function escapeRegExp(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
@@ -18506,7 +21306,6 @@
       function preventSetInterval(source, matchCallback, matchDelay) {
         var isProxySupported = typeof Proxy !== "undefined";
         var nativeInterval = window.setInterval;
-        var log = console.log.bind(console);
         var shouldLog = typeof matchCallback === "undefined" && typeof matchDelay === "undefined";
 
         var legacyIntervalWrapper = function legacyIntervalWrapper(callback, delay) {
@@ -18514,7 +21313,7 @@
 
           if (shouldLog) {
             hit(source);
-            log("setInterval(".concat(String(callback), ", ").concat(delay, ")"));
+            logMessage(source, "setInterval(".concat(String(callback), ", ").concat(delay, ")"), true);
           } else {
             shouldPrevent = isPreventionNeeded({
               callback: callback,
@@ -18543,7 +21342,7 @@
 
           if (shouldLog) {
             hit(source);
-            log("setInterval(".concat(String(callback), ", ").concat(delay, ")"));
+            logMessage(source, "setInterval(".concat(String(callback), ", ").concat(delay, ")"), true);
           } else {
             shouldPrevent = isPreventionNeeded({
               callback: callback,
@@ -18652,6 +21451,14 @@
         }
 
         return shouldPrevent;
+      }
+
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
       }
 
       function toRegExp() {
@@ -18772,7 +21579,6 @@
       function preventSetTimeout(source, matchCallback, matchDelay) {
         var isProxySupported = typeof Proxy !== "undefined";
         var nativeTimeout = window.setTimeout;
-        var log = console.log.bind(console);
         var shouldLog = typeof matchCallback === "undefined" && typeof matchDelay === "undefined";
 
         var legacyTimeoutWrapper = function legacyTimeoutWrapper(callback, delay) {
@@ -18780,7 +21586,7 @@
 
           if (shouldLog) {
             hit(source);
-            log("setTimeout(".concat(String(callback), ", ").concat(delay, ")"));
+            logMessage(source, "setTimeout(".concat(String(callback), ", ").concat(delay, ")"), true);
           } else {
             shouldPrevent = isPreventionNeeded({
               callback: callback,
@@ -18809,7 +21615,7 @@
 
           if (shouldLog) {
             hit(source);
-            log("setTimeout(".concat(String(callback), ", ").concat(delay, ")"));
+            logMessage(source, "setTimeout(".concat(String(callback), ", ").concat(delay, ")"), true);
           } else {
             shouldPrevent = isPreventionNeeded({
               callback: callback,
@@ -18918,6 +21724,14 @@
         }
 
         return shouldPrevent;
+      }
+
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
       }
 
       function parseMatchArg(match) {
@@ -19036,7 +21850,7 @@
 
     function preventWindowOpen(source, args) {
       function preventWindowOpen(source) {
-        var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : getWildcardSymbol();
+        var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "*";
         var delay = arguments.length > 2 ? arguments[2] : undefined;
         var replacement = arguments.length > 3 ? arguments[3] : undefined;
         var nativeOpen = window.open;
@@ -19050,7 +21864,7 @@
           }
 
           if (!isValidStrPattern(delay)) {
-            console.log("Invalid parameter: ".concat(delay));
+            logMessage(source, "Invalid parameter: ".concat(delay));
             return nativeOpen.apply(window, [str].concat(args));
           }
 
@@ -19073,13 +21887,14 @@
 
           if (shouldLog) {
             var argsStr = args && args.length > 0 ? ", ".concat(args.join(", ")) : "";
-            var logMessage = "log: window-open: ".concat(url).concat(argsStr);
-            hit(source, logMessage);
+            var message = "window-open: ".concat(url).concat(argsStr);
+            logMessage(source, message, true);
+            hit(source);
           }
 
           var shouldPrevent = false;
 
-          if (match === getWildcardSymbol()) {
+          if (match === "*") {
             shouldPrevent = true;
           } else if (isValidMatchStr(match)) {
             var _parseMatchArg = parseMatchArg(match),
@@ -19088,7 +21903,7 @@
 
             shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
           } else {
-            console.log("Invalid parameter: ".concat(match));
+            logMessage(source, "Invalid parameter: ".concat(match));
             shouldPrevent = false;
           }
 
@@ -19333,8 +22148,12 @@
         return null;
       }
 
-      function getWildcardSymbol() {
-        return "*";
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
       }
 
       function noopFunc() {}
@@ -19348,7 +22167,7 @@
       }
 
       function endsWith(str, ending) {
-        return !!str && str.indexOf(ending) === str.length - ending.length;
+        return !!str && str.lastIndexOf(ending) === str.length - ending.length;
       }
 
       function substringBefore(str, separator) {
@@ -19397,23 +22216,10 @@
           responseUrl = xhrData.url;
 
           if (typeof propsToMatch === "undefined") {
-            var logMessage = "log: xhr( ".concat(objectToString(xhrData), " )");
-            hit(source, logMessage);
-          } else if (propsToMatch === "" || propsToMatch === getWildcardSymbol()) {
-            shouldPrevent = true;
+            logMessage(source, "xhr( ".concat(objectToString(xhrData), " )"), true);
+            hit(source);
           } else {
-            var parsedData = parseMatchProps(propsToMatch);
-
-            if (!validateParsedData(parsedData)) {
-              console.log("Invalid parameter: ".concat(propsToMatch));
-              shouldPrevent = false;
-            } else {
-              var matchData = getMatchPropsData(parsedData);
-              shouldPrevent = Object.keys(matchData).every(function (matchKey) {
-                var matchValue = matchData[matchKey];
-                return Object.prototype.hasOwnProperty.call(xhrData, matchKey) && matchValue.test(xhrData[matchKey]);
-              });
-            }
+            shouldPrevent = matchRequestProps(source, propsToMatch, xhrData);
           }
 
           return Reflect.apply(target, thisArg, args);
@@ -19438,7 +22244,7 @@
             if (randomText) {
               responseText = randomText;
             } else {
-              console.log("Invalid range: ".concat(customResponseText));
+              logMessage(source, "Invalid range: ".concat(customResponseText));
             }
           }
 
@@ -19543,6 +22349,14 @@
         }
       }
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
       function objectToString(obj) {
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
           var key = pair[0];
@@ -19557,59 +22371,26 @@
         }).join(" ");
       }
 
-      function getWildcardSymbol() {
-        return "*";
-      }
-
-      function parseMatchProps(propsToMatchStr) {
-        var PROPS_DIVIDER = " ";
-        var PAIRS_MARKER = ":";
-        var propsObj = {};
-        var props = propsToMatchStr.split(PROPS_DIVIDER);
-        props.forEach(function (prop) {
-          var dividerInd = prop.indexOf(PAIRS_MARKER);
-
-          if (dividerInd === -1) {
-            propsObj.url = prop;
-          } else {
-            var key = prop.slice(0, dividerInd);
-            var value = prop.slice(dividerInd + 1);
-            propsObj[key] = value;
-          }
-        });
-        return propsObj;
-      }
-
-      function validateParsedData(data) {
-        return Object.values(data).every(function (value) {
-          return isValidStrPattern(value);
-        });
-      }
-
-      function getMatchPropsData(data) {
-        var matchData = {};
-        Object.keys(data).forEach(function (key) {
-          matchData[key] = toRegExp(data[key]);
-        });
-        return matchData;
-      }
-
-      function getRandomIntInclusive(min, max) {
-        min = Math.ceil(min);
-        max = Math.floor(max);
-        return Math.floor(Math.random() * (max - min + 1) + min);
-      }
-
-      function getRandomStrByLength(length) {
-        var result = "";
-        var characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~";
-        var charactersLength = characters.length;
-
-        for (var i = 0; i < length; i += 1) {
-          result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      function matchRequestProps(source, propsToMatch, requestData) {
+        if (propsToMatch === "" || propsToMatch === "*") {
+          return true;
         }
 
-        return result;
+        var isMatched;
+        var parsedData = parseMatchProps(propsToMatch);
+
+        if (!validateParsedData(parsedData)) {
+          logMessage(source, "Invalid parameter: ".concat(propsToMatch));
+          isMatched = false;
+        } else {
+          var matchData = getMatchPropsData(parsedData);
+          isMatched = Object.keys(matchData).every(function (matchKey) {
+            var matchValue = matchData[matchKey];
+            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
+          });
+        }
+
+        return isMatched;
       }
 
       function generateRandomResponse(customResponseText) {
@@ -19721,6 +22502,59 @@
         return native(num);
       }
 
+      function parseMatchProps(propsToMatchStr) {
+        var PROPS_DIVIDER = " ";
+        var PAIRS_MARKER = ":";
+        var LEGAL_MATCH_PROPS = getRequestProps();
+        var propsObj = {};
+        var props = propsToMatchStr.split(PROPS_DIVIDER);
+        props.forEach(function (prop) {
+          var dividerInd = prop.indexOf(PAIRS_MARKER);
+          var key = prop.slice(0, dividerInd);
+          var hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+
+          if (hasLegalMatchProp) {
+            var value = prop.slice(dividerInd + 1);
+            propsObj[key] = value;
+          } else {
+            propsObj.url = prop;
+          }
+        });
+        return propsObj;
+      }
+
+      function validateParsedData(data) {
+        return Object.values(data).every(function (value) {
+          return isValidStrPattern(value);
+        });
+      }
+
+      function getMatchPropsData(data) {
+        var matchData = {};
+        Object.keys(data).forEach(function (key) {
+          matchData[key] = toRegExp(data[key]);
+        });
+        return matchData;
+      }
+
+      function getRandomIntInclusive(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min + 1) + min);
+      }
+
+      function getRandomStrByLength(length) {
+        var result = "";
+        var characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~";
+        var charactersLength = characters.length;
+
+        for (var i = 0; i < length; i += 1) {
+          result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+
+        return result;
+      }
+
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
 
       try {
@@ -19750,7 +22584,7 @@
           try {
             nodes = [].slice.call(document.querySelectorAll(selector));
           } catch (e) {
-            console.log("Invalid remove-attr selector arg: '".concat(selector, "'"));
+            logMessage(source, "Invalid selector arg: '".concat(selector, "'"));
           }
 
           var removed = false;
@@ -19853,36 +22687,6 @@
       function observeDOMChanges(callback) {
         var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
         var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-
-        var throttle = function throttle(method, delay) {
-          var wait = false;
-          var savedArgs;
-
-          var wrapper = function wrapper() {
-            for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-              args[_key] = arguments[_key];
-            }
-
-            if (wait) {
-              savedArgs = args;
-              return;
-            }
-
-            method.apply(void 0, args);
-            wait = true;
-            setTimeout(function () {
-              wait = false;
-
-              if (savedArgs) {
-                wrapper(savedArgs);
-                savedArgs = null;
-              }
-            }, delay);
-          };
-
-          return wrapper;
-        };
-
         var THROTTLE_DELAY_MS = 20;
         var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
 
@@ -19935,6 +22739,43 @@
         };
       }
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
+      function throttle(cb, delay) {
+        var wait = false;
+        var savedArgs;
+
+        var wrapper = function wrapper() {
+          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+
+          if (wait) {
+            savedArgs = args;
+            return;
+          }
+
+          cb.apply(void 0, args);
+          wait = true;
+          setTimeout(function () {
+            wait = false;
+
+            if (savedArgs) {
+              wrapper(savedArgs);
+              savedArgs = null;
+            }
+          }, delay);
+        };
+
+        return wrapper;
+      }
+
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
 
       try {
@@ -19970,7 +22811,7 @@
             try {
               foundNodes = [].slice.call(document.querySelectorAll(selector));
             } catch (e) {
-              console.log("Invalid remove-class selector arg: '".concat(selector, "'"));
+              logMessage(source, "Invalid selector arg: '".concat(selector, "'"));
             }
 
             foundNodes.forEach(function (n) {
@@ -20087,39 +22928,17 @@
         }
       }
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
       function observeDOMChanges(callback) {
         var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
         var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-
-        var throttle = function throttle(method, delay) {
-          var wait = false;
-          var savedArgs;
-
-          var wrapper = function wrapper() {
-            for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-              args[_key] = arguments[_key];
-            }
-
-            if (wait) {
-              savedArgs = args;
-              return;
-            }
-
-            method.apply(void 0, args);
-            wait = true;
-            setTimeout(function () {
-              wait = false;
-
-              if (savedArgs) {
-                wrapper(savedArgs);
-                savedArgs = null;
-              }
-            }, delay);
-          };
-
-          return wrapper;
-        };
-
         var THROTTLE_DELAY_MS = 20;
         var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
 
@@ -20170,6 +22989,35 @@
             return passedFlags.indexOf(flag) !== -1;
           }
         };
+      }
+
+      function throttle(cb, delay) {
+        var wait = false;
+        var savedArgs;
+
+        var wrapper = function wrapper() {
+          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+
+          if (wait) {
+            savedArgs = args;
+            return;
+          }
+
+          cb.apply(void 0, args);
+          wait = true;
+          setTimeout(function () {
+            wait = false;
+
+            if (savedArgs) {
+              wrapper(savedArgs);
+              savedArgs = null;
+            }
+          }, delay);
+        };
+
+        return wrapper;
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -20394,36 +23242,6 @@
       function observeDOMChanges(callback) {
         var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
         var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-
-        var throttle = function throttle(method, delay) {
-          var wait = false;
-          var savedArgs;
-
-          var wrapper = function wrapper() {
-            for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-              args[_key] = arguments[_key];
-            }
-
-            if (wait) {
-              savedArgs = args;
-              return;
-            }
-
-            method.apply(void 0, args);
-            wait = true;
-            setTimeout(function () {
-              wait = false;
-
-              if (savedArgs) {
-                wrapper(savedArgs);
-                savedArgs = null;
-              }
-            }, delay);
-          };
-
-          return wrapper;
-        };
-
         var THROTTLE_DELAY_MS = 20;
         var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
 
@@ -20457,28 +23275,6 @@
         connect();
       }
 
-      function flatten(input) {
-        var stack = [];
-        input.forEach(function (el) {
-          return stack.push(el);
-        });
-        var res = [];
-
-        while (stack.length) {
-          var next = stack.pop();
-
-          if (Array.isArray(next)) {
-            next.forEach(function (el) {
-              return stack.push(el);
-            });
-          } else {
-            res.push(next);
-          }
-        }
-
-        return res.reverse();
-      }
-
       function findHostElements(rootElement) {
         var hosts = [];
         var domElems = rootElement.querySelectorAll("*");
@@ -20506,6 +23302,57 @@
           targets: targets,
           innerHosts: innerHosts
         };
+      }
+
+      function flatten(input) {
+        var stack = [];
+        input.forEach(function (el) {
+          return stack.push(el);
+        });
+        var res = [];
+
+        while (stack.length) {
+          var next = stack.pop();
+
+          if (Array.isArray(next)) {
+            next.forEach(function (el) {
+              return stack.push(el);
+            });
+          } else {
+            res.push(next);
+          }
+        }
+
+        return res.reverse();
+      }
+
+      function throttle(cb, delay) {
+        var wait = false;
+        var savedArgs;
+
+        var wrapper = function wrapper() {
+          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+
+          if (wait) {
+            savedArgs = args;
+            return;
+          }
+
+          cb.apply(void 0, args);
+          wait = true;
+          setTimeout(function () {
+            wait = false;
+
+            if (savedArgs) {
+              wrapper(savedArgs);
+              savedArgs = null;
+            }
+          }, delay);
+        };
+
+        return wrapper;
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -20598,36 +23445,6 @@
       function observeDOMChanges(callback) {
         var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
         var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-
-        var throttle = function throttle(method, delay) {
-          var wait = false;
-          var savedArgs;
-
-          var wrapper = function wrapper() {
-            for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-              args[_key] = arguments[_key];
-            }
-
-            if (wait) {
-              savedArgs = args;
-              return;
-            }
-
-            method.apply(void 0, args);
-            wait = true;
-            setTimeout(function () {
-              wait = false;
-
-              if (savedArgs) {
-                wrapper(savedArgs);
-                savedArgs = null;
-              }
-            }, delay);
-          };
-
-          return wrapper;
-        };
-
         var THROTTLE_DELAY_MS = 20;
         var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
 
@@ -20666,6 +23483,35 @@
         return native(num);
       }
 
+      function throttle(cb, delay) {
+        var wait = false;
+        var savedArgs;
+
+        var wrapper = function wrapper() {
+          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+
+          if (wait) {
+            savedArgs = args;
+            return;
+          }
+
+          cb.apply(void 0, args);
+          wait = true;
+          setTimeout(function () {
+            wait = false;
+
+            if (savedArgs) {
+              wrapper(savedArgs);
+              savedArgs = null;
+            }
+          }, delay);
+        };
+
+        return wrapper;
+      }
+
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
 
       try {
@@ -20681,7 +23527,6 @@
           return;
         }
 
-        var log = console.log.bind(console);
         var emptyArr = noopArray();
         var emptyObj = noopObject();
         var constantValue;
@@ -20737,7 +23582,7 @@
             return canceled;
           }
 
-          canceled = value !== undefined && constantValue !== undefined && typeof value !== typeof constantValue;
+          canceled = value !== undefined && constantValue !== undefined && typeof value !== typeof constantValue && value !== null;
           return canceled;
         };
 
@@ -20751,10 +23596,8 @@
 
           if (origDescriptor instanceof Object) {
             if (!origDescriptor.configurable) {
-              if (source.verbose) {
-                log("set-constant: property '".concat(prop, "' is not configurable"));
-              }
-
+              var message = "set-constant: property '".concat(prop, "' is not configurable");
+              logMessage(source, message);
               return false;
             }
 
@@ -20786,7 +23629,7 @@
           var base = chainInfo.base;
           var prop = chainInfo.prop,
               chain = chainInfo.chain;
-          var undefPropHandler = {
+          var inChainPropHandler = {
             factValue: undefined,
             init: function init(a) {
               this.factValue = a;
@@ -20837,13 +23680,22 @@
             return;
           }
 
+          if (base !== undefined && base[prop] === null) {
+            trapProp(base, prop, true, inChainPropHandler);
+            return;
+          }
+
+          if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
+            trapProp(base, prop, true, inChainPropHandler);
+          }
+
           var propValue = owner[prop];
 
           if (propValue instanceof Object || typeof propValue === "object" && propValue !== null) {
             setChainPropAccess(propValue, chain);
           }
 
-          trapProp(base, prop, true, undefPropHandler);
+          trapProp(base, prop, true, inChainPropHandler);
         };
 
         setChainPropAccess(window, property);
@@ -20898,6 +23750,14 @@
         }
       }
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
       function noopArray() {
         return [];
       }
@@ -20922,6 +23782,8 @@
 
       function noopPromiseResolve() {
         var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
+        var responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        var responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
 
         if (typeof Response === "undefined") {
           return;
@@ -20930,6 +23792,14 @@
         var response = new Response(responseBody, {
           status: 200,
           statusText: "OK"
+        });
+        Object.defineProperties(response, {
+          url: {
+            value: responseUrl
+          },
+          type: {
+            value: responseType
+          }
         });
         return Promise.resolve(response);
       }
@@ -20956,6 +23826,22 @@
 
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
+
+        if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+
+        if (nextBase === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
 
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
@@ -20993,6 +23879,10 @@
           return true;
         }
 
+        if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
+          return true;
+        }
+
         var stackRegexp = toRegExp(stackMatch);
         var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
@@ -21003,6 +23893,10 @@
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
+      }
+
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0;
       }
 
       function getNativeRegexpTest() {
@@ -21020,7 +23914,15 @@
 
     function setCookie(source, args) {
       function setCookie(source, name, value) {
-        var cookieData = prepareCookie(name, value);
+        var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "/";
+        var validValue = getLimitedCookieValue(source, value);
+
+        if (validValue === null) {
+          logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
+          return;
+        }
+
+        var cookieData = concatCookieNameValuePath(source, name, validValue, path);
 
         if (cookieData) {
           hit(source);
@@ -21077,55 +23979,84 @@
         }
       }
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
       }
 
-      function prepareCookie(name, value) {
-        if (!name || !value) {
+      function getLimitedCookieValue(source, value) {
+        if (!value) {
           return null;
         }
 
-        var valueToSet;
+        var validValue;
 
         if (value === "true") {
-          valueToSet = "true";
+          validValue = "true";
         } else if (value === "True") {
-          valueToSet = "True";
+          validValue = "True";
         } else if (value === "false") {
-          valueToSet = "false";
+          validValue = "false";
         } else if (value === "False") {
-          valueToSet = "False";
+          validValue = "False";
         } else if (value === "yes") {
-          valueToSet = "yes";
+          validValue = "yes";
         } else if (value === "Yes") {
-          valueToSet = "Yes";
+          validValue = "Yes";
         } else if (value === "Y") {
-          valueToSet = "Y";
+          validValue = "Y";
         } else if (value === "no") {
-          valueToSet = "no";
+          validValue = "no";
         } else if (value === "ok") {
-          valueToSet = "ok";
+          validValue = "ok";
         } else if (value === "OK") {
-          valueToSet = "OK";
+          validValue = "OK";
         } else if (/^\d+$/.test(value)) {
-          valueToSet = parseFloat(value);
+          validValue = parseFloat(value);
 
-          if (nativeIsNaN(valueToSet)) {
+          if (nativeIsNaN(validValue)) {
+            logMessage(source, "Invalid cookie value: '".concat(value, "'"));
             return null;
           }
 
-          if (Math.abs(valueToSet) < 0 || Math.abs(valueToSet) > 15) {
+          if (Math.abs(validValue) < 0 || Math.abs(validValue) > 15) {
+            logMessage(source, "Invalid cookie value: '".concat(value, "'"));
             return null;
           }
         } else {
           return null;
         }
 
-        var pathToSet = "path=/;";
-        var cookieData = "".concat(encodeURIComponent(name), "=").concat(encodeURIComponent(valueToSet), "; ").concat(pathToSet);
-        return cookieData;
+        return validValue;
+      }
+
+      function concatCookieNameValuePath(source, rawName, rawValue, rawPath) {
+        if (!isValidCookieRawPath(rawPath)) {
+          logMessage(source, "Invalid cookie path: '".concat(rawPath, "'"));
+          return null;
+        }
+
+        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath));
+      }
+
+      function isValidCookieRawPath(rawPath) {
+        return rawPath === "/" || rawPath === "none";
+      }
+
+      function getCookiePath(rawPath) {
+        if (rawPath === "/") {
+          return "path=/";
+        }
+
+        return "";
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -21139,31 +24070,26 @@
 
     function setCookieReload(source, args) {
       function setCookieReload(source, name, value) {
-        var isCookieSetWithValue = function isCookieSetWithValue(name, value) {
-          return document.cookie.split(";").some(function (cookieStr) {
-            var pos = cookieStr.indexOf("=");
-
-            if (pos === -1) {
-              return false;
-            }
-
-            var cookieName = cookieStr.slice(0, pos).trim();
-            var cookieValue = cookieStr.slice(pos + 1).trim();
-            return name === cookieName && value === cookieValue;
-          });
-        };
+        var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "/";
 
         if (isCookieSetWithValue(name, value)) {
           return;
         }
 
-        var cookieData = prepareCookie(name, value);
+        var validValue = getLimitedCookieValue(source, value);
+
+        if (validValue === null) {
+          logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
+          return;
+        }
+
+        var cookieData = concatCookieNameValuePath(source, name, validValue, path);
 
         if (cookieData) {
           document.cookie = cookieData;
           hit(source);
 
-          if (isCookieSetWithValue(name, value)) {
+          if (isCookieSetWithValue(document.cookie, name, value)) {
             window.location.reload();
           }
         }
@@ -21218,55 +24144,98 @@
         }
       }
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
       }
 
-      function prepareCookie(name, value) {
-        if (!name || !value) {
+      function isCookieSetWithValue(cookieString, name, value) {
+        return cookieString.split(";").some(function (cookieStr) {
+          var pos = cookieStr.indexOf("=");
+
+          if (pos === -1) {
+            return false;
+          }
+
+          var cookieName = cookieStr.slice(0, pos).trim();
+          var cookieValue = cookieStr.slice(pos + 1).trim();
+          return name === cookieName && value === cookieValue;
+        });
+      }
+
+      function getLimitedCookieValue(source, value) {
+        if (!value) {
           return null;
         }
 
-        var valueToSet;
+        var validValue;
 
         if (value === "true") {
-          valueToSet = "true";
+          validValue = "true";
         } else if (value === "True") {
-          valueToSet = "True";
+          validValue = "True";
         } else if (value === "false") {
-          valueToSet = "false";
+          validValue = "false";
         } else if (value === "False") {
-          valueToSet = "False";
+          validValue = "False";
         } else if (value === "yes") {
-          valueToSet = "yes";
+          validValue = "yes";
         } else if (value === "Yes") {
-          valueToSet = "Yes";
+          validValue = "Yes";
         } else if (value === "Y") {
-          valueToSet = "Y";
+          validValue = "Y";
         } else if (value === "no") {
-          valueToSet = "no";
+          validValue = "no";
         } else if (value === "ok") {
-          valueToSet = "ok";
+          validValue = "ok";
         } else if (value === "OK") {
-          valueToSet = "OK";
+          validValue = "OK";
         } else if (/^\d+$/.test(value)) {
-          valueToSet = parseFloat(value);
+          validValue = parseFloat(value);
 
-          if (nativeIsNaN(valueToSet)) {
+          if (nativeIsNaN(validValue)) {
+            logMessage(source, "Invalid cookie value: '".concat(value, "'"));
             return null;
           }
 
-          if (Math.abs(valueToSet) < 0 || Math.abs(valueToSet) > 15) {
+          if (Math.abs(validValue) < 0 || Math.abs(validValue) > 15) {
+            logMessage(source, "Invalid cookie value: '".concat(value, "'"));
             return null;
           }
         } else {
           return null;
         }
 
-        var pathToSet = "path=/;";
-        var cookieData = "".concat(encodeURIComponent(name), "=").concat(encodeURIComponent(valueToSet), "; ").concat(pathToSet);
-        return cookieData;
+        return validValue;
+      }
+
+      function concatCookieNameValuePath(source, rawName, rawValue, rawPath) {
+        if (!isValidCookieRawPath(rawPath)) {
+          logMessage(source, "Invalid cookie path: '".concat(rawPath, "'"));
+          return null;
+        }
+
+        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath));
+      }
+
+      function isValidCookieRawPath(rawPath) {
+        return rawPath === "/" || rawPath === "none";
+      }
+
+      function getCookiePath(rawPath) {
+        if (rawPath === "/") {
+          return "path=/";
+        }
+
+        return "";
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -21280,59 +24249,22 @@
 
     function setLocalStorageItem(source, args) {
       function setLocalStorageItem(source, key, value) {
-        if (!key || !value && value !== "") {
+        if (typeof key === "undefined") {
+          logMessage(source, "Item key should be specified.");
           return;
         }
 
-        var keyValue;
+        var validValue = getLimitedStorageItemValue(source, value);
 
-        if (value === "undefined") {
-          keyValue = undefined;
-        } else if (value === "false") {
-          keyValue = false;
-        } else if (value === "true") {
-          keyValue = true;
-        } else if (value === "null") {
-          keyValue = null;
-        } else if (value === "emptyArr") {
-          keyValue = "[]";
-        } else if (value === "emptyObj") {
-          keyValue = "{}";
-        } else if (value === "") {
-          keyValue = "";
-        } else if (/^\d+$/.test(value)) {
-          keyValue = parseFloat(value);
-
-          if (nativeIsNaN(keyValue)) {
-            return;
-          }
-
-          if (Math.abs(keyValue) > 32767) {
-            return;
-          }
-        } else if (value === "yes") {
-          keyValue = "yes";
-        } else if (value === "no") {
-          keyValue = "no";
-        } else {
+        if (validValue === null) {
+          logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
           return;
         }
 
-        var setItem = function setItem(key, value) {
-          var _window = window,
-              localStorage = _window.localStorage;
-
-          try {
-            localStorage.setItem(key, value);
-            hit(source);
-          } catch (e) {
-            if (source.verbose) {
-              console.log("Was unable to set localStorage item due to: ".concat(e.message));
-            }
-          }
-        };
-
-        setItem(key, keyValue);
+        var _window = window,
+            localStorage = _window.localStorage;
+        setStorageItem(source, localStorage, key, validValue);
+        hit(source);
       }
 
       function hit(source, message) {
@@ -21384,9 +24316,70 @@
         }
       }
 
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
+      }
+
+      function setStorageItem(source, storage, key, value) {
+        try {
+          storage.setItem(key, value);
+        } catch (e) {
+          var message = "Unable to set sessionStorage item due to: ".concat(e.message);
+          logMessage(source, message);
+        }
+      }
+
+      function getLimitedStorageItemValue(source, value) {
+        if (!value) {
+          return null;
+        }
+
+        var validValue;
+
+        if (value === "undefined") {
+          validValue = undefined;
+        } else if (value === "false") {
+          validValue = false;
+        } else if (value === "true") {
+          validValue = true;
+        } else if (value === "null") {
+          validValue = null;
+        } else if (value === "emptyArr") {
+          validValue = "[]";
+        } else if (value === "emptyObj") {
+          validValue = "{}";
+        } else if (value === "") {
+          validValue = "";
+        } else if (/^\d+$/.test(value)) {
+          validValue = parseFloat(value);
+
+          if (nativeIsNaN(validValue)) {
+            logMessage(source, "Invalid storage item value: '".concat(value, "'"));
+            return null;
+          }
+
+          if (Math.abs(validValue) > 32767) {
+            logMessage(source, "Invalid storage item value: '".concat(value, "'"));
+            return null;
+          }
+        } else if (value === "yes") {
+          validValue = "yes";
+        } else if (value === "no") {
+          validValue = "no";
+        } else {
+          return null;
+        }
+
+        return validValue;
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -21478,59 +24471,281 @@
 
     function setSessionStorageItem(source, args) {
       function setSessionStorageItem(source, key, value) {
-        if (!key || !value && value !== "") {
+        if (typeof key === "undefined") {
+          logMessage(source, "Item key should be specified.");
           return;
         }
 
-        var keyValue;
+        var validValue = getLimitedStorageItemValue(source, value);
+
+        if (validValue === null) {
+          logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
+          return;
+        }
+
+        var _window = window,
+            sessionStorage = _window.sessionStorage;
+        setStorageItem(source, sessionStorage, key, validValue);
+      }
+
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
+      function nativeIsNaN(num) {
+        var native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+
+      function setStorageItem(source, storage, key, value) {
+        try {
+          storage.setItem(key, value);
+        } catch (e) {
+          var message = "Unable to set sessionStorage item due to: ".concat(e.message);
+          logMessage(source, message);
+        }
+      }
+
+      function getLimitedStorageItemValue(source, value) {
+        if (!value) {
+          return null;
+        }
+
+        var validValue;
 
         if (value === "undefined") {
-          keyValue = undefined;
+          validValue = undefined;
         } else if (value === "false") {
-          keyValue = false;
+          validValue = false;
         } else if (value === "true") {
-          keyValue = true;
+          validValue = true;
         } else if (value === "null") {
-          keyValue = null;
+          validValue = null;
         } else if (value === "emptyArr") {
-          keyValue = "[]";
+          validValue = "[]";
         } else if (value === "emptyObj") {
-          keyValue = "{}";
+          validValue = "{}";
         } else if (value === "") {
-          keyValue = "";
+          validValue = "";
         } else if (/^\d+$/.test(value)) {
-          keyValue = parseFloat(value);
+          validValue = parseFloat(value);
 
-          if (nativeIsNaN(keyValue)) {
-            return;
+          if (nativeIsNaN(validValue)) {
+            logMessage(source, "Invalid storage item value: '".concat(value, "'"));
+            return null;
           }
 
-          if (Math.abs(keyValue) > 32767) {
-            return;
+          if (Math.abs(validValue) > 32767) {
+            logMessage(source, "Invalid storage item value: '".concat(value, "'"));
+            return null;
           }
         } else if (value === "yes") {
-          keyValue = "yes";
+          validValue = "yes";
         } else if (value === "no") {
-          keyValue = "no";
+          validValue = "no";
         } else {
+          return null;
+        }
+
+        return validValue;
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        setSessionStorageItem.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function trustedClickElement(source, args) {
+      function trustedClickElement(source, selectors) {
+        var extraMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+        var delay = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : NaN;
+
+        if (!selectors) {
           return;
         }
 
-        var setItem = function setItem(key, value) {
-          var _window = window,
-              sessionStorage = _window.sessionStorage;
+        var OBSERVER_TIMEOUT_MS = 1e4;
+        var THROTTLE_DELAY_MS = 20;
+        var COOKIE_MATCH_MARKER = "cookie:";
+        var LOCAL_STORAGE_MATCH_MARKER = "localStorage:";
+        var SELECTORS_DELIMITER = ",";
+        var COOKIE_STRING_DELIMITER = ";";
+        var EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=cookie:|localStorage:)/;
+        var parsedDelay;
 
-          try {
-            sessionStorage.setItem(key, value);
-            hit(source);
-          } catch (e) {
-            if (source.verbose) {
-              console.log("Was unable to set sessionStorage item due to: ".concat(e.message));
+        if (delay) {
+          parsedDelay = parseInt(delay, 10);
+          var isValidDelay = !Number.isNaN(parsedDelay) || parsedDelay < OBSERVER_TIMEOUT_MS;
+
+          if (!isValidDelay) {
+            var message = "Passed delay '".concat(delay, "' is invalid or bigger than ").concat(OBSERVER_TIMEOUT_MS, " ms");
+            logMessage(source, message);
+            return;
+          }
+        }
+
+        var canClick = !parsedDelay;
+        var cookieMatches = [];
+        var localStorageMatches = [];
+
+        if (extraMatch) {
+          var parsedExtraMatch = extraMatch.split(EXTRA_MATCH_DELIMITER).map(function (matchStr) {
+            return matchStr.trim();
+          });
+          parsedExtraMatch.forEach(function (matchStr) {
+            if (matchStr.indexOf(COOKIE_MATCH_MARKER) > -1) {
+              var cookieMatch = matchStr.replace(COOKIE_MATCH_MARKER, "");
+              cookieMatches.push(cookieMatch);
             }
+
+            if (matchStr.indexOf(LOCAL_STORAGE_MATCH_MARKER) > -1) {
+              var localStorageMatch = matchStr.replace(LOCAL_STORAGE_MATCH_MARKER, "");
+              localStorageMatches.push(localStorageMatch);
+            }
+          });
+        }
+
+        if (cookieMatches.length > 0) {
+          var parsedCookieMatches = parseCookieString(cookieMatches.join(COOKIE_STRING_DELIMITER));
+          var parsedCookies = parseCookieString(document.cookie);
+          var cookieKeys = Object.keys(parsedCookies);
+
+          if (cookieKeys.length === 0) {
+            return;
+          }
+
+          var cookiesMatched = Object.keys(parsedCookieMatches).every(function (key) {
+            var valueMatch = parsedCookieMatches[key] ? toRegExp(parsedCookieMatches[key]) : null;
+            var keyMatch = toRegExp(key);
+            return cookieKeys.some(function (key) {
+              var keysMatched = keyMatch.test(key);
+
+              if (!keysMatched) {
+                return false;
+              }
+
+              if (!valueMatch) {
+                return true;
+              }
+
+              return valueMatch.test(parsedCookies[key]);
+            });
+          });
+
+          if (!cookiesMatched) {
+            return;
+          }
+        }
+
+        if (localStorageMatches.length > 0) {
+          var localStorageMatched = localStorageMatches.every(function (str) {
+            var itemValue = window.localStorage.getItem(str);
+            return itemValue || itemValue === "";
+          });
+
+          if (!localStorageMatched) {
+            return;
+          }
+        }
+
+        var selectorsSequence = selectors.split(SELECTORS_DELIMITER).map(function (selector) {
+          return selector.trim();
+        });
+
+        var createElementObj = function createElementObj(element) {
+          return {
+            element: element || null,
+            clicked: false
+          };
+        };
+
+        var elementsSequence = Array(selectorsSequence.length).fill(createElementObj());
+
+        var clickElementsBySequence = function clickElementsBySequence() {
+          for (var i = 0; i < elementsSequence.length; i += 1) {
+            var elementObj = elementsSequence[i];
+
+            if (!elementObj.element) {
+              break;
+            }
+
+            if (!elementObj.clicked) {
+              elementObj.element.click();
+              elementObj.clicked = true;
+            }
+          }
+
+          var allElementsClicked = elementsSequence.every(function (elementObj) {
+            return elementObj.clicked === true;
+          });
+
+          if (allElementsClicked) {
+            hit(source);
           }
         };
 
-        setItem(key, keyValue);
+        var handleElement = function handleElement(element, i) {
+          var elementObj = createElementObj(element);
+          elementsSequence[i] = elementObj;
+
+          if (canClick) {
+            clickElementsBySequence();
+          }
+        };
+
+        var findElements = function findElements(mutations, observer) {
+          var fulfilledSelectors = [];
+          selectorsSequence.forEach(function (selector, i) {
+            if (!selector) {
+              return;
+            }
+
+            var element = document.querySelector(selector);
+
+            if (!element) {
+              return;
+            }
+
+            handleElement(element, i);
+            fulfilledSelectors.push(selector);
+          });
+          selectorsSequence = selectorsSequence.map(function (selector) {
+            return fulfilledSelectors.indexOf(selector) === -1 ? selector : null;
+          });
+          var allSelectorsFulfilled = selectorsSequence.every(function (selector) {
+            return selector === null;
+          });
+
+          if (allSelectorsFulfilled) {
+            observer.disconnect();
+          }
+        };
+
+        var observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
+        observer.observe(document.documentElement, {
+          attributes: true,
+          childList: true,
+          subtree: true
+        });
+
+        if (parsedDelay) {
+          setTimeout(function () {
+            clickElementsBySequence();
+            canClick = true;
+          }, parsedDelay);
+        }
+
+        setTimeout(function () {
+          return observer.disconnect();
+        }, OBSERVER_TIMEOUT_MS);
       }
 
       function hit(source, message) {
@@ -21582,15 +24797,1334 @@
         }
       }
 
-      function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN;
-        return native(num);
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function parseCookieString(cookieString) {
+        var COOKIE_DELIMITER = "=";
+        var COOKIE_PAIRS_DELIMITER = ";";
+        var cookieChunks = cookieString.split(COOKIE_PAIRS_DELIMITER);
+        var cookieData = {};
+        cookieChunks.forEach(function (singleCookie) {
+          var cookieKey;
+          var cookieValue;
+          var delimiterIndex = singleCookie.indexOf(COOKIE_DELIMITER);
+
+          if (delimiterIndex === -1) {
+            cookieKey = singleCookie.trim();
+          } else {
+            cookieKey = singleCookie.slice(0, delimiterIndex).trim();
+            cookieValue = singleCookie.slice(delimiterIndex + 1);
+          }
+
+          cookieData[cookieKey] = cookieValue || null;
+        });
+        return cookieData;
+      }
+
+      function throttle(cb, delay) {
+        var wait = false;
+        var savedArgs;
+
+        var wrapper = function wrapper() {
+          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+
+          if (wait) {
+            savedArgs = args;
+            return;
+          }
+
+          cb.apply(void 0, args);
+          wait = true;
+          setTimeout(function () {
+            wait = false;
+
+            if (savedArgs) {
+              wrapper(savedArgs);
+              savedArgs = null;
+            }
+          }, delay);
+        };
+
+        return wrapper;
+      }
+
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
       }
 
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
 
       try {
-        setSessionStorageItem.apply(this, updatedArgs);
+        trustedClickElement.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function trustedReplaceFetchResponse(source, args) {
+      function trustedReplaceFetchResponse(source) {
+        var pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        var replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+        var propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+
+        if (typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
+          return;
+        }
+
+        if (pattern === "" && replacement !== "") {
+          logMessage(source, "Pattern argument should not be empty string.");
+          return;
+        }
+
+        var shouldLog = pattern === "" && replacement === "";
+        var nativeFetch = fetch;
+        var shouldReplace = false;
+        var fetchData;
+
+        var handlerWrapper = function () {
+          var _ref = asyncToGenerator(regenerator.mark(function _callee(target, thisArg, args) {
+            var forgeResponse;
+            return regenerator.wrap(function _callee$(_context) {
+              while (1) {
+                switch (_context.prev = _context.next) {
+                  case 0:
+                    fetchData = getFetchData(args);
+
+                    if (!shouldLog) {
+                      _context.next = 5;
+                      break;
+                    }
+
+                    logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
+                    hit(source);
+                    return _context.abrupt("return", Reflect.apply(target, thisArg, args));
+
+                  case 5:
+                    shouldReplace = matchRequestProps(source, propsToMatch, fetchData);
+
+                    if (shouldReplace) {
+                      _context.next = 8;
+                      break;
+                    }
+
+                    return _context.abrupt("return", Reflect.apply(target, thisArg, args));
+
+                  case 8:
+                    forgeResponse = function forgeResponse(response, textContent) {
+                      var bodyUsed = response.bodyUsed,
+                          headers = response.headers,
+                          ok = response.ok,
+                          redirected = response.redirected,
+                          status = response.status,
+                          statusText = response.statusText,
+                          type = response.type,
+                          url = response.url;
+                      var forgedResponse = new Response(textContent, {
+                        status: status,
+                        statusText: statusText,
+                        headers: headers
+                      });
+                      Object.defineProperties(forgedResponse, {
+                        url: {
+                          value: url
+                        },
+                        type: {
+                          value: type
+                        },
+                        ok: {
+                          value: ok
+                        },
+                        bodyUsed: {
+                          value: bodyUsed
+                        },
+                        redirected: {
+                          value: redirected
+                        }
+                      });
+                      return forgedResponse;
+                    };
+
+                    return _context.abrupt("return", nativeFetch.apply(void 0, toConsumableArray(args)).then(function (response) {
+                      return response.text().then(function (bodyText) {
+                        var patternRegexp = pattern === "*" ? toRegExp() : toRegExp(pattern);
+                        var modifiedTextContent = bodyText.replace(patternRegexp, replacement);
+                        var forgedResponse = forgeResponse(response, modifiedTextContent);
+                        hit(source);
+                        return forgedResponse;
+                      }).catch(function () {
+                        var fetchDataStr = objectToString(fetchData);
+                        var message = "Response body can't be converted to text: ".concat(fetchDataStr);
+                        logMessage(source, message);
+                        return Reflect.apply(target, thisArg, args);
+                      });
+                    }).catch(function () {
+                      return Reflect.apply(target, thisArg, args);
+                    }));
+
+                  case 10:
+                  case "end":
+                    return _context.stop();
+                }
+              }
+            }, _callee);
+          }));
+
+          return function handlerWrapper(_x, _x2, _x3) {
+            return _ref.apply(this, arguments);
+          };
+        }();
+
+        var fetchHandler = {
+          apply: handlerWrapper
+        };
+        fetch = new Proxy(fetch, fetchHandler);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
+      function getFetchData(args) {
+        var fetchPropsObj = {};
+        var fetchUrl;
+        var fetchInit;
+
+        if (args[0] instanceof Request) {
+          var requestData = getRequestData(args[0]);
+          fetchUrl = requestData.url;
+          fetchInit = requestData;
+        } else {
+          fetchUrl = args[0];
+          fetchInit = args[1];
+        }
+
+        fetchPropsObj.url = fetchUrl;
+
+        if (fetchInit instanceof Object) {
+          Object.keys(fetchInit).forEach(function (prop) {
+            fetchPropsObj[prop] = fetchInit[prop];
+          });
+        }
+
+        return fetchPropsObj;
+      }
+
+      function objectToString(obj) {
+        return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
+          var key = pair[0];
+          var value = pair[1];
+          var recordValueStr = value;
+
+          if (value instanceof Object) {
+            recordValueStr = "{ ".concat(objectToString(value), " }");
+          }
+
+          return "".concat(key, ':"').concat(recordValueStr, '"');
+        }).join(" ");
+      }
+
+      function matchRequestProps(source, propsToMatch, requestData) {
+        if (propsToMatch === "" || propsToMatch === "*") {
+          return true;
+        }
+
+        var isMatched;
+        var parsedData = parseMatchProps(propsToMatch);
+
+        if (!validateParsedData(parsedData)) {
+          logMessage(source, "Invalid parameter: ".concat(propsToMatch));
+          isMatched = false;
+        } else {
+          var matchData = getMatchPropsData(parsedData);
+          isMatched = Object.keys(matchData).every(function (matchKey) {
+            var matchValue = matchData[matchKey];
+            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
+          });
+        }
+
+        return isMatched;
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function isValidStrPattern(input) {
+        var FORWARD_SLASH = "/";
+        var str = escapeRegExp(input);
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          str = input.slice(1, -1);
+        }
+
+        var isValid;
+
+        try {
+          isValid = new RegExp(str);
+          isValid = true;
+        } catch (e) {
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+      function escapeRegExp(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      }
+
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0;
+      }
+
+      function getRequestData(request) {
+        var requestInitOptions = getRequestProps();
+        var entries = requestInitOptions.map(function (key) {
+          var value = request[key];
+          return [key, value];
+        });
+        return getObjectFromEntries(entries);
+      }
+
+      function getObjectEntries(object) {
+        var keys = Object.keys(object);
+        var entries = [];
+        keys.forEach(function (key) {
+          return entries.push([key, object[key]]);
+        });
+        return entries;
+      }
+
+      function getObjectFromEntries(entries) {
+        var output = entries.reduce(function (acc, el) {
+          var key = el[0];
+          var value = el[1];
+          acc[key] = value;
+          return acc;
+        }, {});
+        return output;
+      }
+
+      function parseMatchProps(propsToMatchStr) {
+        var PROPS_DIVIDER = " ";
+        var PAIRS_MARKER = ":";
+        var LEGAL_MATCH_PROPS = getRequestProps();
+        var propsObj = {};
+        var props = propsToMatchStr.split(PROPS_DIVIDER);
+        props.forEach(function (prop) {
+          var dividerInd = prop.indexOf(PAIRS_MARKER);
+          var key = prop.slice(0, dividerInd);
+          var hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+
+          if (hasLegalMatchProp) {
+            var value = prop.slice(dividerInd + 1);
+            propsObj[key] = value;
+          } else {
+            propsObj.url = prop;
+          }
+        });
+        return propsObj;
+      }
+
+      function validateParsedData(data) {
+        return Object.values(data).every(function (value) {
+          return isValidStrPattern(value);
+        });
+      }
+
+      function getMatchPropsData(data) {
+        var matchData = {};
+        Object.keys(data).forEach(function (key) {
+          matchData[key] = toRegExp(data[key]);
+        });
+        return matchData;
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        trustedReplaceFetchResponse.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function trustedReplaceXhrResponse(source, args) {
+      function trustedReplaceXhrResponse(source) {
+        var pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        var replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+        var propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+
+        if (typeof Proxy === "undefined") {
+          return;
+        }
+
+        if (pattern === "" && replacement !== "") {
+          var message = "Pattern argument should not be empty string.";
+          logMessage(source, message);
+          return;
+        }
+
+        var shouldLog = pattern === "" && replacement === "";
+        var nativeOpen = window.XMLHttpRequest.prototype.open;
+        var nativeSend = window.XMLHttpRequest.prototype.send;
+        var shouldReplace = false;
+        var xhrData;
+        var requestHeaders = [];
+
+        var openWrapper = function openWrapper(target, thisArg, args) {
+          xhrData = getXhrData.apply(void 0, toConsumableArray(args));
+
+          if (shouldLog) {
+            var _message = "log: xhr( ".concat(objectToString(xhrData), " )");
+
+            logMessage(source, _message, true);
+            hit(source);
+            return Reflect.apply(target, thisArg, args);
+          }
+
+          shouldReplace = matchRequestProps(source, propsToMatch, xhrData);
+
+          if (shouldReplace) {
+            var setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+              requestHeaders.push(args);
+              return Reflect.apply(target, thisArg, args);
+            };
+
+            var setRequestHeaderHandler = {
+              apply: setRequestHeaderWrapper
+            };
+            thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
+          }
+
+          return Reflect.apply(target, thisArg, args);
+        };
+
+        var sendWrapper = function () {
+          var _ref = asyncToGenerator(regenerator.mark(function _callee(target, thisArg, args) {
+            var forgedRequest;
+            return regenerator.wrap(function _callee$(_context) {
+              while (1) {
+                switch (_context.prev = _context.next) {
+                  case 0:
+                    if (shouldReplace) {
+                      _context.next = 2;
+                      break;
+                    }
+
+                    return _context.abrupt("return", Reflect.apply(target, thisArg, args));
+
+                  case 2:
+                    forgedRequest = new XMLHttpRequest();
+                    forgedRequest.addEventListener("readystatechange", function () {
+                      if (forgedRequest.readyState !== 4) {
+                        return;
+                      }
+
+                      var readyState = forgedRequest.readyState,
+                          response = forgedRequest.response,
+                          responseText = forgedRequest.responseText,
+                          responseURL = forgedRequest.responseURL,
+                          responseXML = forgedRequest.responseXML,
+                          status = forgedRequest.status,
+                          statusText = forgedRequest.statusText;
+                      var content = responseText || response;
+
+                      if (typeof content !== "string") {
+                        return;
+                      }
+
+                      var patternRegexp = pattern === "*" ? toRegExp() : toRegExp(pattern);
+                      var modifiedContent = content.replace(patternRegexp, replacement);
+                      Object.defineProperties(thisArg, {
+                        readyState: {
+                          value: readyState
+                        },
+                        response: {
+                          value: modifiedContent
+                        },
+                        responseText: {
+                          value: modifiedContent
+                        },
+                        responseURL: {
+                          value: responseURL
+                        },
+                        responseXML: {
+                          value: responseXML
+                        },
+                        status: {
+                          value: status
+                        },
+                        statusText: {
+                          value: statusText
+                        }
+                      });
+                      setTimeout(function () {
+                        var stateEvent = new Event("readystatechange");
+                        thisArg.dispatchEvent(stateEvent);
+                        var loadEvent = new Event("load");
+                        thisArg.dispatchEvent(loadEvent);
+                        var loadEndEvent = new Event("loadend");
+                        thisArg.dispatchEvent(loadEndEvent);
+                      }, 1);
+                      hit(source);
+                    });
+                    nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
+                    requestHeaders.forEach(function (header) {
+                      var name = header[0];
+                      var value = header[1];
+                      forgedRequest.setRequestHeader(name, value);
+                    });
+                    requestHeaders = [];
+                    _context.prev = 7;
+                    nativeSend.call(forgedRequest, args);
+                    _context.next = 14;
+                    break;
+
+                  case 11:
+                    _context.prev = 11;
+                    _context.t0 = _context["catch"](7);
+                    return _context.abrupt("return", Reflect.apply(target, thisArg, args));
+
+                  case 14:
+                    return _context.abrupt("return", undefined);
+
+                  case 15:
+                  case "end":
+                    return _context.stop();
+                }
+              }
+            }, _callee, null, [[7, 11]]);
+          }));
+
+          return function sendWrapper(_x, _x2, _x3) {
+            return _ref.apply(this, arguments);
+          };
+        }();
+
+        var openHandler = {
+          apply: openWrapper
+        };
+        var sendHandler = {
+          apply: sendWrapper
+        };
+        XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
+        XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function objectToString(obj) {
+        return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
+          var key = pair[0];
+          var value = pair[1];
+          var recordValueStr = value;
+
+          if (value instanceof Object) {
+            recordValueStr = "{ ".concat(objectToString(value), " }");
+          }
+
+          return "".concat(key, ':"').concat(recordValueStr, '"');
+        }).join(" ");
+      }
+
+      function matchRequestProps(source, propsToMatch, requestData) {
+        if (propsToMatch === "" || propsToMatch === "*") {
+          return true;
+        }
+
+        var isMatched;
+        var parsedData = parseMatchProps(propsToMatch);
+
+        if (!validateParsedData(parsedData)) {
+          logMessage(source, "Invalid parameter: ".concat(propsToMatch));
+          isMatched = false;
+        } else {
+          var matchData = getMatchPropsData(parsedData);
+          isMatched = Object.keys(matchData).every(function (matchKey) {
+            var matchValue = matchData[matchKey];
+            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
+          });
+        }
+
+        return isMatched;
+      }
+
+      function getXhrData(method, url, async, user, password) {
+        return {
+          method: method,
+          url: url,
+          async: async,
+          user: user,
+          password: password
+        };
+      }
+
+      function getMatchPropsData(data) {
+        var matchData = {};
+        Object.keys(data).forEach(function (key) {
+          matchData[key] = toRegExp(data[key]);
+        });
+        return matchData;
+      }
+
+      function validateParsedData(data) {
+        return Object.values(data).every(function (value) {
+          return isValidStrPattern(value);
+        });
+      }
+
+      function parseMatchProps(propsToMatchStr) {
+        var PROPS_DIVIDER = " ";
+        var PAIRS_MARKER = ":";
+        var LEGAL_MATCH_PROPS = getRequestProps();
+        var propsObj = {};
+        var props = propsToMatchStr.split(PROPS_DIVIDER);
+        props.forEach(function (prop) {
+          var dividerInd = prop.indexOf(PAIRS_MARKER);
+          var key = prop.slice(0, dividerInd);
+          var hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+
+          if (hasLegalMatchProp) {
+            var value = prop.slice(dividerInd + 1);
+            propsObj[key] = value;
+          } else {
+            propsObj.url = prop;
+          }
+        });
+        return propsObj;
+      }
+
+      function isValidStrPattern(input) {
+        var FORWARD_SLASH = "/";
+        var str = escapeRegExp(input);
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          str = input.slice(1, -1);
+        }
+
+        var isValid;
+
+        try {
+          isValid = new RegExp(str);
+          isValid = true;
+        } catch (e) {
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+      function escapeRegExp(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      }
+
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0;
+      }
+
+      function getObjectEntries(object) {
+        var keys = Object.keys(object);
+        var entries = [];
+        keys.forEach(function (key) {
+          return entries.push([key, object[key]]);
+        });
+        return entries;
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        trustedReplaceXhrResponse.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function trustedSetCookie(source, args) {
+      function trustedSetCookie(source, name, value) {
+        var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+        var reload = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "false";
+        var path = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : "/";
+
+        if (typeof name === "undefined") {
+          logMessage(source, "Cookie name should be specified.");
+          return;
+        }
+
+        if (typeof value === "undefined") {
+          logMessage(source, "Cookie value should be specified.");
+          return;
+        }
+
+        if (reload === "true" && isCookieSetWithValue(document.cookie, name, value)) {
+          return;
+        }
+
+        var ONE_YEAR_EXPIRATION_KEYWORD = "1year";
+        var ONE_DAY_EXPIRATION_KEYWORD = "1day";
+        var parsedValue = parseKeywordValue(value);
+        var cookieToSet = concatCookieNameValuePath(source, name, parsedValue, path);
+
+        if (!cookieToSet) {
+          return;
+        }
+
+        if (offsetExpiresSec) {
+          var MS_IN_SEC = 1e3;
+          var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
+          var SECONDS_IN_DAY = 24 * 60 * 60;
+          var parsedOffsetExpiresSec;
+
+          if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
+            parsedOffsetExpiresSec = SECONDS_IN_YEAR;
+          } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
+            parsedOffsetExpiresSec = SECONDS_IN_DAY;
+          } else {
+            parsedOffsetExpiresSec = Number.parseInt(offsetExpiresSec, 10);
+
+            if (Number.isNaN(parsedOffsetExpiresSec)) {
+              var message = "log: Invalid offsetExpiresSec value: ".concat(offsetExpiresSec);
+              logMessage(source, message);
+              return;
+            }
+          }
+
+          var expires = Date.now() + parsedOffsetExpiresSec * MS_IN_SEC;
+          cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
+        }
+
+        if (cookieToSet) {
+          document.cookie = cookieToSet;
+          hit(source);
+
+          if (reload === "true" && isCookieSetWithValue(document.cookie, name, value)) {
+            window.location.reload();
+          }
+        }
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
+      function isCookieSetWithValue(cookieString, name, value) {
+        return cookieString.split(";").some(function (cookieStr) {
+          var pos = cookieStr.indexOf("=");
+
+          if (pos === -1) {
+            return false;
+          }
+
+          var cookieName = cookieStr.slice(0, pos).trim();
+          var cookieValue = cookieStr.slice(pos + 1).trim();
+          return name === cookieName && value === cookieValue;
+        });
+      }
+
+      function concatCookieNameValuePath(source, rawName, rawValue, rawPath) {
+        if (!isValidCookieRawPath(rawPath)) {
+          logMessage(source, "Invalid cookie path: '".concat(rawPath, "'"));
+          return null;
+        }
+
+        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath));
+      }
+
+      function isValidCookieRawPath(rawPath) {
+        return rawPath === "/" || rawPath === "none";
+      }
+
+      function parseKeywordValue(rawValue) {
+        var NOW_VALUE_KEYWORD = "$now$";
+        var CURRENT_DATE_KEYWORD = "$currentDate$";
+        var parsedValue = rawValue;
+
+        if (rawValue === NOW_VALUE_KEYWORD) {
+          parsedValue = Date.now().toString();
+        } else if (rawValue === CURRENT_DATE_KEYWORD) {
+          parsedValue = Date();
+        }
+
+        return parsedValue;
+      }
+
+      function getCookiePath(rawPath) {
+        if (rawPath === "/") {
+          return "path=/";
+        }
+
+        return "";
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        trustedSetCookie.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function trustedSetLocalStorageItem(source, args) {
+      function trustedSetLocalStorageItem(source, key, value) {
+        if (typeof key === "undefined") {
+          logMessage(source, "Item key should be specified.");
+          return;
+        }
+
+        if (typeof value === "undefined") {
+          logMessage(source, "Item value should be specified.");
+          return;
+        }
+
+        var parsedValue = parseKeywordValue(value);
+        var _window = window,
+            localStorage = _window.localStorage;
+        setStorageItem(source, localStorage, key, parsedValue);
+        hit(source);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
+      function setStorageItem(source, storage, key, value) {
+        try {
+          storage.setItem(key, value);
+        } catch (e) {
+          var message = "Unable to set sessionStorage item due to: ".concat(e.message);
+          logMessage(source, message);
+        }
+      }
+
+      function parseKeywordValue(rawValue) {
+        var NOW_VALUE_KEYWORD = "$now$";
+        var CURRENT_DATE_KEYWORD = "$currentDate$";
+        var parsedValue = rawValue;
+
+        if (rawValue === NOW_VALUE_KEYWORD) {
+          parsedValue = Date.now().toString();
+        } else if (rawValue === CURRENT_DATE_KEYWORD) {
+          parsedValue = Date();
+        }
+
+        return parsedValue;
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        trustedSetLocalStorageItem.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function xmlPrune(source, args) {
+      function xmlPrune(source, propsToRemove) {
+        var _this = this;
+
+        var optionalProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+        var urlToMatch = arguments.length > 3 ? arguments[3] : undefined;
+
+        if (typeof Reflect === "undefined" || typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
+          return;
+        }
+
+        var shouldPruneResponse = true;
+
+        if (!propsToRemove) {
+          shouldPruneResponse = false;
+        }
+
+        var urlMatchRegexp = toRegExp(urlToMatch);
+
+        var isXML = function isXML(text) {
+          var trimedText = text.trim();
+
+          if (startsWith(trimedText, "<") && endsWith(trimedText, ">")) {
+            return true;
+          }
+
+          return false;
+        };
+
+        var pruneXML = function pruneXML(text) {
+          if (!isXML(text)) {
+            shouldPruneResponse = false;
+            return text;
+          }
+
+          var xmlParser = new DOMParser();
+          var xmlDoc = xmlParser.parseFromString(text, "text/xml");
+          var errorNode = xmlDoc.querySelector("parsererror");
+
+          if (errorNode) {
+            return text;
+          }
+
+          if (optionalProp !== "" && xmlDoc.querySelector(optionalProp) === null) {
+            shouldPruneResponse = false;
+            return text;
+          }
+
+          var elems = xmlDoc.querySelectorAll(propsToRemove);
+
+          if (!elems.length) {
+            shouldPruneResponse = false;
+            return text;
+          }
+
+          elems.forEach(function (elem) {
+            elem.remove();
+          });
+          var serializer = new XMLSerializer();
+          text = serializer.serializeToString(xmlDoc);
+          return text;
+        };
+
+        var xhrWrapper = function xhrWrapper(target, thisArg, args) {
+          var xhrURL = args[1];
+
+          if (typeof xhrURL !== "string" || xhrURL.length === 0) {
+            return Reflect.apply(target, thisArg, args);
+          }
+
+          if (urlMatchRegexp.test(xhrURL)) {
+            thisArg.addEventListener("readystatechange", function pruneResponse() {
+              if (thisArg.readyState === 4) {
+                var response = thisArg.response;
+                thisArg.removeEventListener("readystatechange", pruneResponse);
+
+                if (!shouldPruneResponse) {
+                  if (isXML(response)) {
+                    var message = "XMLHttpRequest.open() URL: ".concat(xhrURL, "\nresponse: ").concat(response);
+                    logMessage(message);
+                  }
+                } else {
+                  var prunedResponseContent = pruneXML(response);
+
+                  if (shouldPruneResponse) {
+                    Object.defineProperty(thisArg, "response", {
+                      value: prunedResponseContent
+                    });
+                    Object.defineProperty(thisArg, "responseText", {
+                      value: prunedResponseContent
+                    });
+                    hit(source);
+                  }
+
+                  shouldPruneResponse = true;
+                }
+              }
+            });
+          }
+
+          return Reflect.apply(target, thisArg, args);
+        };
+
+        var xhrHandler = {
+          apply: xhrWrapper
+        };
+        window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler);
+        var nativeFetch = window.fetch;
+
+        var fetchWrapper = function fetchWrapper(target, thisArg, args) {
+          var fetchURL = args[0];
+
+          if (typeof fetchURL !== "string" || fetchURL.length === 0) {
+            return Reflect.apply(target, thisArg, args);
+          }
+
+          if (urlMatchRegexp.test(fetchURL)) {
+            return nativeFetch.apply(_this, args).then(function (response) {
+              return response.text().then(function (text) {
+                if (!shouldPruneResponse) {
+                  if (isXML(text)) {
+                    logMessage("fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(text));
+                  }
+
+                  return Reflect.apply(target, thisArg, args);
+                }
+
+                var prunedText = pruneXML(text);
+
+                if (shouldPruneResponse) {
+                  hit(source);
+                  return new Response(prunedText, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: response.headers
+                  });
+                }
+
+                shouldPruneResponse = true;
+                return Reflect.apply(target, thisArg, args);
+              });
+            });
+          }
+
+          return Reflect.apply(target, thisArg, args);
+        };
+
+        var fetchHandler = {
+          apply: fetchWrapper
+        };
+        window.fetch = new Proxy(window.fetch, fetchHandler);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
+            }
+          }
+
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+
+        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+
+      function startsWith(str, prefix) {
+        return !!str && str.indexOf(prefix) === 0;
+      }
+
+      function endsWith(str, ending) {
+        return !!str && str.lastIndexOf(ending) === str.length - ending.length;
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        xmlPrune.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
@@ -21811,7 +26345,16 @@
       "popads-dummy.js": setPopadsDummy,
       "ubo-popads-dummy.js": setPopadsDummy,
       "ubo-popads-dummy": setPopadsDummy,
-      "set-session-storage-item": setSessionStorageItem
+      "set-session-storage-item": setSessionStorageItem,
+      "trusted-click-element": trustedClickElement,
+      "trusted-replace-fetch-response": trustedReplaceFetchResponse,
+      "trusted-replace-xhr-response": trustedReplaceXhrResponse,
+      "trusted-set-cookie": trustedSetCookie,
+      "trusted-set-local-storage-item": trustedSetLocalStorageItem,
+      "xml-prune": xmlPrune,
+      "xml-prune.js": xmlPrune,
+      "ubo-xml-prune.js": xmlPrune,
+      "ubo-xml-prune": xmlPrune
     };
 
     var getScriptletFunction = function getScriptletFunction(name) {
