@@ -1,6 +1,6 @@
 /* eslint-disable no-underscore-dangle, no-console */
 import { runScriptlet, clearGlobalProps } from '../helpers';
-import { startsWith } from '../../src/helpers/string-utils';
+import { startsWith, logMessage } from '../../src/helpers';
 
 const { test, module } = QUnit;
 const name = 'prevent-xhr';
@@ -549,7 +549,7 @@ if (isSupported) {
             try {
                 createImg.setAttribute('src', window.URL.createObjectURL(xhr.response));
             } catch (error) {
-                console.error(error);
+                logMessage(error);
             }
             document.body.appendChild(createImg);
             assert.strictEqual(xhr.readyState, 4, 'Response done');

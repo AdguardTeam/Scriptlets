@@ -2,11 +2,9 @@ import {
     hit,
     getFetchData,
     objectToString,
-    parseMatchProps,
-    validateParsedData,
-    getMatchPropsData,
     noopPromiseResolve,
-    getWildcardSymbol,
+    matchRequestProps,
+    logMessage,
     // following helpers should be imported and injected
     // because they are used by helpers above
     toRegExp,
@@ -16,6 +14,9 @@ import {
     getRequestData,
     getObjectEntries,
     getObjectFromEntries,
+    parseMatchProps,
+    validateParsedData,
+    getMatchPropsData,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -30,7 +31,7 @@ import {
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody]])
+ * example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, responseType]]])
  * ```
  *
  * - `propsToMatch` - optional, string of space-separated properties to match; possible props:
@@ -41,8 +42,12 @@ import {
  * - responseBody - optional, string for defining response body value, defaults to `emptyObj`. Possible values:
  *    - `emptyObj` - empty object
  *    - `emptyArr` - empty array
+ * - responseType - optional, string for defining response type, defaults to `default`. Possible values:
+ *    - default
+ *    - opaque
+ *
  * > Usage with no arguments will log fetch calls to browser console;
- * which is useful for debugging but permitted for production filter lists.
+ * which is useful for debugging but not permitted for production filter lists.
  *
  * **Examples**
  * 1. Log all fetch calls
@@ -82,7 +87,7 @@ import {
  *     ```
  */
 /* eslint-enable max-len */
-export function preventFetch(source, propsToMatch, responseBody = 'emptyObj') {
+export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', responseType = 'default') {
     // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -101,37 +106,26 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj') {
         return;
     }
 
+    // Skip disallowed response types
+    if (!(responseType === 'default' || responseType === 'opaque')) {
+        logMessage(source, `Invalid parameter: ${responseType}`);
+        return;
+    }
+
     const handlerWrapper = (target, thisArg, args) => {
         let shouldPrevent = false;
         const fetchData = getFetchData(args);
         if (typeof propsToMatch === 'undefined') {
-            // log if no propsToMatch given
-            const logMessage = `log: fetch( ${objectToString(fetchData)} )`;
-            hit(source, logMessage);
-        } else if (propsToMatch === '' || propsToMatch === getWildcardSymbol()) {
-            // prevent all fetch calls
-            shouldPrevent = true;
-        } else {
-            const parsedData = parseMatchProps(propsToMatch);
-            if (!validateParsedData(parsedData)) {
-                // eslint-disable-next-line no-console
-                console.log(`Invalid parameter: ${propsToMatch}`);
-                shouldPrevent = false;
-            } else {
-                const matchData = getMatchPropsData(parsedData);
-                // prevent only if all props match
-                shouldPrevent = Object.keys(matchData)
-                    .every((matchKey) => {
-                        const matchValue = matchData[matchKey];
-                        return Object.prototype.hasOwnProperty.call(fetchData, matchKey)
-                        && matchValue.test(fetchData[matchKey]);
-                    });
-            }
+            logMessage(source, `fetch( ${objectToString(fetchData)} )`, true);
+            hit(source);
+            return Reflect.apply(target, thisArg, args);
         }
+
+        shouldPrevent = matchRequestProps(source, propsToMatch, fetchData);
 
         if (shouldPrevent) {
             hit(source);
-            return noopPromiseResolve(strResponseBody);
+            return noopPromiseResolve(strResponseBody, fetchData.url, responseType);
         }
 
         return Reflect.apply(target, thisArg, args);
@@ -156,11 +150,9 @@ preventFetch.injections = [
     hit,
     getFetchData,
     objectToString,
-    parseMatchProps,
-    validateParsedData,
-    getMatchPropsData,
     noopPromiseResolve,
-    getWildcardSymbol,
+    matchRequestProps,
+    logMessage,
     toRegExp,
     isValidStrPattern,
     escapeRegExp,
@@ -168,4 +160,7 @@ preventFetch.injections = [
     getRequestData,
     getObjectEntries,
     getObjectFromEntries,
+    parseMatchProps,
+    validateParsedData,
+    getMatchPropsData,
 ];

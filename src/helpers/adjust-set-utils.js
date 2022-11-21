@@ -1,7 +1,6 @@
 import { nativeIsNaN, nativeIsFinite } from './number-utils';
-import { getWildcardSymbol } from './constants';
 
-export const shouldMatchAnyDelay = (delay) => delay === getWildcardSymbol();
+export const shouldMatchAnyDelay = (delay) => delay === '*';
 
 /**
  * Handles input delay value

@@ -104,7 +104,6 @@ export function metrikaYandexTag(source) {
     function ym(id, funcName, ...args) {
         return api[funcName] && api[funcName](id, ...args);
     }
-    ym.a = [];
 
     function init(id) {
         // yaCounter object should provide api
@@ -114,12 +113,13 @@ export function metrikaYandexTag(source) {
 
     if (typeof window.ym === 'undefined') {
         window.ym = ym;
+        ym.a = [];
     } else if (window.ym && window.ym.a) {
-        // Get id for yaCounter object
-        const counters = window.ym.a;
-
+        // Keep initial counters array intact
+        ym.a = window.ym.a;
         window.ym = ym;
-        counters.forEach((params) => {
+
+        window.ym.a.forEach((params) => {
             const id = params[0];
             init(id);
         });

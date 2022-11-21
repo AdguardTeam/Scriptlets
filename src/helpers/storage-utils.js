@@ -1,0 +1,72 @@
+import { nativeIsNaN } from './number-utils';
+import { logMessage } from './log-message';
+
+/**
+ * @typedef { import('../scriptlets/index').Source } Source
+ */
+
+/**
+ * Sets item to a specified storage, if storage isn't full.
+ * @param {Source} source
+ * @param {Storage} storage storage instance to set item into
+ * @param {string} key
+ * @param {string} value
+ * @param {boolean} shouldLog determines if helper should log on a failed set attempt
+ */
+export const setStorageItem = (source, storage, key, value) => {
+    // setItem() may throw an exception if the storage is full.
+    try {
+        storage.setItem(key, value);
+    } catch (e) {
+        const message = `Unable to set sessionStorage item due to: ${e.message}`;
+        logMessage(source, message);
+    }
+};
+
+/**
+ * Gets supported storage item value
+ * @param {Source} source
+ * @param {string} value input item value
+ * @param {boolean} verbose if logging invalid values is required
+ * @returns {string|null|undefined|boolean} valid item value if ok OR null if not
+ */
+export const getLimitedStorageItemValue = (source, value) => {
+    if (!value) {
+        return null;
+    }
+
+    let validValue;
+    if (value === 'undefined') {
+        validValue = undefined;
+    } else if (value === 'false') {
+        validValue = false;
+    } else if (value === 'true') {
+        validValue = true;
+    } else if (value === 'null') {
+        validValue = null;
+    } else if (value === 'emptyArr') {
+        validValue = '[]';
+    } else if (value === 'emptyObj') {
+        validValue = '{}';
+    } else if (value === '') {
+        validValue = '';
+    } else if (/^\d+$/.test(value)) {
+        validValue = parseFloat(value);
+        if (nativeIsNaN(validValue)) {
+            logMessage(source, `Invalid storage item value: '${value}'`);
+            return null;
+        }
+        if (Math.abs(validValue) > 0x7FFF) {
+            logMessage(source, `Invalid storage item value: '${value}'`);
+            return null;
+        }
+    } else if (value === 'yes') {
+        validValue = 'yes';
+    } else if (value === 'no') {
+        validValue = 'no';
+    } else {
+        return null;
+    }
+
+    return validValue;
+};

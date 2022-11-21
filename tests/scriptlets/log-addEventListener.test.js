@@ -10,8 +10,8 @@ const hit = () => {
 
 const changingProps = ['hit', '__debug'];
 
-const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 const nativeConsole = console.log;
+const nativeDescriptor = Object.getOwnPropertyDescriptor(window.EventTarget.prototype, 'addEventListener');
 
 const beforeEach = () => {
     window.__debug = hit;
@@ -19,7 +19,9 @@ const beforeEach = () => {
 
 const afterEach = () => {
     console.log = nativeConsole;
-    window.EventTarget.prototype.addEventListener = nativeAddEventListener;
+    Object.defineProperty(window.EventTarget.prototype, 'addEventListener', nativeDescriptor);
+    Object.defineProperty(window, 'addEventListener', nativeDescriptor);
+    Object.defineProperty(document, 'addEventListener', nativeDescriptor);
     clearGlobalProps(...changingProps);
 };
 

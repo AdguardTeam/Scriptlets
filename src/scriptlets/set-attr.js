@@ -2,6 +2,9 @@ import {
     hit,
     observeDOMChanges,
     nativeIsNaN,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    throttle,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -57,8 +60,8 @@ export function setAttr(source, selector, attr, value = '') {
     // Drop strings that cant be parsed into number, negative numbers and numbers below 32767
     if (value.length !== 0
         && (nativeIsNaN(parseInt(value, 10))
-        || parseInt(value, 10) < 0
-        || parseInt(value, 10) > 0x7FFF)) {
+            || parseInt(value, 10) < 0
+            || parseInt(value, 10) > 0x7FFF)) {
         return;
     }
 
@@ -82,4 +85,11 @@ setAttr.names = [
     'set-attr',
 ];
 
-setAttr.injections = [hit, observeDOMChanges, nativeIsNaN];
+setAttr.injections = [
+    hit,
+    observeDOMChanges,
+    nativeIsNaN,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    throttle,
+];

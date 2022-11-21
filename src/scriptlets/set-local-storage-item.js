@@ -1,6 +1,9 @@
 import {
     hit,
+    logMessage,
     nativeIsNaN,
+    setStorageItem,
+    getLimitedStorageItemValue,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -9,6 +12,7 @@ import {
  *
  * @description
  * Adds specified key and its value to localStorage object, or updates the value of the key if it already exists.
+ * Scriptlet won't set item if storage is full.
  *
  * **Syntax**
  * ```
@@ -39,56 +43,20 @@ import {
 /* eslint-enable max-len */
 
 export function setLocalStorageItem(source, key, value) {
-    if (!key || (!value && value !== '')) {
+    if (typeof key === 'undefined') {
+        logMessage(source, 'Item key should be specified.');
         return;
     }
 
-    let keyValue;
-    if (value === 'undefined') {
-        keyValue = undefined;
-    } else if (value === 'false') {
-        keyValue = false;
-    } else if (value === 'true') {
-        keyValue = true;
-    } else if (value === 'null') {
-        keyValue = null;
-    } else if (value === 'emptyArr') {
-        keyValue = '[]';
-    } else if (value === 'emptyObj') {
-        keyValue = '{}';
-    } else if (value === '') {
-        keyValue = '';
-    } else if (/^\d+$/.test(value)) {
-        keyValue = parseFloat(value);
-        if (nativeIsNaN(keyValue)) {
-            return;
-        }
-        if (Math.abs(keyValue) > 0x7FFF) {
-            return;
-        }
-    } else if (value === 'yes') {
-        keyValue = 'yes';
-    } else if (value === 'no') {
-        keyValue = 'no';
-    } else {
+    const validValue = getLimitedStorageItemValue(source, value);
+    if (validValue === null) {
+        logMessage(source, `Invalid cookie value: '${validValue}'`);
         return;
     }
 
-    const setItem = (key, value) => {
-        const { localStorage } = window;
-        // setItem() may throw an exception if the storage is full.
-        try {
-            localStorage.setItem(key, value);
-            hit(source);
-        } catch (e) {
-            if (source.verbose) {
-                // eslint-disable-next-line no-console
-                console.log(`Was unable to set localStorage item due to: ${e.message}`);
-            }
-        }
-    };
-
-    setItem(key, keyValue);
+    const { localStorage } = window;
+    setStorageItem(source, localStorage, key, validValue);
+    hit(source);
 }
 
 setLocalStorageItem.names = [
@@ -97,5 +65,8 @@ setLocalStorageItem.names = [
 
 setLocalStorageItem.injections = [
     hit,
+    logMessage,
     nativeIsNaN,
+    setStorageItem,
+    getLimitedStorageItemValue,
 ];

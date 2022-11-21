@@ -11,7 +11,7 @@
     "qunit": true
   },
   "rules": {
-    "indent": ["error", 4],
+    "indent": ["error", 4, { "SwitchCase": 1}],
     "no-param-reassign": 0,
     "no-shadow": 0,
     "import/prefer-default-export": 0,

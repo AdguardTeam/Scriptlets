@@ -4,7 +4,7 @@ import { runScriptlet, clearGlobalProps } from '../helpers';
 const { test, module } = QUnit;
 const name = 'prevent-addEventListener';
 
-const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+const nativeDescriptor = Object.getOwnPropertyDescriptor(window.EventTarget.prototype, 'addEventListener');
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -14,7 +14,9 @@ const beforeEach = () => {
 
 const afterEach = () => {
     clearGlobalProps('__debug', 'hit');
-    window.EventTarget.prototype.addEventListener = nativeAddEventListener;
+    Object.defineProperty(window.EventTarget.prototype, 'addEventListener', nativeDescriptor);
+    Object.defineProperty(window, 'addEventListener', nativeDescriptor);
+    Object.defineProperty(document, 'addEventListener', nativeDescriptor);
 };
 
 module(name, { beforeEach, afterEach });

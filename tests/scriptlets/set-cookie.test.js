@@ -1,5 +1,9 @@
 /* eslint-disable no-underscore-dangle */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    clearCookie,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'set-cookie';
@@ -15,10 +19,6 @@ const afterEach = () => {
 };
 
 module(name, { beforeEach, afterEach });
-
-const clearCookie = (cName) => {
-    document.cookie = `${cName}=; max-age=0`;
-};
 
 test('Set cookie with valid value', (assert) => {
     let cName = '__test-cookie_OK';

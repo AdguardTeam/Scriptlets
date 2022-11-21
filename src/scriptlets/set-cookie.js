@@ -1,15 +1,26 @@
-import { hit, nativeIsNaN, prepareCookie } from '../helpers/index';
+import {
+    hit,
+    logMessage,
+    nativeIsNaN,
+    isCookieSetWithValue,
+    getLimitedCookieValue,
+    concatCookieNameValuePath,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    isValidCookieRawPath,
+    getCookiePath,
+} from '../helpers/index';
 
 /* eslint-disable max-len */
 /**
  * @scriptlet set-cookie
  *
  * @description
- * Sets a cookie with the specified name and value. Cookie path defaults to root.
+ * Sets a cookie with the specified name, value, and path.
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('set-cookie', name, value)
+ * example.org#%#//scriptlet('set-cookie', name, value[, path])
  * ```
  *
  * - `name` - required, cookie name to be set
@@ -21,17 +32,28 @@ import { hit, nativeIsNaN, prepareCookie } from '../helpers/index';
  *         - `yes` / `Yes` / `Y`
  *         - `no`
  *         - `ok` / `OK`
+ * - `path` - optional, cookie path, defaults to `/`; possible values:
+ *     - `/` — root path
+ *     - `none` — to set no path at all
  *
  * **Examples**
  * ```
- * example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1')
+ * example.org#%#//scriptlet('set-cookie', 'CookieConsent', '1')
  *
  * example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', 'true')
+ *
+ * example.org#%#//scriptlet('set-cookie', 'cookie_consent', 'ok', 'none')
  * ```
  */
 /* eslint-enable max-len */
-export function setCookie(source, name, value) {
-    const cookieData = prepareCookie(name, value);
+export function setCookie(source, name, value, path = '/') {
+    const validValue = getLimitedCookieValue(source, value);
+    if (validValue === null) {
+        logMessage(source, `Invalid cookie value: '${validValue}'`);
+        return;
+    }
+
+    const cookieData = concatCookieNameValuePath(source, name, validValue, path);
 
     if (cookieData) {
         hit(source);
@@ -43,4 +65,13 @@ setCookie.names = [
     'set-cookie',
 ];
 
-setCookie.injections = [hit, nativeIsNaN, prepareCookie];
+setCookie.injections = [
+    hit,
+    logMessage,
+    nativeIsNaN,
+    isCookieSetWithValue,
+    getLimitedCookieValue,
+    concatCookieNameValuePath,
+    isValidCookieRawPath,
+    getCookiePath,
+];

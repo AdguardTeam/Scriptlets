@@ -9,8 +9,6 @@ import {
 
 import { isExisting } from './array-utils';
 
-import { getWildcardSymbol } from './constants';
-
 import validator from './validator';
 
 import { parseRule } from './parse-rule';
@@ -48,7 +46,7 @@ const UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
 
 const ADG_PREVENT_FETCH_NAME = 'prevent-fetch';
 const ADG_PREVENT_FETCH_EMPTY_STRING = '';
-const ADG_PREVENT_FETCH_WILDCARD = getWildcardSymbol();
+const ADG_PREVENT_FETCH_WILDCARD = '*';
 const UBO_NO_FETCH_IF_WILDCARD = '/^/';
 
 const ESCAPED_COMMA_SEPARATOR = '\\,';

@@ -2,6 +2,10 @@ import {
     hit,
     observeDOMChanges,
     parseFlags,
+    logMessage,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    throttle,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -79,8 +83,7 @@ export function removeAttr(source, attrs, selector, applying = 'asap stay') {
         try {
             nodes = [].slice.call(document.querySelectorAll(selector));
         } catch (e) {
-            // eslint-disable-next-line no-console
-            console.log(`Invalid remove-attr selector arg: '${selector}'`);
+            logMessage(source, `Invalid selector arg: '${selector}'`);
         }
         let removed = false;
         nodes.forEach((node) => {
@@ -143,4 +146,8 @@ removeAttr.injections = [
     hit,
     observeDOMChanges,
     parseFlags,
+    logMessage,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    throttle,
 ];

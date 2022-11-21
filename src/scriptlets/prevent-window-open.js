@@ -9,7 +9,7 @@ import {
     createDecoy,
     getPreventGetter,
     noopNull,
-    getWildcardSymbol,
+    logMessage,
     // following helpers are needed for helpers above
     escapeRegExp,
     noopFunc,
@@ -82,7 +82,7 @@ import {
  * > For better compatibility with uBO, old syntax is not recommended to use.
  */
 /* eslint-enable max-len */
-export function preventWindowOpen(source, match = getWildcardSymbol(), delay, replacement) {
+export function preventWindowOpen(source, match = '*', delay, replacement) {
     // default match value is needed for preventing all window.open calls
     // if scriptlet runs without args
     const nativeOpen = window.open;
@@ -92,8 +92,7 @@ export function preventWindowOpen(source, match = getWildcardSymbol(), delay, re
         match = Number(match) > 0;
         // 'delay' was 'search' prop for matching in old syntax
         if (!isValidStrPattern(delay)) {
-            // eslint-disable-next-line no-console
-            console.log(`Invalid parameter: ${delay}`);
+            logMessage(source, `Invalid parameter: ${delay}`);
             return nativeOpen.apply(window, [str, ...args]);
         }
         const searchRegexp = toRegExp(delay);
@@ -110,19 +109,19 @@ export function preventWindowOpen(source, match = getWildcardSymbol(), delay, re
             const argsStr = args && args.length > 0
                 ? `, ${args.join(', ')}`
                 : '';
-            const logMessage = `log: window-open: ${url}${argsStr}`;
-            hit(source, logMessage);
+            const message = `window-open: ${url}${argsStr}`;
+            logMessage(source, message, true);
+            hit(source);
         }
 
         let shouldPrevent = false;
-        if (match === getWildcardSymbol()) {
+        if (match === '*') {
             shouldPrevent = true;
         } else if (isValidMatchStr(match)) {
             const { isInvertedMatch, matchRegexp } = parseMatchArg(match);
             shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
         } else {
-            // eslint-disable-next-line no-console
-            console.log(`Invalid parameter: ${match}`);
+            logMessage(source, `Invalid parameter: ${match}`);
             shouldPrevent = false;
         }
 
@@ -187,7 +186,7 @@ preventWindowOpen.injections = [
     createDecoy,
     getPreventGetter,
     noopNull,
-    getWildcardSymbol,
+    logMessage,
     noopFunc,
     trueFunc,
     startsWith,

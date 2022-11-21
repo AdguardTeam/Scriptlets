@@ -16,8 +16,8 @@ const afterEach = () => {
 
 module(name, { beforeEach, afterEach });
 
-const clearStorageItem = (cName) => {
-    window.localStorage.removeItem(cName);
+const clearStorageItem = (iName) => {
+    window.localStorage.removeItem(iName);
 };
 
 if (isSafariBrowser()) {
@@ -27,104 +27,104 @@ if (isSafariBrowser()) {
     });
 } else {
     test('Set localStorage key with valid value', (assert) => {
-        let cName = '__test-item_true';
-        let cValue = 'true';
-        runScriptlet(name, [cName, cValue]);
+        let iName = '__test-item_true';
+        let iValue = 'true';
+        runScriptlet(name, [iName, iValue]);
         assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
-        assert.strictEqual(window.localStorage.getItem(cName), 'true', 'localStorage item has been set');
-        clearStorageItem(cName);
+        assert.strictEqual(window.localStorage.getItem(iName), 'true', 'localStorage item has been set');
+        clearStorageItem(iName);
 
-        cName = '__test-item_false';
-        cValue = 'false';
-        runScriptlet(name, [cName, cValue]);
+        iName = '__test-item_false';
+        iValue = 'false';
+        runScriptlet(name, [iName, iValue]);
         assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
-        assert.strictEqual(window.localStorage.getItem(cName), 'false', 'localStorage item has been set');
-        clearStorageItem(cName);
+        assert.strictEqual(window.localStorage.getItem(iName), 'false', 'localStorage item has been set');
+        clearStorageItem(iName);
 
-        cName = '__test-item_null';
-        cValue = 'null';
-        runScriptlet(name, [cName, cValue]);
+        iName = '__test-item_null';
+        iValue = 'null';
+        runScriptlet(name, [iName, iValue]);
         assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
-        assert.strictEqual(window.localStorage.getItem(cName), 'null', 'localStorage item has been set');
-        clearStorageItem(cName);
+        assert.strictEqual(window.localStorage.getItem(iName), 'null', 'localStorage item has been set');
+        clearStorageItem(iName);
 
-        cName = '__test-item_undefined';
-        cValue = 'undefined';
-        runScriptlet(name, [cName, cValue]);
+        iName = '__test-item_undefined';
+        iValue = 'undefined';
+        runScriptlet(name, [iName, iValue]);
         assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
-        assert.strictEqual(window.localStorage.getItem(cName), 'undefined', 'localStorage item has been set');
-        clearStorageItem(cName);
+        assert.strictEqual(window.localStorage.getItem(iName), 'undefined', 'localStorage item has been set');
+        clearStorageItem(iName);
 
-        cName = '__test-item_emptyObj';
-        cValue = 'emptyObj';
-        runScriptlet(name, [cName, cValue]);
+        iName = '__test-item_emptyObj';
+        iValue = 'emptyObj';
+        runScriptlet(name, [iName, iValue]);
         assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
-        assert.strictEqual(window.localStorage.getItem(cName), '{}', 'localStorage item has been set');
-        clearStorageItem(cName);
+        assert.strictEqual(window.localStorage.getItem(iName), '{}', 'localStorage item has been set');
+        clearStorageItem(iName);
 
-        cName = '__test-item_emptyArr';
-        cValue = 'emptyArr';
-        runScriptlet(name, [cName, cValue]);
+        iName = '__test-item_emptyArr';
+        iValue = 'emptyArr';
+        runScriptlet(name, [iName, iValue]);
         assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
-        assert.strictEqual(window.localStorage.getItem(cName), '[]', 'localStorage item has been set');
-        clearStorageItem(cName);
+        assert.strictEqual(window.localStorage.getItem(iName), '[]', 'localStorage item has been set');
+        clearStorageItem(iName);
 
-        cName = '__test-item_emptyStr';
-        cValue = '';
-        runScriptlet(name, [cName, cValue]);
+        iName = '__test-item_emptyStr';
+        iValue = '';
+        runScriptlet(name, [iName, iValue]);
         assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
-        assert.strictEqual(window.localStorage.getItem(cName), '', 'localStorage item has been set');
-        clearStorageItem(cName);
+        assert.strictEqual(window.localStorage.getItem(iName), '', 'localStorage item has been set');
+        clearStorageItem(iName);
 
-        cName = '__test-item_int';
-        cValue = '15';
-        runScriptlet(name, [cName, cValue]);
+        iName = '__test-item_int';
+        iValue = '15';
+        runScriptlet(name, [iName, iValue]);
         assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
-        assert.strictEqual(window.localStorage.getItem(cName), '15', 'localStorage item has been set');
-        clearStorageItem(cName);
+        assert.strictEqual(window.localStorage.getItem(iName), '15', 'localStorage item has been set');
+        clearStorageItem(iName);
 
-        cName = '__test-item_yes';
-        cValue = 'yes';
-        runScriptlet(name, [cName, cValue]);
+        iName = '__test-item_yes';
+        iValue = 'yes';
+        runScriptlet(name, [iName, iValue]);
         assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
-        assert.strictEqual(window.localStorage.getItem(cName), 'yes', 'localStorage item has been set');
-        clearStorageItem(cName);
+        assert.strictEqual(window.localStorage.getItem(iName), 'yes', 'localStorage item has been set');
+        clearStorageItem(iName);
 
-        cName = '__test-item_no';
-        cValue = 'no';
-        runScriptlet(name, [cName, cValue]);
+        iName = '__test-item_no';
+        iValue = 'no';
+        runScriptlet(name, [iName, iValue]);
         assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
-        assert.strictEqual(window.localStorage.getItem(cName), 'no', 'localStorage item has been set');
-        clearStorageItem(cName);
+        assert.strictEqual(window.localStorage.getItem(iName), 'no', 'localStorage item has been set');
+        clearStorageItem(iName);
+    });
+
+    test('Set localStorage key with invalid value', (assert) => {
+        let iName = '__test-item_arrayItem';
+        let iValue = '["item"]';
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, undefined, 'Hit was not fired');
+        assert.strictEqual(window.localStorage.getItem(iName), null, 'localStorage item has not been set');
+        clearStorageItem(iName);
+
+        iName = '__test-item_object';
+        iValue = '{"key":value"}';
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, undefined, 'Hit was not fired');
+        assert.strictEqual(window.localStorage.getItem(iName), null, 'localStorage item has not been set');
+        clearStorageItem(iName);
+
+        iName = '__test-item_str';
+        iValue = 'test_string';
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, undefined, 'Hit was not fired');
+        assert.strictEqual(window.localStorage.getItem(iName), null, 'localStorage item has not been set');
+        clearStorageItem(iName);
+
+        iName = '__test-item_bigInt';
+        iValue = '999999';
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, undefined, 'Hit was not fired');
+        assert.strictEqual(window.localStorage.getItem(iName), null, 'localStorage item has not been set');
+        clearStorageItem(iName);
     });
 }
-
-test('Set localStorage key with invalid value', (assert) => {
-    let cName = '__test-item_arrayItem';
-    let cValue = '["item"]';
-    runScriptlet(name, [cName, cValue]);
-    assert.strictEqual(window.hit, undefined, 'Hit was not fired');
-    assert.strictEqual(window.localStorage.getItem(cName), null, 'localStorage item has not been set');
-    clearStorageItem(cName);
-
-    cName = '__test-item_object';
-    cValue = '{"key":value"}';
-    runScriptlet(name, [cName, cValue]);
-    assert.strictEqual(window.hit, undefined, 'Hit was not fired');
-    assert.strictEqual(window.localStorage.getItem(cName), null, 'localStorage item has not been set');
-    clearStorageItem(cName);
-
-    cName = '__test-item_str';
-    cValue = 'test_string';
-    runScriptlet(name, [cName, cValue]);
-    assert.strictEqual(window.hit, undefined, 'Hit was not fired');
-    assert.strictEqual(window.localStorage.getItem(cName), null, 'localStorage item has not been set');
-    clearStorageItem(cName);
-
-    cName = '__test-item_bigInt';
-    cValue = '999999';
-    runScriptlet(name, [cName, cValue]);
-    assert.strictEqual(window.hit, undefined, 'Hit was not fired');
-    assert.strictEqual(window.localStorage.getItem(cName), null, 'localStorage item has not been set');
-    clearStorageItem(cName);
-});

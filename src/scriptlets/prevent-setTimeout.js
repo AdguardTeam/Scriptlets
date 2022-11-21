@@ -2,6 +2,7 @@ import {
     hit,
     noopFunc,
     isPreventionNeeded,
+    logMessage,
     // following helpers are needed for helpers above
     parseMatchArg,
     parseDelayArg,
@@ -126,7 +127,6 @@ export function preventSetTimeout(source, matchCallback, matchDelay) {
     const isProxySupported = typeof Proxy !== 'undefined';
 
     const nativeTimeout = window.setTimeout;
-    const log = console.log.bind(console); // eslint-disable-line no-console
 
     // logs setTimeouts to console if no arguments have been specified
     const shouldLog = ((typeof matchCallback === 'undefined') && (typeof matchDelay === 'undefined'));
@@ -136,7 +136,7 @@ export function preventSetTimeout(source, matchCallback, matchDelay) {
         if (shouldLog) {
             hit(source);
             // https://github.com/AdguardTeam/Scriptlets/issues/105
-            log(`setTimeout(${String(callback)}, ${delay})`);
+            logMessage(source, `setTimeout(${String(callback)}, ${delay})`, true);
         } else {
             shouldPrevent = isPreventionNeeded({
                 callback,
@@ -159,7 +159,7 @@ export function preventSetTimeout(source, matchCallback, matchDelay) {
         if (shouldLog) {
             hit(source);
             // https://github.com/AdguardTeam/Scriptlets/issues/105
-            log(`setTimeout(${String(callback)}, ${delay})`);
+            logMessage(source, `setTimeout(${String(callback)}, ${delay})`, true);
         } else {
             shouldPrevent = isPreventionNeeded({
                 callback,
@@ -208,6 +208,7 @@ preventSetTimeout.injections = [
     hit,
     noopFunc,
     isPreventionNeeded,
+    logMessage,
     // following helpers should be injected as helpers above use them
     parseMatchArg,
     parseDelayArg,

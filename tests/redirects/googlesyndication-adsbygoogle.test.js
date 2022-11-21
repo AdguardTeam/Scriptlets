@@ -69,8 +69,17 @@ test('Redirect testing', (assert) => {
 
     assert.strictEqual(window.adsbygoogle.length, undefined, 'adsbygoogle.length check');
     assert.strictEqual(window.adsbygoogle.push.length, 1, 'push.length check');
-    const pushCallback = () => {
-        assert.ok(true, 'callback was called');
+    const pushCallback = (arg) => {
+        try {
+            // Test for https://github.com/AdguardTeam/Scriptlets/issues/252
+            // If arg is not defined then error will be thrown
+            if (arg.whatever) {
+                arg.whatever = 1;
+            }
+            assert.ok(typeof arg !== 'undefined', 'arg is defined');
+        } catch (error) {
+            assert.ok(false, 'something went wrong');
+        }
     };
     const pushArg = {
         test: 'test',

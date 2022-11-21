@@ -2,6 +2,7 @@
 import {
     hit,
     noopFunc,
+    logMessage,
     convertRtcConfigToString,
 } from '../helpers/index';
 
@@ -35,7 +36,9 @@ export function nowebrtc(source) {
 
     const rtcReplacement = (config) => {
         // eslint-disable-next-line max-len
-        hit(source, `Document tried to create an RTCPeerConnection: ${convertRtcConfigToString(config)}`);
+        const message = `Document tried to create an RTCPeerConnection: ${convertRtcConfigToString(config)}`;
+        logMessage(source, message);
+        hit(source);
     };
     rtcReplacement.prototype = {
         close: noopFunc,
@@ -66,5 +69,6 @@ nowebrtc.names = [
 nowebrtc.injections = [
     hit,
     noopFunc,
+    logMessage,
     convertRtcConfigToString,
 ];

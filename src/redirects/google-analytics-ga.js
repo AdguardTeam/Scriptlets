@@ -1,5 +1,9 @@
 /* eslint-disable no-underscore-dangle */
-import { hit, noopFunc } from '../helpers/index';
+import {
+    hit,
+    noopFunc,
+    logMessage,
+} from '../helpers/index';
 
 /**
  * @redirect google-analytics-ga
@@ -93,11 +97,7 @@ export function GoogleAnalyticsGa(source) {
         try {
             window.location.assign(url);
         } catch (e) {
-            // log the error only while debugging
-            if (source.verbose) {
-                // eslint-disable-next-line no-console
-                console.log(e);
-            }
+            logMessage(source, e);
         }
     };
 
@@ -128,4 +128,8 @@ GoogleAnalyticsGa.names = [
     'google-analytics_ga.js',
 ];
 
-GoogleAnalyticsGa.injections = [hit, noopFunc];
+GoogleAnalyticsGa.injections = [
+    hit,
+    noopFunc,
+    logMessage,
+];

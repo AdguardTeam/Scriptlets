@@ -6,6 +6,10 @@ import {
     startsWith,
     createOnErrorHandler,
     hit,
+    logMessage,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    isEmptyObject,
     getDescriptorAddon,
 } from '../helpers/index';
 
@@ -136,7 +140,9 @@ export function abortCurrentInlineScript(source, property, search) {
             const props = property.split('.');
             const propIndex = props.indexOf(prop);
             const baseName = props[propIndex - 1];
-            console.log(`The scriptlet had been executed before the ${baseName} was loaded.`); // eslint-disable-line no-console, max-len
+
+            const message = `The scriptlet had been executed before the ${baseName} was loaded.`;
+            logMessage(source, message);
             return;
         }
 
@@ -230,5 +236,7 @@ abortCurrentInlineScript.injections = [
     startsWith,
     createOnErrorHandler,
     hit,
+    logMessage,
+    isEmptyObject,
     getDescriptorAddon,
 ];

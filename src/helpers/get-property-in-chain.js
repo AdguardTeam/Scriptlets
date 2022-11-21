@@ -1,3 +1,5 @@
+import { isEmptyObject } from './object-utils';
+
 /**
  * @typedef Chain
  * @property {Object} base
@@ -32,6 +34,16 @@ export function getPropertyInChain(base, chain) {
 
     const nextBase = base[prop];
     chain = chain.slice(pos + 1);
+
+    if ((base instanceof Object || typeof base === 'object') && isEmptyObject(base)) {
+        // for empty objects in chain
+        return { base, prop, chain };
+    }
+
+    if (nextBase === null) {
+        return { base, prop, chain };
+    }
+
     if (nextBase !== undefined) {
         return getPropertyInChain(nextBase, chain);
     }

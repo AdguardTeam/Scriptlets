@@ -1,5 +1,9 @@
 /* eslint-disable func-names, no-underscore-dangle */
-import { hit, noopFunc } from '../helpers/index';
+import {
+    hit,
+    noopFunc,
+    logMessage,
+} from '../helpers/index';
 
 /**
  * @redirect google-ima3
@@ -105,8 +109,6 @@ export function GoogleIma3(source) {
         },
     };
 
-    let managerLoaded = false;
-
     const EventHandler = function () {
         this.listeners = new Map();
         this._dispatch = function (e) {
@@ -116,8 +118,7 @@ export function GoogleIma3(source) {
                 try {
                     listener(e);
                 } catch (r) {
-                    // eslint-disable-next-line no-console
-                    console.error(r);
+                    logMessage(source, r);
                 }
             }
         };
@@ -167,8 +168,7 @@ export function GoogleIma3(source) {
             try {
                 this._dispatch(new ima.AdEvent(type));
             } catch (e) {
-                // eslint-disable-next-line no-console
-                console.error(e);
+                logMessage(source, e);
             }
         }
     };
@@ -205,27 +205,27 @@ export function GoogleIma3(source) {
     };
     AdsLoader.prototype.getVersion = () => VERSION;
     AdsLoader.prototype.requestAds = function (adsRequest, userRequestContext) {
-        if (!managerLoaded) {
-            managerLoaded = true;
-
-            requestAnimationFrame(() => {
-                const { ADS_MANAGER_LOADED } = AdsManagerLoadedEvent.Type;
-                // eslint-disable-next-line max-len
-                this._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED, adsRequest, userRequestContext));
-            });
-
-            const e = new ima.AdError(
-                'adPlayError',
-                1205,
-                1205,
-                'The browser prevented playback initiated without user interaction.',
+        requestAnimationFrame(() => {
+            const { ADS_MANAGER_LOADED } = AdsManagerLoadedEvent.Type;
+            const event = new ima.AdsManagerLoadedEvent(
+                ADS_MANAGER_LOADED,
                 adsRequest,
                 userRequestContext,
             );
-            requestAnimationFrame(() => {
-                this._dispatch(new ima.AdErrorEvent(e));
-            });
-        }
+            this._dispatch(event);
+        });
+
+        const e = new ima.AdError(
+            'adPlayError',
+            1205,
+            1205,
+            'The browser prevented playback initiated without user interaction.',
+            adsRequest,
+            userRequestContext,
+        );
+        requestAnimationFrame(() => {
+            this._dispatch(new ima.AdErrorEvent(e));
+        });
     };
 
     const AdsRenderingSettings = noopFunc;
@@ -480,4 +480,8 @@ export function GoogleIma3(source) {
 
 GoogleIma3.names = ['google-ima3'];
 
-GoogleIma3.injections = [hit, noopFunc];
+GoogleIma3.injections = [
+    hit,
+    noopFunc,
+    logMessage,
+];

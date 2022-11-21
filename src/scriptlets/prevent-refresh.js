@@ -1,6 +1,7 @@
 import {
     hit,
     getNumberFromString,
+    logMessage,
     // following helpers are needed for helpers above
     nativeIsNaN,
 } from '../helpers/index';
@@ -44,10 +45,7 @@ export function preventRefresh(source, delaySec) {
             try {
                 metaNodes = document.querySelectorAll('meta[http-equiv="refresh"][content]');
             } catch (e) {
-                if (source.verbose) {
-                    // eslint-disable-next-line no-console
-                    console.log(e);
-                }
+                logMessage(source, e);
             }
         }
         return Array.from(metaNodes);
@@ -125,5 +123,6 @@ preventRefresh.names = [
 preventRefresh.injections = [
     hit,
     getNumberFromString,
+    logMessage,
     nativeIsNaN,
 ];

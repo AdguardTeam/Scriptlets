@@ -59,4 +59,12 @@ export const runRedirect = (name, verbose = true) => {
     evalWrapper(resultString);
 };
 
+/**
+ * Clear cookie by name
+ * @param {string} cName
+ */
+export const clearCookie = (cName) => {
+    document.cookie = `${cName}=; max-age=0`;
+};
+
 export const isSafariBrowser = () => navigator.vendor === 'Apple Computer, Inc.';

@@ -45,6 +45,7 @@
 * [set-local-storage-item](#set-local-storage-item)
 * [set-popads-dummy](#set-popads-dummy)
 * [set-session-storage-item](#set-session-storage-item)
+* [xml-prune](#xml-prune)
 * * *
 ### <a id="abort-current-inline-script"></a> ⚡️ abort-current-inline-script
 
@@ -1493,6 +1494,8 @@ Creates a constant property and assigns it one of the values from the predefined
 
 > Actually, it's not a constant. Please note, that it can be rewritten with a value of a different type.
 
+> If empty object is present in chain it will be trapped until chain leftovers appear.
+
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#set-constantjs-
 
@@ -1554,12 +1557,13 @@ example.org#%#//scriptlet('set-constant', 'document.third', 'trueFunc', 'checkin
 
 ### <a id="set-cookie-reload"></a> ⚡️ set-cookie-reload
 
-Sets a cookie with the specified name and value, and then reloads the current page.
+Sets a cookie with the specified name and value, and path,
+and reloads the current page after the cookie setting.
 If reloading option is not needed, use [set-cookie](#set-cookie) scriptlet.
 
 **Syntax**
 ```
-example.org#%#//scriptlet('set-cookie-reload', name, value)
+example.org#%#//scriptlet('set-cookie-reload', name, value[, path])
 ```
 
 - `name` - required, cookie name to be set
@@ -1571,12 +1575,17 @@ example.org#%#//scriptlet('set-cookie-reload', name, value)
         - `yes` / `Yes` / `Y`
         - `no`
         - `ok` / `OK`
+- `path` - optional, cookie path, defaults to `/`; possible values:
+    - `/` — root path
+    - `none` — to set no path at all
 
 **Examples**
 ```
 example.org#%#//scriptlet('set-cookie-reload', 'checking', 'ok')
 
 example.org#%#//scriptlet('set-cookie-reload', 'gdpr-settings-cookie', '1')
+
+example.org#%#//scriptlet('set-cookie-reload', 'cookie-set', 'true', 'none')
 ```
 
 [Scriptlet source](../src/scriptlets/set-cookie-reload.js)
@@ -1584,11 +1593,11 @@ example.org#%#//scriptlet('set-cookie-reload', 'gdpr-settings-cookie', '1')
 
 ### <a id="set-cookie"></a> ⚡️ set-cookie
 
-Sets a cookie with the specified name and value. Cookie path defaults to root.
+Sets a cookie with the specified name, value, and path.
 
 **Syntax**
 ```
-example.org#%#//scriptlet('set-cookie', name, value)
+example.org#%#//scriptlet('set-cookie', name, value[, path])
 ```
 
 - `name` - required, cookie name to be set
@@ -1600,12 +1609,17 @@ example.org#%#//scriptlet('set-cookie', name, value)
         - `yes` / `Yes` / `Y`
         - `no`
         - `ok` / `OK`
+- `path` - optional, cookie path, defaults to `/`; possible values:
+    - `/` — root path
+    - `none` — to set no path at all
 
 **Examples**
 ```
-example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1')
+example.org#%#//scriptlet('set-cookie', 'CookieConsent', '1')
 
 example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', 'true')
+
+example.org#%#//scriptlet('set-cookie', 'cookie_consent', 'ok', 'none')
 ```
 
 [Scriptlet source](../src/scriptlets/set-cookie.js)
@@ -1690,5 +1704,50 @@ example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '
 ```
 
 [Scriptlet source](../src/scriptlets/set-session-storage-item.js)
+* * *
+
+### <a id="xml-prune"></a> ⚡️ xml-prune
+
+Removes an element from the specified XML.
+
+
+**Syntax**
+```
+example.org#%#//scriptlet('xml-prune'[, propsToMatch[, optionalProp[, urlToMatch]]])
+```
+
+- `propsToMatch` - optional, selector of elements which will be removed from XML
+- `optionalProp` - optional, selector of elements that must occur in XML document
+- `urlToMatch` - optional, string or regular expression for matching the request's URL
+> Usage with no arguments will log response payload and URL to browser console;
+which is useful for debugging but prohibited for production filter lists.
+
+**Examples**
+1. Remove `Period` tag whose `id` contains `-ad-` from all requests
+    ```
+    example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]')
+    ```
+
+2. Remove `Period` tag whose `id` contains `-ad-`, only if XML contains `SegmentTemplate`
+    ```
+    example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', 'SegmentTemplate')
+    ```
+
+3. Remove `Period` tag whose `id` contains `-ad-`, only if request's URL contains `.mpd`
+    ```
+    example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', '', '.mpd')
+    ```
+
+4. Call with no arguments will log response payload and URL at the console
+    ```
+    example.org#%#//scriptlet('xml-prune')
+    ```
+
+5. Call with only `urlToMatch` argument will log response payload and URL only for the matched URL
+    ```
+    example.org#%#//scriptlet('xml-prune', '', '', '.mpd')
+    ```
+
+[Scriptlet source](../src/scriptlets/xml-prune.js)
 * * *
 

@@ -2,24 +2,34 @@ import { toRegExp, isValidStrPattern } from './string-utils';
 import { getObjectFromEntries } from './object-utils';
 
 /**
+ * Returns array of request props that are supported by fetch/xhr scriptlets.
+ * Includes common 'url' and 'method' props and all other fetch-specific props
+ * @returns {string[]}
+ */
+const getRequestProps = () => [
+    'url',
+    'method',
+    'headers',
+    'body',
+    'mode',
+    'credentials',
+    'cache',
+    'redirect',
+    'referrer',
+    'referrerPolicy',
+    'integrity',
+    'keepalive',
+    'signal',
+];
+
+/**
  * Collects Request options to object
  * @param {Request} request
  * @returns {Object} data object
  */
 export const getRequestData = (request) => {
-    const REQUEST_INIT_OPTIONS = [
-        'url',
-        'method',
-        'headers',
-        'body',
-        'mode',
-        'credentials',
-        'cache',
-        'redirect',
-        'referrer',
-        'integrity',
-    ];
-    const entries = REQUEST_INIT_OPTIONS
+    const requestInitOptions = getRequestProps();
+    const entries = requestInitOptions
         .map((key) => {
             // if request has no such option, value will be undefined
             const value = request[key];
@@ -59,6 +69,25 @@ export const getFetchData = (args) => {
 };
 
 /**
+ * Collect xhr.open arguments to object
+ * @param {string} method
+ * @param {string} url
+ * @param {string} async
+ * @param {string} user
+ * @param {string} password
+ * @returns {Object}
+ */
+export const getXhrData = (method, url, async, user, password) => {
+    return {
+        method,
+        url,
+        async,
+        user,
+        password,
+    };
+};
+
+/**
  * Parse propsToMatch input string into object;
  * used for prevent-fetch and prevent-xhr
  * @param {string} propsToMatchStr
@@ -67,18 +96,25 @@ export const getFetchData = (args) => {
 export const parseMatchProps = (propsToMatchStr) => {
     const PROPS_DIVIDER = ' ';
     const PAIRS_MARKER = ':';
+    const LEGAL_MATCH_PROPS = getRequestProps();
 
     const propsObj = {};
     const props = propsToMatchStr.split(PROPS_DIVIDER);
 
     props.forEach((prop) => {
         const dividerInd = prop.indexOf(PAIRS_MARKER);
-        if (dividerInd === -1) {
-            propsObj.url = prop;
-        } else {
-            const key = prop.slice(0, dividerInd);
+
+        const key = prop.slice(0, dividerInd);
+        const hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+
+        if (hasLegalMatchProp) {
             const value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
+        } else {
+            // Escape multiple colons in prop
+            // i.e regex value and/or url with protocol specified, with or without 'url:' match prop
+            // https://github.com/AdguardTeam/Scriptlets/issues/216#issuecomment-1178591463
+            propsObj.url = prop;
         }
     });
 

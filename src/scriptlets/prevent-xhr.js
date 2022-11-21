@@ -1,13 +1,9 @@
 import {
     hit,
     objectToString,
-    getWildcardSymbol,
-    parseMatchProps,
-    validateParsedData,
-    getMatchPropsData,
-    getRandomIntInclusive,
-    getRandomStrByLength,
     generateRandomResponse,
+    matchRequestProps,
+    logMessage,
     // following helpers should be imported and injected
     // because they are used by helpers above
     toRegExp,
@@ -18,6 +14,11 @@ import {
     getNumberFromString,
     nativeIsFinite,
     nativeIsNaN,
+    parseMatchProps,
+    validateParsedData,
+    getMatchPropsData,
+    getRandomIntInclusive,
+    getRandomStrByLength,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -47,7 +48,7 @@ import {
  *       - value — range on numbers, for example `100-300`, limited to 500000 characters
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
- * which is useful for debugging but permitted for production filter lists.
+ * which is useful for debugging but not allowed for production filter lists.
  *
  * **Examples**
  * 1. Log all XMLHttpRequests
@@ -107,27 +108,10 @@ export function preventXHR(source, propsToMatch, customResponseText) {
         responseUrl = xhrData.url;
         if (typeof propsToMatch === 'undefined') {
             // Log if no propsToMatch given
-            const logMessage = `log: xhr( ${objectToString(xhrData)} )`;
-            hit(source, logMessage);
-        } else if (propsToMatch === '' || propsToMatch === getWildcardSymbol()) {
-            // Prevent all fetch calls
-            shouldPrevent = true;
+            logMessage(source, `xhr( ${objectToString(xhrData)} )`, true);
+            hit(source);
         } else {
-            const parsedData = parseMatchProps(propsToMatch);
-            if (!validateParsedData(parsedData)) {
-                // eslint-disable-next-line no-console
-                console.log(`Invalid parameter: ${propsToMatch}`);
-                shouldPrevent = false;
-            } else {
-                const matchData = getMatchPropsData(parsedData);
-                // prevent only if all props match
-                shouldPrevent = Object.keys(matchData)
-                    .every((matchKey) => {
-                        const matchValue = matchData[matchKey];
-                        return Object.prototype.hasOwnProperty.call(xhrData, matchKey)
-                            && matchValue.test(xhrData[matchKey]);
-                    });
-            }
+            shouldPrevent = matchRequestProps(source, propsToMatch, xhrData);
         }
 
         return Reflect.apply(target, thisArg, args);
@@ -151,8 +135,7 @@ export function preventXHR(source, propsToMatch, customResponseText) {
             if (randomText) {
                 responseText = randomText;
             } else {
-                // eslint-disable-next-line no-console
-                console.log(`Invalid range: ${customResponseText}`);
+                logMessage(source, `Invalid range: ${customResponseText}`);
             }
         }
         // Mock response object
@@ -203,13 +186,9 @@ preventXHR.names = [
 
 preventXHR.injections = [
     hit,
+    logMessage,
     objectToString,
-    getWildcardSymbol,
-    parseMatchProps,
-    validateParsedData,
-    getMatchPropsData,
-    getRandomIntInclusive,
-    getRandomStrByLength,
+    matchRequestProps,
     generateRandomResponse,
     toRegExp,
     isValidStrPattern,
@@ -219,4 +198,9 @@ preventXHR.injections = [
     getNumberFromString,
     nativeIsFinite,
     nativeIsNaN,
+    parseMatchProps,
+    validateParsedData,
+    getMatchPropsData,
+    getRandomIntInclusive,
+    getRandomStrByLength,
 ];
