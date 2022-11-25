@@ -160,7 +160,7 @@ export function setConstant(source, property, value, stack) {
         if (origDescriptor instanceof Object) {
             // This check is required to avoid defining non-configurable props
             if (!origDescriptor.configurable) {
-                const message = `set-constant: property '${prop}' is not configurable`;
+                const message = `Property '${prop}' is not configurable`;
                 logMessage(source, message);
                 return false;
             }
