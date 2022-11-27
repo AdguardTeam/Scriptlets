@@ -2,6 +2,7 @@ import {
     hit,
     noopFunc,
     isPreventionNeeded,
+    logMessage,
     // following helpers are needed for helpers above
     toRegExp,
     startsWith,
@@ -126,7 +127,6 @@ export function preventSetInterval(source, matchCallback, matchDelay) {
     const isProxySupported = typeof Proxy !== 'undefined';
 
     const nativeInterval = window.setInterval;
-    const log = console.log.bind(console); // eslint-disable-line no-console
 
     // logs setIntervals to console if no arguments have been specified
     const shouldLog = ((typeof matchCallback === 'undefined') && (typeof matchDelay === 'undefined'));
@@ -136,7 +136,7 @@ export function preventSetInterval(source, matchCallback, matchDelay) {
         if (shouldLog) {
             hit(source);
             // https://github.com/AdguardTeam/Scriptlets/issues/105
-            log(`setInterval(${String(callback)}, ${delay})`);
+            logMessage(source, `setInterval(${String(callback)}, ${delay})`, true);
         } else {
             shouldPrevent = isPreventionNeeded({
                 callback,
@@ -159,7 +159,7 @@ export function preventSetInterval(source, matchCallback, matchDelay) {
         if (shouldLog) {
             hit(source);
             // https://github.com/AdguardTeam/Scriptlets/issues/105
-            log(`setInterval(${String(callback)}, ${delay})`);
+            logMessage(source, `setInterval(${String(callback)}, ${delay})`, true);
         } else {
             shouldPrevent = isPreventionNeeded({
                 callback,
@@ -205,6 +205,7 @@ preventSetInterval.injections = [
     hit,
     noopFunc,
     isPreventionNeeded,
+    logMessage,
     // following helpers should be injected as helpers above use them
     toRegExp,
     startsWith,

@@ -86,3 +86,18 @@ test('dot notation deferred defenition', (assert) => {
     );
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
+
+test('Works with an empty object in chain', (assert) => {
+    window.aaa = {};
+    const scriptletArgs = [CHAIN_PROPERTY];
+    runScriptlet(name, scriptletArgs);
+
+    window.aaa.bbb = 'value';
+
+    assert.throws(
+        () => window.aaa.bbb,
+        /ReferenceError/,
+        `should throw Reference error when try to access property ${CHAIN_PROPERTY}`,
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});

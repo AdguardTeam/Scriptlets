@@ -2,11 +2,13 @@ import {
     hit,
     toRegExp,
     parseCookieString,
+    throttle,
+    logMessage,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
 /**
- * @scriptlet trusted-click-element
+ * @trustedScriptlet trusted-click-element
  *
  * @description
  * Clicks selected elements in a strict sequence, ordered by selectors passed, and waiting for them to render in the DOM first.
@@ -64,8 +66,6 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
     if (!selectors) {
         return;
     }
-    // eslint-disable-next-line no-console
-    const log = console.log.bind(console);
 
     const OBSERVER_TIMEOUT_MS = 10000;
     const THROTTLE_DELAY_MS = 20;
@@ -81,7 +81,9 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
         parsedDelay = parseInt(delay, 10);
         const isValidDelay = !Number.isNaN(parsedDelay) || parsedDelay < OBSERVER_TIMEOUT_MS;
         if (!isValidDelay) {
-            log(`Passed delay '${delay}' is invalid or bigger than ${OBSERVER_TIMEOUT_MS} ms`);
+            // eslint-disable-next-line max-len
+            const message = `Passed delay '${delay}' is invalid or bigger than ${OBSERVER_TIMEOUT_MS} ms`;
+            logMessage(source, message);
             return;
         }
     }
@@ -248,29 +250,6 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
         }
     };
 
-    const throttle = (cb, ms) => {
-        let wait = false;
-        let savedArgs;
-        const wrapper = (...args) => {
-            if (wait) {
-                savedArgs = args;
-                return;
-            }
-
-            cb(...args);
-            wait = true;
-
-            setTimeout(() => {
-                wait = false;
-                if (savedArgs) {
-                    wrapper(savedArgs);
-                    savedArgs = null;
-                }
-            }, ms);
-        };
-        return wrapper;
-    };
-
     // eslint-disable-next-line compat/compat
     const observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
     observer.observe(document.documentElement, {
@@ -299,4 +278,6 @@ trustedClickElement.injections = [
     hit,
     toRegExp,
     parseCookieString,
+    throttle,
+    logMessage,
 ];

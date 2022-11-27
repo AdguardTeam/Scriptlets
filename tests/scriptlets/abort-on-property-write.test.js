@@ -92,3 +92,21 @@ test('dot notation deferred defenition', (assert) => {
     );
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
+
+test('Works with an empty object in chain', (assert) => {
+    const CHAIN_PROPERTY = 'window.aaa.bbb';
+    const scriptletArgs = [CHAIN_PROPERTY];
+    window.aaa = {};
+    runScriptlet(name, scriptletArgs);
+
+    window.aaa.bbb = 'value';
+
+    assert.throws(
+        () => {
+            window.aaa.bbb = 'new value';
+        },
+        /ReferenceError/,
+        `should throw Reference error when try to access property ${CHAIN_PROPERTY}`,
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});

@@ -4,6 +4,7 @@ import {
     validateListener,
     listenerToString,
     convertTypeToString,
+    logMessage,
     // following helpers are needed for helpers above
     objectToString,
     isEmptyObject,
@@ -25,22 +26,20 @@ import {
  * ```
  */
 export function logAddEventListener(source) {
-    // eslint-disable-next-line no-console
-    const log = console.log.bind(console);
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
     function addEventListenerWrapper(type, listener, ...args) {
         if (validateType(type) && validateListener(listener)) {
-            const logMessage = `addEventListener("${type}", ${listenerToString(listener)})`;
-            log(logMessage);
+            const message = `addEventListener("${type}", ${listenerToString(listener)})`;
+            logMessage(source, message, true);
             hit(source);
-        } else if (source.verbose) {
-            // logging while debugging
-            const logMessage = `Invalid event type or listener passed to addEventListener:
+        }
+
+        // logging while debugging
+        const message = `Invalid event type or listener passed to addEventListener:
 type: ${convertTypeToString(type)}
 listener: ${convertTypeToString(listener)}`;
-            log(logMessage);
-        }
+        logMessage(source, message, true);
 
         return nativeAddEventListener.apply(this, [type, listener, ...args]);
     }
@@ -74,6 +73,7 @@ logAddEventListener.injections = [
     validateListener,
     listenerToString,
     convertTypeToString,
+    logMessage,
     objectToString,
     isEmptyObject,
     getObjectEntries,

@@ -2,24 +2,34 @@ import { toRegExp, isValidStrPattern } from './string-utils';
 import { getObjectFromEntries } from './object-utils';
 
 /**
+ * Returns array of request props that are supported by fetch/xhr scriptlets.
+ * Includes common 'url' and 'method' props and all other fetch-specific props
+ * @returns {string[]}
+ */
+const getRequestProps = () => [
+    'url',
+    'method',
+    'headers',
+    'body',
+    'mode',
+    'credentials',
+    'cache',
+    'redirect',
+    'referrer',
+    'referrerPolicy',
+    'integrity',
+    'keepalive',
+    'signal',
+];
+
+/**
  * Collects Request options to object
  * @param {Request} request
  * @returns {Object} data object
  */
 export const getRequestData = (request) => {
-    const REQUEST_INIT_OPTIONS = [
-        'url',
-        'method',
-        'headers',
-        'body',
-        'mode',
-        'credentials',
-        'cache',
-        'redirect',
-        'referrer',
-        'integrity',
-    ];
-    const entries = REQUEST_INIT_OPTIONS
+    const requestInitOptions = getRequestProps();
+    const entries = requestInitOptions
         .map((key) => {
             // if request has no such option, value will be undefined
             const value = request[key];
@@ -86,22 +96,7 @@ export const getXhrData = (method, url, async, user, password) => {
 export const parseMatchProps = (propsToMatchStr) => {
     const PROPS_DIVIDER = ' ';
     const PAIRS_MARKER = ':';
-    const LEGAL_MATCH_PROPS = [
-        'method',
-        'url',
-        'headers',
-        'body',
-        'mode',
-        'credentials',
-        'cache',
-        'redirect',
-        'referrer',
-        'referrerPolicy',
-        'integrity',
-        'keepalive',
-        'signal',
-        'async',
-    ];
+    const LEGAL_MATCH_PROPS = getRequestProps();
 
     const propsObj = {};
     const props = propsToMatchStr.split(PROPS_DIVIDER);

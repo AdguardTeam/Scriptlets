@@ -6,7 +6,9 @@ const name = 'scriptlets-redirects helpers';
 module(name);
 
 test('Test matchStackTrace for working with getNativeRegexpTest helper', async (assert) => {
-    const match = matchStackTrace('stack', new Error().stack);
+    const notMatched = matchStackTrace('not_present', new Error().stack);
+    const matched = matchStackTrace('stack', new Error().stack);
 
-    assert.ok(!match);
+    assert.true(matched);
+    assert.false(notMatched);
 });

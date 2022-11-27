@@ -4,11 +4,11 @@ import {
     toRegExp,
     getBoostMultiplier,
     isDelayMatched,
+    logMessage,
     // following helpers are needed for helpers above
     nativeIsNaN,
     nativeIsFinite,
     getMatchDelay,
-    getWildcardSymbol,
     shouldMatchAnyDelay,
 } from '../helpers/index';
 
@@ -70,10 +70,9 @@ export function adjustSetInterval(source, matchCallback, matchDelay, boost) {
     const intervalWrapper = (callback, delay, ...args) => {
         // https://github.com/AdguardTeam/Scriptlets/issues/221
         if (!isValidCallback(callback)) {
-            if (source.verbose) {
-                // eslint-disable-next-line no-console, max-len
-                console.log(`Scriptlet adjust-setInterval can not be applied because of invalid callback: '${String(callback)}'.`);
-            }
+            // eslint-disable-next-line max-len
+            const message = `Scriptlet can't be applied because of invalid callback: '${String(callback)}'.`;
+            logMessage(source, message);
         } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
             delay *= getBoostMultiplier(boost);
             hit(source);
@@ -100,10 +99,10 @@ adjustSetInterval.injections = [
     toRegExp,
     getBoostMultiplier,
     isDelayMatched,
+    logMessage,
     // following helpers should be injected as helpers above use them
     nativeIsNaN,
     nativeIsFinite,
     getMatchDelay,
-    getWildcardSymbol,
     shouldMatchAnyDelay,
 ];

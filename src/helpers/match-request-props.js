@@ -3,22 +3,31 @@ import {
     validateParsedData,
     parseMatchProps,
 } from './request-utils';
+import { logMessage } from './log-message';
+
+/**
+ * @typedef { import('../scriptlets/index').Source } Source
+ */
 
 /**
  * Checks if given propsToMatch string matches with given request data
  * This is used by prevent-xhr, prevent-fetch, trusted-replace-xhr-response
  * and  trusted-replace-fetch-response scriptlets
+ * @param {Source} source
  * @param {string} propsToMatch
  * @param {Object} requestData object with standard properties of fetch/xhr like url, method etc
  * @returns {boolean}
  */
-export const matchRequestProps = (propsToMatch, requestData) => {
+export const matchRequestProps = (source, propsToMatch, requestData) => {
+    if (propsToMatch === '' || propsToMatch === '*') {
+        return true;
+    }
+
     let isMatched;
 
     const parsedData = parseMatchProps(propsToMatch);
     if (!validateParsedData(parsedData)) {
-        // eslint-disable-next-line no-console
-        console.log(`Invalid parameter: ${propsToMatch}`);
+        logMessage(source, `Invalid parameter: ${propsToMatch}`);
         isMatched = false;
     } else {
         const matchData = getMatchPropsData(parsedData);

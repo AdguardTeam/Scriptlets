@@ -1,5 +1,6 @@
 import {
     hit,
+    logMessage,
     noopArray,
     noopObject,
     noopFunc,
@@ -89,8 +90,6 @@ export function setConstant(source, property, value, stack) {
         || !matchStackTrace(stack, new Error().stack)) {
         return;
     }
-    // eslint-disable-next-line no-console
-    const log = console.log.bind(console);
 
     const emptyArr = noopArray();
     const emptyObj = noopObject();
@@ -161,9 +160,8 @@ export function setConstant(source, property, value, stack) {
         if (origDescriptor instanceof Object) {
             // This check is required to avoid defining non-configurable props
             if (!origDescriptor.configurable) {
-                if (source.verbose) {
-                    log(`set-constant: property '${prop}' is not configurable`);
-                }
+                const message = `Property '${prop}' is not configurable`;
+                logMessage(source, message);
                 return false;
             }
 
@@ -278,6 +276,7 @@ setConstant.names = [
 ];
 setConstant.injections = [
     hit,
+    logMessage,
     noopArray,
     noopObject,
     noopFunc,

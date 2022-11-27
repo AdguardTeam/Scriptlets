@@ -1,53 +1,105 @@
 import { nativeIsNaN } from './number-utils';
+import { logMessage } from './log-message';
+
 /**
- * Prepares cookie string if given parameters are ok
- * @param {string} name cookie name to set
- * @param {string} value cookie value to set
- * @returns {string|null} cookie string if ok OR null if not
+ * @typedef { import('../scriptlets/index').Source } Source
  */
-export const prepareCookie = (name, value) => {
-    if (!name || !value) {
+
+/**
+ * Checks whether the input path is supported
+ *
+ * @param {string} rawPath input path
+ *
+ * @returns {boolean}
+ */
+export const isValidCookieRawPath = (rawPath) => rawPath === '/' || rawPath === 'none';
+
+/**
+ * Returns 'path=/' if rawPath is '/'
+ * or empty string '' for other cases, `rawPath === 'none'` included
+ *
+ * @param {string} rawPath
+ *
+ * @returns {string}
+ */
+export const getCookiePath = (rawPath) => {
+    if (rawPath === '/') {
+        return 'path=/';
+    }
+    // otherwise do not set path as invalid
+    // the same for pathArg === 'none'
+    //
+    return '';
+};
+
+/**
+ * Combines input cookie name, value, and path into string.
+ *
+ * @param {Source} source
+ * @param {string} rawName
+ * @param {string} rawValue
+ * @param {string} rawPath
+ *
+ * @returns {string} string OR `null` if path is not supported
+ */
+export const concatCookieNameValuePath = (source, rawName, rawValue, rawPath) => {
+    if (!isValidCookieRawPath(rawPath)) {
+        logMessage(source, `Invalid cookie path: '${rawPath}'`);
+        return null;
+    }
+    // eslint-disable-next-line max-len
+    return `${encodeURIComponent(rawName)}=${encodeURIComponent(rawValue)}; ${getCookiePath(rawPath)}`;
+};
+
+/**
+ * Gets supported cookie value
+ *
+ * @param {Source} source
+ * @param {string} value input cookie value
+ *
+ * @returns {string|null} valid cookie string if ok OR null if not
+ */
+export const getLimitedCookieValue = (source, value) => {
+    if (!value) {
         return null;
     }
 
-    let valueToSet;
+    let validValue;
     if (value === 'true') {
-        valueToSet = 'true';
+        validValue = 'true';
     } else if (value === 'True') {
-        valueToSet = 'True';
+        validValue = 'True';
     } else if (value === 'false') {
-        valueToSet = 'false';
+        validValue = 'false';
     } else if (value === 'False') {
-        valueToSet = 'False';
+        validValue = 'False';
     } else if (value === 'yes') {
-        valueToSet = 'yes';
+        validValue = 'yes';
     } else if (value === 'Yes') {
-        valueToSet = 'Yes';
+        validValue = 'Yes';
     } else if (value === 'Y') {
-        valueToSet = 'Y';
+        validValue = 'Y';
     } else if (value === 'no') {
-        valueToSet = 'no';
+        validValue = 'no';
     } else if (value === 'ok') {
-        valueToSet = 'ok';
+        validValue = 'ok';
     } else if (value === 'OK') {
-        valueToSet = 'OK';
+        validValue = 'OK';
     } else if (/^\d+$/.test(value)) {
-        valueToSet = parseFloat(value);
-        if (nativeIsNaN(valueToSet)) {
+        validValue = parseFloat(value);
+        if (nativeIsNaN(validValue)) {
+            logMessage(source, `Invalid cookie value: '${value}'`);
             return null;
         }
-        if (Math.abs(valueToSet) < 0 || Math.abs(valueToSet) > 15) {
+        if (Math.abs(validValue) < 0 || Math.abs(validValue) > 15) {
+            logMessage(source, `Invalid cookie value: '${value}'`);
             return null;
         }
     } else {
         return null;
     }
 
-    const pathToSet = 'path=/;';
-    // eslint-disable-next-line max-len
-    const cookieData = `${encodeURIComponent(name)}=${encodeURIComponent(valueToSet)}; ${pathToSet}`;
-
-    return cookieData;
+    return validValue;
 };
 
 /**
@@ -78,4 +130,25 @@ export const parseCookieString = (cookieString) => {
     });
 
     return cookieData;
+};
+
+/**
+ * Check if cookie with specified name and value is present in a cookie string
+ * @param {string} cookieString
+ * @param {string} name
+ * @param {string} value
+ * @returns {boolean}
+ */
+export const isCookieSetWithValue = (cookieString, name, value) => {
+    return cookieString.split(';')
+        .some((cookieStr) => {
+            const pos = cookieStr.indexOf('=');
+            if (pos === -1) {
+                return false;
+            }
+            const cookieName = cookieStr.slice(0, pos).trim();
+            const cookieValue = cookieStr.slice(pos + 1).trim();
+
+            return name === cookieName && value === cookieValue;
+        });
 };

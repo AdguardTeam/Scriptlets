@@ -1,5 +1,9 @@
 /* eslint-disable no-underscore-dangle */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    clearCookie,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'set-cookie-reload';
@@ -12,10 +16,6 @@ const beforeEach = () => {
 
 const afterEach = () => {
     clearGlobalProps('hit', '__debug');
-};
-
-const clearCookie = (cName) => {
-    document.cookie = `${cName}=; max-age=0`;
 };
 
 module(name, { beforeEach, afterEach });

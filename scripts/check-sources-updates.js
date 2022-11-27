@@ -191,7 +191,7 @@ async function checkForUBOScriptletsUpdates() {
 /**
  * UBO redirects github page
  */
-const UBO_REDIRECTS_DIRECTORY_FILE = 'https://raw.githubusercontent.com/gorhill/uBlock/master/src/js/redirect-engine.js';
+const UBO_REDIRECTS_DIRECTORY_FILE = 'https://raw.githubusercontent.com/gorhill/uBlock/master/src/js/redirect-resources.js';
 
 /**
  * Make request to UBO repo(master), parses and returns the list of UBO redirects
@@ -201,7 +201,7 @@ async function getCurrentUBORedirects() {
     let { data } = await axios.get(UBO_REDIRECTS_DIRECTORY_FILE);
     console.log('Done.');
 
-    const startTrigger = 'const redirectableResources = new Map([';
+    const startTrigger = 'export default new Map([';
     const endTrigger = ']);';
 
     const startIndex = data.indexOf(startTrigger);
@@ -270,7 +270,7 @@ async function getCurrentABPSnippets() { // eslint-disable-line no-unused-vars
 /**
  * Checks for ABP Snippets updates
  */
-async function checkForABPScriptletssUpdates() {
+async function checkForABPScriptletsUpdates() {
     const oldList = getScriptletsFromTable('abp');
     // ABP_SNIPPETS_FILE is unavailable
     // TODO: fix later, AG-11891
@@ -333,7 +333,7 @@ async function checkForABPRedirectsUpdates() {
     const UBORedirectsDiff = await checkForUBORedirectsUpdates();
     const UBOScriptletsDiff = await checkForUBOScriptletsUpdates();
     const ABPRedirectsDiff = await checkForABPRedirectsUpdates();
-    const ABPScriptletsDiff = await checkForABPScriptletssUpdates();
+    const ABPScriptletsDiff = await checkForABPScriptletsUpdates();
 
     if (UBORedirectsDiff) {
         markTableWithDiff(UBORedirectsDiff, 'redirects', 'ubo');

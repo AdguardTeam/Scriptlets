@@ -180,6 +180,9 @@ example.com#%#//scriptlet('abort-on-stack-trace', property, stack)
 
 - `property` - required, path to a property. The property must be attached to window.
 - `stack` - required, string that must match the current function call stack trace.
+    - values to abort inline or injected script, accordingly:
+        - `inlineScript`
+        - `injectedScript`
 
 **Examples**
 ```
@@ -192,6 +195,12 @@ example.org#%#//scriptlet('abort-on-stack-trace', 'Ya.videoAd', 'test.js')
 ! Aborts script when stack trace matches with any of these parameters
 example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexFuncName')
 example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexScriptName')
+
+! Aborts script when it tries to access `window.Ya` and it's an inline script
+example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'inlineScript')
+
+! Aborts script when it tries to access `window.Ya` and it's an injected script
+example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'injectedScript')
 ```
 
 [Scriptlet source](../src/scriptlets/abort-on-stack-trace.js)
@@ -796,7 +805,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#no-fetch-ifjs-
 
 **Syntax**
 ```
-example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody]])
+example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, responseType]]])
 ```
 
 - `propsToMatch` - optional, string of space-separated properties to match; possible props:
@@ -807,8 +816,12 @@ example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody]])
 - responseBody - optional, string for defining response body value, defaults to `emptyObj`. Possible values:
    - `emptyObj` - empty object
    - `emptyArr` - empty array
+- responseType - optional, string for defining response type, defaults to `default`. Possible values:
+   - default
+   - opaque
+
 > Usage with no arguments will log fetch calls to browser console;
-which is useful for debugging but permitted for production filter lists.
+which is useful for debugging but not permitted for production filter lists.
 
 **Examples**
 1. Log all fetch calls
@@ -1250,7 +1263,7 @@ example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
       - value — range on numbers, for example `100-300`, limited to 500000 characters
 
 > Usage with no arguments will log XMLHttpRequest objects to browser console;
-which is useful for debugging but permitted for production filter lists.
+which is useful for debugging but not allowed for production filter lists.
 
 **Examples**
 1. Log all XMLHttpRequests
@@ -1591,12 +1604,13 @@ example.org#%#//scriptlet('set-constant', 'document.third', 'trueFunc', 'checkin
 
 ### <a id="set-cookie-reload"></a> ⚡️ set-cookie-reload
 
-Sets a cookie with the specified name and value, and then reloads the current page.
+Sets a cookie with the specified name and value, and path,
+and reloads the current page after the cookie setting.
 If reloading option is not needed, use [set-cookie](#set-cookie) scriptlet.
 
 **Syntax**
 ```
-example.org#%#//scriptlet('set-cookie-reload', name, value)
+example.org#%#//scriptlet('set-cookie-reload', name, value[, path])
 ```
 
 - `name` - required, cookie name to be set
@@ -1608,12 +1622,17 @@ example.org#%#//scriptlet('set-cookie-reload', name, value)
         - `yes` / `Yes` / `Y`
         - `no`
         - `ok` / `OK`
+- `path` - optional, cookie path, defaults to `/`; possible values:
+    - `/` — root path
+    - `none` — to set no path at all
 
 **Examples**
 ```
 example.org#%#//scriptlet('set-cookie-reload', 'checking', 'ok')
 
 example.org#%#//scriptlet('set-cookie-reload', 'gdpr-settings-cookie', '1')
+
+example.org#%#//scriptlet('set-cookie-reload', 'cookie-set', 'true', 'none')
 ```
 
 [Scriptlet source](../src/scriptlets/set-cookie-reload.js)
@@ -1621,11 +1640,11 @@ example.org#%#//scriptlet('set-cookie-reload', 'gdpr-settings-cookie', '1')
 
 ### <a id="set-cookie"></a> ⚡️ set-cookie
 
-Sets a cookie with the specified name and value. Cookie path defaults to root.
+Sets a cookie with the specified name, value, and path.
 
 **Syntax**
 ```
-example.org#%#//scriptlet('set-cookie', name, value)
+example.org#%#//scriptlet('set-cookie', name, value[, path])
 ```
 
 - `name` - required, cookie name to be set
@@ -1637,12 +1656,17 @@ example.org#%#//scriptlet('set-cookie', name, value)
         - `yes` / `Yes` / `Y`
         - `no`
         - `ok` / `OK`
+- `path` - optional, cookie path, defaults to `/`; possible values:
+    - `/` — root path
+    - `none` — to set no path at all
 
 **Examples**
 ```
-example.org#%#//scriptlet('set-cookie', 'ReadlyCookieConsent', '1')
+example.org#%#//scriptlet('set-cookie', 'CookieConsent', '1')
 
 example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', 'true')
+
+example.org#%#//scriptlet('set-cookie', 'cookie_consent', 'ok', 'none')
 ```
 
 [Scriptlet source](../src/scriptlets/set-cookie.js)
@@ -1651,6 +1675,7 @@ example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', 'true')
 ### <a id="set-local-storage-item"></a> ⚡️ set-local-storage-item
 
 Adds specified key and its value to localStorage object, or updates the value of the key if it already exists.
+Scriptlet won't set item if storage is full.
 
 **Syntax**
 ```
@@ -1699,6 +1724,7 @@ example.org#%#//scriptlet('set-popads-dummy')
 ### <a id="set-session-storage-item"></a> ⚡️ set-session-storage-item
 
 Adds specified key and its value to sessionStorage object, or updates the value of the key if it already exists.
+Scriptlet won't set item if storage is full.
 
 **Syntax**
 ```

@@ -1,5 +1,6 @@
 import {
     hit,
+    logMessage,
     toRegExp,
     startsWith,
     endsWith,
@@ -65,8 +66,7 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch) {
     }
 
     let shouldPruneResponse = true;
-    // eslint-disable-next-line no-console
-    const log = console.log.bind(console);
+
     if (!propsToRemove) {
         // If "propsToRemove" is not defined, then response shouldn't be pruned
         // but it should be logged in browser console
@@ -125,7 +125,9 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch) {
                     thisArg.removeEventListener('readystatechange', pruneResponse);
                     if (!shouldPruneResponse) {
                         if (isXML(response)) {
-                            log(`XMLHttpRequest.open() URL: ${xhrURL}\nresponse: ${response}`);
+                            // eslint-disable-next-line max-len
+                            const message = `XMLHttpRequest.open() URL: ${xhrURL}\nresponse: ${response}`;
+                            logMessage(message);
                         }
                     } else {
                         const prunedResponseContent = pruneXML(response);
@@ -169,7 +171,7 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch) {
                 return response.text().then((text) => {
                     if (!shouldPruneResponse) {
                         if (isXML(text)) {
-                            log(`fetch URL: ${fetchURL}\nresponse text: ${text}`);
+                            logMessage(`fetch URL: ${fetchURL}\nresponse text: ${text}`);
                         }
                         return Reflect.apply(target, thisArg, args);
                     }
@@ -182,7 +184,7 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch) {
                             headers: response.headers,
                         });
                     }
-                    // In case if response shouldn't be pruned
+                    // If response shouldn't be pruned
                     // pruneXML sets shouldPruneResponse to false
                     // so it's necessary to set it to true again
                     // otherwise response will be only logged
@@ -211,6 +213,7 @@ xmlPrune.names = [
 
 xmlPrune.injections = [
     hit,
+    logMessage,
     toRegExp,
     startsWith,
     endsWith,

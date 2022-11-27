@@ -2,11 +2,9 @@ import {
     hit,
     getFetchData,
     objectToString,
-    parseMatchProps,
-    validateParsedData,
-    getMatchPropsData,
     noopPromiseResolve,
-    getWildcardSymbol,
+    matchRequestProps,
+    logMessage,
     // following helpers should be imported and injected
     // because they are used by helpers above
     toRegExp,
@@ -16,6 +14,9 @@ import {
     getRequestData,
     getObjectEntries,
     getObjectFromEntries,
+    parseMatchProps,
+    validateParsedData,
+    getMatchPropsData,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -107,8 +108,7 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
 
     // Skip disallowed response types
     if (!(responseType === 'default' || responseType === 'opaque')) {
-        // eslint-disable-next-line no-console
-        console.log(`Invalid parameter: ${responseType}`);
+        logMessage(source, `Invalid parameter: ${responseType}`);
         return;
     }
 
@@ -116,29 +116,12 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
         let shouldPrevent = false;
         const fetchData = getFetchData(args);
         if (typeof propsToMatch === 'undefined') {
-            // log if no propsToMatch given
-            const logMessage = `log: fetch( ${objectToString(fetchData)} )`;
-            hit(source, logMessage);
-        } else if (propsToMatch === '' || propsToMatch === getWildcardSymbol()) {
-            // prevent all fetch calls
-            shouldPrevent = true;
-        } else {
-            const parsedData = parseMatchProps(propsToMatch);
-            if (!validateParsedData(parsedData)) {
-                // eslint-disable-next-line no-console
-                console.log(`Invalid parameter: ${propsToMatch}`);
-                shouldPrevent = false;
-            } else {
-                const matchData = getMatchPropsData(parsedData);
-                // prevent only if all props match
-                shouldPrevent = Object.keys(matchData)
-                    .every((matchKey) => {
-                        const matchValue = matchData[matchKey];
-                        return Object.prototype.hasOwnProperty.call(fetchData, matchKey)
-                        && matchValue.test(fetchData[matchKey]);
-                    });
-            }
+            logMessage(source, `fetch( ${objectToString(fetchData)} )`, true);
+            hit(source);
+            return Reflect.apply(target, thisArg, args);
         }
+
+        shouldPrevent = matchRequestProps(source, propsToMatch, fetchData);
 
         if (shouldPrevent) {
             hit(source);
@@ -167,11 +150,9 @@ preventFetch.injections = [
     hit,
     getFetchData,
     objectToString,
-    parseMatchProps,
-    validateParsedData,
-    getMatchPropsData,
     noopPromiseResolve,
-    getWildcardSymbol,
+    matchRequestProps,
+    logMessage,
     toRegExp,
     isValidStrPattern,
     escapeRegExp,
@@ -179,4 +160,7 @@ preventFetch.injections = [
     getRequestData,
     getObjectEntries,
     getObjectFromEntries,
+    parseMatchProps,
+    validateParsedData,
+    getMatchPropsData,
 ];

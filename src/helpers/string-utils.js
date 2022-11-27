@@ -1,5 +1,10 @@
-import { nativeIsFinite, nativeIsNaN } from './number-utils';
 import { isEmptyObject, getObjectEntries } from './object-utils';
+import {
+    nativeIsFinite,
+    nativeIsNaN,
+    getNumberFromString,
+    getRandomIntInclusive,
+} from './number-utils';
 
 /**
  * String.prototype.replaceAll polyfill
@@ -287,3 +292,63 @@ export const convertTypeToString = (value) => {
 
     return output;
 };
+
+/**
+ * Generate a random string, a length of the string is provided as an argument
+ * @param {number} length
+ * @returns {string}
+ */
+export function getRandomStrByLength(length) {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~';
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i += 1) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+}
+
+/**
+ * Generate a random string
+ * @param {string} customResponseText
+ * @returns {string|null} random string or null if passed argument is invalid
+ */
+export function generateRandomResponse(customResponseText) {
+    let customResponse = customResponseText;
+
+    if (customResponse === 'true') {
+        // Generate random alphanumeric string of 10 symbols
+        customResponse = Math.random().toString(36).slice(-10);
+        return customResponse;
+    }
+
+    customResponse = customResponse.replace('length:', '');
+    const rangeRegex = /^\d+-\d+$/;
+    // Return empty string if range is invalid
+    if (!rangeRegex.test(customResponse)) {
+        return null;
+    }
+
+    let rangeMin = getNumberFromString(customResponse.split('-')[0]);
+    let rangeMax = getNumberFromString(customResponse.split('-')[1]);
+
+    if (!nativeIsFinite(rangeMin) || !nativeIsFinite(rangeMax)) {
+        return null;
+    }
+
+    // If rangeMin > rangeMax, swap variables
+    if (rangeMin > rangeMax) {
+        const temp = rangeMin;
+        rangeMin = rangeMax;
+        rangeMax = temp;
+    }
+
+    const LENGTH_RANGE_LIMIT = 500 * 1000;
+    if (rangeMax > LENGTH_RANGE_LIMIT) {
+        return null;
+    }
+
+    const length = getRandomIntInclusive(rangeMin, rangeMax);
+    customResponse = getRandomStrByLength(length);
+    return customResponse;
+}

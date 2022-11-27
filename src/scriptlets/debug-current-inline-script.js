@@ -5,6 +5,7 @@ import {
     toRegExp,
     createOnErrorHandler,
     hit,
+    logMessage,
     // following helpers should be imported and injected
     // because they are used by helpers above
     isEmptyObject,
@@ -79,7 +80,9 @@ export function debugCurrentInlineScript(source, property, search) {
             const props = property.split('.');
             const propIndex = props.indexOf(prop);
             const baseName = props[propIndex - 1];
-            console.log(`The scriptlet had been executed before the ${baseName} was loaded.`); // eslint-disable-line no-console, max-len
+
+            const message = `The scriptlet had been executed before the ${baseName} was loaded.`;
+            logMessage(message, source.verbose);
             return;
         }
 
@@ -127,5 +130,6 @@ debugCurrentInlineScript.injections = [
     toRegExp,
     createOnErrorHandler,
     hit,
+    logMessage,
     isEmptyObject,
 ];

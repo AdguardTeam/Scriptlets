@@ -2,9 +2,9 @@ import {
     hit,
     matchStackTrace,
     getWildcardPropertyInChain,
+    logMessage,
     // following helpers are needed for helpers above
     toRegExp,
-    getWildcardSymbol,
     getNativeRegexpTest,
 } from '../helpers/index';
 
@@ -89,8 +89,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
     if (!!stack && !matchStackTrace(stack, new Error().stack)) {
         return;
     }
-    // eslint-disable-next-line no-console
-    const log = console.log.bind(console);
+
     const prunePaths = propsToRemove !== undefined && propsToRemove !== ''
         ? propsToRemove.split(/ +/)
         : [];
@@ -111,7 +110,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
             const matchRegex = toRegExp(requiredPaths.join(''));
             const shouldLog = matchRegex.test(rootString);
             if (shouldLog) {
-                log(window.location.hostname, root);
+                logMessage(source, `${window.location.hostname} ${root}`, true);
                 shouldProcess = false;
                 return shouldProcess;
             }
@@ -157,7 +156,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
      */
     const jsonPruner = (root) => {
         if (prunePaths.length === 0 && requiredPaths.length === 0) {
-            log(window.location.hostname, root);
+            logMessage(source, `${window.location.hostname} ${root}`, true);
             return root;
         }
 
@@ -178,7 +177,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
                 });
             });
         } catch (e) {
-            log(e.toString());
+            logMessage(source, e);
         }
 
         return root;
@@ -229,7 +228,7 @@ jsonPrune.injections = [
     hit,
     matchStackTrace,
     getWildcardPropertyInChain,
+    logMessage,
     toRegExp,
-    getWildcardSymbol,
     getNativeRegexpTest,
 ];

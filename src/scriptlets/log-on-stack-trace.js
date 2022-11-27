@@ -2,6 +2,7 @@ import {
     getPropertyInChain,
     setPropertyAccess,
     hit,
+    logMessage,
     // following helpers should be imported and injected
     // because they are used by helpers above
     isEmptyObject,
@@ -40,10 +41,15 @@ export function logOnStacktrace(source, property) {
             let funcFullPath;
             /* eslint-disable-next-line no-useless-escape */
             const reg = /\(([^\)]+)\)/;
+            const regFirefox = /(.*?@)(\S+)(:\d+):\d+\)?$/;
             if (line.match(reg)) {
                 funcName = line.split(' ').slice(0, -1).join(' ');
-                /* eslint-disable-next-line prefer-destructuring, no-useless-escape */
+                /* eslint-disable-next-line prefer-destructuring */
                 funcFullPath = line.match(reg)[1];
+            } else if (line.match(regFirefox)) {
+                funcName = line.split('@').slice(0, -1).join(' ');
+                /* eslint-disable-next-line prefer-destructuring */
+                funcFullPath = line.match(regFirefox)[2];
             } else {
                 // For when func name is not available
                 funcName = 'function name is not available';
@@ -83,13 +89,13 @@ export function logOnStacktrace(source, property) {
         setPropertyAccess(base, prop, {
             get() {
                 hit(source);
-                console.log(`%cGet %c${prop}`, 'color:red;', 'color:green;');
+                logMessage(source, `Get ${prop}`, true);
                 console.table(refineStackTrace(new Error().stack));
                 return value;
             },
             set(newValue) {
                 hit(source);
-                console.log(`%cSet %c${prop}`, 'color:red;', 'color:green;');
+                logMessage(source, `Set ${prop}`, true);
                 console.table(refineStackTrace(new Error().stack));
                 value = newValue;
             },
@@ -107,5 +113,6 @@ logOnStacktrace.injections = [
     getPropertyInChain,
     setPropertyAccess,
     hit,
+    logMessage,
     isEmptyObject,
 ];

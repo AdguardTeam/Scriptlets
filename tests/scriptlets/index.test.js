@@ -47,4 +47,7 @@ import './no-topics.test';
 import './trusted-replace-xhr-response.test';
 import './xml-prune.test';
 import './trusted-click-element.test';
+import './trusted-set-cookie.test';
+import './trusted-replace-fetch-response.test';
+import './trusted-set-local-storage-item.test';
 import './m3u-prune.test';

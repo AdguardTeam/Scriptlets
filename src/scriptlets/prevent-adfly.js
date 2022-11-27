@@ -1,5 +1,9 @@
 /* eslint-disable func-names */
-import { hit, setPropertyAccess } from '../helpers/index';
+import {
+    hit,
+    setPropertyAccess,
+    logMessage,
+} from '../helpers/index';
 
 /**
  * @scriptlet prevent-adfly
@@ -79,7 +83,7 @@ export function preventAdfly(source) {
     if (result) {
         hit(source);
     } else {
-        window.console.error('Failed to set up prevent-adfly scriptlet');
+        logMessage(source, 'Failed to set up prevent-adfly scriptlet');
     }
 }
 
@@ -91,4 +95,8 @@ preventAdfly.names = [
     'ubo-adfly-defuser',
 ];
 
-preventAdfly.injections = [setPropertyAccess, hit];
+preventAdfly.injections = [
+    setPropertyAccess,
+    hit,
+    logMessage,
+];

@@ -1,7 +1,11 @@
 import {
     hit,
+    logMessage,
     observeDOMChanges,
     parseFlags,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    throttle,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -89,8 +93,7 @@ export function removeClass(source, classNames, selector, applying = 'asap stay'
             try {
                 foundNodes = [].slice.call(document.querySelectorAll(selector));
             } catch (e) {
-                // eslint-disable-next-line no-console
-                console.log(`Invalid remove-class selector arg: '${selector}'`);
+                logMessage(source, `Invalid selector arg: '${selector}'`);
             }
             foundNodes.forEach((n) => nodes.add(n));
         } else if (selectors.length > 0) {
@@ -167,6 +170,10 @@ removeClass.names = [
 
 removeClass.injections = [
     hit,
+    logMessage,
     observeDOMChanges,
     parseFlags,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    throttle,
 ];

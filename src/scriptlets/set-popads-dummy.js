@@ -1,4 +1,4 @@
-/* eslint-disable no-console, func-names, no-multi-assign */
+/* eslint-disable func-names, no-multi-assign */
 import { hit } from '../helpers/index';
 
 /**

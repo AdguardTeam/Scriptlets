@@ -43,3 +43,29 @@ test('Ima mocked', (assert) => {
     assert.strictEqual(adError.adsRequest, 'adsRequest', 'AdError adsRequest saved');
     assert.strictEqual(adError.userRequestContext, 'userRequestContext', 'AdError request context saved');
 });
+
+test('Ima - run requestAds function twice', (assert) => {
+    // Test for https://github.com/AdguardTeam/Scriptlets/issues/255
+    const done = assert.async();
+
+    runRedirect(name);
+
+    let number = 0;
+    const test = () => {
+        number += 1;
+    };
+    const { ima } = window.google;
+    const AdsLoader = new ima.AdsLoader();
+    AdsLoader.addEventListener(ima.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED, test);
+
+    AdsLoader.requestAds();
+    requestAnimationFrame(() => {
+        assert.strictEqual(number, 1, 'number is equal to 1');
+    });
+
+    AdsLoader.requestAds();
+    requestAnimationFrame(() => {
+        assert.strictEqual(number, 2, 'number is equal to 2');
+        done();
+    });
+});

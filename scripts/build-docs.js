@@ -1,138 +1,118 @@
-const dox = require('dox');
 const fs = require('fs');
 const path = require('path');
-
 const yaml = require('js-yaml');
+const { EOL } = require('os');
 
-const SCRIPTLETS_FILES_DIRECTORY = '../src/scriptlets';
-const REDIRECTS_FILES_DIRECTORY = '../src/redirects';
-const STATIC_REDIRECTS = '../src/redirects/static-redirects.yml';
-const BLOCKING_REDIRECTS = '../src/redirects/blocking-redirects.yml';
+const {
+    getDataFromFiles,
+    SCRIPTLET_TYPE,
+    TRUSTED_SCRIPTLET_TYPE,
+    REDIRECT_TYPE,
+} = require('./helpers');
 
-const ABOUT_SCRIPTLETS_PATH = path.resolve(__dirname, '../wiki/about-scriptlets.md');
-const ABOUT_REDIRECTS_PATH = path.resolve(__dirname, '../wiki/about-redirects.md');
+const {
+    WIKI_DIR_PATH,
+    scriptletsFilenames,
+    trustedScriptletsFilenames,
+    redirectsFilenames,
+    SCRIPTLETS_SRC_RELATIVE_DIR_PATH,
+    REDIRECTS_SRC_RELATIVE_DIR_PATH,
+} = require('./constants');
 
-// files which are not scriptlets or redirects in their directories
-const NON_SCRIPTLETS_FILES = [
-    'index.js',
-    'scriptlets.js',
-    'scriptlets-list.js',
-    'scriptlets-wrapper.js',
-    'scriptlets-umd-wrapper.js',
-];
-const NON_REDIRECTS_FILES = [
-    'index.js',
-    'redirects.js',
-    'redirects-list.js',
-];
+const STATIC_REDIRECTS_FILENAME = 'static-redirects.yml';
+const BLOCKING_REDIRECTS_FILENAME = 'blocking-redirects.yml';
 
-/**
- * Gets list of files
- * @param {string} dirPath path to directory
- */
-const getFilesList = (dirPath) => {
-    const filesList = fs.readdirSync(path.resolve(__dirname, dirPath), { encoding: 'utf8' })
-        .filter((el) => el.includes('.js'));
-    return filesList;
-};
+// eslint-disable-next-line max-len
+const STATIC_REDIRECTS_RELATIVE_SOURCE = `${REDIRECTS_SRC_RELATIVE_DIR_PATH}/${STATIC_REDIRECTS_FILENAME}`;
 
-const scriptletsFilesList = getFilesList(SCRIPTLETS_FILES_DIRECTORY)
-    .filter((el) => !NON_SCRIPTLETS_FILES.includes(el));
+const staticRedirectsPath = path.resolve(__dirname, STATIC_REDIRECTS_RELATIVE_SOURCE);
 
-const redirectsFilesList = getFilesList(REDIRECTS_FILES_DIRECTORY)
-    .filter((el) => !NON_REDIRECTS_FILES.includes(el));
+const blockingRedirectsPath = path.resolve(
+    __dirname,
+    REDIRECTS_SRC_RELATIVE_DIR_PATH,
+    BLOCKING_REDIRECTS_FILENAME,
+);
 
-/**
- * Gets required comments from file.
- * In one file might be comments describing scriptlet and redirect as well.
- * @param {string} srcPath path to file
- */
-const getComments = (srcPath) => {
-    const srcCode = fs.readFileSync(srcPath, { encoding: 'utf8' });
-    const parsedCommentsFromFile = dox.parseComments(srcCode);
-    const describingComment = Object.values(parsedCommentsFromFile)
-        .filter((comment) => {
-            const [base] = comment.tags;
-            const isNeededComment = (base
-                && (base.type === 'scriptlet' || base.type === 'redirect'));
-            return isNeededComment;
-        });
+const ABOUT_SCRIPTLETS_FILENAME = 'about-scriptlets.md';
+const ABOUT_TRUSTED_SCRIPTLETS_FILENAME = 'about-trusted-scriptlets.md';
+const ABOUT_REDIRECTS_FILENAME = 'about-redirects.md';
 
-    if (describingComment.length === 0) {
-        throw new Error(`No description in ${srcPath}.
-Please add one OR edit the list of NON_SCRIPTLETS_FILES / NON_REDIRECTS_FILES.`);
-    }
-
-    return describingComment;
-};
-
-/**
- * Convert parsed comments to objects
- * @param {object} requiredComments parsed comments for one file
- * @param {string} sourcePath path to file
- */
-const prepareData = (requiredComments, sourcePath) => {
-    return requiredComments.map((el) => {
-        const [base, sup] = el.tags;
-        return {
-            type: base.type,
-            name: base.string,
-            description: sup.string,
-            source: sourcePath,
-        };
-    });
-};
-
-/**
- * Gets data objects which describe every required comment in one directory
- * @param {array} filesList list of files in directory
- * @param {string} directoryPath path to directory
- */
-const getDataFromFiles = (filesList, directoryPath) => {
-    const pathToDir = path.resolve(__dirname, directoryPath);
-    return filesList.map((file) => {
-        const pathToFile = path.resolve(pathToDir, file);
-        const requiredComments = getComments(pathToFile);
-
-        return prepareData(requiredComments, `${directoryPath}/${file}`);
-    });
-};
+const aboutScriptletsPath = path.resolve(__dirname, WIKI_DIR_PATH, ABOUT_SCRIPTLETS_FILENAME);
+const aboutRedirectsPath = path.resolve(__dirname, WIKI_DIR_PATH, ABOUT_REDIRECTS_FILENAME);
+const aboutTrustedScriptletsPath = path.resolve(
+    __dirname,
+    WIKI_DIR_PATH,
+    ABOUT_TRUSTED_SCRIPTLETS_FILENAME,
+);
 
 /**
  * Collects required comments from files and
  * returns describing object for scriptlets and redirects
  */
 const manageDataFromFiles = () => {
-    // eslint-disable-next-line max-len
-    const dataFromScriptletsFiles = getDataFromFiles(scriptletsFilesList, SCRIPTLETS_FILES_DIRECTORY);
-    const dataFromRedirectsFiles = getDataFromFiles(redirectsFilesList, REDIRECTS_FILES_DIRECTORY);
+    const dataFromScriptletsFiles = getDataFromFiles(
+        scriptletsFilenames,
+        SCRIPTLETS_SRC_RELATIVE_DIR_PATH,
+    );
 
-    const fullData = dataFromScriptletsFiles.concat(dataFromRedirectsFiles).flat(Infinity);
+    const dataFromTrustedScriptletsFiles = getDataFromFiles(
+        trustedScriptletsFilenames,
+        SCRIPTLETS_SRC_RELATIVE_DIR_PATH,
+    );
 
-    const scriptletsData = fullData.filter((el) => {
-        return el.type === 'scriptlet';
-    });
-    const redirectsData = fullData.filter((el) => {
-        return el.type === 'redirect';
-    });
+    const dataFromRedirectsFiles = getDataFromFiles(
+        redirectsFilenames,
+        REDIRECTS_SRC_RELATIVE_DIR_PATH,
+    );
 
-    return { scriptletsData, redirectsData };
+    const fullData = dataFromScriptletsFiles
+        .concat(dataFromTrustedScriptletsFiles)
+        .concat(dataFromRedirectsFiles)
+        .flat(Infinity);
+
+    const scriptletsData = fullData.filter(({ type }) => type === SCRIPTLET_TYPE);
+    const trustedScriptletsData = fullData.filter(({ type }) => type === TRUSTED_SCRIPTLET_TYPE);
+    const redirectsData = fullData.filter(({ type }) => type === REDIRECT_TYPE);
+
+    return {
+        scriptletsData,
+        trustedScriptletsData,
+        redirectsData,
+    };
 };
 
 /**
- * Generates markdown list and describing text
- * @param {object} data array of filtered objects - scriptlets or redirects
+ * @typedef { import('./helpers').DescribingCommentData } DescribingCommentData
  */
-const generateMD = (data) => {
-    const output = data.reduce((acc, el) => {
-        acc.list.push(`* [${el.name}](#${el.name})\n`);
 
-        const typeOfSrc = el.type === 'scriptlet' ? 'Scriptlet' : 'Redirect';
+/**
+ * @typedef {Object} MarkdownData
+ * @property {string} list table of content
+ * @property {string} body main content which
+ */
 
-        const body = `### <a id="${el.name}"></a> ⚡️ ${el.name}
-${el.description}\n
-[${typeOfSrc} source](${el.source})
-* * *\n\n`;
+/**
+ * Generates markdown list and describing text.
+ *
+ * @param {DescribingCommentData[]} dataItems array of comment data objects
+ *
+ * @returns {MarkdownData}
+ */
+const getMarkdownData = (dataItems) => {
+    const output = dataItems.reduce((acc, {
+        name,
+        type,
+        description,
+        source,
+    }) => {
+        acc.list.push(`* [${name}](#${name})${EOL}`);
+
+        const typeOfSrc = type === 'scriptlet' ? 'Scriptlet' : 'Redirect';
+
+        const body = `### <a id="${name}"></a> ⚡️ ${name}
+${description}${EOL}
+[${typeOfSrc} source](${source})
+* * *${EOL}${EOL}`;
         acc.body.push(body);
 
         return acc;
@@ -146,22 +126,24 @@ ${el.description}\n
 
 /**
  * Generates markdown list and describing text for static redirect resources
+ *
+ * @returns {MarkdownData}
  */
-const mdForStaticRedirects = () => {
-    const staticRedirects = fs.readFileSync(path.resolve(__dirname, STATIC_REDIRECTS), { encoding: 'utf8' });
+const getMarkdownDataForStaticRedirects = () => {
+    const staticRedirects = fs.readFileSync(path.resolve(__dirname, staticRedirectsPath), { encoding: 'utf8' });
     const parsedStaticRedirects = yaml.safeLoad(staticRedirects);
 
-    const output = parsedStaticRedirects.reduce((acc, el) => {
-        if (el.description) {
-            acc.list.push(`* [${el.title}](#${el.title})\n`);
+    const output = parsedStaticRedirects.reduce((acc, { title, description }) => {
+        if (description) {
+            acc.list.push(`* [${title}](#${title})${EOL}`);
 
-            const body = `### <a id="${el.title}"></a> ⚡️ ${el.title}
-${el.description}
-[Redirect source](${STATIC_REDIRECTS})
-* * *\n\n`;
+            const body = `### <a id="${title}"></a> ⚡️ ${title}
+${description}
+[Redirect source](${STATIC_REDIRECTS_RELATIVE_SOURCE})
+* * *${EOL}${EOL}`;
             acc.body.push(body);
         } else {
-            throw new Error(`No description for ${el.title}`);
+            throw new Error(`No description for ${title}`);
         }
 
         return acc;
@@ -175,24 +157,28 @@ ${el.description}
 
 /**
  * Generates markdown list and describing text for blocking redirect resources, i.e click2load.html
+ *
+ * @returns {MarkdownData}
  */
-const mdForBlockingRedirects = () => {
-    const BLOCKING_REDIRECTS_SOURCE_DIR = '../src/redirects/blocking-redirects';
+const getMarkdownDataForBlockingRedirects = () => {
+    const BLOCKING_REDIRECTS_SOURCE_SUB_DIR = 'blocking-redirects';
+    // eslint-disable-next-line max-len
+    const BLOCKING_REDIRECTS_RELATIVE_SOURCE = `${REDIRECTS_SRC_RELATIVE_DIR_PATH}/${BLOCKING_REDIRECTS_SOURCE_SUB_DIR}`;
 
-    const blockingRedirects = fs.readFileSync(path.resolve(__dirname, BLOCKING_REDIRECTS), { encoding: 'utf8' });
+    const blockingRedirects = fs.readFileSync(blockingRedirectsPath, { encoding: 'utf8' });
     const parsedBlockingRedirects = yaml.safeLoad(blockingRedirects);
 
-    const output = parsedBlockingRedirects.reduce((acc, el) => {
-        if (el.description) {
-            acc.list.push(`* [${el.title}](#${el.title})\n`);
+    const output = parsedBlockingRedirects.reduce((acc, { title, description }) => {
+        if (description) {
+            acc.list.push(`* [${title}](#${title})${EOL}`);
 
-            const body = `### <a id="${el.title}"></a> ⚡️ ${el.title}
-${el.description}
-[Redirect source](${BLOCKING_REDIRECTS_SOURCE_DIR}/${el.title})
-* * *\n\n`;
+            const body = `### <a id="${title}"></a> ⚡️ ${title}
+${description}
+[Redirect source](${BLOCKING_REDIRECTS_RELATIVE_SOURCE}/${title})
+* * *${EOL}${EOL}`;
             acc.body.push(body);
         } else {
-            throw new Error(`No description for ${el.title}`);
+            throw new Error(`No description for ${title}`);
         }
 
         return acc;
@@ -205,33 +191,49 @@ ${el.description}
 };
 
 /**
- * Entry function
+ * Builds about wiki pages for scriptlets and redirects
  */
-function init() {
+const buildWikiAboutPages = () => {
     try {
-        const scriptletsMarkdownData = generateMD(manageDataFromFiles().scriptletsData);
-        const redirectsMarkdownData = generateMD(manageDataFromFiles().redirectsData);
-        const staticRedirectsMarkdownData = mdForStaticRedirects();
-        const blockingRedirectsMarkdownData = mdForBlockingRedirects();
+        const filesData = manageDataFromFiles();
+        const scriptletsMarkdownData = getMarkdownData(filesData.scriptletsData);
+
+        const trustedScriptletsMarkdownData = getMarkdownData(filesData.trustedScriptletsData);
+
+        const redirectsMarkdownData = getMarkdownData(filesData.redirectsData);
+        const staticRedirectsMarkdownData = getMarkdownDataForStaticRedirects();
+        const blockingRedirectsMarkdownData = getMarkdownDataForBlockingRedirects();
+
+        const scriptletsPageContent = `## <a id="scriptlets"></a> Available Scriptlets
+${scriptletsMarkdownData.list}* * *
+${scriptletsMarkdownData.body}`;
+        fs.writeFileSync(
+            path.resolve(__dirname, aboutScriptletsPath),
+            scriptletsPageContent,
+        );
+
+        // eslint-disable-next-line max-len
+        const trustedScriptletsPageContent = `## <a id="trusted-scriptlets"></a> Available Trusted Scriptlets
+${trustedScriptletsMarkdownData.list}* * *
+${trustedScriptletsMarkdownData.body}`;
+        fs.writeFileSync(
+            path.resolve(__dirname, aboutTrustedScriptletsPath),
+            trustedScriptletsPageContent,
+        );
 
         /* eslint-disable max-len */
-        const scriptletsAbout = `## <a id="scriptlets"></a> Available Scriptlets\n${scriptletsMarkdownData.list}* * *\n${scriptletsMarkdownData.body}`;
-        fs.writeFileSync(path.resolve(__dirname, ABOUT_SCRIPTLETS_PATH), scriptletsAbout);
-
-        const redirectsAbout = `## <a id="redirect-resources"></a> Available Redirect resources
+        const redirectsPageContent = `## <a id="redirect-resources"></a> Available Redirect resources
 ${staticRedirectsMarkdownData.list}${redirectsMarkdownData.list}${blockingRedirectsMarkdownData.list}* * *
 ${staticRedirectsMarkdownData.body}${redirectsMarkdownData.body}${blockingRedirectsMarkdownData.body}`;
         /* eslint-enable max-len */
-        fs.writeFileSync(path.resolve(__dirname, ABOUT_REDIRECTS_PATH), redirectsAbout);
+        fs.writeFileSync(
+            path.resolve(__dirname, aboutRedirectsPath),
+            redirectsPageContent,
+        );
     } catch (e) {
         // eslint-disable-next-line no-console
         console.log(e.message);
     }
-}
-
-init();
-
-module.exports = {
-    redirectsFilesList,
-    getDataFromFiles,
 };
+
+buildWikiAboutPages();

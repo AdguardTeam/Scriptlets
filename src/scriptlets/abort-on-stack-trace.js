@@ -7,11 +7,14 @@ import {
     isValidStrPattern,
     matchStackTrace,
     getDescriptorAddon,
+    logMessage,
+    shouldAbortInlineOrInjectedScript,
     // following helpers are needed for helpers above
     escapeRegExp,
     toRegExp,
     isEmptyObject,
     getNativeRegexpTest,
+    startsWith,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -31,6 +34,9 @@ import {
  *
  * - `property` - required, path to a property. The property must be attached to window.
  * - `stack` - required, string that must match the current function call stack trace.
+ *     - values to abort inline or injected script, accordingly:
+ *         - `inlineScript`
+ *         - `injectedScript`
  *
  * **Examples**
  * ```
@@ -43,6 +49,12 @@ import {
  * ! Aborts script when stack trace matches with any of these parameters
  * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexFuncName')
  * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexScriptName')
+ *
+ * ! Aborts script when it tries to access `window.Ya` and it's an inline script
+ * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'inlineScript')
+ *
+ * ! Aborts script when it tries to access `window.Ya` and it's an injected script
+ * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'injectedScript')
  * ```
  */
 /* eslint-enable max-len */
@@ -75,9 +87,8 @@ export function abortOnStackTrace(source, property, stack) {
             return;
         }
 
-        if (!isValidStrPattern(stack)) {
-            // eslint-disable-next-line no-console
-            console.log(`Invalid parameter: ${stack}`);
+        if (!stack.match(/^(inlineScript|injectedScript)$/) && !isValidStrPattern(stack)) {
+            logMessage(source, `Invalid parameter: ${stack}`);
             return;
         }
 
@@ -138,7 +149,10 @@ abortOnStackTrace.injections = [
     escapeRegExp,
     matchStackTrace,
     getDescriptorAddon,
+    logMessage,
     toRegExp,
     isEmptyObject,
     getNativeRegexpTest,
+    startsWith,
+    shouldAbortInlineOrInjectedScript,
 ];

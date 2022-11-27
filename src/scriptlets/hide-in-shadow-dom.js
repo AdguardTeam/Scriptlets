@@ -1,9 +1,12 @@
 import {
     hit,
     observeDOMChanges,
-    flatten,
     findHostElements,
     pierceShadowDom,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    flatten,
+    throttle,
 } from '../helpers/index';
 
 /**
@@ -85,7 +88,10 @@ hideInShadowDom.names = [
 hideInShadowDom.injections = [
     hit,
     observeDOMChanges,
-    flatten,
     findHostElements,
     pierceShadowDom,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    flatten,
+    throttle,
 ];

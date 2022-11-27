@@ -1,7 +1,7 @@
 import {
     noopFunc,
     trueFunc,
-} from './noop';
+} from './noop-utils';
 import {
     startsWith,
     endsWith,

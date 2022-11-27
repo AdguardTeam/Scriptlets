@@ -242,6 +242,9 @@
         },
         {
             "ubo": "xml-prune.js"
+        },
+        {
+            "ubo": "m3u-prune.js"
         }
     ],
     "redirects": [
