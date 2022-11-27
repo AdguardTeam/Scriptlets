@@ -63,12 +63,13 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
 
     const urlMatchRegexp = toRegExp(urlToMatch);
 
+    const SEGMENT_MARKER = '#';
+
     const AD_MARKER = {
         ASSET: '#EXT-X-ASSET:',
         CUE: '#EXT-X-CUE:',
         CUE_IN: '#EXT-X-CUE-IN',
         DISCONTINUITY: '#EXT-X-DISCONTINUITY',
-        EXT_X_KEY: '#EXT-X-KEY:METHOD=NONE',
         EXTINF: '#EXTINF',
         EXTM3U: '#EXTM3U',
         SCTE35: '#EXT-X-SCTE35:',
@@ -81,8 +82,25 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
         VMAP_AD_BREAK: '#EXT-X-VMAP-AD-BREAK:',
     };
 
-    const UPLYNK_AD_MARKER = {
-        SEGMENT: '#UPLYNK-SEGMENT',
+    // List of tags which should not be removed
+    const IMPORTANT_TAGS = [
+        '#EXT-X-TARGETDURATION',
+        '#EXT-X-MEDIA-SEQUENCE',
+        '#EXT-X-DISCONTINUITY-SEQUENCE',
+        '#EXT-X-ENDLIST',
+        '#EXT-X-PLAYLIST-TYPE',
+        '#EXT-X-I-FRAMES-ONLY',
+        '#EXT-X-MEDIA',
+        '#EXT-X-STREAM-INF',
+        '#EXT-X-I-FRAME-STREAM-INF',
+        '#EXT-X-SESSION-DATA',
+        '#EXT-X-SESSION-KEY',
+        '#EXT-X-INDEPENDENT-SEGMENTS',
+        '#EXT-X-START',
+    ];
+
+    const isImportantTag = (str) => {
+        return IMPORTANT_TAGS.some((el) => startsWith(str, el));
     };
 
     /**
@@ -170,7 +188,7 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
 
     /**
     * Sets an item in array to undefined, if it contains removeM3ULineRegexp and one of the
-    * AD_MARKER: AD_MARKER.EXTINF, AD_MARKER.DISCONTINUITY, AD_MARKER.EXT_X_KEY
+    * AD_MARKER: AD_MARKER.EXTINF, AD_MARKER.DISCONTINUITY
     * @param {Array} lines
     * @param {number} i
     * @returns {Array}
@@ -182,32 +200,37 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
         if (!removeM3ULineRegexp.test(lines[i + 1])) {
             return lines;
         }
-        lines[i] = undefined;
-        lines[i + 1] = undefined;
-        i += 2;
-        if (startsWith(lines[i], AD_MARKER.DISCONTINUITY)) {
+        if (!isImportantTag(lines[i])) {
             lines[i] = undefined;
         }
         i += 1;
-        if (startsWith(lines[i], AD_MARKER.EXT_X_KEY)) {
+        if (!isImportantTag(lines[i])) {
+            lines[i] = undefined;
+        }
+        i += 1;
+        if (startsWith(lines[i], AD_MARKER.DISCONTINUITY)) {
             lines[i] = undefined;
         }
         return lines;
     };
 
     /**
-    * Sets an item in array to undefined, if it contains removeM3ULineRegexp
-    * and UPLYNK_AD_MARKER.SEGMENT
+    * Removes block of segments (if it contains removeM3ULineRegexp) until another segment occurs
     * @param {Array} lines
     * @returns {Array}
     */
-    const pruneUplynkSegments = (lines) => {
+    const pruneSegments = (lines) => {
         for (let i = 0; i < lines.length - 1; i += 1) {
-            if (removeM3ULineRegexp.test(lines[i])) {
+            if (startsWith(lines[i], SEGMENT_MARKER) && removeM3ULineRegexp.test(lines[i])) {
+                const segmentName = lines[i].substring(0, lines[i].indexOf(':'));
+                if (!segmentName) {
+                    return lines;
+                }
                 lines[i] = undefined;
                 i += 1;
                 for (let j = i; j < lines.length; j += 1) {
-                    if (lines[j].indexOf(UPLYNK_AD_MARKER.SEGMENT) < 0) {
+                    if (lines[j].indexOf(segmentName) < 0
+                        && !isImportantTag(lines[j])) {
                         lines[j] = undefined;
                     } else {
                         i = j - 1;
@@ -259,11 +282,8 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
             return lines.filter((l) => l !== undefined).join('\n');
         }
 
-        if (text.indexOf(UPLYNK_AD_MARKER.SEGMENT) > -1) {
-            lines = pruneUplynkSegments(lines);
-            return lines.filter((l) => l !== undefined).join('\n');
-        }
         for (let i = 0; i < lines.length; i += 1) {
+            lines = pruneSegments(lines);
             lines = pruneSpliceoutBlock(lines, i);
             lines = pruneInfBlock(lines, i);
         }
@@ -314,7 +334,7 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
     const nativeFetch = window.fetch;
 
     const fetchWrapper = (target, thisArg, args) => {
-        const fetchURL = args[0];
+        const fetchURL = args[0] instanceof Request ? args[0].url : args[0];
         if (typeof fetchURL !== 'string' || fetchURL.length === 0) {
             return Reflect.apply(target, thisArg, args);
         }

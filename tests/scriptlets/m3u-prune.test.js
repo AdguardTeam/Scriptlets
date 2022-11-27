@@ -190,6 +190,27 @@ if (!isSupported) {
         done();
     });
 
+    test('fetch - new Request() - remove ads ', async (assert) => {
+        const M3U8_PATH = M3U8_OBJECTS_PATH_01;
+        const MATCH_DATA = 'tvessaiprod.nbcuni.com/video/';
+        const REQUEST = new Request(M3U8_PATH);
+
+        runScriptlet(name, [MATCH_DATA]);
+
+        const done = assert.async();
+
+        const response = await fetch(REQUEST);
+        const responseM3U8 = await response.text();
+
+        assert.notOk(responseM3U8.indexOf('tvessaiprod.nbcuni.com/video/') > -1, 'check if "tvessaiprod.nbcuni.com/video/" has been removed');
+        assert.notOk(responseM3U8.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1, 'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed');
+        assert.notOk(responseM3U8.indexOf('#EXT-X-CUE-IN') > -1, 'check if "#EXT-X-CUE-IN" has been removed');
+        assert.notOk(responseM3U8.indexOf('#EXT-X-ASSET:CAID') > -1, 'check if "#EXT-X-ASSET:CAID" has been removed');
+        assert.notOk(responseM3U8.indexOf('#EXT-X-SCTE35:') > -1, 'check if "#EXT-X-SCTE35:" has been removed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
     test('fetch regexp propsToRemove - remove ads 1', async (assert) => {
         const M3U8_PATH = M3U8_OBJECTS_PATH_01;
         const MATCH_DATA = '/tvessaiprod\\.nbcuni\\.com/video//';
