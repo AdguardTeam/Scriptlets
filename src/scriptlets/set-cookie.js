@@ -5,9 +5,9 @@ import {
     isCookieSetWithValue,
     getLimitedCookieValue,
     concatCookieNameValuePath,
+    isValidCookiePath,
     // following helpers should be imported and injected
     // because they are used by helpers above
-    isValidCookieRawPath,
     getCookiePath,
 } from '../helpers/index';
 
@@ -47,18 +47,24 @@ import {
  */
 /* eslint-enable max-len */
 export function setCookie(source, name, value, path = '/') {
-    const validValue = getLimitedCookieValue(source, value);
+    const validValue = getLimitedCookieValue(value);
     if (validValue === null) {
         logMessage(source, `Invalid cookie value: '${validValue}'`);
         return;
     }
 
-    const cookieData = concatCookieNameValuePath(source, name, validValue, path);
-
-    if (cookieData) {
-        hit(source);
-        document.cookie = cookieData;
+    if (!isValidCookiePath(path)) {
+        logMessage(source, `Invalid cookie path: '${path}'`);
+        return;
     }
+
+    const cookieToSet = concatCookieNameValuePath(name, validValue, path);
+    if (!cookieToSet) {
+        return;
+    }
+
+    hit(source);
+    document.cookie = cookieToSet;
 }
 
 setCookie.names = [
@@ -72,6 +78,6 @@ setCookie.injections = [
     isCookieSetWithValue,
     getLimitedCookieValue,
     concatCookieNameValuePath,
-    isValidCookieRawPath,
+    isValidCookiePath,
     getCookiePath,
 ];

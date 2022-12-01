@@ -51,5 +51,6 @@ export * from './no-topics';
 export * from './trusted-replace-xhr-response';
 export * from './xml-prune';
 export * from './trusted-set-cookie';
+export * from './trusted-set-cookie-reload';
 export * from './trusted-replace-fetch-response';
 export * from './trusted-set-local-storage-item';

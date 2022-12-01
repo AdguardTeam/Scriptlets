@@ -1,6 +1,10 @@
 # Scriptlets and Redirect Resources Changelog
 
-## v1.7.5
+## v1.7.6
+
+### Added
+
+* new scriptlet `trusted-set-cookie-reload`
 
 ### Fixed
 

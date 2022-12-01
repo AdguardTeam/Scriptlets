@@ -5,9 +5,9 @@ import {
     isCookieSetWithValue,
     getLimitedCookieValue,
     concatCookieNameValuePath,
+    isValidCookiePath,
     // following helpers should be imported and injected
     // because they are used by helpers above
-    isValidCookieRawPath,
     getCookiePath,
 } from '../helpers/index';
 
@@ -51,23 +51,29 @@ export function setCookieReload(source, name, value, path = '/') {
         return;
     }
 
-    const validValue = getLimitedCookieValue(source, value);
+    const validValue = getLimitedCookieValue(value);
     if (validValue === null) {
-        logMessage(source, `Invalid cookie value: '${validValue}'`);
+        logMessage(source, `Invalid cookie value: '${value}'`);
         return;
     }
 
-    const cookieData = concatCookieNameValuePath(source, name, validValue, path);
+    if (!isValidCookiePath(path)) {
+        logMessage(source, `Invalid cookie path: '${path}'`);
+        return;
+    }
 
-    if (cookieData) {
-        document.cookie = cookieData;
-        hit(source);
+    const cookieToSet = concatCookieNameValuePath(name, validValue, path);
+    if (!cookieToSet) {
+        return;
+    }
 
-        // Only reload the page if cookie was set
-        // https://github.com/AdguardTeam/Scriptlets/issues/212
-        if (isCookieSetWithValue(document.cookie, name, value)) {
-            window.location.reload();
-        }
+    document.cookie = cookieToSet;
+    hit(source);
+
+    // Only reload the page if cookie was set
+    // https://github.com/AdguardTeam/Scriptlets/issues/212
+    if (isCookieSetWithValue(document.cookie, name, value)) {
+        window.location.reload();
     }
 }
 
@@ -82,6 +88,6 @@ setCookieReload.injections = [
     isCookieSetWithValue,
     getLimitedCookieValue,
     concatCookieNameValuePath,
-    isValidCookieRawPath,
+    isValidCookiePath,
     getCookiePath,
 ];
