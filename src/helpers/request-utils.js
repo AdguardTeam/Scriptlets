@@ -6,7 +6,7 @@ import { getObjectFromEntries } from './object-utils';
  * Includes common 'url' and 'method' props and all other fetch-specific props
  * @returns {string[]}
  */
-const getRequestProps = () => [
+export const getRequestProps = () => [
     'url',
     'method',
     'headers',

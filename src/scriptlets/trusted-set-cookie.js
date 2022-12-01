@@ -29,12 +29,12 @@ import {
  *   - arbitrary value
  *   - empty string for no value
  *   - `$now$` keyword for setting current time
- * - 'offsetExpiresSec' - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
+ * - `offsetExpiresSec` - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
  * Possible values:
  *   - positive integer in seconds
  *   - `1year` keyword for setting expiration date to one year
  *   - `1day` keyword for setting expiration date to one day
- * - 'reload' - optional, boolean. Argument for reloading page after cookie is set. Defaults to `false`
+ * - `reload` - optional, boolean. Argument for reloading page after cookie is set. Defaults to `false`
  * - `path` - optional, argument for setting cookie path, defaults to `/`; possible values:
  *   - `/` — root path
  *   - `none` — to set no path at all
@@ -48,7 +48,7 @@ import {
  *
  * 2. Set cookie with `new Date().getTime()` value
  * ```
- * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '$now')
+ * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '$now$')
  * ```
  *
  * 3. Set cookie which will expire in 3 days

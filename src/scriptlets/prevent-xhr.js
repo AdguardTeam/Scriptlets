@@ -17,6 +17,7 @@ import {
     parseMatchProps,
     validateParsedData,
     getMatchPropsData,
+    getRequestProps,
     getRandomIntInclusive,
     getRandomStrByLength,
 } from '../helpers/index';
@@ -201,6 +202,7 @@ preventXHR.injections = [
     parseMatchProps,
     validateParsedData,
     getMatchPropsData,
+    getRequestProps,
     getRandomIntInclusive,
     getRandomStrByLength,
 ];

@@ -1,5 +1,12 @@
 # Scriptlets and Redirect Resources Changelog
 
+## v1.7.5
+
+### Fixed
+
+* spread of args bug at getXhrData call for `trusted-replace-xhr-response`
+* request properties array not being served to `getRequestData` and `parseMatchProps` helpers
+
 ## v1.7.3
 
 ### Added

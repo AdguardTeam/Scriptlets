@@ -8,6 +8,7 @@ import {
     // following helpers should be imported and injected
     // because they are used by helpers above
     getMatchPropsData,
+    getRequestProps,
     validateParsedData,
     parseMatchProps,
     isValidStrPattern,
@@ -94,11 +95,12 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
     let requestHeaders = [];
 
     const openWrapper = (target, thisArg, args) => {
-        xhrData = getXhrData(...args);
+        // eslint-disable-next-line prefer-spread
+        xhrData = getXhrData.apply(null, args);
 
         if (shouldLog) {
             // Log if no propsToMatch given
-            const message = `log: xhr( ${objectToString(xhrData)} )`;
+            const message = `xhr( ${objectToString(xhrData)} )`;
             logMessage(source, message, true);
             hit(source);
             return Reflect.apply(target, thisArg, args);
@@ -126,7 +128,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
         return Reflect.apply(target, thisArg, args);
     };
 
-    const sendWrapper = async (target, thisArg, args) => {
+    const sendWrapper = (target, thisArg, args) => {
         if (!shouldReplace) {
             return Reflect.apply(target, thisArg, args);
         }
@@ -236,6 +238,7 @@ trustedReplaceXhrResponse.injections = [
     matchRequestProps,
     getXhrData,
     getMatchPropsData,
+    getRequestProps,
     validateParsedData,
     parseMatchProps,
     isValidStrPattern,

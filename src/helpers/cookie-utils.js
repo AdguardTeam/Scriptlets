@@ -48,7 +48,7 @@ export const concatCookieNameValuePath = (source, rawName, rawValue, rawPath) =>
         return null;
     }
     // eslint-disable-next-line max-len
-    return `${encodeURIComponent(rawName)}=${encodeURIComponent(rawValue)}; ${getCookiePath(rawPath)}`;
+    return `${encodeURIComponent(rawName)}=${encodeURIComponent(rawValue)}; ${getCookiePath(rawPath)};`;
 };
 
 /**

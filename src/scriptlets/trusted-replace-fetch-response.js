@@ -11,6 +11,7 @@ import {
     escapeRegExp,
     isEmptyObject,
     getRequestData,
+    getRequestProps,
     getObjectEntries,
     getObjectFromEntries,
     parseMatchProps,
@@ -97,7 +98,7 @@ export function trustedReplaceFetchResponse(source, pattern = '', replacement = 
     let shouldReplace = false;
     let fetchData;
 
-    const handlerWrapper = async (target, thisArg, args) => {
+    const handlerWrapper = (target, thisArg, args) => {
         fetchData = getFetchData(args);
 
         if (shouldLog) {
@@ -199,6 +200,7 @@ trustedReplaceFetchResponse.injections = [
     escapeRegExp,
     isEmptyObject,
     getRequestData,
+    getRequestProps,
     getObjectEntries,
     getObjectFromEntries,
     parseMatchProps,
