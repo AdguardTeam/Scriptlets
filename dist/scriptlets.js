@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.7.3
+ * Version 1.7.6
  */
 
 (function () {
@@ -896,28 +896,6 @@
      */
 
     /**
-     * Conditionally logs message to console.
-     * Convention is to log messages by source.verbose if such log
-     * is not a part of scriptlet's functionality, eg on invalid input,
-     * and use 'forced' argument otherwise.
-     * @param {Source} source required
-     * @param {string} message required, message to log
-     * @param {boolean} [forced=false] to log message unconditionally
-     */
-    var logMessage = function logMessage(source, message) {
-      var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
-      if (forced || source.verbose) {
-        // eslint-disable-next-line no-console
-        console.log("".concat(source.name, ": ").concat(message));
-      }
-    };
-
-    /**
-     * @typedef { import('../scriptlets/index').Source } Source
-     */
-
-    /**
      * Checks whether the input path is supported
      *
      * @param {string} rawPath input path
@@ -925,7 +903,7 @@
      * @returns {boolean}
      */
 
-    var isValidCookieRawPath = function isValidCookieRawPath(rawPath) {
+    var isValidCookiePath = function isValidCookiePath(rawPath) {
       return rawPath === '/' || rawPath === 'none';
     };
     /**
@@ -942,7 +920,6 @@
         return 'path=/';
       } // otherwise do not set path as invalid
       // the same for pathArg === 'none'
-      //
 
 
       return '';
@@ -950,33 +927,26 @@
     /**
      * Combines input cookie name, value, and path into string.
      *
-     * @param {Source} source
      * @param {string} rawName
      * @param {string} rawValue
      * @param {string} rawPath
      *
-     * @returns {string} string OR `null` if path is not supported
+     * @returns {string|null} string OR `null` if path is not supported
      */
 
-    var concatCookieNameValuePath = function concatCookieNameValuePath(source, rawName, rawValue, rawPath) {
-      if (!isValidCookieRawPath(rawPath)) {
-        logMessage(source, "Invalid cookie path: '".concat(rawPath, "'"));
-        return null;
-      } // eslint-disable-next-line max-len
-
-
-      return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath));
+    var concatCookieNameValuePath = function concatCookieNameValuePath(rawName, rawValue, rawPath) {
+      // eslint-disable-next-line max-len
+      return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
     };
     /**
      * Gets supported cookie value
      *
-     * @param {Source} source
      * @param {string} value input cookie value
      *
      * @returns {string|null} valid cookie string if ok OR null if not
      */
 
-    var getLimitedCookieValue = function getLimitedCookieValue(source, value) {
+    var getLimitedCookieValue = function getLimitedCookieValue(value) {
       if (!value) {
         return null;
       }
@@ -1007,12 +977,10 @@
         validValue = parseFloat(value);
 
         if (nativeIsNaN(validValue)) {
-          logMessage(source, "Invalid cookie value: '".concat(value, "'"));
           return null;
         }
 
         if (Math.abs(validValue) < 0 || Math.abs(validValue) > 15) {
-          logMessage(source, "Invalid cookie value: '".concat(value, "'"));
           return null;
         }
       } else {
@@ -1070,6 +1038,39 @@
         var cookieValue = cookieStr.slice(pos + 1).trim();
         return name === cookieName && value === cookieValue;
       });
+    };
+    /**
+     * Returns parsed offset expired number of ms or null if `offsetExpiresSec` is invalid
+     *
+     * @param {string} offsetExpiresSec input offset param in seconds
+     * @returns {number|null} number is milliseconds OR null
+     */
+
+    var getTrustedCookieOffsetMs = function getTrustedCookieOffsetMs(offsetExpiresSec) {
+      if (!offsetExpiresSec) {
+        return null;
+      }
+
+      var ONE_YEAR_EXPIRATION_KEYWORD = '1year';
+      var ONE_DAY_EXPIRATION_KEYWORD = '1day';
+      var MS_IN_SEC = 1000;
+      var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
+      var SECONDS_IN_DAY = 24 * 60 * 60;
+      var parsedSec; // Set predefined expire value if corresponding keyword was passed
+
+      if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
+        parsedSec = SECONDS_IN_YEAR;
+      } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
+        parsedSec = SECONDS_IN_DAY;
+      } else {
+        parsedSec = Number.parseInt(offsetExpiresSec, 10); // If offsetExpiresSec has been parsed to NaN - do not set cookie at all
+
+        if (Number.isNaN(parsedSec)) {
+          return null;
+        }
+      }
+
+      return parsedSec * MS_IN_SEC;
     };
 
     /**
@@ -1471,7 +1472,7 @@
      * @returns {string[]}
      */
 
-    var getRequestProps$1 = function getRequestProps() {
+    var getRequestProps = function getRequestProps() {
       return ['url', 'method', 'headers', 'body', 'mode', 'credentials', 'cache', 'redirect', 'referrer', 'referrerPolicy', 'integrity', 'keepalive', 'signal'];
     };
     /**
@@ -1480,9 +1481,8 @@
      * @returns {Object} data object
      */
 
-
     var getRequestData = function getRequestData(request) {
-      var requestInitOptions = getRequestProps$1();
+      var requestInitOptions = getRequestProps();
       var entries = requestInitOptions.map(function (key) {
         // if request has no such option, value will be undefined
         var value = request[key];
@@ -1551,7 +1551,7 @@
     var parseMatchProps = function parseMatchProps(propsToMatchStr) {
       var PROPS_DIVIDER = ' ';
       var PAIRS_MARKER = ':';
-      var LEGAL_MATCH_PROPS = getRequestProps$1();
+      var LEGAL_MATCH_PROPS = getRequestProps();
       var propsObj = {};
       var props = propsToMatchStr.split(PROPS_DIVIDER);
       props.forEach(function (prop) {
@@ -1594,6 +1594,28 @@
         matchData[key] = toRegExp(data[key]);
       });
       return matchData;
+    };
+
+    /**
+     * @typedef { import('../scriptlets/index').Source } Source
+     */
+
+    /**
+     * Conditionally logs message to console.
+     * Convention is to log messages by source.verbose if such log
+     * is not a part of scriptlet's functionality, eg on invalid input,
+     * and use 'forced' argument otherwise.
+     * @param {Source} source required
+     * @param {string} message required, message to log
+     * @param {boolean} [forced=false] to log message unconditionally
+     */
+    var logMessage = function logMessage(source, message) {
+      var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+      if (forced || source.verbose) {
+        // eslint-disable-next-line no-console
+        console.log("".concat(source.name, ": ").concat(message));
+      }
     };
 
     /**
@@ -2130,6 +2152,11 @@
     /**
      * Modifies passed keyword value according to its purpose.
      * Returns initial value if it's not a keyword.
+     *
+     * Supported keywords:
+     *   - '$now$' - returns current time in ms, e.g 1667915146503
+     *   - '$currentDate$' - returns current date e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+     *
      * @param {string} rawValue
      * @returns {string}
      */
@@ -3485,7 +3512,7 @@
         if (origDescriptor instanceof Object) {
           // This check is required to avoid defining non-configurable props
           if (!origDescriptor.configurable) {
-            var message = "set-constant: property '".concat(prop, "' is not configurable");
+            var message = "Property '".concat(prop, "' is not configurable");
             logMessage(source, message);
             return false;
           }
@@ -5652,22 +5679,29 @@
 
     function setCookie$1(source, name, value) {
       var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '/';
-      var validValue = getLimitedCookieValue(source, value);
+      var validValue = getLimitedCookieValue(value);
 
       if (validValue === null) {
         logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
         return;
       }
 
-      var cookieData = concatCookieNameValuePath(source, name, validValue, path);
-
-      if (cookieData) {
-        hit(source);
-        document.cookie = cookieData;
+      if (!isValidCookiePath(path)) {
+        logMessage(source, "Invalid cookie path: '".concat(path, "'"));
+        return;
       }
+
+      var cookieToSet = concatCookieNameValuePath(name, validValue, path);
+
+      if (!cookieToSet) {
+        return;
+      }
+
+      hit(source);
+      document.cookie = cookieToSet;
     }
     setCookie$1.names = ['set-cookie'];
-    setCookie$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, getLimitedCookieValue, concatCookieNameValuePath, isValidCookieRawPath, getCookiePath];
+    setCookie$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, getLimitedCookieValue, concatCookieNameValuePath, isValidCookiePath, getCookiePath];
 
     /**
      * @scriptlet set-cookie-reload
@@ -5712,27 +5746,34 @@
         return;
       }
 
-      var validValue = getLimitedCookieValue(source, value);
+      var validValue = getLimitedCookieValue(value);
 
       if (validValue === null) {
-        logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
+        logMessage(source, "Invalid cookie value: '".concat(value, "'"));
         return;
       }
 
-      var cookieData = concatCookieNameValuePath(source, name, validValue, path);
+      if (!isValidCookiePath(path)) {
+        logMessage(source, "Invalid cookie path: '".concat(path, "'"));
+        return;
+      }
 
-      if (cookieData) {
-        document.cookie = cookieData;
-        hit(source); // Only reload the page if cookie was set
-        // https://github.com/AdguardTeam/Scriptlets/issues/212
+      var cookieToSet = concatCookieNameValuePath(name, validValue, path);
 
-        if (isCookieSetWithValue(document.cookie, name, value)) {
-          window.location.reload();
-        }
+      if (!cookieToSet) {
+        return;
+      }
+
+      document.cookie = cookieToSet;
+      hit(source); // Only reload the page if cookie was set
+      // https://github.com/AdguardTeam/Scriptlets/issues/212
+
+      if (isCookieSetWithValue(document.cookie, name, value)) {
+        window.location.reload();
       }
     }
     setCookieReload$1.names = ['set-cookie-reload'];
-    setCookieReload$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, getLimitedCookieValue, concatCookieNameValuePath, isValidCookieRawPath, getCookiePath];
+    setCookieReload$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, getLimitedCookieValue, concatCookieNameValuePath, isValidCookiePath, getCookiePath];
 
     /**
      * @scriptlet hide-in-shadow-dom
@@ -6014,7 +6055,7 @@
     }
     preventFetch$1.names = ['prevent-fetch', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-fetch-if.js', 'ubo-no-fetch-if.js', 'ubo-no-fetch-if'];
-    preventFetch$1.injections = [hit, getFetchData, objectToString, noopPromiseResolve, matchRequestProps, logMessage, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries, parseMatchProps, validateParsedData, getMatchPropsData];
+    preventFetch$1.injections = [hit, getFetchData, objectToString, noopPromiseResolve, matchRequestProps, logMessage, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getRequestProps, getObjectEntries, getObjectFromEntries, parseMatchProps, validateParsedData, getMatchPropsData];
 
     /* eslint-disable max-len */
 
@@ -6550,7 +6591,7 @@
     }
     preventXHR$1.names = ['prevent-xhr', // aliases are needed for matching the related scriptlet converted into our syntax
     'no-xhr-if.js', 'ubo-no-xhr-if.js', 'ubo-no-xhr-if'];
-    preventXHR$1.injections = [hit, logMessage, objectToString, matchRequestProps, generateRandomResponse, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getObjectEntries, getNumberFromString, nativeIsFinite, nativeIsNaN, parseMatchProps, validateParsedData, getMatchPropsData, getRandomIntInclusive, getRandomStrByLength];
+    preventXHR$1.injections = [hit, logMessage, objectToString, matchRequestProps, generateRandomResponse, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getObjectEntries, getNumberFromString, nativeIsFinite, nativeIsNaN, parseMatchProps, validateParsedData, getMatchPropsData, getRequestProps, getRandomIntInclusive, getRandomStrByLength];
 
     /**
      * @scriptlet close-window
@@ -6986,826 +7027,6 @@
     noTopics$1.names = ['no-topics'];
     noTopics$1.injections = [hit, noopPromiseResolve];
 
-    function createCommonjsModule(fn) {
-      var module = { exports: {} };
-    	return fn(module, module.exports), module.exports;
-    }
-
-    function commonjsRequire (target) {
-    	throw new Error('Could not dynamically require "' + target + '". Please configure the dynamicRequireTargets option of @rollup/plugin-commonjs appropriately for this require call to behave properly.');
-    }
-
-    /**
-     * Copyright (c) 2014-present, Facebook, Inc.
-     *
-     * This source code is licensed under the MIT license found in the
-     * LICENSE file in the root directory of this source tree.
-     */
-    var runtime_1 = createCommonjsModule(function (module) {
-      var runtime = function (exports) {
-
-        var Op = Object.prototype;
-        var hasOwn = Op.hasOwnProperty;
-        var undefined$1; // More compressible than void 0.
-
-        var $Symbol = typeof Symbol === "function" ? Symbol : {};
-        var iteratorSymbol = $Symbol.iterator || "@@iterator";
-        var asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator";
-        var toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
-
-        function define(obj, key, value) {
-          Object.defineProperty(obj, key, {
-            value: value,
-            enumerable: true,
-            configurable: true,
-            writable: true
-          });
-          return obj[key];
-        }
-
-        try {
-          // IE 8 has a broken Object.defineProperty that only works on DOM objects.
-          define({}, "");
-        } catch (err) {
-          define = function define(obj, key, value) {
-            return obj[key] = value;
-          };
-        }
-
-        function wrap(innerFn, outerFn, self, tryLocsList) {
-          // If outerFn provided and outerFn.prototype is a Generator, then outerFn.prototype instanceof Generator.
-          var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator;
-          var generator = Object.create(protoGenerator.prototype);
-          var context = new Context(tryLocsList || []); // The ._invoke method unifies the implementations of the .next,
-          // .throw, and .return methods.
-
-          generator._invoke = makeInvokeMethod(innerFn, self, context);
-          return generator;
-        }
-
-        exports.wrap = wrap; // Try/catch helper to minimize deoptimizations. Returns a completion
-        // record like context.tryEntries[i].completion. This interface could
-        // have been (and was previously) designed to take a closure to be
-        // invoked without arguments, but in all the cases we care about we
-        // already have an existing method we want to call, so there's no need
-        // to create a new function object. We can even get away with assuming
-        // the method takes exactly one argument, since that happens to be true
-        // in every case, so we don't have to touch the arguments object. The
-        // only additional allocation required is the completion record, which
-        // has a stable shape and so hopefully should be cheap to allocate.
-
-        function tryCatch(fn, obj, arg) {
-          try {
-            return {
-              type: "normal",
-              arg: fn.call(obj, arg)
-            };
-          } catch (err) {
-            return {
-              type: "throw",
-              arg: err
-            };
-          }
-        }
-
-        var GenStateSuspendedStart = "suspendedStart";
-        var GenStateSuspendedYield = "suspendedYield";
-        var GenStateExecuting = "executing";
-        var GenStateCompleted = "completed"; // Returning this object from the innerFn has the same effect as
-        // breaking out of the dispatch switch statement.
-
-        var ContinueSentinel = {}; // Dummy constructor functions that we use as the .constructor and
-        // .constructor.prototype properties for functions that return Generator
-        // objects. For full spec compliance, you may wish to configure your
-        // minifier not to mangle the names of these two functions.
-
-        function Generator() {}
-
-        function GeneratorFunction() {}
-
-        function GeneratorFunctionPrototype() {} // This is a polyfill for %IteratorPrototype% for environments that
-        // don't natively support it.
-
-
-        var IteratorPrototype = {};
-
-        IteratorPrototype[iteratorSymbol] = function () {
-          return this;
-        };
-
-        var getProto = Object.getPrototypeOf;
-        var NativeIteratorPrototype = getProto && getProto(getProto(values([])));
-
-        if (NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol)) {
-          // This environment has a native %IteratorPrototype%; use it instead
-          // of the polyfill.
-          IteratorPrototype = NativeIteratorPrototype;
-        }
-
-        var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype);
-        GeneratorFunction.prototype = Gp.constructor = GeneratorFunctionPrototype;
-        GeneratorFunctionPrototype.constructor = GeneratorFunction;
-        GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"); // Helper for defining the .next, .throw, and .return methods of the
-        // Iterator interface in terms of a single ._invoke method.
-
-        function defineIteratorMethods(prototype) {
-          ["next", "throw", "return"].forEach(function (method) {
-            define(prototype, method, function (arg) {
-              return this._invoke(method, arg);
-            });
-          });
-        }
-
-        exports.isGeneratorFunction = function (genFun) {
-          var ctor = typeof genFun === "function" && genFun.constructor;
-          return ctor ? ctor === GeneratorFunction || // For the native GeneratorFunction constructor, the best we can
-          // do is to check its .name property.
-          (ctor.displayName || ctor.name) === "GeneratorFunction" : false;
-        };
-
-        exports.mark = function (genFun) {
-          if (Object.setPrototypeOf) {
-            Object.setPrototypeOf(genFun, GeneratorFunctionPrototype);
-          } else {
-            genFun.__proto__ = GeneratorFunctionPrototype;
-            define(genFun, toStringTagSymbol, "GeneratorFunction");
-          }
-
-          genFun.prototype = Object.create(Gp);
-          return genFun;
-        }; // Within the body of any async function, `await x` is transformed to
-        // `yield regeneratorRuntime.awrap(x)`, so that the runtime can test
-        // `hasOwn.call(value, "__await")` to determine if the yielded value is
-        // meant to be awaited.
-
-
-        exports.awrap = function (arg) {
-          return {
-            __await: arg
-          };
-        };
-
-        function AsyncIterator(generator, PromiseImpl) {
-          function invoke(method, arg, resolve, reject) {
-            var record = tryCatch(generator[method], generator, arg);
-
-            if (record.type === "throw") {
-              reject(record.arg);
-            } else {
-              var result = record.arg;
-              var value = result.value;
-
-              if (value && typeof value === "object" && hasOwn.call(value, "__await")) {
-                return PromiseImpl.resolve(value.__await).then(function (value) {
-                  invoke("next", value, resolve, reject);
-                }, function (err) {
-                  invoke("throw", err, resolve, reject);
-                });
-              }
-
-              return PromiseImpl.resolve(value).then(function (unwrapped) {
-                // When a yielded Promise is resolved, its final value becomes
-                // the .value of the Promise<{value,done}> result for the
-                // current iteration.
-                result.value = unwrapped;
-                resolve(result);
-              }, function (error) {
-                // If a rejected Promise was yielded, throw the rejection back
-                // into the async generator function so it can be handled there.
-                return invoke("throw", error, resolve, reject);
-              });
-            }
-          }
-
-          var previousPromise;
-
-          function enqueue(method, arg) {
-            function callInvokeWithMethodAndArg() {
-              return new PromiseImpl(function (resolve, reject) {
-                invoke(method, arg, resolve, reject);
-              });
-            }
-
-            return previousPromise = // If enqueue has been called before, then we want to wait until
-            // all previous Promises have been resolved before calling invoke,
-            // so that results are always delivered in the correct order. If
-            // enqueue has not been called before, then it is important to
-            // call invoke immediately, without waiting on a callback to fire,
-            // so that the async generator function has the opportunity to do
-            // any necessary setup in a predictable way. This predictability
-            // is why the Promise constructor synchronously invokes its
-            // executor callback, and why async functions synchronously
-            // execute code before the first await. Since we implement simple
-            // async functions in terms of async generators, it is especially
-            // important to get this right, even though it requires care.
-            previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, // Avoid propagating failures to Promises returned by later
-            // invocations of the iterator.
-            callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg();
-          } // Define the unified helper method that is used to implement .next,
-          // .throw, and .return (see defineIteratorMethods).
-
-
-          this._invoke = enqueue;
-        }
-
-        defineIteratorMethods(AsyncIterator.prototype);
-
-        AsyncIterator.prototype[asyncIteratorSymbol] = function () {
-          return this;
-        };
-
-        exports.AsyncIterator = AsyncIterator; // Note that simple async functions are implemented on top of
-        // AsyncIterator objects; they just return a Promise for the value of
-        // the final result produced by the iterator.
-
-        exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) {
-          if (PromiseImpl === void 0) PromiseImpl = Promise;
-          var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl);
-          return exports.isGeneratorFunction(outerFn) ? iter // If outerFn is a generator, return the full iterator.
-          : iter.next().then(function (result) {
-            return result.done ? result.value : iter.next();
-          });
-        };
-
-        function makeInvokeMethod(innerFn, self, context) {
-          var state = GenStateSuspendedStart;
-          return function invoke(method, arg) {
-            if (state === GenStateExecuting) {
-              throw new Error("Generator is already running");
-            }
-
-            if (state === GenStateCompleted) {
-              if (method === "throw") {
-                throw arg;
-              } // Be forgiving, per 25.3.3.3.3 of the spec:
-              // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-generatorresume
-
-
-              return doneResult();
-            }
-
-            context.method = method;
-            context.arg = arg;
-
-            while (true) {
-              var delegate = context.delegate;
-
-              if (delegate) {
-                var delegateResult = maybeInvokeDelegate(delegate, context);
-
-                if (delegateResult) {
-                  if (delegateResult === ContinueSentinel) continue;
-                  return delegateResult;
-                }
-              }
-
-              if (context.method === "next") {
-                // Setting context._sent for legacy support of Babel's
-                // function.sent implementation.
-                context.sent = context._sent = context.arg;
-              } else if (context.method === "throw") {
-                if (state === GenStateSuspendedStart) {
-                  state = GenStateCompleted;
-                  throw context.arg;
-                }
-
-                context.dispatchException(context.arg);
-              } else if (context.method === "return") {
-                context.abrupt("return", context.arg);
-              }
-
-              state = GenStateExecuting;
-              var record = tryCatch(innerFn, self, context);
-
-              if (record.type === "normal") {
-                // If an exception is thrown from innerFn, we leave state ===
-                // GenStateExecuting and loop back for another invocation.
-                state = context.done ? GenStateCompleted : GenStateSuspendedYield;
-
-                if (record.arg === ContinueSentinel) {
-                  continue;
-                }
-
-                return {
-                  value: record.arg,
-                  done: context.done
-                };
-              } else if (record.type === "throw") {
-                state = GenStateCompleted; // Dispatch the exception by looping back around to the
-                // context.dispatchException(context.arg) call above.
-
-                context.method = "throw";
-                context.arg = record.arg;
-              }
-            }
-          };
-        } // Call delegate.iterator[context.method](context.arg) and handle the
-        // result, either by returning a { value, done } result from the
-        // delegate iterator, or by modifying context.method and context.arg,
-        // setting context.delegate to null, and returning the ContinueSentinel.
-
-
-        function maybeInvokeDelegate(delegate, context) {
-          var method = delegate.iterator[context.method];
-
-          if (method === undefined$1) {
-            // A .throw or .return when the delegate iterator has no .throw
-            // method always terminates the yield* loop.
-            context.delegate = null;
-
-            if (context.method === "throw") {
-              // Note: ["return"] must be used for ES3 parsing compatibility.
-              if (delegate.iterator["return"]) {
-                // If the delegate iterator has a return method, give it a
-                // chance to clean up.
-                context.method = "return";
-                context.arg = undefined$1;
-                maybeInvokeDelegate(delegate, context);
-
-                if (context.method === "throw") {
-                  // If maybeInvokeDelegate(context) changed context.method from
-                  // "return" to "throw", let that override the TypeError below.
-                  return ContinueSentinel;
-                }
-              }
-
-              context.method = "throw";
-              context.arg = new TypeError("The iterator does not provide a 'throw' method");
-            }
-
-            return ContinueSentinel;
-          }
-
-          var record = tryCatch(method, delegate.iterator, context.arg);
-
-          if (record.type === "throw") {
-            context.method = "throw";
-            context.arg = record.arg;
-            context.delegate = null;
-            return ContinueSentinel;
-          }
-
-          var info = record.arg;
-
-          if (!info) {
-            context.method = "throw";
-            context.arg = new TypeError("iterator result is not an object");
-            context.delegate = null;
-            return ContinueSentinel;
-          }
-
-          if (info.done) {
-            // Assign the result of the finished delegate to the temporary
-            // variable specified by delegate.resultName (see delegateYield).
-            context[delegate.resultName] = info.value; // Resume execution at the desired location (see delegateYield).
-
-            context.next = delegate.nextLoc; // If context.method was "throw" but the delegate handled the
-            // exception, let the outer generator proceed normally. If
-            // context.method was "next", forget context.arg since it has been
-            // "consumed" by the delegate iterator. If context.method was
-            // "return", allow the original .return call to continue in the
-            // outer generator.
-
-            if (context.method !== "return") {
-              context.method = "next";
-              context.arg = undefined$1;
-            }
-          } else {
-            // Re-yield the result returned by the delegate method.
-            return info;
-          } // The delegate iterator is finished, so forget it and continue with
-          // the outer generator.
-
-
-          context.delegate = null;
-          return ContinueSentinel;
-        } // Define Generator.prototype.{next,throw,return} in terms of the
-        // unified ._invoke helper method.
-
-
-        defineIteratorMethods(Gp);
-        define(Gp, toStringTagSymbol, "Generator"); // A Generator should always return itself as the iterator object when the
-        // @@iterator function is called on it. Some browsers' implementations of the
-        // iterator prototype chain incorrectly implement this, causing the Generator
-        // object to not be returned from this call. This ensures that doesn't happen.
-        // See https://github.com/facebook/regenerator/issues/274 for more details.
-
-        Gp[iteratorSymbol] = function () {
-          return this;
-        };
-
-        Gp.toString = function () {
-          return "[object Generator]";
-        };
-
-        function pushTryEntry(locs) {
-          var entry = {
-            tryLoc: locs[0]
-          };
-
-          if (1 in locs) {
-            entry.catchLoc = locs[1];
-          }
-
-          if (2 in locs) {
-            entry.finallyLoc = locs[2];
-            entry.afterLoc = locs[3];
-          }
-
-          this.tryEntries.push(entry);
-        }
-
-        function resetTryEntry(entry) {
-          var record = entry.completion || {};
-          record.type = "normal";
-          delete record.arg;
-          entry.completion = record;
-        }
-
-        function Context(tryLocsList) {
-          // The root entry object (effectively a try statement without a catch
-          // or a finally block) gives us a place to store values thrown from
-          // locations where there is no enclosing try statement.
-          this.tryEntries = [{
-            tryLoc: "root"
-          }];
-          tryLocsList.forEach(pushTryEntry, this);
-          this.reset(true);
-        }
-
-        exports.keys = function (object) {
-          var keys = [];
-
-          for (var key in object) {
-            keys.push(key);
-          }
-
-          keys.reverse(); // Rather than returning an object with a next method, we keep
-          // things simple and return the next function itself.
-
-          return function next() {
-            while (keys.length) {
-              var key = keys.pop();
-
-              if (key in object) {
-                next.value = key;
-                next.done = false;
-                return next;
-              }
-            } // To avoid creating an additional object, we just hang the .value
-            // and .done properties off the next function object itself. This
-            // also ensures that the minifier will not anonymize the function.
-
-
-            next.done = true;
-            return next;
-          };
-        };
-
-        function values(iterable) {
-          if (iterable) {
-            var iteratorMethod = iterable[iteratorSymbol];
-
-            if (iteratorMethod) {
-              return iteratorMethod.call(iterable);
-            }
-
-            if (typeof iterable.next === "function") {
-              return iterable;
-            }
-
-            if (!isNaN(iterable.length)) {
-              var i = -1,
-                  next = function next() {
-                while (++i < iterable.length) {
-                  if (hasOwn.call(iterable, i)) {
-                    next.value = iterable[i];
-                    next.done = false;
-                    return next;
-                  }
-                }
-
-                next.value = undefined$1;
-                next.done = true;
-                return next;
-              };
-
-              return next.next = next;
-            }
-          } // Return an iterator with no values.
-
-
-          return {
-            next: doneResult
-          };
-        }
-
-        exports.values = values;
-
-        function doneResult() {
-          return {
-            value: undefined$1,
-            done: true
-          };
-        }
-
-        Context.prototype = {
-          constructor: Context,
-          reset: function reset(skipTempReset) {
-            this.prev = 0;
-            this.next = 0; // Resetting context._sent for legacy support of Babel's
-            // function.sent implementation.
-
-            this.sent = this._sent = undefined$1;
-            this.done = false;
-            this.delegate = null;
-            this.method = "next";
-            this.arg = undefined$1;
-            this.tryEntries.forEach(resetTryEntry);
-
-            if (!skipTempReset) {
-              for (var name in this) {
-                // Not sure about the optimal order of these conditions:
-                if (name.charAt(0) === "t" && hasOwn.call(this, name) && !isNaN(+name.slice(1))) {
-                  this[name] = undefined$1;
-                }
-              }
-            }
-          },
-          stop: function stop() {
-            this.done = true;
-            var rootEntry = this.tryEntries[0];
-            var rootRecord = rootEntry.completion;
-
-            if (rootRecord.type === "throw") {
-              throw rootRecord.arg;
-            }
-
-            return this.rval;
-          },
-          dispatchException: function dispatchException(exception) {
-            if (this.done) {
-              throw exception;
-            }
-
-            var context = this;
-
-            function handle(loc, caught) {
-              record.type = "throw";
-              record.arg = exception;
-              context.next = loc;
-
-              if (caught) {
-                // If the dispatched exception was caught by a catch block,
-                // then let that catch block handle the exception normally.
-                context.method = "next";
-                context.arg = undefined$1;
-              }
-
-              return !!caught;
-            }
-
-            for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-              var entry = this.tryEntries[i];
-              var record = entry.completion;
-
-              if (entry.tryLoc === "root") {
-                // Exception thrown outside of any try block that could handle
-                // it, so set the completion value of the entire function to
-                // throw the exception.
-                return handle("end");
-              }
-
-              if (entry.tryLoc <= this.prev) {
-                var hasCatch = hasOwn.call(entry, "catchLoc");
-                var hasFinally = hasOwn.call(entry, "finallyLoc");
-
-                if (hasCatch && hasFinally) {
-                  if (this.prev < entry.catchLoc) {
-                    return handle(entry.catchLoc, true);
-                  } else if (this.prev < entry.finallyLoc) {
-                    return handle(entry.finallyLoc);
-                  }
-                } else if (hasCatch) {
-                  if (this.prev < entry.catchLoc) {
-                    return handle(entry.catchLoc, true);
-                  }
-                } else if (hasFinally) {
-                  if (this.prev < entry.finallyLoc) {
-                    return handle(entry.finallyLoc);
-                  }
-                } else {
-                  throw new Error("try statement without catch or finally");
-                }
-              }
-            }
-          },
-          abrupt: function abrupt(type, arg) {
-            for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-              var entry = this.tryEntries[i];
-
-              if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) {
-                var finallyEntry = entry;
-                break;
-              }
-            }
-
-            if (finallyEntry && (type === "break" || type === "continue") && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc) {
-              // Ignore the finally entry if control is not jumping to a
-              // location outside the try/catch block.
-              finallyEntry = null;
-            }
-
-            var record = finallyEntry ? finallyEntry.completion : {};
-            record.type = type;
-            record.arg = arg;
-
-            if (finallyEntry) {
-              this.method = "next";
-              this.next = finallyEntry.finallyLoc;
-              return ContinueSentinel;
-            }
-
-            return this.complete(record);
-          },
-          complete: function complete(record, afterLoc) {
-            if (record.type === "throw") {
-              throw record.arg;
-            }
-
-            if (record.type === "break" || record.type === "continue") {
-              this.next = record.arg;
-            } else if (record.type === "return") {
-              this.rval = this.arg = record.arg;
-              this.method = "return";
-              this.next = "end";
-            } else if (record.type === "normal" && afterLoc) {
-              this.next = afterLoc;
-            }
-
-            return ContinueSentinel;
-          },
-          finish: function finish(finallyLoc) {
-            for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-              var entry = this.tryEntries[i];
-
-              if (entry.finallyLoc === finallyLoc) {
-                this.complete(entry.completion, entry.afterLoc);
-                resetTryEntry(entry);
-                return ContinueSentinel;
-              }
-            }
-          },
-          "catch": function _catch(tryLoc) {
-            for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-              var entry = this.tryEntries[i];
-
-              if (entry.tryLoc === tryLoc) {
-                var record = entry.completion;
-
-                if (record.type === "throw") {
-                  var thrown = record.arg;
-                  resetTryEntry(entry);
-                }
-
-                return thrown;
-              }
-            } // The context.catch method must only be called with a location
-            // argument that corresponds to a known catch block.
-
-
-            throw new Error("illegal catch attempt");
-          },
-          delegateYield: function delegateYield(iterable, resultName, nextLoc) {
-            this.delegate = {
-              iterator: values(iterable),
-              resultName: resultName,
-              nextLoc: nextLoc
-            };
-
-            if (this.method === "next") {
-              // Deliberately forget the last sent value so that we don't
-              // accidentally pass it on to the delegate.
-              this.arg = undefined$1;
-            }
-
-            return ContinueSentinel;
-          }
-        }; // Regardless of whether this script is executing as a CommonJS module
-        // or not, return the runtime object so that we can declare the variable
-        // regeneratorRuntime in the outer scope, which allows this module to be
-        // injected easily by `bin/regenerator --include-runtime script.js`.
-
-        return exports;
-      }( // If this script is executing as a CommonJS module, use module.exports
-      // as the regeneratorRuntime namespace. Otherwise create a new empty
-      // object. Either way, the resulting object will be used to initialize
-      // the regeneratorRuntime variable at the top of this file.
-      module.exports );
-
-      try {
-        regeneratorRuntime = runtime;
-      } catch (accidentalStrictMode) {
-        // This module should not be running in strict mode, so the above
-        // assignment should always work unless something is misconfigured. Just
-        // in case runtime.js accidentally runs in strict mode, we can escape
-        // strict mode using a global Function call. This could conceivably fail
-        // if a Content Security Policy forbids using Function, but in that case
-        // the proper solution is to fix the accidental strict mode problem. If
-        // you've misconfigured your bundler to force strict mode and applied a
-        // CSP to forbid Function, and you're not willing to fix either of those
-        // problems, please detail your unique predicament in a GitHub issue.
-        Function("r", "regeneratorRuntime = r")(runtime);
-      }
-    });
-
-    var regenerator$1 = runtime_1;
-
-    function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) {
-      try {
-        var info = gen[key](arg);
-        var value = info.value;
-      } catch (error) {
-        reject(error);
-        return;
-      }
-
-      if (info.done) {
-        resolve(value);
-      } else {
-        Promise.resolve(value).then(_next, _throw);
-      }
-    }
-
-    function _asyncToGenerator(fn) {
-      return function () {
-        var self = this,
-            args = arguments;
-        return new Promise(function (resolve, reject) {
-          var gen = fn.apply(self, args);
-
-          function _next(value) {
-            asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value);
-          }
-
-          function _throw(err) {
-            asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err);
-          }
-
-          _next(undefined);
-        });
-      };
-    }
-
-    var asyncToGenerator$1 = _asyncToGenerator;
-
-    function _arrayLikeToArray(arr, len) {
-      if (len == null || len > arr.length) len = arr.length;
-
-      for (var i = 0, arr2 = new Array(len); i < len; i++) {
-        arr2[i] = arr[i];
-      }
-
-      return arr2;
-    }
-
-    var arrayLikeToArray = _arrayLikeToArray;
-
-    function _arrayWithoutHoles(arr) {
-      if (Array.isArray(arr)) return arrayLikeToArray(arr);
-    }
-
-    var arrayWithoutHoles = _arrayWithoutHoles;
-
-    function _iterableToArray(iter) {
-      if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
-    }
-
-    var iterableToArray = _iterableToArray;
-
-    function _unsupportedIterableToArray(o, minLen) {
-      if (!o) return;
-      if (typeof o === "string") return arrayLikeToArray(o, minLen);
-      var n = Object.prototype.toString.call(o).slice(8, -1);
-      if (n === "Object" && o.constructor) n = o.constructor.name;
-      if (n === "Map" || n === "Set") return Array.from(o);
-      if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
-    }
-
-    var unsupportedIterableToArray = _unsupportedIterableToArray;
-
-    function _nonIterableSpread() {
-      throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-    }
-
-    var nonIterableSpread = _nonIterableSpread;
-
-    function _toConsumableArray(arr) {
-      return arrayWithoutHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableSpread();
-    }
-
-    var toConsumableArray$1 = _toConsumableArray;
-
     /* eslint-disable max-len */
 
     /**
@@ -7889,11 +7110,12 @@
       var requestHeaders = [];
 
       var openWrapper = function openWrapper(target, thisArg, args) {
-        xhrData = getXhrData.apply(void 0, toConsumableArray$1(args));
+        // eslint-disable-next-line prefer-spread
+        xhrData = getXhrData.apply(null, args);
 
         if (shouldLog) {
           // Log if no propsToMatch given
-          var _message = "log: xhr( ".concat(objectToString(xhrData), " )");
+          var _message = "xhr( ".concat(objectToString(xhrData), " )");
 
           logMessage(source, _message, true);
           hit(source);
@@ -7920,118 +7142,93 @@
         return Reflect.apply(target, thisArg, args);
       };
 
-      var sendWrapper = /*#__PURE__*/function () {
-        var _ref = asyncToGenerator$1( /*#__PURE__*/regenerator$1.mark(function _callee(target, thisArg, args) {
-          var forgedRequest;
-          return regenerator$1.wrap(function _callee$(_context) {
-            while (1) {
-              switch (_context.prev = _context.next) {
-                case 0:
-                  if (shouldReplace) {
-                    _context.next = 2;
-                    break;
-                  }
+      var sendWrapper = function sendWrapper(target, thisArg, args) {
+        if (!shouldReplace) {
+          return Reflect.apply(target, thisArg, args);
+        }
+        /**
+         * Create separate XHR request with original request's input
+         * to be able to collect response data without triggering
+         * listeners on original XHR object
+         */
 
-                  return _context.abrupt("return", Reflect.apply(target, thisArg, args));
 
-                case 2:
-                  /**
-                   * Create separate XHR request with original request's input
-                   * to be able to collect response data without triggering
-                   * listeners on original XHR object
-                   */
-                  forgedRequest = new XMLHttpRequest();
-                  forgedRequest.addEventListener('readystatechange', function () {
-                    if (forgedRequest.readyState !== 4) {
-                      return;
-                    }
+        var forgedRequest = new XMLHttpRequest();
+        forgedRequest.addEventListener('readystatechange', function () {
+          if (forgedRequest.readyState !== 4) {
+            return;
+          }
 
-                    var readyState = forgedRequest.readyState,
-                        response = forgedRequest.response,
-                        responseText = forgedRequest.responseText,
-                        responseURL = forgedRequest.responseURL,
-                        responseXML = forgedRequest.responseXML,
-                        status = forgedRequest.status,
-                        statusText = forgedRequest.statusText; // Extract content from response
+          var readyState = forgedRequest.readyState,
+              response = forgedRequest.response,
+              responseText = forgedRequest.responseText,
+              responseURL = forgedRequest.responseURL,
+              responseXML = forgedRequest.responseXML,
+              status = forgedRequest.status,
+              statusText = forgedRequest.statusText; // Extract content from response
 
-                    var content = responseText || response;
+          var content = responseText || response;
 
-                    if (typeof content !== 'string') {
-                      return;
-                    }
+          if (typeof content !== 'string') {
+            return;
+          }
 
-                    var patternRegexp = pattern === '*' ? toRegExp() : toRegExp(pattern);
-                    var modifiedContent = content.replace(patternRegexp, replacement); // Manually put required values into target XHR object
-                    // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
+          var patternRegexp = pattern === '*' ? toRegExp() : toRegExp(pattern);
+          var modifiedContent = content.replace(patternRegexp, replacement); // Manually put required values into target XHR object
+          // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
 
-                    Object.defineProperties(thisArg, {
-                      readyState: {
-                        value: readyState
-                      },
-                      response: {
-                        value: modifiedContent
-                      },
-                      responseText: {
-                        value: modifiedContent
-                      },
-                      responseURL: {
-                        value: responseURL
-                      },
-                      responseXML: {
-                        value: responseXML
-                      },
-                      status: {
-                        value: status
-                      },
-                      statusText: {
-                        value: statusText
-                      }
-                    }); // Mock events
-
-                    setTimeout(function () {
-                      var stateEvent = new Event('readystatechange');
-                      thisArg.dispatchEvent(stateEvent);
-                      var loadEvent = new Event('load');
-                      thisArg.dispatchEvent(loadEvent);
-                      var loadEndEvent = new Event('loadend');
-                      thisArg.dispatchEvent(loadEndEvent);
-                    }, 1);
-                    hit(source);
-                  });
-                  nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]); // Mimic request headers before sending
-                  // setRequestHeader can only be called on open request objects
-
-                  requestHeaders.forEach(function (header) {
-                    var name = header[0];
-                    var value = header[1];
-                    forgedRequest.setRequestHeader(name, value);
-                  });
-                  requestHeaders = [];
-                  _context.prev = 7;
-                  nativeSend.call(forgedRequest, args);
-                  _context.next = 14;
-                  break;
-
-                case 11:
-                  _context.prev = 11;
-                  _context.t0 = _context["catch"](7);
-                  return _context.abrupt("return", Reflect.apply(target, thisArg, args));
-
-                case 14:
-                  return _context.abrupt("return", undefined);
-
-                case 15:
-                case "end":
-                  return _context.stop();
-              }
+          Object.defineProperties(thisArg, {
+            readyState: {
+              value: readyState
+            },
+            response: {
+              value: modifiedContent
+            },
+            responseText: {
+              value: modifiedContent
+            },
+            responseURL: {
+              value: responseURL
+            },
+            responseXML: {
+              value: responseXML
+            },
+            status: {
+              value: status
+            },
+            statusText: {
+              value: statusText
             }
-          }, _callee, null, [[7, 11]]);
-        }));
+          }); // Mock events
 
-        return function sendWrapper(_x, _x2, _x3) {
-          return _ref.apply(this, arguments);
-        };
-      }();
+          setTimeout(function () {
+            var stateEvent = new Event('readystatechange');
+            thisArg.dispatchEvent(stateEvent);
+            var loadEvent = new Event('load');
+            thisArg.dispatchEvent(loadEvent);
+            var loadEndEvent = new Event('loadend');
+            thisArg.dispatchEvent(loadEndEvent);
+          }, 1);
+          hit(source);
+        });
+        nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]); // Mimic request headers before sending
+        // setRequestHeader can only be called on open request objects
+
+        requestHeaders.forEach(function (header) {
+          var name = header[0];
+          var value = header[1];
+          forgedRequest.setRequestHeader(name, value);
+        });
+        requestHeaders = [];
+
+        try {
+          nativeSend.call(forgedRequest, args);
+        } catch (_unused) {
+          return Reflect.apply(target, thisArg, args);
+        }
+
+        return undefined;
+      };
 
       var openHandler = {
         apply: openWrapper
@@ -8044,7 +7241,7 @@
     }
     trustedReplaceXhrResponse$1.names = ['trusted-replace-xhr-response' // trusted scriptlets support no aliases
     ];
-    trustedReplaceXhrResponse$1.injections = [hit, logMessage, toRegExp, objectToString, matchRequestProps, getXhrData, getMatchPropsData, validateParsedData, parseMatchProps, isValidStrPattern, escapeRegExp, isEmptyObject, getObjectEntries];
+    trustedReplaceXhrResponse$1.injections = [hit, logMessage, toRegExp, objectToString, matchRequestProps, getXhrData, getMatchPropsData, getRequestProps, validateParsedData, parseMatchProps, isValidStrPattern, escapeRegExp, isEmptyObject, getObjectEntries];
 
     /* eslint-disable max-len */
 
@@ -8276,25 +7473,25 @@
      * @trustedScriptlet trusted-set-cookie
      *
      * @description
-     * Sets a cookie with arbitrary name and value, with optional path
-     * and the ability to reload the page after cookie was set.
+     * Sets a cookie with arbitrary name and value,
+     * and with optional ability to offset cookie attribute 'expires' and set path.
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[, reload[, path]]])
+     * example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[, path]])
      * ```
      *
      * - `name` - required, cookie name to be set
      * - `value` - required, cookie value. Possible values:
      *   - arbitrary value
      *   - empty string for no value
-     *   - `$now$` keyword for setting current time
-     * - 'offsetExpiresSec' - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
+     *   - `$now$` keyword for setting current time in ms, e.g 1667915146503
+     *   - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+     * - `offsetExpiresSec` - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
      * Possible values:
      *   - positive integer in seconds
      *   - `1year` keyword for setting expiration date to one year
      *   - `1day` keyword for setting expiration date to one day
-     * - 'reload' - optional, boolean. Argument for reloading page after cookie is set. Defaults to `false`
      * - `path` - optional, argument for setting cookie path, defaults to `/`; possible values:
      *   - `/` — root path
      *   - `none` — to set no path at all
@@ -8308,7 +7505,7 @@
      *
      * 2. Set cookie with `new Date().getTime()` value
      * ```
-     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '$now')
+     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '$now$')
      * ```
      *
      * 3. Set cookie which will expire in 3 days
@@ -8320,14 +7517,10 @@
      * ```
      * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept', '1year')
      * ```
-     * 5. Reload the page if cookie was successfully set
-     * ```
-     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'true')
-     * ```
      *
-     * 6. Set cookie with no path
+     * 5. Set cookie with no path
      * ```
-     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', '', 'none')
+     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'none')
      * ```
      */
 
@@ -8335,8 +7528,110 @@
 
     function trustedSetCookie$1(source, name, value) {
       var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-      var reload = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 'false';
-      var path = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : '/';
+      var path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '/';
+
+      if (typeof name === 'undefined') {
+        logMessage(source, 'Cookie name should be specified.');
+        return;
+      }
+
+      if (typeof value === 'undefined') {
+        logMessage(source, 'Cookie value should be specified.');
+        return;
+      }
+
+      var parsedValue = parseKeywordValue(value);
+
+      if (!isValidCookiePath(path)) {
+        logMessage(source, "Invalid cookie path: '".concat(path, "'"));
+        return;
+      }
+
+      var cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
+
+      if (!cookieToSet) {
+        return;
+      }
+
+      var parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
+
+      if (!parsedOffsetMs) {
+        logMessage(source, "Invalid offsetExpiresSec value: ".concat(offsetExpiresSec));
+        return;
+      }
+
+      var expires = Date.now() + parsedOffsetMs;
+      cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
+      document.cookie = cookieToSet;
+      hit(source);
+    }
+    trustedSetCookie$1.names = ['trusted-set-cookie' // trusted scriptlets support no aliases
+    ];
+    trustedSetCookie$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, concatCookieNameValuePath, isValidCookiePath, getTrustedCookieOffsetMs, parseKeywordValue, getCookiePath];
+
+    /* eslint-disable max-len */
+
+    /**
+     * @trustedScriptlet trusted-set-cookie-reload
+     *
+     * @description
+     * Sets a cookie with arbitrary name and value,
+     * and with optional ability to offset cookie attribute 'expires' and set path.
+     * Also reloads the current page after the cookie setting.
+     * If reloading option is not needed, use the [`trusted-set-cookie` scriptlet](#trusted-set-cookie).
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie-reload', name, value[, offsetExpiresSec[, path]])
+     * ```
+     *
+     * - `name` - required, cookie name to be set
+     * - `value` - required, cookie value. Possible values:
+     *   - arbitrary value
+     *   - empty string for no value
+     *   - `$now$` keyword for setting current time in ms, e.g 1667915146503
+     *   - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+     * - 'offsetExpiresSec' - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
+     * Possible values:
+     *   - positive integer in seconds
+     *   - `1year` keyword for setting expiration date to one year
+     *   - `1day` keyword for setting expiration date to one day
+     * - `path` - optional, argument for setting cookie path, defaults to `/`; possible values:
+     *   - `/` — root path
+     *   - `none` — to set no path at all
+     *
+     * **Examples**
+     * 1. Set cookie and reload the page after it
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept')
+     * ```
+     *
+     * 2. Set cookie with `new Date().getTime()` value and reload the page after it
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', '$now$')
+     * ```
+     *
+     * 3. Set cookie which will expire in 3 days and reload the page after it
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept', '259200')
+     * ```
+     *
+     * 4. Set cookie which will expire in one year and reload the page after it
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept', '1year')
+     * ```
+     *
+     * 5. Set cookie with no 'expire' and no path, reload the page after it
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'decline', '', 'none')
+     * ```
+     */
+
+    /* eslint-enable max-len */
+
+    function trustedSetCookieReload$1(source, name, value) {
+      var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+      var path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '/';
 
       if (typeof name === 'undefined') {
         logMessage(source, 'Cookie name should be specified.');
@@ -8350,57 +7645,90 @@
       // https://github.com/AdguardTeam/Scriptlets/issues/212
 
 
-      if (reload === 'true' && isCookieSetWithValue(document.cookie, name, value)) {
+      if (isCookieSetWithValue(document.cookie, name, value)) {
         return;
       }
 
-      var ONE_YEAR_EXPIRATION_KEYWORD = '1year';
-      var ONE_DAY_EXPIRATION_KEYWORD = '1day';
       var parsedValue = parseKeywordValue(value);
-      var cookieToSet = concatCookieNameValuePath(source, name, parsedValue, path);
+
+      if (!isValidCookiePath(path)) {
+        logMessage(source, "Invalid cookie path: '".concat(path, "'"));
+        return;
+      }
+
+      var cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
 
       if (!cookieToSet) {
         return;
-      } // Set expiration date if offsetExpiresSec was passed
-
-
-      if (offsetExpiresSec) {
-        var MS_IN_SEC = 1000;
-        var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
-        var SECONDS_IN_DAY = 24 * 60 * 60;
-        var parsedOffsetExpiresSec; // Set predefined expire value if corresponding keyword was passed
-
-        if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
-          parsedOffsetExpiresSec = SECONDS_IN_YEAR;
-        } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
-          parsedOffsetExpiresSec = SECONDS_IN_DAY;
-        } else {
-          parsedOffsetExpiresSec = Number.parseInt(offsetExpiresSec, 10); // If offsetExpiresSec has been parsed to NaN - do not set cookie at all
-
-          if (Number.isNaN(parsedOffsetExpiresSec)) {
-            var message = "log: Invalid offsetExpiresSec value: ".concat(offsetExpiresSec);
-            logMessage(source, message);
-            return;
-          }
-        }
-
-        var expires = Date.now() + parsedOffsetExpiresSec * MS_IN_SEC;
-        cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
       }
 
-      if (cookieToSet) {
-        document.cookie = cookieToSet;
-        hit(source); // Only reload the page if cookie was set
-        // https://github.com/AdguardTeam/Scriptlets/issues/212
+      var parsedOffsetExpiresMs = getTrustedCookieOffsetMs(offsetExpiresSec);
 
-        if (reload === 'true' && isCookieSetWithValue(document.cookie, name, value)) {
-          window.location.reload();
-        }
+      if (!parsedOffsetExpiresMs) {
+        logMessage(source, "Invalid offsetExpiresSec value: ".concat(offsetExpiresSec));
+        return;
+      }
+
+      var expires = Date.now() + parsedOffsetExpiresMs;
+      cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
+      document.cookie = cookieToSet;
+      hit(source); // Only reload the page if cookie was set
+      // https://github.com/AdguardTeam/Scriptlets/issues/212
+
+      if (isCookieSetWithValue(document.cookie, name, value)) {
+        window.location.reload();
       }
     }
-    trustedSetCookie$1.names = ['trusted-set-cookie' // trusted scriptlets support no aliases
+    trustedSetCookieReload$1.names = ['trusted-set-cookie-reload' // trusted scriptlets support no aliases
     ];
-    trustedSetCookie$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, concatCookieNameValuePath, isValidCookieRawPath, parseKeywordValue, getCookiePath];
+    trustedSetCookieReload$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, concatCookieNameValuePath, isValidCookiePath, getTrustedCookieOffsetMs, parseKeywordValue, getCookiePath];
+
+    function _arrayLikeToArray(arr, len) {
+      if (len == null || len > arr.length) len = arr.length;
+
+      for (var i = 0, arr2 = new Array(len); i < len; i++) {
+        arr2[i] = arr[i];
+      }
+
+      return arr2;
+    }
+
+    var arrayLikeToArray = _arrayLikeToArray;
+
+    function _arrayWithoutHoles(arr) {
+      if (Array.isArray(arr)) return arrayLikeToArray(arr);
+    }
+
+    var arrayWithoutHoles = _arrayWithoutHoles;
+
+    function _iterableToArray(iter) {
+      if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
+    }
+
+    var iterableToArray = _iterableToArray;
+
+    function _unsupportedIterableToArray(o, minLen) {
+      if (!o) return;
+      if (typeof o === "string") return arrayLikeToArray(o, minLen);
+      var n = Object.prototype.toString.call(o).slice(8, -1);
+      if (n === "Object" && o.constructor) n = o.constructor.name;
+      if (n === "Map" || n === "Set") return Array.from(o);
+      if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
+    }
+
+    var unsupportedIterableToArray = _unsupportedIterableToArray;
+
+    function _nonIterableSpread() {
+      throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+    }
+
+    var nonIterableSpread = _nonIterableSpread;
+
+    function _toConsumableArray(arr) {
+      return arrayWithoutHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableSpread();
+    }
+
+    var toConsumableArray$1 = _toConsumableArray;
 
     /* eslint-disable max-len */
 
@@ -8485,109 +7813,84 @@
       var shouldReplace = false;
       var fetchData;
 
-      var handlerWrapper = /*#__PURE__*/function () {
-        var _ref = asyncToGenerator$1( /*#__PURE__*/regenerator$1.mark(function _callee(target, thisArg, args) {
-          var forgeResponse;
-          return regenerator$1.wrap(function _callee$(_context) {
-            while (1) {
-              switch (_context.prev = _context.next) {
-                case 0:
-                  fetchData = getFetchData(args);
+      var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+        fetchData = getFetchData(args);
 
-                  if (!shouldLog) {
-                    _context.next = 5;
-                    break;
-                  }
+        if (shouldLog) {
+          // log if no propsToMatch given
+          logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
+          hit(source);
+          return Reflect.apply(target, thisArg, args);
+        }
 
-                  // log if no propsToMatch given
-                  logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
-                  hit(source);
-                  return _context.abrupt("return", Reflect.apply(target, thisArg, args));
+        shouldReplace = matchRequestProps(source, propsToMatch, fetchData);
 
-                case 5:
-                  shouldReplace = matchRequestProps(source, propsToMatch, fetchData);
+        if (!shouldReplace) {
+          return Reflect.apply(target, thisArg, args);
+        }
+        /**
+         * Create new Response object using original response' properties
+         * and given text as body content
+         * @param {Response} response original response to copy properties from
+         * @param {string} textContent text to set as body content
+         * @returns {Response}
+         */
 
-                  if (shouldReplace) {
-                    _context.next = 8;
-                    break;
-                  }
 
-                  return _context.abrupt("return", Reflect.apply(target, thisArg, args));
+        var forgeResponse = function forgeResponse(response, textContent) {
+          var bodyUsed = response.bodyUsed,
+              headers = response.headers,
+              ok = response.ok,
+              redirected = response.redirected,
+              status = response.status,
+              statusText = response.statusText,
+              type = response.type,
+              url = response.url; // eslint-disable-next-line compat/compat
 
-                case 8:
-                  /**
-                   * Create new Response object using original response' properties
-                   * and given text as body content
-                   * @param {Response} response original response to copy properties from
-                   * @param {string} textContent text to set as body content
-                   * @returns {Response}
-                   */
-                  forgeResponse = function forgeResponse(response, textContent) {
-                    var bodyUsed = response.bodyUsed,
-                        headers = response.headers,
-                        ok = response.ok,
-                        redirected = response.redirected,
-                        status = response.status,
-                        statusText = response.statusText,
-                        type = response.type,
-                        url = response.url; // eslint-disable-next-line compat/compat
+          var forgedResponse = new Response(textContent, {
+            status: status,
+            statusText: statusText,
+            headers: headers
+          }); // Manually set properties which can't be set by Response constructor
 
-                    var forgedResponse = new Response(textContent, {
-                      status: status,
-                      statusText: statusText,
-                      headers: headers
-                    }); // Manually set properties which can't be set by Response constructor
-
-                    Object.defineProperties(forgedResponse, {
-                      url: {
-                        value: url
-                      },
-                      type: {
-                        value: type
-                      },
-                      ok: {
-                        value: ok
-                      },
-                      bodyUsed: {
-                        value: bodyUsed
-                      },
-                      redirected: {
-                        value: redirected
-                      }
-                    });
-                    return forgedResponse;
-                  };
-
-                  return _context.abrupt("return", nativeFetch.apply(void 0, toConsumableArray$1(args)).then(function (response) {
-                    return response.text().then(function (bodyText) {
-                      var patternRegexp = pattern === '*' ? toRegExp() : toRegExp(pattern);
-                      var modifiedTextContent = bodyText.replace(patternRegexp, replacement);
-                      var forgedResponse = forgeResponse(response, modifiedTextContent);
-                      hit(source);
-                      return forgedResponse;
-                    }).catch(function () {
-                      // log if response body can't be converted to a string
-                      var fetchDataStr = objectToString(fetchData);
-                      var message = "Response body can't be converted to text: ".concat(fetchDataStr);
-                      logMessage(source, message);
-                      return Reflect.apply(target, thisArg, args);
-                    });
-                  }).catch(function () {
-                    return Reflect.apply(target, thisArg, args);
-                  }));
-
-                case 10:
-                case "end":
-                  return _context.stop();
-              }
+          Object.defineProperties(forgedResponse, {
+            url: {
+              value: url
+            },
+            type: {
+              value: type
+            },
+            ok: {
+              value: ok
+            },
+            bodyUsed: {
+              value: bodyUsed
+            },
+            redirected: {
+              value: redirected
             }
-          }, _callee);
-        }));
-
-        return function handlerWrapper(_x, _x2, _x3) {
-          return _ref.apply(this, arguments);
+          });
+          return forgedResponse;
         };
-      }();
+
+        return nativeFetch.apply(void 0, toConsumableArray$1(args)).then(function (response) {
+          return response.text().then(function (bodyText) {
+            var patternRegexp = pattern === '*' ? toRegExp() : toRegExp(pattern);
+            var modifiedTextContent = bodyText.replace(patternRegexp, replacement);
+            var forgedResponse = forgeResponse(response, modifiedTextContent);
+            hit(source);
+            return forgedResponse;
+          }).catch(function () {
+            // log if response body can't be converted to a string
+            var fetchDataStr = objectToString(fetchData);
+            var message = "Response body can't be converted to text: ".concat(fetchDataStr);
+            logMessage(source, message);
+            return Reflect.apply(target, thisArg, args);
+          });
+        }).catch(function () {
+          return Reflect.apply(target, thisArg, args);
+        });
+      };
 
       var fetchHandler = {
         apply: handlerWrapper
@@ -8595,7 +7898,7 @@
       fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
     }
     trustedReplaceFetchResponse$1.names = ['trusted-replace-fetch-response'];
-    trustedReplaceFetchResponse$1.injections = [hit, logMessage, getFetchData, objectToString, matchRequestProps, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries, parseMatchProps, validateParsedData, getMatchPropsData];
+    trustedReplaceFetchResponse$1.injections = [hit, logMessage, getFetchData, objectToString, matchRequestProps, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getRequestProps, getObjectEntries, getObjectFromEntries, parseMatchProps, validateParsedData, getMatchPropsData];
 
     /* eslint-disable max-len */
 
@@ -8724,6 +8027,7 @@
         trustedReplaceXhrResponse: trustedReplaceXhrResponse$1,
         xmlPrune: xmlPrune$1,
         trustedSetCookie: trustedSetCookie$1,
+        trustedSetCookieReload: trustedSetCookieReload$1,
         trustedReplaceFetchResponse: trustedReplaceFetchResponse$1,
         trustedSetLocalStorageItem: trustedSetLocalStorageItem$1
     });
@@ -12794,6 +12098,10 @@
       kind: 'scalar',
       resolve: resolveYamlMerge
     });
+
+    function commonjsRequire (target) {
+    	throw new Error('Could not dynamically require "' + target + '". Please configure the dynamicRequireTargets option of @rollup/plugin-commonjs appropriately for this require call to behave properly.');
+    }
 
     /*eslint-disable no-bitwise*/
 
@@ -20813,6 +20121,10 @@
         return getObjectFromEntries(entries);
       }
 
+      function getRequestProps() {
+        return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
+      }
+
       function getObjectEntries(object) {
         var keys = Object.keys(object);
         var entries = [];
@@ -22537,6 +21849,10 @@
         return matchData;
       }
 
+      function getRequestProps() {
+        return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
+      }
+
       function getRandomIntInclusive(min, max) {
         min = Math.ceil(min);
         max = Math.floor(max);
@@ -23596,7 +22912,7 @@
 
           if (origDescriptor instanceof Object) {
             if (!origDescriptor.configurable) {
-              var message = "set-constant: property '".concat(prop, "' is not configurable");
+              var message = "Property '".concat(prop, "' is not configurable");
               logMessage(source, message);
               return false;
             }
@@ -23915,19 +23231,26 @@
     function setCookie(source, args) {
       function setCookie(source, name, value) {
         var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "/";
-        var validValue = getLimitedCookieValue(source, value);
+        var validValue = getLimitedCookieValue(value);
 
         if (validValue === null) {
           logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
           return;
         }
 
-        var cookieData = concatCookieNameValuePath(source, name, validValue, path);
-
-        if (cookieData) {
-          hit(source);
-          document.cookie = cookieData;
+        if (!isValidCookiePath(path)) {
+          logMessage(source, "Invalid cookie path: '".concat(path, "'"));
+          return;
         }
+
+        var cookieToSet = concatCookieNameValuePath(name, validValue, path);
+
+        if (!cookieToSet) {
+          return;
+        }
+
+        hit(source);
+        document.cookie = cookieToSet;
       }
 
       function hit(source, message) {
@@ -23992,7 +23315,7 @@
         return native(num);
       }
 
-      function getLimitedCookieValue(source, value) {
+      function getLimitedCookieValue(value) {
         if (!value) {
           return null;
         }
@@ -24023,12 +23346,10 @@
           validValue = parseFloat(value);
 
           if (nativeIsNaN(validValue)) {
-            logMessage(source, "Invalid cookie value: '".concat(value, "'"));
             return null;
           }
 
           if (Math.abs(validValue) < 0 || Math.abs(validValue) > 15) {
-            logMessage(source, "Invalid cookie value: '".concat(value, "'"));
             return null;
           }
         } else {
@@ -24038,16 +23359,11 @@
         return validValue;
       }
 
-      function concatCookieNameValuePath(source, rawName, rawValue, rawPath) {
-        if (!isValidCookieRawPath(rawPath)) {
-          logMessage(source, "Invalid cookie path: '".concat(rawPath, "'"));
-          return null;
-        }
-
-        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath));
+      function concatCookieNameValuePath(rawName, rawValue, rawPath) {
+        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
       }
 
-      function isValidCookieRawPath(rawPath) {
+      function isValidCookiePath(rawPath) {
         return rawPath === "/" || rawPath === "none";
       }
 
@@ -24076,22 +23392,29 @@
           return;
         }
 
-        var validValue = getLimitedCookieValue(source, value);
+        var validValue = getLimitedCookieValue(value);
 
         if (validValue === null) {
-          logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
+          logMessage(source, "Invalid cookie value: '".concat(value, "'"));
           return;
         }
 
-        var cookieData = concatCookieNameValuePath(source, name, validValue, path);
+        if (!isValidCookiePath(path)) {
+          logMessage(source, "Invalid cookie path: '".concat(path, "'"));
+          return;
+        }
 
-        if (cookieData) {
-          document.cookie = cookieData;
-          hit(source);
+        var cookieToSet = concatCookieNameValuePath(name, validValue, path);
 
-          if (isCookieSetWithValue(document.cookie, name, value)) {
-            window.location.reload();
-          }
+        if (!cookieToSet) {
+          return;
+        }
+
+        document.cookie = cookieToSet;
+        hit(source);
+
+        if (isCookieSetWithValue(document.cookie, name, value)) {
+          window.location.reload();
         }
       }
 
@@ -24171,7 +23494,7 @@
         });
       }
 
-      function getLimitedCookieValue(source, value) {
+      function getLimitedCookieValue(value) {
         if (!value) {
           return null;
         }
@@ -24202,12 +23525,10 @@
           validValue = parseFloat(value);
 
           if (nativeIsNaN(validValue)) {
-            logMessage(source, "Invalid cookie value: '".concat(value, "'"));
             return null;
           }
 
           if (Math.abs(validValue) < 0 || Math.abs(validValue) > 15) {
-            logMessage(source, "Invalid cookie value: '".concat(value, "'"));
             return null;
           }
         } else {
@@ -24217,16 +23538,11 @@
         return validValue;
       }
 
-      function concatCookieNameValuePath(source, rawName, rawValue, rawPath) {
-        if (!isValidCookieRawPath(rawPath)) {
-          logMessage(source, "Invalid cookie path: '".concat(rawPath, "'"));
-          return null;
-        }
-
-        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath));
+      function concatCookieNameValuePath(rawName, rawValue, rawPath) {
+        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
       }
 
-      function isValidCookieRawPath(rawPath) {
+      function isValidCookiePath(rawPath) {
         return rawPath === "/" || rawPath === "none";
       }
 
@@ -24902,98 +24218,72 @@
         var shouldReplace = false;
         var fetchData;
 
-        var handlerWrapper = function () {
-          var _ref = asyncToGenerator(regenerator.mark(function _callee(target, thisArg, args) {
-            var forgeResponse;
-            return regenerator.wrap(function _callee$(_context) {
-              while (1) {
-                switch (_context.prev = _context.next) {
-                  case 0:
-                    fetchData = getFetchData(args);
+        var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+          fetchData = getFetchData(args);
 
-                    if (!shouldLog) {
-                      _context.next = 5;
-                      break;
-                    }
+          if (shouldLog) {
+            logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
+            hit(source);
+            return Reflect.apply(target, thisArg, args);
+          }
 
-                    logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
-                    hit(source);
-                    return _context.abrupt("return", Reflect.apply(target, thisArg, args));
+          shouldReplace = matchRequestProps(source, propsToMatch, fetchData);
 
-                  case 5:
-                    shouldReplace = matchRequestProps(source, propsToMatch, fetchData);
+          if (!shouldReplace) {
+            return Reflect.apply(target, thisArg, args);
+          }
 
-                    if (shouldReplace) {
-                      _context.next = 8;
-                      break;
-                    }
-
-                    return _context.abrupt("return", Reflect.apply(target, thisArg, args));
-
-                  case 8:
-                    forgeResponse = function forgeResponse(response, textContent) {
-                      var bodyUsed = response.bodyUsed,
-                          headers = response.headers,
-                          ok = response.ok,
-                          redirected = response.redirected,
-                          status = response.status,
-                          statusText = response.statusText,
-                          type = response.type,
-                          url = response.url;
-                      var forgedResponse = new Response(textContent, {
-                        status: status,
-                        statusText: statusText,
-                        headers: headers
-                      });
-                      Object.defineProperties(forgedResponse, {
-                        url: {
-                          value: url
-                        },
-                        type: {
-                          value: type
-                        },
-                        ok: {
-                          value: ok
-                        },
-                        bodyUsed: {
-                          value: bodyUsed
-                        },
-                        redirected: {
-                          value: redirected
-                        }
-                      });
-                      return forgedResponse;
-                    };
-
-                    return _context.abrupt("return", nativeFetch.apply(void 0, toConsumableArray(args)).then(function (response) {
-                      return response.text().then(function (bodyText) {
-                        var patternRegexp = pattern === "*" ? toRegExp() : toRegExp(pattern);
-                        var modifiedTextContent = bodyText.replace(patternRegexp, replacement);
-                        var forgedResponse = forgeResponse(response, modifiedTextContent);
-                        hit(source);
-                        return forgedResponse;
-                      }).catch(function () {
-                        var fetchDataStr = objectToString(fetchData);
-                        var message = "Response body can't be converted to text: ".concat(fetchDataStr);
-                        logMessage(source, message);
-                        return Reflect.apply(target, thisArg, args);
-                      });
-                    }).catch(function () {
-                      return Reflect.apply(target, thisArg, args);
-                    }));
-
-                  case 10:
-                  case "end":
-                    return _context.stop();
-                }
+          var forgeResponse = function forgeResponse(response, textContent) {
+            var bodyUsed = response.bodyUsed,
+                headers = response.headers,
+                ok = response.ok,
+                redirected = response.redirected,
+                status = response.status,
+                statusText = response.statusText,
+                type = response.type,
+                url = response.url;
+            var forgedResponse = new Response(textContent, {
+              status: status,
+              statusText: statusText,
+              headers: headers
+            });
+            Object.defineProperties(forgedResponse, {
+              url: {
+                value: url
+              },
+              type: {
+                value: type
+              },
+              ok: {
+                value: ok
+              },
+              bodyUsed: {
+                value: bodyUsed
+              },
+              redirected: {
+                value: redirected
               }
-            }, _callee);
-          }));
-
-          return function handlerWrapper(_x, _x2, _x3) {
-            return _ref.apply(this, arguments);
+            });
+            return forgedResponse;
           };
-        }();
+
+          return nativeFetch.apply(void 0, toConsumableArray(args)).then(function (response) {
+            return response.text().then(function (bodyText) {
+              var patternRegexp = pattern === "*" ? toRegExp() : toRegExp(pattern);
+              var modifiedTextContent = bodyText.replace(patternRegexp, replacement);
+              var forgedResponse = forgeResponse(response, modifiedTextContent);
+              hit(source);
+              return forgedResponse;
+            }).catch(function () {
+              var fetchDataStr = objectToString(fetchData);
+              var message = "Response body can't be converted to text: ".concat(fetchDataStr);
+              logMessage(source, message);
+              return Reflect.apply(target, thisArg, args);
+            });
+          }).catch(function () {
+            return Reflect.apply(target, thisArg, args);
+          });
+        };
 
         var fetchHandler = {
           apply: handlerWrapper
@@ -25173,6 +24463,10 @@
         return getObjectFromEntries(entries);
       }
 
+      function getRequestProps() {
+        return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
+      }
+
       function getObjectEntries(object) {
         var keys = Object.keys(object);
         var entries = [];
@@ -25260,10 +24554,10 @@
         var requestHeaders = [];
 
         var openWrapper = function openWrapper(target, thisArg, args) {
-          xhrData = getXhrData.apply(void 0, toConsumableArray(args));
+          xhrData = getXhrData.apply(null, args);
 
           if (shouldLog) {
-            var _message = "log: xhr( ".concat(objectToString(xhrData), " )");
+            var _message = "xhr( ".concat(objectToString(xhrData), " )");
 
             logMessage(source, _message, true);
             hit(source);
@@ -25287,107 +24581,81 @@
           return Reflect.apply(target, thisArg, args);
         };
 
-        var sendWrapper = function () {
-          var _ref = asyncToGenerator(regenerator.mark(function _callee(target, thisArg, args) {
-            var forgedRequest;
-            return regenerator.wrap(function _callee$(_context) {
-              while (1) {
-                switch (_context.prev = _context.next) {
-                  case 0:
-                    if (shouldReplace) {
-                      _context.next = 2;
-                      break;
-                    }
+        var sendWrapper = function sendWrapper(target, thisArg, args) {
+          if (!shouldReplace) {
+            return Reflect.apply(target, thisArg, args);
+          }
 
-                    return _context.abrupt("return", Reflect.apply(target, thisArg, args));
+          var forgedRequest = new XMLHttpRequest();
+          forgedRequest.addEventListener("readystatechange", function () {
+            if (forgedRequest.readyState !== 4) {
+              return;
+            }
 
-                  case 2:
-                    forgedRequest = new XMLHttpRequest();
-                    forgedRequest.addEventListener("readystatechange", function () {
-                      if (forgedRequest.readyState !== 4) {
-                        return;
-                      }
+            var readyState = forgedRequest.readyState,
+                response = forgedRequest.response,
+                responseText = forgedRequest.responseText,
+                responseURL = forgedRequest.responseURL,
+                responseXML = forgedRequest.responseXML,
+                status = forgedRequest.status,
+                statusText = forgedRequest.statusText;
+            var content = responseText || response;
 
-                      var readyState = forgedRequest.readyState,
-                          response = forgedRequest.response,
-                          responseText = forgedRequest.responseText,
-                          responseURL = forgedRequest.responseURL,
-                          responseXML = forgedRequest.responseXML,
-                          status = forgedRequest.status,
-                          statusText = forgedRequest.statusText;
-                      var content = responseText || response;
+            if (typeof content !== "string") {
+              return;
+            }
 
-                      if (typeof content !== "string") {
-                        return;
-                      }
-
-                      var patternRegexp = pattern === "*" ? toRegExp() : toRegExp(pattern);
-                      var modifiedContent = content.replace(patternRegexp, replacement);
-                      Object.defineProperties(thisArg, {
-                        readyState: {
-                          value: readyState
-                        },
-                        response: {
-                          value: modifiedContent
-                        },
-                        responseText: {
-                          value: modifiedContent
-                        },
-                        responseURL: {
-                          value: responseURL
-                        },
-                        responseXML: {
-                          value: responseXML
-                        },
-                        status: {
-                          value: status
-                        },
-                        statusText: {
-                          value: statusText
-                        }
-                      });
-                      setTimeout(function () {
-                        var stateEvent = new Event("readystatechange");
-                        thisArg.dispatchEvent(stateEvent);
-                        var loadEvent = new Event("load");
-                        thisArg.dispatchEvent(loadEvent);
-                        var loadEndEvent = new Event("loadend");
-                        thisArg.dispatchEvent(loadEndEvent);
-                      }, 1);
-                      hit(source);
-                    });
-                    nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
-                    requestHeaders.forEach(function (header) {
-                      var name = header[0];
-                      var value = header[1];
-                      forgedRequest.setRequestHeader(name, value);
-                    });
-                    requestHeaders = [];
-                    _context.prev = 7;
-                    nativeSend.call(forgedRequest, args);
-                    _context.next = 14;
-                    break;
-
-                  case 11:
-                    _context.prev = 11;
-                    _context.t0 = _context["catch"](7);
-                    return _context.abrupt("return", Reflect.apply(target, thisArg, args));
-
-                  case 14:
-                    return _context.abrupt("return", undefined);
-
-                  case 15:
-                  case "end":
-                    return _context.stop();
-                }
+            var patternRegexp = pattern === "*" ? toRegExp() : toRegExp(pattern);
+            var modifiedContent = content.replace(patternRegexp, replacement);
+            Object.defineProperties(thisArg, {
+              readyState: {
+                value: readyState
+              },
+              response: {
+                value: modifiedContent
+              },
+              responseText: {
+                value: modifiedContent
+              },
+              responseURL: {
+                value: responseURL
+              },
+              responseXML: {
+                value: responseXML
+              },
+              status: {
+                value: status
+              },
+              statusText: {
+                value: statusText
               }
-            }, _callee, null, [[7, 11]]);
-          }));
+            });
+            setTimeout(function () {
+              var stateEvent = new Event("readystatechange");
+              thisArg.dispatchEvent(stateEvent);
+              var loadEvent = new Event("load");
+              thisArg.dispatchEvent(loadEvent);
+              var loadEndEvent = new Event("loadend");
+              thisArg.dispatchEvent(loadEndEvent);
+            }, 1);
+            hit(source);
+          });
+          nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
+          requestHeaders.forEach(function (header) {
+            var name = header[0];
+            var value = header[1];
+            forgedRequest.setRequestHeader(name, value);
+          });
+          requestHeaders = [];
 
-          return function sendWrapper(_x, _x2, _x3) {
-            return _ref.apply(this, arguments);
-          };
-        }();
+          try {
+            nativeSend.call(forgedRequest, args);
+          } catch (_unused) {
+            return Reflect.apply(target, thisArg, args);
+          }
+
+          return undefined;
+        };
 
         var openHandler = {
           apply: openWrapper
@@ -25527,6 +24795,10 @@
         return matchData;
       }
 
+      function getRequestProps() {
+        return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
+      }
+
       function validateParsedData(data) {
         return Object.values(data).every(function (value) {
           return isValidStrPattern(value);
@@ -25603,8 +24875,7 @@
     function trustedSetCookie(source, args) {
       function trustedSetCookie(source, name, value) {
         var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
-        var reload = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "false";
-        var path = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : "/";
+        var path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "/";
 
         if (typeof name === "undefined") {
           logMessage(source, "Cookie name should be specified.");
@@ -25616,50 +24887,201 @@
           return;
         }
 
-        if (reload === "true" && isCookieSetWithValue(document.cookie, name, value)) {
+        var parsedValue = parseKeywordValue(value);
+
+        if (!isValidCookiePath(path)) {
+          logMessage(source, "Invalid cookie path: '".concat(path, "'"));
           return;
         }
 
-        var ONE_YEAR_EXPIRATION_KEYWORD = "1year";
-        var ONE_DAY_EXPIRATION_KEYWORD = "1day";
-        var parsedValue = parseKeywordValue(value);
-        var cookieToSet = concatCookieNameValuePath(source, name, parsedValue, path);
+        var cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
 
         if (!cookieToSet) {
           return;
         }
 
-        if (offsetExpiresSec) {
-          var MS_IN_SEC = 1e3;
-          var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
-          var SECONDS_IN_DAY = 24 * 60 * 60;
-          var parsedOffsetExpiresSec;
+        var parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
 
-          if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
-            parsedOffsetExpiresSec = SECONDS_IN_YEAR;
-          } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
-            parsedOffsetExpiresSec = SECONDS_IN_DAY;
-          } else {
-            parsedOffsetExpiresSec = Number.parseInt(offsetExpiresSec, 10);
+        if (!parsedOffsetMs) {
+          logMessage(source, "Invalid offsetExpiresSec value: ".concat(offsetExpiresSec));
+          return;
+        }
 
-            if (Number.isNaN(parsedOffsetExpiresSec)) {
-              var message = "log: Invalid offsetExpiresSec value: ".concat(offsetExpiresSec);
-              logMessage(source, message);
-              return;
+        var expires = Date.now() + parsedOffsetMs;
+        cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
+        document.cookie = cookieToSet;
+        hit(source);
+      }
+
+      function hit(source, message) {
+        if (source.verbose !== true) {
+          return;
+        }
+
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+
+          var LOG_MARKER = "log: ";
+
+          if (message) {
+            if (message.indexOf(LOG_MARKER) === -1) {
+              log("".concat(prefix, " message:\n").concat(message));
+            } else {
+              log(message.slice(LOG_MARKER.length));
             }
           }
 
-          var expires = Date.now() + parsedOffsetExpiresSec * MS_IN_SEC;
-          cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
+          log("".concat(prefix, " trace start"));
+
+          if (trace) {
+            trace();
+          }
+
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+
+      function concatCookieNameValuePath(rawName, rawValue, rawPath) {
+        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
+      }
+
+      function isValidCookiePath(rawPath) {
+        return rawPath === "/" || rawPath === "none";
+      }
+
+      function getTrustedCookieOffsetMs(offsetExpiresSec) {
+        if (!offsetExpiresSec) {
+          return null;
         }
 
-        if (cookieToSet) {
-          document.cookie = cookieToSet;
-          hit(source);
+        var ONE_YEAR_EXPIRATION_KEYWORD = "1year";
+        var ONE_DAY_EXPIRATION_KEYWORD = "1day";
+        var MS_IN_SEC = 1e3;
+        var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
+        var SECONDS_IN_DAY = 24 * 60 * 60;
+        var parsedSec;
 
-          if (reload === "true" && isCookieSetWithValue(document.cookie, name, value)) {
-            window.location.reload();
+        if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
+          parsedSec = SECONDS_IN_YEAR;
+        } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
+          parsedSec = SECONDS_IN_DAY;
+        } else {
+          parsedSec = Number.parseInt(offsetExpiresSec, 10);
+
+          if (Number.isNaN(parsedSec)) {
+            return null;
           }
+        }
+
+        return parsedSec * MS_IN_SEC;
+      }
+
+      function parseKeywordValue(rawValue) {
+        var NOW_VALUE_KEYWORD = "$now$";
+        var CURRENT_DATE_KEYWORD = "$currentDate$";
+        var parsedValue = rawValue;
+
+        if (rawValue === NOW_VALUE_KEYWORD) {
+          parsedValue = Date.now().toString();
+        } else if (rawValue === CURRENT_DATE_KEYWORD) {
+          parsedValue = Date();
+        }
+
+        return parsedValue;
+      }
+
+      function getCookiePath(rawPath) {
+        if (rawPath === "/") {
+          return "path=/";
+        }
+
+        return "";
+      }
+
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+
+      try {
+        trustedSetCookie.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    function trustedSetCookieReload(source, args) {
+      function trustedSetCookieReload(source, name, value) {
+        var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+        var path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "/";
+
+        if (typeof name === "undefined") {
+          logMessage(source, "Cookie name should be specified.");
+          return;
+        }
+
+        if (typeof value === "undefined") {
+          logMessage(source, "Cookie value should be specified.");
+          return;
+        }
+
+        if (isCookieSetWithValue(document.cookie, name, value)) {
+          return;
+        }
+
+        var parsedValue = parseKeywordValue(value);
+
+        if (!isValidCookiePath(path)) {
+          logMessage(source, "Invalid cookie path: '".concat(path, "'"));
+          return;
+        }
+
+        var cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
+
+        if (!cookieToSet) {
+          return;
+        }
+
+        var parsedOffsetExpiresMs = getTrustedCookieOffsetMs(offsetExpiresSec);
+
+        if (!parsedOffsetExpiresMs) {
+          logMessage(source, "Invalid offsetExpiresSec value: ".concat(offsetExpiresSec));
+          return;
+        }
+
+        var expires = Date.now() + parsedOffsetExpiresMs;
+        cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
+        document.cookie = cookieToSet;
+        hit(source);
+
+        if (isCookieSetWithValue(document.cookie, name, value)) {
+          window.location.reload();
         }
       }
 
@@ -25734,17 +25156,39 @@
         });
       }
 
-      function concatCookieNameValuePath(source, rawName, rawValue, rawPath) {
-        if (!isValidCookieRawPath(rawPath)) {
-          logMessage(source, "Invalid cookie path: '".concat(rawPath, "'"));
+      function concatCookieNameValuePath(rawName, rawValue, rawPath) {
+        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
+      }
+
+      function isValidCookiePath(rawPath) {
+        return rawPath === "/" || rawPath === "none";
+      }
+
+      function getTrustedCookieOffsetMs(offsetExpiresSec) {
+        if (!offsetExpiresSec) {
           return null;
         }
 
-        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath));
-      }
+        var ONE_YEAR_EXPIRATION_KEYWORD = "1year";
+        var ONE_DAY_EXPIRATION_KEYWORD = "1day";
+        var MS_IN_SEC = 1e3;
+        var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
+        var SECONDS_IN_DAY = 24 * 60 * 60;
+        var parsedSec;
 
-      function isValidCookieRawPath(rawPath) {
-        return rawPath === "/" || rawPath === "none";
+        if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
+          parsedSec = SECONDS_IN_YEAR;
+        } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
+          parsedSec = SECONDS_IN_DAY;
+        } else {
+          parsedSec = Number.parseInt(offsetExpiresSec, 10);
+
+          if (Number.isNaN(parsedSec)) {
+            return null;
+          }
+        }
+
+        return parsedSec * MS_IN_SEC;
       }
 
       function parseKeywordValue(rawValue) {
@@ -25772,7 +25216,7 @@
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
 
       try {
-        trustedSetCookie.apply(this, updatedArgs);
+        trustedSetCookieReload.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
@@ -26350,6 +25794,7 @@
       "trusted-replace-fetch-response": trustedReplaceFetchResponse,
       "trusted-replace-xhr-response": trustedReplaceXhrResponse,
       "trusted-set-cookie": trustedSetCookie,
+      "trusted-set-cookie-reload": trustedSetCookieReload,
       "trusted-set-local-storage-item": trustedSetLocalStorageItem,
       "xml-prune": xmlPrune,
       "xml-prune.js": xmlPrune,

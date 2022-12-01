@@ -2,6 +2,7 @@
 * [trusted-click-element](#trusted-click-element)
 * [trusted-replace-fetch-response](#trusted-replace-fetch-response)
 * [trusted-replace-xhr-response](#trusted-replace-xhr-response)
+* [trusted-set-cookie-reload](#trusted-set-cookie-reload)
 * [trusted-set-cookie](#trusted-set-cookie)
 * [trusted-set-local-storage-item](#trusted-set-local-storage-item)
 * * *
@@ -169,27 +170,83 @@ which is useful for debugging but not permitted for production filter lists.
 [Redirect source](../src/scriptlets/trusted-replace-xhr-response.js)
 * * *
 
-### <a id="trusted-set-cookie"></a> ⚡️ trusted-set-cookie
+### <a id="trusted-set-cookie-reload"></a> ⚡️ trusted-set-cookie-reload
 
-Sets a cookie with arbitrary name and value, with optional path
-and the ability to reload the page after cookie was set.
+Sets a cookie with arbitrary name and value,
+and with optional ability to offset cookie attribute 'expires' and set path.
+Also reloads the current page after the cookie setting.
+If reloading option is not needed, use the [`trusted-set-cookie` scriptlet](#trusted-set-cookie).
 
 **Syntax**
 ```
-example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[, reload[, path]]])
+example.org#%#//scriptlet('trusted-set-cookie-reload', name, value[, offsetExpiresSec[, path]])
 ```
 
 - `name` - required, cookie name to be set
 - `value` - required, cookie value. Possible values:
   - arbitrary value
   - empty string for no value
-  - `$now$` keyword for setting current time
+  - `$now$` keyword for setting current time in ms, e.g 1667915146503
+  - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+- 'offsetExpiresSec' - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
+Possible values:
+  - positive integer in seconds
+  - `1year` keyword for setting expiration date to one year
+  - `1day` keyword for setting expiration date to one day
+- `path` - optional, argument for setting cookie path, defaults to `/`; possible values:
+  - `/` — root path
+  - `none` — to set no path at all
+
+**Examples**
+1. Set cookie and reload the page after it
+```
+example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept')
+```
+
+2. Set cookie with `new Date().getTime()` value and reload the page after it
+```
+example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', '$now$')
+```
+
+3. Set cookie which will expire in 3 days and reload the page after it
+```
+example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept', '259200')
+```
+
+4. Set cookie which will expire in one year and reload the page after it
+```
+example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept', '1year')
+```
+
+5. Set cookie with no 'expire' and no path, reload the page after it
+```
+example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'decline', '', 'none')
+```
+
+[Redirect source](../src/scriptlets/trusted-set-cookie-reload.js)
+* * *
+
+### <a id="trusted-set-cookie"></a> ⚡️ trusted-set-cookie
+
+Sets a cookie with arbitrary name and value,
+and with optional ability to offset cookie attribute 'expires' and set path.
+
+**Syntax**
+```
+example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[, path]])
+```
+
+- `name` - required, cookie name to be set
+- `value` - required, cookie value. Possible values:
+  - arbitrary value
+  - empty string for no value
+  - `$now$` keyword for setting current time in ms, e.g 1667915146503
+  - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
 - `offsetExpiresSec` - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
 Possible values:
   - positive integer in seconds
   - `1year` keyword for setting expiration date to one year
   - `1day` keyword for setting expiration date to one day
-- `reload` - optional, boolean. Argument for reloading page after cookie is set. Defaults to `false`
 - `path` - optional, argument for setting cookie path, defaults to `/`; possible values:
   - `/` — root path
   - `none` — to set no path at all
@@ -215,14 +272,10 @@ example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept', '259200'
 ```
 example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept', '1year')
 ```
-5. Reload the page if cookie was successfully set
-```
-example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'true')
-```
 
-6. Set cookie with no path
+5. Set cookie with no path
 ```
-example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', '', 'none')
+example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'none')
 ```
 
 [Redirect source](../src/scriptlets/trusted-set-cookie.js)
