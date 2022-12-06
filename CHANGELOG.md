@@ -1,6 +1,6 @@
 # Scriptlets and Redirect Resources Changelog
 
-## v1.7.6
+## v1.7.10
 
 ### Added
 
@@ -8,6 +8,8 @@
 
 ### Fixed
 
+* `set-cookie-reload` infinite page reloading
+* breakage of `prevent-element-src-loading` due to `window` getting into `apply` wrapper
 * spread of args bug at getXhrData call for `trusted-replace-xhr-response`
 * request properties array not being served to `getRequestData` and `parseMatchProps` helpers
 
