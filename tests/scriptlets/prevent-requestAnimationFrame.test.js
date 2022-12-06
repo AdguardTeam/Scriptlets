@@ -62,7 +62,7 @@ test('prevent-requestAnimationFrame: no args -- logging', (assert) => {
     // do test checking after scriptlet's execution end
     setTimeout(() => {
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-        assert.strictEqual(loggedMessage, `requestAnimationFrame(${testFunction.toString()})`, 'console.hit input');
+        assert.strictEqual(loggedMessage, `prevent-requestAnimationFrame: requestAnimationFrame(${testFunction.toString()})`, 'console.hit input');
         assert.strictEqual(window[logProperty], 'changed', 'property changed');
         clearGlobalProps(logProperty);
         done();

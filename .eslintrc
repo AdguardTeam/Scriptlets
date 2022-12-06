@@ -11,6 +11,12 @@
     "qunit": true
   },
   "rules": {
+    "max-len": [
+        "error",
+        {
+            "code": 120
+        }
+    ],
     "indent": ["error", 4, { "SwitchCase": 1}],
     "no-param-reassign": 0,
     "no-shadow": 0,

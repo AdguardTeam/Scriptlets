@@ -57,7 +57,7 @@ if (isSupported) {
             if (input.indexOf('trace') > -1) {
                 return;
             }
-            const EXPECTED_LOG_STR = `xhr( method:"${METHOD}" url:"${URL}" )`;
+            const EXPECTED_LOG_STR = `${name}: xhr( method:"${METHOD}" url:"${URL}" )`;
             assert.ok(startsWith(input, EXPECTED_LOG_STR), 'console.hit input');
         };
 

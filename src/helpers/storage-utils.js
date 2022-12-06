@@ -25,14 +25,12 @@ export const setStorageItem = (source, storage, key, value) => {
 
 /**
  * Gets supported storage item value
- * @param {Source} source
  * @param {string} value input item value
- * @param {boolean} verbose if logging invalid values is required
  * @returns {string|null|undefined|boolean} valid item value if ok OR null if not
  */
-export const getLimitedStorageItemValue = (source, value) => {
-    if (!value) {
-        return null;
+export const getLimitedStorageItemValue = (value) => {
+    if (typeof value !== 'string') {
+        throw new Error('Invalid value');
     }
 
     let validValue;
@@ -53,19 +51,17 @@ export const getLimitedStorageItemValue = (source, value) => {
     } else if (/^\d+$/.test(value)) {
         validValue = parseFloat(value);
         if (nativeIsNaN(validValue)) {
-            logMessage(source, `Invalid storage item value: '${value}'`);
-            return null;
+            throw new Error('Invalid value');
         }
         if (Math.abs(validValue) > 0x7FFF) {
-            logMessage(source, `Invalid storage item value: '${value}'`);
-            return null;
+            throw new Error('Invalid value');
         }
     } else if (value === 'yes') {
         validValue = 'yes';
     } else if (value === 'no') {
         validValue = 'no';
     } else {
-        return null;
+        throw new Error('Invalid value');
     }
 
     return validValue;

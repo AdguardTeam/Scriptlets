@@ -3,9 +3,13 @@ import {
     matchStackTrace,
     getWildcardPropertyInChain,
     logMessage,
+    objectToString,
     // following helpers are needed for helpers above
     toRegExp,
+    isEmptyObject,
+    getObjectEntries,
     getNativeRegexpTest,
+    shouldAbortInlineOrInjectedScript,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -110,7 +114,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
             const matchRegex = toRegExp(requiredPaths.join(''));
             const shouldLog = matchRegex.test(rootString);
             if (shouldLog) {
-                logMessage(source, `${window.location.hostname} ${root}`, true);
+                logMessage(source, `${window.location.hostname} ${objectToString(root)}`, true);
                 shouldProcess = false;
                 return shouldProcess;
             }
@@ -156,7 +160,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
      */
     const jsonPruner = (root) => {
         if (prunePaths.length === 0 && requiredPaths.length === 0) {
-            logMessage(source, `${window.location.hostname} ${root}`, true);
+            logMessage(source, `${window.location.hostname} ${objectToString(root)}`, true);
             return root;
         }
 
@@ -229,6 +233,11 @@ jsonPrune.injections = [
     matchStackTrace,
     getWildcardPropertyInChain,
     logMessage,
+    objectToString,
+    // following helpers are needed for helpers above
     toRegExp,
+    isEmptyObject,
+    getObjectEntries,
     getNativeRegexpTest,
+    shouldAbortInlineOrInjectedScript,
 ];

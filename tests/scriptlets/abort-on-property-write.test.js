@@ -99,11 +99,9 @@ test('Works with an empty object in chain', (assert) => {
     window.aaa = {};
     runScriptlet(name, scriptletArgs);
 
-    window.aaa.bbb = 'value';
-
     assert.throws(
         () => {
-            window.aaa.bbb = 'new value';
+            window.aaa.bbb = 'value';
         },
         /ReferenceError/,
         `should throw Reference error when try to access property ${CHAIN_PROPERTY}`,

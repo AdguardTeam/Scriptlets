@@ -150,10 +150,6 @@ export const isCookieSetWithValue = (cookieString, name, value) => {
  * @returns {number|null} number is milliseconds OR null
  */
 export const getTrustedCookieOffsetMs = (offsetExpiresSec) => {
-    if (!offsetExpiresSec) {
-        return null;
-    }
-
     const ONE_YEAR_EXPIRATION_KEYWORD = '1year';
     const ONE_DAY_EXPIRATION_KEYWORD = '1day';
 

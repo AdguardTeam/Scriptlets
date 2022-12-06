@@ -15,6 +15,9 @@ import {
     nativeIsNaN,
     isEmptyObject,
     getNativeRegexpTest,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    shouldAbortInlineOrInjectedScript,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -291,4 +294,7 @@ setConstant.injections = [
     nativeIsNaN,
     isEmptyObject,
     getNativeRegexpTest,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    shouldAbortInlineOrInjectedScript,
 ];

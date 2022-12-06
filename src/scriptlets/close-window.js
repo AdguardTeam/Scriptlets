@@ -11,7 +11,7 @@ import {
  * Closes the browser tab immediately.
  *
  * > `window.close()` usage is restricted in Chrome. In this case
- * tab will only be closed if using AdGuard browser extension.
+ * tab will only be closed when using AdGuard browser extension.
  *
  * **Syntax**
  * ```
@@ -36,6 +36,7 @@ export function forceWindowClose(source, path = '') {
     if (typeof window.close !== 'function') {
         const message = 'window.close() is not a function so \'close-window\' scriptlet is unavailable';
         logMessage(source, message);
+        return;
     }
 
     const closeImmediately = () => {

@@ -28,13 +28,16 @@ const afterEach = () => {
 module(name, { beforeEach, afterEach });
 
 test('no-topics - works', async (assert) => {
+    Document.prototype[TOPICS_PROPERTY_NAME] = () => ['value1', 'value2'];
+    const mockedDocument = new Document();
+
     const done = assert.async();
     runScriptlet(name);
 
-    const response = await document[TOPICS_PROPERTY_NAME]();
+    const response = await mockedDocument[TOPICS_PROPERTY_NAME]();
     const body = await response.json();
 
-    assert.ok(Array.isArray(body), 'mocked browsingTopics() returns []');
+    assert.ok(Array.isArray(body) && body.length === 0, 'mocked browsingTopics() returns []');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
     done();

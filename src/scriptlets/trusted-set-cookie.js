@@ -91,13 +91,17 @@ export function trustedSetCookie(source, name, value, offsetExpiresSec = '', pat
         return;
     }
 
-    const parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
-    if (!parsedOffsetMs) {
-        logMessage(source, `Invalid offsetExpiresSec value: ${offsetExpiresSec}`);
-        return;
+    if (offsetExpiresSec) {
+        const parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
+
+        if (!parsedOffsetMs) {
+            logMessage(source, `Invalid offsetExpiresSec value: ${offsetExpiresSec}`);
+            return;
+        }
+
+        const expires = Date.now() + parsedOffsetMs;
+        cookieToSet += ` expires=${new Date(expires).toUTCString()};`;
     }
-    const expires = Date.now() + parsedOffsetMs;
-    cookieToSet += ` expires=${new Date(expires).toUTCString()};`;
 
     document.cookie = cookieToSet;
     hit(source);

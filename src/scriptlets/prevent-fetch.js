@@ -86,6 +86,11 @@ import {
  *     ! Specify response body for all fetch calls
  *     example.org#%#//scriptlet('prevent-fetch', '', 'emptyArr')
  *     ```
+ *
+ * 7. Prevent all fetch calls and specify response type value
+ *     ```
+ *     example.org#%#//scriptlet('prevent-fetch', '*', '', 'opaque')
+ *     ```
  */
 /* eslint-enable max-len */
 export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', responseType = 'default') {
@@ -99,7 +104,7 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
     }
 
     let strResponseBody;
-    if (responseBody === 'emptyObj') {
+    if (responseBody === '' || responseBody === 'emptyObj') {
         strResponseBody = '{}';
     } else if (responseBody === 'emptyArr') {
         strResponseBody = '[]';

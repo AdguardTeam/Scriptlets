@@ -276,7 +276,7 @@ test('invalid selector — no match', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(input, `Invalid remove-class selector arg: '${selectors}'`, 'logged error for invalid remove-class selector');
+        assert.strictEqual(input, `${name}: Invalid selector arg: '${selectors}'`, 'logged error for invalid remove-class selector');
     };
 
     assert.strictEqual(window.hit, undefined, 'hit SHOULD NOT fire');

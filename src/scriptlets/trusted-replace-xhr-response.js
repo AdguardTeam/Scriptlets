@@ -161,7 +161,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
             }
 
             const patternRegexp = pattern === '*'
-                ? toRegExp()
+                ? /(\n|.)*/
                 : toRegExp(pattern);
 
             const modifiedContent = content.replace(patternRegexp, replacement);

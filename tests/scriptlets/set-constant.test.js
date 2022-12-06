@@ -79,10 +79,10 @@ if (!isSupported) {
         clearGlobalProps(undefinedProp);
 
         // setting constant to null;
-        const nullProp = 'nullProp';
-        runScriptletFromTag(nullProp, 'null');
-        assert.strictEqual(window[nullProp], null);
-        clearGlobalProps(nullProp);
+        const nullProp1 = 'nullProp1';
+        runScriptletFromTag(nullProp1, 'null');
+        assert.strictEqual(window[nullProp1], null);
+        clearGlobalProps(nullProp1);
 
         // setting constant to empty array
         const emptyArr = 'emptyArr';
@@ -185,10 +185,10 @@ if (!isSupported) {
 
     test('set value on null prop', (assert) => {
         // end prop is null
-        window.nullProp = null;
-        runScriptletFromTag('nullProp', 15);
-        assert.strictEqual(window.nullProp, 15, 'null end prop changed');
-        clearGlobalProps('nullProp');
+        window.nullProp2 = null;
+        runScriptletFromTag('nullProp2', 15);
+        assert.strictEqual(window.nullProp2, 15, 'null end prop changed');
+        clearGlobalProps('nullProp2');
     });
 
     test('set value through chain with empty object', (assert) => {
@@ -261,7 +261,6 @@ if (!isSupported) {
 
     test('sets values correctly + stack match', (assert) => {
         const stackMatch = 'set-constant';
-
         const trueProp = 'trueProp02';
         runScriptletFromTag(trueProp, 'true', stackMatch);
         assert.strictEqual(window[trueProp], true, 'stack match: trueProp - ok');

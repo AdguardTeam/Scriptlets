@@ -32,7 +32,7 @@ test('logs eval calls', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(input, `eval("${evalStr}")`, 'console.hit input should be equal');
+        assert.strictEqual(input, `${name}: eval("${evalStr}")`, 'console.hit input should be equal');
     };
     runScriptlet(name);
     const evalWrap = eval;
@@ -52,7 +52,7 @@ test('logs new Function() calls', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(input, `new Function(${args.join(', ')})`, 'console.hit input should be equal');
+        assert.strictEqual(input, `${name}: new Function(${args.join(', ')})`, 'console.hit input should be equal');
     };
 
     runScriptlet(name);

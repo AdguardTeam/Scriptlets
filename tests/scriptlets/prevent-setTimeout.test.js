@@ -67,7 +67,11 @@ test('no args -- logging', (assert) => {
     // We need to run our assertion after all timeouts
     nativeSetTimeout(() => {
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-        assert.strictEqual(loggedMessage, `setTimeout(${callback.toString()}, ${timeout})`, 'console.hit input ok');
+        assert.strictEqual(
+            loggedMessage,
+            `prevent-setTimeout: setTimeout(${callback.toString()}, ${timeout})`,
+            'console.hit input ok',
+        );
         assert.strictEqual(window[agLogSetTimeout], 'changed', 'property changed');
         clearGlobalProps(agLogSetTimeout);
         done();

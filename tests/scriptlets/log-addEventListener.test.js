@@ -58,7 +58,8 @@ test('logs events to console', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(input, `addEventListener("${eventName}", ${callback.toString()})`, 'console.hit input should be equal');
+        assert.ok(input.includes(eventName), 'console.hit input should be equal');
+        assert.ok(input.includes(callback.toString()), 'console.hit input should be equal');
     };
 
     runScriptlet(name);

@@ -312,9 +312,9 @@ test('can NOT remove propsToRemove if nested requiredInitialProps has wildcard b
 });
 
 test('does NOT remove propsToRemove if invoked without parameter propsToRemove and return hostname', (assert) => {
-    console.log = (host, params) => {
-        assert.strictEqual(host, window.location.hostname, 'should log hostname in console');
-        assert.deepEqual(params, { a: 1, b: 2 }, 'should log parameters in console');
+    console.log = (message) => {
+        assert.ok(message.includes(window.location.hostname), 'should log hostname in console');
+        assert.ok(message.includes('a:"1" b:"2"'), 'should log parameters in console');
     };
     runScriptlet('json-prune');
     JSON.parse('{"a":1, "b":2}');
@@ -322,9 +322,9 @@ test('does NOT remove propsToRemove if invoked without parameter propsToRemove a
 
 test('logs matched object and hostname if invoked with only second arg', (assert) => {
     assert.expect(2);
-    console.log = (host, params) => {
-        assert.strictEqual(host, window.location.hostname, 'should log hostname in console');
-        assert.deepEqual(params, { a: 1 }, 'should log parameters in console');
+    console.log = (message) => {
+        assert.ok(message.includes(window.location.hostname), 'should log hostname in console');
+        assert.ok(message.includes('a:"1"'), 'should log parameters in console');
     };
     runScriptlet('json-prune', '', '"a":1');
     JSON.parse('{"a":1}');

@@ -28,6 +28,7 @@ module(name, { beforeEach, afterEach });
 
 const isSupported = typeof fetch !== 'undefined' && typeof Proxy !== 'undefined' && typeof Response !== 'undefined';
 
+// TODO: add testcases with POST requests
 if (!isSupported) {
     test('unsupported', (assert) => {
         assert.ok(true, 'Browser does not support it');
@@ -53,7 +54,7 @@ if (!isSupported) {
 
     test('simple fetch - no args - logging', async (assert) => {
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
-        const TEST_METHOD = 'POST';
+        const TEST_METHOD = 'GET';
         const init = {
             method: TEST_METHOD,
         };
@@ -70,7 +71,7 @@ if (!isSupported) {
                 return;
             }
             // eslint-disable-next-line max-len
-            const EXPECTED_LOG_STR_START = `fetch( url:"${INPUT_JSON_PATH}" method:"${TEST_METHOD}"`;
+            const EXPECTED_LOG_STR_START = `${name}: fetch( url:"${INPUT_JSON_PATH}" method:"${TEST_METHOD}"`;
             assert.ok(startsWith(input, EXPECTED_LOG_STR_START), 'console.hit input');
         };
 
@@ -85,33 +86,26 @@ if (!isSupported) {
         done();
     });
 
-    test('fetch request - no args - logging', async (assert) => {
+    test('simple fetch - no match props - no prevent', async (assert) => {
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
-        const inputRequest = new Request(INPUT_JSON_PATH);
+        const init = {
+            method: 'GET',
+        };
         const expectedJson = {
             a1: 1,
             b2: 'test',
             c3: 3,
         };
+
+        // no url match
+        runScriptlet(name, ['/test06/ method:POST']);
         const done = assert.async();
 
-        // mock console.log function for log checking
-        console.log = function log(input) {
-            if (input.indexOf('trace') > -1) {
-                return;
-            }
-            const strToCheck = INPUT_JSON_PATH.slice(1);
-            assert.ok(input.indexOf(strToCheck) > -1, 'console.hit input');
-        };
-
-        // no args -> just logging, no preventing
-        runScriptlet(name);
-
-        const response = await fetch(inputRequest);
+        const response = await fetch(INPUT_JSON_PATH, init);
         const actualJson = await response.json();
 
-        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         assert.deepEqual(actualJson, expectedJson);
+        assert.strictEqual(window.hit, undefined, 'hit should not fire');
         done();
     });
 
@@ -196,29 +190,6 @@ if (!isSupported) {
 
         assert.ok(isEmptyObject(parsedData), 'Response is mocked');
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
-        done();
-    });
-
-    test('simple fetch - no match props - no prevent', async (assert) => {
-        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
-        const init = {
-            method: 'POST',
-        };
-        const expectedJson = {
-            a1: 1,
-            b2: 'test',
-            c3: 3,
-        };
-
-        // no url match
-        runScriptlet(name, ['/test06/ method:POST']);
-        const done = assert.async();
-
-        const response = await fetch(INPUT_JSON_PATH, init);
-        const actualJson = await response.json();
-
-        assert.deepEqual(actualJson, expectedJson);
-        assert.strictEqual(window.hit, undefined, 'hit should not fire');
         done();
     });
 

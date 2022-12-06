@@ -51,7 +51,7 @@ if (!isSupported) {
                 return;
             }
             // eslint-disable-next-line max-len
-            const EXPECTED_LOG_STR_START = `fetch( url:"${INPUT_JSON_PATH}" method:"${TEST_METHOD}"`;
+            const EXPECTED_LOG_STR_START = `${name}: fetch( url:"${INPUT_JSON_PATH}" method:"${TEST_METHOD}"`;
             assert.ok(startsWith(input, EXPECTED_LOG_STR_START), 'console.hit input');
         };
 
@@ -99,7 +99,7 @@ if (!isSupported) {
 
         const done = assert.async();
 
-        const PATTERN = /test/;
+        const PATTERN = '/test/';
         const REPLACEMENT = 'new content';
         runScriptlet(name, [PATTERN, REPLACEMENT]);
 
@@ -109,8 +109,29 @@ if (!isSupported) {
         const textContent = JSON.stringify(actualJson);
 
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
-        assert.notOk(PATTERN.test(textContent), 'Pattern is removed');
+        assert.notOk(textContent.includes(PATTERN), 'Pattern is removed');
         assert.ok(textContent.includes(REPLACEMENT), 'New content is set');
+        done();
+    });
+
+    test('Match all requests, replace multiline content', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/empty.html`;
+        const TEST_METHOD = 'GET';
+        const init = {
+            method: TEST_METHOD,
+        };
+
+        const done = assert.async();
+
+        const PATTERN = '*';
+        const REPLACEMENT = '';
+        runScriptlet(name, [PATTERN, REPLACEMENT]);
+
+        const response = await fetch(INPUT_JSON_PATH, init);
+        const textContent = await response.text();
+
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        assert.ok(textContent === '', 'Multiline content is removed');
         done();
     });
 
@@ -123,7 +144,7 @@ if (!isSupported) {
 
         const done = assert.async();
 
-        const PATTERN = '';
+        const PATTERN = '*';
         const REPLACEMENT = '';
         const PROPS_TO_MATCH = 'test01 method:GET';
         runScriptlet(name, [PATTERN, REPLACEMENT, PROPS_TO_MATCH]);
@@ -172,7 +193,7 @@ if (!isSupported) {
 
         const done = assert.async();
 
-        const PATTERN = '';
+        const PATTERN = '*';
         const REPLACEMENT = '';
         const PROPS_TO_MATCH = 'test01 method:GET';
 
@@ -185,19 +206,15 @@ if (!isSupported) {
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 
         const {
-            bodyUsedExpected,
-            headersExpected,
-            okExpected,
-            redirectedExpected,
-            statusExpected,
-            statusTextExpected,
-            typeExpected,
-            urlExpected,
+            ok: okExpected,
+            redirected: redirectedExpected,
+            status: statusExpected,
+            statusText: statusTextExpected,
+            type: typeExpected,
+            url: urlExpected,
         } = expectedResponse;
 
         const {
-            bodyUsed,
-            headers,
             ok,
             redirected,
             status,
@@ -206,8 +223,6 @@ if (!isSupported) {
             url,
         } = actualResponse;
 
-        assert.strictEqual(bodyUsed, bodyUsedExpected, 'response prop is copied');
-        assert.strictEqual(headers, headersExpected, 'response prop is copied');
         assert.strictEqual(ok, okExpected, 'response prop is copied');
         assert.strictEqual(redirected, redirectedExpected, 'response prop is copied');
         assert.strictEqual(status, statusExpected, 'response prop is copied');

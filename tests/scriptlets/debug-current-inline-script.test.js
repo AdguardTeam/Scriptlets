@@ -43,20 +43,7 @@ test('works', (assert) => {
     addAndRemoveInlineScript('window.___aaa;');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-});
-
-test('works with an empty object in chain', (assert) => {
-    window.onerror = onError(assert);
-    const property = 'window.aaa.bbb';
-    const scriptletArgs = [property];
-
-    window.aaa = {};
-    runScriptlet(name, scriptletArgs);
-    window.aaa.bbb = 'value';
-
-    addAndRemoveInlineScript('window.aaa.bbb;');
-
-    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    clearGlobalProps('___aaa');
 });
 
 test('works with chained properties', (assert) => {
@@ -72,9 +59,25 @@ test('works with chained properties', (assert) => {
     `);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    clearGlobalProps('aaa');
 });
 
-test('doesnt aborts script which is not specified by search', (assert) => {
+test('works with an empty object in chain', (assert) => {
+    window.onerror = onError(assert);
+    const property = 'window.aaa.bbb';
+    const scriptletArgs = [property];
+
+    window.aaa = {};
+    runScriptlet(name, scriptletArgs);
+    window.aaa.bbb = 'value';
+
+    addAndRemoveInlineScript('window.aaa.bbb;');
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    clearGlobalProps('aaa');
+});
+
+test('does not abort script which is not specified by search', (assert) => {
     const property = '___aaa';
     const search = 'some search';
     const scriptletArgs = [property, search];
@@ -83,6 +86,7 @@ test('doesnt aborts script which is not specified by search', (assert) => {
     addAndRemoveInlineScript(`window.${property};`);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    clearGlobalProps('___aaa');
 });
 
 test('searches script by regexp', (assert) => {
@@ -95,6 +99,7 @@ test('searches script by regexp', (assert) => {
     addAndRemoveInlineScript(`window.${property};`);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    clearGlobalProps('___aaa');
 });
 
 test('Patched textContent', (assert) => {
@@ -112,6 +117,7 @@ test('Patched textContent', (assert) => {
     `);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    clearGlobalProps('___aaa5');
 });
 
 test('does not abort script -- invalid regexp pattern', (assert) => {
@@ -124,4 +130,5 @@ test('does not abort script -- invalid regexp pattern', (assert) => {
     addAndRemoveInlineScript(`window.${property};`);
 
     assert.strictEqual(window.hit, undefined, 'should not hit');
+    clearGlobalProps('___aaa6');
 });

@@ -98,13 +98,17 @@ export function trustedSetCookieReload(source, name, value, offsetExpiresSec = '
         return;
     }
 
-    const parsedOffsetExpiresMs = getTrustedCookieOffsetMs(offsetExpiresSec);
-    if (!parsedOffsetExpiresMs) {
-        logMessage(source, `Invalid offsetExpiresSec value: ${offsetExpiresSec}`);
-        return;
+    if (offsetExpiresSec) {
+        const parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
+
+        if (!parsedOffsetMs) {
+            logMessage(source, `Invalid offsetExpiresSec value: ${offsetExpiresSec}`);
+            return;
+        }
+
+        const expires = Date.now() + parsedOffsetMs;
+        cookieToSet += ` expires=${new Date(expires).toUTCString()};`;
     }
-    const expires = Date.now() + parsedOffsetExpiresMs;
-    cookieToSet += ` expires=${new Date(expires).toUTCString()};`;
 
     document.cookie = cookieToSet;
     hit(source);

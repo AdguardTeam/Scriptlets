@@ -1,4 +1,4 @@
-import { preventBab } from '../scriptlets/prevent-bab';
+import { preventBab as preventBabScriptlet } from '../scriptlets/prevent-bab';
 
 /**
  * @redirect prevent-bab
@@ -17,4 +17,10 @@ import { preventBab } from '../scriptlets/prevent-bab';
  * /blockadblock.$script,redirect=prevent-bab
  * ```
  */
+const preventBab = preventBabScriptlet;
+preventBab.names = [
+    'prevent-bab',
+    // list of prevent-bab redirect aliases
+];
+
 export { preventBab };

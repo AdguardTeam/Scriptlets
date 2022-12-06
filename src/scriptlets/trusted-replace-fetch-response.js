@@ -152,12 +152,13 @@ export function trustedReplaceFetchResponse(source, pattern = '', replacement = 
             return forgedResponse;
         };
 
-        return nativeFetch(...args)
+        // eslint-disable-next-line prefer-spread
+        return nativeFetch.apply(null, args)
             .then((response) => {
                 return response.text()
                     .then((bodyText) => {
                         const patternRegexp = pattern === '*'
-                            ? toRegExp()
+                            ? /(\n|.)*/
                             : toRegExp(pattern);
 
                         const modifiedTextContent = bodyText.replace(patternRegexp, replacement);

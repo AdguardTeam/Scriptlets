@@ -109,7 +109,7 @@ export function preventWindowOpen(source, match = '*', delay, replacement) {
             const argsStr = args && args.length > 0
                 ? `, ${args.join(', ')}`
                 : '';
-            const message = `window-open: ${url}${argsStr}`;
+            const message = `${url}${argsStr}`;
             logMessage(source, message, true);
             hit(source);
         }

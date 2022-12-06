@@ -48,14 +48,17 @@ export function setSessionStorageItem(source, key, value) {
         return;
     }
 
-    const validValue = getLimitedStorageItemValue(source, value);
-    if (validValue === null) {
-        logMessage(source, `Invalid cookie value: '${validValue}'`);
+    let validValue;
+    try {
+        validValue = getLimitedStorageItemValue(value);
+    } catch {
+        logMessage(source, `Invalid storage item value: '${value}'`);
         return;
     }
 
     const { sessionStorage } = window;
     setStorageItem(source, sessionStorage, key, validValue);
+    hit(source);
 }
 
 setSessionStorageItem.names = [

@@ -288,7 +288,7 @@ test('no match -- invalid callback - undefined', (assert) => {
     assert.strictEqual(window.hit, undefined, 'hit should not fire');
     assert.strictEqual(
         loggedMessage,
-        `Scriptlet adjust-setTimeout can not be applied because of invalid callback: '${String(callback)}'.`, // eslint-disable-line max-len
+        `${name}: Scriptlet can't be applied because of invalid callback: '${String(callback)}'.`, // eslint-disable-line max-len
         'console.logged warning ok',
     );
     clearTimeout(testTimeout);
