@@ -1,6 +1,6 @@
 #
 #    AdGuard Scriptlets (Redirects Source)
-#    Version 1.7.6
+#    Version 1.7.10
 #
 - title: 1x1-transparent.gif
   description: |-
@@ -3050,7 +3050,13 @@
 
 - title: prevent-bab
   comment: Prevents BlockAdblock script from detecting an ad blocker.
-  aliases: []
+  aliases:
+    - nobab.js
+    - ubo-nobab.js
+    - bab-defuser.js
+    - ubo-bab-defuser.js
+    - ubo-nobab
+    - ubo-bab-defuser
   contentType: application/javascript
   content: |-
     (function(source, args) {

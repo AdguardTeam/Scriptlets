@@ -308,7 +308,7 @@ defaults to match all callbacks; invalid regular expression will cause exit and 
 Closes the browser tab immediately.
 
 > `window.close()` usage is restricted in Chrome. In this case
-tab will only be closed if using AdGuard browser extension.
+tab will only be closed when using AdGuard browser extension.
 
 **Syntax**
 ```
@@ -824,6 +824,11 @@ which is useful for debugging but not permitted for production filter lists.
 
     ! Specify response body for all fetch calls
     example.org#%#//scriptlet('prevent-fetch', '', 'emptyArr')
+    ```
+
+7. Prevent all fetch calls and specify response type value
+    ```
+    example.org#%#//scriptlet('prevent-fetch', '*', '', 'opaque')
     ```
 
 [Scriptlet source](../src/scriptlets/prevent-fetch.js)

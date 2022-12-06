@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.7.6
+ * Version 1.7.10
  */
 
 (function (factory) {
@@ -3542,9 +3542,10 @@
       };
       window.eval = evalWrapper.bind(window);
     }
-    preventBab$2.names = ['prevent-bab',
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    'nobab.js', 'ubo-nobab.js', 'bab-defuser.js', 'ubo-bab-defuser.js', 'ubo-nobab', 'ubo-bab-defuser'];
+    preventBab$2.names = ['prevent-bab'
+    // there is no aliases for this scriptlet
+    ];
+
     preventBab$2.injections = [hit];
 
     /* eslint-disable no-unused-vars, no-extra-bind, func-names */
@@ -5238,7 +5239,7 @@
      */
     function setCookieReload$1(source, name, value) {
       var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '/';
-      if (isCookieSetWithValue(name, value)) {
+      if (isCookieSetWithValue(document.cookie, name, value)) {
         return;
       }
       var validValue = getLimitedCookieValue(value);
@@ -6362,7 +6363,7 @@
           return Reflect.apply(target, thisArg, args);
         }
         var eventName = args[0];
-        var isMatched = thisArg.getAttribute(source.name) === 'matched' && eventName === 'error';
+        var isMatched = typeof thisArg.getAttribute === 'function' && thisArg.getAttribute(source.name) === 'matched' && eventName === 'error';
         if (isMatched) {
           return Reflect.apply(target, thisArg, [eventName, noopFunc]);
         }
@@ -9134,9 +9135,9 @@
      * ```
      */
     var preventBab$1 = preventBab$2;
-    preventBab$1.names = ['prevent-bab'
+    preventBab$1.names = ['prevent-bab',
     // list of prevent-bab redirect aliases
-    ];
+    'nobab.js', 'ubo-nobab.js', 'bab-defuser.js', 'ubo-bab-defuser.js', 'ubo-nobab', 'ubo-bab-defuser'];
 
     /**
      * @redirect amazon-apstag
@@ -13617,6 +13618,12 @@
       "prebid-ads.js": "prebid-ads.js",
       prebid: "prebid.js",
       "prevent-bab": "prevent-bab.js",
+      "nobab.js": "prevent-bab.js",
+      "ubo-nobab.js": "prevent-bab.js",
+      "bab-defuser.js": "prevent-bab.js",
+      "ubo-bab-defuser.js": "prevent-bab.js",
+      "ubo-nobab": "prevent-bab.js",
+      "ubo-bab-defuser": "prevent-bab.js",
       "prevent-bab2": "prevent-bab2.js",
       "nobab2.js": "prevent-bab2.js",
       "prevent-fab-3.2.0": "prevent-fab-3.2.0.js",
@@ -16875,7 +16882,7 @@
             return Reflect.apply(target, thisArg, args);
           }
           var eventName = args[0];
-          var isMatched = thisArg.getAttribute(source.name) === "matched" && eventName === "error";
+          var isMatched = typeof thisArg.getAttribute === "function" && thisArg.getAttribute(source.name) === "matched" && eventName === "error";
           if (isMatched) {
             return Reflect.apply(target, thisArg, [eventName, noopFunc]);
           }
@@ -19869,7 +19876,7 @@
     function setCookieReload(source, args) {
       function setCookieReload(source, name, value) {
         var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "/";
-        if (isCookieSetWithValue(name, value)) {
+        if (isCookieSetWithValue(document.cookie, name, value)) {
           return;
         }
         var validValue = getLimitedCookieValue(value);
@@ -21682,12 +21689,6 @@
       "ubo-adfly-defuser.js": preventAdfly,
       "ubo-adfly-defuser": preventAdfly,
       "prevent-bab": preventBab,
-      "nobab.js": preventBab,
-      "ubo-nobab.js": preventBab,
-      "bab-defuser.js": preventBab,
-      "ubo-bab-defuser.js": preventBab,
-      "ubo-nobab": preventBab,
-      "ubo-bab-defuser": preventBab,
       "prevent-element-src-loading": preventElementSrcLoading,
       "prevent-eval-if": preventEvalIf,
       "noeval-if.js": preventEvalIf,
