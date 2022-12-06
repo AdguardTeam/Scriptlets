@@ -170,7 +170,8 @@ export function preventElementSrcLoading(source, tagName, match) {
         }
 
         const eventName = args[0];
-        const isMatched = thisArg.getAttribute(source.name) === 'matched'
+        const isMatched = typeof thisArg.getAttribute === 'function'
+            && thisArg.getAttribute(source.name) === 'matched'
             && eventName === 'error';
 
         if (isMatched) {
