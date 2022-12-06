@@ -47,7 +47,7 @@ import {
  * ```
  */
 export function setCookieReload(source, name, value, path = '/') {
-    if (isCookieSetWithValue(name, value)) {
+    if (isCookieSetWithValue(document.cookie, name, value)) {
         return;
     }
 
