@@ -8,9 +8,9 @@
 
 ### Fixed
 
-* `set-cookie-reload` infinite page reloading
-* breakage of `prevent-element-src-loading` due to `window` getting into `apply` wrapper
-* spread of args bug at getXhrData call for `trusted-replace-xhr-response`
+* `set-cookie-reload` infinite page reloading [#265](https://github.com/AdguardTeam/Scriptlets/issues/265)
+* breakage of `prevent-element-src-loading` due to `window` getting into `apply` wrapper [#264](https://github.com/AdguardTeam/Scriptlets/issues/264)
+* spread of args bug at `getXhrData` call for `trusted-replace-xhr-response`
 * request properties array not being served to `getRequestData` and `parseMatchProps` helpers
 
 ## v1.7.3
