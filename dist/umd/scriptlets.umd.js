@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.7.10
+ * Version 1.7.13
  */
 
 (function (factory) {
@@ -113,7 +113,7 @@
      * @returns {boolean}
      */
     var isEmptyObject = function isEmptyObject(obj) {
-      return Object.keys(obj).length === 0;
+      return Object.keys(obj).length === 0 && !obj.prototype;
     };
 
     /**
@@ -2020,7 +2020,7 @@
      *
      * 3. Click multiple elements by selector with a delay
      * ```
-     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name='check"], input[type="submit"][value="akkoord"]', '', '500')
+     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name="check"], input[type="submit"][value="akkoord"]', '', '500')
      * ```
      *
      * 4. Match cookies by keys using regex and string
@@ -13923,7 +13923,7 @@
         }
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getDescriptorAddon() {
         return {
@@ -14091,7 +14091,7 @@
         }
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -14238,7 +14238,7 @@
         }
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -14479,7 +14479,7 @@
         return new RegExp(escaped);
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getNativeRegexpTest() {
         return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
@@ -14964,7 +14964,7 @@
         }
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -15113,7 +15113,7 @@
       }
       function noopFunc() {}
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -15260,7 +15260,7 @@
         }
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -15831,7 +15831,7 @@
         return new RegExp(escaped);
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getObjectEntries(object) {
         var keys = Object.keys(object);
@@ -16020,7 +16020,7 @@
         }).join(" ");
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getObjectEntries(object) {
         var keys = Object.keys(object);
@@ -16261,7 +16261,7 @@
         }
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -17298,7 +17298,7 @@
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getRequestData(request) {
         var requestInitOptions = getRequestProps();
@@ -18579,7 +18579,7 @@
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getObjectEntries(object) {
         var keys = Object.keys(object);
@@ -19689,7 +19689,7 @@
         return native(num);
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getNativeRegexpTest() {
         return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
@@ -20727,7 +20727,7 @@
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getRequestData(request) {
         var requestInitOptions = getRequestProps();
@@ -21053,7 +21053,7 @@
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getObjectEntries(object) {
         var keys = Object.keys(object);
