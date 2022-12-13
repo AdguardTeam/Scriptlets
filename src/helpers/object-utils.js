@@ -35,7 +35,7 @@ export const getObjectFromEntries = (entries) => {
  * @param {Object} obj
  * @returns {boolean}
  */
-export const isEmptyObject = (obj) => Object.keys(obj).length === 0;
+export const isEmptyObject = (obj) => Object.keys(obj).length === 0 && !obj.prototype;
 
 /**
  * Checks whether the obj is an empty object

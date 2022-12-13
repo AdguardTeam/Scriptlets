@@ -1,5 +1,11 @@
 # Scriptlets and Redirect Resources Changelog
 
+## v1.7.13
+
+### Fixed 
+
+* `isEmptyObject` helper not counting `prototype` as an object property
+
 ## v1.7.10
 
 ### Added
