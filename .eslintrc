@@ -14,7 +14,8 @@
     "max-len": [
         "error",
         {
-            "code": 120
+          "code": 120,
+          "ignoreUrls": true
         }
     ],
     "indent": ["error", 4, { "SwitchCase": 1}],
