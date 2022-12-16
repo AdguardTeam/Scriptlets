@@ -5,7 +5,7 @@
 
 ### Added
 
-* `set-constant` ADG→UBO conversion for `emptyArr` and `emptyObj`
+* `set-constant` ADG→UBO conversion for [`emptyArr` and `emptyObj`](https://github.com/uBlockOrigin/uBlock-issues/issues/2411)
 
 
 ## v1.7.13
