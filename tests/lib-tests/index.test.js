@@ -246,6 +246,16 @@ test('Test SCRIPTLET converting - ADG -> UBO', (assert) => {
     inputAdg = 'example.com#%#//scriptlet(\'close-window\')';
     expectedUbo = 'example.com##+js(window-close-if)';
     assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
+
+    // emptyArr as set-constant parameter
+    inputAdg = "example.org#%#//scriptlet('set-constant', 'adUnits', 'emptyArr')";
+    expectedUbo = 'example.org##+js(set-constant, adUnits, [])';
+    assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
+
+    // emptyObj as set-constant parameter
+    inputAdg = "example.org#%#//scriptlet('set-constant', 'adUnits', 'emptyObj')";
+    expectedUbo = 'example.org##+js(set-constant, adUnits, {})';
+    assert.strictEqual(convertAdgScriptletToUbo(inputAdg), expectedUbo);
 });
 
 test('Test $redirect validation', (assert) => {
