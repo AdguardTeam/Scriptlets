@@ -1,4 +1,4 @@
-# AdGuard Scriptlets and Redirect resources
+# AdGuard Scriptlets and Redirect Resources
 
 AdGuard's Scriptlets and Redirect resources library which provides extended capabilities for content blocking.
 
