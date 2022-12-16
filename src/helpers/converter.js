@@ -250,11 +250,12 @@ export const convertAdgScriptletToUbo = (rule) => {
         const { name: parsedName, args: parsedParams } = parseRule(rule);
 
         let preparedParams;
-        // https://github.com/AdguardTeam/FiltersCompiler/issues/102
         if (parsedName === ADG_SET_CONSTANT_NAME
+            // https://github.com/AdguardTeam/FiltersCompiler/issues/102
             && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_STRING) {
             preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_STRING];
         } else if (parsedName === ADG_SET_CONSTANT_NAME
+            // https://github.com/uBlockOrigin/uBlock-issues/issues/2411
             && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_ARRAY) {
             preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_ARRAY];
         } else if (parsedName === ADG_SET_CONSTANT_NAME
