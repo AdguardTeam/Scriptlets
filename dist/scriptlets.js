@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.7.13
+ * Version 1.7.14
  */
 
 (function () {
@@ -7886,7 +7886,11 @@
     var ADG_XHR_TYPE = 'xmlhttprequest';
     var ADG_SET_CONSTANT_NAME = 'set-constant';
     var ADG_SET_CONSTANT_EMPTY_STRING = '';
+    var ADG_SET_CONSTANT_EMPTY_ARRAY = 'emptyArr';
+    var ADG_SET_CONSTANT_EMPTY_OBJECT = 'emptyObj';
     var UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
+    var UBO_SET_CONSTANT_EMPTY_ARRAY = '[]';
+    var UBO_SET_CONSTANT_EMPTY_OBJECT = '{}';
     var ADG_PREVENT_FETCH_NAME = 'prevent-fetch';
     var ADG_PREVENT_FETCH_EMPTY_STRING = '';
     var ADG_PREVENT_FETCH_WILDCARD = '*';
@@ -8078,9 +8082,16 @@
           parsedName = _parseRule.name,
           parsedParams = _parseRule.args;
         var preparedParams;
+        if (parsedName === ADG_SET_CONSTANT_NAME
         // https://github.com/AdguardTeam/FiltersCompiler/issues/102
-        if (parsedName === ADG_SET_CONSTANT_NAME && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_STRING) {
+        && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_STRING) {
           preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_STRING];
+        } else if (parsedName === ADG_SET_CONSTANT_NAME
+        // https://github.com/uBlockOrigin/uBlock-issues/issues/2411
+        && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_ARRAY) {
+          preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_ARRAY];
+        } else if (parsedName === ADG_SET_CONSTANT_NAME && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_OBJECT) {
+          preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_OBJECT];
         } else if (parsedName === ADG_PREVENT_FETCH_NAME
         // https://github.com/AdguardTeam/Scriptlets/issues/109
         && (parsedParams[0] === ADG_PREVENT_FETCH_WILDCARD || parsedParams[0] === ADG_PREVENT_FETCH_EMPTY_STRING)) {
