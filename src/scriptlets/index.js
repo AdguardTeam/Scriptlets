@@ -29,16 +29,24 @@ import { getScriptletFunction } from '../../tmp/scriptlets-func';
  * Returns scriptlet code by param
  * @param {Source} source
  * @returns {string|null} scriptlet code
+ * @throws on unknown scriptlet name
  */
 function getScriptletCode(source) {
     if (!validator.isValidScriptletName(source.name)) {
         return null;
     }
 
-    const scriptletFunction = getScriptletFunction(source.name).toString();
+    const scriptletFunction = getScriptletFunction(source.name);
+    // In case isValidScriptletName check will pass invalid scriptlet name,
+    // for example when there is a bad alias
+    if (typeof scriptletFunction !== 'function') {
+        throw new Error(`Error: cannot invoke scriptlet with name: '${source.name}'`);
+    }
+    const scriptletFunctionString = scriptletFunction.toString();
+
     const result = source.engine === 'corelibs' || source.engine === 'test'
-        ? wrapInNonameFunc(scriptletFunction)
-        : passSourceAndProps(source, scriptletFunction);
+        ? wrapInNonameFunc(scriptletFunctionString)
+        : passSourceAndProps(source, scriptletFunctionString);
     return result;
 }
 

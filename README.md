@@ -161,9 +161,10 @@ And also there is a module at `dist/scriptlets.js` which has been exported to a 
 
 ```javascript
 /**
- * Returns scriptlet code
+ * Returns scriptlet code by param
  * @param {Source} source
- * @returns {string}
+ * @returns {string|null} scriptlet code
+ * @throws on unknown scriptlet name
  */
 scriptlets.invoke(source);
 ```
