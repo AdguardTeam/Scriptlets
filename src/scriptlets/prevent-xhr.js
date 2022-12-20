@@ -96,7 +96,6 @@ export function preventXHR(source, propsToMatch, customResponseText) {
         return;
     }
 
-    let shouldPrevent = false;
     let response = '';
     let responseText = '';
     let responseUrl;
@@ -111,15 +110,15 @@ export function preventXHR(source, propsToMatch, customResponseText) {
             // Log if no propsToMatch given
             logMessage(source, `xhr( ${objectToString(xhrData)} )`, true);
             hit(source);
-        } else {
-            shouldPrevent = matchRequestProps(source, propsToMatch, xhrData);
+        } else if (matchRequestProps(source, propsToMatch, xhrData)) {
+            thisArg.shouldBePrevented = true;
         }
 
         return Reflect.apply(target, thisArg, args);
     };
 
     const sendWrapper = (target, thisArg, args) => {
-        if (!shouldPrevent) {
+        if (!thisArg.shouldBePrevented) {
             return Reflect.apply(target, thisArg, args);
         }
 

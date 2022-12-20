@@ -159,7 +159,7 @@ if (isSupported) {
         xhr.send();
     });
 
-    test('Args, method matched, randomize response text, rangeMin equal to rangeMax (length:100-100)', async (assert) => {
+    test('Args, method matched, randomize response text, rangeMin === rangeMax (length:100-100)', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
         const MATCH_DATA = ['method:GET', 'length:100-100'];
@@ -203,7 +203,7 @@ if (isSupported) {
         xhr.send();
     });
 
-    test('Empty arg, prevent all, do not randomize response text - limit range (rangeMin + rangeMax - length:8888888888888888-99999999999999999999999)', async (assert) => {
+    test('Empty arg, prevent all, dont randomize response - limit range (rangeMin+rangeMax-length)', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
         const MATCH_DATA = ['', 'length:8888888888888888-99999999999999999999999'];
@@ -224,7 +224,7 @@ if (isSupported) {
         xhr.send();
     });
 
-    test('Empty arg, prevent all, do not randomize response text - limit range (rangeMax - length:10000-600000)', async (assert) => {
+    test('Empty arg, prevent all, dont randomize response text - limit range (rangeMax - length)', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
         const MATCH_DATA = ['', 'length:10000-600000'];
@@ -286,7 +286,7 @@ if (isSupported) {
         xhr.send();
     });
 
-    test('Empty arg, prevent all, do not randomize response text - invalid argument (length:test-30000)', async (assert) => {
+    test('Empty arg, prevent all, dont randomize response - invalid argument (length:test-30000)', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
         const MATCH_DATA = ['', 'length:test-30000'];
@@ -346,7 +346,7 @@ if (isSupported) {
         xhr.send();
     });
 
-    test('Empty arg, prevent all, do not randomize response text - invalid argument (length:123-345-450)', async (assert) => {
+    test('Empty arg, prevent all, dont randomize response - invalid argument (length:123-345-450)', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
         const MATCH_DATA = ['', 'length:123-345-450'];
@@ -366,7 +366,7 @@ if (isSupported) {
         xhr.send();
     });
 
-    test('Empty arg, prevent all, do not randomize response text - invalid argument (length:123---450)', async (assert) => {
+    test('Empty arg, prevent all, dont randomize response - invalid argument (length:123---450)', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
         const MATCH_DATA = ['', 'length:123---450'];
@@ -386,7 +386,7 @@ if (isSupported) {
         xhr.send();
     });
 
-    test('Empty arg, prevent all, do not randomize response text - invalid argument (length::123-450)', async (assert) => {
+    test('Empty arg, prevent all, dont randomize response - invalid argument (length::123-450)', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
         const MATCH_DATA = ['', 'length::123-450'];
@@ -587,6 +587,44 @@ if (isSupported) {
             done();
         };
         xhr.send();
+    });
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/261
+    test('Works correctly with different parallel XHR requests', async (assert) => {
+        const METHOD = 'GET';
+        const URL_TO_BLOCK = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const URL_TO_PASS = `${FETCH_OBJECTS_PATH}/test02.json`;
+        const MATCH_DATA = ['test01.json'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done1 = assert.async();
+        const done2 = assert.async();
+
+        const xhr1 = new XMLHttpRequest();
+        const xhr2 = new XMLHttpRequest();
+
+        xhr1.open(METHOD, URL_TO_PASS);
+        xhr2.open(METHOD, URL_TO_BLOCK);
+
+        xhr1.onload = () => {
+            assert.strictEqual(xhr1.readyState, 4, 'Response done');
+            assert.ok(xhr1.response, 'Response data exists');
+            assert.strictEqual(window.hit, undefined, 'hit should not fire');
+            done1();
+        };
+
+        xhr2.onload = () => {
+            assert.strictEqual(xhr2.readyState, 4, 'Response done');
+            assert.strictEqual(typeof xhr2.responseText, 'string', 'Response text mocked');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            clearGlobalProps('hit');
+            done2();
+        };
+
+        xhr1.send();
+        // use timeout to avoid hit collisions
+        setTimeout(() => xhr2.send(), 1);
     });
 } else {
     test('unsupported', (assert) => {
