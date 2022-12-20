@@ -1587,7 +1587,7 @@
      * Generate random six symbols id
      */
     function randomId() {
-      return Math.random().toString(36).substr(2, 9);
+      return Math.random().toString(36).slice(2, 9);
     }
 
     /**
@@ -13810,7 +13810,7 @@
         window.onerror = createOnErrorHandler(rid).bind();
       }
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
@@ -14000,7 +14000,7 @@
         window.onerror = createOnErrorHandler(rid).bind();
       }
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
@@ -14147,7 +14147,7 @@
         window.onerror = createOnErrorHandler(rid).bind();
       }
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
@@ -14318,7 +14318,7 @@
         window.onerror = createOnErrorHandler(rid).bind();
       }
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
@@ -14854,7 +14854,7 @@
         window.onerror = createOnErrorHandler(rid).bind();
       }
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
@@ -15021,7 +15021,7 @@
         window.onerror = createOnErrorHandler(rid).bind();
       }
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
@@ -15169,7 +15169,7 @@
         window.onerror = createOnErrorHandler(rid).bind();
       }
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
@@ -17410,7 +17410,7 @@
         };
       }
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
       function hit(source) {
         if (source.verbose !== true) {
