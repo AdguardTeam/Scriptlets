@@ -63,7 +63,13 @@ export function preventAddEventListener(source, typeSearch, listenerSearch) {
             return undefined;
         }
 
-        return nativeAddEventListener.apply(this, [type, listener, ...args]);
+        // Avoid illegal invocations due to lost context
+        // https://github.com/AdguardTeam/Scriptlets/issues/271
+        let context = this;
+        if (this && this.constructor?.name === 'Window' && this !== window) {
+            context = window;
+        }
+        return nativeAddEventListener.apply(context, [type, listener, ...args]);
     }
 
     const descriptor = {

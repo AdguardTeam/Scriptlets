@@ -1,5 +1,10 @@
 # Scriptlets and Redirect Resources Changelog
 
+## Unreleased
+
+### Fixed
+
+- `prevent-addEventListener` and `log-addEventListener` loosing context when encountering already bound `.addEventListener`
 
 ## v1.7.14
 
