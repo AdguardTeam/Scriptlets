@@ -38,7 +38,7 @@ import {
  *
  * 3. Click multiple elements by selector with a delay
  * ```
- * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name='check"], input[type="submit"][value="akkoord"]', '', '500')
+ * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name="check"], input[type="submit"][value="akkoord"]', '', '500')
  * ```
  *
  * 4. Match cookies by keys using regex and string

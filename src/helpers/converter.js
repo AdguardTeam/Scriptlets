@@ -42,7 +42,11 @@ const ADG_XHR_TYPE = 'xmlhttprequest';
 
 const ADG_SET_CONSTANT_NAME = 'set-constant';
 const ADG_SET_CONSTANT_EMPTY_STRING = '';
+const ADG_SET_CONSTANT_EMPTY_ARRAY = 'emptyArr';
+const ADG_SET_CONSTANT_EMPTY_OBJECT = 'emptyObj';
 const UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
+const UBO_SET_CONSTANT_EMPTY_ARRAY = '[]';
+const UBO_SET_CONSTANT_EMPTY_OBJECT = '{}';
 
 const ADG_PREVENT_FETCH_NAME = 'prevent-fetch';
 const ADG_PREVENT_FETCH_EMPTY_STRING = '';
@@ -246,10 +250,17 @@ export const convertAdgScriptletToUbo = (rule) => {
         const { name: parsedName, args: parsedParams } = parseRule(rule);
 
         let preparedParams;
-        // https://github.com/AdguardTeam/FiltersCompiler/issues/102
         if (parsedName === ADG_SET_CONSTANT_NAME
+            // https://github.com/AdguardTeam/FiltersCompiler/issues/102
             && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_STRING) {
             preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_STRING];
+        } else if (parsedName === ADG_SET_CONSTANT_NAME
+            // https://github.com/uBlockOrigin/uBlock-issues/issues/2411
+            && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_ARRAY) {
+            preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_ARRAY];
+        } else if (parsedName === ADG_SET_CONSTANT_NAME
+            && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_OBJECT) {
+            preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_OBJECT];
         } else if (parsedName === ADG_PREVENT_FETCH_NAME
             // https://github.com/AdguardTeam/Scriptlets/issues/109
             && (parsedParams[0] === ADG_PREVENT_FETCH_WILDCARD

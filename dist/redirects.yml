@@ -1,6 +1,6 @@
 #
 #    AdGuard Scriptlets (Redirects Source)
-#    Version 1.7.10
+#    Version 1.7.14
 #
 - title: 1x1-transparent.gif
   description: |-
@@ -3388,7 +3388,7 @@
             };
         }
         function randomId() {
-            return Math.random().toString(36).substr(2, 9);
+            return Math.random().toString(36).slice(2, 9);
         }
         function hit(source) {
             if (source.verbose !== true) {

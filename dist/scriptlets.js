@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.7.10
+ * Version 1.7.14
  */
 
 (function () {
@@ -111,7 +111,7 @@
      * @returns {boolean}
      */
     var isEmptyObject = function isEmptyObject(obj) {
-      return Object.keys(obj).length === 0;
+      return Object.keys(obj).length === 0 && !obj.prototype;
     };
 
     /**
@@ -1587,7 +1587,7 @@
      * Generate random six symbols id
      */
     function randomId() {
-      return Math.random().toString(36).substr(2, 9);
+      return Math.random().toString(36).slice(2, 9);
     }
 
     /**
@@ -2018,7 +2018,7 @@
      *
      * 3. Click multiple elements by selector with a delay
      * ```
-     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name='check"], input[type="submit"][value="akkoord"]', '', '500')
+     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name="check"], input[type="submit"][value="akkoord"]', '', '500')
      * ```
      *
      * 4. Match cookies by keys using regex and string
@@ -7886,7 +7886,11 @@
     var ADG_XHR_TYPE = 'xmlhttprequest';
     var ADG_SET_CONSTANT_NAME = 'set-constant';
     var ADG_SET_CONSTANT_EMPTY_STRING = '';
+    var ADG_SET_CONSTANT_EMPTY_ARRAY = 'emptyArr';
+    var ADG_SET_CONSTANT_EMPTY_OBJECT = 'emptyObj';
     var UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
+    var UBO_SET_CONSTANT_EMPTY_ARRAY = '[]';
+    var UBO_SET_CONSTANT_EMPTY_OBJECT = '{}';
     var ADG_PREVENT_FETCH_NAME = 'prevent-fetch';
     var ADG_PREVENT_FETCH_EMPTY_STRING = '';
     var ADG_PREVENT_FETCH_WILDCARD = '*';
@@ -8078,9 +8082,16 @@
           parsedName = _parseRule.name,
           parsedParams = _parseRule.args;
         var preparedParams;
+        if (parsedName === ADG_SET_CONSTANT_NAME
         // https://github.com/AdguardTeam/FiltersCompiler/issues/102
-        if (parsedName === ADG_SET_CONSTANT_NAME && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_STRING) {
+        && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_STRING) {
           preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_STRING];
+        } else if (parsedName === ADG_SET_CONSTANT_NAME
+        // https://github.com/uBlockOrigin/uBlock-issues/issues/2411
+        && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_ARRAY) {
+          preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_ARRAY];
+        } else if (parsedName === ADG_SET_CONSTANT_NAME && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_OBJECT) {
+          preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_OBJECT];
         } else if (parsedName === ADG_PREVENT_FETCH_NAME
         // https://github.com/AdguardTeam/Scriptlets/issues/109
         && (parsedParams[0] === ADG_PREVENT_FETCH_WILDCARD || parsedParams[0] === ADG_PREVENT_FETCH_EMPTY_STRING)) {
@@ -13799,7 +13810,7 @@
         window.onerror = createOnErrorHandler(rid).bind();
       }
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
@@ -13921,7 +13932,7 @@
         }
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getDescriptorAddon() {
         return {
@@ -13989,7 +14000,7 @@
         window.onerror = createOnErrorHandler(rid).bind();
       }
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
@@ -14089,7 +14100,7 @@
         }
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -14136,7 +14147,7 @@
         window.onerror = createOnErrorHandler(rid).bind();
       }
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
@@ -14236,7 +14247,7 @@
         }
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -14307,7 +14318,7 @@
         window.onerror = createOnErrorHandler(rid).bind();
       }
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
@@ -14477,7 +14488,7 @@
         return new RegExp(escaped);
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getNativeRegexpTest() {
         return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
@@ -14843,7 +14854,7 @@
         window.onerror = createOnErrorHandler(rid).bind();
       }
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
@@ -14962,7 +14973,7 @@
         }
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -15010,7 +15021,7 @@
         window.onerror = createOnErrorHandler(rid).bind();
       }
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
@@ -15111,7 +15122,7 @@
       }
       function noopFunc() {}
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -15158,7 +15169,7 @@
         window.onerror = createOnErrorHandler(rid).bind();
       }
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
@@ -15258,7 +15269,7 @@
         }
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -15829,7 +15840,7 @@
         return new RegExp(escaped);
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getObjectEntries(object) {
         var keys = Object.keys(object);
@@ -16018,7 +16029,7 @@
         }).join(" ");
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getObjectEntries(object) {
         var keys = Object.keys(object);
@@ -16259,7 +16270,7 @@
         }
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -17296,7 +17307,7 @@
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getRequestData(request) {
         var requestInitOptions = getRequestProps();
@@ -17399,7 +17410,7 @@
         };
       }
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
       function hit(source) {
         if (source.verbose !== true) {
@@ -18577,7 +18588,7 @@
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getObjectEntries(object) {
         var keys = Object.keys(object);
@@ -19687,7 +19698,7 @@
         return native(num);
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getNativeRegexpTest() {
         return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
@@ -20725,7 +20736,7 @@
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getRequestData(request) {
         var requestInitOptions = getRequestProps();
@@ -21051,7 +21062,7 @@
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getObjectEntries(object) {
         var keys = Object.keys(object);

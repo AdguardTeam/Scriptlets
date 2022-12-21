@@ -1,11 +1,29 @@
 # Scriptlets and Redirect Resources Changelog
 
-## 1.8.0
+## Unreleased 1.8.x
 
 ### Fixed
 
 - `prevent-xhr` and `trusted-replace-xhr-response` closure bug on multiple requests [#261](https://github.com/AdguardTeam/Scriptlets/issues/261)
 
+## Unreleased 1.7.x
+
+### Fixed
+
+- `prevent-addEventListener` and `log-addEventListener` loosing context when encountering already bound `.addEventListener`
+
+## v1.7.14
+
+### Added
+
+* `set-constant` ADG→UBO conversion for [`emptyArr` and `emptyObj`](https://github.com/uBlockOrigin/uBlock-issues/issues/2411)
+
+
+## v1.7.13
+
+### Fixed
+
+* `isEmptyObject` helper not counting `prototype` as an object property
 
 ## v1.7.10
 
@@ -19,6 +37,7 @@
 - breakage of `prevent-element-src-loading` due to `window` getting into `apply` wrapper [#264](https://github.com/AdguardTeam/Scriptlets/issues/264)
 - spread of args bug at `getXhrData` call for `trusted-replace-xhr-response`
 - request properties array not being served to `getRequestData` and `parseMatchProps` helpers
+
 
 ## v1.7.3
 
