@@ -77,6 +77,7 @@ const redirects = [
     },
     {
         adg: 'google-ima3',
+        ubo: 'google-ima.js',
     },
     {
         adg: 'gemius',

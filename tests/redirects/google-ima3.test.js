@@ -18,6 +18,24 @@ const afterEach = () => {
 
 module(name, { beforeEach, afterEach });
 
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
+        name: 'ubo-google-ima.js',
+        engine: 'test',
+        verbose: true,
+    };
+
+    const codeByAdgParams = window.scriptlets.redirects.getCode(adgParams);
+    const codeByUboParams = window.scriptlets.redirects.getCode(uboParams);
+
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
+});
+
 test('Ima mocked', (assert) => {
     assert.expect(28);
 

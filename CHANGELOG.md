@@ -1,10 +1,11 @@
 # Scriptlets and Redirect Resources Changelog
 
-## Unreleased
+## Unreleased 1.7.x
 
 ### Fixed
 
 - `prevent-addEventListener` and `log-addEventListener` loosing context when encountering already bound `.addEventListener`
+- `google-ima3` conversion
 
 ## v1.7.14
 
