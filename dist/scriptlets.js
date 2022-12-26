@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.7.19
+ * Version 1.7.20
  */
 
 (function () {
@@ -13518,6 +13518,7 @@
      * @property {string} comment
      * @property {string} content
      * @property {string} contentType
+     * @property {string} file
      * @property {boolean} [isBlocking]
      * @property {string} [sha]
      */
@@ -13545,7 +13546,7 @@
       /**
        * Returns redirect source object
        * @param {string} title
-       * @return {Redirect}
+       * @return {Redirect|undefined} Found redirect source object, or `undefined` if not found.
        */
       createClass(Redirects, [{
         key: "getRedirect",
@@ -13566,6 +13567,21 @@
             }
             return aliases.indexOf(title) > -1;
           });
+        }
+        /**
+         * Checks if redirect is blocking like click2load.html
+         * @param {string} title Title of the redirect.
+         * @returns True if redirect is blocking otherwise returns `false` even if redirect name is
+         * unknown.
+         */
+      }, {
+        key: "isBlocking",
+        value: function isBlocking(title) {
+          var redirect = this.redirects[title];
+          if (redirect) {
+            return !!redirect.isBlocking;
+          }
+          return false;
         }
       }]);
       return Redirects;
