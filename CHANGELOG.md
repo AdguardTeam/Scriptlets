@@ -1,5 +1,16 @@
 # Scriptlets and Redirect Resources Changelog
 
+## v1.7.20
+
+### Added
+
+- `isBlocking()` method for Redirects class
+- `file` field for redirect type
+
+### Fixed
+
+- Redirects types.
+
 ## v1.7.19
 
 ### Fixed

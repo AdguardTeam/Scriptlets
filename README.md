@@ -427,6 +427,11 @@ const redirects = new Redirects(rawYaml)
 const redirect = redirect.getRedirect('noopjs');
 
 /**
+ * Check if redirect is blocking, e.g. click2load.html
+ */
+const isBlocking = redirect.isBlocking('click2load.html');
+
+/**
  * Redirect - object with following props
  * {
  *      title: 1x1-transparent.gif
