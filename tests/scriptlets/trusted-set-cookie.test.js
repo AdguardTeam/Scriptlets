@@ -112,11 +112,9 @@ test('Set cookie with invalid expires', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(
-            input,
-            `${name}: Invalid offsetExpiresSec value: ${expiresSec};`,
-            'logs correctly on invalid offsetExpiresSec',
-        );
+        assert.strictEqual(input,
+            `${name}: Invalid offsetExpiresSec value: ${expiresSec}`,
+            'logs correctly on invalid offsetExpiresSec');
     };
     runScriptlet(name, [cName, cValue, `${expiresSec}`]);
 

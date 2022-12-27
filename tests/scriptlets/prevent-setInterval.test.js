@@ -69,7 +69,7 @@ test('no args -- logging', (assert) => {
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         assert.strictEqual(
             loggedMessage,
-            `prevent-setInterval: setInterval(${callback.toString()}, ${timeout});`,
+            `prevent-setInterval: setInterval(${callback.toString()}, ${timeout})`,
             'console.hit input ok',
         );
         assert.strictEqual(window[agLogSetInterval], 'changed', 'property changed');

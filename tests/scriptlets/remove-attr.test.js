@@ -306,11 +306,7 @@ test('invalid selector — no match', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(
-            input,
-            `${name}: Invalid selector arg: '${selector}';`,
-            'logged error for invalid remove-attr selector;',
-        );
+        assert.strictEqual(input, `${name}: Invalid selector arg: '${selector}'`, 'logged error for invalid remove-attr selector');
     };
 
     runScriptlet(name, scriptletArgs);
