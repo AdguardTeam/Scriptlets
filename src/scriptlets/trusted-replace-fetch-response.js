@@ -88,7 +88,7 @@ export function trustedReplaceFetchResponse(source, pattern = '', replacement = 
 
     // Only allow pattern as empty string for logging purposes
     if (pattern === '' && replacement !== '') {
-        logMessage(source, 'Pattern argument should not be empty string.');
+        logMessage(source, 'Pattern argument should not be empty string');
         return;
     }
     const shouldLog = pattern === '' && replacement === '';

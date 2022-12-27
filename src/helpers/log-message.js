@@ -12,8 +12,26 @@
  * @param {boolean} [forced=false] to log message unconditionally
  */
 export const logMessage = (source, message, forced = false) => {
-    if (forced || source.verbose) {
-        // eslint-disable-next-line no-console
-        console.log(`${source.name}: ${message}`);
+    const {
+        name,
+        ruleText,
+        verbose,
+    } = source;
+
+    if (!forced && !verbose) {
+        return;
     }
+
+    let messageStr = `${name}: ${message};`;
+
+    // Extract scriptlet part from rule text
+    if (ruleText) {
+        const RULE_MARKER = '#%#';
+        const markerIdx = ruleText.indexOf(RULE_MARKER);
+        const extension = ruleText.slice(markerIdx, ruleText.length);
+        messageStr += ` cannot apply rule: ${extension}`;
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(messageStr);
 };

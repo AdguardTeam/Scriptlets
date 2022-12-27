@@ -87,7 +87,7 @@ if (!isSupported) {
                 return;
             }
             // eslint-disable-next-line max-len
-            const EXPECTED_LOG_STR = `${name}: Document tried to create an RTCPeerConnection: ${TEST_URL_VALUE}`;
+            const EXPECTED_LOG_STR = `${name}: Document tried to create an RTCPeerConnection: ${TEST_URL_VALUE};`;
             assert.ok(endsWith(input, EXPECTED_LOG_STR), 'console.hit input');
         };
 
