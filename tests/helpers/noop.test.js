@@ -1,4 +1,9 @@
-import { noopPromiseResolve } from '../../src/helpers';
+import {
+    noopPromiseResolve,
+    noopCallbackFunc,
+    noopFunc,
+    noopThrow,
+} from '../../src/helpers';
 
 const { test, module } = QUnit;
 const name = 'scriptlets-redirects helpers';
@@ -21,4 +26,15 @@ test('Test noopPromiseResolve for valid response props', async (assert) => {
     assert.ok(typeof objBody === 'object' && !objBody.length);
     assert.ok(Array.isArray(arrBody) && !arrBody.length);
     assert.strictEqual(responseWithType.type, TEST_TYPE);
+});
+
+test('noopCallbackFunc returns noopFunc', async (assert) => {
+    const func = noopCallbackFunc();
+    assert.ok(typeof func === 'function', 'returns function');
+    assert.strictEqual(func.toString(), noopFunc.toString(), 'returns empty function');
+    assert.strictEqual(func(), undefined, 'function returns undefined');
+});
+
+test('noopThrow throws an error', async (assert) => {
+    assert.throws(() => noopThrow(), 'noopThrow throws an error');
 });

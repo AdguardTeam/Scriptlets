@@ -104,6 +104,20 @@ if (!isSupported) {
         assert.strictEqual(window[noopFuncProp](), undefined);
         clearGlobalProps(noopFuncProp);
 
+        // setting constant to noopCallbackFunc;
+        const noopCallbackFuncProp = 'noopCallbackFunc';
+        runScriptletFromTag(noopCallbackFuncProp, 'noopCallbackFunc');
+        const noopFuncCb = window[noopCallbackFuncProp]();
+        assert.ok(typeof noopFuncCb === 'function', 'returns function');
+        assert.strictEqual(noopFuncCb(), undefined, 'function returns undefined');
+        clearGlobalProps(noopCallbackFuncProp);
+
+        // setting constant to noopCallbackFunc;
+        const noopThrowProp = 'noopThrow';
+        runScriptletFromTag(noopThrowProp, 'noopThrow');
+        assert.throws(() => window[noopThrowProp]()(), 'noopThrowProp throws an error');
+        clearGlobalProps(noopThrowProp);
+
         // setting constant to trueFunc;
         const trueFuncProp = 'trueFuncProp';
         runScriptletFromTag(trueFuncProp, 'trueFunc');

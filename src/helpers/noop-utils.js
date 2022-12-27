@@ -5,6 +5,12 @@
 export const noopFunc = () => { };
 
 /**
+ * Function return noopFunc
+ * @returns {Function}
+ */
+export const noopCallbackFunc = () => noopFunc;
+
+/**
  * Function returns null
  * @return {null} null
  */
@@ -46,6 +52,14 @@ export const noopArray = () => [];
  * @return {Object} empty object
  */
 export const noopObject = () => ({});
+
+/**
+ * Function throws an error
+ * @throws
+ */
+export const noopThrow = () => {
+    throw new Error();
+};
 
 /**
  * Function returns Promise.reject()

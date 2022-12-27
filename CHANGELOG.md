@@ -2,6 +2,9 @@
 
 ## Unreleased 1.8.x
 
+### Added
+- `noopThrow` and `noopCallbackFunc` prop values for `set-constant` scriptlet
+
 ### Changed
 
 - add decimal delay matching for `prevent-setInterval` and `prevent-setTimeout` [#247](https://github.com/AdguardTeam/Scriptlets/issues/247)
