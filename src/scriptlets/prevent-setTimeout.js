@@ -15,6 +15,7 @@ import {
     isValidStrPattern,
     nativeIsFinite,
     isValidMatchNumber,
+    parseRawDelay,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -44,6 +45,7 @@ import {
  * - `matchDelay` - optional, must be an integer.
  * If starts with `!`, scriptlet will not match the delay but all other will be defused.
  * If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
+ * Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
  *
  * > If `prevent-setTimeout` log looks like `setTimeout(undefined, 1000)`,
  * it means that no callback was passed to setTimeout() and that's not scriptlet issue
@@ -117,6 +119,21 @@ import {
  *     setTimeout(function () {
  *         window.value = "test -- executed";
  *     }, 500);
+ *     ```
+ *
+ * 5. Prevents `setTimeout` calls if the callback contains `value` and delay is a decimal.
+ *     ```
+ *     example.org#%#//scriptlet('prevent-setTimeout', 'value', '300')
+ *     ```
+ *
+ *     For instance, the following calls will be prevented:
+ *     ```javascript
+ *     setTimeout(function () {
+ *         window.test = "value";
+ *     }, 300);
+ *     setTimeout(function () {
+ *         window.test = "value";
+ *     }, 300 + Math.random());
  *     ```
  */
 /* eslint-enable max-len */
@@ -221,4 +238,5 @@ preventSetTimeout.injections = [
     isValidStrPattern,
     nativeIsFinite,
     isValidMatchNumber,
+    parseRawDelay,
 ];

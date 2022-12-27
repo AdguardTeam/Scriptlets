@@ -598,8 +598,7 @@ if (isSupported) {
 
         runScriptlet(name, MATCH_DATA);
 
-        const done1 = assert.async();
-        const done2 = assert.async();
+        const done = assert.async(2);
 
         const xhr1 = new XMLHttpRequest();
         const xhr2 = new XMLHttpRequest();
@@ -611,7 +610,7 @@ if (isSupported) {
             assert.strictEqual(xhr1.readyState, 4, 'Response done');
             assert.ok(xhr1.response, 'Response data exists');
             assert.strictEqual(window.hit, undefined, 'hit should not fire');
-            done1();
+            done();
         };
 
         xhr2.onload = () => {
@@ -619,7 +618,7 @@ if (isSupported) {
             assert.strictEqual(typeof xhr2.responseText, 'string', 'Response text mocked');
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             clearGlobalProps('hit');
-            done2();
+            done();
         };
 
         xhr1.send();
