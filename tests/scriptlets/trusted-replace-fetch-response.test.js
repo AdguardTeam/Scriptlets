@@ -50,7 +50,6 @@ if (!isSupported) {
             if (input.indexOf('trace') > -1) {
                 return;
             }
-            // eslint-disable-next-line max-len
             const EXPECTED_LOG_STR_START = `${name}: fetch( url:"${INPUT_JSON_PATH}" method:"${TEST_METHOD}"`;
             assert.ok(startsWith(input, EXPECTED_LOG_STR_START), 'console.hit input');
         };

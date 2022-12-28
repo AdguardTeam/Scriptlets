@@ -85,7 +85,6 @@ test('setInterval callback name matching', (assert) => {
     // We need to run our assertion after all timeouts
     setTimeout(() => {
         assert.equal(window.one, 'value', 'Target property not changed');
-        // eslint-disable-next-line max-len
         assert.equal(window.two, 'new value', 'Another property should successfully changed by another timeout');
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         done();
@@ -113,7 +112,6 @@ test('code matching', (assert) => {
     // We need to run our assertion after all timeouts
     setTimeout(() => {
         assert.equal(window.one, 'value', 'Target property not changed');
-        // eslint-disable-next-line max-len
         assert.equal(window.two, 'new value', 'Another property should  be successfully changed by another timeout');
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         done();

@@ -71,11 +71,11 @@ import {
 
 export function trustedSetCookie(source, name, value, offsetExpiresSec = '', path = '/') {
     if (typeof name === 'undefined') {
-        logMessage(source, 'Cookie name should be specified.');
+        logMessage(source, 'Cookie name should be specified');
         return;
     }
     if (typeof value === 'undefined') {
-        logMessage(source, 'Cookie value should be specified.');
+        logMessage(source, 'Cookie value should be specified');
         return;
     }
 

@@ -129,8 +129,10 @@ if (isSupported) {
         xhr.open(METHOD, URL);
         xhr.onload = () => {
             assert.strictEqual(typeof xhr.responseText, 'string', 'Response text mocked');
-            // eslint-disable-next-line max-len
-            assert.ok(xhr.responseText.length > 20000, `Response text randomized, response length: ${xhr.responseText.length}`);
+            assert.ok(
+                xhr.responseText.length > 20000,
+                `Response text randomized, response length: ${xhr.responseText.length}`,
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -151,8 +153,10 @@ if (isSupported) {
         xhr.onload = () => {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
             assert.strictEqual(typeof xhr.responseText, 'string', 'Response text mocked');
-            // eslint-disable-next-line max-len
-            assert.ok(xhr.responseText.length > 20000, `Response text randomized, response length: ${xhr.responseText.length}`);
+            assert.ok(
+                xhr.responseText.length > 20000,
+                `Response text randomized, response length: ${xhr.responseText.length}`,
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -173,8 +177,10 @@ if (isSupported) {
         xhr.onload = () => {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
             assert.strictEqual(typeof xhr.responseText, 'string', 'Response text mocked');
-            // eslint-disable-next-line max-len
-            assert.ok(xhr.responseText.length === 100, `Response text randomized, response length: ${xhr.responseText.length}`);
+            assert.ok(
+                xhr.responseText.length === 100,
+                `Response text randomized, response length: ${xhr.responseText.length}`,
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -195,8 +201,10 @@ if (isSupported) {
         xhr.onload = () => {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
             assert.strictEqual(typeof xhr.responseText, 'string', 'Response text mocked');
-            // eslint-disable-next-line max-len
-            assert.ok(xhr.responseText.length === 500000, `Response text randomized, response length: ${xhr.responseText.length}`);
+            assert.ok(
+                xhr.responseText.length === 500000,
+                `Response text randomized, response length: ${xhr.responseText.length}`,
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -216,7 +224,6 @@ if (isSupported) {
         xhr.open(METHOD, URL);
         xhr.onload = () => {
             assert.strictEqual(typeof xhr.responseText, 'string', 'Response text mocked');
-            // eslint-disable-next-line max-len
             assert.ok(xhr.responseText.length === 0, 'Response text is not randomized');
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
@@ -257,8 +264,10 @@ if (isSupported) {
         xhr.open(METHOD, URL);
         xhr.onload = () => {
             assert.strictEqual(typeof xhr.responseText, 'string', 'Response text mocked');
-            // eslint-disable-next-line max-len
-            assert.ok(xhr.responseText.length >= 100 && xhr.responseText.length <= 300, `Response text randomized, response length: ${xhr.responseText.length}`);
+            assert.ok(
+                xhr.responseText.length >= 100 && xhr.responseText.length <= 300,
+                `Response text randomized, response length: ${xhr.responseText.length}`,
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -278,8 +287,10 @@ if (isSupported) {
         xhr.open(METHOD, URL);
         xhr.onload = () => {
             assert.strictEqual(typeof xhr.responseText, 'string', 'Response text mocked');
-            // eslint-disable-next-line max-len
-            assert.ok(xhr.responseText.length >= 10 && xhr.responseText.length <= 20, `Response text randomized, response length: ${xhr.responseText.length}`);
+            assert.ok(
+                xhr.responseText.length >= 10 && xhr.responseText.length <= 20,
+                `Response text randomized, response length: ${xhr.responseText.length}`,
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -623,7 +634,7 @@ if (isSupported) {
 
         xhr1.send();
         // use timeout to avoid hit collisions
-        setTimeout(() => xhr2.send(), 1);
+        setTimeout(() => xhr2.send(), 10);
     });
 } else {
     test('unsupported', (assert) => {

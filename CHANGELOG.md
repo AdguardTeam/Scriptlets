@@ -8,6 +8,7 @@
 ### Changed
 
 - add decimal delay matching for `prevent-setInterval` and `prevent-setTimeout` [#247](https://github.com/AdguardTeam/Scriptlets/issues/247)
+- debug logging to include rule text when available
 
 ### Fixed
 
