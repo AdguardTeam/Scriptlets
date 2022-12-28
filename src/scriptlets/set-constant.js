@@ -7,7 +7,7 @@ import {
     noopFunc,
     trueFunc,
     falseFunc,
-    noopThrow,
+    throwFunc,
     noopPromiseReject,
     noopPromiseResolve,
     getPropertyInChain,
@@ -58,7 +58,7 @@ import {
  *         - `noopCallbackFunc` - function returning noopFunc
  *         - `trueFunc` - function returning true
  *         - `falseFunc` - function returning false
- *         - `noopThrow` - function throwing an error
+ *         - `throwFunc` - function throwing an error
  *         - `noopPromiseResolve` - function returning Promise object that is resolved with an empty response
  *         - `noopPromiseReject` - function returning Promise.reject()
  *         - `''` - empty string
@@ -122,8 +122,8 @@ export function setConstant(source, property, value, stack) {
         constantValue = trueFunc;
     } else if (value === 'falseFunc') {
         constantValue = falseFunc;
-    } else if (value === 'noopThrow') {
-        constantValue = noopThrow;
+    } else if (value === 'throwFunc') {
+        constantValue = throwFunc;
     } else if (value === 'noopPromiseResolve') {
         constantValue = noopPromiseResolve;
     } else if (value === 'noopPromiseReject') {
@@ -294,7 +294,7 @@ setConstant.injections = [
     noopCallbackFunc,
     trueFunc,
     falseFunc,
-    noopThrow,
+    throwFunc,
     noopPromiseReject,
     noopPromiseResolve,
     getPropertyInChain,

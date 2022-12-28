@@ -2,7 +2,7 @@ import {
     noopPromiseResolve,
     noopCallbackFunc,
     noopFunc,
-    noopThrow,
+    throwFunc,
 } from '../../src/helpers';
 
 const { test, module } = QUnit;
@@ -35,6 +35,6 @@ test('noopCallbackFunc returns noopFunc', async (assert) => {
     assert.strictEqual(func(), undefined, 'function returns undefined');
 });
 
-test('noopThrow throws an error', async (assert) => {
-    assert.throws(() => noopThrow(), 'noopThrow throws an error');
+test('throwFunc throws an error', async (assert) => {
+    assert.throws(() => throwFunc(), 'throwFunc throws an error');
 });

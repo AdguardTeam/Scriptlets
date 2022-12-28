@@ -113,10 +113,10 @@ if (!isSupported) {
         clearGlobalProps(noopCallbackFuncProp);
 
         // setting constant to noopCallbackFunc;
-        const noopThrowProp = 'noopThrow';
-        runScriptletFromTag(noopThrowProp, 'noopThrow');
-        assert.throws(() => window[noopThrowProp]()(), 'noopThrowProp throws an error');
-        clearGlobalProps(noopThrowProp);
+        const throwFuncProp = 'throwFunc';
+        runScriptletFromTag(throwFuncProp, 'throwFunc');
+        assert.throws(() => window[throwFuncProp]()(), 'throwFuncProp throws an error');
+        clearGlobalProps(throwFuncProp);
 
         // setting constant to trueFunc;
         const trueFuncProp = 'trueFuncProp';

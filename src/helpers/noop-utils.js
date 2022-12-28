@@ -57,7 +57,7 @@ export const noopObject = () => ({});
  * Function throws an error
  * @throws
  */
-export const noopThrow = () => {
+export const throwFunc = () => {
     throw new Error();
 };
 

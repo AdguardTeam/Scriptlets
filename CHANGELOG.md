@@ -3,7 +3,7 @@
 ## Unreleased 1.8.x
 
 ### Added
-- `noopThrow` and `noopCallbackFunc` prop values for `set-constant` scriptlet
+- `throwFunc` and `noopCallbackFunc` prop values for `set-constant` scriptlet
 
 ### Changed
 
