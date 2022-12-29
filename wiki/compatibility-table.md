@@ -91,6 +91,7 @@
 | [fingerprint3js](../wiki/about-redirects.md#fingerprint3js) | fingerprint3.js |  |
 | [google-analytics](../wiki/about-redirects.md#google-analytics) | google-analytics_analytics.js |  |
 | [google-analytics-ga](../wiki/about-redirects.md#google-analytics-ga) | google-analytics_ga.js |  |
+| [google-ima3](../wiki/about-redirects.md#google-ima3) | google-ima.js |  |
 | [googlesyndication-adsbygoogle](../wiki/about-redirects.md#googlesyndication-adsbygoogle) | googlesyndication_adsbygoogle.js |  |
 | [googletagservices-gpt](../wiki/about-redirects.md#googletagservices-gpt) | googletagservices_gpt.js |  |
 | [gemius](../wiki/about-redirects.md#gemius) |  |  |
@@ -133,5 +134,4 @@
 |  | window.open-defuser.js |  |
 |  | noeval.js |  |
 |  | mxpnl_mixpanel.js |  |
-|  | google-ima.js |  |
 |  | noop-0.5s.mp3 |  |

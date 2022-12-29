@@ -1,6 +1,6 @@
 #
 #    AdGuard Scriptlets (Redirects Source)
-#    Version 1.7.14
+#    Version 1.7.20
 #
 - title: 1x1-transparent.gif
   description: |-
@@ -1428,7 +1428,9 @@
 
 - title: google-ima3
   comment: Mocks the IMA SDK of Google.
-  aliases: []
+  aliases:
+    - ubo-google-ima.js
+    - google-ima.js
   contentType: application/javascript
   content: |-
     (function(source, args) {

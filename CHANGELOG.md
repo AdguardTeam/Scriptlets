@@ -14,11 +14,23 @@
 
 - `prevent-xhr` and `trusted-replace-xhr-response` closure bug on multiple requests [#261](https://github.com/AdguardTeam/Scriptlets/issues/261)
 
-## Unreleased 1.7.x
+## v1.7.20
+
+### Added
+
+- `isBlocking()` method for Redirects class
+- `file` field for redirect type
+
+### Fixed
+
+- Redirects types.
+
+## v1.7.19
 
 ### Fixed
 
 - `prevent-addEventListener` and `log-addEventListener` loosing context when encountering already bound `.addEventListener`
+- `google-ima3` conversion
 
 ## v1.7.14
 

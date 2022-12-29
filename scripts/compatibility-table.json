@@ -296,6 +296,10 @@
             "ubo": "google-analytics_ga.js"
         },
         {
+            "adg": "google-ima3",
+            "ubo": "google-ima.js"
+        },
+        {
             "adg": "googlesyndication-adsbygoogle",
             "ubo": "googlesyndication_adsbygoogle.js"
         },
@@ -443,9 +447,6 @@
         },
         {
             "ubo": "mxpnl_mixpanel.js"
-        },
-        {
-            "ubo": "google-ima.js"
         },
         {
             "ubo": "noop-0.5s.mp3"

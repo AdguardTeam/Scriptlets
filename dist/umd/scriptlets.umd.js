@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.7.14
+ * Version 1.7.20
  */
 
 (function (factory) {
@@ -1586,7 +1586,7 @@
     }
 
     /**
-     * Generate random six symbols id
+     * Generate random seven symbols id
      */
     function randomId() {
       return Math.random().toString(36).slice(2, 9);
@@ -3441,6 +3441,7 @@
       var listenerSearchRegexp = toRegExp(listenerSearch);
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
       function addEventListenerWrapper(type, listener) {
+        var _this$constructor;
         var shouldPrevent = false;
         if (validateType(type) && validateListener(listener)) {
           shouldPrevent = typeSearchRegexp.test(type.toString()) && listenerSearchRegexp.test(listenerToString(listener));
@@ -3449,10 +3450,17 @@
           hit(source);
           return undefined;
         }
+
+        // Avoid illegal invocations due to lost context
+        // https://github.com/AdguardTeam/Scriptlets/issues/271
+        var context = this;
+        if (this && ((_this$constructor = this.constructor) === null || _this$constructor === void 0 ? void 0 : _this$constructor.name) === 'Window' && this !== window) {
+          context = window;
+        }
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
-        return nativeAddEventListener.apply(this, [type, listener].concat(args));
+        return nativeAddEventListener.apply(context, [type, listener].concat(args));
       }
       var descriptor = {
         configurable: true,
@@ -3621,6 +3629,7 @@
     function logAddEventListener$1(source) {
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
       function addEventListenerWrapper(type, listener) {
+        var _this$constructor;
         if (validateType(type) && validateListener(listener)) {
           var _message = "addEventListener(\"".concat(type, "\", ").concat(listenerToString(listener), ")");
           logMessage(source, _message, true);
@@ -3630,10 +3639,17 @@
         // logging while debugging
         var message = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
         logMessage(source, message, true);
+
+        // Avoid illegal invocations due to lost context
+        // https://github.com/AdguardTeam/Scriptlets/issues/271
+        var context = this;
+        if (this && ((_this$constructor = this.constructor) === null || _this$constructor === void 0 ? void 0 : _this$constructor.name) === 'Window' && this !== window) {
+          context = window;
+        }
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
-        return nativeAddEventListener.apply(this, [type, listener].concat(args));
+        return nativeAddEventListener.apply(context, [type, listener].concat(args));
       }
       var descriptor = {
         configurable: true,
@@ -6267,7 +6283,13 @@
       var hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === 'function';
       var policy;
       if (hasTrustedTypes) {
-        policy = window.trustedTypes.createPolicy('mock', {
+        // The name for the trusted-types policy should only be 'AGPolicy',because corelibs can
+        // allow our policy if the server has restricted the creation of a trusted-types policy with
+        // the directive 'Content-Security-Policy: trusted-types <policyName>;`.
+        // If such a header is presented in the server response, corelibs adds permission to create
+        // the 'AGPolicy' policy with the 'allow-duplicates' option to prevent errors.
+        // See AG-18204 for details.
+        policy = window.trustedTypes.createPolicy('AGPolicy', {
           createScriptURL: function createScriptURL(arg) {
             return arg;
           }
@@ -7359,7 +7381,8 @@
       adg: 'googletagservices-gpt',
       ubo: 'googletagservices_gpt.js'
     }, {
-      adg: 'google-ima3'
+      adg: 'google-ima3',
+      ubo: 'google-ima.js'
     }, {
       adg: 'gemius'
     }, {
@@ -10046,7 +10069,11 @@
       window.google.ima = ima;
       hit(source);
     }
-    GoogleIma3.names = ['google-ima3'];
+    GoogleIma3.names = ['google-ima3',
+    // prefixed name
+    'ubo-google-ima.js',
+    // original ubo name
+    'google-ima.js'];
     GoogleIma3.injections = [hit, noopFunc, logMessage];
 
     /* eslint-disable func-names, no-underscore-dangle */
@@ -13493,6 +13520,7 @@
      * @property {string} comment
      * @property {string} content
      * @property {string} contentType
+     * @property {string} file
      * @property {boolean} [isBlocking]
      * @property {string} [sha]
      */
@@ -13520,7 +13548,7 @@
       /**
        * Returns redirect source object
        * @param {string} title
-       * @return {Redirect}
+       * @return {Redirect|undefined} Found redirect source object, or `undefined` if not found.
        */
       createClass(Redirects, [{
         key: "getRedirect",
@@ -13541,6 +13569,21 @@
             }
             return aliases.indexOf(title) > -1;
           });
+        }
+        /**
+         * Checks if redirect is blocking like click2load.html
+         * @param {string} title Title of the redirect.
+         * @returns True if redirect is blocking otherwise returns `false` even if redirect name is
+         * unknown.
+         */
+      }, {
+        key: "isBlocking",
+        value: function isBlocking(title) {
+          var redirect = this.redirects[title];
+          if (redirect) {
+            return !!redirect.isBlocking;
+          }
+          return false;
         }
       }]);
       return Redirects;
@@ -13606,6 +13649,8 @@
       "ubo-googletagmanager_gtm.js": "google-analytics.js",
       "googletagmanager_gtm.js": "google-analytics.js",
       "google-ima3": "google-ima3.js",
+      "ubo-google-ima.js": "google-ima3.js",
+      "google-ima.js": "google-ima3.js",
       "googlesyndication-adsbygoogle": "googlesyndication-adsbygoogle.js",
       "ubo-googlesyndication_adsbygoogle.js": "googlesyndication-adsbygoogle.js",
       "googlesyndication_adsbygoogle.js": "googlesyndication-adsbygoogle.js",
@@ -15936,6 +15981,7 @@
       function logAddEventListener(source) {
         var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
         function addEventListenerWrapper(type, listener) {
+          var _this$constructor;
           if (validateType(type) && validateListener(listener)) {
             var _message = 'addEventListener("'.concat(type, '", ').concat(listenerToString(listener), ")");
             logMessage(source, _message, true);
@@ -15943,10 +15989,14 @@
           }
           var message = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
           logMessage(source, message, true);
+          var context = this;
+          if (this && ((_this$constructor = this.constructor) === null || _this$constructor === void 0 ? void 0 : _this$constructor.name) === "Window" && this !== window) {
+            context = window;
+          }
           for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
             args[_key - 2] = arguments[_key];
           }
-          return nativeAddEventListener.apply(this, [type, listener].concat(args));
+          return nativeAddEventListener.apply(context, [type, listener].concat(args));
         }
         var descriptor = {
           configurable: true,
@@ -16500,6 +16550,7 @@
         var listenerSearchRegexp = toRegExp(listenerSearch);
         var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
         function addEventListenerWrapper(type, listener) {
+          var _this$constructor;
           var shouldPrevent = false;
           if (validateType(type) && validateListener(listener)) {
             shouldPrevent = typeSearchRegexp.test(type.toString()) && listenerSearchRegexp.test(listenerToString(listener));
@@ -16508,10 +16559,14 @@
             hit(source);
             return undefined;
           }
+          var context = this;
+          if (this && ((_this$constructor = this.constructor) === null || _this$constructor === void 0 ? void 0 : _this$constructor.name) === "Window" && this !== window) {
+            context = window;
+          }
           for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
             args[_key - 2] = arguments[_key];
           }
-          return nativeAddEventListener.apply(this, [type, listener].concat(args));
+          return nativeAddEventListener.apply(context, [type, listener].concat(args));
         }
         var descriptor = {
           configurable: true,
@@ -16809,7 +16864,7 @@
         var hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === "function";
         var policy;
         if (hasTrustedTypes) {
-          policy = window.trustedTypes.createPolicy("mock", {
+          policy = window.trustedTypes.createPolicy("AGPolicy", {
             createScriptURL: function createScriptURL(arg) {
               return arg;
             }

@@ -418,6 +418,10 @@ test('Test REDIRECT converting - UBO -> ADG', (assert) => {
     uboRule = '||g9g.eu^*fa.js$script,redirect=fuckadblock.js-3.2.0';
     expectedAdgRule = '||g9g.eu^*fa.js$script,redirect=prevent-fab-3.2.0';
     assert.strictEqual(convertRedirectToAdg(uboRule), expectedAdgRule);
+
+    uboRule = '||imasdk.googleapis.com/js/sdkloader/ima3.js$script,important,redirect=google-ima.js,domain=example.org';
+    expectedAdgRule = '||imasdk.googleapis.com/js/sdkloader/ima3.js$script,important,redirect=google-ima3,domain=example.org';
+    assert.strictEqual(convertRedirectToAdg(uboRule), expectedAdgRule);
 });
 
 test('Test REDIRECT-RULE converting - UBO -> ADG', (assert) => {
@@ -559,6 +563,10 @@ test('Test REDIRECT converting - ADG -> UBO', (assert) => {
         new RegExp('Unable to convert for uBO'), // specific error matcher
         'no TYPES to specify, ABSENT_SOURCE_TYPE_REPLACEMENT should be updated',
     );
+
+    adgRule = '||imasdk.googleapis.com/js/sdkloader/ima3.js$script,important,redirect=google-ima3,domain=example.org';
+    expectedUboRule = '||imasdk.googleapis.com/js/sdkloader/ima3.js$script,important,redirect=google-ima.js,domain=example.org';
+    assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
 });
 
 test('Test REDIRECT-RULE converting - ADG -> UBO', (assert) => {
