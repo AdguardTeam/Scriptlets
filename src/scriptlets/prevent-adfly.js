@@ -7,7 +7,6 @@ import {
 
 /**
  * @scriptlet prevent-adfly
- *
  * @description
  * Prevents anti-adblock scripts on adfly short links.
  *

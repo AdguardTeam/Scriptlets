@@ -14,7 +14,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet prevent-requestAnimationFrame
- *
  * @description
  * Prevents a `requestAnimationFrame` call
  * if the text of the callback is matching the specified search string which does not start with `!`;

@@ -1,9 +1,11 @@
 /**
  * Iterate over iterable argument and evaluate current state with transitions
- * @param {string} init first transition name
- * @param {Array|Collection|string} iterable
+ *
+ * @param {Array|string} iterable rule or list or rules
  * @param {Object} transitions transtion functions
+ * @param {string} init first transition name
  * @param {any} args arguments which should be passed to transition functions
+ * @returns {string} state
  */
 function iterateWithTransitions(iterable, transitions, init, args) {
     let state = init || Object.keys(transitions)[0];
@@ -20,6 +22,8 @@ export const ADG_SCRIPTLET_MASK = '#//scriptlet';
 
 /**
  * Helper to accumulate an array of strings char by char
+ *
+ * @returns {Object} object with helper methods
  */
 const wordSaver = () => {
     let str = '';
@@ -47,8 +51,10 @@ const substringAfter = (str, separator) => {
 
 /**
  * Parse and validate scriptlet rule
- * @param {*} ruleText
- * @returns {{name: string, args: Array<string>}}
+ *
+ * @param {string} ruleText rule string
+ * @returns {{name: string, args: Array<string>}} parsed rule
+ * @throws
  */
 export const parseRule = (ruleText) => {
     ruleText = substringAfter(ruleText, ADG_SCRIPTLET_MASK);
@@ -63,10 +69,13 @@ export const parseRule = (ruleText) => {
 
     /**
      * Transition function: the current index position in start, end or between params
-     * @param {string} rule
-     * @param {number} index
-     * @param {Object} Object
-     * @property {Object} Object.sep contains prop symb with current separator char
+     *
+     * @param {string} rule rule string
+     * @param {number} index index
+     * @param {Object} Object helper object
+     * @param {Object} Object.sep contains prop symb with current separator char
+     * @throws {string} throws if given rule is not a scriptlet
+     * @returns {string} transition
      */
     const opened = (rule, index, { sep }) => {
         const char = rule[index];
@@ -99,11 +108,13 @@ export const parseRule = (ruleText) => {
     };
     /**
      * Transition function: the current index position inside param
-     * @param {string} rule
-     * @param {number} index
-     * @param {Object} Object
-     * @property {Object} Object.sep contains prop `symb` with current separator char
-     * @property {Object} Object.saver helper which allow to save strings by car by char
+     *
+     * @param {string} rule rule string
+     * @param {number} index index
+     * @param {Object} Object helper object
+     * @param {Object} Object.sep contains prop `symb` with current separator char
+     * @param {Object} Object.saver helper which allow to save strings by car by char
+     * @returns {void}
      */
     const param = (rule, index, { saver, sep }) => {
         const char = rule[index];

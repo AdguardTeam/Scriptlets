@@ -11,7 +11,6 @@ import {
 
 /**
  * @scriptlet hide-in-shadow-dom
- *
  * @description
  * Hides elements inside open shadow DOM elements.
  *

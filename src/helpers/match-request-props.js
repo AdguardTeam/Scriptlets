@@ -6,17 +6,14 @@ import {
 import { logMessage } from './log-message';
 
 /**
- * @typedef { import('../scriptlets/index').Source } Source
- */
-
-/**
  * Checks if given propsToMatch string matches with given request data
  * This is used by prevent-xhr, prevent-fetch, trusted-replace-xhr-response
  * and  trusted-replace-fetch-response scriptlets
- * @param {Source} source
- * @param {string} propsToMatch
+ *
+ * @param {Object} source scriptlet properties
+ * @param {string} propsToMatch string of space-separated request properties to match
  * @param {Object} requestData object with standard properties of fetch/xhr like url, method etc
- * @returns {boolean}
+ * @returns {boolean} if request properties match
  */
 export const matchRequestProps = (source, propsToMatch, requestData) => {
     if (propsToMatch === '' || propsToMatch === '*') {

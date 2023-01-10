@@ -27,6 +27,7 @@ function clickToLoad() {
      * Some browsers does not support URL.searchParams.get()
      * but we need script run with no error
      * because frame will be shown anyway if click2load redirect rule used
+     *
      * @param {string} rawQueryStr
      * @returns {Object} key is parameter name and value is parameter value
      */
@@ -123,6 +124,7 @@ function clickToLoad() {
     /**
      * Returns translations data for navigator.language
      * or 'en' if navigator.language is not supported
+     *
      * @returns {Object} data for one locale with 'title' and 'button' keys
      */
     const getTranslations = () => {
@@ -150,6 +152,7 @@ function clickToLoad() {
 
     /**
      * Prepares frame url to replace on button click
+     *
      * @param {string} originUrl passed origin frame url
      * @param {string} unblockTokenName param name for further validation
      * @param {string} unblockTokenValue param value for further validation
@@ -215,6 +218,7 @@ function clickToLoad() {
 
     /**
      * Checks whether the rule has 'frame' or 'subdocument' modifier
+     *
      * @param {string} rule blocking rules passed into redirect
      * @returns {boolean}
      */
@@ -231,6 +235,7 @@ function clickToLoad() {
     };
     /**
      * Checks whether script runs inside a frame
+     *
      * @returns {boolean}
      */
     const isInsideFrame = () => window.self !== window.top;

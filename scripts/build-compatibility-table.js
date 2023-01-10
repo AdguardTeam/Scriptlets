@@ -21,15 +21,15 @@ const WIKI_COMPATIBILITY_TABLE_PATH = path.resolve(
 
 /**
  * @typedef {Object} CompatibilityItem
- * @property {string} adg
- * @property {string} abp
- * @property {string} ubo
+ * @property {string} adg AdGuard name
+ * @property {string} abp Adblock Plus name
+ * @property {string} ubo uBlock name
  */
 
 /**
  * @typedef {Object} CompatibilityData
- * @property {CompatibilityItem[]} scriptlets
- * @property {CompatibilityItem[]} redirects
+ * @property {CompatibilityItem[]} scriptlets list of scriptlets compatibility items
+ * @property {CompatibilityItem[]} redirects list of redirects compatibility items
  */
 
 /**
@@ -50,7 +50,6 @@ const getTableData = () => {
  * @param {string} item.adg AdGuard name
  * @param {string} item.abp Adblock Plus name
  * @param {string} item.ubo uBlock name
- *
  * @returns {string} markdown table row
  */
 const getRow = (id, { adg, abp, ubo }) => {
@@ -77,10 +76,10 @@ const getTableHeader = () => {
 
 /**
  * Builds markdown string of scriptlets/redirect compatibility table
+ *
  * @param {string} title title for scriptlets or redirects
  * @param {CompatibilityItem[]} data array of scriptlets or redirects compatibility data items
  * @param {'scriptlets'|'redirects'} id
- *
  * @returns {string} scriptlets or redirects compatibility table
  */
 const buildTable = (title, data = [], id = '') => {

@@ -23,7 +23,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet prevent-fetch
- *
  * @description
  * Prevents `fetch` calls if **all** given parameters match
  *

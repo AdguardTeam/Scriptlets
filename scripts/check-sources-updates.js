@@ -14,8 +14,10 @@ const {
 
 /**
  * Checks if arrays contain the same strings
+ *
  * @param {Array} arr1
  * @param {Array} arr2
+ * @returns {boolean}
  */
 const areArraysOfStringsEqual = (arr1, arr2) => {
     if (arr1.length !== arr2.length) {
@@ -30,6 +32,8 @@ const areArraysOfStringsEqual = (arr1, arr2) => {
 
 /**
  * Returns parsed compatibility table
+ *
+ * @returns {Object}
  */
 const getCompatibilityTable = () => {
     const rawData = fs.readFileSync(COMPATIBILITY_TABLE_DATA_PATH);
@@ -39,7 +43,9 @@ const getCompatibilityTable = () => {
 
 /**
  * Returns list of scriptlets listed in table for specified platform
+ *
  * @param {"ubo"|"abp"} platform
+ * @returns {string[]}
  */
 const getScriptletsFromTable = (platform) => {
     const { scriptlets } = getCompatibilityTable();
@@ -48,7 +54,9 @@ const getScriptletsFromTable = (platform) => {
 
 /**
  * Returns list of redirects listed in table for specified platform
+ *
  * @param {"ubo"|"abp"} platform
+ * @returns {string[]}
  */
 const getRedirectsFromTable = (platform) => {
     const { redirects } = getCompatibilityTable();
@@ -56,14 +64,22 @@ const getRedirectsFromTable = (platform) => {
 };
 
 /**
+ * @typedef {Object} Diff
+ * @property {string[]} added added content
+ * @property {string[]} removed removed content
+ */
+
+/**
  * Finds a difference between old and new array
+ *
  * @param {Array} oldList
  * @param {Array} newList
+ * @returns {Diff|null}
  */
 const getDiff = (oldList, newList) => {
     const diff = {
-        removed: [],
         added: [],
+        removed: [],
     };
 
     diff.removed = oldList.filter((item) => (
@@ -77,6 +93,7 @@ const getDiff = (oldList, newList) => {
 
 /**
  * Marks removed rules with (removed) and adds new rules to the end of the table
+ *
  * @param {{removed: Array, added: Array}} diff Object with diffs for certain type and platform
  * @param {"scriptlets"|"redirects"} ruleType
  * @param {"ubo"|"abp"} platform

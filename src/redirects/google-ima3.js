@@ -7,7 +7,6 @@ import {
 
 /**
  * @redirect google-ima3
- *
  * @description
  * Mocks the IMA SDK of Google.
  *

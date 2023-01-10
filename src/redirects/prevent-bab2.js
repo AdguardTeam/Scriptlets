@@ -3,7 +3,6 @@ import { hit } from '../helpers/index';
 
 /**
  * @redirect prevent-bab2
- *
  * @description
  * Prevents BlockAdblock script from detecting an ad blocker.
  *

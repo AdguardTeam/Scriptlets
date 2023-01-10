@@ -15,7 +15,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet adjust-setTimeout
- *
  * @description
  * Adjusts delay for specified setTimeout() callbacks.
  *

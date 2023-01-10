@@ -21,6 +21,7 @@ const writeFile = async (filePath, content) => {
 
 /**
  * Gets list of `.js` files in directory
+ *
  * @param {string} relativeDirPath relative path to directory
  * @returns {string[]} array of file names
  */
@@ -43,7 +44,6 @@ const getFilesList = (relativeDirPath) => {
  * In one file might be comments describing scriptlet and redirect as well.
  *
  * @param {string} filePath absolute path to file
- *
  * @returns {CommentTag[]}
  */
 const getDescribingCommentTags = (filePath) => {
@@ -80,7 +80,6 @@ Please add one OR edit the list of NON_SCRIPTLETS_FILES / NON_REDIRECTS_FILES.`)
  * @typedef {Object} DescribingCommentData
  *
  * Collected data from jsdoc-type comment for every scriptlet or redirect.
- *
  * @property {string} type parsed instance tag:
  * 'scriptlet' for '@scriptlet', 'redirect' for '@redirect'
  * @property {string} name name of instance which goes after the instance tag
@@ -93,7 +92,6 @@ Please add one OR edit the list of NON_SCRIPTLETS_FILES / NON_REDIRECTS_FILES.`)
  *
  * @param {CommentTag[]} commentTags parsed tags from describing comment
  * @param {string} source relative path to file
- *
  * @returns {DescribingCommentData}
  */
 const prepareCommentsData = (commentTags, source) => {
@@ -108,9 +106,9 @@ const prepareCommentsData = (commentTags, source) => {
 
 /**
  * Gets data objects which describe every required comment in one directory
+ *
  * @param {string[]} filesList list of files in directory
  * @param {string} relativeDirPath relative path to directory
- *
  * @returns {DescribingCommentData}
  */
 const getDataFromFiles = (filesList, relativeDirPath) => {

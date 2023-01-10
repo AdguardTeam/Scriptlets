@@ -2,7 +2,9 @@
  * Some browsers do not support Array.prototype.flat()
  * for example, Opera 42 which is used for browserstack tests
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flat
- * @param {Array} input
+ *
+ * @param {Array} input arbitrary array
+ * @returns {Array} flattened array
  */
 export const flatten = (input) => {
     const stack = [];
@@ -24,7 +26,8 @@ export const flatten = (input) => {
 
 /**
  * Predicate method to check if the array item exists
- * @param {any} item
- * @returns {boolean}
+ *
+ * @param {any} item arbitrary
+ * @returns {boolean} if item is truthy or not
  */
 export const isExisting = (item) => !!item;

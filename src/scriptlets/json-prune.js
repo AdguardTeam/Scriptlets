@@ -15,7 +15,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet json-prune
- *
  * @description
  * Removes specified properties from the result of calling JSON.parse and returns the caller
  *
@@ -156,7 +155,9 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
 
     /**
      * Prunes properties of 'root' object
+     *
      * @param {Object} root
+     * @returns {Object} pruned root
      */
     const jsonPruner = (root) => {
         if (prunePaths.length === 0 && requiredPaths.length === 0) {

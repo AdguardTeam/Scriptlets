@@ -1,7 +1,9 @@
 /* eslint-disable no-console, no-underscore-dangle */
+
 /**
  * Hit used only for debug purposes now
- * @param {Source} source
+ *
+ * @param {Object} source scriptlet properties
  * use LOG_MARKER = 'log: ' at the start of a message
  * for logging scriptlets
  */

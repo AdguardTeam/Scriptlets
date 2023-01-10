@@ -11,7 +11,6 @@ import {
 
 /**
  * @redirect googletagservices-gpt
- *
  * @description
  * Mocks Google Publisher Tag API.
  *

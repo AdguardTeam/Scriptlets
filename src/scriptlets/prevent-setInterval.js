@@ -21,7 +21,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet prevent-setInterval
- *
  * @description
  * Prevents a `setInterval` call if:
  * 1) the text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;

@@ -8,8 +8,9 @@ import { nativeIsNaN } from './number-utils';
 
 /**
  * Checks whether the passed arg is proper callback
- * @param {*} callback
- * @returns {boolean}
+ *
+ * @param {any} callback arbitrary callback
+ * @returns {boolean} if callback is valid
  */
 export const isValidCallback = (callback) => {
     return callback instanceof Function
@@ -23,7 +24,8 @@ export const isValidCallback = (callback) => {
  * Parses delay argument of setTimeout / setInterval methods into
  * rounded down number for number/string values or passes on for other types.
  * Needed for prevent-setTimeout and prevent-setInterval
- * @param {any} delay
+ *
+ * @param {any} delay native method delay arg
  * @returns {any} number as parsed delay or any input type if `delay` is not parsable
  */
 export const parseRawDelay = (delay) => {
@@ -35,8 +37,13 @@ export const parseRawDelay = (delay) => {
  * Checks whether 'callback' and 'delay' are matching
  * by given parameters 'matchCallback' and 'matchDelay'.
  * Used for prevent-setTimeout and prevent-setInterval.
- * @param {Object} { callback, delay, matchCallback, matchDelay }
- * @returns {boolean}
+ *
+ * @param {Object} preventData set of data to determine if scriptlet should match
+ * @param {Function} preventData.callback method's callback arg
+ * @param {any} preventData.delay method's delay arg
+ * @param {string} preventData.matchCallback scriptlets's callback arg
+ * @param {string} preventData.matchDelay scriptlets's delay arg
+ * @returns {boolean} if scriptlet should match
  */
 export const isPreventionNeeded = ({
     callback,

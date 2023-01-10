@@ -2,8 +2,10 @@ import { throttle } from './throttle';
 
 /**
  * DOM tree changes observer. Used for 'remove-attr' and 'remove-class' scriptlets
- * @param {Function} callback
- * @param {boolean} observeAttrs - optional parameter - should observer check attributes changes
+ *
+ * @param {Function} callback function to call on each mutation
+ * @param {boolean} [observeAttrs] if observer should observe attributes changes
+ * @param {Array} [attrsToObserve] list of attributes to observe
  */
 export const observeDOMChanges = (callback, observeAttrs = false, attrsToObserve = []) => {
     /**
@@ -35,6 +37,11 @@ export const observeDOMChanges = (callback, observeAttrs = false, attrsToObserve
     const disconnect = () => {
         observer.disconnect();
     };
+
+    /**
+     * Callback wrapper to prevent loops
+     * when callback tinkers with attributes
+     */
     function callbackWrapper() {
         disconnect();
         callback();

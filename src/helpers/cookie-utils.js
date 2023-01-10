@@ -1,15 +1,10 @@
 import { nativeIsNaN } from './number-utils';
 
 /**
- * @typedef { import('../scriptlets/index').Source } Source
- */
-
-/**
  * Checks whether the input path is supported
  *
  * @param {string} rawPath input path
- *
- * @returns {boolean}
+ * @returns {boolean} if cookie path is valid
  */
 export const isValidCookiePath = (rawPath) => rawPath === '/' || rawPath === 'none';
 
@@ -17,9 +12,8 @@ export const isValidCookiePath = (rawPath) => rawPath === '/' || rawPath === 'no
  * Returns 'path=/' if rawPath is '/'
  * or empty string '' for other cases, `rawPath === 'none'` included
  *
- * @param {string} rawPath
- *
- * @returns {string}
+ * @param {string} rawPath path argument of *set-cookie-* scriptlets
+ * @returns {string} cookie path
  */
 export const getCookiePath = (rawPath) => {
     if (rawPath === '/') {
@@ -33,10 +27,9 @@ export const getCookiePath = (rawPath) => {
 /**
  * Combines input cookie name, value, and path into string.
  *
- * @param {string} rawName
- * @param {string} rawValue
- * @param {string} rawPath
- *
+ * @param {string} rawName name argument of *set-cookie-* scriptlets
+ * @param {string} rawValue value argument of *set-cookie-* scriptlets
+ * @param {string} rawPath path argument of *set-cookie-* scriptlets
  * @returns {string|null} string OR `null` if path is not supported
  */
 export const concatCookieNameValuePath = (rawName, rawValue, rawPath) => {
@@ -48,7 +41,6 @@ export const concatCookieNameValuePath = (rawName, rawValue, rawPath) => {
  * Gets supported cookie value
  *
  * @param {string} value input cookie value
- *
  * @returns {string|null} valid cookie string if ok OR null if not
  */
 export const getLimitedCookieValue = (value) => {
@@ -94,6 +86,7 @@ export const getLimitedCookieValue = (value) => {
 
 /**
  * Parses cookie string into object
+ *
  * @param {string} cookieString string that conforms to document.cookie format
  * @returns {Object} key:value object that corresponds with incoming cookies keys and values
  */
@@ -124,10 +117,11 @@ export const parseCookieString = (cookieString) => {
 
 /**
  * Check if cookie with specified name and value is present in a cookie string
- * @param {string} cookieString
- * @param {string} name
- * @param {string} value
- * @returns {boolean}
+ *
+ * @param {string} cookieString 'document.cookie'-like string
+ * @param {string} name name argument of *set-cookie-* scriptlets
+ * @param {string} value value argument of *set-cookie-* scriptlets
+ * @returns {boolean} if cookie is already set
  */
 export const isCookieSetWithValue = (cookieString, name, value) => {
     return cookieString.split(';')

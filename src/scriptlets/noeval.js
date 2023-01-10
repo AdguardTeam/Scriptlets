@@ -3,7 +3,6 @@ import { hit, logMessage } from '../helpers/index';
 
 /**
  * @scriptlet noeval
- *
  * @description
  * Prevents page to use eval.
  * Notifies about attempts in the console

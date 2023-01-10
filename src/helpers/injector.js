@@ -1,6 +1,8 @@
 /**
  * Concat dependencies to scriptlet code
+ *
  * @param {string} scriptlet string view of scriptlet
+ * @returns {string} string view of scriptlet with attached dependencies
  */
 export function attachDependencies(scriptlet) {
     const { injections = [] } = scriptlet;
@@ -11,8 +13,10 @@ export function attachDependencies(scriptlet) {
 
 /**
  * Add scriptlet call to existing code
- * @param {Function} scriptlet
- * @param {string} code
+ *
+ * @param {Function} scriptlet scriptlet func
+ * @param {string} code scriptlet's string representation
+ * @returns {string} wrapped scriptlet call
  */
 export function addCall(scriptlet, code) {
     return `${code}
@@ -27,12 +31,6 @@ export function addCall(scriptlet, code) {
 /**
  * Wrap function into IIFE (Immediately invoked function expression)
  *
- * @param {Source} source - object with scriptlet properties
- * @param {string} code - scriptlet source code with dependencies
- *
- * @param redirect
- * @returns {string} full scriptlet code
- *
  * @example
  * const source = {
  *      args: ["aaa", "bbb"],
@@ -46,6 +44,10 @@ export function addCall(scriptlet, code) {
  *      function noeval(source) { alert(source); }
  *      noeval.apply(this, args);
  * )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])`
+ * @param {Object} source - object with scriptlet properties
+ * @param {string} code - scriptlet source code with dependencies
+ * @param {boolean} redirect if function is redirect
+ * @returns {string} full scriptlet code
  */
 export function passSourceAndProps(source, code, redirect = false) {
     if (source.hit) {
@@ -64,7 +66,9 @@ export function passSourceAndProps(source, code, redirect = false) {
 
 /**
  * Wrap code in no name function
+ *
  * @param {string} code which must be wrapped
+ * @returns {string} wrapped code
  */
 export function wrapInNonameFunc(code) {
     return `function(source, args){\n${code}\n}`;

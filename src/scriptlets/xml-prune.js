@@ -9,10 +9,8 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet xml-prune
- *
  * @description
  * Removes an element from the specified XML.
- *
  *
  * **Syntax**
  * ```

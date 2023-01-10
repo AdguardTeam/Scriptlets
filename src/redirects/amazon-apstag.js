@@ -2,7 +2,6 @@ import { hit, noopFunc } from '../helpers/index';
 
 /**
  * @redirect amazon-apstag
- *
  * @description
  * Mocks Amazon's apstag.js
  *

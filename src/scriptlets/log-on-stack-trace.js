@@ -11,7 +11,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet log-on-stack-trace
- *
  * @description
  * This scriptlet is basically the same as [abort-on-stack-trace](#abort-on-stack-trace), but instead of aborting it logs:
  * - function and source script names pairs that access the given property

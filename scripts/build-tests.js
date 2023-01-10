@@ -14,9 +14,11 @@ const TEST_FILE_NAME_MARKER = '.test.js';
 
 /**
  * Prepares rollup config for test file
+ *
  * @param {string} fileName test file name
  * @param {string} dirPath resolved directory path
  * @param {string} subDir subdirectory with test files
+ * @returns {Object} rollup config
  */
 const getTestConfig = (fileName, dirPath, subDir) => {
     if (!fs.existsSync(TESTS_DIST)) {

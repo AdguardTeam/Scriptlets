@@ -11,7 +11,6 @@ import {
 
 /**
  * @scriptlet remove-in-shadow-dom
- *
  * @description
  * Removes elements inside open shadow DOM elements.
  *

@@ -23,7 +23,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet prevent-window-open
- *
  * @description
  * Prevents `window.open` calls when URL either matches or not matches the specified string/regexp. Using it without parameters prevents all `window.open` calls.
  *

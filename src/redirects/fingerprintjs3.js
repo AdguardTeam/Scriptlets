@@ -6,7 +6,6 @@ import {
 
 /**
  * @redirect fingerprintjs3
- *
  * @description
  * Mocks FingerprintJS v3
  * https://github.com/fingerprintjs

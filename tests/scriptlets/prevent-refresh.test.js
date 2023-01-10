@@ -90,7 +90,7 @@ test('Prevent redirect, delay from arg (delay 1)', (assert) => {
     }, 1 * 1000);
 });
 
-test('Prevent redirect, in case of invalid content, checks for - TypeError: Reduce of empty array with no initial value', (assert) => {
+test('Prevent redirect in case of invalid content', (assert) => {
     const REL_PAGE_PATH = './test-files/empty.html';
     const contentValue = `invalid;url=${REL_PAGE_PATH}`;
     let testPassed = true;

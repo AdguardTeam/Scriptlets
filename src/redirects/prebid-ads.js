@@ -3,7 +3,6 @@ import { hit } from '../helpers/index';
 
 /**
  * @redirect prebid-ads
- *
  * @description
  * Sets predefined constants on a page:
  * - `canRunAds`: `true`

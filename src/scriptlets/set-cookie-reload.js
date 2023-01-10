@@ -13,7 +13,6 @@ import {
 
 /**
  * @scriptlet set-cookie-reload
- *
  * @description
  * Sets a cookie with the specified name and value, and path,
  * and reloads the current page after the cookie setting.

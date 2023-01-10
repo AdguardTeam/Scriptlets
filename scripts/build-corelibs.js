@@ -7,7 +7,8 @@ import { version } from '../package.json';
 import { writeFile } from './helpers';
 
 const buildCorelibsJson = async () => {
-    const { getScriptletFunction } = require('../tmp/scriptlets-func'); // eslint-disable-line import/no-unresolved,global-require
+    // eslint-disable-next-line import/no-unresolved,global-require
+    const { getScriptletFunction } = require('../tmp/scriptlets-func');
 
     const scriptlets = await Promise.all(Object
         .values(scriptletList)

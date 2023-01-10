@@ -2,7 +2,6 @@ import { preventBab as preventBabScriptlet } from '../scriptlets/prevent-bab';
 
 /**
  * @redirect prevent-bab
- *
  * @description
  * Prevents BlockAdblock script from detecting an ad blocker.
  *

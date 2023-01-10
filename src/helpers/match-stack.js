@@ -5,9 +5,10 @@ import { getNativeRegexpTest } from './regexp-utils';
 /**
  * Checks if the stackTrace contains stackRegexp
  * https://github.com/AdguardTeam/Scriptlets/issues/82
+ *
  * @param {string|undefined} stackMatch - input stack value to match
  * @param {string} stackTrace - script error stack trace
- * @returns {boolean}
+ * @returns {boolean} if the stackTrace contains stackRegexp
  */
 export const matchStackTrace = (stackMatch, stackTrace) => {
     if (!stackMatch || stackMatch === '') {

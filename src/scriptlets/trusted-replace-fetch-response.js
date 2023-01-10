@@ -22,7 +22,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @trustedScriptlet trusted-replace-fetch-response
- *
  * @description
  * Replaces response text content of `fetch` requests if **all** given parameters match.
  *
@@ -117,6 +116,7 @@ export function trustedReplaceFetchResponse(source, pattern = '', replacement = 
         /**
          * Create new Response object using original response' properties
          * and given text as body content
+         *
          * @param {Response} response original response to copy properties from
          * @param {string} textContent text to set as body content
          * @returns {Response}

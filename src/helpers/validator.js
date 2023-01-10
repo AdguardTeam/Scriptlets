@@ -18,8 +18,9 @@ const COMMENT_MARKER = '!';
 
 /**
  * Checks if rule text is comment e.g. !!example.org##+js(set-constant.js, test, false)
- * @param {string} rule
- * @return {boolean}
+ *
+ * @param {string} rule rule text
+ * @returns {boolean} if rule text is comment
  */
 const isComment = (rule) => startsWith(rule, COMMENT_MARKER);
 
@@ -51,7 +52,9 @@ const ADG_CSS_MASK_REG = /#@?\$#.+?\s*\{.*\}\s*$/g;
 
 /**
  * Checks if the `rule` is AdGuard scriptlet rule
+ *
  * @param {string} rule - rule text
+ * @returns {boolean} if given rule is adg rule
  */
 const isAdgScriptletRule = (rule) => {
     return (
@@ -62,7 +65,9 @@ const isAdgScriptletRule = (rule) => {
 
 /**
  * Checks if the `rule` is uBO scriptlet rule
+ *
  * @param {string} rule rule text
+ * @returns {boolean} if given rule is ubo rule
  */
 const isUboScriptletRule = (rule) => {
     return (
@@ -77,7 +82,9 @@ const isUboScriptletRule = (rule) => {
 
 /**
  * Checks if the `rule` is AdBlock Plus snippet
+ *
  * @param {string} rule rule text
+ * @returns {boolean} if given rule is abp rule
  */
 const isAbpSnippetRule = (rule) => {
     return (
@@ -90,7 +97,9 @@ const isAbpSnippetRule = (rule) => {
 
 /**
  * Finds scriptlet by it's name
+ *
  * @param {string} name - scriptlet name
+ * @returns {Function} scriptlet function
  */
 const getScriptletByName = (name) => {
     const scriptlets = Object.keys(scriptletsList).map((key) => scriptletsList[key]);
@@ -107,7 +116,9 @@ const getScriptletByName = (name) => {
 
 /**
  * Checks if the scriptlet name is valid
+ *
  * @param {string} name - Scriptlet name
+ * @returns {boolean} if the scriptlet name is valid
  */
 const isValidScriptletName = (name) => {
     if (!name) {
@@ -260,14 +271,16 @@ const REDIRECT_RULE_TYPES = {
 
 /**
  * Parses redirect rule modifiers
- * @param {string} rule
- * @returns {Array}
+ *
+ * @param {string} rule rule text
+ * @returns {Array} list of rule modifiers
  */
 const parseModifiers = (rule) => substringAfter(rule, '$').split(',');
 
 /**
  * Gets redirect resource name
- * @param {string} rule
+ *
+ * @param {string} rule rule text
  * @param {string} marker - specific Adg/Ubo or Abp redirect resources marker
  * @returns {string} - redirect resource name
  */
@@ -281,7 +294,9 @@ const getRedirectName = (rule, marker) => {
 /**
  * Checks if the `rule` is AdGuard redirect rule.
  * Discards comments and JS rules and checks if the `rule` has 'redirect' modifier.
+ *
  * @param {string} rule - rule text
+ * @returns {boolean} if given rule is adg redirect
  */
 const isAdgRedirectRule = (rule) => {
     const MARKER_IN_BASE_PART_MASK = '/((?!\\$|\\,).{1})redirect((-rule)?)=(.{0,}?)\\$(popup)?/';
@@ -300,8 +315,10 @@ const isAdgRedirectRule = (rule) => {
 
 /**
  * Checks if the `rule` satisfies the `type`
+ *
  * @param {string} rule - rule text
  * @param {'VALID_ADG'|'ADG'|'UBO'|'ABP'} type - type of a redirect rule
+ * @returns {boolean} if the `rule` satisfies the `type`
  */
 const isRedirectRuleByType = (rule, type) => {
     const {
@@ -340,37 +357,41 @@ const isRedirectRuleByType = (rule, type) => {
 };
 
 /**
-* Checks if the `rule` is **valid** AdGuard redirect resource rule
-* @param {string} rule - rule text
-* @returns {boolean}
-*/
+ * Checks if the `rule` is **valid** AdGuard redirect resource rule
+ *
+ * @param {string} rule - rule text
+ * @returns {boolean} if given rule is valid adg redirect
+ */
 const isValidAdgRedirectRule = (rule) => {
     return isRedirectRuleByType(rule, 'VALID_ADG');
 };
 
 /**
-* Checks if the AdGuard redirect `rule` has Ubo analog. Needed for Adg->Ubo conversion
-* @param {string} rule - AdGuard rule text
-* @returns {boolean} - true if the rule can be converted to Ubo
-*/
+ * Checks if the AdGuard redirect `rule` has Ubo analog. Needed for Adg->Ubo conversion
+ *
+ * @param {string} rule - AdGuard rule text
+ * @returns {boolean} - true if the rule can be converted to Ubo
+ */
 const isAdgRedirectCompatibleWithUbo = (rule) => {
     return isAdgRedirectRule(rule) && isRedirectRuleByType(rule, 'ADG');
 };
 
 /**
-* Checks if the Ubo redirect `rule` has AdGuard analog. Needed for Ubo->Adg conversion
-* @param {string} rule - Ubo rule text
-* @returns {boolean} - true if the rule can be converted to AdGuard
-*/
+ * Checks if the Ubo redirect `rule` has AdGuard analog. Needed for Ubo->Adg conversion
+ *
+ * @param {string} rule - Ubo rule text
+ * @returns {boolean} - true if the rule can be converted to AdGuard
+ */
 const isUboRedirectCompatibleWithAdg = (rule) => {
     return isRedirectRuleByType(rule, 'UBO');
 };
 
 /**
-* Checks if the Abp redirect `rule` has AdGuard analog. Needed for Abp->Adg conversion
-* @param {string} rule - Abp rule text
-* @returns {boolean} - true if the rule can be converted to AdGuard
-*/
+ * Checks if the Abp redirect `rule` has AdGuard analog. Needed for Abp->Adg conversion
+ *
+ * @param {string} rule - Abp rule text
+ * @returns {boolean} - true if the rule can be converted to AdGuard
+ */
 const isAbpRedirectCompatibleWithAdg = (rule) => {
     return isRedirectRuleByType(rule, 'ABP');
 };
@@ -388,8 +409,8 @@ const isAbpRedirectCompatibleWithAdg = (rule) => {
  * $script,redirect=noopvast-2.0
  * $xmlhttprequest,redirect=noopvast-2.0
  *
- * @param {string} rule
- * @returns {boolean}
+ * @param {string} rule rule text
+ * @returns {boolean} if the rule has specified content type before conversion
  */
 const hasValidContentType = (rule) => {
     const ruleModifiers = parseModifiers(rule);

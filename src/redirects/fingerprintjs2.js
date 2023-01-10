@@ -3,7 +3,6 @@ import { hit } from '../helpers/index';
 
 /**
  * @redirect fingerprintjs2
- *
  * @description
  * Mocks FingerprintJS v2
  * https://github.com/fingerprintjs

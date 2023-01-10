@@ -3,7 +3,6 @@ import { hit } from '../helpers/index';
 
 /**
  * @scriptlet set-popads-dummy
- *
  * @description
  * Sets static properties PopAds and popns.
  *

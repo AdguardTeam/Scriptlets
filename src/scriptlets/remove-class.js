@@ -11,7 +11,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet remove-class
- *
  * @description
  * Removes the specified classes from DOM nodes. This scriptlet runs once after the page loads
  * and after that periodically in order to DOM tree changes.

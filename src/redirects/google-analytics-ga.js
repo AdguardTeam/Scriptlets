@@ -7,7 +7,6 @@ import {
 
 /**
  * @redirect google-analytics-ga
- *
  * @description
  * Mocks old Google Analytics API.
  *

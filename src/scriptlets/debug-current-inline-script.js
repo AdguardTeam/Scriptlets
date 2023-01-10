@@ -14,7 +14,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet debug-current-inline-script
- *
  * @description
  * This scriptlet is basically the same as [abort-current-inline-script](#abort-current-inline-script), but instead of aborting it starts the debugger.
  *

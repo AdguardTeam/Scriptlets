@@ -16,7 +16,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet abort-current-inline-script
- *
  * @description
  * Aborts an inline script when it attempts to **read** or **write to** the specified property
  * AND when the contents of the `<script>` element contains the specified

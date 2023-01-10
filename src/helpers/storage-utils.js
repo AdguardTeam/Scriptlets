@@ -2,16 +2,12 @@ import { nativeIsNaN } from './number-utils';
 import { logMessage } from './log-message';
 
 /**
- * @typedef { import('../scriptlets/index').Source } Source
- */
-
-/**
  * Sets item to a specified storage, if storage isn't full.
- * @param {Source} source
+ *
+ * @param {Object} source scriptlet's configuration
  * @param {Storage} storage storage instance to set item into
- * @param {string} key
- * @param {string} value
- * @param {boolean} shouldLog determines if helper should log on a failed set attempt
+ * @param {string} key storage key
+ * @param {string} value staroge value
  */
 export const setStorageItem = (source, storage, key, value) => {
     // setItem() may throw an exception if the storage is full.
@@ -25,6 +21,7 @@ export const setStorageItem = (source, storage, key, value) => {
 
 /**
  * Gets supported storage item value
+ *
  * @param {string} value input item value
  * @returns {string|null|undefined|boolean} valid item value if ok OR null if not
  */

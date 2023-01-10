@@ -2,7 +2,6 @@ import { hit, noopFunc } from '../helpers/index';
 
 /**
  * @redirect metrika-yandex-tag
- *
  * @description
  * Mocks Yandex Metrika API.
  * https://yandex.ru/support/metrica/objects/method-reference.html
@@ -39,6 +38,8 @@ export function metrikaYandexTag(source) {
 
     /**
      * https://yandex.ru/support/metrica/objects/get-client-id.html
+     *
+     * @param {string} id
      * @param {Function} cb
      */
     const getClientID = (id, cb) => {
@@ -65,6 +66,8 @@ export function metrikaYandexTag(source) {
 
     /**
      * https://yandex.ru/support/metrica/objects/reachgoal.html
+     *
+     * @param {string} id
      * @param {string} target
      * @param {Object} params
      * @param {Function} callback

@@ -1,35 +1,42 @@
 /**
  * Noop function
- * @return {undefined} undefined
+ *
+ * @returns {undefined} undefined
  */
 export const noopFunc = () => { };
 
 /**
- * Function return noopFunc
- * @returns {Function}
+ * Function returns noopFunc
+ *
+ * @returns {Function} noopFunc
  */
 export const noopCallbackFunc = () => noopFunc;
 
 /**
  * Function returns null
- * @return {null} null
+ *
+ * @returns {null} null
  */
 export const noopNull = () => null;
 
 /**
  * Function returns true
- * @return {boolean} true
+ *
+ * @returns {boolean} true
  */
 export const trueFunc = () => true;
 
 /**
  * Function returns false
- * @return {boolean} false
+ *
+ * @returns {boolean} false
  */
 export const falseFunc = () => false;
 
 /**
  * Function returns this
+ *
+ * @returns {this} this object
  */
 export function noopThis() {
     return this;
@@ -37,24 +44,28 @@ export function noopThis() {
 
 /**
  * Function returns empty string
- * @return {string} empty string
+ *
+ * @returns {string} empty string
  */
 export const noopStr = () => '';
 
 /**
  * Function returns empty array
- * @return {Array} empty array
+ *
+ * @returns {Array} empty array
  */
 export const noopArray = () => [];
 
 /**
  * Function returns empty object
- * @return {Object} empty object
+ *
+ * @returns {Object} empty object
  */
 export const noopObject = () => ({});
 
 /**
  * Function throws an error
+ *
  * @throws
  */
 export const throwFunc = () => {
@@ -63,13 +74,18 @@ export const throwFunc = () => {
 
 /**
  * Function returns Promise.reject()
+ *
+ * @returns {Promise} rejected Promise
  */
 export const noopPromiseReject = () => Promise.reject(); // eslint-disable-line compat/compat
 
 /**
- * Returns Promise object that is resolved  value of response body
- * @param {string} [url=''] value of response url to set on response object
- * @param {string} [response='default'] value of response type to set on response object
+ * Returns Promise object that is resolved with specified props
+ *
+ * @param {string} [responseBody='{}'] value to set as responseBody
+ * @param {string} [responseUrl=''] value to set as responseUrl
+ * @param {string} [responseType='default'] value to set as responseType
+ * @returns {Promise<Response>|undefined} resolved Promise or undefined if Response interface is not available
  */
 export const noopPromiseResolve = (responseBody = '{}', responseUrl = '', responseType = 'default') => {
     if (typeof Response === 'undefined') {

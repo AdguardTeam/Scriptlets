@@ -3,7 +3,6 @@ import { hit, noopFunc } from '../helpers/index';
 
 /**
  * @redirect naver-wcslog
- *
  * @description
  * Mocks wcslog.js of Naver Analytics.
  *

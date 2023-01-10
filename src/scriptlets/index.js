@@ -19,7 +19,7 @@ import { getScriptletFunction } from '../../tmp/scriptlets-func';
  * @property {Array<string>} args Arguments for scriptlet function
  * @property {'extension'|'corelibs'|'test'} engine -
  * Defines the final form of scriptlet string presentation
- * @property {string} [version]
+ * @property {string} [version] extension version
  * @property {boolean} [verbose] flag to enable printing to console debug information
  * @property {string} [ruleText] Source rule text is used for debugging purposes
  * @property {string} [domainName] domain name where scriptlet is applied; for debugging purposes
@@ -27,7 +27,8 @@ import { getScriptletFunction } from '../../tmp/scriptlets-func';
 
 /**
  * Returns scriptlet code by param
- * @param {Source} source
+ *
+ * @param {Object} source scriptlet properties
  * @returns {string|null} scriptlet code
  * @throws on unknown scriptlet name
  */

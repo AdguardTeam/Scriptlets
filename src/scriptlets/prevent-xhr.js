@@ -25,7 +25,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet prevent-xhr
- *
  * @description
  * Prevents `xhr` calls if **all** given parameters match.
  *
