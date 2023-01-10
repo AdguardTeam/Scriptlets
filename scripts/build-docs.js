@@ -107,7 +107,7 @@ const getMarkdownData = (dataItems) => {
     }) => {
         acc.list.push(`* [${name}](#${name})${EOL}`);
 
-        const typeOfSrc = type === 'scriptlet' ? 'Scriptlet' : 'Redirect';
+        const typeOfSrc = type.toLowerCase().includes('scriptlet') ? 'Scriptlet' : 'Redirect';
 
         const body = `### <a id="${name}"></a> ⚡️ ${name}
 ${description}${EOL}

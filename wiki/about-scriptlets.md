@@ -646,21 +646,22 @@ defaults to match all listeners; invalid regular expression will cause exit and 
 
 **Examples**
 1. Prevent all `click` listeners:
-```
+    ```
     example.org#%#//scriptlet('prevent-addEventListener', 'click')
-```
+    ```
 
 2. Prevent 'click' listeners with the callback body containing `searchString`.
-```
+    ```
     example.org#%#//scriptlet('prevent-addEventListener', 'click', 'searchString')
-```
+    ```
 
     For instance, this listener will not be called:
-```javascript
+
+    ```javascript
     el.addEventListener('click', () => {
         window.test = 'searchString';
     });
-```
+    ```
 
 [Scriptlet source](../src/scriptlets/prevent-addEventListener.js)
 * * *
@@ -1174,36 +1175,36 @@ for accessing its methods (blur(), focus() etc.) and will be removed after the d
 
 **Examples**
 1. Prevent all `window.open` calls:
-```
+    ```
     example.org#%#//scriptlet('prevent-window-open')
-```
+    ```
 
 2. Prevent `window.open` for all URLs containing `example`:
-```
+    ```
     example.org#%#//scriptlet('prevent-window-open', 'example')
-```
+    ```
 
 3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
-```
+    ```
     example.org#%#//scriptlet('prevent-window-open', '/example\./')
-```
+    ```
 
 4. Prevent `window.open` for all URLs **NOT** containing `example`:
-```
+    ```
     example.org#%#//scriptlet('prevent-window-open', '!example')
-```
-
+    ```
+P
 Old syntax of prevent-window-open parameters:
 - `match` - optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
 - `search` - optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
 - `replacement` - optional, string to return prop value or property instead of window.open; defaults to return noopFunc.
 **Examples**
-```
+    ```
     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
     example.org#%#//scriptlet('prevent-window-open', '0', 'example')
     example.org#%#//scriptlet('prevent-window-open', '', '', 'trueFunc')
     example.org#%#//scriptlet('prevent-window-open', '1', '', '{propName=noopFunc}')
-```
+    ```
 
 > For better compatibility with uBO, old syntax is not recommended to use.
 
@@ -1416,16 +1417,17 @@ example.org#%#//scriptlet('remove-cookie'[, match])
 
 **Examples**
 1. Removes all cookies:
-```
+    ```
     example.org#%#//scriptlet('remove-cookie')
-```
+    ```
 
-2. Removes cookies which name contains `example` string.
-```
+2. Removes cookies which name contains `example` string:
+    ```
     example.org#%#//scriptlet('remove-cookie', 'example')
-```
+    ```
 
-    For instance this cookie will be removed
+    For instance this cookie will be removed:
+
     ```javascript
     document.cookie = '__example=randomValue';
     ```
