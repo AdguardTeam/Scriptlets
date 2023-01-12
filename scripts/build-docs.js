@@ -105,11 +105,13 @@ const getMarkdownData = (dataItems) => {
         description,
         source,
     }) => {
-        acc.list.push(`* [${name}](#${name})${EOL}`);
+        // low case name should be used as anchor
+        acc.list.push(`* [${name}](#${name.toLowerCase()})${EOL}`);
 
         const typeOfSrc = type.toLowerCase().includes('scriptlet') ? 'Scriptlet' : 'Redirect';
 
-        const body = `### <a id="${name}"></a> ⚡️ ${name}
+        // low case name should be used as anchor
+        const body = `### <a id="${name.toLowerCase()}"></a> ⚡️ ${name}
 ${description}${EOL}
 [${typeOfSrc} source](${source})
 * * *${EOL}${EOL}`;
