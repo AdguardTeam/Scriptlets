@@ -372,3 +372,52 @@ export function generateRandomResponse(customResponseText) {
     customResponse = getRandomStrByLength(length);
     return customResponse;
 }
+
+/**
+ * Infers value from string argument
+ * Inferring goes from more specific to more ambiguous options
+ * Arrays, objects and strings are parsed via JSON.parse
+ *
+ * @param {string} value arbitrary string
+ * @returns {any} converted value
+ * @throws an error on unexpected input
+ */
+export function inferValue(value) {
+    if (value === 'undefined') {
+        return undefined;
+    } if (value === 'false') {
+        return false;
+    } if (value === 'true') {
+        return true;
+    } if (value === 'null') {
+        return null;
+    } if (value === 'NaN') {
+        return NaN;
+    }
+
+    // Number class constructor works 2 times faster than JSON.parse
+    // and wont interpret mixed inputs like '123asd' as parseFloat would
+    const MAX_ALLOWED_NUM = 32767;
+    const numVal = Number(value);
+    if (!nativeIsNaN(numVal)) {
+        if (Math.abs(numVal) > MAX_ALLOWED_NUM) {
+            throw new Error('number values bigger than 32767 are not allowed');
+        }
+        return numVal;
+    }
+
+    let errorMessage = `'${value}' value type can't be inferred`;
+    try {
+        // Parse strings, arrays and objects represented as JSON strings
+        // '[1,2,3,"string"]' > [1, 2, 3, 'string']
+        // '"arbitrary string"' > 'arbitrary string'
+        const parsableVal = JSON.parse(value);
+        if (parsableVal instanceof Object || typeof parsableVal === 'string') {
+            return parsableVal;
+        }
+    } catch (e) {
+        errorMessage += `: ${e}`;
+    }
+
+    throw new TypeError(errorMessage);
+}

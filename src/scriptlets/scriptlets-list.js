@@ -54,3 +54,4 @@ export * from './trusted-set-cookie';
 export * from './trusted-set-cookie-reload';
 export * from './trusted-replace-fetch-response';
 export * from './trusted-set-local-storage-item';
+export * from './trusted-set-constant';

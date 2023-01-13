@@ -49,3 +49,4 @@ import './trusted-click-element.test';
 import './trusted-set-cookie.test';
 import './trusted-replace-fetch-response.test';
 import './trusted-set-local-storage-item.test';
+import './trusted-set-constant.test';

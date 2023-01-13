@@ -50,7 +50,7 @@ export const getLimitedStorageItemValue = (value) => {
         if (nativeIsNaN(validValue)) {
             throw new Error('Invalid value');
         }
-        if (Math.abs(validValue) > 0x7FFF) {
+        if (Math.abs(validValue) > 32767) {
             throw new Error('Invalid value');
         }
     } else if (value === 'yes') {

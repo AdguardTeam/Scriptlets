@@ -1,5 +1,6 @@
 import {
     hit,
+    inferValue,
     logMessage,
     noopArray,
     noopObject,
@@ -24,126 +25,73 @@ import {
 
 /* eslint-disable max-len */
 /**
- * @scriptlet set-constant
+ * @scriptlet trusted-set-constant
  * @description
- * Creates a constant property and assigns it one of the values from the predefined list.
+ * Creates a constant property and assigns it a specified value.
  *
  * > Actually, it's not a constant. Please note, that it can be rewritten with a value of a different type.
  *
  * > If empty object is present in chain it will be trapped until chain leftovers appear.
  *
- * Related UBO scriptlet:
- * https://github.com/gorhill/uBlock/wiki/Resources-Library#set-constantjs-
- *
- * Related ABP snippet:
- * https://github.com/adblockplus/adblockpluscore/blob/adblockpluschrome-3.9.4/lib/content/snippets.js#L1361
+ * > Use [set-constant](./about-scriptlets.md#set-constant) to set predefined values and functions.
  *
  * **Syntax**
  * ```
- * example.org#%#//scriptlet('set-constant', property, value[, stack])
+ * example.org#%#//scriptlet('trusted-set-constant', property, value[, stack])
  * ```
  *
  * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`.
- * - `value` - required. Possible values:
- *     - positive decimal integer `<= 32767`
- *     - one of the predefined constants:
- *         - `undefined`
- *         - `false`
- *         - `true`
- *         - `null`
- *         - `emptyObj` - empty object
- *         - `emptyArr` - empty array
- *         - `noopFunc` - function with empty body
- *         - `noopCallbackFunc` - function returning noopFunc
- *         - `trueFunc` - function returning true
- *         - `falseFunc` - function returning false
- *         - `throwFunc` - function throwing an error
- *         - `noopPromiseResolve` - function returning Promise object that is resolved with an empty response
- *         - `noopPromiseReject` - function returning Promise.reject()
- *         - `''` - empty string
- *         - `-1` - number value `-1`
- *         - `yes`
- *         - `no`
+ * - `value` - required, an arbitrary value to be set; value type is being inferred from the argument, e.g '500' will be set as number;
+ * to set string type value wrap argument into another pair of quotes: `'"500"'`;
  * - `stack` - optional, string or regular expression that must match the current function call stack trace;
  * if regular expression is invalid it will be skipped
  *
  * **Examples**
+ * 1. Set property values of different types
  * ```
- * ! Any access to `window.first` will return `false`
- * example.org#%#//scriptlet('set-constant', 'first', 'false')
+ * ! Set string value wrapping argument into another pair of quotes
+ * example.org#%#//scriptlet('trusted-set-constant', 'click_r', '"null"')
  *
- * ✔ window.first === false
+ * ✔ window.click_r === 'null'
+ * ✔ typeof window.click_r === 'string'
+ *
+ * ! Set inferred null value
+ * example.org#%#//scriptlet('trusted-set-constant', 'click_r', 'null')
+ *
+ * ✔ window.click_r === null
+ * ✔ typeof window.click_r === 'object'
+ *
+ * ! Set number type value
+ * example.org#%#//scriptlet('trusted-set-constant', 'click_r', '48')
+ *
+ * ✔ window.click_r === 48
+ * ✔ typeof window.click_r === 'number'
+ *
+ * ! Set array or object as property value, argument should be a JSON string
+ * example.org#%#//scriptlet('trusted-set-constant', 'click_r', '[1,"string"]')
+ * example.org#%#//scriptlet('trusted-set-constant', 'click_r', '{"aaa":123,"bbb":{"ccc":"string"}}')
  * ```
  *
+ * 2. Use script stack matching to set value
  * ```
- * ! Any call to `window.second()` will return `true`
- * example.org#%#//scriptlet('set-constant', 'second', 'trueFunc')
+ * ! `document.first` will return `1` if the method is related to `checking.js`
+ * example.org#%#//scriptlet('trusted-set-constant', 'document.first', '1', 'checking.js')
  *
- * ✔ window.second() === true
- * ✔ window.second.toString() === "function trueFunc() {return true;}"
- * ```
- *
- * ```
- * ! Any call to `document.third()` will return `true` if the method is related to `checking.js`
- * example.org#%#//scriptlet('set-constant', 'document.third', 'trueFunc', 'checking.js')
- *
- * ✔ document.third() === true  // if the condition described above is met
+ * ✔ document.first === 1  // if the condition described above is met
  * ```
  */
 /* eslint-enable max-len */
-export function setConstant(source, property, value, stack) {
+export function trustedSetConstant(source, property, value, stack) {
     if (!property
         || !matchStackTrace(stack, new Error().stack)) {
         return;
     }
 
-    const emptyArr = noopArray();
-    const emptyObj = noopObject();
-
     let constantValue;
-    if (value === 'undefined') {
-        constantValue = undefined;
-    } else if (value === 'false') {
-        constantValue = false;
-    } else if (value === 'true') {
-        constantValue = true;
-    } else if (value === 'null') {
-        constantValue = null;
-    } else if (value === 'emptyArr') {
-        constantValue = emptyArr;
-    } else if (value === 'emptyObj') {
-        constantValue = emptyObj;
-    } else if (value === 'noopFunc') {
-        constantValue = noopFunc;
-    } else if (value === 'noopCallbackFunc') {
-        constantValue = noopCallbackFunc;
-    } else if (value === 'trueFunc') {
-        constantValue = trueFunc;
-    } else if (value === 'falseFunc') {
-        constantValue = falseFunc;
-    } else if (value === 'throwFunc') {
-        constantValue = throwFunc;
-    } else if (value === 'noopPromiseResolve') {
-        constantValue = noopPromiseResolve;
-    } else if (value === 'noopPromiseReject') {
-        constantValue = noopPromiseReject;
-    } else if (/^\d+$/.test(value)) {
-        constantValue = parseFloat(value);
-        if (nativeIsNaN(constantValue)) {
-            return;
-        }
-        if (Math.abs(constantValue) > 32767) {
-            return;
-        }
-    } else if (value === '-1') {
-        constantValue = -1;
-    } else if (value === '') {
-        constantValue = '';
-    } else if (value === 'yes') {
-        constantValue = 'yes';
-    } else if (value === 'no') {
-        constantValue = 'no';
-    } else {
+    try {
+        constantValue = inferValue(value);
+    } catch (e) {
+        logMessage(source, e);
         return;
     }
 
@@ -162,7 +110,7 @@ export function setConstant(source, property, value, stack) {
     /**
      * Safely sets property on a given object
      *
-     * IMPORTANT! this duplicates corresponding func in trusted-set-constant scriptlet as
+     * IMPORTANT! this duplicates corresponding func in set-constant scriptlet as
      * reorganizing this to common helpers will most definitely complicate debugging
      *
      * @param {Object} base arbitrary reachable object
@@ -212,7 +160,7 @@ export function setConstant(source, property, value, stack) {
      * Chains that yet include non-object values (e.g null) are valid and will be
      * traversed when appropriate chain member is set by an external script
      *
-     * IMPORTANT! this duplicates corresponding func in trusted-set-constant scriptlet as
+     * IMPORTANT! this duplicates corresponding func in set-constant scriptlet as
      * reorganizing this to common helpers will most definitely complicate debugging
      *
      * @param {Object} owner object that owns chain
@@ -296,19 +244,13 @@ export function setConstant(source, property, value, stack) {
     setChainPropAccess(window, property);
 }
 
-setConstant.names = [
-    'set-constant',
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    'set-constant.js',
-    'ubo-set-constant.js',
-    'set.js',
-    'ubo-set.js',
-    'ubo-set-constant',
-    'ubo-set',
-    'abp-override-property-read',
+trustedSetConstant.names = [
+    'trusted-set-constant',
+    // trusted scriptlets support no aliases
 ];
-setConstant.injections = [
+trustedSetConstant.injections = [
     hit,
+    inferValue,
     logMessage,
     noopArray,
     noopObject,

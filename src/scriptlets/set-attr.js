@@ -60,7 +60,7 @@ export function setAttr(source, selector, attr, value = '') {
     if (value.length !== 0
         && (nativeIsNaN(parseInt(value, 10))
             || parseInt(value, 10) < 0
-            || parseInt(value, 10) > 0x7FFF)) {
+            || parseInt(value, 10) > 32767)) {
         return;
     }
 

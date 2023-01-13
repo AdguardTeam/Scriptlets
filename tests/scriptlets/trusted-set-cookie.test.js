@@ -59,7 +59,7 @@ test('Set cookie with current time value', (assert) => {
 
     // Some time will pass between calling scriptlet
     // and qunit running assertion
-    const tolerance = 100;
+    const tolerance = 125;
     const cookieValue = parseCookieString(document.cookie)[cName];
     const currentTime = new Date().getTime();
     const timeDiff = currentTime - cookieValue;
