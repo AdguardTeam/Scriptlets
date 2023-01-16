@@ -133,7 +133,6 @@ export function trustedReplaceFetchResponse(source, pattern = '', replacement = 
                 url,
             } = response;
 
-            // eslint-disable-next-line compat/compat
             const forgedResponse = new Response(textContent, {
                 status,
                 statusText,

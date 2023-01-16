@@ -202,7 +202,6 @@ export const convertUboScriptletToAdg = (rule) => {
  *
  * @param {string} rule ABP snippet rule
  * @returns {Array} array of AdGuard scriptlet rules, one or few items depends on Abp-rule
- * 
  */
 export const convertAbpSnippetToAdg = (rule) => {
     const SEMICOLON_DIVIDER = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/g;

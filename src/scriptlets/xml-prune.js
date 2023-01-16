@@ -156,7 +156,6 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch) {
     // eslint-disable-next-line max-len
     window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler);
 
-    // eslint-disable-next-line compat/compat
     const nativeFetch = window.fetch;
 
     const fetchWrapper = (target, thisArg, args) => {
@@ -197,7 +196,7 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch) {
     const fetchHandler = {
         apply: fetchWrapper,
     };
-    // eslint-disable-next-line compat/compat
+
     window.fetch = new Proxy(window.fetch, fetchHandler);
 }
 

@@ -84,7 +84,7 @@ export function logOnStacktrace(source, property) {
         }
 
         let value = base[prop];
-        /* eslint-disable no-console, compat/compat */
+        /* eslint-disable no-console */
         setPropertyAccess(base, prop, {
             get() {
                 hit(source);
@@ -99,7 +99,7 @@ export function logOnStacktrace(source, property) {
                 value = newValue;
             },
         });
-        /* eslint-enable no-console, compat/compat */
+        /* eslint-enable no-console */
     };
 
     setChainPropAccess(window, property);

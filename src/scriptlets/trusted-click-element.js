@@ -250,7 +250,6 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
         }
     };
 
-    // eslint-disable-next-line compat/compat
     const observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
     observer.observe(document.documentElement, {
         attributes: true,

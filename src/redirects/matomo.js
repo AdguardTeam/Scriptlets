@@ -22,12 +22,8 @@ export function Matomo(source) {
     AsyncTracker.prototype.addListener = noopFunc;
 
     const matomoWrapper = {
-        getTracker() {
-            return new Tracker();
-        },
-        getAsyncTracker() {
-            return new AsyncTracker();
-        },
+        getTracker: Tracker,
+        getAsyncTracker: AsyncTracker,
     };
 
     window.Piwik = matomoWrapper;

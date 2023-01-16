@@ -77,7 +77,7 @@ export const throwFunc = () => {
  *
  * @returns {Promise} rejected Promise
  */
-export const noopPromiseReject = () => Promise.reject(); // eslint-disable-line compat/compat
+export const noopPromiseReject = () => Promise.reject();
 
 /**
  * Returns Promise object that is resolved with specified props
@@ -91,7 +91,7 @@ export const noopPromiseResolve = (responseBody = '{}', responseUrl = '', respon
     if (typeof Response === 'undefined') {
         return;
     }
-    // eslint-disable-next-line compat/compat
+
     const response = new Response(responseBody, {
         status: 200,
         statusText: 'OK',
@@ -104,6 +104,6 @@ export const noopPromiseResolve = (responseBody = '{}', responseUrl = '', respon
         type: { value: responseType },
     });
 
-    // eslint-disable-next-line compat/compat, consistent-return
+    // eslint-disable-next-line consistent-return
     return Promise.resolve(response);
 };

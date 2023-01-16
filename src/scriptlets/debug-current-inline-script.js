@@ -32,7 +32,7 @@ export function debugCurrentInlineScript(source, property, search) {
 
     const getCurrentScript = () => {
         if ('currentScript' in document) {
-            return document.currentScript; // eslint-disable-line compat/compat
+            return document.currentScript;
         }
         const scripts = document.getElementsByTagName('script');
         return scripts[scripts.length - 1];

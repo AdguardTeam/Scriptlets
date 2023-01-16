@@ -1,7 +1,6 @@
 module.exports = {
     extends: [
         '../../.eslintrc',
-        '../.eslintrc',
     ],
     rules: {
         'jsdoc/require-jsdoc': 1,

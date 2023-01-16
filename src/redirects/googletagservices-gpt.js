@@ -47,7 +47,6 @@ export function GoogleTagServicesGpt(source) {
     };
 
     const fireSlotEvent = (name, slot) => {
-        // eslint-disable-next-line compat/compat
         return new Promise((resolve) => {
             requestAnimationFrame(() => {
                 const size = [0, 0];

@@ -137,36 +137,8 @@ import {
  */
 /* eslint-enable max-len */
 export function preventSetInterval(source, matchCallback, matchDelay) {
-    // if browser does not support Proxy (e.g. Internet Explorer),
-    // we use none-proxy "legacy" wrapper for preventing
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-    const isProxySupported = typeof Proxy !== 'undefined';
-
-    const nativeInterval = window.setInterval;
-
     // logs setIntervals to console if no arguments have been specified
     const shouldLog = ((typeof matchCallback === 'undefined') && (typeof matchDelay === 'undefined'));
-
-    const legacyIntervalWrapper = (callback, delay, ...args) => {
-        let shouldPrevent = false;
-        if (shouldLog) {
-            hit(source);
-            // https://github.com/AdguardTeam/Scriptlets/issues/105
-            logMessage(source, `setInterval(${String(callback)}, ${delay})`, true);
-        } else {
-            shouldPrevent = isPreventionNeeded({
-                callback,
-                delay,
-                matchCallback,
-                matchDelay,
-            });
-        }
-        if (shouldPrevent) {
-            hit(source);
-            return nativeInterval(noopFunc, delay);
-        }
-        return nativeInterval.apply(window, [callback, delay, ...args]);
-    };
 
     const handlerWrapper = (target, thisArg, args) => {
         const callback = args[0];
@@ -195,9 +167,7 @@ export function preventSetInterval(source, matchCallback, matchDelay) {
         apply: handlerWrapper,
     };
 
-    window.setInterval = isProxySupported
-        ? new Proxy(window.setInterval, setIntervalHandler)
-        : legacyIntervalWrapper;
+    window.setInterval = new Proxy(window.setInterval, setIntervalHandler);
 }
 
 preventSetInterval.names = [

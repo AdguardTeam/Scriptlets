@@ -30,11 +30,9 @@ export function Fingerprintjs3(source) {
     const FingerprintJS = function () { };
     FingerprintJS.prototype = {
         load() {
-            // eslint-disable-next-line compat/compat
             return Promise.resolve(new FingerprintJS());
         },
         get() {
-            // eslint-disable-next-line compat/compat
             return Promise.resolve({
                 visitorId,
             });

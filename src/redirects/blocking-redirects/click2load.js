@@ -130,7 +130,6 @@ function clickToLoad() {
     const getTranslations = () => {
         const baseLocaleData = translationsData.en;
         try {
-            // eslint-disable-next-line compat/compat
             const currentLocale = navigator.language.toLowerCase();
             let localeData = translationsData[currentLocale];
             if (!localeData) {

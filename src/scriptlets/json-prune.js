@@ -200,7 +200,6 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
     jsonParseWrapper.toString = nativeJSONParse.toString.bind(nativeJSONParse);
     JSON.parse = jsonParseWrapper;
 
-    // eslint-disable-next-line compat/compat
     const nativeResponseJson = Response.prototype.json;
     // eslint-disable-next-line func-names
     const responseJsonWrapper = function () {
@@ -216,7 +215,6 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
         return;
     }
 
-    // eslint-disable-next-line compat/compat
     Response.prototype.json = responseJsonWrapper;
 }
 

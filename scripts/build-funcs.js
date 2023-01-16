@@ -30,7 +30,6 @@ const getScriptletFunctionsString = () => {
     function wrapInFunc(name, code) {
         return `function ${name}(source, args){\n${code}\n}`;
     }
-
     // we require scriptlets list dynamically, because scriptletsList file can be not built in the
     // moment of this script execution
     // eslint-disable-next-line import/no-unresolved,global-require

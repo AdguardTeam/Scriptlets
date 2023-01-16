@@ -50,11 +50,9 @@ export function preventAdfly(source) {
         }
         data = data.join('');
         const decodedURL = window.atob(data).slice(16, -16);
-        /* eslint-disable compat/compat */
         if (window.stop) {
             window.stop();
         }
-        /* eslint-enable compat/compat */
         window.onbeforeunload = null;
         window.location.href = decodedURL;
     };

@@ -137,36 +137,8 @@ import {
  */
 /* eslint-enable max-len */
 export function preventSetTimeout(source, matchCallback, matchDelay) {
-    // if browser does not support Proxy (e.g. Internet Explorer),
-    // we use none-proxy "legacy" wrapper for preventing
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-    const isProxySupported = typeof Proxy !== 'undefined';
-
-    const nativeTimeout = window.setTimeout;
-
     // logs setTimeouts to console if no arguments have been specified
     const shouldLog = ((typeof matchCallback === 'undefined') && (typeof matchDelay === 'undefined'));
-
-    const legacyTimeoutWrapper = (callback, delay, ...args) => {
-        let shouldPrevent = false;
-        if (shouldLog) {
-            hit(source);
-            // https://github.com/AdguardTeam/Scriptlets/issues/105
-            logMessage(source, `setTimeout(${String(callback)}, ${delay})`, true);
-        } else {
-            shouldPrevent = isPreventionNeeded({
-                callback,
-                delay,
-                matchCallback,
-                matchDelay,
-            });
-        }
-        if (shouldPrevent) {
-            hit(source);
-            return nativeTimeout(noopFunc, delay);
-        }
-        return nativeTimeout.apply(window, [callback, delay, ...args]);
-    };
 
     const handlerWrapper = (target, thisArg, args) => {
         const callback = args[0];
@@ -195,9 +167,7 @@ export function preventSetTimeout(source, matchCallback, matchDelay) {
         apply: handlerWrapper,
     };
 
-    window.setTimeout = isProxySupported
-        ? new Proxy(window.setTimeout, setTimeoutHandler)
-        : legacyTimeoutWrapper;
+    window.setTimeout = new Proxy(window.setTimeout, setTimeoutHandler);
 }
 
 preventSetTimeout.names = [

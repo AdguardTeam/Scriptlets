@@ -87,9 +87,7 @@ export function ATInternetSmartTag(source) {
 
     const smartTagWrapper = {
         Tracker: {
-            Tag() {
-                return new tag(); // eslint-disable-line new-cap
-            },
+            Tag: tag,
         },
     };
 

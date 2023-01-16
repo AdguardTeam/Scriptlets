@@ -515,9 +515,14 @@ There are two scripts to update wiki:
 2. `yarn wiki:build-docs` — updates wiki pages `about-scriptlets.md` and `about-redirects.md`. They are being generated from JSDoc-type comments of corresponding scriptlets and redirects source files due to `@scriptlet`/`@redirect` and `@description` tags. Runs automatically while the release build.
 
 ## <a id="browser-compatibility"> Browser Compatibility
-| Chrome | Edge | Firefox | IE  | Opera | Safari |
-| ------ | ---- | ------- | --- | ----- | ------ |
-| 55     | 15   | 52      | 11  | 42    | 10     |
+| Browser               | Version   |
+|-----------------------|:----------|
+| Chrome                | ✅ 55     |
+| Firefox               | ✅ 52     |
+| Edge                  | ✅ 15     |
+| Opera                 | ✅ 42     |
+| Safari                | ✅ 11     |
+| Internet Explorer     | ❌        |
 
 ## <a id="used-by"> Projects using Scriptlets
 * [CoreLibs](https://github.com/AdguardTeam/CoreLibs) (updates automatically)
