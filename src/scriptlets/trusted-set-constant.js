@@ -25,7 +25,7 @@ import {
 
 /* eslint-disable max-len */
 /**
- * @scriptlet trusted-set-constant
+ * @trustedScriptlet trusted-set-constant
  * @description
  * Creates a constant property and assigns it a specified value.
  *
