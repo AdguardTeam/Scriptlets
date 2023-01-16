@@ -24,6 +24,7 @@ import {
  *    - `cookie` - test string or regex against cookies on a page
  *    - `localStorage` - check if localStorage item is present
  * - 'delay' - optional, time in ms to delay scriptlet execution, defaults to instant execution.
+ *
  * **Examples**
  * 1. Click single element by selector
  * ```

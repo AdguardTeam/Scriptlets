@@ -27,21 +27,22 @@ import {
  *
  * **Examples**
  * 1. Prevent all `click` listeners:
- * ```
+ *     ```
  *     example.org#%#//scriptlet('prevent-addEventListener', 'click')
- * ```
+ *     ```
  *
 2. Prevent 'click' listeners with the callback body containing `searchString`.
- * ```
+ *     ```
  *     example.org#%#//scriptlet('prevent-addEventListener', 'click', 'searchString')
- * ```
+ *     ```
  *
  *     For instance, this listener will not be called:
- * ```javascript
+ *
+ *     ```javascript
  *     el.addEventListener('click', () => {
  *         window.test = 'searchString';
  *     });
- * ```
+ *     ```
  */
 /* eslint-enable max-len */
 export function preventAddEventListener(source, typeSearch, listenerSearch) {

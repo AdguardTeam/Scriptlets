@@ -18,16 +18,17 @@ import { hit, toRegExp } from '../helpers/index';
  *
  * **Examples**
  * 1. Removes all cookies:
- * ```
+ *     ```
  *     example.org#%#//scriptlet('remove-cookie')
- * ```
+ *     ```
  *
- * 2. Removes cookies which name contains `example` string.
- * ```
+ * 2. Removes cookies which name contains `example` string:
+ *     ```
  *     example.org#%#//scriptlet('remove-cookie', 'example')
- * ```
+ *     ```
  *
- *     For instance this cookie will be removed
+ *     For instance this cookie will be removed:
+ *
  *     ```javascript
  *     document.cookie = '__example=randomValue';
  *     ```

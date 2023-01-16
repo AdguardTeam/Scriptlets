@@ -107,6 +107,10 @@
             "adg": "prevent-popads-net"
         },
         {
+            "adg": "prevent-refresh",
+            "ubo": "refresh-defuser.js"
+        },
+        {
             "adg": "prevent-requestAnimationFrame",
             "ubo": "no-requestAnimationFrame-if.js (norafif.js)"
         },
@@ -143,6 +147,10 @@
         },
         {
             "adg": "set-popads-dummy"
+        },
+        {
+            "adg": "xml-prune",
+            "ubo": "xml-prune.js"
         },
         {
             "ubo": "webrtc-if.js"
@@ -232,16 +240,10 @@
             "ubo": "abort-current-script.js (acs.js, abort-current-inline-script.js, acis.js)"
         },
         {
-            "ubo": "refresh-defuser.js"
-        },
-        {
             "ubo": "no-floc.js"
         },
         {
             "ubo": "window.name-defuser.js"
-        },
-        {
-            "ubo": "xml-prune.js"
         },
         {
             "ubo": "m3u-prune.js"

@@ -22,6 +22,7 @@ Multiple conditions are allowed inside one `extraMatch` but they should be delim
    - `cookie` - test string or regex against cookies on a page
    - `localStorage` - check if localStorage item is present
 - 'delay' - optional, time in ms to delay scriptlet execution, defaults to instant execution.
+
 **Examples**
 1. Click single element by selector
 ```
@@ -58,7 +59,7 @@ example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'loca
 example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], input[type="submit"][value="akkoord"]', 'cookie:cmpconsent, localStorage:promo', '250')
 ```
 
-[Redirect source](../src/scriptlets/trusted-click-element.js)
+[Scriptlet source](../src/scriptlets/trusted-click-element.js)
 * * *
 
 ### <a id="trusted-replace-fetch-response"></a> ⚡️ trusted-replace-fetch-response
@@ -114,7 +115,7 @@ which is useful for debugging but only allowed for production filter lists.
     example.org#%#//scriptlet('trusted-replace-fetch-response', '*', '', 'example.com')
     ```
 
-[Redirect source](../src/scriptlets/trusted-replace-fetch-response.js)
+[Scriptlet source](../src/scriptlets/trusted-replace-fetch-response.js)
 * * *
 
 ### <a id="trusted-replace-xhr-response"></a> ⚡️ trusted-replace-xhr-response
@@ -167,7 +168,7 @@ which is useful for debugging but not permitted for production filter lists.
     example.org#%#//scriptlet('trusted-replace-xhr-response', '*', '', 'example.com')
     ```
 
-[Redirect source](../src/scriptlets/trusted-replace-xhr-response.js)
+[Scriptlet source](../src/scriptlets/trusted-replace-xhr-response.js)
 * * *
 
 ### <a id="trusted-set-cookie-reload"></a> ⚡️ trusted-set-cookie-reload
@@ -223,7 +224,7 @@ example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept', '
 example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'decline', '', 'none')
 ```
 
-[Redirect source](../src/scriptlets/trusted-set-cookie-reload.js)
+[Scriptlet source](../src/scriptlets/trusted-set-cookie-reload.js)
 * * *
 
 ### <a id="trusted-set-cookie"></a> ⚡️ trusted-set-cookie
@@ -278,7 +279,7 @@ example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept', '1year')
 example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'none')
 ```
 
-[Redirect source](../src/scriptlets/trusted-set-cookie.js)
+[Scriptlet source](../src/scriptlets/trusted-set-cookie.js)
 * * *
 
 ### <a id="trusted-set-local-storage-item"></a> ⚡️ trusted-set-local-storage-item
@@ -324,6 +325,6 @@ example.org#%#//scriptlet('trusted-set-local-storage-item', 'player.live.current
 example.org#%#//scriptlet('trusted-set-local-storage-item', 'ppu_main_none', '')
 ```
 
-[Redirect source](../src/scriptlets/trusted-set-local-storage-item.js)
+[Scriptlet source](../src/scriptlets/trusted-set-local-storage-item.js)
 * * *
 

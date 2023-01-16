@@ -3,8 +3,8 @@
 * [abort-on-property-read](#abort-on-property-read)
 * [abort-on-property-write](#abort-on-property-write)
 * [abort-on-stack-trace](#abort-on-stack-trace)
-* [adjust-setInterval](#adjust-setInterval)
-* [adjust-setTimeout](#adjust-setTimeout)
+* [adjust-setInterval](#adjust-setinterval)
+* [adjust-setTimeout](#adjust-settimeout)
 * [close-window](#close-window)
 * [debug-current-inline-script](#debug-current-inline-script)
 * [debug-on-property-read](#debug-on-property-read)
@@ -13,14 +13,14 @@
 * [disable-newtab-links](#disable-newtab-links)
 * [hide-in-shadow-dom](#hide-in-shadow-dom)
 * [json-prune](#json-prune)
-* [log-addEventListener](#log-addEventListener)
+* [log-addEventListener](#log-addeventlistener)
 * [log-eval](#log-eval)
 * [log-on-stack-trace](#log-on-stack-trace)
 * [log](#log)
 * [no-topics](#no-topics)
 * [noeval](#noeval)
 * [nowebrtc](#nowebrtc)
-* [prevent-addEventListener](#prevent-addEventListener)
+* [prevent-addEventListener](#prevent-addeventlistener)
 * [prevent-adfly](#prevent-adfly)
 * [prevent-bab](#prevent-bab)
 * [prevent-element-src-loading](#prevent-element-src-loading)
@@ -29,9 +29,9 @@
 * [prevent-fetch](#prevent-fetch)
 * [prevent-popads-net](#prevent-popads-net)
 * [prevent-refresh](#prevent-refresh)
-* [prevent-requestAnimationFrame](#prevent-requestAnimationFrame)
-* [prevent-setInterval](#prevent-setInterval)
-* [prevent-setTimeout](#prevent-setTimeout)
+* [prevent-requestAnimationFrame](#prevent-requestanimationframe)
+* [prevent-setInterval](#prevent-setinterval)
+* [prevent-setTimeout](#prevent-settimeout)
 * [prevent-window-open](#prevent-window-open)
 * [prevent-xhr](#prevent-xhr)
 * [remove-attr](#remove-attr)
@@ -205,7 +205,7 @@ example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'injectedScript')
 [Scriptlet source](../src/scriptlets/abort-on-stack-trace.js)
 * * *
 
-### <a id="adjust-setInterval"></a> ⚡️ adjust-setInterval
+### <a id="adjust-setinterval"></a> ⚡️ adjust-setInterval
 
 Adjusts delay for specified setInterval() callbacks.
 
@@ -254,7 +254,7 @@ defaults to match all callbacks; invalid regular expression will cause exit and 
 [Scriptlet source](../src/scriptlets/adjust-setInterval.js)
 * * *
 
-### <a id="adjust-setTimeout"></a> ⚡️ adjust-setTimeout
+### <a id="adjust-settimeout"></a> ⚡️ adjust-setTimeout
 
 Adjusts delay for specified setTimeout() callbacks.
 
@@ -523,7 +523,7 @@ e.g. 'ad.*.src' instead of 'ad.0.src ad.1.src ad.2.src ...'
 [Scriptlet source](../src/scriptlets/json-prune.js)
 * * *
 
-### <a id="log-addEventListener"></a> ⚡️ log-addEventListener
+### <a id="log-addeventlistener"></a> ⚡️ log-addEventListener
 
 Logs all addEventListener calls to the console.
 
@@ -627,7 +627,7 @@ example.org#%#//scriptlet('nowebrtc')
 [Scriptlet source](../src/scriptlets/nowebrtc.js)
 * * *
 
-### <a id="prevent-addEventListener"></a> ⚡️ prevent-addEventListener
+### <a id="prevent-addeventlistener"></a> ⚡️ prevent-addEventListener
 
 Prevents adding event listeners for the specified events and callbacks.
 
@@ -646,21 +646,22 @@ defaults to match all listeners; invalid regular expression will cause exit and 
 
 **Examples**
 1. Prevent all `click` listeners:
-```
+    ```
     example.org#%#//scriptlet('prevent-addEventListener', 'click')
-```
+    ```
 
 2. Prevent 'click' listeners with the callback body containing `searchString`.
-```
+    ```
     example.org#%#//scriptlet('prevent-addEventListener', 'click', 'searchString')
-```
+    ```
 
     For instance, this listener will not be called:
-```javascript
+
+    ```javascript
     el.addEventListener('click', () => {
         window.test = 'searchString';
     });
-```
+    ```
 
 [Scriptlet source](../src/scriptlets/prevent-addEventListener.js)
 * * *
@@ -877,7 +878,7 @@ example.org#%#//scriptlet('prevent-refresh'[, delay])
 [Scriptlet source](../src/scriptlets/prevent-refresh.js)
 * * *
 
-### <a id="prevent-requestAnimationFrame"></a> ⚡️ prevent-requestAnimationFrame
+### <a id="prevent-requestanimationframe"></a> ⚡️ prevent-requestAnimationFrame
 
 Prevents a `requestAnimationFrame` call
 if the text of the callback is matching the specified search string which does not start with `!`;
@@ -945,7 +946,7 @@ So do not use the scriptlet without any parameter in production filter lists.
 [Scriptlet source](../src/scriptlets/prevent-requestAnimationFrame.js)
 * * *
 
-### <a id="prevent-setInterval"></a> ⚡️ prevent-setInterval
+### <a id="prevent-setinterval"></a> ⚡️ prevent-setInterval
 
 Prevents a `setInterval` call if:
 1) the text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
@@ -1047,7 +1048,7 @@ and obviously it can not be matched by `matchCallback`.
 [Scriptlet source](../src/scriptlets/prevent-setInterval.js)
 * * *
 
-### <a id="prevent-setTimeout"></a> ⚡️ prevent-setTimeout
+### <a id="prevent-settimeout"></a> ⚡️ prevent-setTimeout
 
 Prevents a `setTimeout` call if:
 1) the text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
@@ -1174,36 +1175,36 @@ for accessing its methods (blur(), focus() etc.) and will be removed after the d
 
 **Examples**
 1. Prevent all `window.open` calls:
-```
+    ```
     example.org#%#//scriptlet('prevent-window-open')
-```
+    ```
 
 2. Prevent `window.open` for all URLs containing `example`:
-```
+    ```
     example.org#%#//scriptlet('prevent-window-open', 'example')
-```
+    ```
 
 3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
-```
+    ```
     example.org#%#//scriptlet('prevent-window-open', '/example\./')
-```
+    ```
 
 4. Prevent `window.open` for all URLs **NOT** containing `example`:
-```
+    ```
     example.org#%#//scriptlet('prevent-window-open', '!example')
-```
-
+    ```
+P
 Old syntax of prevent-window-open parameters:
 - `match` - optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
 - `search` - optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
 - `replacement` - optional, string to return prop value or property instead of window.open; defaults to return noopFunc.
 **Examples**
-```
+    ```
     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
     example.org#%#//scriptlet('prevent-window-open', '0', 'example')
     example.org#%#//scriptlet('prevent-window-open', '', '', 'trueFunc')
     example.org#%#//scriptlet('prevent-window-open', '1', '', '{propName=noopFunc}')
-```
+    ```
 
 > For better compatibility with uBO, old syntax is not recommended to use.
 
@@ -1416,16 +1417,17 @@ example.org#%#//scriptlet('remove-cookie'[, match])
 
 **Examples**
 1. Removes all cookies:
-```
+    ```
     example.org#%#//scriptlet('remove-cookie')
-```
+    ```
 
-2. Removes cookies which name contains `example` string.
-```
+2. Removes cookies which name contains `example` string:
+    ```
     example.org#%#//scriptlet('remove-cookie', 'example')
-```
+    ```
 
-    For instance this cookie will be removed
+    For instance this cookie will be removed:
+
     ```javascript
     document.cookie = '__example=randomValue';
     ```
