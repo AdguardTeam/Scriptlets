@@ -5,15 +5,18 @@
 ### Added
 - new `trusted-set-constant` scriptlet [#137](https://github.com/AdguardTeam/Scriptlets/issues/137)
 - `throwFunc` and `noopCallbackFunc` prop values for `set-constant` scriptlet
+- `recreateIframeForSlot` method mock to `googletagservices-gpt` redirect
 
 ### Changed
 
 - add decimal delay matching for `prevent-setInterval` and `prevent-setTimeout` [#247](https://github.com/AdguardTeam/Scriptlets/issues/247)
 - debug logging to include rule text when available
+- `getScriptletFunction` calls to throw error on unknown scriptlet names
 
 ### Fixed
 
 - `prevent-xhr` and `trusted-replace-xhr-response` closure bug on multiple requests [#261](https://github.com/AdguardTeam/Scriptlets/issues/261)
+- missing `googletagmanager-gtm` in compatibility table
 
 ## v1.7.20
 
