@@ -31,3 +31,4 @@ export * from './parse-flags';
 export * from './parse-keyword-value';
 export * from './random-id';
 export * from './throttle';
+export * from './shadow-dom-utils';

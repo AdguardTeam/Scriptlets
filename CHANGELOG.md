@@ -4,6 +4,7 @@
 
 ### Added
 - new `trusted-set-constant` scriptlet [#137](https://github.com/AdguardTeam/Scriptlets/issues/137)
+- new `inject-css-in-shadow-dom` scriptlet [#267](https://github.com/AdguardTeam/Scriptlets/issues/267)
 - `throwFunc` and `noopCallbackFunc` prop values for `set-constant` scriptlet
 - `recreateIframeForSlot` method mock to `googletagservices-gpt` redirect [#259](https://github.com/AdguardTeam/Scriptlets/issues/259)
 
