@@ -5,7 +5,7 @@
 ### Added
 - new `trusted-set-constant` scriptlet [#137](https://github.com/AdguardTeam/Scriptlets/issues/137)
 - `throwFunc` and `noopCallbackFunc` prop values for `set-constant` scriptlet
-- `recreateIframeForSlot` method mock to `googletagservices-gpt` redirect
+- `recreateIframeForSlot` method mock to `googletagservices-gpt` redirect [#259](https://github.com/AdguardTeam/Scriptlets/issues/259)
 
 ### Changed
 
