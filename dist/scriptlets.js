@@ -1,17 +1,19 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.7.20
+ * Version 1.8.2
  */
 
 (function () {
 
     /**
      * Concat dependencies to scriptlet code
+     *
      * @param {string} scriptlet string view of scriptlet
+     * @returns {string} string view of scriptlet with attached dependencies
      */
     function attachDependencies(scriptlet) {
-      var _scriptlet$injections = scriptlet.injections,
+      const _scriptlet$injections = scriptlet.injections,
         injections = _scriptlet$injections === void 0 ? [] : _scriptlet$injections;
       return injections.reduce(function (accum, dep) {
         return "".concat(accum, "\n").concat(dep.toString());
@@ -20,8 +22,10 @@
 
     /**
      * Add scriptlet call to existing code
-     * @param {Function} scriptlet
-     * @param {string} code
+     *
+     * @param {Function} scriptlet scriptlet func
+     * @param {string} code scriptlet's string representation
+     * @returns {string} wrapped scriptlet call
      */
     function addCall(scriptlet, code) {
       return "".concat(code, "\n    const updatedArgs = args ? [].concat(source).concat(args) : [source];\n    try {\n        ").concat(scriptlet.name, ".apply(this, updatedArgs);\n    } catch (e) {\n        console.log(e);\n    }");
@@ -29,12 +33,6 @@
 
     /**
      * Wrap function into IIFE (Immediately invoked function expression)
-     *
-     * @param {Source} source - object with scriptlet properties
-     * @param {string} code - scriptlet source code with dependencies
-     *
-     * @param redirect
-     * @returns {string} full scriptlet code
      *
      * @example
      * const source = {
@@ -49,15 +47,19 @@
      *      function noeval(source) { alert(source); }
      *      noeval.apply(this, args);
      * )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])`
+     * @param {Object} source - object with scriptlet properties
+     * @param {string} code - scriptlet source code with dependencies
+     * @param {boolean} redirect if function is redirect
+     * @returns {string} full scriptlet code
      */
     function passSourceAndProps(source, code) {
-      var redirect = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      let redirect = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
       if (source.hit) {
         source.hit = source.hit.toString();
       }
-      var sourceString = JSON.stringify(source);
-      var argsString = source.args ? "[".concat(source.args.map(JSON.stringify), "]") : undefined;
-      var params = argsString ? "".concat(sourceString, ", ").concat(argsString) : sourceString;
+      const sourceString = JSON.stringify(source);
+      const argsString = source.args ? "[".concat(source.args.map(JSON.stringify), "]") : undefined;
+      const params = argsString ? "".concat(sourceString, ", ").concat(argsString) : sourceString;
       if (redirect) {
         return "(function(source, args){\n".concat(code, "\n})(").concat(params, ");");
       }
@@ -66,7 +68,9 @@
 
     /**
      * Wrap code in no name function
+     *
      * @param {string} code which must be wrapped
+     * @returns {string} wrapped code
      */
     function wrapInNonameFunc(code) {
       return "function(source, args){\n".concat(code, "\n}");
@@ -76,12 +80,13 @@
      * Converts object to array of pairs.
      * Object.entries() polyfill because it is not supported by IE
      * https://caniuse.com/?search=Object.entries
-     * @param {Object} object
+     *
+     * @param {Object} object arbitrary object
      * @returns {Array} array of pairs
      */
-    var getObjectEntries = function getObjectEntries(object) {
-      var keys = Object.keys(object);
-      var entries = [];
+    const getObjectEntries = function getObjectEntries(object) {
+      const keys = Object.keys(object);
+      const entries = [];
       keys.forEach(function (key) {
         return entries.push([key, object[key]]);
       });
@@ -92,13 +97,14 @@
      * Converts array of pairs to object.
      * Object.fromEntries() polyfill because it is not supported by IE
      * https://caniuse.com/?search=Object.fromEntries
+     *
      * @param {Array} entries - array of pairs
-     * @returns {Object}
+     * @returns {Object} result object
      */
-    var getObjectFromEntries = function getObjectFromEntries(entries) {
-      var output = entries.reduce(function (acc, el) {
-        var key = el[0];
-        var value = el[1];
+    const getObjectFromEntries = function getObjectFromEntries(entries) {
+      const output = entries.reduce(function (acc, el) {
+        const key = el[0];
+        const value = el[1];
         acc[key] = value;
         return acc;
       }, {});
@@ -107,21 +113,23 @@
 
     /**
      * Checks whether the obj is an empty object
-     * @param {Object} obj
-     * @returns {boolean}
+     *
+     * @param {Object} obj arbitrary object
+     * @returns {boolean} if object is empty
      */
-    var isEmptyObject = function isEmptyObject(obj) {
+    const isEmptyObject = function isEmptyObject(obj) {
       return Object.keys(obj).length === 0 && !obj.prototype;
     };
 
     /**
-     * Checks whether the obj is an empty object
-     * @param {Object} obj
-     * @param {string} prop
-     * @returns {Object|null}
+     * Safely retrieve property descriptor
+     *
+     * @param {Object} obj target object
+     * @param {string} prop target property
+     * @returns {object|null} descriptor or null if it's not available or non-configurable
      */
-    var safeGetDescriptor = function safeGetDescriptor(obj, prop) {
-      var descriptor = Object.getOwnPropertyDescriptor(obj, prop);
+    const safeGetDescriptor = function safeGetDescriptor(obj, prop) {
+      const descriptor = Object.getOwnPropertyDescriptor(obj, prop);
       if (descriptor && descriptor.configurable) {
         return descriptor;
       }
@@ -130,13 +138,14 @@
 
     /**
      * Set getter and setter to property if it's configurable
+     *
      * @param {Object} object target object with property
      * @param {string} property property name
-     * @param {PropertyDescriptor} descriptor contains getter and setter functions
+     * @param {Object} descriptor contains getter and setter functions
      * @returns {boolean} is operation successful
      */
     function setPropertyAccess(object, property, descriptor) {
-      var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+      const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
       if (currentDescriptor && !currentDescriptor.configurable) {
         return false;
       }
@@ -147,44 +156,48 @@
     /**
      * Determines whether the passed value is NaN
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isNaN
-     * @param {*} num
-     * @returns {boolean}
+     *
+     * @param {any} num arbitrary value
+     * @returns {boolean} if provided value is NaN
      */
-    var nativeIsNaN = function nativeIsNaN(num) {
+    const nativeIsNaN = function nativeIsNaN(num) {
       // eslint-disable-next-line no-restricted-properties
-      var native = Number.isNaN || window.isNaN;
+      const native = Number.isNaN || window.isNaN;
       return native(num);
     };
 
     /**
      * Determines whether the passed value is a finite number
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isFinite
-     * @param {*} num
-     * @returns {boolean}
+     *
+     * @param {any} num arbitrary value
+     * @returns {boolean} if provided value is finite
      */
-    var nativeIsFinite = function nativeIsFinite(num) {
+    const nativeIsFinite = function nativeIsFinite(num) {
       // eslint-disable-next-line no-restricted-properties
-      var native = Number.isFinite || window.isFinite;
+      const native = Number.isFinite || window.isFinite;
       return native(num);
     };
 
     /**
      * Parses string for a number, if possible, otherwise returns null.
-     * @param {*} rawString
-     * @returns {number|null}
+     *
+     * @param {any} rawString arbitrary string
+     * @returns {number|null} number or null if string not parsable
      */
-    var getNumberFromString = function getNumberFromString(rawString) {
-      var parsedDelay = parseInt(rawString, 10);
-      var validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
+    const getNumberFromString = function getNumberFromString(rawString) {
+      const parsedDelay = parseInt(rawString, 10);
+      const validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
       return validDelay;
     };
 
     /**
      * Generate a random integer between two values, inclusive
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#getting_a_random_integer_between_two_values_inclusive
-     * @param {number} min
-     * @param {number} max
-     * @returns {number}
+     *
+     * @param {number} min range minimum
+     * @param {number} max range maximum
+     * @returns {number} random number
      */
     function getRandomIntInclusive(min, max) {
       min = Math.ceil(min);
@@ -194,63 +207,68 @@
 
     /**
      * String.prototype.replaceAll polyfill
+     *
      * @param {string} input input string
      * @param {string} substr to look for
      * @param {string} newSubstr replacement
-     * @returns {string}
+     * @returns {string} result string
      */
-    var replaceAll = function replaceAll(input, substr, newSubstr) {
+    const replaceAll = function replaceAll(input, substr, newSubstr) {
       return input.split(substr).join(newSubstr);
     };
 
     /**
      * Escapes special chars in string
-     * @param {string} str
-     * @returns {string}
+     *
+     * @param {string} str raw string
+     * @returns {string} string with escaped special characters
      */
-    var escapeRegExp = function escapeRegExp(str) {
+    const escapeRegExp = function escapeRegExp(str) {
       return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     };
 
     /**
      * A literal string or regexp pattern wrapped in forward slashes.
      * For example, 'simpleStr' or '/adblock|_0x/'.
+     *
      * @typedef {string} RawStrPattern
      */
 
     /**
      * Converts string to the regexp
      * TODO think about nested dependencies, but be careful with dependency loops
+     *
      * @param {RawStrPattern} [input=''] literal string or regexp pattern; defaults to '' (empty string)
      * @returns {RegExp} regular expression; defaults to /.?/
      * @throws {SyntaxError} Throw an error for invalid regex pattern
      */
-    var toRegExp = function toRegExp() {
-      var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-      var DEFAULT_VALUE = '.?';
-      var FORWARD_SLASH = '/';
+    const toRegExp = function toRegExp() {
+      let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+      const DEFAULT_VALUE = '.?';
+      const FORWARD_SLASH = '/';
       if (input === '') {
         return new RegExp(DEFAULT_VALUE);
       }
       if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
         return new RegExp(input.slice(1, -1));
       }
-      var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       return new RegExp(escaped);
     };
 
     /**
      * Checks whether the input string can be converted to regexp
+     *
      * @param {RawStrPattern} input literal string or regexp pattern
-     * @returns {boolean}
+     * @returns {boolean} if input can be converted to regexp
      */
-    var isValidStrPattern = function isValidStrPattern(input) {
-      var FORWARD_SLASH = '/';
-      var str = escapeRegExp(input);
+    const isValidStrPattern = function isValidStrPattern(input) {
+      const FORWARD_SLASH = '/';
+      let str = escapeRegExp(input);
       if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
         str = input.slice(1, -1);
       }
-      var isValid;
+      let isValid;
       try {
         isValid = new RegExp(str);
         isValid = true;
@@ -262,21 +280,24 @@
 
     /**
      * Get string before regexp first match
-     * @param {string} str
-     * @param {RegExp} rx
+     *
+     * @param {string} str input string
+     * @param {RegExp} rx find pattern
+     * @returns {string} result string
      */
-    var getBeforeRegExp = function getBeforeRegExp(str, rx) {
-      var index = str.search(rx);
+    const getBeforeRegExp = function getBeforeRegExp(str, rx) {
+      const index = str.search(rx);
       return str.substring(0, index);
     };
 
     /**
      * Checks whether the string starts with the substring
+     *
      * @param {string} str full string
      * @param {string} prefix substring
-     * @returns {boolean}
+     * @returns {boolean} if string start with the substring
      */
-    var startsWith$1 = function startsWith(str, prefix) {
+    const startsWith$1 = function startsWith(str, prefix) {
       // if str === '', (str && false) will return ''
       // that's why it has to be !!str
       return !!str && str.indexOf(prefix) === 0;
@@ -284,35 +305,38 @@
 
     /**
      * Checks whether the string ends with the substring
+     *
      * @param {string} str full string
      * @param {string} ending substring
-     * @returns {boolean}
+     * @returns {boolean} string ends with the substring
      */
-    var endsWith = function endsWith(str, ending) {
+    const endsWith = function endsWith(str, ending) {
       // if str === '', (str && false) will return ''
       // that's why it has to be !!str
       return !!str && str.lastIndexOf(ending) === str.length - ending.length;
     };
-    var substringAfter$1 = function substringAfter(str, separator) {
+    const substringAfter$1 = function substringAfter(str, separator) {
       if (!str) {
         return str;
       }
-      var index = str.indexOf(separator);
+      const index = str.indexOf(separator);
       return index < 0 ? '' : str.substring(index + separator.length);
     };
-    var substringBefore = function substringBefore(str, separator) {
+    const substringBefore = function substringBefore(str, separator) {
       if (!str || !separator) {
         return str;
       }
-      var index = str.indexOf(separator);
+      const index = str.indexOf(separator);
       return index < 0 ? str : str.substring(0, index);
     };
 
     /**
      * Wrap str in single quotes and replaces single quotes to double one
-     * @param {string} str
+     *
+     * @param {string} str input string
+     * @returns {string} string with swapped quotes
      */
-    var wrapInSingleQuotes = function wrapInSingleQuotes(str) {
+    const wrapInSingleQuotes = function wrapInSingleQuotes(str) {
       if (str[0] === '\'' && str[str.length - 1] === '\'' || str[0] === '"' && str[str.length - 1] === '"') {
         str = str.substring(1, str.length - 1);
       }
@@ -323,27 +347,30 @@
 
     /**
      * Returns substring enclosed in the widest braces
-     * @param {string} str
+     *
+     * @param {string} str input string
+     * @returns {string} substring
      */
-    var getStringInBraces = function getStringInBraces(str) {
-      var firstIndex = str.indexOf('(');
-      var lastIndex = str.lastIndexOf(')');
+    const getStringInBraces = function getStringInBraces(str) {
+      const firstIndex = str.indexOf('(');
+      const lastIndex = str.lastIndexOf(')');
       return str.substring(firstIndex + 1, lastIndex);
     };
 
     /**
      * Prepares RTCPeerConnection config as string for proper logging
-     * @param {*} config
+     *
+     * @param {any} config RTC config
      * @returns {string} stringified config
-    */
-    var convertRtcConfigToString = function convertRtcConfigToString(config) {
-      var UNDEF_STR = 'undefined';
-      var str = UNDEF_STR;
+     */
+    const convertRtcConfigToString = function convertRtcConfigToString(config) {
+      const UNDEF_STR = 'undefined';
+      let str = UNDEF_STR;
       if (config === null) {
         str = 'null';
       } else if (config instanceof Object) {
-        var SERVERS_PROP_NAME = 'iceServers';
-        var URLS_PROP_NAME = 'urls';
+        const SERVERS_PROP_NAME = 'iceServers';
+        const URLS_PROP_NAME = 'urls';
         /*
             const exampleConfig = {
                 'iceServers': [
@@ -361,12 +388,13 @@
     /**
      * Checks whether the match input string can be converted to regexp,
      * used for match inputs with possible negation
+     *
      * @param {string} match literal string or regexp pattern
-     * @returns {boolean}
+     * @returns {boolean} true if input can be converted to regexp
      */
-    var isValidMatchStr = function isValidMatchStr(match) {
-      var INVERT_MARKER = '!';
-      var str = match;
+    const isValidMatchStr = function isValidMatchStr(match) {
+      const INVERT_MARKER = '!';
+      let str = match;
       if (startsWith$1(match, INVERT_MARKER)) {
         str = match.slice(1);
       }
@@ -376,79 +404,81 @@
     /**
      * Validates the match input number,
      * used for match inputs with possible negation
+     *
      * @param {string} match string of match number
-     * @returns {boolean}
+     * @returns {boolean} if match number is valid
      */
-    var isValidMatchNumber = function isValidMatchNumber(match) {
-      var INVERT_MARKER = '!';
-      var str = match;
+    const isValidMatchNumber = function isValidMatchNumber(match) {
+      const INVERT_MARKER = '!';
+      let str = match;
       if (startsWith$1(match, INVERT_MARKER)) {
         str = match.slice(1);
       }
-      var num = parseFloat(str);
+      const num = parseFloat(str);
       return !nativeIsNaN(num) && nativeIsFinite(num);
     };
 
     /**
      * @typedef {Object} MatchData
-     * @property {boolean} isInvertedMatch
-     * @property {RegExp} matchRegexp
+     * @property {boolean} isInvertedMatch if matching should be inverted
+     * @property {RegExp} matchRegexp match value parsed into regex
      */
 
     /**
      * Parses match arg with possible negation for no matching.
      * Needed for prevent-setTimeout, prevent-setInterval,
      * prevent-requestAnimationFrame and prevent-window-open
-     * @param {string} match
-     * @returns {MatchData}
+     *
+     * @param {string} match matching arg
+     * @returns {MatchData} data prepared for matching
      */
-    var parseMatchArg = function parseMatchArg(match) {
-      var INVERT_MARKER = '!';
-      var isInvertedMatch = startsWith$1(match, INVERT_MARKER);
-      var matchValue = isInvertedMatch ? match.slice(1) : match;
-      var matchRegexp = toRegExp(matchValue);
+    const parseMatchArg = function parseMatchArg(match) {
+      const INVERT_MARKER = '!';
+      const isInvertedMatch = startsWith$1(match, INVERT_MARKER);
+      const matchValue = isInvertedMatch ? match.slice(1) : match;
+      const matchRegexp = toRegExp(matchValue);
       return {
-        isInvertedMatch: isInvertedMatch,
-        matchRegexp: matchRegexp
+        isInvertedMatch,
+        matchRegexp
       };
     };
 
     /**
      * @typedef {Object} DelayData
-     * @property {boolean} isInvertedDelayMatch
-     * @property {number|null} delayMatch
+     * @property {boolean} isInvertedDelayMatch if matching should be inverted
+     * @property {number|null} delayMatch parsed delay or null if delay is invalid
      */
 
     /**
      * Parses delay arg with possible negation for no matching.
      * Needed for prevent-setTimeout and prevent-setInterval
-     * @param {string} delay
-     * @returns {DelayData} `{ isInvertedDelayMatch, delayMatch }` where:
-     * `isInvertedDelayMatch` is boolean,
-     * `delayMatch` is number OR null for invalid `delay`
+     *
+     * @param {string} delay scriptlet's delay arg
+     * @returns {DelayData} parsed delay data
      */
-    var parseDelayArg = function parseDelayArg(delay) {
-      var INVERT_MARKER = '!';
-      var isInvertedDelayMatch = startsWith$1(delay, INVERT_MARKER);
-      var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
+    const parseDelayArg = function parseDelayArg(delay) {
+      const INVERT_MARKER = '!';
+      const isInvertedDelayMatch = startsWith$1(delay, INVERT_MARKER);
+      let delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
       delayValue = parseInt(delayValue, 10);
-      var delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
+      const delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
       return {
-        isInvertedDelayMatch: isInvertedDelayMatch,
-        delayMatch: delayMatch
+        isInvertedDelayMatch,
+        delayMatch
       };
     };
 
     /**
      * Converts object to string for logging
+     *
      * @param {Object} obj data object
-     * @returns {string}
+     * @returns {string} object's string representation
      */
-    var objectToString = function objectToString(obj) {
+    const objectToString = function objectToString(obj) {
       return isEmptyObject(obj) ? '{}' : getObjectEntries(obj).map(function (pair) {
-        var key = pair[0];
-        var value = pair[1];
-        var recordValueStr = value;
+        const key = pair[0];
+        const value = pair[1];
+        let recordValueStr = value;
         if (value instanceof Object) {
           recordValueStr = "{ ".concat(objectToString(value), " }");
         }
@@ -458,11 +488,12 @@
 
     /**
      * Converts types into a string
-     * @param {*} value
-     * @returns {string}
+     *
+     * @param {any} value input value type
+     * @returns {string} type's string representation
      */
-    var convertTypeToString = function convertTypeToString(value) {
-      var output;
+    const convertTypeToString = function convertTypeToString(value) {
+      let output;
       if (typeof value === 'undefined') {
         output = 'undefined';
       } else if (typeof value === 'object') {
@@ -479,14 +510,15 @@
 
     /**
      * Generate a random string, a length of the string is provided as an argument
-     * @param {number} length
-     * @returns {string}
+     *
+     * @param {number} length output's length
+     * @returns {string} random string
      */
     function getRandomStrByLength(length) {
-      var result = '';
-      var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~';
-      var charactersLength = characters.length;
-      for (var i = 0; i < length; i += 1) {
+      let result = '';
+      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~';
+      const charactersLength = characters.length;
+      for (let i = 0; i < length; i += 1) {
         result += characters.charAt(Math.floor(Math.random() * charactersLength));
       }
       return result;
@@ -494,68 +526,107 @@
 
     /**
      * Generate a random string
-     * @param {string} customResponseText
+     *
+     * @param {string} customResponseText response text to include in output
      * @returns {string|null} random string or null if passed argument is invalid
      */
     function generateRandomResponse(customResponseText) {
-      var customResponse = customResponseText;
+      let customResponse = customResponseText;
       if (customResponse === 'true') {
         // Generate random alphanumeric string of 10 symbols
         customResponse = Math.random().toString(36).slice(-10);
         return customResponse;
       }
       customResponse = customResponse.replace('length:', '');
-      var rangeRegex = /^\d+-\d+$/;
+      const rangeRegex = /^\d+-\d+$/;
       // Return empty string if range is invalid
       if (!rangeRegex.test(customResponse)) {
         return null;
       }
-      var rangeMin = getNumberFromString(customResponse.split('-')[0]);
-      var rangeMax = getNumberFromString(customResponse.split('-')[1]);
+      let rangeMin = getNumberFromString(customResponse.split('-')[0]);
+      let rangeMax = getNumberFromString(customResponse.split('-')[1]);
       if (!nativeIsFinite(rangeMin) || !nativeIsFinite(rangeMax)) {
         return null;
       }
 
       // If rangeMin > rangeMax, swap variables
       if (rangeMin > rangeMax) {
-        var temp = rangeMin;
+        const temp = rangeMin;
         rangeMin = rangeMax;
         rangeMax = temp;
       }
-      var LENGTH_RANGE_LIMIT = 500 * 1000;
+      const LENGTH_RANGE_LIMIT = 500 * 1000;
       if (rangeMax > LENGTH_RANGE_LIMIT) {
         return null;
       }
-      var length = getRandomIntInclusive(rangeMin, rangeMax);
+      const length = getRandomIntInclusive(rangeMin, rangeMax);
       customResponse = getRandomStrByLength(length);
       return customResponse;
     }
 
-    function _defineProperty(obj, key, value) {
-      if (key in obj) {
-        Object.defineProperty(obj, key, {
-          value: value,
-          enumerable: true,
-          configurable: true,
-          writable: true
-        });
-      } else {
-        obj[key] = value;
+    /**
+     * Infers value from string argument
+     * Inferring goes from more specific to more ambiguous options
+     * Arrays, objects and strings are parsed via JSON.parse
+     *
+     * @param {string} value arbitrary string
+     * @returns {any} converted value
+     * @throws an error on unexpected input
+     */
+    function inferValue(value) {
+      if (value === 'undefined') {
+        return undefined;
       }
-      return obj;
+      if (value === 'false') {
+        return false;
+      }
+      if (value === 'true') {
+        return true;
+      }
+      if (value === 'null') {
+        return null;
+      }
+      if (value === 'NaN') {
+        return NaN;
+      }
+
+      // Number class constructor works 2 times faster than JSON.parse
+      // and wont interpret mixed inputs like '123asd' as parseFloat would
+      const MAX_ALLOWED_NUM = 32767;
+      const numVal = Number(value);
+      if (!nativeIsNaN(numVal)) {
+        if (Math.abs(numVal) > MAX_ALLOWED_NUM) {
+          throw new Error('number values bigger than 32767 are not allowed');
+        }
+        return numVal;
+      }
+      let errorMessage = "'".concat(value, "' value type can't be inferred");
+      try {
+        // Parse strings, arrays and objects represented as JSON strings
+        // '[1,2,3,"string"]' > [1, 2, 3, 'string']
+        // '"arbitrary string"' > 'arbitrary string'
+        const parsableVal = JSON.parse(value);
+        if (parsableVal instanceof Object || typeof parsableVal === 'string') {
+          return parsableVal;
+        }
+      } catch (e) {
+        errorMessage += ": ".concat(e);
+      }
+      throw new TypeError(errorMessage);
     }
-    var defineProperty = _defineProperty;
 
     /**
      * Iterate over iterable argument and evaluate current state with transitions
-     * @param {string} init first transition name
-     * @param {Array|Collection|string} iterable
+     *
+     * @param {Array|string} iterable rule or list or rules
      * @param {Object} transitions transtion functions
+     * @param {string} init first transition name
      * @param {any} args arguments which should be passed to transition functions
+     * @returns {string} state
      */
     function iterateWithTransitions(iterable, transitions, init, args) {
-      var state = init || Object.keys(transitions)[0];
-      for (var i = 0; i < iterable.length; i += 1) {
+      let state = init || Object.keys(transitions)[0];
+      for (let i = 0; i < iterable.length; i += 1) {
         state = transitions[state](iterable, i, args);
       }
       return state;
@@ -564,51 +635,54 @@
     /**
      * AdGuard scriptlet rule mask
      */
-    var ADG_SCRIPTLET_MASK = '#//scriptlet';
+    const ADG_SCRIPTLET_MASK = '#//scriptlet';
 
     /**
      * Helper to accumulate an array of strings char by char
+     *
+     * @returns {Object} object with helper methods
      */
-    var wordSaver = function wordSaver() {
-      var str = '';
-      var strs = [];
-      var saveSymb = function saveSymb(s) {
+    const wordSaver = function wordSaver() {
+      let str = '';
+      const strs = [];
+      const saveSymb = function saveSymb(s) {
         str += s;
         return str;
       };
-      var saveStr = function saveStr() {
+      const saveStr = function saveStr() {
         strs.push(str);
         str = '';
       };
-      var getAll = function getAll() {
-        return [].concat(strs);
+      const getAll = function getAll() {
+        return [...strs];
       };
       return {
-        saveSymb: saveSymb,
-        saveStr: saveStr,
-        getAll: getAll
+        saveSymb,
+        saveStr,
+        getAll
       };
     };
-    var substringAfter = function substringAfter(str, separator) {
+    const substringAfter = function substringAfter(str, separator) {
       if (!str) {
         return str;
       }
-      var index = str.indexOf(separator);
+      const index = str.indexOf(separator);
       return index < 0 ? '' : str.substring(index + separator.length);
     };
 
     /**
      * Parse and validate scriptlet rule
-     * @param {*} ruleText
-     * @returns {{name: string, args: Array<string>}}
+     *
+     * @param {string} ruleText rule string
+     * @returns {{name: string, args: Array<string>}} parsed rule
+     * @throws
      */
-    var parseRule = function parseRule(ruleText) {
-      var _transitions;
+    const parseRule = function parseRule(ruleText) {
       ruleText = substringAfter(ruleText, ADG_SCRIPTLET_MASK);
       /**
        * Transition names
        */
-      var TRANSITION = {
+      const TRANSITION = {
         OPENED: 'opened',
         PARAM: 'param',
         CLOSED: 'closed'
@@ -616,15 +690,18 @@
 
       /**
        * Transition function: the current index position in start, end or between params
-       * @param {string} rule
-       * @param {number} index
-       * @param {Object} Object
-       * @property {Object} Object.sep contains prop symb with current separator char
+       *
+       * @param {string} rule rule string
+       * @param {number} index index
+       * @param {Object} Object helper object
+       * @param {Object} Object.sep contains prop symb with current separator char
+       * @throws {string} throws if given rule is not a scriptlet
+       * @returns {string} transition
        */
-      var opened = function opened(rule, index, _ref) {
-        var sep = _ref.sep;
-        var char = rule[index];
-        var transition;
+      const opened = function opened(rule, index, _ref) {
+        let sep = _ref.sep;
+        const char = rule[index];
+        let transition;
         switch (char) {
           case ' ':
           case '(':
@@ -654,22 +731,24 @@
       };
       /**
        * Transition function: the current index position inside param
-       * @param {string} rule
-       * @param {number} index
-       * @param {Object} Object
-       * @property {Object} Object.sep contains prop `symb` with current separator char
-       * @property {Object} Object.saver helper which allow to save strings by car by char
+       *
+       * @param {string} rule rule string
+       * @param {number} index index
+       * @param {Object} Object helper object
+       * @param {Object} Object.sep contains prop `symb` with current separator char
+       * @param {Object} Object.saver helper which allow to save strings by car by char
+       * @returns {void}
        */
-      var param = function param(rule, index, _ref2) {
-        var saver = _ref2.saver,
+      const param = function param(rule, index, _ref2) {
+        let saver = _ref2.saver,
           sep = _ref2.sep;
-        var char = rule[index];
+        const char = rule[index];
         switch (char) {
           case '\'':
           case '"':
             {
-              var preIndex = index - 1;
-              var before = rule[preIndex];
+              const preIndex = index - 1;
+              const before = rule[preIndex];
               if (char === sep.symb && before !== '\\') {
                 sep.symb = null;
                 saver.saveStr();
@@ -684,19 +763,23 @@
             }
         }
       };
-      var transitions = (_transitions = {}, defineProperty(_transitions, TRANSITION.OPENED, opened), defineProperty(_transitions, TRANSITION.PARAM, param), defineProperty(_transitions, TRANSITION.CLOSED, function () {}), _transitions);
-      var sep = {
+      const transitions = {
+        [TRANSITION.OPENED]: opened,
+        [TRANSITION.PARAM]: param,
+        [TRANSITION.CLOSED]: function () {}
+      };
+      const sep = {
         symb: null
       };
-      var saver = wordSaver();
-      var state = iterateWithTransitions(ruleText, transitions, TRANSITION.OPENED, {
-        sep: sep,
-        saver: saver
+      const saver = wordSaver();
+      const state = iterateWithTransitions(ruleText, transitions, TRANSITION.OPENED, {
+        sep,
+        saver
       });
       if (state !== 'closed') {
         throw new Error("Invalid scriptlet rule ".concat(ruleText));
       }
-      var args = saver.getAll();
+      const args = saver.getAll();
       return {
         name: args[0],
         args: args.slice(1)
@@ -705,20 +788,22 @@
 
     /**
      * Validates event type
-     * @param {*} type
-     * @returns {boolean}
+     *
+     * @param {any} type event type
+     * @returns {boolean} if type is valid
      */
-    var validateType = function validateType(type) {
+    const validateType = function validateType(type) {
       // https://github.com/AdguardTeam/Scriptlets/issues/125
       return typeof type !== 'undefined';
     };
 
     /**
      * Validates event listener
-     * @param {*} listener
-     * @returns {boolean}
+     *
+     * @param {any} listener event listener
+     * @returns {boolean} if listener callback is valid
      */
-    var validateListener = function validateListener(listener) {
+    const validateListener = function validateListener(listener) {
       // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#parameters
       return typeof listener !== 'undefined' && (typeof listener === 'function' || typeof listener === 'object'
       // https://github.com/AdguardTeam/Scriptlets/issues/76
@@ -726,53 +811,61 @@
     };
 
     /**
+     * @typedef {object|Function|null} EventListener
+     */
+
+    /**
      * Serialize valid event listener
      * https://developer.mozilla.org/en-US/docs/Web/API/EventListener
+     *
      * @param {EventListener} listener valid listener
-     * @returns {string}
+     * @returns {string} listener string
      */
-    var listenerToString = function listenerToString(listener) {
+    const listenerToString = function listenerToString(listener) {
       return typeof listener === 'function' ? listener.toString() : listener.handleEvent.toString();
     };
 
-    var shouldMatchAnyDelay = function shouldMatchAnyDelay(delay) {
+    const shouldMatchAnyDelay = function shouldMatchAnyDelay(delay) {
       return delay === '*';
     };
 
     /**
      * Handles input delay value
-     * @param {*} delay
+     *
+     * @param {any} delay matchDelay argument of adjust-* scriptlets
      * @returns {number} proper number delay value
      */
-    var getMatchDelay = function getMatchDelay(delay) {
-      var DEFAULT_DELAY = 1000;
-      var parsedDelay = parseInt(delay, 10);
-      var delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY // default scriptlet value
+    const getMatchDelay = function getMatchDelay(delay) {
+      const DEFAULT_DELAY = 1000;
+      const parsedDelay = parseInt(delay, 10);
+      const delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY // default scriptlet value
       : parsedDelay;
       return delayMatch;
     };
 
     /**
      * Checks delay match condition
-     * @param {*} inputDelay
-     * @param {number} realDelay
-     * @returns {boolean}
+     *
+     * @param {any} inputDelay matchDelay argument of adjust-* scriptlets
+     * @param {number} realDelay delay argument of setTimeout/setInterval
+     * @returns {boolean} if given delays match
      */
-    var isDelayMatched = function isDelayMatched(inputDelay, realDelay) {
+    const isDelayMatched = function isDelayMatched(inputDelay, realDelay) {
       return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
     };
 
     /**
      * Handles input boost value
-     * @param {*} boost
+     *
+     * @param {any} boost boost argument of adjust-* scriptlets
      * @returns {number} proper number boost multiplier value
      */
-    var getBoostMultiplier = function getBoostMultiplier(boost) {
-      var DEFAULT_MULTIPLIER = 0.05;
-      var MIN_MULTIPLIER = 0.02;
-      var MAX_MULTIPLIER = 50;
-      var parsedBoost = parseFloat(boost);
-      var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER // default scriptlet value
+    const getBoostMultiplier = function getBoostMultiplier(boost) {
+      const DEFAULT_MULTIPLIER = 0.05;
+      const MIN_MULTIPLIER = 0.02;
+      const MAX_MULTIPLIER = 50;
+      const parsedBoost = parseFloat(boost);
+      let boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER // default scriptlet value
       : parsedBoost;
       if (boostMultiplier < MIN_MULTIPLIER) {
         boostMultiplier = MIN_MULTIPLIER;
@@ -787,17 +880,19 @@
      * Some browsers do not support Array.prototype.flat()
      * for example, Opera 42 which is used for browserstack tests
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flat
-     * @param {Array} input
+     *
+     * @param {Array} input arbitrary array
+     * @returns {Array} flattened array
      */
-    var flatten = function flatten(input) {
-      var stack = [];
+    const flatten = function flatten(input) {
+      const stack = [];
       input.forEach(function (el) {
         return stack.push(el);
       });
-      var res = [];
+      const res = [];
       while (stack.length) {
         // pop value from stack
-        var next = stack.pop();
+        const next = stack.pop();
         if (Array.isArray(next)) {
           // push back array items, won't modify the original input
           next.forEach(function (el) {
@@ -813,25 +908,21 @@
 
     /**
      * Predicate method to check if the array item exists
-     * @param {any} item
-     * @returns {boolean}
+     *
+     * @param {any} item arbitrary
+     * @returns {boolean} if item is truthy or not
      */
-    var isExisting = function isExisting(item) {
+    const isExisting = function isExisting(item) {
       return !!item;
     };
-
-    /**
-     * @typedef { import('../scriptlets/index').Source } Source
-     */
 
     /**
      * Checks whether the input path is supported
      *
      * @param {string} rawPath input path
-     *
-     * @returns {boolean}
+     * @returns {boolean} if cookie path is valid
      */
-    var isValidCookiePath = function isValidCookiePath(rawPath) {
+    const isValidCookiePath = function isValidCookiePath(rawPath) {
       return rawPath === '/' || rawPath === 'none';
     };
 
@@ -839,11 +930,10 @@
      * Returns 'path=/' if rawPath is '/'
      * or empty string '' for other cases, `rawPath === 'none'` included
      *
-     * @param {string} rawPath
-     *
-     * @returns {string}
+     * @param {string} rawPath path argument of *set-cookie-* scriptlets
+     * @returns {string} cookie path
      */
-    var getCookiePath = function getCookiePath(rawPath) {
+    const getCookiePath = function getCookiePath(rawPath) {
       if (rawPath === '/') {
         return 'path=/';
       }
@@ -855,13 +945,12 @@
     /**
      * Combines input cookie name, value, and path into string.
      *
-     * @param {string} rawName
-     * @param {string} rawValue
-     * @param {string} rawPath
-     *
+     * @param {string} rawName name argument of *set-cookie-* scriptlets
+     * @param {string} rawValue value argument of *set-cookie-* scriptlets
+     * @param {string} rawPath path argument of *set-cookie-* scriptlets
      * @returns {string|null} string OR `null` if path is not supported
      */
-    var concatCookieNameValuePath = function concatCookieNameValuePath(rawName, rawValue, rawPath) {
+    const concatCookieNameValuePath = function concatCookieNameValuePath(rawName, rawValue, rawPath) {
       // eslint-disable-next-line max-len
       return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
     };
@@ -870,14 +959,13 @@
      * Gets supported cookie value
      *
      * @param {string} value input cookie value
-     *
      * @returns {string|null} valid cookie string if ok OR null if not
      */
-    var getLimitedCookieValue = function getLimitedCookieValue(value) {
+    const getLimitedCookieValue = function getLimitedCookieValue(value) {
       if (!value) {
         return null;
       }
-      var validValue;
+      let validValue;
       if (value === 'true') {
         validValue = 'true';
       } else if (value === 'True') {
@@ -914,20 +1002,21 @@
 
     /**
      * Parses cookie string into object
+     *
      * @param {string} cookieString string that conforms to document.cookie format
      * @returns {Object} key:value object that corresponds with incoming cookies keys and values
      */
-    var parseCookieString = function parseCookieString(cookieString) {
-      var COOKIE_DELIMITER = '=';
-      var COOKIE_PAIRS_DELIMITER = ';';
+    const parseCookieString = function parseCookieString(cookieString) {
+      const COOKIE_DELIMITER = '=';
+      const COOKIE_PAIRS_DELIMITER = ';';
 
       // Get raw cookies
-      var cookieChunks = cookieString.split(COOKIE_PAIRS_DELIMITER);
-      var cookieData = {};
+      const cookieChunks = cookieString.split(COOKIE_PAIRS_DELIMITER);
+      const cookieData = {};
       cookieChunks.forEach(function (singleCookie) {
-        var cookieKey;
-        var cookieValue;
-        var delimiterIndex = singleCookie.indexOf(COOKIE_DELIMITER);
+        let cookieKey;
+        let cookieValue;
+        const delimiterIndex = singleCookie.indexOf(COOKIE_DELIMITER);
         if (delimiterIndex === -1) {
           cookieKey = singleCookie.trim();
         } else {
@@ -942,19 +1031,20 @@
 
     /**
      * Check if cookie with specified name and value is present in a cookie string
-     * @param {string} cookieString
-     * @param {string} name
-     * @param {string} value
-     * @returns {boolean}
+     *
+     * @param {string} cookieString 'document.cookie'-like string
+     * @param {string} name name argument of *set-cookie-* scriptlets
+     * @param {string} value value argument of *set-cookie-* scriptlets
+     * @returns {boolean} if cookie is already set
      */
-    var isCookieSetWithValue = function isCookieSetWithValue(cookieString, name, value) {
+    const isCookieSetWithValue = function isCookieSetWithValue(cookieString, name, value) {
       return cookieString.split(';').some(function (cookieStr) {
-        var pos = cookieStr.indexOf('=');
+        const pos = cookieStr.indexOf('=');
         if (pos === -1) {
           return false;
         }
-        var cookieName = cookieStr.slice(0, pos).trim();
-        var cookieValue = cookieStr.slice(pos + 1).trim();
+        const cookieName = cookieStr.slice(0, pos).trim();
+        const cookieValue = cookieStr.slice(pos + 1).trim();
         return name === cookieName && value === cookieValue;
       });
     };
@@ -965,13 +1055,13 @@
      * @param {string} offsetExpiresSec input offset param in seconds
      * @returns {number|null} number is milliseconds OR null
      */
-    var getTrustedCookieOffsetMs = function getTrustedCookieOffsetMs(offsetExpiresSec) {
-      var ONE_YEAR_EXPIRATION_KEYWORD = '1year';
-      var ONE_DAY_EXPIRATION_KEYWORD = '1day';
-      var MS_IN_SEC = 1000;
-      var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
-      var SECONDS_IN_DAY = 24 * 60 * 60;
-      var parsedSec;
+    const getTrustedCookieOffsetMs = function getTrustedCookieOffsetMs(offsetExpiresSec) {
+      const ONE_YEAR_EXPIRATION_KEYWORD = '1year';
+      const ONE_DAY_EXPIRATION_KEYWORD = '1day';
+      const MS_IN_SEC = 1000;
+      const SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
+      const SECONDS_IN_DAY = 24 * 60 * 60;
+      let parsedSec;
       // Set predefined expire value if corresponding keyword was passed
       if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
         parsedSec = SECONDS_IN_YEAR;
@@ -989,36 +1079,51 @@
 
     /**
      * Noop function
-     * @return {undefined} undefined
+     *
+     * @returns {undefined} undefined
      */
-    var noopFunc = function noopFunc() {};
+    const noopFunc = function noopFunc() {};
+
+    /**
+     * Function returns noopFunc
+     *
+     * @returns {Function} noopFunc
+     */
+    const noopCallbackFunc = function noopCallbackFunc() {
+      return noopFunc;
+    };
 
     /**
      * Function returns null
-     * @return {null} null
+     *
+     * @returns {null} null
      */
-    var noopNull = function noopNull() {
+    const noopNull = function noopNull() {
       return null;
     };
 
     /**
      * Function returns true
-     * @return {boolean} true
+     *
+     * @returns {boolean} true
      */
-    var trueFunc = function trueFunc() {
+    const trueFunc = function trueFunc() {
       return true;
     };
 
     /**
      * Function returns false
-     * @return {boolean} false
+     *
+     * @returns {boolean} false
      */
-    var falseFunc = function falseFunc() {
+    const falseFunc = function falseFunc() {
       return false;
     };
 
     /**
      * Function returns this
+     *
+     * @returns {this} this object
      */
     function noopThis() {
       return this;
@@ -1026,49 +1131,65 @@
 
     /**
      * Function returns empty string
-     * @return {string} empty string
+     *
+     * @returns {string} empty string
      */
-    var noopStr = function noopStr() {
+    const noopStr = function noopStr() {
       return '';
     };
 
     /**
      * Function returns empty array
-     * @return {Array} empty array
+     *
+     * @returns {Array} empty array
      */
-    var noopArray = function noopArray() {
+    const noopArray = function noopArray() {
       return [];
     };
 
     /**
      * Function returns empty object
-     * @return {Object} empty object
+     *
+     * @returns {Object} empty object
      */
-    var noopObject = function noopObject() {
+    const noopObject = function noopObject() {
       return {};
     };
 
     /**
-     * Function returns Promise.reject()
+     * Function throws an error
+     *
+     * @throws
      */
-    var noopPromiseReject = function noopPromiseReject() {
-      return Promise.reject();
-    }; // eslint-disable-line compat/compat
+    const throwFunc = function throwFunc() {
+      throw new Error();
+    };
 
     /**
-     * Returns Promise object that is resolved  value of response body
-     * @param {string} [url=''] value of response url to set on response object
-     * @param {string} [response='default'] value of response type to set on response object
+     * Function returns Promise.reject()
+     *
+     * @returns {Promise} rejected Promise
      */
-    var noopPromiseResolve = function noopPromiseResolve() {
-      var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '{}';
-      var responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
-      var responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'default';
+    const noopPromiseReject = function noopPromiseReject() {
+      return Promise.reject();
+    };
+
+    /**
+     * Returns Promise object that is resolved with specified props
+     *
+     * @param {string} [responseBody='{}'] value to set as responseBody
+     * @param {string} [responseUrl=''] value to set as responseUrl
+     * @param {string} [responseType='default'] value to set as responseType
+     * @returns {Promise<Response>|undefined} resolved Promise or undefined if Response interface is not available
+     */
+    const noopPromiseResolve = function noopPromiseResolve() {
+      let responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '{}';
+      let responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+      let responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'default';
       if (typeof Response === 'undefined') {
         return;
       }
-      // eslint-disable-next-line compat/compat
-      var response = new Response(responseBody, {
+      const response = new Response(responseBody, {
         status: 200,
         statusText: 'OK'
       });
@@ -1084,7 +1205,7 @@
         }
       });
 
-      // eslint-disable-next-line compat/compat, consistent-return
+      // eslint-disable-next-line consistent-return
       return Promise.resolve(response);
     };
 
@@ -1092,25 +1213,26 @@
      * Determines if type of script is inline or injected
      * and when it's one of them then return true, otherwise false
      * https://github.com/AdguardTeam/Scriptlets/issues/201
+     *
      * @param {string|undefined} stackMatch - input stack value to match
      * @param {string} stackTrace - script error stack trace
-     * @returns {boolean}
+     * @returns {boolean} if stacks match
      */
-    var shouldAbortInlineOrInjectedScript = function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
-      var INLINE_SCRIPT_STRING = 'inlineScript';
-      var INJECTED_SCRIPT_STRING = 'injectedScript';
-      var INJECTED_SCRIPT_MARKER = '<anonymous>';
-      var isInlineScript = function isInlineScript(stackMatch) {
+    const shouldAbortInlineOrInjectedScript = function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
+      const INLINE_SCRIPT_STRING = 'inlineScript';
+      const INJECTED_SCRIPT_STRING = 'injectedScript';
+      const INJECTED_SCRIPT_MARKER = '<anonymous>';
+      const isInlineScript = function isInlineScript(stackMatch) {
         return stackMatch.indexOf(INLINE_SCRIPT_STRING) > -1;
       };
-      var isInjectedScript = function isInjectedScript(stackMatch) {
+      const isInjectedScript = function isInjectedScript(stackMatch) {
         return stackMatch.indexOf(INJECTED_SCRIPT_STRING) > -1;
       };
       if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
         return false;
       }
-      var documentURL = window.location.href;
-      var pos = documentURL.indexOf('#');
+      let documentURL = window.location.href;
+      const pos = documentURL.indexOf('#');
       // Remove URL hash
       // in Chrome, URL in stackTrace doesn't contain hash
       // so, it's necessary to remove it, otherwise location.href
@@ -1118,24 +1240,24 @@
       if (pos !== -1) {
         documentURL = documentURL.slice(0, pos);
       }
-      var stackSteps = stackTrace.split('\n').slice(2).map(function (line) {
+      const stackSteps = stackTrace.split('\n').slice(2).map(function (line) {
         return line.trim();
       });
-      var stackLines = stackSteps.map(function (line) {
-        var stack;
+      const stackLines = stackSteps.map(function (line) {
+        let stack;
         // Get stack trace URL
         // in Firefox stack trace looks like this: advanceTaskQueue@http://127.0.0.1:8080/scriptlets/tests/dist/qunit.js:1834:20
         // in Chrome like this: at Assert.throws (http://127.0.0.1:8080/scriptlets/tests/dist/qunit.js:3178:16)
         // so, first group "(.*?@)" is required for Firefox, second group contains URL
-        var getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
+        const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
         if (getStackTraceURL) {
-          var stackURL = getStackTraceURL[2];
+          let stackURL = getStackTraceURL[2];
           if (startsWith$1(stackURL, '(')) {
             stackURL = stackURL.slice(1);
           }
           if (startsWith$1(stackURL, INJECTED_SCRIPT_MARKER)) {
             stackURL = INJECTED_SCRIPT_STRING;
-            var stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
+            let stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
             if (startsWith$1(stackFunction, 'at')) {
               stackFunction = stackFunction.slice(2).trim();
             }
@@ -1149,7 +1271,7 @@
         return stack;
       });
       if (stackLines) {
-        for (var index = 0; index < stackLines.length; index += 1) {
+        for (let index = 0; index < stackLines.length; index += 1) {
           if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
             return true;
           }
@@ -1163,16 +1285,17 @@
 
     /**
      * Finds shadow-dom host (elements with shadowRoot property) in DOM of rootElement.
-     * @param {HTMLElement} rootElement
+     *
+     * @param {HTMLElement} rootElement shadow dom root
      * @returns {HTMLElement[]} shadow-dom hosts
      */
-    var findHostElements = function findHostElements(rootElement) {
-      var hosts = [];
+    const findHostElements = function findHostElements(rootElement) {
+      const hosts = [];
       // Element.querySelectorAll() returns list of elements
       // which are defined in DOM of Element.
       // Meanwhile, inner DOM of the element with shadowRoot property
       // is absolutely another DOM and which can not be reached by querySelectorAll('*')
-      var domElems = rootElement.querySelectorAll('*');
+      const domElems = rootElement.querySelectorAll('*');
       domElems.forEach(function (el) {
         if (el.shadowRoot) {
           hosts.push(el);
@@ -1198,21 +1321,22 @@
      * Pierces open shadow-dom in order to find:
      * - elements by 'selector' matching
      * - inner shadow-dom hosts
-     * @param {string} selector
-     * @param {HTMLElement[]|external:NodeList} hostElements
-     * @returns {PierceData}
+     *
+     * @param {string} selector DOM elements selector
+     * @param {HTMLElement[]|external:NodeList} hostElements shadow-dom hosts
+     * @returns {PierceData} object with found elements and shadow-dom hosts
      */
-    var pierceShadowDom = function pierceShadowDom(selector, hostElements) {
-      var targets = [];
-      var innerHostsAcc = [];
+    const pierceShadowDom = function pierceShadowDom(selector, hostElements) {
+      let targets = [];
+      const innerHostsAcc = [];
 
       // it's possible to get a few hostElements found by baseSelector on the page
       hostElements.forEach(function (host) {
         // check presence of selector element inside base element if it's not in shadow-dom
-        var simpleElems = host.querySelectorAll(selector);
+        const simpleElems = host.querySelectorAll(selector);
         targets = targets.concat([].slice.call(simpleElems));
-        var shadowRootElem = host.shadowRoot;
-        var shadowChildren = shadowRootElem.querySelectorAll(selector);
+        const shadowRootElem = host.shadowRoot;
+        const shadowChildren = shadowRootElem.querySelectorAll(selector);
         targets = targets.concat([].slice.call(shadowChildren));
 
         // find inner shadow-dom hosts inside processing shadow-dom
@@ -1221,19 +1345,20 @@
 
       // if there were more than one host element,
       // innerHostsAcc is an array of arrays and should be flatten
-      var innerHosts = flatten(innerHostsAcc);
+      const innerHosts = flatten(innerHostsAcc);
       return {
-        targets: targets,
-        innerHosts: innerHosts
+        targets,
+        innerHosts
       };
     };
 
     /**
      * Checks whether the passed arg is proper callback
-     * @param {*} callback
-     * @returns {boolean}
+     *
+     * @param {any} callback arbitrary callback
+     * @returns {boolean} if callback is valid
      */
-    var isValidCallback = function isValidCallback(callback) {
+    const isValidCallback = function isValidCallback(callback) {
       return callback instanceof Function
       // passing string as 'code' arg is not recommended
       // but it is possible and not restricted
@@ -1242,14 +1367,32 @@
     };
 
     /**
+     * Parses delay argument of setTimeout / setInterval methods into
+     * rounded down number for number/string values or passes on for other types.
+     * Needed for prevent-setTimeout and prevent-setInterval
+     *
+     * @param {any} delay native method delay arg
+     * @returns {any} number as parsed delay or any input type if `delay` is not parsable
+     */
+    const parseRawDelay = function parseRawDelay(delay) {
+      const parsedDelay = Math.floor(parseInt(delay, 10));
+      return typeof parsedDelay === 'number' && !nativeIsNaN(parsedDelay) ? parsedDelay : delay;
+    };
+
+    /**
      * Checks whether 'callback' and 'delay' are matching
      * by given parameters 'matchCallback' and 'matchDelay'.
      * Used for prevent-setTimeout and prevent-setInterval.
-     * @param {Object} { callback, delay, matchCallback, matchDelay }
-     * @returns {boolean}
+     *
+     * @param {Object} preventData set of data to determine if scriptlet should match
+     * @param {Function} preventData.callback method's callback arg
+     * @param {any} preventData.delay method's delay arg
+     * @param {string} preventData.matchCallback scriptlets's callback arg
+     * @param {string} preventData.matchDelay scriptlets's delay arg
+     * @returns {boolean} if scriptlet should match
      */
-    var isPreventionNeeded = function isPreventionNeeded(_ref) {
-      var callback = _ref.callback,
+    const isPreventionNeeded = function isPreventionNeeded(_ref) {
+      let callback = _ref.callback,
         delay = _ref.delay,
         matchCallback = _ref.matchCallback,
         matchDelay = _ref.matchDelay;
@@ -1262,27 +1405,31 @@
       if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
         return false;
       }
-      var _parseMatchArg = parseMatchArg(matchCallback),
+      const _parseMatchArg = parseMatchArg(matchCallback),
         isInvertedMatch = _parseMatchArg.isInvertedMatch,
         matchRegexp = _parseMatchArg.matchRegexp;
-      var _parseDelayArg = parseDelayArg(matchDelay),
+      const _parseDelayArg = parseDelayArg(matchDelay),
         isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
         delayMatch = _parseDelayArg.delayMatch;
-      var shouldPrevent = false;
+
+      // Parse delay for decimal, string and non-number values
+      // https://github.com/AdguardTeam/Scriptlets/issues/247
+      const parsedDelay = parseRawDelay(delay);
+      let shouldPrevent = false;
       // https://github.com/AdguardTeam/Scriptlets/issues/105
-      var callbackStr = String(callback);
+      const callbackStr = String(callback);
       if (delayMatch === null) {
         shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
       } else if (!matchCallback) {
-        shouldPrevent = delay === delayMatch !== isInvertedDelayMatch;
+        shouldPrevent = parsedDelay === delayMatch !== isInvertedDelayMatch;
       } else {
-        shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && delay === delayMatch !== isInvertedDelayMatch;
+        shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && parsedDelay === delayMatch !== isInvertedDelayMatch;
       }
       return shouldPrevent;
     };
 
-    var handleOldReplacement = function handleOldReplacement(replacement) {
-      var result;
+    const handleOldReplacement = function handleOldReplacement(replacement) {
+      let result;
       // defaults to return noopFunc instead of window.open
       if (!replacement) {
         result = noopFunc;
@@ -1292,11 +1439,11 @@
         // We should return noopFunc instead of window.open
         // but with some property if website checks it (examples 5, 6)
         // https://github.com/AdguardTeam/Scriptlets/issues/71
-        var isProp = startsWith$1(replacement, '{') && endsWith(replacement, '}');
+        const isProp = startsWith$1(replacement, '{') && endsWith(replacement, '}');
         if (isProp) {
-          var propertyPart = replacement.slice(1, -1);
-          var propertyName = substringBefore(propertyPart, '=');
-          var propertyValue = substringAfter$1(propertyPart, '=');
+          const propertyPart = replacement.slice(1, -1);
+          const propertyName = substringBefore(propertyPart, '=');
+          const propertyValue = substringAfter$1(propertyPart, '=');
           if (propertyValue === 'noopFunc') {
             result = {};
             result[propertyName] = noopFunc;
@@ -1305,16 +1452,16 @@
       }
       return result;
     };
-    var createDecoy = function createDecoy(args) {
-      var OBJECT_TAG_NAME = 'object';
-      var OBJECT_URL_PROP_NAME = 'data';
-      var IFRAME_TAG_NAME = 'iframe';
-      var IFRAME_URL_PROP_NAME = 'src';
-      var replacement = args.replacement,
+    const createDecoy = function createDecoy(args) {
+      const OBJECT_TAG_NAME = 'object';
+      const OBJECT_URL_PROP_NAME = 'data';
+      const IFRAME_TAG_NAME = 'iframe';
+      const IFRAME_URL_PROP_NAME = 'src';
+      const replacement = args.replacement,
         url = args.url,
         delay = args.delay;
-      var tag;
-      var urlProp;
+      let tag;
+      let urlProp;
       if (replacement === 'obj') {
         tag = OBJECT_TAG_NAME;
         urlProp = OBJECT_URL_PROP_NAME;
@@ -1322,7 +1469,7 @@
         tag = IFRAME_TAG_NAME;
         urlProp = IFRAME_URL_PROP_NAME;
       }
-      var decoy = document.createElement(tag);
+      const decoy = document.createElement(tag);
       decoy[urlProp] = url;
       decoy.style.setProperty('height', '1px', 'important');
       decoy.style.setProperty('position', 'fixed', 'important');
@@ -1334,8 +1481,8 @@
       }, delay * 1000);
       return decoy;
     };
-    var getPreventGetter = function getPreventGetter(nativeGetter) {
-      var preventGetter = function preventGetter(target, prop) {
+    const getPreventGetter = function getPreventGetter(nativeGetter) {
+      const preventGetter = function preventGetter(target, prop) {
         if (prop && prop === 'closed') {
           return false;
         }
@@ -1347,29 +1494,31 @@
       return preventGetter;
     };
 
-    var getNativeRegexpTest = function getNativeRegexpTest() {
+    const getNativeRegexpTest = function getNativeRegexpTest() {
       return Object.getOwnPropertyDescriptor(RegExp.prototype, 'test').value;
     };
 
     /**
      * Returns array of request props that are supported by fetch/xhr scriptlets.
      * Includes common 'url' and 'method' props and all other fetch-specific props
-     * @returns {string[]}
+     *
+     * @returns {string[]} list of request props
      */
-    var getRequestProps = function getRequestProps() {
+    const getRequestProps = function getRequestProps() {
       return ['url', 'method', 'headers', 'body', 'mode', 'credentials', 'cache', 'redirect', 'referrer', 'referrerPolicy', 'integrity', 'keepalive', 'signal'];
     };
 
     /**
      * Collects Request options to object
-     * @param {Request} request
+     *
+     * @param {Request} request Request instance to collect properties from
      * @returns {Object} data object
      */
-    var getRequestData = function getRequestData(request) {
-      var requestInitOptions = getRequestProps();
-      var entries = requestInitOptions.map(function (key) {
+    const getRequestData = function getRequestData(request) {
+      const requestInitOptions = getRequestProps();
+      const entries = requestInitOptions.map(function (key) {
         // if request has no such option, value will be undefined
-        var value = request[key];
+        const value = request[key];
         return [key, value];
       });
       return getObjectFromEntries(entries);
@@ -1377,16 +1526,17 @@
 
     /**
      * Collects fetch args to object
-     * @param {*} args fetch args
+     *
+     * @param {any} args fetch args
      * @returns {Object} data object
      */
-    var getFetchData = function getFetchData(args) {
-      var fetchPropsObj = {};
-      var fetchUrl;
-      var fetchInit;
+    const getFetchData = function getFetchData(args) {
+      const fetchPropsObj = {};
+      let fetchUrl;
+      let fetchInit;
       if (args[0] instanceof Request) {
         // if Request passed to fetch, it will be in array
-        var requestData = getRequestData(args[0]);
+        const requestData = getRequestData(args[0]);
         fetchUrl = requestData.url;
         fetchInit = requestData;
       } else {
@@ -1405,41 +1555,43 @@
 
     /**
      * Collect xhr.open arguments to object
-     * @param {string} method
-     * @param {string} url
-     * @param {string} async
-     * @param {string} user
-     * @param {string} password
-     * @returns {Object}
+     *
+     * @param {string} method request method
+     * @param {string} url request url
+     * @param {string} async request async prop
+     * @param {string} user request user prop
+     * @param {string} password request password prop
+     * @returns {Object} aggregated request data
      */
-    var getXhrData = function getXhrData(method, url, async, user, password) {
+    const getXhrData = function getXhrData(method, url, async, user, password) {
       return {
-        method: method,
-        url: url,
-        async: async,
-        user: user,
-        password: password
+        method,
+        url,
+        async,
+        user,
+        password
       };
     };
 
     /**
      * Parse propsToMatch input string into object;
      * used for prevent-fetch and prevent-xhr
-     * @param {string} propsToMatchStr
+     *
+     * @param {string} propsToMatchStr string of space-separated request properties to match
      * @returns {Object} object where 'key' is prop name and 'value' is prop value
      */
-    var parseMatchProps = function parseMatchProps(propsToMatchStr) {
-      var PROPS_DIVIDER = ' ';
-      var PAIRS_MARKER = ':';
-      var LEGAL_MATCH_PROPS = getRequestProps();
-      var propsObj = {};
-      var props = propsToMatchStr.split(PROPS_DIVIDER);
+    const parseMatchProps = function parseMatchProps(propsToMatchStr) {
+      const PROPS_DIVIDER = ' ';
+      const PAIRS_MARKER = ':';
+      const LEGAL_MATCH_PROPS = getRequestProps();
+      const propsObj = {};
+      const props = propsToMatchStr.split(PROPS_DIVIDER);
       props.forEach(function (prop) {
-        var dividerInd = prop.indexOf(PAIRS_MARKER);
-        var key = prop.slice(0, dividerInd);
-        var hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+        const dividerInd = prop.indexOf(PAIRS_MARKER);
+        const key = prop.slice(0, dividerInd);
+        const hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
         if (hasLegalMatchProp) {
-          var value = prop.slice(dividerInd + 1);
+          const value = prop.slice(dividerInd + 1);
           propsObj[key] = value;
         } else {
           // Escape multiple colons in prop
@@ -1453,10 +1605,11 @@
 
     /**
      * Validates parsed data values
-     * @param {Object} data
-     * @returns {boolean}
+     *
+     * @param {Object} data request data
+     * @returns {boolean} if data is valid
      */
-    var validateParsedData = function validateParsedData(data) {
+    const validateParsedData = function validateParsedData(data) {
       return Object.values(data).every(function (value) {
         return isValidStrPattern(value);
       });
@@ -1464,11 +1617,12 @@
 
     /**
      * Converts valid parsed data to data obj for further matching
-     * @param {Object} data
-     * @returns {Object}
+     *
+     * @param {Object} data parsed request data
+     * @returns {Object} data obj ready for matching
      */
-    var getMatchPropsData = function getMatchPropsData(data) {
-      var matchData = {};
+    const getMatchPropsData = function getMatchPropsData(data) {
+      const matchData = {};
       Object.keys(data).forEach(function (key) {
         matchData[key] = toRegExp(data[key]);
       });
@@ -1476,58 +1630,68 @@
     };
 
     /**
-     * @typedef { import('../scriptlets/index').Source } Source
-     */
-
-    /**
      * Conditionally logs message to console.
      * Convention is to log messages by source.verbose if such log
      * is not a part of scriptlet's functionality, eg on invalid input,
      * and use 'forced' argument otherwise.
-     * @param {Source} source required
+     *
+     * @param {Object} source required, scriptlet properties
      * @param {string} message required, message to log
      * @param {boolean} [forced=false] to log message unconditionally
      */
-    var logMessage = function logMessage(source, message) {
-      var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-      if (forced || source.verbose) {
-        // eslint-disable-next-line no-console
-        console.log("".concat(source.name, ": ").concat(message));
+    const logMessage = function logMessage(source, message) {
+      let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      const name = source.name,
+        ruleText = source.ruleText,
+        verbose = source.verbose;
+      if (!forced && !verbose) {
+        return;
       }
+      let messageStr = "".concat(name, ": ").concat(message);
+
+      // Extract scriptlet part from rule text
+      if (ruleText) {
+        const RULE_MARKER = '#%#//scriptlet';
+        const markerIdx = ruleText.indexOf(RULE_MARKER);
+        if (markerIdx > -1) {
+          const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+          messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+        }
+      }
+
+      // eslint-disable-next-line no-console
+      console.log(messageStr);
     };
 
     /**
-     * @typedef { import('../scriptlets/index').Source } Source
-     */
-
-    /**
      * Sets item to a specified storage, if storage isn't full.
-     * @param {Source} source
+     *
+     * @param {Object} source scriptlet's configuration
      * @param {Storage} storage storage instance to set item into
-     * @param {string} key
-     * @param {string} value
-     * @param {boolean} shouldLog determines if helper should log on a failed set attempt
+     * @param {string} key storage key
+     * @param {string} value staroge value
      */
-    var setStorageItem = function setStorageItem(source, storage, key, value) {
+    const setStorageItem = function setStorageItem(source, storage, key, value) {
       // setItem() may throw an exception if the storage is full.
       try {
         storage.setItem(key, value);
       } catch (e) {
-        var message = "Unable to set sessionStorage item due to: ".concat(e.message);
+        const message = "Unable to set sessionStorage item due to: ".concat(e.message);
         logMessage(source, message);
       }
     };
 
     /**
      * Gets supported storage item value
+     *
      * @param {string} value input item value
      * @returns {string|null|undefined|boolean} valid item value if ok OR null if not
      */
-    var getLimitedStorageItemValue = function getLimitedStorageItemValue(value) {
+    const getLimitedStorageItemValue = function getLimitedStorageItemValue(value) {
       if (typeof value !== 'string') {
         throw new Error('Invalid value');
       }
-      var validValue;
+      let validValue;
       if (value === 'undefined') {
         validValue = undefined;
       } else if (value === 'false') {
@@ -1547,7 +1711,7 @@
         if (nativeIsNaN(validValue)) {
           throw new Error('Invalid value');
         }
-        if (Math.abs(validValue) > 0x7FFF) {
+        if (Math.abs(validValue) > 32767) {
           throw new Error('Invalid value');
         }
       } else if (value === 'yes') {
@@ -1563,12 +1727,13 @@
     /**
      * Generates function which silents global errors on page generated by scriptlet
      * If error doesn't belong to our error we transfer it to the native onError handler
+     *
      * @param {string} rid - unique identifier of scriptlet
-     * @return {onError}
+     * @returns {Function} window.onerror handler
      */
     function createOnErrorHandler(rid) {
       // eslint-disable-next-line consistent-return
-      var nativeOnError = window.onerror;
+      const nativeOnError = window.onerror;
       return function onError(error) {
         if (typeof error === 'string' && error.indexOf(rid) !== -1) {
           return true;
@@ -1577,7 +1742,7 @@
           for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
             args[_key - 1] = arguments[_key];
           }
-          return nativeOnError.apply(this, [error].concat(args));
+          return nativeOnError.apply(this, [error, ...args]);
         }
         return false;
       };
@@ -1585,39 +1750,41 @@
 
     /**
      * Generate random seven symbols id
+     *
+     * @returns {string} randomized id
      */
     function randomId() {
       return Math.random().toString(36).slice(2, 9);
     }
 
     /**
-     * Prevent infinite loops when trapping props that could be used by scriptlet's own helpers
+     * Prevents infinite loops when trapping props that could be used by scriptlet's own helpers
      * Example: window.RegExp, that is used by matchStackTrace > toRegExp
      *
      * https://github.com/AdguardTeam/Scriptlets/issues/251
      * https://github.com/AdguardTeam/Scriptlets/issues/226
      * https://github.com/AdguardTeam/Scriptlets/issues/232
      *
-     * @return {Object}
+     * @returns {Object} descriptor addon
      */
     function getDescriptorAddon() {
       return {
         isAbortingSuspended: false,
-        isolateCallback: function isolateCallback(cb) {
+        isolateCallback(cb) {
           this.isAbortingSuspended = true;
-          // try...catch is required in case if there are more than one inline scripts
-          // which should be aborted.
+          // try...catch is required in case there are more than one inline scripts
+          // which should be aborted,
           // so after the first successful abortion, `cb(...args);` will throw error,
           // and we should not stop on that and continue to abort other scripts
           try {
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            var result = cb.apply(void 0, args);
+            const result = cb(...args);
             this.isAbortingSuspended = false;
             return result;
           } catch (_unused) {
-            var rid = randomId();
+            const rid = randomId();
             this.isAbortingSuspended = false;
             // It's necessary to throw error
             // otherwise script will be not aborted
@@ -1628,10 +1795,10 @@
     }
 
     /**
-     * @typedef Chain
-     * @property {Object} base
-     * @property {string} prop
-     * @property {string} [chain]
+     * @typedef ChainInfo
+     * @property {Object} base current chain base
+     * @property {string} prop current chain prop
+     * @property {string} [chain] string representation
      */
 
     /**
@@ -1641,45 +1808,45 @@
      * defines this property as 'undefined'
      * and returns base, property name and remaining part of property chain
      *
-     * @param {Object} base
-     * @param {string} chain
-     * @returns {Chain}
+     * @param {Object} base object that owns chain
+     * @param {string} chain chain of owner properties
+     * @returns {ChainInfo} chain info object
      */
     function getPropertyInChain(base, chain) {
-      var pos = chain.indexOf('.');
+      const pos = chain.indexOf('.');
       if (pos === -1) {
         return {
-          base: base,
+          base,
           prop: chain
         };
       }
-      var prop = chain.slice(0, pos);
+      const prop = chain.slice(0, pos);
 
       // https://github.com/AdguardTeam/Scriptlets/issues/128
       if (base === null) {
         // if base is null, return 'null' as base.
         // it's needed for triggering the reason logging while debugging
         return {
-          base: base,
-          prop: prop,
-          chain: chain
+          base,
+          prop,
+          chain
         };
       }
-      var nextBase = base[prop];
+      const nextBase = base[prop];
       chain = chain.slice(pos + 1);
       if ((base instanceof Object || typeof base === 'object') && isEmptyObject(base)) {
         // for empty objects in chain
         return {
-          base: base,
-          prop: prop,
-          chain: chain
+          base,
+          prop,
+          chain
         };
       }
       if (nextBase === null) {
         return {
-          base: base,
-          prop: prop,
-          chain: chain
+          base,
+          prop,
+          chain
         };
       }
       if (nextBase !== undefined) {
@@ -1689,17 +1856,17 @@
         configurable: true
       });
       return {
-        base: base,
-        prop: prop,
-        chain: chain
+        base,
+        prop,
+        chain
       };
     }
 
     /**
-     * @typedef Chain
-     * @property {Object} base
-     * @property {string} prop
-     * @property {string} [chain]
+     * @typedef ChainInfo
+     * @property {Object} base current chain base
+     * @property {string} prop current chain prop
+     * @property {string} [chain] string representation
      */
 
     /**
@@ -1707,52 +1874,52 @@
      * Similar to getPropertyInChain but upgraded for json-prune:
      * handle wildcard properties and does not define nonexistent base property as 'undefined'
      *
-     * @param {Object} base
-     * @param {string} chain
+     * @param {Object} base object that owns chain
+     * @param {string} chain chain of owner properties
      * @param {boolean} [lookThrough=false]
      * should the method look through it's props in order to wildcard
      * @param {Array} [output=[]] result acc
-     * @returns {Chain[]} array of objects
+     * @returns {ChainInfo[]} array of objects
      */
     function getWildcardPropertyInChain(base, chain) {
-      var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-      var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
-      var pos = chain.indexOf('.');
+      let lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      let output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+      const pos = chain.indexOf('.');
       if (pos === -1) {
         // for paths like 'a.b.*' every final nested prop should be processed
         if (chain === '*' || chain === '[]') {
           // eslint-disable-next-line no-restricted-syntax
-          for (var key in base) {
+          for (const key in base) {
             // to process each key in base except inherited ones
             if (Object.prototype.hasOwnProperty.call(base, key)) {
               output.push({
-                base: base,
+                base,
                 prop: key
               });
             }
           }
         } else {
           output.push({
-            base: base,
+            base,
             prop: chain
           });
         }
         return output;
       }
-      var prop = chain.slice(0, pos);
-      var shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === '*' && base instanceof Object;
+      const prop = chain.slice(0, pos);
+      const shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === '*' && base instanceof Object;
       if (shouldLookThrough) {
-        var nextProp = chain.slice(pos + 1);
-        var baseKeys = Object.keys(base);
+        const nextProp = chain.slice(pos + 1);
+        const baseKeys = Object.keys(base);
 
         // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src ad.1.src'),
         // each one of base keys should be considered as a potential chain prop in final path
         baseKeys.forEach(function (key) {
-          var item = base[key];
+          const item = base[key];
           getWildcardPropertyInChain(item, nextProp, lookThrough, output);
         });
       }
-      var nextBase = base[prop];
+      const nextBase = base[prop];
       chain = chain.slice(pos + 1);
       if (nextBase !== undefined) {
         getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
@@ -1761,32 +1928,33 @@
     }
 
     /* eslint-disable no-console, no-underscore-dangle */
+
     /**
      * Hit used only for debug purposes now
-     * @param {Source} source
+     *
+     * @param {Object} source scriptlet properties
      * use LOG_MARKER = 'log: ' at the start of a message
      * for logging scriptlets
      */
-    var hit = function hit(source) {
+    const hit = function hit(source) {
       if (source.verbose !== true) {
         return;
       }
       try {
-        var log = console.log.bind(console);
-        var trace = console.trace.bind(console); // eslint-disable-line compat/compat
-
-        var prefix = source.ruleText || '';
+        const log = console.log.bind(console);
+        const trace = console.trace.bind(console);
+        let prefix = source.ruleText || '';
         if (source.domainName) {
-          var AG_SCRIPTLET_MARKER = '#%#//';
-          var UBO_SCRIPTLET_MARKER = '##+js';
-          var ruleStartIndex;
+          const AG_SCRIPTLET_MARKER = '#%#//';
+          const UBO_SCRIPTLET_MARKER = '##+js';
+          let ruleStartIndex;
           if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
             ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
           } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
             ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
           }
           // delete all domains from ruleText and leave just rule part
-          var rulePart = source.ruleText.slice(ruleStartIndex);
+          const rulePart = source.ruleText.slice(ruleStartIndex);
           // prepare applied scriptlet rule for specific domain
           prefix = "".concat(source.domainName).concat(rulePart);
         }
@@ -1808,32 +1976,29 @@
     };
 
     /**
-     * @typedef { import('../scriptlets/index').Source } Source
-     */
-
-    /**
      * Checks if given propsToMatch string matches with given request data
      * This is used by prevent-xhr, prevent-fetch, trusted-replace-xhr-response
      * and  trusted-replace-fetch-response scriptlets
-     * @param {Source} source
-     * @param {string} propsToMatch
+     *
+     * @param {Object} source scriptlet properties
+     * @param {string} propsToMatch string of space-separated request properties to match
      * @param {Object} requestData object with standard properties of fetch/xhr like url, method etc
-     * @returns {boolean}
+     * @returns {boolean} if request properties match
      */
-    var matchRequestProps = function matchRequestProps(source, propsToMatch, requestData) {
+    const matchRequestProps = function matchRequestProps(source, propsToMatch, requestData) {
       if (propsToMatch === '' || propsToMatch === '*') {
         return true;
       }
-      var isMatched;
-      var parsedData = parseMatchProps(propsToMatch);
+      let isMatched;
+      const parsedData = parseMatchProps(propsToMatch);
       if (!validateParsedData(parsedData)) {
         logMessage(source, "Invalid parameter: ".concat(propsToMatch));
         isMatched = false;
       } else {
-        var matchData = getMatchPropsData(parsedData);
+        const matchData = getMatchPropsData(parsedData);
         // prevent only if all props match
         isMatched = Object.keys(matchData).every(function (matchKey) {
-          var matchValue = matchData[matchKey];
+          const matchValue = matchData[matchKey];
           return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
         });
       }
@@ -1843,19 +2008,20 @@
     /**
      * Checks if the stackTrace contains stackRegexp
      * https://github.com/AdguardTeam/Scriptlets/issues/82
+     *
      * @param {string|undefined} stackMatch - input stack value to match
      * @param {string} stackTrace - script error stack trace
-     * @returns {boolean}
+     * @returns {boolean} if the stackTrace contains stackRegexp
      */
-    var matchStackTrace = function matchStackTrace(stackMatch, stackTrace) {
+    const matchStackTrace = function matchStackTrace(stackMatch, stackTrace) {
       if (!stackMatch || stackMatch === '') {
         return true;
       }
       if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
         return true;
       }
-      var stackRegexp = toRegExp(stackMatch);
-      var refinedStackTrace = stackTrace.split('\n').slice(2) // get rid of our own functions in the stack trace
+      const stackRegexp = toRegExp(stackMatch);
+      const refinedStackTrace = stackTrace.split('\n').slice(2) // get rid of our own functions in the stack trace
       .map(function (line) {
         return line.trim();
       }) // trim the lines
@@ -1866,13 +2032,15 @@
     /**
      * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
      * Those calls that fall into the "cooldown" period, are ignored
-     * @param {Function} method
-     * @param {Number} delay - milliseconds
+     *
+     * @param {Function} cb callback
+     * @param {number} delay - milliseconds
+     * @returns {Function} throttled callback
      */
-    var throttle = function throttle(cb, delay) {
-      var wait = false;
-      var savedArgs;
-      var wrapper = function wrapper() {
+    const throttle = function throttle(cb, delay) {
+      let wait = false;
+      let savedArgs;
+      const wrapper = function wrapper() {
         for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
           args[_key] = arguments[_key];
         }
@@ -1880,7 +2048,7 @@
           savedArgs = args;
           return;
         }
-        cb.apply(void 0, args);
+        cb(...args);
         wait = true;
         setTimeout(function () {
           wait = false;
@@ -1895,22 +2063,24 @@
 
     /**
      * DOM tree changes observer. Used for 'remove-attr' and 'remove-class' scriptlets
-     * @param {Function} callback
-     * @param {boolean} observeAttrs - optional parameter - should observer check attributes changes
+     *
+     * @param {Function} callback function to call on each mutation
+     * @param {boolean} [observeAttrs] if observer should observe attributes changes
+     * @param {Array} [attrsToObserve] list of attributes to observe
      */
-    var observeDOMChanges = function observeDOMChanges(callback) {
-      var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-      var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+    const observeDOMChanges = function observeDOMChanges(callback) {
+      let observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      let attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
       /**
        * 'delay' in milliseconds for 'throttle' method
        */
-      var THROTTLE_DELAY_MS = 20;
+      const THROTTLE_DELAY_MS = 20;
       /**
        * Used for remove-class
        */
-      // eslint-disable-next-line no-use-before-define, compat/compat
-      var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-      var connect = function connect() {
+      // eslint-disable-next-line no-use-before-define
+      const observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+      const connect = function connect() {
         if (attrsToObserve.length > 0) {
           observer.observe(document.documentElement, {
             childList: true,
@@ -1926,9 +2096,14 @@
           });
         }
       };
-      var disconnect = function disconnect() {
+      const disconnect = function disconnect() {
         observer.disconnect();
       };
+
+      /**
+       * Callback wrapper to prevent loops
+       * when callback tinkers with attributes
+       */
       function callbackWrapper() {
         disconnect();
         callback();
@@ -1938,24 +2113,34 @@
     };
 
     /**
-     * Behaviour flags string parser
-     * @param {string} flags required, 'applying' argument string
-     * @return {Object}
+     * @typedef {Object} FlagsData object that holds info about valid flags
+     * and provides method for easy access
+     * @property {string} ASAP asap flag string
+     * @property {string} COMPLETE complete flag string
+     * @property {string} STAY stay flag string
+     * @property {Function} hasFlag to check if given flag is present
      */
-    var parseFlags = function parseFlags(flags) {
-      var FLAGS_DIVIDER = ' ';
-      var ASAP_FLAG = 'asap';
-      var COMPLETE_FLAG = 'complete';
-      var STAY_FLAG = 'stay';
-      var VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
-      var passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
+
+    /**
+     * Behaviour flags string parser
+     *
+     * @param {string} flags required, 'applying' argument string
+     * @returns {FlagsData} object with parsed flags
+     */
+    const parseFlags = function parseFlags(flags) {
+      const FLAGS_DIVIDER = ' ';
+      const ASAP_FLAG = 'asap';
+      const COMPLETE_FLAG = 'complete';
+      const STAY_FLAG = 'stay';
+      const VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
+      const passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
         return VALID_FLAGS.indexOf(f) !== -1;
       });
       return {
         ASAP: ASAP_FLAG,
         COMPLETE: COMPLETE_FLAG,
         STAY: STAY_FLAG,
-        hasFlag: function hasFlag(flag) {
+        hasFlag(flag) {
           return passedFlags.indexOf(flag) !== -1;
         }
       };
@@ -1969,13 +2154,13 @@
      *   - '$now$' - returns current time in ms, e.g 1667915146503
      *   - '$currentDate$' - returns current date e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
      *
-     * @param {string} rawValue
-     * @returns {string}
+     * @param {string} rawValue keyword
+     * @returns {string} parsed value
      */
-    var parseKeywordValue = function parseKeywordValue(rawValue) {
-      var NOW_VALUE_KEYWORD = '$now$';
-      var CURRENT_DATE_KEYWORD = '$currentDate$';
-      var parsedValue = rawValue;
+    const parseKeywordValue = function parseKeywordValue(rawValue) {
+      const NOW_VALUE_KEYWORD = '$now$';
+      const CURRENT_DATE_KEYWORD = '$currentDate$';
+      let parsedValue = rawValue;
       if (rawValue === NOW_VALUE_KEYWORD) {
         // Set to current time in ms, e.g 1667915146503
         parsedValue = Date.now().toString();
@@ -1986,10 +2171,40 @@
       return parsedValue;
     };
 
+    /**
+     * Makes arbitrary operations on shadow root element,
+     * to be passed as callback to hijackAttachShadow
+     *
+     * @callback attachShadowCallback
+     * @param {HTMLElement} shadowRoot
+     * @returns {void}
+     */
+
+    /**
+     * Overrides attachShadow method of Element API on a given context
+     * to pass retrieved shadowRoots to callback
+     *
+     * @param {Object} context e.g global window object or contentWindow of an iframe
+     * @param {string} hostSelector selector to determine if callback should be called on current shadow subtree
+     * @param {attachShadowCallback} callback callback to call on shadow root
+     */
+    const hijackAttachShadow = function hijackAttachShadow(context, hostSelector, callback) {
+      const handlerWrapper = function handlerWrapper(target, thisArg, args) {
+        const shadowRoot = Reflect.apply(target, thisArg, args);
+        if (thisArg && thisArg.matches(hostSelector || '*')) {
+          callback(shadowRoot);
+        }
+        return shadowRoot;
+      };
+      const attachShadowHandler = {
+        apply: handlerWrapper
+      };
+      context.Element.prototype.attachShadow = new Proxy(context.Element.prototype.attachShadow, attachShadowHandler);
+    };
+
     /* eslint-disable max-len */
     /**
      * @trustedScriptlet trusted-click-element
-     *
      * @description
      * Clicks selected elements in a strict sequence, ordered by selectors passed, and waiting for them to render in the DOM first.
      * Deactivates after all elements have been clicked or by 10s timeout.
@@ -2005,6 +2220,7 @@
      *    - `cookie` - test string or regex against cookies on a page
      *    - `localStorage` - check if localStorage item is present
      * - 'delay' - optional, time in ms to delay scriptlet execution, defaults to instant execution.
+     *
      * **Examples**
      * 1. Click single element by selector
      * ```
@@ -2043,66 +2259,66 @@
      */
     /* eslint-enable max-len */
     function trustedClickElement$1(source, selectors) {
-      var extraMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
-      var delay = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : NaN;
+      let extraMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+      let delay = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : NaN;
       if (!selectors) {
         return;
       }
-      var OBSERVER_TIMEOUT_MS = 10000;
-      var THROTTLE_DELAY_MS = 20;
-      var COOKIE_MATCH_MARKER = 'cookie:';
-      var LOCAL_STORAGE_MATCH_MARKER = 'localStorage:';
-      var SELECTORS_DELIMITER = ',';
-      var COOKIE_STRING_DELIMITER = ';';
+      const OBSERVER_TIMEOUT_MS = 10000;
+      const THROTTLE_DELAY_MS = 20;
+      const COOKIE_MATCH_MARKER = 'cookie:';
+      const LOCAL_STORAGE_MATCH_MARKER = 'localStorage:';
+      const SELECTORS_DELIMITER = ',';
+      const COOKIE_STRING_DELIMITER = ';';
       // Regex to split match pairs by commas, avoiding the ones included in regexes
-      var EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=cookie:|localStorage:)/;
-      var parsedDelay;
+      const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=cookie:|localStorage:)/;
+      let parsedDelay;
       if (delay) {
         parsedDelay = parseInt(delay, 10);
-        var isValidDelay = !Number.isNaN(parsedDelay) || parsedDelay < OBSERVER_TIMEOUT_MS;
+        const isValidDelay = !Number.isNaN(parsedDelay) || parsedDelay < OBSERVER_TIMEOUT_MS;
         if (!isValidDelay) {
           // eslint-disable-next-line max-len
-          var message = "Passed delay '".concat(delay, "' is invalid or bigger than ").concat(OBSERVER_TIMEOUT_MS, " ms");
+          const message = "Passed delay '".concat(delay, "' is invalid or bigger than ").concat(OBSERVER_TIMEOUT_MS, " ms");
           logMessage(source, message);
           return;
         }
       }
-      var canClick = !parsedDelay;
-      var cookieMatches = [];
-      var localStorageMatches = [];
+      let canClick = !parsedDelay;
+      const cookieMatches = [];
+      const localStorageMatches = [];
       if (extraMatch) {
         // Get all match marker:value pairs from argument
-        var parsedExtraMatch = extraMatch.split(EXTRA_MATCH_DELIMITER).map(function (matchStr) {
+        const parsedExtraMatch = extraMatch.split(EXTRA_MATCH_DELIMITER).map(function (matchStr) {
           return matchStr.trim();
         });
 
         // Filter match pairs by marker
         parsedExtraMatch.forEach(function (matchStr) {
           if (matchStr.indexOf(COOKIE_MATCH_MARKER) > -1) {
-            var cookieMatch = matchStr.replace(COOKIE_MATCH_MARKER, '');
+            const cookieMatch = matchStr.replace(COOKIE_MATCH_MARKER, '');
             cookieMatches.push(cookieMatch);
           }
           if (matchStr.indexOf(LOCAL_STORAGE_MATCH_MARKER) > -1) {
-            var localStorageMatch = matchStr.replace(LOCAL_STORAGE_MATCH_MARKER, '');
+            const localStorageMatch = matchStr.replace(LOCAL_STORAGE_MATCH_MARKER, '');
             localStorageMatches.push(localStorageMatch);
           }
         });
       }
       if (cookieMatches.length > 0) {
-        var parsedCookieMatches = parseCookieString(cookieMatches.join(COOKIE_STRING_DELIMITER));
-        var parsedCookies = parseCookieString(document.cookie);
-        var cookieKeys = Object.keys(parsedCookies);
+        const parsedCookieMatches = parseCookieString(cookieMatches.join(COOKIE_STRING_DELIMITER));
+        const parsedCookies = parseCookieString(document.cookie);
+        const cookieKeys = Object.keys(parsedCookies);
         if (cookieKeys.length === 0) {
           return;
         }
-        var cookiesMatched = Object.keys(parsedCookieMatches).every(function (key) {
+        const cookiesMatched = Object.keys(parsedCookieMatches).every(function (key) {
           // Avoid getting /.?/ result from toRegExp on undefined
           // as cookie may be set without value,
           // on which cookie parsing will return cookieKey:undefined pair
-          var valueMatch = parsedCookieMatches[key] ? toRegExp(parsedCookieMatches[key]) : null;
-          var keyMatch = toRegExp(key);
+          const valueMatch = parsedCookieMatches[key] ? toRegExp(parsedCookieMatches[key]) : null;
+          const keyMatch = toRegExp(key);
           return cookieKeys.some(function (key) {
-            var keysMatched = keyMatch.test(key);
+            const keysMatched = keyMatch.test(key);
             if (!keysMatched) {
               return false;
             }
@@ -2119,8 +2335,8 @@
         }
       }
       if (localStorageMatches.length > 0) {
-        var localStorageMatched = localStorageMatches.every(function (str) {
-          var itemValue = window.localStorage.getItem(str);
+        const localStorageMatched = localStorageMatches.every(function (str) {
+          const itemValue = window.localStorage.getItem(str);
           return itemValue || itemValue === '';
         });
         if (!localStorageMatched) {
@@ -2136,16 +2352,16 @@
        * - always know on what index corresponding element should be put
        * - prevent selectors from being queried multiple times
        */
-      var selectorsSequence = selectors.split(SELECTORS_DELIMITER).map(function (selector) {
+      let selectorsSequence = selectors.split(SELECTORS_DELIMITER).map(function (selector) {
         return selector.trim();
       });
-      var createElementObj = function createElementObj(element) {
+      const createElementObj = function createElementObj(element) {
         return {
           element: element || null,
           clicked: false
         };
       };
-      var elementsSequence = Array(selectorsSequence.length).fill(createElementObj());
+      const elementsSequence = Array(selectorsSequence.length).fill(createElementObj());
 
       /**
        * Go through elementsSequence from left to right, clicking on found elements
@@ -2153,9 +2369,9 @@
        * Element should not be clicked if it is already clicked,
        * or a previous element is not found or clicked yet
        */
-      var clickElementsBySequence = function clickElementsBySequence() {
-        for (var i = 0; i < elementsSequence.length; i += 1) {
-          var elementObj = elementsSequence[i];
+      const clickElementsBySequence = function clickElementsBySequence() {
+        for (let i = 0; i < elementsSequence.length; i += 1) {
+          const elementObj = elementsSequence[i];
           // Stop clicking if that pos element is not found yet
           if (!elementObj.element) {
             break;
@@ -2166,7 +2382,7 @@
             elementObj.clicked = true;
           }
         }
-        var allElementsClicked = elementsSequence.every(function (elementObj) {
+        const allElementsClicked = elementsSequence.every(function (elementObj) {
           return elementObj.clicked === true;
         });
         if (allElementsClicked) {
@@ -2174,8 +2390,8 @@
           hit(source);
         }
       };
-      var handleElement = function handleElement(element, i) {
-        var elementObj = createElementObj(element);
+      const handleElement = function handleElement(element, i) {
+        const elementObj = createElementObj(element);
         elementsSequence[i] = elementObj;
         if (canClick) {
           clickElementsBySequence();
@@ -2190,13 +2406,13 @@
        * when delay is getting off after the last mutation took place.
        *
        */
-      var findElements = function findElements(mutations, observer) {
-        var fulfilledSelectors = [];
+      const findElements = function findElements(mutations, observer) {
+        const fulfilledSelectors = [];
         selectorsSequence.forEach(function (selector, i) {
           if (!selector) {
             return;
           }
-          var element = document.querySelector(selector);
+          const element = document.querySelector(selector);
           if (!element) {
             return;
           }
@@ -2210,16 +2426,14 @@
         });
 
         // Disconnect observer after finding all elements
-        var allSelectorsFulfilled = selectorsSequence.every(function (selector) {
+        const allSelectorsFulfilled = selectorsSequence.every(function (selector) {
           return selector === null;
         });
         if (allSelectorsFulfilled) {
           observer.disconnect();
         }
       };
-
-      // eslint-disable-next-line compat/compat
-      var observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
+      const observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
       observer.observe(document.documentElement, {
         attributes: true,
         childList: true,
@@ -2245,7 +2459,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet abort-on-property-read
-     *
      * @description
      * Aborts a script when it attempts to **read** the specified property.
      *
@@ -2276,18 +2489,18 @@
       if (!property) {
         return;
       }
-      var rid = randomId();
-      var abort = function abort() {
+      const rid = randomId();
+      const abort = function abort() {
         hit(source);
         throw new ReferenceError(rid);
       };
-      var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
-        var base = chainInfo.base;
-        var prop = chainInfo.prop,
+      const setChainPropAccess = function setChainPropAccess(owner, property) {
+        const chainInfo = getPropertyInChain(owner, property);
+        let base = chainInfo.base;
+        const prop = chainInfo.prop,
           chain = chainInfo.chain;
         if (chain) {
-          var setter = function setter(a) {
+          const setter = function setter(a) {
             base = a;
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
@@ -2317,7 +2530,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet abort-on-property-write
-     *
      * @description
      * Aborts a script when it attempts to **write** the specified property.
      *
@@ -2345,18 +2557,18 @@
       if (!property) {
         return;
       }
-      var rid = randomId();
-      var abort = function abort() {
+      const rid = randomId();
+      const abort = function abort() {
         hit(source);
         throw new ReferenceError(rid);
       };
-      var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
-        var base = chainInfo.base;
-        var prop = chainInfo.prop,
+      const setChainPropAccess = function setChainPropAccess(owner, property) {
+        const chainInfo = getPropertyInChain(owner, property);
+        let base = chainInfo.base;
+        const prop = chainInfo.prop,
           chain = chainInfo.chain;
         if (chain) {
-          var setter = function setter(a) {
+          const setter = function setter(a) {
             base = a;
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
@@ -2385,7 +2597,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet prevent-setTimeout
-     *
      * @description
      * Prevents a `setTimeout` call if:
      * 1) the text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
@@ -2409,6 +2620,7 @@
      * - `matchDelay` - optional, must be an integer.
      * If starts with `!`, scriptlet will not match the delay but all other will be defused.
      * If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
+     * Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
      *
      * > If `prevent-setTimeout` log looks like `setTimeout(undefined, 1000)`,
      * it means that no callback was passed to setTimeout() and that's not scriptlet issue
@@ -2483,54 +2695,40 @@
      *         window.value = "test -- executed";
      *     }, 500);
      *     ```
+     *
+     * 5. Prevents `setTimeout` calls if the callback contains `value` and delay is a decimal.
+     *     ```
+     *     example.org#%#//scriptlet('prevent-setTimeout', 'value', '300')
+     *     ```
+     *
+     *     For instance, the following calls will be prevented:
+     *     ```javascript
+     *     setTimeout(function () {
+     *         window.test = "value";
+     *     }, 300);
+     *     setTimeout(function () {
+     *         window.test = "value";
+     *     }, 300 + Math.random());
+     *     ```
      */
     /* eslint-enable max-len */
     function preventSetTimeout$1(source, matchCallback, matchDelay) {
-      // if browser does not support Proxy (e.g. Internet Explorer),
-      // we use none-proxy "legacy" wrapper for preventing
-      // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-      var isProxySupported = typeof Proxy !== 'undefined';
-      var nativeTimeout = window.setTimeout;
-
       // logs setTimeouts to console if no arguments have been specified
-      var shouldLog = typeof matchCallback === 'undefined' && typeof matchDelay === 'undefined';
-      var legacyTimeoutWrapper = function legacyTimeoutWrapper(callback, delay) {
-        var shouldPrevent = false;
+      const shouldLog = typeof matchCallback === 'undefined' && typeof matchDelay === 'undefined';
+      const handlerWrapper = function handlerWrapper(target, thisArg, args) {
+        const callback = args[0];
+        const delay = args[1];
+        let shouldPrevent = false;
         if (shouldLog) {
           hit(source);
           // https://github.com/AdguardTeam/Scriptlets/issues/105
           logMessage(source, "setTimeout(".concat(String(callback), ", ").concat(delay, ")"), true);
         } else {
           shouldPrevent = isPreventionNeeded({
-            callback: callback,
-            delay: delay,
-            matchCallback: matchCallback,
-            matchDelay: matchDelay
-          });
-        }
-        if (shouldPrevent) {
-          hit(source);
-          return nativeTimeout(noopFunc, delay);
-        }
-        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-          args[_key - 2] = arguments[_key];
-        }
-        return nativeTimeout.apply(window, [callback, delay].concat(args));
-      };
-      var handlerWrapper = function handlerWrapper(target, thisArg, args) {
-        var callback = args[0];
-        var delay = args[1];
-        var shouldPrevent = false;
-        if (shouldLog) {
-          hit(source);
-          // https://github.com/AdguardTeam/Scriptlets/issues/105
-          logMessage(source, "setTimeout(".concat(String(callback), ", ").concat(delay, ")"), true);
-        } else {
-          shouldPrevent = isPreventionNeeded({
-            callback: callback,
-            delay: delay,
-            matchCallback: matchCallback,
-            matchDelay: matchDelay
+            callback,
+            delay,
+            matchCallback,
+            matchDelay
           });
         }
         if (shouldPrevent) {
@@ -2539,10 +2737,10 @@
         }
         return target.apply(thisArg, args);
       };
-      var setTimeoutHandler = {
+      const setTimeoutHandler = {
         apply: handlerWrapper
       };
-      window.setTimeout = isProxySupported ? new Proxy(window.setTimeout, setTimeoutHandler) : legacyTimeoutWrapper;
+      window.setTimeout = new Proxy(window.setTimeout, setTimeoutHandler);
     }
     preventSetTimeout$1.names = ['prevent-setTimeout',
     // aliases are needed for matching the related scriptlet converted into our syntax
@@ -2557,12 +2755,11 @@
     'setTimeout-defuser.js', 'ubo-setTimeout-defuser.js', 'ubo-setTimeout-defuser', 'std.js', 'ubo-std.js', 'ubo-std'];
     preventSetTimeout$1.injections = [hit, noopFunc, isPreventionNeeded, logMessage,
     // following helpers should be injected as helpers above use them
-    parseMatchArg, parseDelayArg, toRegExp, startsWith$1, nativeIsNaN, isValidCallback, isValidMatchStr, escapeRegExp, isValidStrPattern, nativeIsFinite, isValidMatchNumber];
+    parseMatchArg, parseDelayArg, toRegExp, startsWith$1, nativeIsNaN, isValidCallback, isValidMatchStr, escapeRegExp, isValidStrPattern, nativeIsFinite, isValidMatchNumber, parseRawDelay];
 
     /* eslint-disable max-len */
     /**
      * @scriptlet prevent-setInterval
-     *
      * @description
      * Prevents a `setInterval` call if:
      * 1) the text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
@@ -2586,6 +2783,7 @@
      * - `matchDelay` - optional, must be an integer.
      * If starts with `!`, scriptlet will not match the delay but all other will be defused.
      * If do not start with `!`, the delay passed to the `setInterval` call will be matched.
+     * Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
      *
      * > If `prevent-setInterval` log looks like `setInterval(undefined, 1000)`,
      * it means that no callback was passed to setInterval() and that's not scriptlet issue
@@ -2660,54 +2858,40 @@
      *         window.value = "test -- executed";
      *     }, 500);
      *     ```
+     *
+     * 5. Prevents `setInterval` calls if the callback contains `value` and delay is a decimal.
+     *     ```
+     *     example.org#%#//scriptlet('prevent-setInterval', 'value', '300')
+     *     ```
+     *
+     *     For instance, the following calls will be prevented:
+     *     ```javascript
+     *     setInterval(function () {
+     *         window.test = "value";
+     *     }, 300);
+     *     setInterval(function () {
+     *         window.test = "value";
+     *     }, 300 + Math.random());
+     *     ```
      */
     /* eslint-enable max-len */
     function preventSetInterval$1(source, matchCallback, matchDelay) {
-      // if browser does not support Proxy (e.g. Internet Explorer),
-      // we use none-proxy "legacy" wrapper for preventing
-      // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-      var isProxySupported = typeof Proxy !== 'undefined';
-      var nativeInterval = window.setInterval;
-
       // logs setIntervals to console if no arguments have been specified
-      var shouldLog = typeof matchCallback === 'undefined' && typeof matchDelay === 'undefined';
-      var legacyIntervalWrapper = function legacyIntervalWrapper(callback, delay) {
-        var shouldPrevent = false;
+      const shouldLog = typeof matchCallback === 'undefined' && typeof matchDelay === 'undefined';
+      const handlerWrapper = function handlerWrapper(target, thisArg, args) {
+        const callback = args[0];
+        const delay = args[1];
+        let shouldPrevent = false;
         if (shouldLog) {
           hit(source);
           // https://github.com/AdguardTeam/Scriptlets/issues/105
           logMessage(source, "setInterval(".concat(String(callback), ", ").concat(delay, ")"), true);
         } else {
           shouldPrevent = isPreventionNeeded({
-            callback: callback,
-            delay: delay,
-            matchCallback: matchCallback,
-            matchDelay: matchDelay
-          });
-        }
-        if (shouldPrevent) {
-          hit(source);
-          return nativeInterval(noopFunc, delay);
-        }
-        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-          args[_key - 2] = arguments[_key];
-        }
-        return nativeInterval.apply(window, [callback, delay].concat(args));
-      };
-      var handlerWrapper = function handlerWrapper(target, thisArg, args) {
-        var callback = args[0];
-        var delay = args[1];
-        var shouldPrevent = false;
-        if (shouldLog) {
-          hit(source);
-          // https://github.com/AdguardTeam/Scriptlets/issues/105
-          logMessage(source, "setInterval(".concat(String(callback), ", ").concat(delay, ")"), true);
-        } else {
-          shouldPrevent = isPreventionNeeded({
-            callback: callback,
-            delay: delay,
-            matchCallback: matchCallback,
-            matchDelay: matchDelay
+            callback,
+            delay,
+            matchCallback,
+            matchDelay
           });
         }
         if (shouldPrevent) {
@@ -2716,10 +2900,10 @@
         }
         return target.apply(thisArg, args);
       };
-      var setIntervalHandler = {
+      const setIntervalHandler = {
         apply: handlerWrapper
       };
-      window.setInterval = isProxySupported ? new Proxy(window.setInterval, setIntervalHandler) : legacyIntervalWrapper;
+      window.setInterval = new Proxy(window.setInterval, setIntervalHandler);
     }
     preventSetInterval$1.names = ['prevent-setInterval',
     // aliases are needed for matching the related scriptlet converted into our syntax
@@ -2734,12 +2918,11 @@
     'ubo-sid.js', 'ubo-no-setInterval-if', 'ubo-setInterval-defuser', 'ubo-nosiif', 'ubo-sid'];
     preventSetInterval$1.injections = [hit, noopFunc, isPreventionNeeded, logMessage,
     // following helpers should be injected as helpers above use them
-    toRegExp, startsWith$1, nativeIsNaN, parseMatchArg, parseDelayArg, isValidCallback, isValidMatchStr, isValidStrPattern, escapeRegExp, nativeIsFinite, isValidMatchNumber];
+    toRegExp, startsWith$1, nativeIsNaN, parseMatchArg, parseDelayArg, isValidCallback, isValidMatchStr, isValidStrPattern, escapeRegExp, nativeIsFinite, isValidMatchNumber, parseRawDelay];
 
     /* eslint-disable max-len */
     /**
      * @scriptlet prevent-window-open
-     *
      * @description
      * Prevents `window.open` calls when URL either matches or not matches the specified string/regexp. Using it without parameters prevents all `window.open` calls.
      *
@@ -2764,49 +2947,49 @@
      *
      * **Examples**
      * 1. Prevent all `window.open` calls:
-     * ```
+     *     ```
      *     example.org#%#//scriptlet('prevent-window-open')
-     * ```
+     *     ```
      *
      * 2. Prevent `window.open` for all URLs containing `example`:
-     * ```
+     *     ```
      *     example.org#%#//scriptlet('prevent-window-open', 'example')
-     * ```
+     *     ```
      *
      * 3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
-     * ```
+     *     ```
      *     example.org#%#//scriptlet('prevent-window-open', '/example\./')
-     * ```
+     *     ```
      *
      * 4. Prevent `window.open` for all URLs **NOT** containing `example`:
-     * ```
+     *     ```
      *     example.org#%#//scriptlet('prevent-window-open', '!example')
-     * ```
+     *     ```
      *
      * Old syntax of prevent-window-open parameters:
      * - `match` - optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
      * - `search` - optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
      * - `replacement` - optional, string to return prop value or property instead of window.open; defaults to return noopFunc.
      * **Examples**
-     * ```
+     *     ```
      *     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
      *     example.org#%#//scriptlet('prevent-window-open', '0', 'example')
      *     example.org#%#//scriptlet('prevent-window-open', '', '', 'trueFunc')
      *     example.org#%#//scriptlet('prevent-window-open', '1', '', '{propName=noopFunc}')
-     * ```
+     *     ```
      *
      * > For better compatibility with uBO, old syntax is not recommended to use.
      */
     /* eslint-enable max-len */
     function preventWindowOpen$1(source) {
-      var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '*';
-      var delay = arguments.length > 2 ? arguments[2] : undefined;
-      var replacement = arguments.length > 3 ? arguments[3] : undefined;
+      let match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '*';
+      let delay = arguments.length > 2 ? arguments[2] : undefined;
+      let replacement = arguments.length > 3 ? arguments[3] : undefined;
       // default match value is needed for preventing all window.open calls
       // if scriptlet runs without args
-      var nativeOpen = window.open;
-      var isNewSyntax = match !== '0' && match !== '1';
-      var oldOpenWrapper = function oldOpenWrapper(str) {
+      const nativeOpen = window.open;
+      const isNewSyntax = match !== '0' && match !== '1';
+      const oldOpenWrapper = function oldOpenWrapper(str) {
         match = Number(match) > 0;
         // 'delay' was 'search' prop for matching in old syntax
         for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
@@ -2814,31 +2997,31 @@
         }
         if (!isValidStrPattern(delay)) {
           logMessage(source, "Invalid parameter: ".concat(delay));
-          return nativeOpen.apply(window, [str].concat(args));
+          return nativeOpen.apply(window, [str, ...args]);
         }
-        var searchRegexp = toRegExp(delay);
+        const searchRegexp = toRegExp(delay);
         if (match !== searchRegexp.test(str)) {
-          return nativeOpen.apply(window, [str].concat(args));
+          return nativeOpen.apply(window, [str, ...args]);
         }
         hit(source);
         return handleOldReplacement(replacement);
       };
-      var newOpenWrapper = function newOpenWrapper(url) {
-        var shouldLog = replacement && replacement.indexOf('log') > -1;
+      const newOpenWrapper = function newOpenWrapper(url) {
+        const shouldLog = replacement && replacement.indexOf('log') > -1;
         for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
           args[_key2 - 1] = arguments[_key2];
         }
         if (shouldLog) {
-          var argsStr = args && args.length > 0 ? ", ".concat(args.join(', ')) : '';
-          var message = "".concat(url).concat(argsStr);
+          const argsStr = args && args.length > 0 ? ", ".concat(args.join(', ')) : '';
+          const message = "".concat(url).concat(argsStr);
           logMessage(source, message, true);
           hit(source);
         }
-        var shouldPrevent = false;
+        let shouldPrevent = false;
         if (match === '*') {
           shouldPrevent = true;
         } else if (isValidMatchStr(match)) {
-          var _parseMatchArg = parseMatchArg(match),
+          const _parseMatchArg = parseMatchArg(match),
             isInvertedMatch = _parseMatchArg.isInvertedMatch,
             matchRegexp = _parseMatchArg.matchRegexp;
           shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
@@ -2847,18 +3030,18 @@
           shouldPrevent = false;
         }
         if (shouldPrevent) {
-          var parsedDelay = parseInt(delay, 10);
-          var result;
+          const parsedDelay = parseInt(delay, 10);
+          let result;
           if (nativeIsNaN(parsedDelay)) {
             result = noopNull();
           } else {
-            var decoyArgs = {
-              replacement: replacement,
-              url: url,
+            const decoyArgs = {
+              replacement,
+              url,
               delay: parsedDelay
             };
-            var decoy = createDecoy(decoyArgs);
-            var popup = decoy.contentWindow;
+            const decoy = createDecoy(decoyArgs);
+            let popup = decoy.contentWindow;
             if (typeof popup === 'object' && popup !== null) {
               Object.defineProperty(popup, 'closed', {
                 value: false
@@ -2870,7 +3053,7 @@
                 value: null
               });
             } else {
-              var nativeGetter = decoy.contentWindow && decoy.contentWindow.get;
+              const nativeGetter = decoy.contentWindow && decoy.contentWindow.get;
               Object.defineProperty(decoy, 'contentWindow', {
                 get: getPreventGetter(nativeGetter)
               });
@@ -2881,7 +3064,7 @@
           hit(source);
           return result;
         }
-        return nativeOpen.apply(window, [url].concat(args));
+        return nativeOpen.apply(window, [url, ...args]);
       };
       window.open = isNewSyntax ? newOpenWrapper : oldOpenWrapper;
 
@@ -2896,7 +3079,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet abort-current-inline-script
-     *
      * @description
      * Aborts an inline script when it attempts to **read** or **write to** the specified property
      * AND when the contents of the `<script>` element contains the specified
@@ -2958,37 +3140,36 @@
      */
     /* eslint-enable max-len */
     function abortCurrentInlineScript$1(source, property, search) {
-      var searchRegexp = toRegExp(search);
-      var rid = randomId();
-      var SRC_DATA_MARKER = 'data:text/javascript;base64,';
-      var getCurrentScript = function getCurrentScript() {
+      const searchRegexp = toRegExp(search);
+      const rid = randomId();
+      const SRC_DATA_MARKER = 'data:text/javascript;base64,';
+      const getCurrentScript = function getCurrentScript() {
         if ('currentScript' in document) {
-          return document.currentScript; // eslint-disable-line compat/compat
+          return document.currentScript;
         }
-
-        var scripts = document.getElementsByTagName('script');
+        const scripts = document.getElementsByTagName('script');
         return scripts[scripts.length - 1];
       };
-      var ourScript = getCurrentScript();
-      var abort = function abort() {
-        var scriptEl = getCurrentScript();
+      const ourScript = getCurrentScript();
+      const abort = function abort() {
+        const scriptEl = getCurrentScript();
         if (!scriptEl) {
           return;
         }
-        var content = scriptEl.textContent;
+        let content = scriptEl.textContent;
 
         // We are using Node.prototype.textContent property descriptor
         // to get the real script content
         // even when document.currentScript.textContent is replaced.
         // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
         try {
-          var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
+          const textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
           content = textContentGetter.call(scriptEl);
         } catch (e) {} // eslint-disable-line no-empty
 
         // https://github.com/AdguardTeam/Scriptlets/issues/130
         if (content.length === 0 && typeof scriptEl.src !== 'undefined' && startsWith$1(scriptEl.src, SRC_DATA_MARKER)) {
-          var encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
+          const encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
           content = window.atob(encodedContent);
         }
         if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && searchRegexp.test(content)) {
@@ -2996,25 +3177,27 @@
           throw new ReferenceError(rid);
         }
       };
-      var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
-        var base = chainInfo.base;
-        var prop = chainInfo.prop,
-          chain = chainInfo.chain; // The scriptlet might be executed before the chain property has been created
+      const setChainPropAccess = function setChainPropAccess(owner, property) {
+        const chainInfo = getPropertyInChain(owner, property);
+        let base = chainInfo.base;
+        const prop = chainInfo.prop,
+          chain = chainInfo.chain;
+
+        // The scriptlet might be executed before the chain property has been created
         // (for instance, document.body before the HTML body was loaded).
         // In this case we're checking whether the base element exists or not
         // and if not, we simply exit without overriding anything.
         // e.g. https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
         if (base instanceof Object === false && base === null) {
-          var props = property.split('.');
-          var propIndex = props.indexOf(prop);
-          var baseName = props[propIndex - 1];
-          var message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
+          const props = property.split('.');
+          const propIndex = props.indexOf(prop);
+          const baseName = props[propIndex - 1];
+          const message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
           logMessage(source, message);
           return;
         }
         if (chain) {
-          var setter = function setter(a) {
+          const setter = function setter(a) {
             base = a;
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
@@ -3028,15 +3211,15 @@
           });
           return;
         }
-        var currentValue = base[prop];
-        var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+        let currentValue = base[prop];
+        let origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
         if (origDescriptor instanceof Object === false || origDescriptor.get instanceof Function === false) {
           currentValue = base[prop];
           origDescriptor = undefined;
         }
-        var descriptorWrapper = Object.assign(getDescriptorAddon(), {
-          currentValue: currentValue,
-          get: function get() {
+        const descriptorWrapper = Object.assign(getDescriptorAddon(), {
+          currentValue,
+          get() {
             if (!this.isAbortingSuspended) {
               this.isolateCallback(abort);
             }
@@ -3045,7 +3228,7 @@
             }
             return this.currentValue;
           },
-          set: function set(newValue) {
+          set(newValue) {
             if (!this.isAbortingSuspended) {
               this.isolateCallback(abort);
             }
@@ -3058,10 +3241,10 @@
         });
         setPropertyAccess(base, prop, {
           // Call wrapped getter and setter to keep isAbortingSuspended & isolateCallback values
-          get: function get() {
+          get() {
             return descriptorWrapper.get.call(descriptorWrapper);
           },
-          set: function set(newValue) {
+          set(newValue) {
             descriptorWrapper.set.call(descriptorWrapper, newValue);
           }
         });
@@ -3081,7 +3264,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet set-constant
-     *
      * @description
      * Creates a constant property and assigns it one of the values from the predefined list.
      *
@@ -3111,8 +3293,10 @@
      *         - `emptyObj` - empty object
      *         - `emptyArr` - empty array
      *         - `noopFunc` - function with empty body
+     *         - `noopCallbackFunc` - function returning noopFunc
      *         - `trueFunc` - function returning true
      *         - `falseFunc` - function returning false
+     *         - `throwFunc` - function throwing an error
      *         - `noopPromiseResolve` - function returning Promise object that is resolved with an empty response
      *         - `noopPromiseReject` - function returning Promise.reject()
      *         - `''` - empty string
@@ -3150,9 +3334,9 @@
       if (!property || !matchStackTrace(stack, new Error().stack)) {
         return;
       }
-      var emptyArr = noopArray();
-      var emptyObj = noopObject();
-      var constantValue;
+      const emptyArr = noopArray();
+      const emptyObj = noopObject();
+      let constantValue;
       if (value === 'undefined') {
         constantValue = undefined;
       } else if (value === 'false') {
@@ -3167,10 +3351,14 @@
         constantValue = emptyObj;
       } else if (value === 'noopFunc') {
         constantValue = noopFunc;
+      } else if (value === 'noopCallbackFunc') {
+        constantValue = noopCallbackFunc;
       } else if (value === 'trueFunc') {
         constantValue = trueFunc;
       } else if (value === 'falseFunc') {
         constantValue = falseFunc;
+      } else if (value === 'throwFunc') {
+        constantValue = throwFunc;
       } else if (value === 'noopPromiseResolve') {
         constantValue = noopPromiseResolve;
       } else if (value === 'noopPromiseReject') {
@@ -3180,7 +3368,7 @@
         if (nativeIsNaN(constantValue)) {
           return;
         }
-        if (Math.abs(constantValue) > 0x7FFF) {
+        if (Math.abs(constantValue) > 32767) {
           return;
         }
       } else if (value === '-1') {
@@ -3194,25 +3382,38 @@
       } else {
         return;
       }
-      var canceled = false;
-      var mustCancel = function mustCancel(value) {
+      let canceled = false;
+      const mustCancel = function mustCancel(value) {
         if (canceled) {
           return canceled;
         }
         canceled = value !== undefined && constantValue !== undefined && typeof value !== typeof constantValue && value !== null;
         return canceled;
       };
-      var trapProp = function trapProp(base, prop, configurable, handler) {
+
+      /**
+       * Safely sets property on a given object
+       *
+       * IMPORTANT! this duplicates corresponding func in trusted-set-constant scriptlet as
+       * reorganizing this to common helpers will most definitely complicate debugging
+       *
+       * @param {Object} base arbitrary reachable object
+       * @param {string} prop property name
+       * @param {boolean} configurable if set property should be configurable
+       * @param {Object} handler custom property descriptor object
+       * @returns {boolean} true if prop was trapped successfully
+       */
+      const trapProp = function trapProp(base, prop, configurable, handler) {
         if (!handler.init(base[prop])) {
           return false;
         }
-        var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
-        var prevSetter;
+        const origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+        let prevSetter;
         // This is required to prevent scriptlets overwrite each over
         if (origDescriptor instanceof Object) {
           // This check is required to avoid defining non-configurable props
           if (!origDescriptor.configurable) {
-            var message = "Property '".concat(prop, "' is not configurable");
+            const message = "Property '".concat(prop, "' is not configurable");
             logMessage(source, message);
             return false;
           }
@@ -3222,11 +3423,11 @@
           }
         }
         Object.defineProperty(base, prop, {
-          configurable: configurable,
-          get: function get() {
+          configurable,
+          get() {
             return handler.get();
           },
-          set: function set(a) {
+          set(a) {
             if (prevSetter !== undefined) {
               prevSetter(a);
             }
@@ -3235,22 +3436,36 @@
         });
         return true;
       };
-      var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
-        var base = chainInfo.base;
-        var prop = chainInfo.prop,
-          chain = chainInfo.chain; // Handler method init is used to keep track of factual value
+
+      /**
+       * Traverses given chain to set constant value to its end prop
+       * Chains that yet include non-object values (e.g null) are valid and will be
+       * traversed when appropriate chain member is set by an external script
+       *
+       * IMPORTANT! this duplicates corresponding func in trusted-set-constant scriptlet as
+       * reorganizing this to common helpers will most definitely complicate debugging
+       *
+       * @param {Object} owner object that owns chain
+       * @param {string} property chain of owner properties
+       */
+      const setChainPropAccess = function setChainPropAccess(owner, property) {
+        const chainInfo = getPropertyInChain(owner, property);
+        const base = chainInfo.base;
+        const prop = chainInfo.prop,
+          chain = chainInfo.chain;
+
+        // Handler method init is used to keep track of factual value
         // and apply mustCancel() check only on end prop
-        var inChainPropHandler = {
+        const inChainPropHandler = {
           factValue: undefined,
-          init: function init(a) {
+          init(a) {
             this.factValue = a;
             return true;
           },
-          get: function get() {
+          get() {
             return this.factValue;
           },
-          set: function set(a) {
+          set(a) {
             // Prevent breakage due to loop assignments like win.obj = win.obj
             if (this.factValue === a) {
               return;
@@ -3261,17 +3476,17 @@
             }
           }
         };
-        var endPropHandler = {
-          init: function init(a) {
+        const endPropHandler = {
+          init(a) {
             if (mustCancel(a)) {
               return false;
             }
             return true;
           },
-          get: function get() {
+          get() {
             return constantValue;
           },
-          set: function set(a) {
+          set(a) {
             if (!mustCancel(a)) {
               return;
             }
@@ -3281,7 +3496,7 @@
 
         // End prop case
         if (!chain) {
-          var isTrapped = trapProp(base, prop, false, endPropHandler);
+          const isTrapped = trapProp(base, prop, false, endPropHandler);
           if (isTrapped) {
             hit(source);
           }
@@ -3300,7 +3515,7 @@
         }
 
         // Defined prop in chain
-        var propValue = owner[prop];
+        const propValue = owner[prop];
         if (propValue instanceof Object || typeof propValue === 'object' && propValue !== null) {
           setChainPropAccess(propValue, chain);
         }
@@ -3313,7 +3528,7 @@
     setConstant$1.names = ['set-constant',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js', 'ubo-set-constant', 'ubo-set', 'abp-override-property-read'];
-    setConstant$1.injections = [hit, logMessage, noopArray, noopObject, noopFunc, trueFunc, falseFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, nativeIsNaN, isEmptyObject, getNativeRegexpTest,
+    setConstant$1.injections = [hit, logMessage, noopArray, noopObject, noopFunc, noopCallbackFunc, trueFunc, falseFunc, throwFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, nativeIsNaN, isEmptyObject, getNativeRegexpTest,
     // following helpers should be imported and injected
     // because they are used by helpers above
     shouldAbortInlineOrInjectedScript];
@@ -3321,7 +3536,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet remove-cookie
-     *
      * @description
      * Removes current page cookies by passed string matching with name. For current domain and subdomains. Runs on load and before unload.
      *
@@ -3337,29 +3551,30 @@
      *
      * **Examples**
      * 1. Removes all cookies:
-     * ```
+     *     ```
      *     example.org#%#//scriptlet('remove-cookie')
-     * ```
+     *     ```
      *
-     * 2. Removes cookies which name contains `example` string.
-     * ```
+     * 2. Removes cookies which name contains `example` string:
+     *     ```
      *     example.org#%#//scriptlet('remove-cookie', 'example')
-     * ```
+     *     ```
      *
-     *     For instance this cookie will be removed
+     *     For instance this cookie will be removed:
+     *
      *     ```javascript
      *     document.cookie = '__example=randomValue';
      *     ```
      */
     /* eslint-enable max-len */
     function removeCookie$1(source, match) {
-      var matchRegexp = toRegExp(match);
-      var removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
-        var cookieSpec = "".concat(cookieName, "=");
-        var domain1 = "; domain=".concat(hostName);
-        var domain2 = "; domain=.".concat(hostName);
-        var path = '; path=/';
-        var expiration = '; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      const matchRegexp = toRegExp(match);
+      const removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
+        const cookieSpec = "".concat(cookieName, "=");
+        const domain1 = "; domain=".concat(hostName);
+        const domain2 = "; domain=.".concat(hostName);
+        const path = '; path=/';
+        const expiration = '; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         document.cookie = cookieSpec + expiration;
         document.cookie = cookieSpec + domain1 + expiration;
         document.cookie = cookieSpec + domain2 + expiration;
@@ -3368,19 +3583,19 @@
         document.cookie = cookieSpec + domain2 + path + expiration;
         hit(source);
       };
-      var rmCookie = function rmCookie() {
+      const rmCookie = function rmCookie() {
         document.cookie.split(';').forEach(function (cookieStr) {
-          var pos = cookieStr.indexOf('=');
+          const pos = cookieStr.indexOf('=');
           if (pos === -1) {
             return;
           }
-          var cookieName = cookieStr.slice(0, pos).trim();
+          const cookieName = cookieStr.slice(0, pos).trim();
           if (!matchRegexp.test(cookieName)) {
             return;
           }
-          var hostParts = document.location.hostname.split('.');
-          for (var i = 0; i <= hostParts.length - 1; i += 1) {
-            var hostName = hostParts.slice(i).join('.');
+          const hostParts = document.location.hostname.split('.');
+          for (let i = 0; i <= hostParts.length - 1; i += 1) {
+            const hostName = hostParts.slice(i).join('.');
             if (hostName) {
               removeCookieFromHost(cookieName, hostName);
             }
@@ -3398,7 +3613,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet prevent-addEventListener
-     *
      * @description
      * Prevents adding event listeners for the specified events and callbacks.
      *
@@ -3417,30 +3631,31 @@
      *
      * **Examples**
      * 1. Prevent all `click` listeners:
-     * ```
+     *     ```
      *     example.org#%#//scriptlet('prevent-addEventListener', 'click')
-     * ```
-
+     *     ```
+     *
     2. Prevent 'click' listeners with the callback body containing `searchString`.
-     * ```
+     *     ```
      *     example.org#%#//scriptlet('prevent-addEventListener', 'click', 'searchString')
-     * ```
+     *     ```
      *
      *     For instance, this listener will not be called:
-     * ```javascript
+     *
+     *     ```javascript
      *     el.addEventListener('click', () => {
      *         window.test = 'searchString';
      *     });
-     * ```
+     *     ```
      */
     /* eslint-enable max-len */
     function preventAddEventListener$1(source, typeSearch, listenerSearch) {
-      var typeSearchRegexp = toRegExp(typeSearch);
-      var listenerSearchRegexp = toRegExp(listenerSearch);
-      var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+      const typeSearchRegexp = toRegExp(typeSearch);
+      const listenerSearchRegexp = toRegExp(listenerSearch);
+      const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
       function addEventListenerWrapper(type, listener) {
         var _this$constructor;
-        var shouldPrevent = false;
+        let shouldPrevent = false;
         if (validateType(type) && validateListener(listener)) {
           shouldPrevent = typeSearchRegexp.test(type.toString()) && listenerSearchRegexp.test(listenerToString(listener));
         }
@@ -3451,16 +3666,16 @@
 
         // Avoid illegal invocations due to lost context
         // https://github.com/AdguardTeam/Scriptlets/issues/271
-        var context = this;
+        let context = this;
         if (this && ((_this$constructor = this.constructor) === null || _this$constructor === void 0 ? void 0 : _this$constructor.name) === 'Window' && this !== window) {
           context = window;
         }
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
-        return nativeAddEventListener.apply(context, [type, listener].concat(args));
+        return nativeAddEventListener.apply(context, [type, listener, ...args]);
       }
-      var descriptor = {
+      const descriptor = {
         configurable: true,
         set: function set() {},
         get: function get() {
@@ -3482,7 +3697,6 @@
 
     /**
      * @scriptlet prevent-bab
-     *
      * @description
      * Prevents BlockAdblock script from detecting an ad blocker.
      *
@@ -3498,29 +3712,29 @@
      * ```
      */
     function preventBab$2(source) {
-      var nativeSetTimeout = window.setTimeout;
-      var babRegex = /\.bab_elementid.$/;
-      var timeoutWrapper = function timeoutWrapper(callback) {
+      const nativeSetTimeout = window.setTimeout;
+      const babRegex = /\.bab_elementid.$/;
+      const timeoutWrapper = function timeoutWrapper(callback) {
         if (typeof callback !== 'string' || !babRegex.test(callback)) {
           for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
             args[_key - 1] = arguments[_key];
           }
-          return nativeSetTimeout.apply(window, [callback].concat(args));
+          return nativeSetTimeout.apply(window, [callback, ...args]);
         }
         hit(source);
       };
       window.setTimeout = timeoutWrapper;
-      var signatures = [['blockadblock'], ['babasbm'], [/getItem\('babn'\)/], ['getElementById', 'String.fromCharCode', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 'charAt', 'DOMContentLoaded', 'AdBlock', 'addEventListener', 'doScroll', 'fromCharCode', '<<2|r>>4', 'sessionStorage', 'clientWidth', 'localStorage', 'Math', 'random']];
-      var check = function check(str) {
+      const signatures = [['blockadblock'], ['babasbm'], [/getItem\('babn'\)/], ['getElementById', 'String.fromCharCode', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 'charAt', 'DOMContentLoaded', 'AdBlock', 'addEventListener', 'doScroll', 'fromCharCode', '<<2|r>>4', 'sessionStorage', 'clientWidth', 'localStorage', 'Math', 'random']];
+      const check = function check(str) {
         if (typeof str !== 'string') {
           return false;
         }
-        for (var i = 0; i < signatures.length; i += 1) {
-          var tokens = signatures[i];
-          var match = 0;
-          for (var j = 0; j < tokens.length; j += 1) {
-            var token = tokens[j];
-            var found = token instanceof RegExp ? token.test(str) : str.indexOf(token) > -1;
+        for (let i = 0; i < signatures.length; i += 1) {
+          const tokens = signatures[i];
+          let match = 0;
+          for (let j = 0; j < tokens.length; j += 1) {
+            const token = tokens[j];
+            const found = token instanceof RegExp ? token.test(str) : str.indexOf(token) > -1;
             if (found) {
               match += 1;
             }
@@ -3531,17 +3745,17 @@
         }
         return false;
       };
-      var nativeEval = window.eval;
-      var evalWrapper = function evalWrapper(str) {
+      const nativeEval = window.eval;
+      const evalWrapper = function evalWrapper(str) {
         if (!check(str)) {
           return nativeEval(str);
         }
         hit(source);
-        var bodyEl = document.body;
+        const bodyEl = document.body;
         if (bodyEl) {
           bodyEl.style.removeProperty('visibility');
         }
-        var el = document.getElementById('babasbmsgx');
+        const el = document.getElementById('babasbmsgx');
         if (el) {
           el.parentNode.removeChild(el);
         }
@@ -3559,7 +3773,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet nowebrtc
-     *
      * @description
      * Disables WebRTC by overriding `RTCPeerConnection`. The overridden function will log every attempt to create a new connection.
      *
@@ -3573,7 +3786,7 @@
      */
     /* eslint-enable max-len */
     function nowebrtc$1(source) {
-      var propertyName = '';
+      let propertyName = '';
       if (window.RTCPeerConnection) {
         propertyName = 'RTCPeerConnection';
       } else if (window.webkitRTCPeerConnection) {
@@ -3582,9 +3795,9 @@
       if (propertyName === '') {
         return;
       }
-      var rtcReplacement = function rtcReplacement(config) {
+      const rtcReplacement = function rtcReplacement(config) {
         // eslint-disable-next-line max-len
-        var message = "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config));
+        const message = "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config));
         logMessage(source, message);
         hit(source);
       };
@@ -3594,7 +3807,7 @@
         createOffer: noopFunc,
         setRemoteDescription: noopFunc
       };
-      var rtc = window[propertyName];
+      const rtc = window[propertyName];
       window[propertyName] = rtcReplacement;
       if (rtc.prototype) {
         rtc.prototype.createDataChannel = function (a, b) {
@@ -3612,7 +3825,6 @@
 
     /**
      * @scriptlet log-addEventListener
-     *
      * @description
      * Logs all addEventListener calls to the console.
      *
@@ -3625,31 +3837,31 @@
      * ```
      */
     function logAddEventListener$1(source) {
-      var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+      const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
       function addEventListenerWrapper(type, listener) {
         var _this$constructor;
         if (validateType(type) && validateListener(listener)) {
-          var _message = "addEventListener(\"".concat(type, "\", ").concat(listenerToString(listener), ")");
-          logMessage(source, _message, true);
+          const message = "addEventListener(\"".concat(type, "\", ").concat(listenerToString(listener), ")");
+          logMessage(source, message, true);
           hit(source);
         }
 
         // logging while debugging
-        var message = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
+        const message = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
         logMessage(source, message, true);
 
         // Avoid illegal invocations due to lost context
         // https://github.com/AdguardTeam/Scriptlets/issues/271
-        var context = this;
+        let context = this;
         if (this && ((_this$constructor = this.constructor) === null || _this$constructor === void 0 ? void 0 : _this$constructor.name) === 'Window' && this !== window) {
           context = window;
         }
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
-        return nativeAddEventListener.apply(context, [type, listener].concat(args));
+        return nativeAddEventListener.apply(context, [type, listener, ...args]);
       }
-      var descriptor = {
+      const descriptor = {
         configurable: true,
         set: function set() {},
         get: function get() {
@@ -3671,7 +3883,6 @@
 
     /**
      * @scriptlet log-eval
-     *
      * @description
      * Logs all `eval()` or `new Function()` calls to the console.
      *
@@ -3682,7 +3893,7 @@
      */
     function logEval$1(source) {
       // wrap eval function
-      var nativeEval = window.eval;
+      const nativeEval = window.eval;
       function evalWrapper(str) {
         hit(source);
         logMessage(source, "eval(\"".concat(str, "\")"), true);
@@ -3691,14 +3902,14 @@
       window.eval = evalWrapper;
 
       // wrap new Function
-      var nativeFunction = window.Function;
+      const nativeFunction = window.Function;
       function FunctionWrapper() {
         hit(source);
         for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
           args[_key] = arguments[_key];
         }
         logMessage(source, "new Function(".concat(args.join(', '), ")"), true);
-        return nativeFunction.apply(this, [].concat(args));
+        return nativeFunction.apply(this, [...args]);
       }
       FunctionWrapper.prototype = Object.create(nativeFunction.prototype);
       FunctionWrapper.prototype.constructor = FunctionWrapper;
@@ -3709,7 +3920,6 @@
 
     /**
      * @scriptlet log
-     *
      * @description
      * A simple scriptlet which only purpose is to print arguments to console.
      * This scriptlet can be helpful for debugging and troubleshooting other scriptlets.
@@ -3732,7 +3942,6 @@
 
     /**
      * @scriptlet noeval
-     *
      * @description
      * Prevents page to use eval.
      * Notifies about attempts in the console
@@ -3763,7 +3972,6 @@
 
     /**
      * @scriptlet prevent-eval-if
-     *
      * @description
      * Prevents page to use eval matching payload.
      *
@@ -3786,8 +3994,8 @@
      * ```
      */
     function preventEvalIf$1(source, search) {
-      var searchRegexp = toRegExp(search);
-      var nativeEval = window.eval;
+      const searchRegexp = toRegExp(search);
+      const nativeEval = window.eval;
       window.eval = function (payload) {
         if (!searchRegexp.test(payload.toString())) {
           return nativeEval.call(window, payload);
@@ -3805,7 +4013,6 @@
 
     /**
      * @scriptlet prevent-fab-3.2.0
-     *
      * @description
      * Prevents execution of the FAB script v3.2.0.
      *
@@ -3821,7 +4028,7 @@
       hit(source);
 
       // redefines Fab function for adblock detection
-      var Fab = function Fab() {};
+      const Fab = function Fab() {};
       Fab.prototype.check = noopFunc;
       Fab.prototype.clearEvent = noopFunc;
       Fab.prototype.emitEvent = noopFunc;
@@ -3841,18 +4048,18 @@
         set: noopFunc,
         get: noopFunc
       };
-      var fab = new Fab();
-      var getSetFab = {
-        get: function get() {
+      const fab = new Fab();
+      const getSetFab = {
+        get() {
           return Fab;
         },
-        set: function set() {}
+        set() {}
       };
-      var getsetfab = {
-        get: function get() {
+      const getsetfab = {
+        get() {
           return fab;
         },
-        set: function set() {}
+        set() {}
       };
 
       // redefined Fab data properties which if 'FuckAdBlock' variable exists
@@ -3897,7 +4104,6 @@
 
     /**
      * @scriptlet set-popads-dummy
-     *
      * @description
      * Sets static properties PopAds and popns.
      *
@@ -3934,7 +4140,6 @@
 
     /**
      * @scriptlet prevent-popads-net
-     *
      * @description
      * Aborts on property write (PopAds, popns), throws reference error with random id.
      *
@@ -3947,8 +4152,8 @@
      * ```
      */
     function preventPopadsNet$1(source) {
-      var rid = randomId();
-      var throwError = function throwError() {
+      const rid = randomId();
+      const throwError = function throwError() {
         throw new ReferenceError(rid);
       };
       delete window.PopAds;
@@ -3973,7 +4178,6 @@
 
     /**
      * @scriptlet prevent-adfly
-     *
      * @description
      * Prevents anti-adblock scripts on adfly short links.
      *
@@ -3986,49 +4190,47 @@
      * ```
      */
     function preventAdfly$1(source) {
-      var isDigit = function isDigit(data) {
+      const isDigit = function isDigit(data) {
         return /^\d$/.test(data);
       };
-      var handler = function handler(encodedURL) {
-        var evenChars = '';
-        var oddChars = '';
-        for (var i = 0; i < encodedURL.length; i += 1) {
+      const handler = function handler(encodedURL) {
+        let evenChars = '';
+        let oddChars = '';
+        for (let i = 0; i < encodedURL.length; i += 1) {
           if (i % 2 === 0) {
             evenChars += encodedURL.charAt(i);
           } else {
             oddChars = encodedURL.charAt(i) + oddChars;
           }
         }
-        var data = (evenChars + oddChars).split('');
-        for (var _i = 0; _i < data.length; _i += 1) {
-          if (isDigit(data[_i])) {
-            for (var ii = _i + 1; ii < data.length; ii += 1) {
+        let data = (evenChars + oddChars).split('');
+        for (let i = 0; i < data.length; i += 1) {
+          if (isDigit(data[i])) {
+            for (let ii = i + 1; ii < data.length; ii += 1) {
               if (isDigit(data[ii])) {
                 // eslint-disable-next-line no-bitwise
-                var temp = parseInt(data[_i], 10) ^ parseInt(data[ii], 10);
+                const temp = parseInt(data[i], 10) ^ parseInt(data[ii], 10);
                 if (temp < 10) {
-                  data[_i] = temp.toString();
+                  data[i] = temp.toString();
                 }
-                _i = ii;
+                i = ii;
                 break;
               }
             }
           }
         }
         data = data.join('');
-        var decodedURL = window.atob(data).slice(16, -16);
-        /* eslint-disable compat/compat */
+        const decodedURL = window.atob(data).slice(16, -16);
         if (window.stop) {
           window.stop();
         }
-        /* eslint-enable compat/compat */
         window.onbeforeunload = null;
         window.location.href = decodedURL;
       };
-      var val;
+      let val;
       // Do not apply handler more than one time
-      var applyHandler = true;
-      var result = setPropertyAccess(window, 'ysmm', {
+      let applyHandler = true;
+      const result = setPropertyAccess(window, 'ysmm', {
         configurable: false,
         set: function set(value) {
           if (applyHandler) {
@@ -4060,7 +4262,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet debug-on-property-read
-     *
      * @description
      * This scriptlet is basically the same as [abort-on-property-read](#abort-on-property-read), but instead of aborting it starts the debugger.
      *
@@ -4079,19 +4280,19 @@
       if (!property) {
         return;
       }
-      var rid = randomId();
-      var abort = function abort() {
+      const rid = randomId();
+      const abort = function abort() {
         hit(source);
         debugger; // eslint-disable-line no-debugger
       };
 
-      var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
-        var base = chainInfo.base;
-        var prop = chainInfo.prop,
+      const setChainPropAccess = function setChainPropAccess(owner, property) {
+        const chainInfo = getPropertyInChain(owner, property);
+        let base = chainInfo.base;
+        const prop = chainInfo.prop,
           chain = chainInfo.chain;
         if (chain) {
-          var setter = function setter(a) {
+          const setter = function setter(a) {
             base = a;
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
@@ -4119,7 +4320,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet debug-on-property-write
-     *
      * @description
      * This scriptlet is basically the same as [abort-on-property-write](#abort-on-property-write), but instead of aborting it starts the debugger.
      *
@@ -4136,19 +4336,19 @@
       if (!property) {
         return;
       }
-      var rid = randomId();
-      var abort = function abort() {
+      const rid = randomId();
+      const abort = function abort() {
         hit(source);
         debugger; // eslint-disable-line no-debugger
       };
 
-      var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
-        var base = chainInfo.base;
-        var prop = chainInfo.prop,
+      const setChainPropAccess = function setChainPropAccess(owner, property) {
+        const chainInfo = getPropertyInChain(owner, property);
+        let base = chainInfo.base;
+        const prop = chainInfo.prop,
           chain = chainInfo.chain;
         if (chain) {
-          var setter = function setter(a) {
+          const setter = function setter(a) {
             base = a;
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
@@ -4175,7 +4375,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet debug-current-inline-script
-     *
      * @description
      * This scriptlet is basically the same as [abort-current-inline-script](#abort-current-inline-script), but instead of aborting it starts the debugger.
      *
@@ -4189,30 +4388,29 @@
      */
     /* eslint-enable max-len */
     function debugCurrentInlineScript$1(source, property, search) {
-      var searchRegexp = toRegExp(search);
-      var rid = randomId();
-      var getCurrentScript = function getCurrentScript() {
+      const searchRegexp = toRegExp(search);
+      const rid = randomId();
+      const getCurrentScript = function getCurrentScript() {
         if ('currentScript' in document) {
-          return document.currentScript; // eslint-disable-line compat/compat
+          return document.currentScript;
         }
-
-        var scripts = document.getElementsByTagName('script');
+        const scripts = document.getElementsByTagName('script');
         return scripts[scripts.length - 1];
       };
-      var ourScript = getCurrentScript();
-      var abort = function abort() {
-        var scriptEl = getCurrentScript();
+      const ourScript = getCurrentScript();
+      const abort = function abort() {
+        const scriptEl = getCurrentScript();
         if (!scriptEl) {
           return;
         }
-        var content = scriptEl.textContent;
+        let content = scriptEl.textContent;
 
         // We are using Node.prototype.textContent property descriptor
         // to get the real script content
         // even when document.currentScript.textContent is replaced.
         // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
         try {
-          var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
+          const textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
           content = textContentGetter.call(scriptEl);
         } catch (e) {} // eslint-disable-line no-empty
 
@@ -4222,25 +4420,27 @@
         }
       };
 
-      var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
-        var base = chainInfo.base;
-        var prop = chainInfo.prop,
-          chain = chainInfo.chain; // The scriptlet might be executed before the chain property has been created
+      const setChainPropAccess = function setChainPropAccess(owner, property) {
+        const chainInfo = getPropertyInChain(owner, property);
+        let base = chainInfo.base;
+        const prop = chainInfo.prop,
+          chain = chainInfo.chain;
+
+        // The scriptlet might be executed before the chain property has been created
         // (for instance, document.body before the HTML body was loaded).
         // In this case we're checking whether the base element exists or not
         // and if not, we simply exit without overriding anything.
         // e.g. https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
         if (base instanceof Object === false && base === null) {
-          var props = property.split('.');
-          var propIndex = props.indexOf(prop);
-          var baseName = props[propIndex - 1];
-          var message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
+          const props = property.split('.');
+          const propIndex = props.indexOf(prop);
+          const baseName = props[propIndex - 1];
+          const message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
           logMessage(message, source.verbose);
           return;
         }
         if (chain) {
-          var setter = function setter(a) {
+          const setter = function setter(a) {
             base = a;
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
@@ -4254,7 +4454,7 @@
           });
           return;
         }
-        var currentValue = base[prop];
+        let currentValue = base[prop];
         setPropertyAccess(base, prop, {
           set: function set(value) {
             abort();
@@ -4275,7 +4475,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet remove-attr
-     *
      * @description
      * Removes the specified attributes from DOM nodes. This scriptlet runs once when the page loads
      * and after that periodically in order to DOM tree changes by default,
@@ -4334,7 +4533,7 @@
      */
     /* eslint-enable max-len */
     function removeAttr$1(source, attrs, selector) {
-      var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'asap stay';
+      let applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'asap stay';
       if (!attrs) {
         return;
       }
@@ -4342,14 +4541,14 @@
       if (!selector) {
         selector = "[".concat(attrs.join('],['), "]");
       }
-      var rmattr = function rmattr() {
-        var nodes = [];
+      const rmattr = function rmattr() {
+        let nodes = [];
         try {
           nodes = [].slice.call(document.querySelectorAll(selector));
         } catch (e) {
           logMessage(source, "Invalid selector arg: '".concat(selector, "'"));
         }
-        var removed = false;
+        let removed = false;
         nodes.forEach(function (node) {
           attrs.forEach(function (attr) {
             node.removeAttribute(attr);
@@ -4360,8 +4559,8 @@
           hit(source);
         }
       };
-      var flags = parseFlags(applying);
-      var run = function run() {
+      const flags = parseFlags(applying);
+      const run = function run() {
         rmattr();
         if (!flags.hasFlag(flags.STAY)) {
           return;
@@ -4405,7 +4604,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet set-attr
-     *
      * @description
      * Sets the specified attribute on the specified elements. This scriptlet runs once when the page loads
      * and after that and after that on DOM tree changes.
@@ -4449,17 +4647,17 @@
      */
     /* eslint-enable max-len */
     function setAttr$1(source, selector, attr) {
-      var value = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+      let value = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
       if (!selector || !attr) {
         return;
       }
       // Drop strings that cant be parsed into number, negative numbers and numbers below 32767
-      if (value.length !== 0 && (nativeIsNaN(parseInt(value, 10)) || parseInt(value, 10) < 0 || parseInt(value, 10) > 0x7FFF)) {
+      if (value.length !== 0 && (nativeIsNaN(parseInt(value, 10)) || parseInt(value, 10) < 0 || parseInt(value, 10) > 32767)) {
         return;
       }
-      var setAttr = function setAttr() {
-        var nodes = [].slice.call(document.querySelectorAll(selector));
-        var set = false;
+      const setAttr = function setAttr() {
+        const nodes = [].slice.call(document.querySelectorAll(selector));
+        let set = false;
         nodes.forEach(function (node) {
           node.setAttribute(attr, value);
           set = true;
@@ -4480,7 +4678,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet remove-class
-     *
      * @description
      * Removes the specified classes from DOM nodes. This scriptlet runs once after the page loads
      * and after that periodically in order to DOM tree changes.
@@ -4544,21 +4741,21 @@
     /* eslint-enable max-len */
 
     function removeClass$1(source, classNames, selector) {
-      var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'asap stay';
+      let applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'asap stay';
       if (!classNames) {
         return;
       }
       classNames = classNames.split(/\s*\|\s*/);
-      var selectors = [];
+      let selectors = [];
       if (!selector) {
         selectors = classNames.map(function (className) {
           return ".".concat(className);
         });
       }
-      var removeClassHandler = function removeClassHandler() {
-        var nodes = new Set();
+      const removeClassHandler = function removeClassHandler() {
+        const nodes = new Set();
         if (selector) {
-          var foundNodes = [];
+          let foundNodes = [];
           try {
             foundNodes = [].slice.call(document.querySelectorAll(selector));
           } catch (e) {
@@ -4569,14 +4766,14 @@
           });
         } else if (selectors.length > 0) {
           selectors.forEach(function (s) {
-            var elements = document.querySelectorAll(s);
-            for (var i = 0; i < elements.length; i += 1) {
-              var element = elements[i];
+            const elements = document.querySelectorAll(s);
+            for (let i = 0; i < elements.length; i += 1) {
+              const element = elements[i];
               nodes.add(element);
             }
           });
         }
-        var removed = false;
+        let removed = false;
         nodes.forEach(function (node) {
           classNames.forEach(function (className) {
             if (node.classList.contains(className)) {
@@ -4589,9 +4786,9 @@
           hit(source);
         }
       };
-      var CLASS_ATTR_NAME = ['class'];
-      var flags = parseFlags(applying);
-      var run = function run() {
+      const CLASS_ATTR_NAME = ['class'];
+      const flags = parseFlags(applying);
+      const run = function run() {
         removeClassHandler();
         if (!flags.hasFlag(flags.STAY)) {
           return;
@@ -4634,7 +4831,6 @@
 
     /**
      * @scriptlet disable-newtab-links
-     *
      * @description
      * Prevents opening new tabs and windows if there is `target` attribute in element.
      *
@@ -4648,7 +4844,7 @@
      */
     function disableNewtabLinks$1(source) {
       document.addEventListener('click', function (ev) {
-        var target = ev.target;
+        let target = ev.target;
         while (target !== null) {
           if (target.localName === 'a' && target.hasAttribute('target')) {
             ev.stopPropagation();
@@ -4668,7 +4864,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet adjust-setInterval
-     *
      * @description
      * Adjusts delay for specified setInterval() callbacks.
      *
@@ -4716,13 +4911,13 @@
      */
     /* eslint-enable max-len */
     function adjustSetInterval$1(source, matchCallback, matchDelay, boost) {
-      var nativeSetInterval = window.setInterval;
-      var matchRegexp = toRegExp(matchCallback);
-      var intervalWrapper = function intervalWrapper(callback, delay) {
+      const nativeSetInterval = window.setInterval;
+      const matchRegexp = toRegExp(matchCallback);
+      const intervalWrapper = function intervalWrapper(callback, delay) {
         // https://github.com/AdguardTeam/Scriptlets/issues/221
         if (!isValidCallback(callback)) {
           // eslint-disable-next-line max-len
-          var message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'.");
+          const message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'");
           logMessage(source, message);
         } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
           delay *= getBoostMultiplier(boost);
@@ -4731,7 +4926,7 @@
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
-        return nativeSetInterval.apply(window, [callback, delay].concat(args));
+        return nativeSetInterval.apply(window, [callback, delay, ...args]);
       };
       window.setInterval = intervalWrapper;
     }
@@ -4745,7 +4940,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet adjust-setTimeout
-     *
      * @description
      * Adjusts delay for specified setTimeout() callbacks.
      *
@@ -4793,13 +4987,13 @@
      */
     /* eslint-enable max-len */
     function adjustSetTimeout$1(source, matchCallback, matchDelay, boost) {
-      var nativeSetTimeout = window.setTimeout;
-      var matchRegexp = toRegExp(matchCallback);
-      var timeoutWrapper = function timeoutWrapper(callback, delay) {
+      const nativeSetTimeout = window.setTimeout;
+      const matchRegexp = toRegExp(matchCallback);
+      const timeoutWrapper = function timeoutWrapper(callback, delay) {
         // https://github.com/AdguardTeam/Scriptlets/issues/221
         if (!isValidCallback(callback)) {
           // eslint-disable-next-line max-len
-          var message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'.");
+          const message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'");
           logMessage(source, message);
         } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
           delay *= getBoostMultiplier(boost);
@@ -4808,7 +5002,7 @@
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
-        return nativeSetTimeout.apply(window, [callback, delay].concat(args));
+        return nativeSetTimeout.apply(window, [callback, delay, ...args]);
       };
       window.setTimeout = timeoutWrapper;
     }
@@ -4822,7 +5016,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet dir-string
-     *
      * @description
      * Wraps the `console.dir` API to call the `toString` method of the argument.
      * There are several adblock circumvention systems that detect browser devtools
@@ -4847,7 +5040,7 @@
      */
     /* eslint-enable max-len */
     function dirString$1(source, times) {
-      var _console = console,
+      const _console = console,
         dir = _console.dir;
       function dirWrapper(object) {
         if (typeof dir === 'function') {
@@ -4864,7 +5057,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet json-prune
-     *
      * @description
      * Removes specified properties from the result of calling JSON.parse and returns the caller
      *
@@ -4942,43 +5134,43 @@
       if (!!stack && !matchStackTrace(stack, new Error().stack)) {
         return;
       }
-      var prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
-      var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
+      const prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
+      const requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
       function isPruningNeeded(root) {
         if (!root) {
           return false;
         }
-        var shouldProcess;
+        let shouldProcess;
 
         // Only log hostname and matched JSON payload if only second argument is present
         if (prunePaths.length === 0 && requiredPaths.length > 0) {
-          var rootString = JSON.stringify(root);
-          var matchRegex = toRegExp(requiredPaths.join(''));
-          var shouldLog = matchRegex.test(rootString);
+          const rootString = JSON.stringify(root);
+          const matchRegex = toRegExp(requiredPaths.join(''));
+          const shouldLog = matchRegex.test(rootString);
           if (shouldLog) {
             logMessage(source, "".concat(window.location.hostname, " ").concat(objectToString(root)), true);
             shouldProcess = false;
             return shouldProcess;
           }
         }
-        for (var i = 0; i < requiredPaths.length; i += 1) {
-          var requiredPath = requiredPaths[i];
-          var lastNestedPropName = requiredPath.split('.').pop();
-          var hasWildcard = requiredPath.indexOf('.*.') > -1 || requiredPath.indexOf('*.') > -1 || requiredPath.indexOf('.*') > -1 || requiredPath.indexOf('.[].') > -1 || requiredPath.indexOf('[].') > -1 || requiredPath.indexOf('.[]') > -1;
+        for (let i = 0; i < requiredPaths.length; i += 1) {
+          const requiredPath = requiredPaths[i];
+          const lastNestedPropName = requiredPath.split('.').pop();
+          const hasWildcard = requiredPath.indexOf('.*.') > -1 || requiredPath.indexOf('*.') > -1 || requiredPath.indexOf('.*') > -1 || requiredPath.indexOf('.[].') > -1 || requiredPath.indexOf('[].') > -1 || requiredPath.indexOf('.[]') > -1;
 
           // if the path has wildcard, getPropertyInChain should 'look through' chain props
-          var details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
+          const details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
 
           // start value of 'shouldProcess' due to checking below
           shouldProcess = !hasWildcard;
-          for (var _i = 0; _i < details.length; _i += 1) {
+          for (let i = 0; i < details.length; i += 1) {
             if (hasWildcard) {
               // if there is a wildcard,
               // at least one (||) of props chain should be present in object
-              shouldProcess = !(details[_i].base[lastNestedPropName] === undefined) || shouldProcess;
+              shouldProcess = !(details[i].base[lastNestedPropName] === undefined) || shouldProcess;
             } else {
               // otherwise each one (&&) of them should be there
-              shouldProcess = !(details[_i].base[lastNestedPropName] === undefined) && shouldProcess;
+              shouldProcess = !(details[i].base[lastNestedPropName] === undefined) && shouldProcess;
             }
           }
         }
@@ -4987,9 +5179,11 @@
 
       /**
        * Prunes properties of 'root' object
+       *
        * @param {Object} root
+       * @returns {Object} pruned root
        */
-      var jsonPruner = function jsonPruner(root) {
+      const jsonPruner = function jsonPruner(root) {
         if (prunePaths.length === 0 && requiredPaths.length === 0) {
           logMessage(source, "".concat(window.location.hostname, " ").concat(objectToString(root)), true);
           return root;
@@ -5002,7 +5196,7 @@
           // if pruning is needed, we check every input pathToRemove
           // and delete it if root has it
           prunePaths.forEach(function (path) {
-            var ownerObjArr = getWildcardPropertyInChain(root, path, true);
+            const ownerObjArr = getWildcardPropertyInChain(root, path, true);
             ownerObjArr.forEach(function (ownerObj) {
               if (ownerObj !== undefined && ownerObj.base) {
                 delete ownerObj.base[ownerObj.prop];
@@ -5015,26 +5209,24 @@
         }
         return root;
       };
-      var nativeJSONParse = JSON.parse;
-      var jsonParseWrapper = function jsonParseWrapper() {
+      const nativeJSONParse = JSON.parse;
+      const jsonParseWrapper = function jsonParseWrapper() {
         for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
           args[_key] = arguments[_key];
         }
         // dealing with stringified json in args, which should be parsed.
         // so we call nativeJSONParse as JSON.parse which is bound to JSON object
-        var root = nativeJSONParse.apply(JSON, args);
+        const root = nativeJSONParse.apply(JSON, args);
         return jsonPruner(root);
       };
 
       // JSON.parse mocking
       jsonParseWrapper.toString = nativeJSONParse.toString.bind(nativeJSONParse);
       JSON.parse = jsonParseWrapper;
-
-      // eslint-disable-next-line compat/compat
-      var nativeResponseJson = Response.prototype.json;
+      const nativeResponseJson = Response.prototype.json;
       // eslint-disable-next-line func-names
-      var responseJsonWrapper = function responseJsonWrapper() {
-        var promise = nativeResponseJson.apply(this);
+      const responseJsonWrapper = function responseJsonWrapper() {
+        const promise = nativeResponseJson.apply(this);
         return promise.then(function (obj) {
           return jsonPruner(obj);
         });
@@ -5045,8 +5237,6 @@
       if (typeof Response === 'undefined') {
         return;
       }
-
-      // eslint-disable-next-line compat/compat
       Response.prototype.json = responseJsonWrapper;
     }
     jsonPrune$1.names = ['json-prune',
@@ -5059,7 +5249,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet prevent-requestAnimationFrame
-     *
      * @description
      * Prevents a `requestAnimationFrame` call
      * if the text of the callback is matching the specified search string which does not start with `!`;
@@ -5127,15 +5316,15 @@
     /* eslint-enable max-len */
 
     function preventRequestAnimationFrame$1(source, match) {
-      var nativeRequestAnimationFrame = window.requestAnimationFrame;
+      const nativeRequestAnimationFrame = window.requestAnimationFrame;
 
       // logs requestAnimationFrame to console if no arguments have been specified
-      var shouldLog = typeof match === 'undefined';
-      var _parseMatchArg = parseMatchArg(match),
+      const shouldLog = typeof match === 'undefined';
+      const _parseMatchArg = parseMatchArg(match),
         isInvertedMatch = _parseMatchArg.isInvertedMatch,
         matchRegexp = _parseMatchArg.matchRegexp;
-      var rafWrapper = function rafWrapper(callback) {
-        var shouldPrevent = false;
+      const rafWrapper = function rafWrapper(callback) {
+        let shouldPrevent = false;
         if (shouldLog) {
           hit(source);
           logMessage(source, "requestAnimationFrame(".concat(String(callback), ")"), true);
@@ -5149,7 +5338,7 @@
         for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
           args[_key - 1] = arguments[_key];
         }
-        return nativeRequestAnimationFrame.apply(window, [callback].concat(args));
+        return nativeRequestAnimationFrame.apply(window, [callback, ...args]);
       };
       window.requestAnimationFrame = rafWrapper;
     }
@@ -5163,7 +5352,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet set-cookie
-     *
      * @description
      * Sets a cookie with the specified name, value, and path.
      *
@@ -5196,8 +5384,8 @@
      */
     /* eslint-enable max-len */
     function setCookie$1(source, name, value) {
-      var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '/';
-      var validValue = getLimitedCookieValue(value);
+      let path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '/';
+      const validValue = getLimitedCookieValue(value);
       if (validValue === null) {
         logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
         return;
@@ -5206,7 +5394,7 @@
         logMessage(source, "Invalid cookie path: '".concat(path, "'"));
         return;
       }
-      var cookieToSet = concatCookieNameValuePath(name, validValue, path);
+      const cookieToSet = concatCookieNameValuePath(name, validValue, path);
       if (!cookieToSet) {
         return;
       }
@@ -5218,7 +5406,6 @@
 
     /**
      * @scriptlet set-cookie-reload
-     *
      * @description
      * Sets a cookie with the specified name and value, and path,
      * and reloads the current page after the cookie setting.
@@ -5252,11 +5439,11 @@
      * ```
      */
     function setCookieReload$1(source, name, value) {
-      var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '/';
+      let path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '/';
       if (isCookieSetWithValue(document.cookie, name, value)) {
         return;
       }
-      var validValue = getLimitedCookieValue(value);
+      const validValue = getLimitedCookieValue(value);
       if (validValue === null) {
         logMessage(source, "Invalid cookie value: '".concat(value, "'"));
         return;
@@ -5265,7 +5452,7 @@
         logMessage(source, "Invalid cookie path: '".concat(path, "'"));
         return;
       }
-      var cookieToSet = concatCookieNameValuePath(name, validValue, path);
+      const cookieToSet = concatCookieNameValuePath(name, validValue, path);
       if (!cookieToSet) {
         return;
       }
@@ -5283,7 +5470,6 @@
 
     /**
      * @scriptlet hide-in-shadow-dom
-     *
      * @description
      * Hides elements inside open shadow DOM elements.
      *
@@ -5314,22 +5500,22 @@
       if (!Element.prototype.attachShadow) {
         return;
       }
-      var hideElement = function hideElement(targetElement) {
-        var DISPLAY_NONE_CSS = 'display:none!important;';
+      const hideElement = function hideElement(targetElement) {
+        const DISPLAY_NONE_CSS = 'display:none!important;';
         targetElement.style.cssText = DISPLAY_NONE_CSS;
       };
 
       /**
        * Handles shadow-dom piercing and hiding of found elements
        */
-      var hideHandler = function hideHandler() {
+      const hideHandler = function hideHandler() {
         // start value of shadow-dom hosts for the page dom
-        var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
+        let hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
 
         // if there is shadow-dom host, they should be explored
         while (hostElements.length !== 0) {
-          var isHidden = false;
-          var _pierceShadowDom = pierceShadowDom(selector, hostElements),
+          let isHidden = false;
+          const _pierceShadowDom = pierceShadowDom(selector, hostElements),
             targets = _pierceShadowDom.targets,
             innerHosts = _pierceShadowDom.innerHosts;
           targets.forEach(function (targetEl) {
@@ -5356,7 +5542,6 @@
 
     /**
      * @scriptlet remove-in-shadow-dom
-     *
      * @description
      * Removes elements inside open shadow DOM elements.
      *
@@ -5387,21 +5572,21 @@
       if (!Element.prototype.attachShadow) {
         return;
       }
-      var removeElement = function removeElement(targetElement) {
+      const removeElement = function removeElement(targetElement) {
         targetElement.remove();
       };
 
       /**
        * Handles shadow-dom piercing and removing of found elements
        */
-      var removeHandler = function removeHandler() {
+      const removeHandler = function removeHandler() {
         // start value of shadow-dom hosts for the page dom
-        var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
+        let hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
 
         // if there is shadow-dom host, they should be explored
         while (hostElements.length !== 0) {
-          var isRemoved = false;
-          var _pierceShadowDom = pierceShadowDom(selector, hostElements),
+          let isRemoved = false;
+          const _pierceShadowDom = pierceShadowDom(selector, hostElements),
             targets = _pierceShadowDom.targets,
             innerHosts = _pierceShadowDom.innerHosts;
           targets.forEach(function (targetEl) {
@@ -5429,7 +5614,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet prevent-fetch
-     *
      * @description
      * Prevents `fetch` calls if **all** given parameters match
      *
@@ -5500,15 +5684,15 @@
      */
     /* eslint-enable max-len */
     function preventFetch$1(source, propsToMatch) {
-      var responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'emptyObj';
-      var responseType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'default';
+      let responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'emptyObj';
+      let responseType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'default';
       // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
       if (typeof fetch === 'undefined' || typeof Proxy === 'undefined' || typeof Response === 'undefined') {
         return;
       }
-      var strResponseBody;
+      let strResponseBody;
       if (responseBody === '' || responseBody === 'emptyObj') {
         strResponseBody = '{}';
       } else if (responseBody === 'emptyArr') {
@@ -5522,9 +5706,9 @@
         logMessage(source, "Invalid parameter: ".concat(responseType));
         return;
       }
-      var handlerWrapper = function handlerWrapper(target, thisArg, args) {
-        var shouldPrevent = false;
-        var fetchData = getFetchData(args);
+      const handlerWrapper = function handlerWrapper(target, thisArg, args) {
+        let shouldPrevent = false;
+        const fetchData = getFetchData(args);
         if (typeof propsToMatch === 'undefined') {
           logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
           hit(source);
@@ -5537,7 +5721,7 @@
         }
         return Reflect.apply(target, thisArg, args);
       };
-      var fetchHandler = {
+      const fetchHandler = {
         apply: handlerWrapper
       };
       fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
@@ -5551,7 +5735,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet set-local-storage-item
-     *
      * @description
      * Adds specified key and its value to localStorage object, or updates the value of the key if it already exists.
      * Scriptlet won't set item if storage is full.
@@ -5589,14 +5772,14 @@
         logMessage(source, 'Item key should be specified.');
         return;
       }
-      var validValue;
+      let validValue;
       try {
         validValue = getLimitedStorageItemValue(value);
       } catch (_unused) {
         logMessage(source, "Invalid storage item value: '".concat(value, "'"));
         return;
       }
-      var _window = window,
+      const _window = window,
         localStorage = _window.localStorage;
       setStorageItem(source, localStorage, key, validValue);
       hit(source);
@@ -5607,7 +5790,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet set-session-storage-item
-     *
      * @description
      * Adds specified key and its value to sessionStorage object, or updates the value of the key if it already exists.
      * Scriptlet won't set item if storage is full.
@@ -5645,14 +5827,14 @@
         logMessage(source, 'Item key should be specified.');
         return;
       }
-      var validValue;
+      let validValue;
       try {
         validValue = getLimitedStorageItemValue(value);
       } catch (_unused) {
         logMessage(source, "Invalid storage item value: '".concat(value, "'"));
         return;
       }
-      var _window = window,
+      const _window = window,
         sessionStorage = _window.sessionStorage;
       setStorageItem(source, sessionStorage, key, validValue);
       hit(source);
@@ -5663,7 +5845,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet abort-on-stack-trace
-     *
      * @description
      * Aborts a script when it attempts to utilize (read or write to) the specified property and it's error stack trace contains given value.
      *
@@ -5705,18 +5886,18 @@
       if (!property || !stack) {
         return;
       }
-      var rid = randomId();
-      var abort = function abort() {
+      const rid = randomId();
+      const abort = function abort() {
         hit(source);
         throw new ReferenceError(rid);
       };
-      var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
-        var base = chainInfo.base;
-        var prop = chainInfo.prop,
+      const setChainPropAccess = function setChainPropAccess(owner, property) {
+        const chainInfo = getPropertyInChain(owner, property);
+        let base = chainInfo.base;
+        const prop = chainInfo.prop,
           chain = chainInfo.chain;
         if (chain) {
-          var setter = function setter(a) {
+          const setter = function setter(a) {
             base = a;
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
@@ -5736,15 +5917,15 @@
         }
 
         // Prevent infinite loops when trapping prop used by helpers in getter/setter
-        var descriptorWrapper = Object.assign(getDescriptorAddon(), {
+        const descriptorWrapper = Object.assign(getDescriptorAddon(), {
           value: base[prop],
-          get: function get() {
+          get() {
             if (!this.isAbortingSuspended && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
               abort();
             }
             return this.value;
           },
-          set: function set(newValue) {
+          set(newValue) {
             if (!this.isAbortingSuspended && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
               abort();
             }
@@ -5753,10 +5934,10 @@
         });
         setPropertyAccess(base, prop, {
           // Call wrapped getter and setter to keep isAbortingSuspended & isolateCallback values
-          get: function get() {
+          get() {
             return descriptorWrapper.get.call(descriptorWrapper);
           },
-          set: function set(newValue) {
+          set(newValue) {
             descriptorWrapper.set.call(descriptorWrapper, newValue);
           }
         });
@@ -5772,7 +5953,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet log-on-stack-trace
-     *
      * @description
      * This scriptlet is basically the same as [abort-on-stack-trace](#abort-on-stack-trace), but instead of aborting it logs:
      * - function and source script names pairs that access the given property
@@ -5791,19 +5971,19 @@
       if (!property) {
         return;
       }
-      var refineStackTrace = function refineStackTrace(stackString) {
+      const refineStackTrace = function refineStackTrace(stackString) {
         // Split stack trace string by lines and remove first two elements ('Error' and getter call)
         // Remove '    at ' at the start of each string
-        var stackSteps = stackString.split('\n').slice(2).map(function (line) {
+        const stackSteps = stackString.split('\n').slice(2).map(function (line) {
           return line.replace(/ {4}at /, '');
         });
         // Trim each line extracting funcName : fullPath pair
-        var logInfoArray = stackSteps.map(function (line) {
-          var funcName;
-          var funcFullPath;
+        const logInfoArray = stackSteps.map(function (line) {
+          let funcName;
+          let funcFullPath;
           /* eslint-disable-next-line no-useless-escape */
-          var reg = /\(([^\)]+)\)/;
-          var regFirefox = /(.*?@)(\S+)(:\d+):\d+\)?$/;
+          const reg = /\(([^\)]+)\)/;
+          const regFirefox = /(.*?@)(\S+)(:\d+):\d+\)?$/;
           if (line.match(reg)) {
             funcName = line.split(' ').slice(0, -1).join(' ');
             /* eslint-disable-next-line prefer-destructuring */
@@ -5820,20 +6000,20 @@
           return [funcName, funcFullPath];
         });
         // Convert array into object for better display using console.table
-        var logInfoObject = {};
+        const logInfoObject = {};
         logInfoArray.forEach(function (pair) {
           /* eslint-disable-next-line prefer-destructuring */
           logInfoObject[pair[0]] = pair[1];
         });
         return logInfoObject;
       };
-      var setChainPropAccess = function setChainPropAccess(owner, property) {
-        var chainInfo = getPropertyInChain(owner, property);
-        var base = chainInfo.base;
-        var prop = chainInfo.prop,
+      const setChainPropAccess = function setChainPropAccess(owner, property) {
+        const chainInfo = getPropertyInChain(owner, property);
+        let base = chainInfo.base;
+        const prop = chainInfo.prop,
           chain = chainInfo.chain;
         if (chain) {
-          var setter = function setter(a) {
+          const setter = function setter(a) {
             base = a;
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
@@ -5847,23 +6027,23 @@
           });
           return;
         }
-        var value = base[prop];
-        /* eslint-disable no-console, compat/compat */
+        let value = base[prop];
+        /* eslint-disable no-console */
         setPropertyAccess(base, prop, {
-          get: function get() {
+          get() {
             hit(source);
             logMessage(source, "Get ".concat(prop), true);
             console.table(refineStackTrace(new Error().stack));
             return value;
           },
-          set: function set(newValue) {
+          set(newValue) {
             hit(source);
             logMessage(source, "Set ".concat(prop), true);
             console.table(refineStackTrace(new Error().stack));
             value = newValue;
           }
         });
-        /* eslint-enable no-console, compat/compat */
+        /* eslint-enable no-console */
       };
 
       setChainPropAccess(window, property);
@@ -5874,7 +6054,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet prevent-xhr
-     *
      * @description
      * Prevents `xhr` calls if **all** given parameters match.
      *
@@ -5944,13 +6123,12 @@
       if (typeof Proxy === 'undefined') {
         return;
       }
-      var shouldPrevent = false;
-      var response = '';
-      var responseText = '';
-      var responseUrl;
-      var openWrapper = function openWrapper(target, thisArg, args) {
+      let response = '';
+      let responseText = '';
+      let responseUrl;
+      const openWrapper = function openWrapper(target, thisArg, args) {
         // Get method and url from .open()
-        var xhrData = {
+        const xhrData = {
           method: args[0],
           url: args[1]
         };
@@ -5959,13 +6137,13 @@
           // Log if no propsToMatch given
           logMessage(source, "xhr( ".concat(objectToString(xhrData), " )"), true);
           hit(source);
-        } else {
-          shouldPrevent = matchRequestProps(source, propsToMatch, xhrData);
+        } else if (matchRequestProps(source, propsToMatch, xhrData)) {
+          thisArg.shouldBePrevented = true;
         }
         return Reflect.apply(target, thisArg, args);
       };
-      var sendWrapper = function sendWrapper(target, thisArg, args) {
-        if (!shouldPrevent) {
+      const sendWrapper = function sendWrapper(target, thisArg, args) {
+        if (!thisArg.shouldBePrevented) {
           return Reflect.apply(target, thisArg, args);
         }
         if (thisArg.responseType === 'blob') {
@@ -5975,7 +6153,7 @@
           response = new ArrayBuffer();
         }
         if (customResponseText) {
-          var randomText = generateRandomResponse(customResponseText);
+          const randomText = generateRandomResponse(customResponseText);
           if (randomText) {
             responseText = randomText;
           } else {
@@ -6015,20 +6193,20 @@
         });
         // Mock events
         setTimeout(function () {
-          var stateEvent = new Event('readystatechange');
+          const stateEvent = new Event('readystatechange');
           thisArg.dispatchEvent(stateEvent);
-          var loadEvent = new Event('load');
+          const loadEvent = new Event('load');
           thisArg.dispatchEvent(loadEvent);
-          var loadEndEvent = new Event('loadend');
+          const loadEndEvent = new Event('loadend');
           thisArg.dispatchEvent(loadEndEvent);
         }, 1);
         hit(source);
         return undefined;
       };
-      var openHandler = {
+      const openHandler = {
         apply: openWrapper
       };
-      var sendHandler = {
+      const sendHandler = {
         apply: sendWrapper
       };
       XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
@@ -6041,7 +6219,6 @@
 
     /**
      * @scriptlet close-window
-     *
      * @description
      * Closes the browser tab immediately.
      *
@@ -6067,14 +6244,14 @@
      * ```
      */
     function forceWindowClose$1(source) {
-      var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+      let path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
       // https://github.com/AdguardTeam/Scriptlets/issues/158#issuecomment-993423036
       if (typeof window.close !== 'function') {
-        var message = 'window.close() is not a function so \'close-window\' scriptlet is unavailable';
+        const message = 'window.close() is not a function so \'close-window\' scriptlet is unavailable';
         logMessage(source, message);
         return;
       }
-      var closeImmediately = function closeImmediately() {
+      const closeImmediately = function closeImmediately() {
         try {
           hit(source);
           window.close();
@@ -6084,8 +6261,8 @@
           logMessage(source, e);
         }
       };
-      var closeByExtension = function closeByExtension() {
-        var extCall = function extCall() {
+      const closeByExtension = function closeByExtension() {
+        const extCall = function extCall() {
           dispatchEvent(new Event('adguard:scriptlet-close-window'));
         };
         window.addEventListener('adguard:subscribed-to-close-window', extCall, {
@@ -6097,12 +6274,12 @@
           });
         }, 5000);
       };
-      var shouldClose = function shouldClose() {
+      const shouldClose = function shouldClose() {
         if (path === '') {
           return true;
         }
-        var pathRegexp = toRegExp(path);
-        var currentPath = "".concat(window.location.pathname).concat(window.location.search);
+        const pathRegexp = toRegExp(path);
+        const currentPath = "".concat(window.location.pathname).concat(window.location.search);
         return pathRegexp.test(currentPath);
       };
       if (shouldClose()) {
@@ -6118,7 +6295,6 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet prevent-refresh
-     *
      * @description
      * Prevents reloading of a document through a meta "refresh" tag.
      *
@@ -6145,8 +6321,8 @@
      */
     /* eslint-enable max-len */
     function preventRefresh$1(source, delaySec) {
-      var getMetaElements = function getMetaElements() {
-        var metaNodes = [];
+      const getMetaElements = function getMetaElements() {
+        let metaNodes = [];
         try {
           metaNodes = document.querySelectorAll('meta[http-equiv="refresh" i][content]');
         } catch (e) {
@@ -6159,17 +6335,17 @@
         }
         return Array.from(metaNodes);
       };
-      var getMetaContentDelay = function getMetaContentDelay(metaElements) {
-        var delays = metaElements.map(function (meta) {
-          var contentString = meta.getAttribute('content');
+      const getMetaContentDelay = function getMetaContentDelay(metaElements) {
+        const delays = metaElements.map(function (meta) {
+          const contentString = meta.getAttribute('content');
           if (contentString.length === 0) {
             return null;
           }
-          var contentDelay;
+          let contentDelay;
           // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#attr-http-equiv
-          var limiterIndex = contentString.indexOf(';');
+          const limiterIndex = contentString.indexOf(';');
           if (limiterIndex !== -1) {
-            var delaySubstring = contentString.substring(0, limiterIndex);
+            const delaySubstring = contentString.substring(0, limiterIndex);
             contentDelay = getNumberFromString(delaySubstring);
           } else {
             contentDelay = getNumberFromString(contentString);
@@ -6184,18 +6360,18 @@
           return null;
         }
         // Get smallest delay of all metas on the page
-        var minDelay = delays.reduce(function (a, b) {
+        const minDelay = delays.reduce(function (a, b) {
           return Math.min(a, b);
         });
         // eslint-disable-next-line consistent-return
         return minDelay;
       };
-      var stop = function stop() {
-        var metaElements = getMetaElements();
+      const stop = function stop() {
+        const metaElements = getMetaElements();
         if (metaElements.length === 0) {
           return;
         }
-        var secondsToRun = getNumberFromString(delaySec);
+        let secondsToRun = getNumberFromString(delaySec);
         // Check if argument is provided
         if (secondsToRun === null) {
           secondsToRun = getMetaContentDelay(metaElements);
@@ -6204,7 +6380,7 @@
         if (secondsToRun === null) {
           return;
         }
-        var delayMs = secondsToRun * 1000;
+        const delayMs = secondsToRun * 1000;
         setTimeout(function () {
           window.stop();
           hit(source);
@@ -6230,7 +6406,6 @@
     /* eslint-disable max-len, consistent-return */
     /**
      * @scriptlet prevent-element-src-loading
-     *
      * @description
      * Prevents target element source loading without triggering 'onerror' listeners and not breaking 'onload' ones.
      *
@@ -6257,7 +6432,7 @@
       if (typeof Proxy === 'undefined' || typeof Reflect === 'undefined') {
         return;
       }
-      var srcMockData = {
+      const srcMockData = {
         // "KCk9Pnt9" = "()=>{}"
         script: 'data:text/javascript;base64,KCk9Pnt9',
         // Empty 1x1 image
@@ -6265,7 +6440,7 @@
         // Empty h1 tag
         iframe: 'data:text/html;base64, PGRpdj48L2Rpdj4='
       };
-      var instance;
+      let instance;
       if (tagName === 'script') {
         instance = HTMLScriptElement;
       } else if (tagName === 'img') {
@@ -6278,8 +6453,8 @@
 
       // For websites that use Trusted Types
       // https://w3c.github.io/webappsec-trusted-types/dist/spec/
-      var hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === 'function';
-      var policy;
+      const hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === 'function';
+      let policy;
       if (hasTrustedTypes) {
         // The name for the trusted-types policy should only be 'AGPolicy',because corelibs can
         // allow our policy if the server has restricted the creation of a trusted-types policy with
@@ -6293,24 +6468,24 @@
           }
         });
       }
-      var SOURCE_PROPERTY_NAME = 'src';
-      var ONERROR_PROPERTY_NAME = 'onerror';
-      var searchRegexp = toRegExp(match);
+      const SOURCE_PROPERTY_NAME = 'src';
+      const ONERROR_PROPERTY_NAME = 'onerror';
+      const searchRegexp = toRegExp(match);
 
       // This will be needed to silent error events on matched element,
       // as url wont be available
-      var setMatchedAttribute = function setMatchedAttribute(elem) {
+      const setMatchedAttribute = function setMatchedAttribute(elem) {
         return elem.setAttribute(source.name, 'matched');
       };
-      var setAttributeWrapper = function setAttributeWrapper(target, thisArg, args) {
+      const setAttributeWrapper = function setAttributeWrapper(target, thisArg, args) {
         // Check if arguments are present
         if (!args[0] || !args[1]) {
           return Reflect.apply(target, thisArg, args);
         }
-        var nodeName = thisArg.nodeName.toLowerCase();
-        var attrName = args[0].toLowerCase();
-        var attrValue = args[1];
-        var isMatched = attrName === SOURCE_PROPERTY_NAME && tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(attrValue);
+        const nodeName = thisArg.nodeName.toLowerCase();
+        const attrName = args[0].toLowerCase();
+        const attrValue = args[1];
+        const isMatched = attrName === SOURCE_PROPERTY_NAME && tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(attrValue);
         if (!isMatched) {
           return Reflect.apply(target, thisArg, args);
         }
@@ -6319,24 +6494,24 @@
         // Forward the URI that corresponds with element's MIME type
         return Reflect.apply(target, thisArg, [attrName, srcMockData[nodeName]]);
       };
-      var setAttributeHandler = {
+      const setAttributeHandler = {
         apply: setAttributeWrapper
       };
       // eslint-disable-next-line max-len
       instance.prototype.setAttribute = new Proxy(Element.prototype.setAttribute, setAttributeHandler);
-      var origSrcDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
+      const origSrcDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
       if (!origSrcDescriptor) {
         return;
       }
       Object.defineProperty(instance.prototype, SOURCE_PROPERTY_NAME, {
         enumerable: true,
         configurable: true,
-        get: function get() {
+        get() {
           return origSrcDescriptor.get.call(this);
         },
-        set: function set(urlValue) {
-          var nodeName = this.nodeName.toLowerCase();
-          var isMatched = tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(urlValue);
+        set(urlValue) {
+          const nodeName = this.nodeName.toLowerCase();
+          const isMatched = tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(urlValue);
           if (!isMatched) {
             origSrcDescriptor.set.call(this, urlValue);
             return true;
@@ -6344,7 +6519,7 @@
 
           // eslint-disable-next-line no-undef
           if (policy && urlValue instanceof TrustedScriptURL) {
-            var trustedSrc = policy.createScriptURL(urlValue);
+            const trustedSrc = policy.createScriptURL(urlValue);
             origSrcDescriptor.set.call(this, trustedSrc);
             hit(source);
             return;
@@ -6357,18 +6532,18 @@
 
       // https://github.com/AdguardTeam/Scriptlets/issues/228
       // Prevent error event being triggered by other sources
-      var origOnerrorDescriptor = safeGetDescriptor(HTMLElement.prototype, ONERROR_PROPERTY_NAME);
+      const origOnerrorDescriptor = safeGetDescriptor(HTMLElement.prototype, ONERROR_PROPERTY_NAME);
       if (!origOnerrorDescriptor) {
         return;
       }
       Object.defineProperty(HTMLElement.prototype, ONERROR_PROPERTY_NAME, {
         enumerable: true,
         configurable: true,
-        get: function get() {
+        get() {
           return origOnerrorDescriptor.get.call(this);
         },
-        set: function set(cb) {
-          var isMatched = this.getAttribute(source.name) === 'matched';
+        set(cb) {
+          const isMatched = this.getAttribute(source.name) === 'matched';
           if (!isMatched) {
             origOnerrorDescriptor.set.call(this, cb);
             return true;
@@ -6377,19 +6552,19 @@
           return true;
         }
       });
-      var addEventListenerWrapper = function addEventListenerWrapper(target, thisArg, args) {
+      const addEventListenerWrapper = function addEventListenerWrapper(target, thisArg, args) {
         // Check if arguments are present
         if (!args[0] || !args[1]) {
           return Reflect.apply(target, thisArg, args);
         }
-        var eventName = args[0];
-        var isMatched = typeof thisArg.getAttribute === 'function' && thisArg.getAttribute(source.name) === 'matched' && eventName === 'error';
+        const eventName = args[0];
+        const isMatched = typeof thisArg.getAttribute === 'function' && thisArg.getAttribute(source.name) === 'matched' && eventName === 'error';
         if (isMatched) {
           return Reflect.apply(target, thisArg, [eventName, noopFunc]);
         }
         return Reflect.apply(target, thisArg, args);
       };
-      var addEventListenerHandler = {
+      const addEventListenerHandler = {
         apply: addEventListenerWrapper
       };
       // eslint-disable-next-line max-len
@@ -6400,7 +6575,6 @@
 
     /**
      * @scriptlet no-topics
-     *
      * @description
      * Prevents using The Topics API
      * https://developer.chrome.com/docs/privacy-sandbox/topics/
@@ -6411,7 +6585,7 @@
      * ```
      */
     function noTopics$1(source) {
-      var TOPICS_PROPERTY_NAME = 'browsingTopics';
+      const TOPICS_PROPERTY_NAME = 'browsingTopics';
       if (Document instanceof Object === false) {
         return;
       }
@@ -6432,7 +6606,6 @@
     /* eslint-disable max-len */
     /**
      * @trustedScriptlet trusted-replace-xhr-response
-     *
      * @description
      * Replaces response content of `xhr` requests if **all** given parameters match.
      *
@@ -6484,9 +6657,9 @@
      */
     /* eslint-enable max-len */
     function trustedReplaceXhrResponse$1(source) {
-      var pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
-      var replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
-      var propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+      let pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+      let replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+      let propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
       // do nothing if browser does not support Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
       if (typeof Proxy === 'undefined') {
@@ -6495,36 +6668,37 @@
 
       // Only allow pattern as empty string for logging purposes
       if (pattern === '' && replacement !== '') {
-        var message = 'Pattern argument should not be empty string.';
+        const message = 'Pattern argument should not be empty string.';
         logMessage(source, message);
         return;
       }
-      var shouldLog = pattern === '' && replacement === '';
-      var nativeOpen = window.XMLHttpRequest.prototype.open;
-      var nativeSend = window.XMLHttpRequest.prototype.send;
-      var shouldReplace = false;
-      var xhrData;
-      var requestHeaders = [];
-      var openWrapper = function openWrapper(target, thisArg, args) {
+      const shouldLog = pattern === '' && replacement === '';
+      const nativeOpen = window.XMLHttpRequest.prototype.open;
+      const nativeSend = window.XMLHttpRequest.prototype.send;
+      let xhrData;
+      const openWrapper = function openWrapper(target, thisArg, args) {
         // eslint-disable-next-line prefer-spread
         xhrData = getXhrData.apply(null, args);
         if (shouldLog) {
           // Log if no propsToMatch given
-          var _message = "xhr( ".concat(objectToString(xhrData), " )");
-          logMessage(source, _message, true);
+          const message = "xhr( ".concat(objectToString(xhrData), " )");
+          logMessage(source, message, true);
           hit(source);
           return Reflect.apply(target, thisArg, args);
         }
-        shouldReplace = matchRequestProps(source, propsToMatch, xhrData);
+        if (matchRequestProps(source, propsToMatch, xhrData)) {
+          thisArg.shouldBePrevented = true;
+        }
 
         // Trap setRequestHeader of target xhr object to mimic request headers later
-        if (shouldReplace) {
-          var setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+        if (thisArg.shouldBePrevented) {
+          thisArg.collectedHeaders = [];
+          const setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
             // Collect headers
-            requestHeaders.push(args);
+            thisArg.collectedHeaders.push(args);
             return Reflect.apply(target, thisArg, args);
           };
-          var setRequestHeaderHandler = {
+          const setRequestHeaderHandler = {
             apply: setRequestHeaderWrapper
           };
 
@@ -6534,8 +6708,8 @@
         }
         return Reflect.apply(target, thisArg, args);
       };
-      var sendWrapper = function sendWrapper(target, thisArg, args) {
-        if (!shouldReplace) {
+      const sendWrapper = function sendWrapper(target, thisArg, args) {
+        if (!thisArg.shouldBePrevented) {
           return Reflect.apply(target, thisArg, args);
         }
 
@@ -6544,24 +6718,26 @@
          * to be able to collect response data without triggering
          * listeners on original XHR object
          */
-        var forgedRequest = new XMLHttpRequest();
+        const forgedRequest = new XMLHttpRequest();
         forgedRequest.addEventListener('readystatechange', function () {
           if (forgedRequest.readyState !== 4) {
             return;
           }
-          var readyState = forgedRequest.readyState,
+          const readyState = forgedRequest.readyState,
             response = forgedRequest.response,
             responseText = forgedRequest.responseText,
             responseURL = forgedRequest.responseURL,
             responseXML = forgedRequest.responseXML,
             status = forgedRequest.status,
-            statusText = forgedRequest.statusText; // Extract content from response
-          var content = responseText || response;
+            statusText = forgedRequest.statusText;
+
+          // Extract content from response
+          const content = responseText || response;
           if (typeof content !== 'string') {
             return;
           }
-          var patternRegexp = pattern === '*' ? /(\n|.)*/ : toRegExp(pattern);
-          var modifiedContent = content.replace(patternRegexp, replacement);
+          const patternRegexp = pattern === '*' ? /(\n|.)*/ : toRegExp(pattern);
+          const modifiedContent = content.replace(patternRegexp, replacement);
 
           // Manually put required values into target XHR object
           // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
@@ -6591,11 +6767,11 @@
 
           // Mock events
           setTimeout(function () {
-            var stateEvent = new Event('readystatechange');
+            const stateEvent = new Event('readystatechange');
             thisArg.dispatchEvent(stateEvent);
-            var loadEvent = new Event('load');
+            const loadEvent = new Event('load');
             thisArg.dispatchEvent(loadEvent);
-            var loadEndEvent = new Event('loadend');
+            const loadEndEvent = new Event('loadend');
             thisArg.dispatchEvent(loadEndEvent);
           }, 1);
           hit(source);
@@ -6604,12 +6780,12 @@
 
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
-        requestHeaders.forEach(function (header) {
-          var name = header[0];
-          var value = header[1];
+        thisArg.collectedHeaders.forEach(function (header) {
+          const name = header[0];
+          const value = header[1];
           forgedRequest.setRequestHeader(name, value);
         });
-        requestHeaders = [];
+        thisArg.collectedHeaders = [];
         try {
           nativeSend.call(forgedRequest, args);
         } catch (_unused) {
@@ -6617,10 +6793,10 @@
         }
         return undefined;
       };
-      var openHandler = {
+      const openHandler = {
         apply: openWrapper
       };
-      var sendHandler = {
+      const sendHandler = {
         apply: sendWrapper
       };
       XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
@@ -6635,10 +6811,8 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet xml-prune
-     *
      * @description
      * Removes an element from the specified XML.
-     *
      *
      * **Syntax**
      * ```
@@ -6681,8 +6855,8 @@
 
     function xmlPrune$1(source, propsToRemove) {
       var _this = this;
-      var optionalProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
-      var urlToMatch = arguments.length > 3 ? arguments[3] : undefined;
+      let optionalProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+      let urlToMatch = arguments.length > 3 ? arguments[3] : undefined;
       // do nothing if browser does not support Reflect, fetch or Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -6690,30 +6864,30 @@
       if (typeof Reflect === 'undefined' || typeof fetch === 'undefined' || typeof Proxy === 'undefined' || typeof Response === 'undefined') {
         return;
       }
-      var shouldPruneResponse = true;
+      let shouldPruneResponse = true;
       if (!propsToRemove) {
         // If "propsToRemove" is not defined, then response shouldn't be pruned
         // but it should be logged in browser console
         shouldPruneResponse = false;
       }
-      var urlMatchRegexp = toRegExp(urlToMatch);
-      var isXML = function isXML(text) {
+      const urlMatchRegexp = toRegExp(urlToMatch);
+      const isXML = function isXML(text) {
         // Check if "text" starts with "<" and check if it ends with ">"
         // If so, then it might be an XML file and should be pruned or logged
-        var trimedText = text.trim();
+        const trimedText = text.trim();
         if (startsWith$1(trimedText, '<') && endsWith(trimedText, '>')) {
           return true;
         }
         return false;
       };
-      var pruneXML = function pruneXML(text) {
+      const pruneXML = function pruneXML(text) {
         if (!isXML(text)) {
           shouldPruneResponse = false;
           return text;
         }
-        var xmlParser = new DOMParser();
-        var xmlDoc = xmlParser.parseFromString(text, 'text/xml');
-        var errorNode = xmlDoc.querySelector('parsererror');
+        const xmlParser = new DOMParser();
+        const xmlDoc = xmlParser.parseFromString(text, 'text/xml');
+        const errorNode = xmlDoc.querySelector('parsererror');
         if (errorNode) {
           return text;
         }
@@ -6721,7 +6895,7 @@
           shouldPruneResponse = false;
           return text;
         }
-        var elems = xmlDoc.querySelectorAll(propsToRemove);
+        const elems = xmlDoc.querySelectorAll(propsToRemove);
         if (!elems.length) {
           shouldPruneResponse = false;
           return text;
@@ -6729,28 +6903,28 @@
         elems.forEach(function (elem) {
           elem.remove();
         });
-        var serializer = new XMLSerializer();
+        const serializer = new XMLSerializer();
         text = serializer.serializeToString(xmlDoc);
         return text;
       };
-      var xhrWrapper = function xhrWrapper(target, thisArg, args) {
-        var xhrURL = args[1];
+      const xhrWrapper = function xhrWrapper(target, thisArg, args) {
+        const xhrURL = args[1];
         if (typeof xhrURL !== 'string' || xhrURL.length === 0) {
           return Reflect.apply(target, thisArg, args);
         }
         if (urlMatchRegexp.test(xhrURL)) {
           thisArg.addEventListener('readystatechange', function pruneResponse() {
             if (thisArg.readyState === 4) {
-              var response = thisArg.response;
+              const response = thisArg.response;
               thisArg.removeEventListener('readystatechange', pruneResponse);
               if (!shouldPruneResponse) {
                 if (isXML(response)) {
                   // eslint-disable-next-line max-len
-                  var message = "XMLHttpRequest.open() URL: ".concat(xhrURL, "\nresponse: ").concat(response);
+                  const message = "XMLHttpRequest.open() URL: ".concat(xhrURL, "\nresponse: ").concat(response);
                   logMessage(message);
                 }
               } else {
-                var prunedResponseContent = pruneXML(response);
+                const prunedResponseContent = pruneXML(response);
                 if (shouldPruneResponse) {
                   Object.defineProperty(thisArg, 'response', {
                     value: prunedResponseContent
@@ -6771,16 +6945,14 @@
         }
         return Reflect.apply(target, thisArg, args);
       };
-      var xhrHandler = {
+      const xhrHandler = {
         apply: xhrWrapper
       };
       // eslint-disable-next-line max-len
       window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler);
-
-      // eslint-disable-next-line compat/compat
-      var nativeFetch = window.fetch;
-      var fetchWrapper = function fetchWrapper(target, thisArg, args) {
-        var fetchURL = args[0];
+      const nativeFetch = window.fetch;
+      const fetchWrapper = function fetchWrapper(target, thisArg, args) {
+        const fetchURL = args[0];
         if (typeof fetchURL !== 'string' || fetchURL.length === 0) {
           return Reflect.apply(target, thisArg, args);
         }
@@ -6793,7 +6965,7 @@
                 }
                 return Reflect.apply(target, thisArg, args);
               }
-              var prunedText = pruneXML(text);
+              const prunedText = pruneXML(text);
               if (shouldPruneResponse) {
                 hit(source);
                 return new Response(prunedText, {
@@ -6813,10 +6985,9 @@
         }
         return Reflect.apply(target, thisArg, args);
       };
-      var fetchHandler = {
+      const fetchHandler = {
         apply: fetchWrapper
       };
-      // eslint-disable-next-line compat/compat
       window.fetch = new Proxy(window.fetch, fetchHandler);
     }
     xmlPrune$1.names = ['xml-prune',
@@ -6827,7 +6998,6 @@
     /* eslint-disable max-len */
     /**
      * @trustedScriptlet trusted-set-cookie
-     *
      * @description
      * Sets a cookie with arbitrary name and value,
      * and with optional ability to offset cookie attribute 'expires' and set path.
@@ -6882,32 +7052,32 @@
     /* eslint-enable max-len */
 
     function trustedSetCookie$1(source, name, value) {
-      var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-      var path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '/';
+      let offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+      let path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '/';
       if (typeof name === 'undefined') {
-        logMessage(source, 'Cookie name should be specified.');
+        logMessage(source, 'Cookie name should be specified');
         return;
       }
       if (typeof value === 'undefined') {
-        logMessage(source, 'Cookie value should be specified.');
+        logMessage(source, 'Cookie value should be specified');
         return;
       }
-      var parsedValue = parseKeywordValue(value);
+      const parsedValue = parseKeywordValue(value);
       if (!isValidCookiePath(path)) {
         logMessage(source, "Invalid cookie path: '".concat(path, "'"));
         return;
       }
-      var cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
+      let cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
       if (!cookieToSet) {
         return;
       }
       if (offsetExpiresSec) {
-        var parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
+        const parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
         if (!parsedOffsetMs) {
           logMessage(source, "Invalid offsetExpiresSec value: ".concat(offsetExpiresSec));
           return;
         }
-        var expires = Date.now() + parsedOffsetMs;
+        const expires = Date.now() + parsedOffsetMs;
         cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
       }
       document.cookie = cookieToSet;
@@ -6922,7 +7092,6 @@
     /* eslint-disable max-len */
     /**
      * @trustedScriptlet trusted-set-cookie-reload
-     *
      * @description
      * Sets a cookie with arbitrary name and value,
      * and with optional ability to offset cookie attribute 'expires' and set path.
@@ -6978,14 +7147,14 @@
     /* eslint-enable max-len */
 
     function trustedSetCookieReload$1(source, name, value) {
-      var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-      var path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '/';
+      let offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+      let path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '/';
       if (typeof name === 'undefined') {
-        logMessage(source, 'Cookie name should be specified.');
+        logMessage(source, 'Cookie name should be specified');
         return;
       }
       if (typeof value === 'undefined') {
-        logMessage(source, 'Cookie value should be specified.');
+        logMessage(source, 'Cookie value should be specified');
         return;
       }
 
@@ -6994,22 +7163,22 @@
       if (isCookieSetWithValue(document.cookie, name, value)) {
         return;
       }
-      var parsedValue = parseKeywordValue(value);
+      const parsedValue = parseKeywordValue(value);
       if (!isValidCookiePath(path)) {
         logMessage(source, "Invalid cookie path: '".concat(path, "'"));
         return;
       }
-      var cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
+      let cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
       if (!cookieToSet) {
         return;
       }
       if (offsetExpiresSec) {
-        var parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
+        const parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
         if (!parsedOffsetMs) {
           logMessage(source, "Invalid offsetExpiresSec value: ".concat(offsetExpiresSec));
           return;
         }
-        var expires = Date.now() + parsedOffsetMs;
+        const expires = Date.now() + parsedOffsetMs;
         cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
       }
       document.cookie = cookieToSet;
@@ -7030,7 +7199,6 @@
     /* eslint-disable max-len */
     /**
      * @trustedScriptlet trusted-replace-fetch-response
-     *
      * @description
      * Replaces response text content of `fetch` requests if **all** given parameters match.
      *
@@ -7085,9 +7253,9 @@
      */
     /* eslint-enable max-len */
     function trustedReplaceFetchResponse$1(source) {
-      var pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
-      var replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
-      var propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+      let pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+      let replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+      let propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
       // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -7097,14 +7265,14 @@
 
       // Only allow pattern as empty string for logging purposes
       if (pattern === '' && replacement !== '') {
-        logMessage(source, 'Pattern argument should not be empty string.');
+        logMessage(source, 'Pattern argument should not be empty string');
         return;
       }
-      var shouldLog = pattern === '' && replacement === '';
-      var nativeFetch = fetch;
-      var shouldReplace = false;
-      var fetchData;
-      var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+      const shouldLog = pattern === '' && replacement === '';
+      const nativeFetch = fetch;
+      let shouldReplace = false;
+      let fetchData;
+      const handlerWrapper = function handlerWrapper(target, thisArg, args) {
         fetchData = getFetchData(args);
         if (shouldLog) {
           // log if no propsToMatch given
@@ -7120,23 +7288,24 @@
         /**
          * Create new Response object using original response' properties
          * and given text as body content
+         *
          * @param {Response} response original response to copy properties from
          * @param {string} textContent text to set as body content
          * @returns {Response}
          */
-        var forgeResponse = function forgeResponse(response, textContent) {
-          var bodyUsed = response.bodyUsed,
+        const forgeResponse = function forgeResponse(response, textContent) {
+          const bodyUsed = response.bodyUsed,
             headers = response.headers,
             ok = response.ok,
             redirected = response.redirected,
             status = response.status,
             statusText = response.statusText,
             type = response.type,
-            url = response.url; // eslint-disable-next-line compat/compat
-          var forgedResponse = new Response(textContent, {
-            status: status,
-            statusText: statusText,
-            headers: headers
+            url = response.url;
+          const forgedResponse = new Response(textContent, {
+            status,
+            statusText,
+            headers
           });
 
           // Manually set properties which can't be set by Response constructor
@@ -7163,15 +7332,15 @@
         // eslint-disable-next-line prefer-spread
         return nativeFetch.apply(null, args).then(function (response) {
           return response.text().then(function (bodyText) {
-            var patternRegexp = pattern === '*' ? /(\n|.)*/ : toRegExp(pattern);
-            var modifiedTextContent = bodyText.replace(patternRegexp, replacement);
-            var forgedResponse = forgeResponse(response, modifiedTextContent);
+            const patternRegexp = pattern === '*' ? /(\n|.)*/ : toRegExp(pattern);
+            const modifiedTextContent = bodyText.replace(patternRegexp, replacement);
+            const forgedResponse = forgeResponse(response, modifiedTextContent);
             hit(source);
             return forgedResponse;
           }).catch(function () {
             // log if response body can't be converted to a string
-            var fetchDataStr = objectToString(fetchData);
-            var message = "Response body can't be converted to text: ".concat(fetchDataStr);
+            const fetchDataStr = objectToString(fetchData);
+            const message = "Response body can't be converted to text: ".concat(fetchDataStr);
             logMessage(source, message);
             return Reflect.apply(target, thisArg, args);
           });
@@ -7179,7 +7348,7 @@
           return Reflect.apply(target, thisArg, args);
         });
       };
-      var fetchHandler = {
+      const fetchHandler = {
         apply: handlerWrapper
       };
       fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
@@ -7191,7 +7360,6 @@
     /* eslint-disable max-len */
     /**
      * @trustedScriptlet trusted-set-local-storage-item
-     *
      * @description
      * Adds item with arbitrary key and value to localStorage object, or updates the value of the key if it already exists.
      * Scriptlet won't set item if storage is full.
@@ -7238,15 +7406,15 @@
 
     function trustedSetLocalStorageItem$1(source, key, value) {
       if (typeof key === 'undefined') {
-        logMessage(source, 'Item key should be specified.');
+        logMessage(source, 'Item key should be specified');
         return;
       }
       if (typeof value === 'undefined') {
-        logMessage(source, 'Item value should be specified.');
+        logMessage(source, 'Item value should be specified');
         return;
       }
-      var parsedValue = parseKeywordValue(value);
-      var _window = window,
+      const parsedValue = parseKeywordValue(value);
+      const _window = window,
         localStorage = _window.localStorage;
       setStorageItem(source, localStorage, key, parsedValue);
       hit(source);
@@ -7256,6 +7424,293 @@
     ];
 
     trustedSetLocalStorageItem$1.injections = [hit, logMessage, nativeIsNaN, setStorageItem, parseKeywordValue];
+
+    /* eslint-disable max-len */
+    /**
+     * @trustedScriptlet trusted-set-constant
+     * @description
+     * Creates a constant property and assigns it a specified value.
+     *
+     * > Actually, it's not a constant. Please note, that it can be rewritten with a value of a different type.
+     *
+     * > If empty object is present in chain it will be trapped until chain leftovers appear.
+     *
+     * > Use [set-constant](./about-scriptlets.md#set-constant) to set predefined values and functions.
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('trusted-set-constant', property, value[, stack])
+     * ```
+     *
+     * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`.
+     * - `value` - required, an arbitrary value to be set; value type is being inferred from the argument, e.g '500' will be set as number;
+     * to set string type value wrap argument into another pair of quotes: `'"500"'`;
+     * - `stack` - optional, string or regular expression that must match the current function call stack trace;
+     * if regular expression is invalid it will be skipped
+     *
+     * **Examples**
+     * 1. Set property values of different types
+     * ```
+     * ! Set string value wrapping argument into another pair of quotes
+     * example.org#%#//scriptlet('trusted-set-constant', 'click_r', '"null"')
+     *
+     * ✔ window.click_r === 'null'
+     * ✔ typeof window.click_r === 'string'
+     *
+     * ! Set inferred null value
+     * example.org#%#//scriptlet('trusted-set-constant', 'click_r', 'null')
+     *
+     * ✔ window.click_r === null
+     * ✔ typeof window.click_r === 'object'
+     *
+     * ! Set number type value
+     * example.org#%#//scriptlet('trusted-set-constant', 'click_r', '48')
+     *
+     * ✔ window.click_r === 48
+     * ✔ typeof window.click_r === 'number'
+     *
+     * ! Set array or object as property value, argument should be a JSON string
+     * example.org#%#//scriptlet('trusted-set-constant', 'click_r', '[1,"string"]')
+     * example.org#%#//scriptlet('trusted-set-constant', 'click_r', '{"aaa":123,"bbb":{"ccc":"string"}}')
+     * ```
+     *
+     * 2. Use script stack matching to set value
+     * ```
+     * ! `document.first` will return `1` if the method is related to `checking.js`
+     * example.org#%#//scriptlet('trusted-set-constant', 'document.first', '1', 'checking.js')
+     *
+     * ✔ document.first === 1  // if the condition described above is met
+     * ```
+     */
+    /* eslint-enable max-len */
+    function trustedSetConstant$1(source, property, value, stack) {
+      if (!property || !matchStackTrace(stack, new Error().stack)) {
+        return;
+      }
+      let constantValue;
+      try {
+        constantValue = inferValue(value);
+      } catch (e) {
+        logMessage(source, e);
+        return;
+      }
+      let canceled = false;
+      const mustCancel = function mustCancel(value) {
+        if (canceled) {
+          return canceled;
+        }
+        canceled = value !== undefined && constantValue !== undefined && typeof value !== typeof constantValue && value !== null;
+        return canceled;
+      };
+
+      /**
+       * Safely sets property on a given object
+       *
+       * IMPORTANT! this duplicates corresponding func in set-constant scriptlet as
+       * reorganizing this to common helpers will most definitely complicate debugging
+       *
+       * @param {Object} base arbitrary reachable object
+       * @param {string} prop property name
+       * @param {boolean} configurable if set property should be configurable
+       * @param {Object} handler custom property descriptor object
+       * @returns {boolean} true if prop was trapped successfully
+       */
+      const trapProp = function trapProp(base, prop, configurable, handler) {
+        if (!handler.init(base[prop])) {
+          return false;
+        }
+        const origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+        let prevSetter;
+        // This is required to prevent scriptlets overwrite each over
+        if (origDescriptor instanceof Object) {
+          // This check is required to avoid defining non-configurable props
+          if (!origDescriptor.configurable) {
+            const message = "Property '".concat(prop, "' is not configurable");
+            logMessage(source, message);
+            return false;
+          }
+          base[prop] = constantValue;
+          if (origDescriptor.set instanceof Function) {
+            prevSetter = origDescriptor.set;
+          }
+        }
+        Object.defineProperty(base, prop, {
+          configurable,
+          get() {
+            return handler.get();
+          },
+          set(a) {
+            if (prevSetter !== undefined) {
+              prevSetter(a);
+            }
+            handler.set(a);
+          }
+        });
+        return true;
+      };
+
+      /**
+       * Traverses given chain to set constant value to its end prop
+       * Chains that yet include non-object values (e.g null) are valid and will be
+       * traversed when appropriate chain member is set by an external script
+       *
+       * IMPORTANT! this duplicates corresponding func in set-constant scriptlet as
+       * reorganizing this to common helpers will most definitely complicate debugging
+       *
+       * @param {Object} owner object that owns chain
+       * @param {string} property chain of owner properties
+       */
+      const setChainPropAccess = function setChainPropAccess(owner, property) {
+        const chainInfo = getPropertyInChain(owner, property);
+        const base = chainInfo.base;
+        const prop = chainInfo.prop,
+          chain = chainInfo.chain;
+
+        // Handler method init is used to keep track of factual value
+        // and apply mustCancel() check only on end prop
+        const inChainPropHandler = {
+          factValue: undefined,
+          init(a) {
+            this.factValue = a;
+            return true;
+          },
+          get() {
+            return this.factValue;
+          },
+          set(a) {
+            // Prevent breakage due to loop assignments like win.obj = win.obj
+            if (this.factValue === a) {
+              return;
+            }
+            this.factValue = a;
+            if (a instanceof Object) {
+              setChainPropAccess(a, chain);
+            }
+          }
+        };
+        const endPropHandler = {
+          init(a) {
+            if (mustCancel(a)) {
+              return false;
+            }
+            return true;
+          },
+          get() {
+            return constantValue;
+          },
+          set(a) {
+            if (!mustCancel(a)) {
+              return;
+            }
+            constantValue = a;
+          }
+        };
+
+        // End prop case
+        if (!chain) {
+          const isTrapped = trapProp(base, prop, false, endPropHandler);
+          if (isTrapped) {
+            hit(source);
+          }
+          return;
+        }
+
+        // Null prop in chain
+        if (base !== undefined && base[prop] === null) {
+          trapProp(base, prop, true, inChainPropHandler);
+          return;
+        }
+
+        // Empty object prop in chain
+        if ((base instanceof Object || typeof base === 'object') && isEmptyObject(base)) {
+          trapProp(base, prop, true, inChainPropHandler);
+        }
+
+        // Defined prop in chain
+        const propValue = owner[prop];
+        if (propValue instanceof Object || typeof propValue === 'object' && propValue !== null) {
+          setChainPropAccess(propValue, chain);
+        }
+
+        // Undefined prop in chain
+        trapProp(base, prop, true, inChainPropHandler);
+      };
+      setChainPropAccess(window, property);
+    }
+    trustedSetConstant$1.names = ['trusted-set-constant'
+    // trusted scriptlets support no aliases
+    ];
+
+    trustedSetConstant$1.injections = [hit, inferValue, logMessage, noopArray, noopObject, noopFunc, noopCallbackFunc, trueFunc, falseFunc, throwFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, nativeIsNaN, isEmptyObject, getNativeRegexpTest,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    shouldAbortInlineOrInjectedScript];
+
+    /* eslint-disable max-len */
+    /**
+     * @scriptlet inject-css-in-shadow-dom
+     * @description
+     * Injects CSS rule into selected Shadow DOM subtrees on a page
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('inject-css-in-shadow-dom', cssRule[, hostSelector])
+     * ```
+     *
+     * - `cssRule` - required, string representing a single css rule
+     * - `hostSelector` - optional, string, selector to match shadow host elements. CSS rule will be only applied to shadow roots inside these elements.
+     * Defaults to injecting css rule into all available roots.
+     *
+     * **Examples**
+     * 1. Apply style to all shadow dom subtrees
+     * ```
+     * example.org#%#//scriptlet('inject-css-in-shadow-dom', '#advertisement { display: none !important; }')
+     * ```
+     *
+     * 2. Apply style to a specific shadow dom subtree
+     * ```
+     * example.org#%#//scriptlet('inject-css-in-shadow-dom', '#content { margin-top: 0 !important; }', '.row > #hidden')
+     * ```
+     */
+    /* eslint-enable max-len */
+
+    function injectCssInShadowDom$1(source, cssRule) {
+      let hostSelector = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+      // do nothing if browser does not support ShadowRoot, Proxy or Reflect
+      // https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot
+      if (!Element.prototype.attachShadow || typeof Proxy === 'undefined' || typeof Reflect === 'undefined') {
+        return;
+      }
+
+      // Prevent url() and image-set() styles from being applied
+      if (cssRule.match(/(url|image-set)\(.*\)/i)) {
+        logMessage(source, '"url()" function is not allowed for css rules');
+        return;
+      }
+      const callback = function callback(shadowRoot) {
+        try {
+          // adoptedStyleSheets and CSSStyleSheet constructor are not yet supported by Safari
+          // https://developer.mozilla.org/en-US/docs/Web/API/Document/adoptedStyleSheets
+          // https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleSheet/CSSStyleSheet
+          const stylesheet = new CSSStyleSheet();
+          try {
+            stylesheet.insertRule(cssRule);
+          } catch (e) {
+            logMessage(source, "Unable to apply the rule '".concat(cssRule, "' due to: \n'").concat(e.message, "'"));
+            return;
+          }
+          shadowRoot.adoptedStyleSheets = [...shadowRoot.adoptedStyleSheets, stylesheet];
+        } catch (_unused) {
+          const styleTag = document.createElement('style');
+          styleTag.innerText = cssRule;
+          shadowRoot.appendChild(styleTag);
+        }
+        hit(source);
+      };
+      hijackAttachShadow(window, hostSelector, callback);
+    }
+    injectCssInShadowDom$1.names = ['inject-css-in-shadow-dom'];
+    injectCssInShadowDom$1.injections = [hit, logMessage, hijackAttachShadow];
 
     /**
      * This file must export all scriptlets which should be accessible
@@ -7315,7 +7770,9 @@
         trustedSetCookie: trustedSetCookie$1,
         trustedSetCookieReload: trustedSetCookieReload$1,
         trustedReplaceFetchResponse: trustedReplaceFetchResponse$1,
-        trustedSetLocalStorageItem: trustedSetLocalStorageItem$1
+        trustedSetLocalStorageItem: trustedSetLocalStorageItem$1,
+        trustedSetConstant: trustedSetConstant$1,
+        injectCssInShadowDom: injectCssInShadowDom$1
     });
 
     /**
@@ -7326,7 +7783,7 @@
      * e.g. googletagmanager-gtm is removed and should be removed from compatibility table as well
      * but now it works as alias for google-analytics so it should stay valid for compiler
      */
-    var redirects$1 = [{
+    const redirects$1 = [{
       adg: '1x1-transparent.gif',
       ubo: '1x1.gif',
       abp: '1x1-transparent-gif'
@@ -7375,6 +7832,10 @@
       // https://github.com/AdguardTeam/Scriptlets/issues/127
       adg: 'googletagmanager-gtm',
       ubo: 'google-analytics_ga.js'
+    }, {
+      // https://github.com/AdguardTeam/Scriptlets/issues/260
+      adg: 'googletagmanager-gtm',
+      ubo: 'googletagmanager_gtm.js'
     }, {
       adg: 'googletagservices-gpt',
       ubo: 'googletagservices_gpt.js'
@@ -7462,15 +7923,16 @@
       ubo: 'prebid-ads.js'
     }];
 
-    var JS_RULE_MARKER = '#%#';
-    var COMMENT_MARKER = '!';
+    const JS_RULE_MARKER = '#%#';
+    const COMMENT_MARKER = '!';
 
     /**
      * Checks if rule text is comment e.g. !!example.org##+js(set-constant.js, test, false)
-     * @param {string} rule
-     * @return {boolean}
+     *
+     * @param {string} rule rule text
+     * @returns {boolean} if rule text is comment
      */
-    var isComment = function isComment(rule) {
+    const isComment = function isComment(rule) {
       return startsWith$1(rule, COMMENT_MARKER);
     };
 
@@ -7483,53 +7945,61 @@
     /**
      * uBlock scriptlet rule mask
      */
-    var UBO_SCRIPTLET_MASK_REG = /#@?#script:inject|#@?#\s*\+js/;
-    var UBO_SCRIPTLET_MASK_1 = '##+js';
-    var UBO_SCRIPTLET_MASK_2 = '##script:inject';
-    var UBO_SCRIPTLET_EXCEPTION_MASK_1 = '#@#+js';
-    var UBO_SCRIPTLET_EXCEPTION_MASK_2 = '#@#script:inject';
+    const UBO_SCRIPTLET_MASK_REG = /#@?#script:inject|#@?#\s*\+js/;
+    const UBO_SCRIPTLET_MASK_1 = '##+js';
+    const UBO_SCRIPTLET_MASK_2 = '##script:inject';
+    const UBO_SCRIPTLET_EXCEPTION_MASK_1 = '#@#+js';
+    const UBO_SCRIPTLET_EXCEPTION_MASK_2 = '#@#script:inject';
 
     /**
      * AdBlock Plus snippet rule mask
      */
-    var ABP_SCRIPTLET_MASK = '#$#';
-    var ABP_SCRIPTLET_EXCEPTION_MASK = '#@$#';
+    const ABP_SCRIPTLET_MASK = '#$#';
+    const ABP_SCRIPTLET_EXCEPTION_MASK = '#@$#';
 
     /**
      * AdGuard CSS rule mask
      */
-    var ADG_CSS_MASK_REG = /#@?\$#.+?\s*\{.*\}\s*$/g;
+    const ADG_CSS_MASK_REG = /#@?\$#.+?\s*\{.*\}\s*$/g;
 
     /**
      * Checks if the `rule` is AdGuard scriptlet rule
+     *
      * @param {string} rule - rule text
+     * @returns {boolean} if given rule is adg rule
      */
-    var isAdgScriptletRule = function isAdgScriptletRule(rule) {
+    const isAdgScriptletRule = function isAdgScriptletRule(rule) {
       return !isComment(rule) && rule.indexOf(ADG_SCRIPTLET_MASK) > -1;
     };
 
     /**
      * Checks if the `rule` is uBO scriptlet rule
+     *
      * @param {string} rule rule text
+     * @returns {boolean} if given rule is ubo rule
      */
-    var isUboScriptletRule = function isUboScriptletRule(rule) {
+    const isUboScriptletRule = function isUboScriptletRule(rule) {
       return (rule.indexOf(UBO_SCRIPTLET_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_MASK_2) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_2) > -1) && UBO_SCRIPTLET_MASK_REG.test(rule) && !isComment(rule);
     };
 
     /**
      * Checks if the `rule` is AdBlock Plus snippet
+     *
      * @param {string} rule rule text
+     * @returns {boolean} if given rule is abp rule
      */
-    var isAbpSnippetRule = function isAbpSnippetRule(rule) {
+    const isAbpSnippetRule = function isAbpSnippetRule(rule) {
       return (rule.indexOf(ABP_SCRIPTLET_MASK) > -1 || rule.indexOf(ABP_SCRIPTLET_EXCEPTION_MASK) > -1) && rule.search(ADG_CSS_MASK_REG) === -1 && !isComment(rule);
     };
 
     /**
      * Finds scriptlet by it's name
+     *
      * @param {string} name - scriptlet name
+     * @returns {Function} scriptlet function
      */
-    var getScriptletByName = function getScriptletByName(name) {
-      var scriptlets = Object.keys(scriptletList).map(function (key) {
+    const getScriptletByName = function getScriptletByName(name) {
+      const scriptlets = Object.keys(scriptletList).map(function (key) {
         return scriptletList[key];
       });
       return scriptlets.find(function (s) {
@@ -7543,13 +8013,15 @@
 
     /**
      * Checks if the scriptlet name is valid
+     *
      * @param {string} name - Scriptlet name
+     * @returns {boolean} if the scriptlet name is valid
      */
-    var isValidScriptletName = function isValidScriptletName(name) {
+    const isValidScriptletName = function isValidScriptletName(name) {
       if (!name) {
         return false;
       }
-      var scriptlet = getScriptletByName(name);
+      const scriptlet = getScriptletByName(name);
       if (!scriptlet) {
         return false;
       }
@@ -7565,17 +8037,17 @@
     /**
      * Redirect resources markers
      */
-    var ADG_UBO_REDIRECT_MARKER = 'redirect=';
-    var ADG_UBO_REDIRECT_RULE_MARKER = 'redirect-rule=';
-    var ABP_REDIRECT_MARKER = 'rewrite=abp-resource:';
-    var EMPTY_REDIRECT_MARKER = 'empty';
-    var VALID_SOURCE_TYPES = ['image', 'media', 'subdocument', 'stylesheet', 'script', 'xmlhttprequest', 'other'];
+    const ADG_UBO_REDIRECT_MARKER = 'redirect=';
+    const ADG_UBO_REDIRECT_RULE_MARKER = 'redirect-rule=';
+    const ABP_REDIRECT_MARKER = 'rewrite=abp-resource:';
+    const EMPTY_REDIRECT_MARKER = 'empty';
+    const VALID_SOURCE_TYPES = ['image', 'media', 'subdocument', 'stylesheet', 'script', 'xmlhttprequest', 'other'];
 
     /**
      * Source types for redirect rules if there is no one of them.
      * Used for ADG -> UBO conversion.
      */
-    var ABSENT_SOURCE_TYPE_REPLACEMENT = [{
+    const ABSENT_SOURCE_TYPE_REPLACEMENT = [{
       NAME: 'nooptext',
       TYPES: VALID_SOURCE_TYPES
     }, {
@@ -7603,7 +8075,7 @@
       NAME: 'googletagservices-gpt',
       TYPES: ['script']
     }];
-    var validAdgRedirects = redirects$1.filter(function (el) {
+    const validAdgRedirects = redirects$1.filter(function (el) {
       return el.adg;
     });
 
@@ -7611,7 +8083,7 @@
      * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
      * It's used for UBO -> ADG converting
      */
-    var uboToAdgCompatibility = getObjectFromEntries(validAdgRedirects.filter(function (el) {
+    const uboToAdgCompatibility = getObjectFromEntries(validAdgRedirects.filter(function (el) {
       return el.ubo;
     }).map(function (el) {
       return [el.ubo, el.adg];
@@ -7621,7 +8093,7 @@
      * Compatibility object where KEYS = ABP redirect names and VALUES = ADG redirect names
      * It's used for ABP -> ADG converting
      */
-    var abpToAdgCompatibility = getObjectFromEntries(validAdgRedirects.filter(function (el) {
+    const abpToAdgCompatibility = getObjectFromEntries(validAdgRedirects.filter(function (el) {
       return el.abp;
     }).map(function (el) {
       return [el.abp, el.adg];
@@ -7631,7 +8103,7 @@
      * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
      * It's used for ADG -> UBO converting
      */
-    var adgToUboCompatibility = getObjectFromEntries(validAdgRedirects.filter(function (el) {
+    const adgToUboCompatibility = getObjectFromEntries(validAdgRedirects.filter(function (el) {
       return el.ubo;
     }).map(function (el) {
       return [el.adg, el.ubo];
@@ -7641,10 +8113,10 @@
      * Needed for AdGuard redirect names validation where KEYS = **valid** AdGuard redirect names
      * 'adgToUboCompatibility' is still needed for ADG -> UBO converting
      */
-    var validAdgCompatibility = getObjectFromEntries(validAdgRedirects.map(function (el) {
+    const validAdgCompatibility = getObjectFromEntries(validAdgRedirects.map(function (el) {
       return [el.adg, 'valid adg redirect'];
     }));
-    var REDIRECT_RULE_TYPES = {
+    const REDIRECT_RULE_TYPES = {
       VALID_ADG: {
         redirectMarker: ADG_UBO_REDIRECT_MARKER,
         redirectRuleMarker: ADG_UBO_REDIRECT_RULE_MARKER,
@@ -7668,22 +8140,24 @@
 
     /**
      * Parses redirect rule modifiers
-     * @param {string} rule
-     * @returns {Array}
+     *
+     * @param {string} rule rule text
+     * @returns {Array} list of rule modifiers
      */
-    var parseModifiers = function parseModifiers(rule) {
+    const parseModifiers = function parseModifiers(rule) {
       return substringAfter$1(rule, '$').split(',');
     };
 
     /**
      * Gets redirect resource name
-     * @param {string} rule
+     *
+     * @param {string} rule rule text
      * @param {string} marker - specific Adg/Ubo or Abp redirect resources marker
      * @returns {string} - redirect resource name
      */
-    var getRedirectName = function getRedirectName(rule, marker) {
-      var ruleModifiers = parseModifiers(rule);
-      var redirectNamePart = ruleModifiers.find(function (el) {
+    const getRedirectName = function getRedirectName(rule, marker) {
+      const ruleModifiers = parseModifiers(rule);
+      const redirectNamePart = ruleModifiers.find(function (el) {
         return el.indexOf(marker) > -1;
       });
       return substringAfter$1(redirectNamePart, marker);
@@ -7692,10 +8166,12 @@
     /**
      * Checks if the `rule` is AdGuard redirect rule.
      * Discards comments and JS rules and checks if the `rule` has 'redirect' modifier.
+     *
      * @param {string} rule - rule text
+     * @returns {boolean} if given rule is adg redirect
      */
-    var isAdgRedirectRule = function isAdgRedirectRule(rule) {
-      var MARKER_IN_BASE_PART_MASK = '/((?!\\$|\\,).{1})redirect((-rule)?)=(.{0,}?)\\$(popup)?/';
+    const isAdgRedirectRule = function isAdgRedirectRule(rule) {
+      const MARKER_IN_BASE_PART_MASK = '/((?!\\$|\\,).{1})redirect((-rule)?)=(.{0,}?)\\$(popup)?/';
       return !isComment(rule) && (rule.indexOf(REDIRECT_RULE_TYPES.ADG.redirectMarker) > -1 || rule.indexOf(REDIRECT_RULE_TYPES.ADG.redirectRuleMarker) > -1)
       // some js rules may have 'redirect=' in it, so we should get rid of them
       && rule.indexOf(JS_RULE_MARKER) === -1
@@ -7707,18 +8183,20 @@
 
     /**
      * Checks if the `rule` satisfies the `type`
+     *
      * @param {string} rule - rule text
      * @param {'VALID_ADG'|'ADG'|'UBO'|'ABP'} type - type of a redirect rule
+     * @returns {boolean} if the `rule` satisfies the `type`
      */
-    var isRedirectRuleByType = function isRedirectRuleByType(rule, type) {
-      var _REDIRECT_RULE_TYPES$ = REDIRECT_RULE_TYPES[type],
+    const isRedirectRuleByType = function isRedirectRuleByType(rule, type) {
+      const _REDIRECT_RULE_TYPES$ = REDIRECT_RULE_TYPES[type],
         redirectMarker = _REDIRECT_RULE_TYPES$.redirectMarker,
         redirectRuleMarker = _REDIRECT_RULE_TYPES$.redirectRuleMarker,
         compatibility = _REDIRECT_RULE_TYPES$.compatibility;
       if (rule && !isComment(rule)) {
-        var marker;
+        let marker;
         // check if there is a $redirect-rule modifier in rule
-        var markerIndex = redirectRuleMarker ? rule.indexOf(redirectRuleMarker) : -1;
+        let markerIndex = redirectRuleMarker ? rule.indexOf(redirectRuleMarker) : -1;
         if (markerIndex > -1) {
           marker = redirectRuleMarker;
         } else {
@@ -7730,7 +8208,7 @@
             return false;
           }
         }
-        var redirectName = getRedirectName(rule, marker);
+        const redirectName = getRedirectName(rule, marker);
         if (!redirectName) {
           return false;
         }
@@ -7742,38 +8220,42 @@
     };
 
     /**
-    * Checks if the `rule` is **valid** AdGuard redirect resource rule
-    * @param {string} rule - rule text
-    * @returns {boolean}
-    */
-    var isValidAdgRedirectRule = function isValidAdgRedirectRule(rule) {
+     * Checks if the `rule` is **valid** AdGuard redirect resource rule
+     *
+     * @param {string} rule - rule text
+     * @returns {boolean} if given rule is valid adg redirect
+     */
+    const isValidAdgRedirectRule = function isValidAdgRedirectRule(rule) {
       return isRedirectRuleByType(rule, 'VALID_ADG');
     };
 
     /**
-    * Checks if the AdGuard redirect `rule` has Ubo analog. Needed for Adg->Ubo conversion
-    * @param {string} rule - AdGuard rule text
-    * @returns {boolean} - true if the rule can be converted to Ubo
-    */
-    var isAdgRedirectCompatibleWithUbo = function isAdgRedirectCompatibleWithUbo(rule) {
+     * Checks if the AdGuard redirect `rule` has Ubo analog. Needed for Adg->Ubo conversion
+     *
+     * @param {string} rule - AdGuard rule text
+     * @returns {boolean} - true if the rule can be converted to Ubo
+     */
+    const isAdgRedirectCompatibleWithUbo = function isAdgRedirectCompatibleWithUbo(rule) {
       return isAdgRedirectRule(rule) && isRedirectRuleByType(rule, 'ADG');
     };
 
     /**
-    * Checks if the Ubo redirect `rule` has AdGuard analog. Needed for Ubo->Adg conversion
-    * @param {string} rule - Ubo rule text
-    * @returns {boolean} - true if the rule can be converted to AdGuard
-    */
-    var isUboRedirectCompatibleWithAdg = function isUboRedirectCompatibleWithAdg(rule) {
+     * Checks if the Ubo redirect `rule` has AdGuard analog. Needed for Ubo->Adg conversion
+     *
+     * @param {string} rule - Ubo rule text
+     * @returns {boolean} - true if the rule can be converted to AdGuard
+     */
+    const isUboRedirectCompatibleWithAdg = function isUboRedirectCompatibleWithAdg(rule) {
       return isRedirectRuleByType(rule, 'UBO');
     };
 
     /**
-    * Checks if the Abp redirect `rule` has AdGuard analog. Needed for Abp->Adg conversion
-    * @param {string} rule - Abp rule text
-    * @returns {boolean} - true if the rule can be converted to AdGuard
-    */
-    var isAbpRedirectCompatibleWithAdg = function isAbpRedirectCompatibleWithAdg(rule) {
+     * Checks if the Abp redirect `rule` has AdGuard analog. Needed for Abp->Adg conversion
+     *
+     * @param {string} rule - Abp rule text
+     * @returns {boolean} - true if the rule can be converted to AdGuard
+     */
+    const isAbpRedirectCompatibleWithAdg = function isAbpRedirectCompatibleWithAdg(rule) {
       return isRedirectRuleByType(rule, 'ABP');
     };
 
@@ -7790,46 +8272,56 @@
      * $script,redirect=noopvast-2.0
      * $xmlhttprequest,redirect=noopvast-2.0
      *
-     * @param {string} rule
-     * @returns {boolean}
+     * @param {string} rule rule text
+     * @returns {boolean} if the rule has specified content type before conversion
      */
-    var hasValidContentType = function hasValidContentType(rule) {
-      var ruleModifiers = parseModifiers(rule);
+    const hasValidContentType = function hasValidContentType(rule) {
+      const ruleModifiers = parseModifiers(rule);
       // rule can have more than one source type modifier
-      var sourceTypes = ruleModifiers.filter(function (el) {
+      const sourceTypes = ruleModifiers.filter(function (el) {
         return VALID_SOURCE_TYPES.indexOf(el) > -1;
       });
-      var isSourceTypeSpecified = sourceTypes.length > 0;
+      const isSourceTypeSpecified = sourceTypes.length > 0;
       // eslint-disable-next-line max-len
-      var isEmptyRedirect = ruleModifiers.indexOf("".concat(ADG_UBO_REDIRECT_MARKER).concat(EMPTY_REDIRECT_MARKER)) > -1 || ruleModifiers.indexOf("".concat(ADG_UBO_REDIRECT_RULE_MARKER).concat(EMPTY_REDIRECT_MARKER)) > -1;
+      const isEmptyRedirect = ruleModifiers.indexOf("".concat(ADG_UBO_REDIRECT_MARKER).concat(EMPTY_REDIRECT_MARKER)) > -1 || ruleModifiers.indexOf("".concat(ADG_UBO_REDIRECT_RULE_MARKER).concat(EMPTY_REDIRECT_MARKER)) > -1;
       if (isEmptyRedirect) {
         // no source type for 'empty' is allowed
         return true;
       }
       return isSourceTypeSpecified;
     };
-    var validator = {
-      UBO_SCRIPTLET_MASK_REG: UBO_SCRIPTLET_MASK_REG,
-      ABP_SCRIPTLET_MASK: ABP_SCRIPTLET_MASK,
-      ABP_SCRIPTLET_EXCEPTION_MASK: ABP_SCRIPTLET_EXCEPTION_MASK,
-      isComment: isComment,
-      isAdgScriptletRule: isAdgScriptletRule,
-      isUboScriptletRule: isUboScriptletRule,
-      isAbpSnippetRule: isAbpSnippetRule,
-      getScriptletByName: getScriptletByName,
-      isValidScriptletName: isValidScriptletName,
-      ADG_UBO_REDIRECT_RULE_MARKER: ADG_UBO_REDIRECT_RULE_MARKER,
-      REDIRECT_RULE_TYPES: REDIRECT_RULE_TYPES,
-      ABSENT_SOURCE_TYPE_REPLACEMENT: ABSENT_SOURCE_TYPE_REPLACEMENT,
-      isAdgRedirectRule: isAdgRedirectRule,
-      isValidAdgRedirectRule: isValidAdgRedirectRule,
-      isAdgRedirectCompatibleWithUbo: isAdgRedirectCompatibleWithUbo,
-      isUboRedirectCompatibleWithAdg: isUboRedirectCompatibleWithAdg,
-      isAbpRedirectCompatibleWithAdg: isAbpRedirectCompatibleWithAdg,
-      parseModifiers: parseModifiers,
-      getRedirectName: getRedirectName,
-      hasValidContentType: hasValidContentType
+    const validator = {
+      UBO_SCRIPTLET_MASK_REG,
+      ABP_SCRIPTLET_MASK,
+      ABP_SCRIPTLET_EXCEPTION_MASK,
+      isComment,
+      isAdgScriptletRule,
+      isUboScriptletRule,
+      isAbpSnippetRule,
+      getScriptletByName,
+      isValidScriptletName,
+      ADG_UBO_REDIRECT_RULE_MARKER,
+      REDIRECT_RULE_TYPES,
+      ABSENT_SOURCE_TYPE_REPLACEMENT,
+      isAdgRedirectRule,
+      isValidAdgRedirectRule,
+      isAdgRedirectCompatibleWithUbo,
+      isUboRedirectCompatibleWithAdg,
+      isAbpRedirectCompatibleWithAdg,
+      parseModifiers,
+      getRedirectName,
+      hasValidContentType
     };
+
+    function _arrayWithHoles(arr) {
+      if (Array.isArray(arr)) return arr;
+    }
+    var arrayWithHoles = _arrayWithHoles;
+
+    function _iterableToArray(iter) {
+      if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
+    }
+    var iterableToArray = _iterableToArray;
 
     function _arrayLikeToArray(arr, len) {
       if (len == null || len > arr.length) len = arr.length;
@@ -7840,16 +8332,6 @@
     }
     var arrayLikeToArray = _arrayLikeToArray;
 
-    function _arrayWithoutHoles(arr) {
-      if (Array.isArray(arr)) return arrayLikeToArray(arr);
-    }
-    var arrayWithoutHoles = _arrayWithoutHoles;
-
-    function _iterableToArray(iter) {
-      if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
-    }
-    var iterableToArray = _iterableToArray;
-
     function _unsupportedIterableToArray(o, minLen) {
       if (!o) return;
       if (typeof o === "string") return arrayLikeToArray(o, minLen);
@@ -7859,21 +8341,6 @@
       if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
     }
     var unsupportedIterableToArray = _unsupportedIterableToArray;
-
-    function _nonIterableSpread() {
-      throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-    }
-    var nonIterableSpread = _nonIterableSpread;
-
-    function _toConsumableArray(arr) {
-      return arrayWithoutHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableSpread();
-    }
-    var toConsumableArray = _toConsumableArray;
-
-    function _arrayWithHoles(arr) {
-      if (Array.isArray(arr)) return arr;
-    }
-    var arrayWithHoles = _arrayWithHoles;
 
     function _nonIterableRest() {
       throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
@@ -7888,71 +8355,75 @@
     /**
      * AdGuard scriptlet rule
      */
-    var ADGUARD_SCRIPTLET_MASK_REG = /#@?%#\/\/scriptlet\(.+\)/;
+    const ADGUARD_SCRIPTLET_MASK_REG = /#@?%#\/\/scriptlet\(.+\)/;
     // eslint-disable-next-line no-template-curly-in-string
-    var ADGUARD_SCRIPTLET_TEMPLATE = '${domains}#%#//scriptlet(${args})';
+    const ADGUARD_SCRIPTLET_TEMPLATE = '${domains}#%#//scriptlet(${args})';
     // eslint-disable-next-line no-template-curly-in-string
-    var ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@%#//scriptlet(${args})';
+    const ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@%#//scriptlet(${args})';
 
     /**
      * uBlock scriptlet rule mask
      */
     // eslint-disable-next-line no-template-curly-in-string
-    var UBO_SCRIPTLET_TEMPLATE = '${domains}##+js(${args})';
+    const UBO_SCRIPTLET_TEMPLATE = '${domains}##+js(${args})';
     // eslint-disable-next-line no-template-curly-in-string
-    var UBO_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@#+js(${args})';
-    var UBO_ALIAS_NAME_MARKER = 'ubo-';
-    var UBO_SCRIPTLET_JS_ENDING = '.js';
+    const UBO_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@#+js(${args})';
+    const UBO_ALIAS_NAME_MARKER = 'ubo-';
+    const UBO_SCRIPTLET_JS_ENDING = '.js';
 
     // https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#xhr
-    var UBO_XHR_TYPE = 'xhr';
-    var ADG_XHR_TYPE = 'xmlhttprequest';
-    var ADG_SET_CONSTANT_NAME = 'set-constant';
-    var ADG_SET_CONSTANT_EMPTY_STRING = '';
-    var ADG_SET_CONSTANT_EMPTY_ARRAY = 'emptyArr';
-    var ADG_SET_CONSTANT_EMPTY_OBJECT = 'emptyObj';
-    var UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
-    var UBO_SET_CONSTANT_EMPTY_ARRAY = '[]';
-    var UBO_SET_CONSTANT_EMPTY_OBJECT = '{}';
-    var ADG_PREVENT_FETCH_NAME = 'prevent-fetch';
-    var ADG_PREVENT_FETCH_EMPTY_STRING = '';
-    var ADG_PREVENT_FETCH_WILDCARD = '*';
-    var UBO_NO_FETCH_IF_WILDCARD = '/^/';
-    var ESCAPED_COMMA_SEPARATOR = '\\,';
-    var COMMA_SEPARATOR = ',';
-    var REMOVE_ATTR_METHOD = 'removeAttr';
-    var REMOVE_CLASS_METHOD = 'removeClass';
-    var REMOVE_ATTR_ALIASES = scriptletList[REMOVE_ATTR_METHOD].names;
-    var REMOVE_CLASS_ALIASES = scriptletList[REMOVE_CLASS_METHOD].names;
-    var ADG_REMOVE_ATTR_NAME = REMOVE_ATTR_ALIASES[0];
-    var ADG_REMOVE_CLASS_NAME = REMOVE_CLASS_ALIASES[0];
-    var REMOVE_ATTR_CLASS_APPLYING = ['asap', 'stay', 'complete'];
+    const UBO_XHR_TYPE = 'xhr';
+    const ADG_XHR_TYPE = 'xmlhttprequest';
+    const ADG_SET_CONSTANT_NAME = 'set-constant';
+    const ADG_SET_CONSTANT_EMPTY_STRING = '';
+    const ADG_SET_CONSTANT_EMPTY_ARRAY = 'emptyArr';
+    const ADG_SET_CONSTANT_EMPTY_OBJECT = 'emptyObj';
+    const UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
+    const UBO_SET_CONSTANT_EMPTY_ARRAY = '[]';
+    const UBO_SET_CONSTANT_EMPTY_OBJECT = '{}';
+    const ADG_PREVENT_FETCH_NAME = 'prevent-fetch';
+    const ADG_PREVENT_FETCH_EMPTY_STRING = '';
+    const ADG_PREVENT_FETCH_WILDCARD = '*';
+    const UBO_NO_FETCH_IF_WILDCARD = '/^/';
+    const ESCAPED_COMMA_SEPARATOR = '\\,';
+    const COMMA_SEPARATOR = ',';
+    const REMOVE_ATTR_METHOD = 'removeAttr';
+    const REMOVE_CLASS_METHOD = 'removeClass';
+    const REMOVE_ATTR_ALIASES = scriptletList[REMOVE_ATTR_METHOD].names;
+    const REMOVE_CLASS_ALIASES = scriptletList[REMOVE_CLASS_METHOD].names;
+    const ADG_REMOVE_ATTR_NAME = REMOVE_ATTR_ALIASES[0];
+    const ADG_REMOVE_CLASS_NAME = REMOVE_CLASS_ALIASES[0];
+    const REMOVE_ATTR_CLASS_APPLYING = ['asap', 'stay', 'complete'];
 
     /**
-     * Returns array of strings separated by space which not in quotes
-     * @param {string} str
+     * Returns array of strings separated by space which is not in quotes
+     *
+     * @param {string} str arbitrary string
+     * @returns {string[]} result array
      */
-    var getSentences = function getSentences(str) {
-      var reg = /'.*?'|".*?"|\S+/g;
+    const getSentences = function getSentences(str) {
+      const reg = /'.*?'|".*?"|\S+/g;
       return str.match(reg);
     };
 
     /**
      * Replaces string with data by placeholders
-     * @param {string} str
-     * @param {Object} data - where keys are placeholders names
+     *
+     * @param {string} str string with placeholders
+     * @param {Object} data where keys are placeholders names
+     * @returns {string} string filled with data
      */
-    var replacePlaceholders = function replacePlaceholders(str, data) {
+    const replacePlaceholders = function replacePlaceholders(str, data) {
       return Object.keys(data).reduce(function (acc, key) {
-        var reg = new RegExp("\\$\\{".concat(key, "\\}"), 'g');
+        const reg = new RegExp("\\$\\{".concat(key, "\\}"), 'g');
         acc = acc.replace(reg, data[key]);
         return acc;
       }, str);
     };
-    var splitArgs = function splitArgs(str) {
-      var args = [];
-      var prevArgStart = 0;
-      for (var i = 0; i < str.length; i += 1) {
+    const splitArgs = function splitArgs(str) {
+      const args = [];
+      let prevArgStart = 0;
+      for (let i = 0; i < str.length; i += 1) {
         // do not split args by escaped comma
         // https://github.com/AdguardTeam/Scriptlets/issues/133
         if (str[i] === COMMA_SEPARATOR && str[i - 1] !== '\\') {
@@ -7967,14 +8438,16 @@
 
     /**
      * Validates remove-attr/class scriptlet args
-     * @param {string[]} parsedArgs
+     *
+     * @param {string[]} parsedArgs scriptlet arguments
      * @returns {string[]|Error} valid args OR error for invalid selector
      */
-    var validateRemoveAttrClassArgs = function validateRemoveAttrClassArgs(parsedArgs) {
-      var _parsedArgs = toArray$1(parsedArgs),
+    const validateRemoveAttrClassArgs = function validateRemoveAttrClassArgs(parsedArgs) {
+      const _parsedArgs = toArray$1(parsedArgs),
         name = _parsedArgs[0],
         value = _parsedArgs[1],
-        restArgs = _parsedArgs.slice(2); // no extra checking if there are only scriptlet name and value
+        restArgs = _parsedArgs.slice(2);
+      // no extra checking if there are only scriptlet name and value
       // https://github.com/AdguardTeam/Scriptlets/issues/235
       if (restArgs.length === 0) {
         return [name, value];
@@ -7985,8 +8458,8 @@
       // 2. join 'selector' into one arg
       // 3. combine all args
       // https://github.com/AdguardTeam/Scriptlets/issues/133
-      var lastArg = restArgs.pop();
-      var applying;
+      const lastArg = restArgs.pop();
+      let applying;
       // check the last parsed arg for matching possible 'applying' vale
       if (REMOVE_ATTR_CLASS_APPLYING.some(function (el) {
         return lastArg.indexOf(el) > -1;
@@ -7995,39 +8468,40 @@
       } else {
         restArgs.push(lastArg);
       }
-      var selector = replaceAll(restArgs.join(', '), ESCAPED_COMMA_SEPARATOR, COMMA_SEPARATOR);
+      const selector = replaceAll(restArgs.join(', '), ESCAPED_COMMA_SEPARATOR, COMMA_SEPARATOR);
       if (selector.length > 0 && typeof document !== 'undefined') {
         // empty selector is valid for these scriptlets as it applies to all elements,
         // all other selectors should be validated
         // e.g. #%#//scriptlet('ubo-remove-class.js', 'blur', ', html')
         document.querySelectorAll(selector);
       }
-      var validArgs = applying ? [name, value, selector, applying] : [name, value, selector];
+      const validArgs = applying ? [name, value, selector, applying] : [name, value, selector];
       return validArgs;
     };
 
     /**
      * Converts string of UBO scriptlet rule to AdGuard scriptlet rule
-     * @param {string} rule - UBO scriptlet rule
-     * @returns {string[]} - array with one AdGuard scriptlet rule
+     *
+     * @param {string} rule UBO scriptlet rule
+     * @returns {string[]} array with one AdGuard scriptlet rule
      */
-    var convertUboScriptletToAdg = function convertUboScriptletToAdg(rule) {
-      var domains = getBeforeRegExp(rule, validator.UBO_SCRIPTLET_MASK_REG);
-      var mask = rule.match(validator.UBO_SCRIPTLET_MASK_REG)[0];
-      var template;
+    const convertUboScriptletToAdg = function convertUboScriptletToAdg(rule) {
+      const domains = getBeforeRegExp(rule, validator.UBO_SCRIPTLET_MASK_REG);
+      const mask = rule.match(validator.UBO_SCRIPTLET_MASK_REG)[0];
+      let template;
       if (mask.indexOf('@') > -1) {
         template = ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
       } else {
         template = ADGUARD_SCRIPTLET_TEMPLATE;
       }
-      var argsStr = getStringInBraces(rule);
-      var parsedArgs = splitArgs(argsStr);
-      var scriptletName = parsedArgs[0].indexOf(UBO_SCRIPTLET_JS_ENDING) > -1 ? "ubo-".concat(parsedArgs[0]) : "ubo-".concat(parsedArgs[0]).concat(UBO_SCRIPTLET_JS_ENDING);
+      const argsStr = getStringInBraces(rule);
+      let parsedArgs = splitArgs(argsStr);
+      const scriptletName = parsedArgs[0].indexOf(UBO_SCRIPTLET_JS_ENDING) > -1 ? "ubo-".concat(parsedArgs[0]) : "ubo-".concat(parsedArgs[0]).concat(UBO_SCRIPTLET_JS_ENDING);
       if (REMOVE_ATTR_ALIASES.indexOf(scriptletName) > -1 || REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1) {
         parsedArgs = validateRemoveAttrClassArgs(parsedArgs);
       }
-      var args = parsedArgs.map(function (arg, index) {
-        var outputArg = arg;
+      const args = parsedArgs.map(function (arg, index) {
+        let outputArg = arg;
         if (index === 0) {
           outputArg = scriptletName;
         }
@@ -8039,25 +8513,25 @@
       }).map(function (arg) {
         return wrapInSingleQuotes(arg);
       }).join("".concat(COMMA_SEPARATOR, " "));
-      var adgRule = replacePlaceholders(template, {
-        domains: domains,
-        args: args
+      const adgRule = replacePlaceholders(template, {
+        domains,
+        args
       });
       return [adgRule];
     };
 
     /**
      * Convert string of ABP snippet rule to AdGuard scriptlet rule
-     * @param {string} rule - ABP snippet rule
-     * @returns {Array} - array of AdGuard scriptlet rules -
-     * one or few items depends on Abp-rule
+     *
+     * @param {string} rule ABP snippet rule
+     * @returns {Array} array of AdGuard scriptlet rules, one or few items depends on Abp-rule
      */
-    var convertAbpSnippetToAdg = function convertAbpSnippetToAdg(rule) {
-      var SEMICOLON_DIVIDER = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
-      var mask = rule.indexOf(validator.ABP_SCRIPTLET_MASK) > -1 ? validator.ABP_SCRIPTLET_MASK : validator.ABP_SCRIPTLET_EXCEPTION_MASK;
-      var template = mask === validator.ABP_SCRIPTLET_MASK ? ADGUARD_SCRIPTLET_TEMPLATE : ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
-      var domains = substringBefore(rule, mask);
-      var args = substringAfter$1(rule, mask);
+    const convertAbpSnippetToAdg = function convertAbpSnippetToAdg(rule) {
+      const SEMICOLON_DIVIDER = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
+      const mask = rule.indexOf(validator.ABP_SCRIPTLET_MASK) > -1 ? validator.ABP_SCRIPTLET_MASK : validator.ABP_SCRIPTLET_EXCEPTION_MASK;
+      const template = mask === validator.ABP_SCRIPTLET_MASK ? ADGUARD_SCRIPTLET_TEMPLATE : ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
+      const domains = substringBefore(rule, mask);
+      const args = substringAfter$1(rule, mask);
       return args.split(SEMICOLON_DIVIDER)
       // abp-rule may have `;` at the end which makes last array item irrelevant
       // https://github.com/AdguardTeam/Scriptlets/issues/236
@@ -8069,20 +8543,20 @@
         }).join("".concat(COMMA_SEPARATOR, " "));
       }).map(function (args) {
         return replacePlaceholders(template, {
-          domains: domains,
-          args: args
+          domains,
+          args
         });
       });
     };
 
     /**
      * Converts scriptlet rule to AdGuard one
-     * @param {string} rule
-     * @returns {Array} - array of AdGuard scriptlet rules -
-     * one item for Adg and Ubo or few items for Abp
+     *
+     * @param {string} rule scriptlet rule
+     * @returns {Array} array of AdGuard scriptlet rules, one item for Adg and Ubo or few items for Abp
      */
-    var convertScriptletToAdg = function convertScriptletToAdg(rule) {
-      var result;
+    const convertScriptletToAdg = function convertScriptletToAdg(rule) {
+      let result;
       if (validator.isUboScriptletRule(rule)) {
         result = convertUboScriptletToAdg(rule);
       } else if (validator.isAbpSnippetRule(rule)) {
@@ -8095,16 +8569,17 @@
 
     /**
      * Converts UBO scriptlet rule to AdGuard one
-     * @param {string} rule - AdGuard scriptlet rule
-     * @returns {string} - UBO scriptlet rule
+     *
+     * @param {string} rule AdGuard scriptlet rule
+     * @returns {string} UBO scriptlet rule
      */
-    var convertAdgScriptletToUbo = function convertAdgScriptletToUbo(rule) {
-      var res;
+    const convertAdgScriptletToUbo = function convertAdgScriptletToUbo(rule) {
+      let res;
       if (validator.isAdgScriptletRule(rule)) {
-        var _parseRule = parseRule(rule),
+        const _parseRule = parseRule(rule),
           parsedName = _parseRule.name,
           parsedParams = _parseRule.args;
-        var preparedParams;
+        let preparedParams;
         if (parsedName === ADG_SET_CONSTANT_NAME
         // https://github.com/AdguardTeam/FiltersCompiler/issues/102
         && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_STRING) {
@@ -8126,43 +8601,43 @@
         }
 
         // object of name and aliases for the Adg-scriptlet
-        var adgScriptletObject = Object.keys(scriptletList).map(function (el) {
+        const adgScriptletObject = Object.keys(scriptletList).map(function (el) {
           return scriptletList[el];
         }).map(function (s) {
-          var _s$names = toArray$1(s.names),
+          const _s$names = toArray$1(s.names),
             name = _s$names[0],
             aliases = _s$names.slice(1);
           return {
-            name: name,
-            aliases: aliases
+            name,
+            aliases
           };
         }).find(function (el) {
           return el.name === parsedName || el.aliases.indexOf(parsedName) >= 0;
         });
-        var aliases = adgScriptletObject.aliases;
+        const aliases = adgScriptletObject.aliases;
         if (aliases.length > 0) {
-          var uboAlias = adgScriptletObject.aliases
+          const uboAlias = adgScriptletObject.aliases
           // eslint-disable-next-line no-restricted-properties
           .find(function (alias) {
             return alias.includes(UBO_ALIAS_NAME_MARKER);
           });
           if (uboAlias) {
-            var mask = rule.match(ADGUARD_SCRIPTLET_MASK_REG)[0];
-            var template;
+            const mask = rule.match(ADGUARD_SCRIPTLET_MASK_REG)[0];
+            let template;
             if (mask.indexOf('@') > -1) {
               template = UBO_SCRIPTLET_EXCEPTION_TEMPLATE;
             } else {
               template = UBO_SCRIPTLET_TEMPLATE;
             }
-            var domains = getBeforeRegExp(rule, ADGUARD_SCRIPTLET_MASK_REG);
-            var uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '')
+            const domains = getBeforeRegExp(rule, ADGUARD_SCRIPTLET_MASK_REG);
+            const uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '')
             // '.js' in the Ubo scriptlet name can be omitted
             // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
             .replace(UBO_SCRIPTLET_JS_ENDING, '');
-            var args = preparedParams.length > 0 ? "".concat(uboName, ", ").concat(preparedParams.join("".concat(COMMA_SEPARATOR, " "))) : uboName;
-            var uboRule = replacePlaceholders(template, {
-              domains: domains,
-              args: args
+            const args = preparedParams.length > 0 ? "".concat(uboName, ", ").concat(preparedParams.join("".concat(COMMA_SEPARATOR, " "))) : uboName;
+            const uboRule = replacePlaceholders(template, {
+              domains,
+              args
             });
             res = uboRule;
           }
@@ -8173,20 +8648,21 @@
 
     /**
      * Checks whether the ADG scriptlet exists or UBO/ABP scriptlet is compatible to ADG
-     * @param {string} input - can be ADG or UBO or ABP scriptlet rule
-     * @returns {boolean}
+     *
+     * @param {string} input can be ADG or UBO or ABP scriptlet rule
+     * @returns {boolean} if scriptlet rule is valid
      */
-    var isValidScriptletRule = function isValidScriptletRule(input) {
+    const isValidScriptletRule = function isValidScriptletRule(input) {
       if (!input) {
         return false;
       }
       // ABP 'input' rule may contain more than one snippet
-      var rulesArray = convertScriptletToAdg(input);
+      const rulesArray = convertScriptletToAdg(input);
 
       // checking if each of parsed scriptlets is valid
       // if at least one of them is not valid - whole 'input' rule is not valid too
-      var isValid = rulesArray.every(function (rule) {
-        var parsedRule = parseRule(rule);
+      const isValid = rulesArray.every(function (rule) {
+        const parsedRule = parseRule(rule);
         return validator.isValidScriptletName(parsedRule.name);
       });
       return isValid;
@@ -8194,14 +8670,15 @@
 
     /**
      * Gets index and redirect resource marker from UBO/ADG modifiers array
-     * @param {string[]} modifiers
+     *
+     * @param {string[]} modifiers rule modifiers
      * @param {Object} redirectsData validator.REDIRECT_RULE_TYPES.(UBO|ADG)
-     * @param {string} rule
+     * @param {string} rule rule string
      * @returns {Object} { index, marker }
      */
-    var getMarkerData = function getMarkerData(modifiers, redirectsData, rule) {
-      var marker;
-      var index = modifiers.findIndex(function (m) {
+    const getMarkerData = function getMarkerData(modifiers, redirectsData, rule) {
+      let marker;
+      let index = modifiers.findIndex(function (m) {
         return m.indexOf(redirectsData.redirectRuleMarker) > -1;
       });
       if (index > -1) {
@@ -8217,25 +8694,26 @@
         }
       }
       return {
-        index: index,
-        marker: marker
+        index,
+        marker
       };
     };
 
     /**
      * Converts Ubo redirect rule to Adg one
-     * @param {string} rule
-     * @returns {string}
+     *
+     * @param {string} rule ubo redirect rule
+     * @returns {string} converted adg rule
      */
-    var convertUboRedirectToAdg = function convertUboRedirectToAdg(rule) {
-      var firstPartOfRule = substringBefore(rule, '$');
-      var uboModifiers = validator.parseModifiers(rule);
-      var uboMarkerData = getMarkerData(uboModifiers, validator.REDIRECT_RULE_TYPES.UBO, rule);
-      var adgModifiers = uboModifiers.map(function (modifier, index) {
+    const convertUboRedirectToAdg = function convertUboRedirectToAdg(rule) {
+      const firstPartOfRule = substringBefore(rule, '$');
+      const uboModifiers = validator.parseModifiers(rule);
+      const uboMarkerData = getMarkerData(uboModifiers, validator.REDIRECT_RULE_TYPES.UBO, rule);
+      const adgModifiers = uboModifiers.map(function (modifier, index) {
         if (index === uboMarkerData.index) {
-          var uboName = substringAfter$1(modifier, uboMarkerData.marker);
-          var adgName = validator.REDIRECT_RULE_TYPES.UBO.compatibility[uboName];
-          var adgMarker = uboMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER ? validator.REDIRECT_RULE_TYPES.ADG.redirectRuleMarker : validator.REDIRECT_RULE_TYPES.ADG.redirectMarker;
+          const uboName = substringAfter$1(modifier, uboMarkerData.marker);
+          const adgName = validator.REDIRECT_RULE_TYPES.UBO.compatibility[uboName];
+          const adgMarker = uboMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER ? validator.REDIRECT_RULE_TYPES.ADG.redirectRuleMarker : validator.REDIRECT_RULE_TYPES.ADG.redirectMarker;
           return "".concat(adgMarker).concat(adgName);
         }
         if (modifier === UBO_XHR_TYPE) {
@@ -8248,16 +8726,17 @@
 
     /**
      * Converts Abp redirect rule to Adg one
-     * @param {string} rule
-     * @returns {string}
+     *
+     * @param {string} rule abp redirect rule
+     * @returns {string} converted adg rule
      */
-    var convertAbpRedirectToAdg = function convertAbpRedirectToAdg(rule) {
-      var firstPartOfRule = substringBefore(rule, '$');
-      var abpModifiers = validator.parseModifiers(rule);
-      var adgModifiers = abpModifiers.map(function (modifier) {
+    const convertAbpRedirectToAdg = function convertAbpRedirectToAdg(rule) {
+      const firstPartOfRule = substringBefore(rule, '$');
+      const abpModifiers = validator.parseModifiers(rule);
+      const adgModifiers = abpModifiers.map(function (modifier) {
         if (modifier.indexOf(validator.REDIRECT_RULE_TYPES.ABP.redirectMarker) > -1) {
-          var abpName = substringAfter$1(modifier, validator.REDIRECT_RULE_TYPES.ABP.redirectMarker);
-          var adgName = validator.REDIRECT_RULE_TYPES.ABP.compatibility[abpName];
+          const abpName = substringAfter$1(modifier, validator.REDIRECT_RULE_TYPES.ABP.redirectMarker);
+          const adgName = validator.REDIRECT_RULE_TYPES.ABP.compatibility[abpName];
           return "".concat(validator.REDIRECT_RULE_TYPES.ADG.redirectMarker).concat(adgName);
         }
         return modifier;
@@ -8267,11 +8746,12 @@
 
     /**
      * Converts redirect rule to AdGuard one
-     * @param {string} rule
-     * @returns {string}
+     *
+     * @param {string} rule redirect rule
+     * @returns {string} converted adg rule
      */
-    var convertRedirectToAdg = function convertRedirectToAdg(rule) {
-      var result;
+    const convertRedirectToAdg = function convertRedirectToAdg(rule) {
+      let result;
       if (validator.isUboRedirectCompatibleWithAdg(rule)) {
         result = convertUboRedirectToAdg(rule);
       } else if (validator.isAbpRedirectCompatibleWithAdg(rule)) {
@@ -8290,34 +8770,36 @@
      *    Source types are chosen according to redirect name
      *    e.g. ||ad.com^$redirect=<name>,important  ->>  ||ad.com^$redirect=<name>,important,script
      * 3. Replaces Adg redirect name by Ubo analog
-     * @param {string} rule
-     * @returns {string}
+     *
+     * @param {string} rule adg rule
+     * @returns {string} converted ubo rule
+     * @throws on incompatible rule
      */
-    var convertAdgRedirectToUbo = function convertAdgRedirectToUbo(rule) {
+    const convertAdgRedirectToUbo = function convertAdgRedirectToUbo(rule) {
       if (!validator.isAdgRedirectCompatibleWithUbo(rule)) {
         throw new Error("Unable to convert for uBO - unsupported redirect in rule: ".concat(rule));
       }
-      var basePart = substringBefore(rule, '$');
-      var adgModifiers = validator.parseModifiers(rule);
-      var adgMarkerData = getMarkerData(adgModifiers, validator.REDIRECT_RULE_TYPES.ADG, rule);
-      var adgRedirectName = adgModifiers[adgMarkerData.index].slice(adgMarkerData.marker.length);
+      const basePart = substringBefore(rule, '$');
+      const adgModifiers = validator.parseModifiers(rule);
+      const adgMarkerData = getMarkerData(adgModifiers, validator.REDIRECT_RULE_TYPES.ADG, rule);
+      const adgRedirectName = adgModifiers[adgMarkerData.index].slice(adgMarkerData.marker.length);
       if (!validator.hasValidContentType(rule)) {
         // add missed source types as content type modifiers
-        var sourceTypesData = validator.ABSENT_SOURCE_TYPE_REPLACEMENT.find(function (el) {
+        const sourceTypesData = validator.ABSENT_SOURCE_TYPE_REPLACEMENT.find(function (el) {
           return el.NAME === adgRedirectName;
         });
         if (typeof sourceTypesData === 'undefined') {
           // eslint-disable-next-line max-len
           throw new Error("Unable to convert for uBO - no types to add for specific redirect in rule: ".concat(rule));
         }
-        var additionModifiers = sourceTypesData.TYPES;
-        adgModifiers.push.apply(adgModifiers, toConsumableArray(additionModifiers));
+        const additionModifiers = sourceTypesData.TYPES;
+        adgModifiers.push(...additionModifiers);
       }
-      var uboModifiers = adgModifiers.map(function (el, index) {
+      const uboModifiers = adgModifiers.map(function (el, index) {
         if (index === adgMarkerData.index) {
-          var uboMarker = adgMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER ? validator.REDIRECT_RULE_TYPES.UBO.redirectRuleMarker : validator.REDIRECT_RULE_TYPES.UBO.redirectMarker;
+          const uboMarker = adgMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER ? validator.REDIRECT_RULE_TYPES.UBO.redirectRuleMarker : validator.REDIRECT_RULE_TYPES.UBO.redirectMarker;
           // eslint-disable-next-line max-len
-          var uboRedirectName = validator.REDIRECT_RULE_TYPES.ADG.compatibility[adgRedirectName];
+          const uboRedirectName = validator.REDIRECT_RULE_TYPES.ADG.compatibility[adgRedirectName];
           return "".concat(uboMarker).concat(uboRedirectName);
         }
         return el;
@@ -8327,7 +8809,6 @@
 
     /**
      * @redirect google-analytics
-     *
      * @description
      * Mocks Google's Analytics and Tag Manager APIs.
      * [Covers obsolete googletagmanager-gtm redirect functionality](https://github.com/AdguardTeam/Scriptlets/issues/127).
@@ -8343,22 +8824,22 @@
      */
     function GoogleAnalytics(source) {
       // eslint-disable-next-line func-names
-      var Tracker = function Tracker() {}; // constructor
-      var proto = Tracker.prototype;
+      const Tracker = function Tracker() {}; // constructor
+      const proto = Tracker.prototype;
       proto.get = noopFunc;
       proto.set = noopFunc;
       proto.send = noopFunc;
-      var googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';
+      const googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';
       // a -- fake arg for 'ga.length < 1' antiadblock checking
       // eslint-disable-next-line no-unused-vars
       function ga(a) {
-        var len = arguments.length;
+        const len = arguments.length;
         if (len === 0) {
           return;
         }
         // eslint-disable-next-line prefer-rest-params
-        var lastArg = arguments[len - 1];
-        var replacer;
+        const lastArg = arguments[len - 1];
+        let replacer;
         if (lastArg instanceof Object && lastArg !== null && typeof lastArg.hitCallback === 'function') {
           replacer = lastArg.hitCallback;
         } else if (typeof lastArg === 'function') {
@@ -8385,7 +8866,7 @@
       ga.remove = noopFunc;
       ga.loaded = true;
       window[googleAnalyticsName] = ga;
-      var _window = window,
+      const _window = window,
         dataLayer = _window.dataLayer,
         google_optimize = _window.google_optimize; // eslint-disable-line camelcase
       if (dataLayer instanceof Object === false) {
@@ -8397,11 +8878,11 @@
 
       /**
        * checks data object and delays callback
-       * @param {Object|Array} data gtag payload
+       *
+       * @param {object|Array} dataObj gtag payload
        * @param {string} funcName callback prop name
-       * @returns
        */
-      var handleCallback = function handleCallback(dataObj, funcName) {
+      const handleCallback = function handleCallback(dataObj, funcName) {
         if (dataObj && typeof dataObj[funcName] === 'function') {
           setTimeout(dataObj[funcName]);
         }
@@ -8411,7 +8892,7 @@
           if (data instanceof Object) {
             handleCallback(data, 'eventCallback');
             // eslint-disable-next-line no-restricted-syntax, guard-for-in
-            for (var key in data) {
+            for (const key in data) {
               handleCallback(data[key], 'event_callback');
             }
             // eslint-disable-next-line no-prototype-builtins
@@ -8429,9 +8910,9 @@
       }
 
       // https://github.com/AdguardTeam/Scriptlets/issues/81
+      // eslint-disable-next-line camelcase
       if (google_optimize instanceof Object && typeof google_optimize.get === 'function') {
-        // eslint-disable-line camelcase
-        var googleOptimizeWrapper = {
+        const googleOptimizeWrapper = {
           get: noopFunc
         };
         window.google_optimize = googleOptimizeWrapper;
@@ -8447,7 +8928,6 @@
 
     /**
      * @redirect google-analytics-ga
-     *
      * @description
      * Mocks old Google Analytics API.
      *
@@ -8488,8 +8968,8 @@
           data[2]();
         }
       };
-      var gaq = new Gaq();
-      var asyncTrackers = window._gaq || [];
+      const gaq = new Gaq();
+      const asyncTrackers = window._gaq || [];
       if (Array.isArray(asyncTrackers)) {
         while (asyncTrackers[0]) {
           gaq.push(asyncTrackers.shift());
@@ -8502,8 +8982,8 @@
       function Gat() {}
 
       // Mock tracker api
-      var api = ['_addIgnoredOrganic', '_addIgnoredRef', '_addItem', '_addOrganic', '_addTrans', '_clearIgnoredOrganic', '_clearIgnoredRef', '_clearOrganic', '_cookiePathCopy', '_deleteCustomVar', '_getName', '_setAccount', '_getAccount', '_getClientInfo', '_getDetectFlash', '_getDetectTitle', '_getLinkerUrl', '_getLocalGifPath', '_getServiceMode', '_getVersion', '_getVisitorCustomVar', '_initData', '_link', '_linkByPost', '_setAllowAnchor', '_setAllowHash', '_setAllowLinker', '_setCampContentKey', '_setCampMediumKey', '_setCampNameKey', '_setCampNOKey', '_setCampSourceKey', '_setCampTermKey', '_setCampaignCookieTimeout', '_setCampaignTrack', '_setClientInfo', '_setCookiePath', '_setCookiePersistence', '_setCookieTimeout', '_setCustomVar', '_setDetectFlash', '_setDetectTitle', '_setDomainName', '_setLocalGifPath', '_setLocalRemoteServerMode', '_setLocalServerMode', '_setReferrerOverride', '_setRemoteServerMode', '_setSampleRate', '_setSessionTimeout', '_setSiteSpeedSampleRate', '_setSessionCookieTimeout', '_setVar', '_setVisitorCookieTimeout', '_trackEvent', '_trackPageLoadTime', '_trackPageview', '_trackSocial', '_trackTiming', '_trackTrans', '_visitCode'];
-      var tracker = api.reduce(function (res, funcName) {
+      const api = ['_addIgnoredOrganic', '_addIgnoredRef', '_addItem', '_addOrganic', '_addTrans', '_clearIgnoredOrganic', '_clearIgnoredRef', '_clearOrganic', '_cookiePathCopy', '_deleteCustomVar', '_getName', '_setAccount', '_getAccount', '_getClientInfo', '_getDetectFlash', '_getDetectTitle', '_getLinkerUrl', '_getLocalGifPath', '_getServiceMode', '_getVersion', '_getVisitorCustomVar', '_initData', '_link', '_linkByPost', '_setAllowAnchor', '_setAllowHash', '_setAllowLinker', '_setCampContentKey', '_setCampMediumKey', '_setCampNameKey', '_setCampNOKey', '_setCampSourceKey', '_setCampTermKey', '_setCampaignCookieTimeout', '_setCampaignTrack', '_setClientInfo', '_setCookiePath', '_setCookiePersistence', '_setCookieTimeout', '_setCustomVar', '_setDetectFlash', '_setDetectTitle', '_setDomainName', '_setLocalGifPath', '_setLocalRemoteServerMode', '_setLocalServerMode', '_setReferrerOverride', '_setRemoteServerMode', '_setSampleRate', '_setSessionTimeout', '_setSiteSpeedSampleRate', '_setSessionCookieTimeout', '_setVar', '_setVisitorCookieTimeout', '_trackEvent', '_trackPageLoadTime', '_trackPageview', '_trackSocial', '_trackTiming', '_trackTrans', '_visitCode'];
+      const tracker = api.reduce(function (res, funcName) {
         res[funcName] = noopFunc;
         return res;
       }, {});
@@ -8539,7 +9019,7 @@
       Gat.prototype.oa = noopFunc;
       Gat.prototype.pa = noopFunc;
       Gat.prototype.u = noopFunc;
-      var gat = new Gat();
+      const gat = new Gat();
       window._gat = gat;
       hit(source);
     }
@@ -8549,7 +9029,6 @@
     /* eslint-disable max-len */
     /**
      * @redirect googlesyndication-adsbygoogle
-     *
      * @description
      * Mocks Google AdSense API.
      *
@@ -8568,7 +9047,7 @@
         // length: 0,
         loaded: true,
         // https://github.com/AdguardTeam/Scriptlets/issues/184
-        push: function push(arg) {
+        push(arg) {
           if (typeof this.length === 'undefined') {
             this.length = 0;
             this.length += 1;
@@ -8576,7 +9055,7 @@
           if (arg !== null && arg instanceof Object && arg.constructor.name === 'Object') {
             // eslint-disable-next-line no-restricted-syntax
             for (var _i = 0, _Object$keys = Object.keys(arg); _i < _Object$keys.length; _i++) {
-              var key = _Object$keys[_i];
+              const key = _Object$keys[_i];
               if (typeof arg[key] === 'function') {
                 try {
                   // https://github.com/AdguardTeam/Scriptlets/issues/252
@@ -8590,19 +9069,19 @@
           }
         }
       };
-      var adElems = document.querySelectorAll('.adsbygoogle');
-      var css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
-      var statusAttrName = 'data-adsbygoogle-status';
-      var ASWIFT_IFRAME_MARKER = 'aswift_';
-      var GOOGLE_ADS_IFRAME_MARKER = 'google_ads_iframe_';
-      var executed = false;
-      for (var i = 0; i < adElems.length; i += 1) {
-        var adElemChildNodes = adElems[i].childNodes;
-        var childNodesQuantity = adElemChildNodes.length;
+      const adElems = document.querySelectorAll('.adsbygoogle');
+      const css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
+      const statusAttrName = 'data-adsbygoogle-status';
+      const ASWIFT_IFRAME_MARKER = 'aswift_';
+      const GOOGLE_ADS_IFRAME_MARKER = 'google_ads_iframe_';
+      let executed = false;
+      for (let i = 0; i < adElems.length; i += 1) {
+        const adElemChildNodes = adElems[i].childNodes;
+        const childNodesQuantity = adElemChildNodes.length;
         // childNodes of .adsbygoogle can be defined if scriptlet was executed before
         // so we should check that childNodes are exactly defined by us
         // TODO: remake after scriptlets context developing in 1.3
-        var areIframesDefined = false;
+        let areIframesDefined = false;
         if (childNodesQuantity > 0) {
           // it should be only 2 child iframes if scriptlet was executed
           areIframesDefined = childNodesQuantity === 2
@@ -8614,17 +9093,17 @@
         if (!areIframesDefined) {
           // here we do the job if scriptlet has not been executed earlier
           adElems[i].setAttribute(statusAttrName, 'done');
-          var aswiftIframe = document.createElement('iframe');
+          const aswiftIframe = document.createElement('iframe');
           aswiftIframe.id = "".concat(ASWIFT_IFRAME_MARKER).concat(i);
           aswiftIframe.style = css;
           adElems[i].appendChild(aswiftIframe);
-          var innerAswiftIframe = document.createElement('iframe');
+          const innerAswiftIframe = document.createElement('iframe');
           aswiftIframe.contentWindow.document.body.appendChild(innerAswiftIframe);
-          var googleadsIframe = document.createElement('iframe');
+          const googleadsIframe = document.createElement('iframe');
           googleadsIframe.id = "".concat(GOOGLE_ADS_IFRAME_MARKER).concat(i);
           googleadsIframe.style = css;
           adElems[i].appendChild(googleadsIframe);
-          var innerGoogleadsIframe = document.createElement('iframe');
+          const innerGoogleadsIframe = document.createElement('iframe');
           googleadsIframe.contentWindow.document.body.appendChild(innerGoogleadsIframe);
           executed = true;
         }
@@ -8636,11 +9115,38 @@
     GoogleSyndicationAdsByGoogle.names = ['googlesyndication-adsbygoogle', 'ubo-googlesyndication_adsbygoogle.js', 'googlesyndication_adsbygoogle.js'];
     GoogleSyndicationAdsByGoogle.injections = [hit];
 
-    /* eslint-disable func-names */
+    function _iterableToArrayLimit(arr, i) {
+      if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return;
+      var _arr = [];
+      var _n = true;
+      var _d = false;
+      var _e = undefined;
+      try {
+        for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+          _arr.push(_s.value);
+          if (i && _arr.length === i) break;
+        }
+      } catch (err) {
+        _d = true;
+        _e = err;
+      } finally {
+        try {
+          if (!_n && _i["return"] != null) _i["return"]();
+        } finally {
+          if (_d) throw _e;
+        }
+      }
+      return _arr;
+    }
+    var iterableToArrayLimit = _iterableToArrayLimit;
+
+    function _slicedToArray(arr, i) {
+      return arrayWithHoles(arr) || iterableToArrayLimit(arr, i) || unsupportedIterableToArray(arr, i) || nonIterableRest();
+    }
+    var slicedToArray = _slicedToArray;
 
     /**
      * @redirect googletagservices-gpt
-     *
      * @description
      * Mocks Google Publisher Tag API.
      *
@@ -8653,68 +9159,97 @@
      * ```
      */
     function GoogleTagServicesGpt(source) {
-      var slots = new Map();
-      var slotsById = new Map();
-      var eventCallbacks = new Map();
-      var addEventListener = function addEventListener(name, listener) {
+      const slots = new Map();
+      const slotsById = new Map();
+      const slotsPerPath = new Map();
+      const slotCreatives = new Map();
+      const eventCallbacks = new Map();
+      const gTargeting = new Map();
+      const addEventListener = function addEventListener(name, listener) {
         if (!eventCallbacks.has(name)) {
           eventCallbacks.set(name, new Set());
         }
         eventCallbacks.get(name).add(listener);
         return this;
       };
-      var removeEventListener = function removeEventListener(name, listener) {
+      const removeEventListener = function removeEventListener(name, listener) {
         if (eventCallbacks.has(name)) {
           return eventCallbacks.get(name).delete(listener);
         }
         return false;
       };
-      var fireSlotEvent = function fireSlotEvent(name, slot) {
-        // eslint-disable-next-line compat/compat
+      const fireSlotEvent = function fireSlotEvent(name, slot) {
         return new Promise(function (resolve) {
           requestAnimationFrame(function () {
-            var size = [0, 0];
-            var callbacksSet = eventCallbacks.get(name) || [];
-            var callbackArray = Array.from(callbacksSet);
-            for (var i = 0; i < callbackArray.length; i += 1) {
+            const size = [0, 0];
+            const callbacksSet = eventCallbacks.get(name) || [];
+            const callbackArray = Array.from(callbacksSet);
+            for (let i = 0; i < callbackArray.length; i += 1) {
               callbackArray[i]({
                 isEmpty: true,
-                size: size,
-                slot: slot
+                size,
+                slot
               });
             }
             resolve();
           });
         });
       };
-      var displaySlot = function displaySlot(slot) {
+      const emptySlotElement = function emptySlotElement(slot) {
+        const node = document.getElementById(slot.getSlotElementId());
+        while (node !== null && node !== void 0 && node.lastChild) {
+          node.lastChild.remove();
+        }
+      };
+      const recreateIframeForSlot = function recreateIframeForSlot(slot) {
+        var _document$getElementB;
+        const eid = "google_ads_iframe_".concat(slot.getId());
+        (_document$getElementB = document.getElementById(eid)) === null || _document$getElementB === void 0 ? void 0 : _document$getElementB.remove();
+        const node = document.getElementById(slot.getSlotElementId());
+        if (node) {
+          const f = document.createElement('iframe');
+          f.id = eid;
+          f.srcdoc = '<body></body>';
+          f.style = 'position:absolute; width:0; height:0; left:0; right:0; z-index:-1; border:0';
+          f.setAttribute('width', 0);
+          f.setAttribute('height', 0);
+          // https://github.com/AdguardTeam/Scriptlets/issues/259
+          f.setAttribute('data-load-complete', true);
+          f.setAttribute('data-google-container-id', true);
+          f.setAttribute('sandbox', true);
+          node.appendChild(f);
+        }
+      };
+      const displaySlot = function displaySlot(slot) {
         if (!slot) {
           return;
         }
-        var id = slot.getSlotElementId();
+        const id = slot.getSlotElementId();
         if (!document.getElementById(id)) {
           return;
         }
-        var parent = document.getElementById(id);
+        const parent = document.getElementById(id);
         if (parent) {
           parent.appendChild(document.createElement('div'));
         }
+        emptySlotElement(slot);
+        recreateIframeForSlot(slot);
         fireSlotEvent('slotRenderEnded', slot);
         fireSlotEvent('slotRequested', slot);
         fireSlotEvent('slotResponseReceived', slot);
         fireSlotEvent('slotOnload', slot);
         fireSlotEvent('impressionViewable', slot);
       };
-      var companionAdsService = {
-        addEventListener: addEventListener,
-        removeEventListener: removeEventListener,
+      const companionAdsService = {
+        addEventListener,
+        removeEventListener,
         enableSyncLoading: noopFunc,
         setRefreshUnfilledSlots: noopFunc,
         getSlots: noopArray
       };
-      var contentService = {
-        addEventListener: addEventListener,
-        removeEventListener: removeEventListener,
+      const contentService = {
+        addEventListener,
+        removeEventListener,
         setContent: noopFunc
       };
       function PassbackSlot() {} // constructor
@@ -8729,54 +9264,197 @@
       function SizeMappingBuilder() {} // constructor
       SizeMappingBuilder.prototype.addSize = noopThis;
       SizeMappingBuilder.prototype.build = noopNull;
-      function Slot(adUnitPath, creatives, optDiv) {
-        this.adUnitPath = adUnitPath;
-        this.creatives = creatives;
-        this.optDiv = optDiv;
+      const getTargetingValue = function getTargetingValue(v) {
+        if (typeof v === 'string') {
+          return [v];
+        }
+        try {
+          return [Array.prototype.flat.call(v)[0]];
+        } catch (_unused) {
+          // do nothing
+        }
+        return [];
+      };
+      const updateTargeting = function updateTargeting(targeting, map) {
+        if (typeof map === 'object') {
+          const entries = Object.entries(map || {});
+          for (var _i = 0, _entries = entries; _i < _entries.length; _i++) {
+            const _entries$_i = slicedToArray(_entries[_i], 2),
+              k = _entries$_i[0],
+              v = _entries$_i[1];
+            targeting.set(k, getTargetingValue(v));
+          }
+        }
+      };
+      const defineSlot = function defineSlot(adUnitPath, creatives, optDiv) {
         if (slotsById.has(optDiv)) {
-          var _document$getElementB;
-          (_document$getElementB = document.getElementById(optDiv)) === null || _document$getElementB === void 0 ? void 0 : _document$getElementB.remove();
+          var _document$getElementB2;
+          (_document$getElementB2 = document.getElementById(optDiv)) === null || _document$getElementB2 === void 0 ? void 0 : _document$getElementB2.remove();
           return slotsById.get(optDiv);
         }
-        slotsById.set(optDiv, this);
-      } // constructor
-      Slot.prototype.addService = noopThis;
-      Slot.prototype.clearCategoryExclusions = noopThis;
-      Slot.prototype.clearTargeting = noopThis;
-      Slot.prototype.defineSizeMapping = noopThis;
-      Slot.prototype.get = noopNull;
-      Slot.prototype.getAdUnitPath = function () {
-        return this.adUnitPath;
+        const attributes = new Map();
+        const targeting = new Map();
+        const exclusions = new Set();
+        const response = {
+          advertiserId: undefined,
+          campaignId: undefined,
+          creativeId: undefined,
+          creativeTemplateId: undefined,
+          lineItemId: undefined
+        };
+        const sizes = [{
+          getHeight: function getHeight() {
+            return 2;
+          },
+          getWidth: function getWidth() {
+            return 2;
+          }
+        }];
+        const num = (slotsPerPath.get(adUnitPath) || 0) + 1;
+        slotsPerPath.set(adUnitPath, num);
+        const id = "".concat(adUnitPath, "_").concat(num);
+        let clickUrl = '';
+        let collapseEmptyDiv = null;
+        const services = new Set();
+        const slot = {
+          addService(e) {
+            services.add(e);
+            return slot;
+          },
+          clearCategoryExclusions: noopThis,
+          clearTargeting(k) {
+            if (k === undefined) {
+              targeting.clear();
+            } else {
+              targeting.delete(k);
+            }
+          },
+          defineSizeMapping(mapping) {
+            slotCreatives.set(optDiv, mapping);
+            return this;
+          },
+          get: function get(k) {
+            return attributes.get(k);
+          },
+          getAdUnitPath: function getAdUnitPath() {
+            return adUnitPath;
+          },
+          getAttributeKeys: function getAttributeKeys() {
+            return Array.from(attributes.keys());
+          },
+          getCategoryExclusions: function getCategoryExclusions() {
+            return Array.from(exclusions);
+          },
+          getClickUrl: function getClickUrl() {
+            return clickUrl;
+          },
+          getCollapseEmptyDiv: function getCollapseEmptyDiv() {
+            return collapseEmptyDiv;
+          },
+          getContentUrl: function getContentUrl() {
+            return '';
+          },
+          getDivStartsCollapsed: function getDivStartsCollapsed() {
+            return null;
+          },
+          getDomId: function getDomId() {
+            return optDiv;
+          },
+          getEscapedQemQueryId: function getEscapedQemQueryId() {
+            return '';
+          },
+          getFirstLook: function getFirstLook() {
+            return 0;
+          },
+          getId: function getId() {
+            return id;
+          },
+          getHtml: function getHtml() {
+            return '';
+          },
+          getName: function getName() {
+            return id;
+          },
+          getOutOfPage: function getOutOfPage() {
+            return false;
+          },
+          getResponseInformation: function getResponseInformation() {
+            return response;
+          },
+          getServices: function getServices() {
+            return Array.from(services);
+          },
+          getSizes: function getSizes() {
+            return sizes;
+          },
+          getSlotElementId: function getSlotElementId() {
+            return optDiv;
+          },
+          getSlotId: function getSlotId() {
+            return slot;
+          },
+          getTargeting: function getTargeting(k) {
+            return targeting.get(k) || gTargeting.get(k) || [];
+          },
+          getTargetingKeys: function getTargetingKeys() {
+            return Array.from(new Set(Array.of(...gTargeting.keys(), ...targeting.keys())));
+          },
+          getTargetingMap: function getTargetingMap() {
+            return Object.assign(Object.fromEntries(gTargeting.entries()), Object.fromEntries(targeting.entries()));
+          },
+          set(k, v) {
+            attributes.set(k, v);
+            return slot;
+          },
+          setCategoryExclusion(e) {
+            exclusions.add(e);
+            return slot;
+          },
+          setClickUrl(u) {
+            clickUrl = u;
+            return slot;
+          },
+          setCollapseEmptyDiv(v) {
+            collapseEmptyDiv = !!v;
+            return slot;
+          },
+          setSafeFrameConfig: noopThis,
+          setTagForChildDirectedTreatment: noopThis,
+          setTargeting(k, v) {
+            targeting.set(k, getTargetingValue(v));
+            return slot;
+          },
+          toString: function toString() {
+            return id;
+          },
+          updateTargetingFromMap(map) {
+            updateTargeting(targeting, map);
+            return slot;
+          }
+        };
+        slots.set(adUnitPath, slot);
+        slotsById.set(optDiv, slot);
+        slotCreatives.set(optDiv, creatives);
+        return slot;
       };
-      Slot.prototype.getAttributeKeys = noopArray;
-      Slot.prototype.getCategoryExclusions = noopArray;
-      Slot.prototype.getDomId = function () {
-        return this.optDiv;
-      };
-      Slot.prototype.getSlotElementId = function () {
-        return this.optDiv;
-      };
-      Slot.prototype.getSlotId = noopThis;
-      Slot.prototype.getSizes = noopArray;
-      Slot.prototype.getTargeting = noopArray;
-      Slot.prototype.getTargetingKeys = noopArray;
-      Slot.prototype.set = noopThis;
-      Slot.prototype.setCategoryExclusion = noopThis;
-      Slot.prototype.setClickUrl = noopThis;
-      Slot.prototype.setCollapseEmptyDiv = noopThis;
-      Slot.prototype.setTargeting = noopThis;
-      var pubAdsService = {
-        addEventListener: addEventListener,
-        removeEventListener: removeEventListener,
+      const pubAdsService = {
+        addEventListener,
+        removeEventListener,
         clear: noopFunc,
         clearCategoryExclusions: noopThis,
         clearTagForChildDirectedTreatment: noopThis,
-        clearTargeting: noopThis,
+        clearTargeting(k) {
+          if (k === undefined) {
+            gTargeting.clear();
+          } else {
+            gTargeting.delete(k);
+          }
+        },
         collapseEmptyDivs: noopFunc,
-        defineOutOfPagePassback: function defineOutOfPagePassback() {
+        defineOutOfPagePassback() {
           return new PassbackSlot();
         },
-        definePassback: function definePassback() {
+        definePassback() {
           return new PassbackSlot();
         },
         disableInitialLoad: noopFunc,
@@ -8807,13 +9485,10 @@
         setVideoContent: noopThis,
         updateCorrelator: noopFunc
       };
-      var getNewSlot = function getNewSlot(adUnitPath, creatives, optDiv) {
-        return new Slot(adUnitPath, creatives, optDiv);
-      };
-      var _window = window,
+      const _window = window,
         _window$googletag = _window.googletag,
         googletag = _window$googletag === void 0 ? {} : _window$googletag;
-      var _googletag$cmd = googletag.cmd,
+      const _googletag$cmd = googletag.cmd,
         cmd = _googletag$cmd === void 0 ? [] : _googletag$cmd;
       googletag.apiReady = true;
       googletag.cmd = [];
@@ -8830,15 +9505,15 @@
       googletag.content = function () {
         return contentService;
       };
-      googletag.defineOutOfPageSlot = getNewSlot;
-      googletag.defineSlot = getNewSlot;
+      googletag.defineOutOfPageSlot = defineSlot;
+      googletag.defineSlot = defineSlot;
       googletag.destroySlots = function () {
         slots.clear();
         slotsById.clear();
       };
       googletag.disablePublisherConsole = noopFunc;
       googletag.display = function (arg) {
-        var id;
+        let id;
         if (arg !== null && arg !== void 0 && arg.getSlotElementId) {
           id = arg.getSlotElementId();
         } else if (arg !== null && arg !== void 0 && arg.nodeType) {
@@ -8869,7 +9544,6 @@
 
     /**
      * @redirect scorecardresearch-beacon
-     *
      * @description
      * Mocks Scorecard Research API.
      *
@@ -8883,11 +9557,11 @@
      */
     function ScoreCardResearchBeacon(source) {
       window.COMSCORE = {
-        purge: function purge() {
+        purge() {
           // eslint-disable-next-line no-underscore-dangle
           window._comscore = [];
         },
-        beacon: function beacon() {}
+        beacon() {}
       };
       hit(source);
     }
@@ -8896,7 +9570,6 @@
 
     /**
      * @redirect metrika-yandex-tag
-     *
      * @description
      * Mocks Yandex Metrika API.
      * https://yandex.ru/support/metrica/objects/method-reference.html
@@ -8907,10 +9580,10 @@
      * ```
      */
     function metrikaYandexTag(source) {
-      var asyncCallbackFromOptions = function asyncCallbackFromOptions(id, param) {
-        var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-        var callback = options.callback;
-        var ctx = options.ctx;
+      const asyncCallbackFromOptions = function asyncCallbackFromOptions(id, param) {
+        let options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+        let callback = options.callback;
+        const ctx = options.ctx;
         if (typeof callback === 'function') {
           callback = ctx !== undefined ? callback.bind(ctx) : callback;
           setTimeout(function () {
@@ -8922,23 +9595,25 @@
       /**
        * https://yandex.ru/support/metrica/objects/addfileextension.html
        */
-      var addFileExtension = noopFunc;
+      const addFileExtension = noopFunc;
 
       /**
        * https://yandex.ru/support/metrica/objects/extlink.html
        */
-      var extLink = asyncCallbackFromOptions;
+      const extLink = asyncCallbackFromOptions;
 
       /**
        * https://yandex.ru/support/metrica/objects/file.html
        */
-      var file = asyncCallbackFromOptions;
+      const file = asyncCallbackFromOptions;
 
       /**
        * https://yandex.ru/support/metrica/objects/get-client-id.html
+       *
+       * @param {string} id
        * @param {Function} cb
        */
-      var getClientID = function getClientID(id, cb) {
+      const getClientID = function getClientID(id, cb) {
         if (!cb) {
           return;
         }
@@ -8948,62 +9623,64 @@
       /**
        * https://yandex.ru/support/metrica/objects/hit.html
        */
-      var hitFunc = asyncCallbackFromOptions;
+      const hitFunc = asyncCallbackFromOptions;
 
       /**
        * https://yandex.ru/support/metrica/objects/notbounce.html
        */
-      var notBounce = asyncCallbackFromOptions;
+      const notBounce = asyncCallbackFromOptions;
 
       /**
        * https://yandex.ru/support/metrica/objects/params-method.html
        */
-      var params = noopFunc;
+      const params = noopFunc;
 
       /**
        * https://yandex.ru/support/metrica/objects/reachgoal.html
+       *
+       * @param {string} id
        * @param {string} target
        * @param {Object} params
        * @param {Function} callback
        * @param {any} ctx
        */
-      var reachGoal = function reachGoal(id, target, params, callback, ctx) {
+      const reachGoal = function reachGoal(id, target, params, callback, ctx) {
         asyncCallbackFromOptions(null, null, {
-          callback: callback,
-          ctx: ctx
+          callback,
+          ctx
         });
       };
 
       /**
        * https://yandex.ru/support/metrica/objects/set-user-id.html
        */
-      var setUserID = noopFunc;
+      const setUserID = noopFunc;
 
       /**
        * https://yandex.ru/support/metrica/objects/user-params.html
        */
-      var userParams = noopFunc;
+      const userParams = noopFunc;
 
       // https://github.com/AdguardTeam/Scriptlets/issues/198
-      var destruct = noopFunc;
-      var api = {
-        addFileExtension: addFileExtension,
-        extLink: extLink,
-        file: file,
-        getClientID: getClientID,
+      const destruct = noopFunc;
+      const api = {
+        addFileExtension,
+        extLink,
+        file,
+        getClientID,
         hit: hitFunc,
-        notBounce: notBounce,
-        params: params,
-        reachGoal: reachGoal,
-        setUserID: setUserID,
-        userParams: userParams,
-        destruct: destruct
+        notBounce,
+        params,
+        reachGoal,
+        setUserID,
+        userParams,
+        destruct
       };
       function ym(id, funcName) {
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
-        return api[funcName] && api[funcName].apply(api, [id].concat(args));
+        return api[funcName] && api[funcName](id, ...args);
       }
       function init(id) {
         // yaCounter object should provide api
@@ -9018,7 +9695,7 @@
         ym.a = window.ym.a;
         window.ym = ym;
         window.ym.a.forEach(function (params) {
-          var id = params[0];
+          const id = params[0];
           init(id);
         });
       }
@@ -9029,7 +9706,6 @@
 
     /**
      * @redirect metrika-yandex-watch
-     *
      * @description
      * Mocks the old Yandex Metrika API.
      * https://yandex.ru/support/metrica/objects/_method-reference.html
@@ -9040,16 +9716,17 @@
      * ```
      */
     function metrikaYandexWatch(source) {
-      var cbName = 'yandex_metrika_callbacks';
+      const cbName = 'yandex_metrika_callbacks';
 
       /**
        * Gets callback and its context from options and call it in async way
+       *
        * @param {Object} options Yandex Metrika API options
        */
-      var asyncCallbackFromOptions = function asyncCallbackFromOptions() {
-        var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-        var callback = options.callback;
-        var ctx = options.ctx;
+      const asyncCallbackFromOptions = function asyncCallbackFromOptions() {
+        let options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+        let callback = options.callback;
+        const ctx = options.ctx;
         if (typeof callback === 'function') {
           callback = ctx !== undefined ? callback.bind(ctx) : callback;
           setTimeout(function () {
@@ -9081,7 +9758,7 @@
       Metrika.prototype.reachGoal = function (target, params, cb, ctx) {
         asyncCallbackFromOptions({
           callback: cb,
-          ctx: ctx
+          ctx
         });
       };
       Metrika.prototype.notBounce = asyncCallbackFromOptions;
@@ -9089,7 +9766,7 @@
         window.Ya.Metrika = Metrika;
       } else {
         window.Ya = {
-          Metrika: Metrika
+          Metrika
         };
       }
       if (window[cbName] && Array.isArray(window[cbName])) {
@@ -9108,7 +9785,6 @@
 
     /**
      * @redirect pardot-1.0
-     *
      * @description
      * Mocks the pd.js file of Salesforce.
      * https://pi.pardot.com/pd.js
@@ -9151,7 +9827,6 @@
 
     /**
      * @redirect prevent-bab
-     *
      * @description
      * Prevents BlockAdblock script from detecting an ad blocker.
      *
@@ -9166,14 +9841,13 @@
      * /blockadblock.$script,redirect=prevent-bab
      * ```
      */
-    var preventBab$1 = preventBab$2;
+    const preventBab$1 = preventBab$2;
     preventBab$1.names = ['prevent-bab',
     // list of prevent-bab redirect aliases
     'nobab.js', 'ubo-nobab.js', 'bab-defuser.js', 'ubo-bab-defuser.js', 'ubo-nobab', 'ubo-bab-defuser'];
 
     /**
      * @redirect amazon-apstag
-     *
      * @description
      * Mocks Amazon's apstag.js
      *
@@ -9186,8 +9860,8 @@
      * ```
      */
     function AmazonApstag(source) {
-      var apstagWrapper = {
-        fetchBids: function fetchBids(a, b) {
+      const apstagWrapper = {
+        fetchBids(a, b) {
           if (typeof b === 'function') {
             b([]);
           }
@@ -9206,7 +9880,6 @@
 
     /**
      * @redirect matomo
-     *
      * @description
      * Mocks the piwik.js file of Matomo (formerly Piwik).
      *
@@ -9217,20 +9890,16 @@
      */
 
     function Matomo(source) {
-      var Tracker = function Tracker() {};
+      const Tracker = function Tracker() {};
       Tracker.prototype.setDoNotTrack = noopFunc;
       Tracker.prototype.setDomains = noopFunc;
       Tracker.prototype.setCustomDimension = noopFunc;
       Tracker.prototype.trackPageView = noopFunc;
-      var AsyncTracker = function AsyncTracker() {};
+      const AsyncTracker = function AsyncTracker() {};
       AsyncTracker.prototype.addListener = noopFunc;
-      var matomoWrapper = {
-        getTracker: function getTracker() {
-          return new Tracker();
-        },
-        getAsyncTracker: function getAsyncTracker() {
-          return new AsyncTracker();
-        }
+      const matomoWrapper = {
+        getTracker: Tracker,
+        getAsyncTracker: AsyncTracker
       };
       window.Piwik = matomoWrapper;
       hit(source);
@@ -9242,7 +9911,6 @@
 
     /**
      * @redirect fingerprintjs2
-     *
      * @description
      * Mocks FingerprintJS v2
      * https://github.com/fingerprintjs
@@ -9256,11 +9924,11 @@
      * ```
      */
     function Fingerprintjs2(source) {
-      var browserId = '';
-      for (var i = 0; i < 8; i += 1) {
+      let browserId = '';
+      for (let i = 0; i < 8; i += 1) {
         browserId += (Math.random() * 0x10000 + 0x1000).toString(16).slice(-4);
       }
-      var Fingerprint2 = function Fingerprint2() {};
+      const Fingerprint2 = function Fingerprint2() {};
       Fingerprint2.get = function (options, callback) {
         if (!callback) {
           callback = options;
@@ -9289,7 +9957,6 @@
 
     /**
      * @redirect fingerprintjs3
-     *
      * @description
      * Mocks FingerprintJS v3
      * https://github.com/fingerprintjs
@@ -9303,23 +9970,21 @@
      * ```
      */
     function Fingerprintjs3(source) {
-      var visitorId = function () {
-        var id = '';
-        for (var i = 0; i < 8; i += 1) {
+      const visitorId = function () {
+        let id = '';
+        for (let i = 0; i < 8; i += 1) {
           id += (Math.random() * 0x10000 + 0x1000).toString(16).slice(-4);
         }
         return id;
       }();
-      var FingerprintJS = function FingerprintJS() {};
+      const FingerprintJS = function FingerprintJS() {};
       FingerprintJS.prototype = {
-        load: function load() {
-          // eslint-disable-next-line compat/compat
+        load() {
           return Promise.resolve(new FingerprintJS());
         },
-        get: function get() {
-          // eslint-disable-next-line compat/compat
+        get() {
           return Promise.resolve({
-            visitorId: visitorId
+            visitorId
           });
         },
         hashComponents: noopStr
@@ -9339,7 +10004,6 @@
 
     /**
      * @redirect gemius
-     *
      * @description
      * Mocks Gemius Analytics.
      * https://flowplayer.com/developers/plugins/gemius
@@ -9350,7 +10014,7 @@
      * ```
      */
     function Gemius(source) {
-      var GemiusPlayer = function GemiusPlayer() {};
+      const GemiusPlayer = function GemiusPlayer() {};
       GemiusPlayer.prototype = {
         setVideoObject: noopFunc,
         newProgram: noopFunc,
@@ -9366,7 +10030,6 @@
 
     /**
      * @redirect ati-smarttag
-     *
      * @description
      * Mocks AT Internat SmartTag.
      * https://developers.atinternet-solutions.com/as2-tagging-en/javascript-en/getting-started-javascript-en/tracker-initialisation-javascript-en/
@@ -9377,13 +10040,13 @@
      * ```
      */
     function ATInternetSmartTag(source) {
-      var setNoopFuncWrapper = {
+      const setNoopFuncWrapper = {
         set: noopFunc
       };
-      var sendNoopFuncWrapper = {
+      const sendNoopFuncWrapper = {
         send: noopFunc
       };
-      var ecommerceWrapper = {
+      const ecommerceWrapper = {
         displayCart: {
           products: setNoopFuncWrapper,
           cart: setNoopFuncWrapper
@@ -9406,7 +10069,7 @@
       };
 
       // eslint-disable-next-line new-cap, func-names
-      var tag = function tag() {};
+      const tag = function tag() {};
       tag.prototype = {
         setConfig: noopFunc,
         setParam: noopFunc,
@@ -9444,14 +10107,11 @@
           removeAll: noopFunc
         }
       };
-      var smartTagWrapper = {
+      const smartTagWrapper = {
         Tracker: {
-          Tag: function Tag() {
-            return new tag(); // eslint-disable-line new-cap
-          }
+          Tag: tag
         }
       };
-
       window.ATInternet = smartTagWrapper;
       hit(source);
     }
@@ -9462,7 +10122,6 @@
 
     /**
      * @redirect prevent-bab2
-     *
      * @description
      * Prevents BlockAdblock script from detecting an ad blocker.
      *
@@ -9477,18 +10136,17 @@
      * ```
      */
     function preventBab2(source) {
-      // eslint-disable-next-line compat/compat
-      var script = document.currentScript;
+      const script = document.currentScript;
       if (script === null) {
         return;
       }
-      var url = script.src;
+      const url = script.src;
       if (typeof url !== 'string') {
         return;
       }
-      var domainsStr = ['adclixx\\.net', 'adnetasia\\.com', 'adtrackers\\.net', 'bannertrack\\.net'].join('|');
-      var matchStr = "^https?://[\\w-]+\\.(".concat(domainsStr, ")/.");
-      var domainsRegex = new RegExp(matchStr);
+      const domainsStr = ['adclixx\\.net', 'adnetasia\\.com', 'adtrackers\\.net', 'bannertrack\\.net'].join('|');
+      const matchStr = "^https?://[\\w-]+\\.(".concat(domainsStr, ")/.");
+      const domainsRegex = new RegExp(matchStr);
       if (domainsRegex.test(url) === false) {
         return;
       }
@@ -9504,7 +10162,6 @@
 
     /**
      * @redirect google-ima3
-     *
      * @description
      * Mocks the IMA SDK of Google.
      *
@@ -9515,12 +10172,12 @@
      */
 
     function GoogleIma3(source) {
-      var VERSION = '3.453.0';
-      var ima = {};
-      var AdDisplayContainer = function AdDisplayContainer() {};
+      const VERSION = '3.453.0';
+      const ima = {};
+      const AdDisplayContainer = function AdDisplayContainer() {};
       AdDisplayContainer.prototype.destroy = noopFunc;
       AdDisplayContainer.prototype.initialize = noopFunc;
-      var ImaSdkSettings = function ImaSdkSettings() {};
+      const ImaSdkSettings = function ImaSdkSettings() {};
       ImaSdkSettings.CompanionBackfillMode = {
         ALWAYS: 'always',
         ON_MASTER_AD: 'on_master_ad'
@@ -9540,75 +10197,75 @@
         t: '',
         v: '',
         getCompanionBackfill: noopFunc,
-        getDisableCustomPlaybackForIOS10Plus: function getDisableCustomPlaybackForIOS10Plus() {
+        getDisableCustomPlaybackForIOS10Plus() {
           return this.i;
         },
         getDisabledFlashAds: function getDisabledFlashAds() {
           return true;
         },
-        getFeatureFlags: function getFeatureFlags() {
+        getFeatureFlags() {
           return this.f;
         },
-        getLocale: function getLocale() {
+        getLocale() {
           return this.l;
         },
-        getNumRedirects: function getNumRedirects() {
+        getNumRedirects() {
           return this.r;
         },
-        getPlayerType: function getPlayerType() {
+        getPlayerType() {
           return this.t;
         },
-        getPlayerVersion: function getPlayerVersion() {
+        getPlayerVersion() {
           return this.v;
         },
-        getPpid: function getPpid() {
+        getPpid() {
           return this.p;
         },
-        getVpaidMode: function getVpaidMode() {
+        getVpaidMode() {
           return this.C;
         },
-        isCookiesEnabled: function isCookiesEnabled() {
+        isCookiesEnabled() {
           return this.c;
         },
-        isVpaidAdapter: function isVpaidAdapter() {
+        isVpaidAdapter() {
           return this.M;
         },
         setCompanionBackfill: noopFunc,
-        setAutoPlayAdBreaks: function setAutoPlayAdBreaks(a) {
+        setAutoPlayAdBreaks(a) {
           this.K = a;
         },
-        setCookiesEnabled: function setCookiesEnabled(c) {
+        setCookiesEnabled(c) {
           this.c = !!c;
         },
-        setDisableCustomPlaybackForIOS10Plus: function setDisableCustomPlaybackForIOS10Plus(i) {
+        setDisableCustomPlaybackForIOS10Plus(i) {
           this.i = !!i;
         },
         setDisableFlashAds: noopFunc,
-        setFeatureFlags: function setFeatureFlags(f) {
+        setFeatureFlags(f) {
           this.f = !!f;
         },
-        setIsVpaidAdapter: function setIsVpaidAdapter(a) {
+        setIsVpaidAdapter(a) {
           this.M = a;
         },
-        setLocale: function setLocale(l) {
+        setLocale(l) {
           this.l = !!l;
         },
-        setNumRedirects: function setNumRedirects(r) {
+        setNumRedirects(r) {
           this.r = !!r;
         },
-        setPageCorrelator: function setPageCorrelator(a) {
+        setPageCorrelator(a) {
           this.R = a;
         },
-        setPlayerType: function setPlayerType(t) {
+        setPlayerType(t) {
           this.t = !!t;
         },
-        setPlayerVersion: function setPlayerVersion(v) {
+        setPlayerVersion(v) {
           this.v = !!v;
         },
-        setPpid: function setPpid(p) {
+        setPpid(p) {
           this.p = !!p;
         },
-        setVpaidMode: function setVpaidMode(a) {
+        setVpaidMode(a) {
           this.C = a;
         },
         setSessionId: noopFunc,
@@ -9624,13 +10281,13 @@
           INSECURE: 2
         }
       };
-      var EventHandler = function EventHandler() {
+      const EventHandler = function EventHandler() {
         this.listeners = new Map();
         this._dispatch = function (e) {
-          var listeners = this.listeners.get(e.type) || [];
+          const listeners = this.listeners.get(e.type) || [];
           // eslint-disable-next-line no-restricted-syntax
           for (var _i = 0, _Array$from = Array.from(listeners); _i < _Array$from.length; _i++) {
-            var listener = _Array$from[_i];
+            const listener = _Array$from[_i];
             try {
               listener(e);
             } catch (r) {
@@ -9649,7 +10306,7 @@
           (_this$listeners$get = this.listeners.get(t)) === null || _this$listeners$get === void 0 ? void 0 : _this$listeners$get.delete(c);
         };
       };
-      var AdsManager = new EventHandler();
+      const AdsManager = new EventHandler();
       /* eslint-disable no-use-before-define */
       AdsManager.volume = 1;
       AdsManager.collapse = noopFunc;
@@ -9694,7 +10351,7 @@
       AdsManager.start = function () {
         // eslint-disable-next-line no-restricted-syntax
         for (var _i2 = 0, _arr = [AdEvent.Type.ALL_ADS_COMPLETED, AdEvent.Type.CONTENT_RESUME_REQUESTED]; _i2 < _arr.length; _i2++) {
-          var type = _arr[_i2];
+          const type = _arr[_i2];
           try {
             this._dispatch(new ima.AdEvent(type));
           } catch (e) {
@@ -9706,8 +10363,8 @@
       AdsManager.updateAdsRenderingSettings = noopFunc;
       /* eslint-enable no-use-before-define */
 
-      var manager = Object.create(AdsManager);
-      var AdsManagerLoadedEvent = function AdsManagerLoadedEvent(type, adsRequest, userRequestContext) {
+      const manager = Object.create(AdsManager);
+      const AdsManagerLoadedEvent = function AdsManagerLoadedEvent(type, adsRequest, userRequestContext) {
         this.type = type;
         this.adsRequest = adsRequest;
         this.userRequestContext = userRequestContext;
@@ -9716,7 +10373,7 @@
         getAdsManager: function getAdsManager() {
           return manager;
         },
-        getUserRequestContext: function getUserRequestContext() {
+        getUserRequestContext() {
           if (this.userRequestContext) {
             return this.userRequestContext;
           }
@@ -9726,7 +10383,7 @@
       AdsManagerLoadedEvent.Type = {
         ADS_MANAGER_LOADED: 'adsManagerLoaded'
       };
-      var AdsLoader = EventHandler;
+      const AdsLoader = EventHandler;
       AdsLoader.prototype.settings = new ImaSdkSettings();
       AdsLoader.prototype.contentComplete = noopFunc;
       AdsLoader.prototype.destroy = noopFunc;
@@ -9739,23 +10396,23 @@
       AdsLoader.prototype.requestAds = function (adsRequest, userRequestContext) {
         var _this = this;
         requestAnimationFrame(function () {
-          var ADS_MANAGER_LOADED = AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED;
-          var event = new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED, adsRequest, userRequestContext);
+          const ADS_MANAGER_LOADED = AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED;
+          const event = new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED, adsRequest, userRequestContext);
           _this._dispatch(event);
         });
-        var e = new ima.AdError('adPlayError', 1205, 1205, 'The browser prevented playback initiated without user interaction.', adsRequest, userRequestContext);
+        const e = new ima.AdError('adPlayError', 1205, 1205, 'The browser prevented playback initiated without user interaction.', adsRequest, userRequestContext);
         requestAnimationFrame(function () {
           _this._dispatch(new ima.AdErrorEvent(e));
         });
       };
-      var AdsRenderingSettings = noopFunc;
-      var AdsRequest = function AdsRequest() {};
+      const AdsRenderingSettings = noopFunc;
+      const AdsRequest = function AdsRequest() {};
       AdsRequest.prototype = {
         setAdWillAutoPlay: noopFunc,
         setAdWillPlayMuted: noopFunc,
         setContinuousPlayback: noopFunc
       };
-      var AdPodInfo = function AdPodInfo() {};
+      const AdPodInfo = function AdPodInfo() {};
       AdPodInfo.prototype = {
         getAdPosition: function getAdPosition() {
           return 1;
@@ -9776,13 +10433,13 @@
           return 1;
         }
       };
-      var Ad = function Ad() {};
+      const Ad = function Ad() {};
       Ad.prototype = {
         pi: new AdPodInfo(),
         getAdId: function getAdId() {
           return '';
         },
-        getAdPodInfo: function getAdPodInfo() {
+        getAdPodInfo() {
           return this.pi;
         },
         getAdSystem: function getAdSystem() {
@@ -9869,11 +10526,11 @@
         isLinear: function isLinear() {
           return true;
         },
-        isSkippable: function isSkippable() {
+        isSkippable() {
           return true;
         }
       };
-      var CompanionAd = function CompanionAd() {};
+      const CompanionAd = function CompanionAd() {};
       CompanionAd.prototype = {
         getAdSlotId: function getAdSlotId() {
           return '';
@@ -9891,7 +10548,7 @@
           return 1;
         }
       };
-      var AdError = function AdError(type, code, vast, message, adsRequest, userRequestContext) {
+      const AdError = function AdError(type, code, vast, message, adsRequest, userRequestContext) {
         this.errorCode = code;
         this.message = message;
         this.type = type;
@@ -9916,12 +10573,12 @@
       };
       AdError.ErrorCode = {};
       AdError.Type = {};
-      var isEngadget = function isEngadget() {
+      const isEngadget = function isEngadget() {
         try {
           // eslint-disable-next-line no-restricted-syntax
           for (var _i3 = 0, _Object$values = Object.values(window.vidible._getContexts()); _i3 < _Object$values.length; _i3++) {
             var _ctx$getPlayer, _ctx$getPlayer$div;
-            var ctx = _Object$values[_i3];
+            const ctx = _Object$values[_i3];
             // eslint-disable-next-line no-restricted-properties
             if ((_ctx$getPlayer = ctx.getPlayer()) !== null && _ctx$getPlayer !== void 0 && (_ctx$getPlayer$div = _ctx$getPlayer.div) !== null && _ctx$getPlayer$div !== void 0 && _ctx$getPlayer$div.innerHTML.includes('www.engadget.com')) {
               return true;
@@ -9930,8 +10587,8 @@
         } catch (e) {} // eslint-disable-line no-empty
         return false;
       };
-      var currentAd = isEngadget() ? undefined : new Ad();
-      var AdEvent = function AdEvent(type) {
+      const currentAd = isEngadget() ? undefined : new Ad();
+      const AdEvent = function AdEvent(type) {
         this.type = type;
       };
       AdEvent.prototype = {
@@ -9974,7 +10631,7 @@
         VOLUME_CHANGED: 'volumeChange',
         VOLUME_MUTED: 'mute'
       };
-      var AdErrorEvent = function AdErrorEvent(error) {
+      const AdErrorEvent = function AdErrorEvent(error) {
         this.error = error;
         this.type = 'adError';
         this.getError = function () {
@@ -9991,11 +10648,11 @@
       AdErrorEvent.Type = {
         AD_ERROR: 'adError'
       };
-      var CustomContentLoadedEvent = function CustomContentLoadedEvent() {};
+      const CustomContentLoadedEvent = function CustomContentLoadedEvent() {};
       CustomContentLoadedEvent.Type = {
         CUSTOM_CONTENT_LOADED: 'deprecated-event'
       };
-      var CompanionAdSelectionSettings = function CompanionAdSelectionSettings() {};
+      const CompanionAdSelectionSettings = function CompanionAdSelectionSettings() {};
       CompanionAdSelectionSettings.CreativeType = {
         ALL: 'All',
         FLASH: 'Flash',
@@ -10012,7 +10669,7 @@
         SELECT_EXACT_MATCH: 'SelectExactMatch',
         SELECT_NEAR_MATCH: 'SelectNearMatch'
       };
-      var AdCuePoints = function AdCuePoints() {};
+      const AdCuePoints = function AdCuePoints() {};
       AdCuePoints.prototype = {
         getCuePoints: function getCuePoints() {
           return [];
@@ -10024,26 +10681,26 @@
           return '';
         }
       };
-      var AdProgressData = noopFunc;
-      var UniversalAdIdInfo = function UniversalAdIdInfo() {};
+      const AdProgressData = noopFunc;
+      const UniversalAdIdInfo = function UniversalAdIdInfo() {};
       Object.assign(ima, {
-        AdCuePoints: AdCuePoints,
-        AdDisplayContainer: AdDisplayContainer,
-        AdError: AdError,
-        AdErrorEvent: AdErrorEvent,
-        AdEvent: AdEvent,
-        AdPodInfo: AdPodInfo,
-        AdProgressData: AdProgressData,
-        AdsLoader: AdsLoader,
+        AdCuePoints,
+        AdDisplayContainer,
+        AdError,
+        AdErrorEvent,
+        AdEvent,
+        AdPodInfo,
+        AdProgressData,
+        AdsLoader,
         AdsManager: manager,
-        AdsManagerLoadedEvent: AdsManagerLoadedEvent,
-        AdsRenderingSettings: AdsRenderingSettings,
-        AdsRequest: AdsRequest,
-        CompanionAd: CompanionAd,
-        CompanionAdSelectionSettings: CompanionAdSelectionSettings,
-        CustomContentLoadedEvent: CustomContentLoadedEvent,
+        AdsManagerLoadedEvent,
+        AdsRenderingSettings,
+        AdsRequest,
+        CompanionAd,
+        CompanionAdSelectionSettings,
+        CustomContentLoadedEvent,
         gptProxyInstance: {},
-        ImaSdkSettings: ImaSdkSettings,
+        ImaSdkSettings,
         OmidAccessMode: {
           DOMAIN: 'domain',
           FULL: 'full',
@@ -10054,8 +10711,8 @@
           AD_ATTRIBUTION: 'adAttribution',
           COUNTDOWN: 'countdown'
         },
-        UniversalAdIdInfo: UniversalAdIdInfo,
-        VERSION: VERSION,
+        UniversalAdIdInfo,
+        VERSION,
         ViewMode: {
           FULLSCREEN: 'fullscreen',
           NORMAL: 'normal'
@@ -10078,7 +10735,6 @@
 
     /**
      * @redirect didomi-loader
-     *
      * @description
      * Mocks Didomi's CMP loader script.
      * https://developers.didomi.io/
@@ -10102,7 +10758,7 @@
         return new UserConsentStatusForVendorSubscribe();
       };
       UserConsentStatusForVendor.prototype.subscribe = noopFunc;
-      var DidomiWrapper = {
+      const DidomiWrapper = {
         isConsentRequired: falseFunc,
         getUserConsentStatusForPurpose: trueFunc,
         getUserConsentStatus: trueFunc,
@@ -10120,7 +10776,7 @@
           showDataProcessing: trueFunc
         },
         isUserConsentStatusPartial: falseFunc,
-        on: function on() {
+        on() {
           return {
             actions: {},
             emitter: {},
@@ -10130,12 +10786,12 @@
         },
         shouldConsentBeCollected: falseFunc,
         getUserConsentStatusForAll: noopFunc,
-        getObservableOnUserConsentStatusForVendor: function getObservableOnUserConsentStatusForVendor() {
+        getObservableOnUserConsentStatusForVendor() {
           return new UserConsentStatusForVendor();
         }
       };
       window.Didomi = DidomiWrapper;
-      var didomiStateWrapper = {
+      const didomiStateWrapper = {
         didomiExperimentId: '',
         didomiExperimentUserGroup: '',
         didomiGDPRApplies: 1,
@@ -10151,7 +10807,7 @@
         didomiVendorsRawConsentUnknown: ''
       };
       window.didomiState = didomiStateWrapper;
-      var tcData = {
+      const tcData = {
         eventStatus: 'tcloaded',
         gdprApplies: false,
         listenerId: noopFunc,
@@ -10164,21 +10820,21 @@
       };
 
       // https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#how-does-the-cmp-provide-the-api
-      var __tcfapiWrapper = function __tcfapiWrapper(command, version, callback) {
+      const __tcfapiWrapper = function __tcfapiWrapper(command, version, callback) {
         if (typeof callback !== 'function' || command === 'removeEventListener') {
           return;
         }
         callback(tcData, true);
       };
       window.__tcfapi = __tcfapiWrapper;
-      var didomiEventListenersWrapper = {
+      const didomiEventListenersWrapper = {
         stub: true,
         push: noopFunc
       };
       window.didomiEventListeners = didomiEventListenersWrapper;
-      var didomiOnReadyWrapper = {
+      const didomiOnReadyWrapper = {
         stub: true,
-        push: function push(arg) {
+        push(arg) {
           if (typeof arg !== 'function') {
             return;
           }
@@ -10212,7 +10868,6 @@
 
     /**
      * @redirect prebid
-     *
      * @description
      * Mocks the prebid.js header bidding suit.
      * https://docs.prebid.org/
@@ -10224,7 +10879,7 @@
      */
 
     function Prebid(source) {
-      var pushFunction = function pushFunction(arg) {
+      const pushFunction = function pushFunction(arg) {
         if (typeof arg === 'function') {
           try {
             arg.call();
@@ -10233,8 +10888,8 @@
           }
         }
       };
-      var pbjsWrapper = {
-        addAdUnits: function addAdUnits() {},
+      const pbjsWrapper = {
+        addAdUnits() {},
         adServers: {
           dfp: {
             // https://docs.prebid.org/dev-docs/publisher-api-reference/adServers.dfp.buildVideoUrl.html
@@ -10243,13 +10898,13 @@
           }
         },
         adUnits: [],
-        aliasBidder: function aliasBidder() {},
+        aliasBidder() {},
         cmd: [],
-        enableAnalytics: function enableAnalytics() {},
+        enableAnalytics() {},
         getHighestCpmBids: noopArray,
         libLoaded: true,
         que: [],
-        requestBids: function requestBids(arg) {
+        requestBids(arg) {
           if (arg instanceof Object && arg.bidsBackHandler) {
             try {
               arg.bidsBackHandler.call(); // https://docs.prebid.org/dev-docs/publisher-api-reference/requestBids.html
@@ -10258,10 +10913,10 @@
             }
           }
         },
-        removeAdUnit: function removeAdUnit() {},
-        setBidderConfig: function setBidderConfig() {},
-        setConfig: function setConfig() {},
-        setTargetingForGPTAsync: function setTargetingForGPTAsync() {}
+        removeAdUnit() {},
+        setBidderConfig() {},
+        setConfig() {},
+        setTargetingForGPTAsync() {}
       };
       pbjsWrapper.cmd.push = pushFunction;
       pbjsWrapper.que.push = pushFunction;
@@ -10275,7 +10930,6 @@
 
     /**
      * @redirect prebid-ads
-     *
      * @description
      * Sets predefined constants on a page:
      * - `canRunAds`: `true`
@@ -10298,7 +10952,6 @@
 
     /**
      * @redirect naver-wcslog
-     *
      * @description
      * Mocks wcslog.js of Naver Analytics.
      *
@@ -10348,28 +11001,20 @@
         NaverWcslog: NaverWcslog
     });
 
-    function _classCallCheck(instance, Constructor) {
-      if (!(instance instanceof Constructor)) {
-        throw new TypeError("Cannot call a class as a function");
+    function _defineProperty(obj, key, value) {
+      if (key in obj) {
+        Object.defineProperty(obj, key, {
+          value: value,
+          enumerable: true,
+          configurable: true,
+          writable: true
+        });
+      } else {
+        obj[key] = value;
       }
+      return obj;
     }
-    var classCallCheck = _classCallCheck;
-
-    function _defineProperties(target, props) {
-      for (var i = 0; i < props.length; i++) {
-        var descriptor = props[i];
-        descriptor.enumerable = descriptor.enumerable || false;
-        descriptor.configurable = true;
-        if ("value" in descriptor) descriptor.writable = true;
-        Object.defineProperty(target, descriptor.key, descriptor);
-      }
-    }
-    function _createClass(Constructor, protoProps, staticProps) {
-      if (protoProps) _defineProperties(Constructor.prototype, protoProps);
-      if (staticProps) _defineProperties(Constructor, staticProps);
-      return Constructor;
-    }
-    var createClass = _createClass;
+    var defineProperty = _defineProperty;
 
     function isNothing(subject) {
       return typeof subject === 'undefined' || subject === null;
@@ -13513,28 +14158,31 @@
      *      contentType: image/gif;base64
      *      content: R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
      * }
+     *
      * @typedef {Object} Redirect
-     * @property {string} title
-     * @property {string} comment
-     * @property {string} content
-     * @property {string} contentType
-     * @property {string} file
-     * @property {boolean} [isBlocking]
-     * @property {string} [sha]
+     * @property {string} title resource name
+     * @property {string} comment resource description
+     * @property {string} content encoded resource content
+     * @property {string} contentType MIME type
+     * @property {boolean} [isBlocking] e.g click2load redirect
+     * @property {string} [sha] hash
      */
-    var Redirects = /*#__PURE__*/function () {
+
+    class Redirects {
       /**
        * Converts rawYaml into JS object with sources titles used as keys
-       * @param rawYaml
+       *
+       * @param {string} rawYaml
        * @returns {Object<Redirect>} - return object with titles in the keys and RedirectSources
        * in the values
        */
-      function Redirects(rawYaml) {
-        classCallCheck(this, Redirects);
+      constructor(rawYaml) {
         try {
-          var arrOfRedirects = jsYaml.safeLoad(rawYaml);
+          const arrOfRedirects = jsYaml.safeLoad(rawYaml);
           this.redirects = arrOfRedirects.reduce(function (acc, redirect) {
-            return _objectSpread(_objectSpread({}, acc), {}, defineProperty({}, redirect.title, redirect));
+            return _objectSpread(_objectSpread({}, acc), {}, {
+              [redirect.title]: redirect
+            });
           }, {});
         } catch (e) {
           // eslint-disable-next-line no-console
@@ -13545,49 +14193,46 @@
 
       /**
        * Returns redirect source object
+       *
        * @param {string} title
-       * @return {Redirect|undefined} Found redirect source object, or `undefined` if not found.
+       * @returns {Redirect|undefined} Found redirect source object, or `undefined` if not found.
        */
-      createClass(Redirects, [{
-        key: "getRedirect",
-        value: function getRedirect(title) {
-          var _this = this;
-          if (Object.prototype.hasOwnProperty.call(this.redirects, title)) {
-            return this.redirects[title];
-          }
-
-          // look title among aliases
-          var values = Object.keys(this.redirects).map(function (key) {
-            return _this.redirects[key];
-          });
-          return values.find(function (redirect) {
-            var aliases = redirect.aliases;
-            if (!aliases) {
-              return false;
-            }
-            return aliases.indexOf(title) > -1;
-          });
+      getRedirect(title) {
+        var _this = this;
+        if (Object.prototype.hasOwnProperty.call(this.redirects, title)) {
+          return this.redirects[title];
         }
-        /**
-         * Checks if redirect is blocking like click2load.html
-         * @param {string} title Title of the redirect.
-         * @returns True if redirect is blocking otherwise returns `false` even if redirect name is
-         * unknown.
-         */
-      }, {
-        key: "isBlocking",
-        value: function isBlocking(title) {
-          var redirect = this.redirects[title];
-          if (redirect) {
-            return !!redirect.isBlocking;
-          }
-          return false;
-        }
-      }]);
-      return Redirects;
-    }();
 
-    var redirectsMap = {
+        // look title among aliases
+        const values = Object.keys(this.redirects).map(function (key) {
+          return _this.redirects[key];
+        });
+        return values.find(function (redirect) {
+          const aliases = redirect.aliases;
+          if (!aliases) {
+            return false;
+          }
+          return aliases.indexOf(title) > -1;
+        });
+      }
+
+      /**
+       * Checks if redirect is blocking like click2load.html
+       *
+       * @param {string} title Title of the redirect.
+       * @returns {boolean} True if redirect is blocking otherwise returns `false` even if redirect name is
+       * unknown.
+       */
+      isBlocking(title) {
+        const redirect = this.redirects[title];
+        if (redirect) {
+          return !!redirect.isBlocking;
+        }
+        return false;
+      }
+    }
+
+    const redirectsMap = {
       "1x1-transparent.gif": "1x1-transparent.gif",
       "1x1.gif": "1x1-transparent.gif",
       "1x1-transparent-gif": "1x1-transparent.gif",
@@ -13701,10 +14346,12 @@
 
     /**
      * Finds redirect resource by it's name
+     *
      * @param {string} name - redirect name
+     * @returns {Function}
      */
-    var getRedirectByName = function getRedirectByName(name) {
-      var redirects = Object.keys(redirectsList).map(function (key) {
+    const getRedirectByName = function getRedirectByName(name) {
+      const redirects = Object.keys(redirectsList).map(function (key) {
         return redirectsList[key];
       });
       return redirects.find(function (r) {
@@ -13723,12 +14370,13 @@
 
     /**
      * Returns redirect code by param
+     *
      * @param {Source} source
      * @returns {string} redirect code
      */
-    var getRedirectCode = function getRedirectCode(source) {
-      var redirect = getRedirectByName(source.name);
-      var result = attachDependencies(redirect);
+    const getRedirectCode = function getRedirectCode(source) {
+      const redirect = getRedirectByName(source.name);
+      let result = attachDependencies(redirect);
       result = addCall(redirect, result);
 
       // redirect code for different sources is checked in tests
@@ -13736,49 +14384,49 @@
       result = source.engine === 'test' ? wrapInNonameFunc(result) : passSourceAndProps(source, result, true);
       return result;
     };
-    var getRedirectFilename = function getRedirectFilename(name) {
+    const getRedirectFilename = function getRedirectFilename(name) {
       return redirectsMap[name];
     };
-    var redirects = {
-      Redirects: Redirects,
-      getRedirectFilename: getRedirectFilename,
+    const redirects = {
+      Redirects,
+      getRedirectFilename,
       getCode: getRedirectCode,
       isAdgRedirectRule: validator.isAdgRedirectRule,
       isValidAdgRedirectRule: validator.isValidAdgRedirectRule,
       isAdgRedirectCompatibleWithUbo: validator.isAdgRedirectCompatibleWithUbo,
       isUboRedirectCompatibleWithAdg: validator.isUboRedirectCompatibleWithAdg,
       isAbpRedirectCompatibleWithAdg: validator.isAbpRedirectCompatibleWithAdg,
-      convertUboRedirectToAdg: convertUboRedirectToAdg,
-      convertAbpRedirectToAdg: convertAbpRedirectToAdg,
-      convertRedirectToAdg: convertRedirectToAdg,
-      convertAdgRedirectToUbo: convertAdgRedirectToUbo
+      convertUboRedirectToAdg,
+      convertAbpRedirectToAdg,
+      convertRedirectToAdg,
+      convertAdgRedirectToUbo
     };
 
     function abortCurrentInlineScript(source, args) {
       function abortCurrentInlineScript(source, property, search) {
-        var searchRegexp = toRegExp(search);
-        var rid = randomId();
-        var SRC_DATA_MARKER = "data:text/javascript;base64,";
-        var getCurrentScript = function getCurrentScript() {
+        const searchRegexp = toRegExp(search);
+        const rid = randomId();
+        const SRC_DATA_MARKER = "data:text/javascript;base64,";
+        const getCurrentScript = function getCurrentScript() {
           if ("currentScript" in document) {
             return document.currentScript;
           }
-          var scripts = document.getElementsByTagName("script");
+          const scripts = document.getElementsByTagName("script");
           return scripts[scripts.length - 1];
         };
-        var ourScript = getCurrentScript();
-        var abort = function abort() {
-          var scriptEl = getCurrentScript();
+        const ourScript = getCurrentScript();
+        const abort = function abort() {
+          const scriptEl = getCurrentScript();
           if (!scriptEl) {
             return;
           }
-          var content = scriptEl.textContent;
+          let content = scriptEl.textContent;
           try {
-            var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").get;
+            const textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").get;
             content = textContentGetter.call(scriptEl);
           } catch (e) {}
           if (content.length === 0 && typeof scriptEl.src !== "undefined" && startsWith(scriptEl.src, SRC_DATA_MARKER)) {
-            var encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
+            const encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
             content = window.atob(encodedContent);
           }
           if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && searchRegexp.test(content)) {
@@ -13786,21 +14434,21 @@
             throw new ReferenceError(rid);
           }
         };
-        var setChainPropAccess = function setChainPropAccess(owner, property) {
-          var chainInfo = getPropertyInChain(owner, property);
-          var base = chainInfo.base;
-          var prop = chainInfo.prop,
+        const setChainPropAccess = function setChainPropAccess(owner, property) {
+          const chainInfo = getPropertyInChain(owner, property);
+          let base = chainInfo.base;
+          const prop = chainInfo.prop,
             chain = chainInfo.chain;
           if (base instanceof Object === false && base === null) {
-            var props = property.split(".");
-            var propIndex = props.indexOf(prop);
-            var baseName = props[propIndex - 1];
-            var message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
+            const props = property.split(".");
+            const propIndex = props.indexOf(prop);
+            const baseName = props[propIndex - 1];
+            const message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
             logMessage(source, message);
             return;
           }
           if (chain) {
-            var setter = function setter(a) {
+            const setter = function setter(a) {
               base = a;
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
@@ -13814,15 +14462,15 @@
             });
             return;
           }
-          var currentValue = base[prop];
-          var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+          let currentValue = base[prop];
+          let origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
           if (origDescriptor instanceof Object === false || origDescriptor.get instanceof Function === false) {
             currentValue = base[prop];
             origDescriptor = undefined;
           }
-          var descriptorWrapper = Object.assign(getDescriptorAddon(), {
+          const descriptorWrapper = Object.assign(getDescriptorAddon(), {
             currentValue: currentValue,
-            get: function get() {
+            get() {
               if (!this.isAbortingSuspended) {
                 this.isolateCallback(abort);
               }
@@ -13831,7 +14479,7 @@
               }
               return this.currentValue;
             },
-            set: function set(newValue) {
+            set(newValue) {
               if (!this.isAbortingSuspended) {
                 this.isolateCallback(abort);
               }
@@ -13843,10 +14491,10 @@
             }
           });
           setPropertyAccess(base, prop, {
-            get: function get() {
+            get() {
               return descriptorWrapper.get.call(descriptorWrapper);
             },
-            set: function set(newValue) {
+            set(newValue) {
               descriptorWrapper.set.call(descriptorWrapper, newValue);
             }
           });
@@ -13858,7 +14506,7 @@
         return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
-        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -13866,14 +14514,14 @@
         return true;
       }
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf(".");
+        const pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        var prop = chain.slice(0, pos);
+        const prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -13881,7 +14529,7 @@
             chain: chain
           };
         }
-        var nextBase = base[prop];
+        const nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -13910,23 +14558,23 @@
         };
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function startsWith(str, prefix) {
         return !!str && str.indexOf(prefix) === 0;
       }
       function createOnErrorHandler(rid) {
-        var nativeOnError = window.onerror;
+        const nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
@@ -13935,7 +14583,7 @@
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            return nativeOnError.apply(this, [error].concat(args));
+            return nativeOnError.apply(this, [error, ...args]);
           }
           return false;
         };
@@ -13945,19 +14593,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -13971,10 +14619,23 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
@@ -13982,24 +14643,24 @@
       function getDescriptorAddon() {
         return {
           isAbortingSuspended: false,
-          isolateCallback: function isolateCallback(cb) {
+          isolateCallback(cb) {
             this.isAbortingSuspended = true;
             try {
               for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
                 args[_key - 1] = arguments[_key];
               }
-              var result = cb.apply(void 0, args);
+              const result = cb(...args);
               this.isAbortingSuspended = false;
               return result;
             } catch (_unused) {
-              var rid = randomId();
+              const rid = randomId();
               this.isAbortingSuspended = false;
               throw new ReferenceError(rid);
             }
           }
         };
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         abortCurrentInlineScript.apply(this, updatedArgs);
       } catch (e) {
@@ -14011,18 +14672,18 @@
         if (!property) {
           return;
         }
-        var rid = randomId();
-        var abort = function abort() {
+        const rid = randomId();
+        const abort = function abort() {
           hit(source);
           throw new ReferenceError(rid);
         };
-        var setChainPropAccess = function setChainPropAccess(owner, property) {
-          var chainInfo = getPropertyInChain(owner, property);
-          var base = chainInfo.base;
-          var prop = chainInfo.prop,
+        const setChainPropAccess = function setChainPropAccess(owner, property) {
+          const chainInfo = getPropertyInChain(owner, property);
+          let base = chainInfo.base;
+          const prop = chainInfo.prop,
             chain = chainInfo.chain;
           if (chain) {
-            var setter = function setter(a) {
+            const setter = function setter(a) {
               base = a;
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
@@ -14048,7 +14709,7 @@
         return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
-        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -14056,14 +14717,14 @@
         return true;
       }
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf(".");
+        const pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        var prop = chain.slice(0, pos);
+        const prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -14071,7 +14732,7 @@
             chain: chain
           };
         }
-        var nextBase = base[prop];
+        const nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -14100,7 +14761,7 @@
         };
       }
       function createOnErrorHandler(rid) {
-        var nativeOnError = window.onerror;
+        const nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
@@ -14109,7 +14770,7 @@
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            return nativeOnError.apply(this, [error].concat(args));
+            return nativeOnError.apply(this, [error, ...args]);
           }
           return false;
         };
@@ -14119,19 +14780,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -14147,7 +14808,7 @@
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         abortOnPropertyRead.apply(this, updatedArgs);
       } catch (e) {
@@ -14159,18 +14820,18 @@
         if (!property) {
           return;
         }
-        var rid = randomId();
-        var abort = function abort() {
+        const rid = randomId();
+        const abort = function abort() {
           hit(source);
           throw new ReferenceError(rid);
         };
-        var setChainPropAccess = function setChainPropAccess(owner, property) {
-          var chainInfo = getPropertyInChain(owner, property);
-          var base = chainInfo.base;
-          var prop = chainInfo.prop,
+        const setChainPropAccess = function setChainPropAccess(owner, property) {
+          const chainInfo = getPropertyInChain(owner, property);
+          let base = chainInfo.base;
+          const prop = chainInfo.prop,
             chain = chainInfo.chain;
           if (chain) {
-            var setter = function setter(a) {
+            const setter = function setter(a) {
               base = a;
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
@@ -14195,7 +14856,7 @@
         return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
-        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -14203,14 +14864,14 @@
         return true;
       }
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf(".");
+        const pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        var prop = chain.slice(0, pos);
+        const prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -14218,7 +14879,7 @@
             chain: chain
           };
         }
-        var nextBase = base[prop];
+        const nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -14247,7 +14908,7 @@
         };
       }
       function createOnErrorHandler(rid) {
-        var nativeOnError = window.onerror;
+        const nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
@@ -14256,7 +14917,7 @@
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            return nativeOnError.apply(this, [error].concat(args));
+            return nativeOnError.apply(this, [error, ...args]);
           }
           return false;
         };
@@ -14266,19 +14927,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -14294,7 +14955,7 @@
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         abortOnPropertyWrite.apply(this, updatedArgs);
       } catch (e) {
@@ -14306,18 +14967,18 @@
         if (!property || !stack) {
           return;
         }
-        var rid = randomId();
-        var abort = function abort() {
+        const rid = randomId();
+        const abort = function abort() {
           hit(source);
           throw new ReferenceError(rid);
         };
-        var setChainPropAccess = function setChainPropAccess(owner, property) {
-          var chainInfo = getPropertyInChain(owner, property);
-          var base = chainInfo.base;
-          var prop = chainInfo.prop,
+        const setChainPropAccess = function setChainPropAccess(owner, property) {
+          const chainInfo = getPropertyInChain(owner, property);
+          let base = chainInfo.base;
+          const prop = chainInfo.prop,
             chain = chainInfo.chain;
           if (chain) {
-            var setter = function setter(a) {
+            const setter = function setter(a) {
               base = a;
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
@@ -14335,15 +14996,15 @@
             logMessage(source, "Invalid parameter: ".concat(stack));
             return;
           }
-          var descriptorWrapper = Object.assign(getDescriptorAddon(), {
+          const descriptorWrapper = Object.assign(getDescriptorAddon(), {
             value: base[prop],
-            get: function get() {
+            get() {
               if (!this.isAbortingSuspended && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
                 abort();
               }
               return this.value;
             },
-            set: function set(newValue) {
+            set(newValue) {
               if (!this.isAbortingSuspended && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
                 abort();
               }
@@ -14351,10 +15012,10 @@
             }
           });
           setPropertyAccess(base, prop, {
-            get: function get() {
+            get() {
               return descriptorWrapper.get.call(descriptorWrapper);
             },
-            set: function set(newValue) {
+            set(newValue) {
               descriptorWrapper.set.call(descriptorWrapper, newValue);
             }
           });
@@ -14366,7 +15027,7 @@
         return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
-        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -14374,14 +15035,14 @@
         return true;
       }
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf(".");
+        const pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        var prop = chain.slice(0, pos);
+        const prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -14389,7 +15050,7 @@
             chain: chain
           };
         }
-        var nextBase = base[prop];
+        const nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -14418,7 +15079,7 @@
         };
       }
       function createOnErrorHandler(rid) {
-        var nativeOnError = window.onerror;
+        const nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
@@ -14427,7 +15088,7 @@
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            return nativeOnError.apply(this, [error].concat(args));
+            return nativeOnError.apply(this, [error, ...args]);
           }
           return false;
         };
@@ -14437,19 +15098,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -14463,12 +15124,12 @@
         }
       }
       function isValidStrPattern(input) {
-        var FORWARD_SLASH = "/";
-        var str = escapeRegExp(input);
+        const FORWARD_SLASH = "/";
+        let str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        var isValid;
+        let isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -14487,8 +15148,8 @@
         if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
           return true;
         }
-        var stackRegexp = toRegExp(stackMatch);
-        var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
+        const stackRegexp = toRegExp(stackMatch);
+        const refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         }).join("\n");
         return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
@@ -14496,17 +15157,17 @@
       function getDescriptorAddon() {
         return {
           isAbortingSuspended: false,
-          isolateCallback: function isolateCallback(cb) {
+          isolateCallback(cb) {
             this.isAbortingSuspended = true;
             try {
               for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
                 args[_key - 1] = arguments[_key];
               }
-              var result = cb.apply(void 0, args);
+              const result = cb(...args);
               this.isAbortingSuspended = false;
               return result;
             } catch (_unused) {
-              var rid = randomId();
+              const rid = randomId();
               this.isAbortingSuspended = false;
               throw new ReferenceError(rid);
             }
@@ -14514,22 +15175,35 @@
         };
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function isEmptyObject(obj) {
@@ -14542,37 +15216,37 @@
         return !!str && str.indexOf(prefix) === 0;
       }
       function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
-        var INLINE_SCRIPT_STRING = "inlineScript";
-        var INJECTED_SCRIPT_STRING = "injectedScript";
-        var INJECTED_SCRIPT_MARKER = "<anonymous>";
-        var isInlineScript = function isInlineScript(stackMatch) {
+        const INLINE_SCRIPT_STRING = "inlineScript";
+        const INJECTED_SCRIPT_STRING = "injectedScript";
+        const INJECTED_SCRIPT_MARKER = "<anonymous>";
+        const isInlineScript = function isInlineScript(stackMatch) {
           return stackMatch.indexOf(INLINE_SCRIPT_STRING) > -1;
         };
-        var isInjectedScript = function isInjectedScript(stackMatch) {
+        const isInjectedScript = function isInjectedScript(stackMatch) {
           return stackMatch.indexOf(INJECTED_SCRIPT_STRING) > -1;
         };
         if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
           return false;
         }
-        var documentURL = window.location.href;
-        var pos = documentURL.indexOf("#");
+        let documentURL = window.location.href;
+        const pos = documentURL.indexOf("#");
         if (pos !== -1) {
           documentURL = documentURL.slice(0, pos);
         }
-        var stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
+        const stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         });
-        var stackLines = stackSteps.map(function (line) {
-          var stack;
-          var getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
+        const stackLines = stackSteps.map(function (line) {
+          let stack;
+          const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
           if (getStackTraceURL) {
-            var stackURL = getStackTraceURL[2];
+            let stackURL = getStackTraceURL[2];
             if (startsWith(stackURL, "(")) {
               stackURL = stackURL.slice(1);
             }
             if (startsWith(stackURL, INJECTED_SCRIPT_MARKER)) {
               stackURL = INJECTED_SCRIPT_STRING;
-              var stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
+              let stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
               if (startsWith(stackFunction, "at")) {
                 stackFunction = stackFunction.slice(2).trim();
               }
@@ -14586,7 +15260,7 @@
           return stack;
         });
         if (stackLines) {
-          for (var index = 0; index < stackLines.length; index += 1) {
+          for (let index = 0; index < stackLines.length; index += 1) {
             if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
               return true;
             }
@@ -14597,7 +15271,7 @@
         }
         return false;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         abortOnStackTrace.apply(this, updatedArgs);
       } catch (e) {
@@ -14606,11 +15280,11 @@
     }
     function adjustSetInterval(source, args) {
       function adjustSetInterval(source, matchCallback, matchDelay, boost) {
-        var nativeSetInterval = window.setInterval;
-        var matchRegexp = toRegExp(matchCallback);
-        var intervalWrapper = function intervalWrapper(callback, delay) {
+        const nativeSetInterval = window.setInterval;
+        const matchRegexp = toRegExp(matchCallback);
+        const intervalWrapper = function intervalWrapper(callback, delay) {
           if (!isValidCallback(callback)) {
-            var message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'.");
+            const message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'");
             logMessage(source, message);
           } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
             delay *= getBoostMultiplier(boost);
@@ -14619,7 +15293,7 @@
           for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
             args[_key - 2] = arguments[_key];
           }
-          return nativeSetInterval.apply(window, [callback, delay].concat(args));
+          return nativeSetInterval.apply(window, [callback, delay, ...args]);
         };
         window.setInterval = intervalWrapper;
       }
@@ -14628,19 +15302,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -14657,24 +15331,24 @@
         return callback instanceof Function || typeof callback === "string";
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function getBoostMultiplier(boost) {
-        var DEFAULT_MULTIPLIER = .05;
-        var MIN_MULTIPLIER = .02;
-        var MAX_MULTIPLIER = 50;
-        var parsedBoost = parseFloat(boost);
-        var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
+        const DEFAULT_MULTIPLIER = .05;
+        const MIN_MULTIPLIER = .02;
+        const MAX_MULTIPLIER = 50;
+        const parsedBoost = parseFloat(boost);
+        let boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
         if (boostMultiplier < MIN_MULTIPLIER) {
           boostMultiplier = MIN_MULTIPLIER;
         }
@@ -14687,29 +15361,42 @@
         return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN;
+        const native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function nativeIsFinite(num) {
-        var native = Number.isFinite || window.isFinite;
+        const native = Number.isFinite || window.isFinite;
         return native(num);
       }
       function getMatchDelay(delay) {
-        var DEFAULT_DELAY = 1e3;
-        var parsedDelay = parseInt(delay, 10);
-        var delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
+        const DEFAULT_DELAY = 1e3;
+        const parsedDelay = parseInt(delay, 10);
+        const delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
         return delayMatch;
       }
       function shouldMatchAnyDelay(delay) {
         return delay === "*";
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         adjustSetInterval.apply(this, updatedArgs);
       } catch (e) {
@@ -14718,11 +15405,11 @@
     }
     function adjustSetTimeout(source, args) {
       function adjustSetTimeout(source, matchCallback, matchDelay, boost) {
-        var nativeSetTimeout = window.setTimeout;
-        var matchRegexp = toRegExp(matchCallback);
-        var timeoutWrapper = function timeoutWrapper(callback, delay) {
+        const nativeSetTimeout = window.setTimeout;
+        const matchRegexp = toRegExp(matchCallback);
+        const timeoutWrapper = function timeoutWrapper(callback, delay) {
           if (!isValidCallback(callback)) {
-            var message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'.");
+            const message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'");
             logMessage(source, message);
           } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
             delay *= getBoostMultiplier(boost);
@@ -14731,7 +15418,7 @@
           for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
             args[_key - 2] = arguments[_key];
           }
-          return nativeSetTimeout.apply(window, [callback, delay].concat(args));
+          return nativeSetTimeout.apply(window, [callback, delay, ...args]);
         };
         window.setTimeout = timeoutWrapper;
       }
@@ -14740,19 +15427,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -14769,24 +15456,24 @@
         return callback instanceof Function || typeof callback === "string";
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function getBoostMultiplier(boost) {
-        var DEFAULT_MULTIPLIER = .05;
-        var MIN_MULTIPLIER = .02;
-        var MAX_MULTIPLIER = 50;
-        var parsedBoost = parseFloat(boost);
-        var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
+        const DEFAULT_MULTIPLIER = .05;
+        const MIN_MULTIPLIER = .02;
+        const MAX_MULTIPLIER = 50;
+        const parsedBoost = parseFloat(boost);
+        let boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
         if (boostMultiplier < MIN_MULTIPLIER) {
           boostMultiplier = MIN_MULTIPLIER;
         }
@@ -14799,29 +15486,42 @@
         return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN;
+        const native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function nativeIsFinite(num) {
-        var native = Number.isFinite || window.isFinite;
+        const native = Number.isFinite || window.isFinite;
         return native(num);
       }
       function getMatchDelay(delay) {
-        var DEFAULT_DELAY = 1e3;
-        var parsedDelay = parseInt(delay, 10);
-        var delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
+        const DEFAULT_DELAY = 1e3;
+        const parsedDelay = parseInt(delay, 10);
+        const delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
         return delayMatch;
       }
       function shouldMatchAnyDelay(delay) {
         return delay === "*";
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         adjustSetTimeout.apply(this, updatedArgs);
       } catch (e) {
@@ -14830,24 +15530,24 @@
     }
     function debugCurrentInlineScript(source, args) {
       function debugCurrentInlineScript(source, property, search) {
-        var searchRegexp = toRegExp(search);
-        var rid = randomId();
-        var getCurrentScript = function getCurrentScript() {
+        const searchRegexp = toRegExp(search);
+        const rid = randomId();
+        const getCurrentScript = function getCurrentScript() {
           if ("currentScript" in document) {
             return document.currentScript;
           }
-          var scripts = document.getElementsByTagName("script");
+          const scripts = document.getElementsByTagName("script");
           return scripts[scripts.length - 1];
         };
-        var ourScript = getCurrentScript();
-        var abort = function abort() {
-          var scriptEl = getCurrentScript();
+        const ourScript = getCurrentScript();
+        const abort = function abort() {
+          const scriptEl = getCurrentScript();
           if (!scriptEl) {
             return;
           }
-          var content = scriptEl.textContent;
+          let content = scriptEl.textContent;
           try {
-            var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").get;
+            const textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").get;
             content = textContentGetter.call(scriptEl);
           } catch (e) {}
           if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && searchRegexp.test(content)) {
@@ -14855,21 +15555,21 @@
             debugger;
           }
         };
-        var setChainPropAccess = function setChainPropAccess(owner, property) {
-          var chainInfo = getPropertyInChain(owner, property);
-          var base = chainInfo.base;
-          var prop = chainInfo.prop,
+        const setChainPropAccess = function setChainPropAccess(owner, property) {
+          const chainInfo = getPropertyInChain(owner, property);
+          let base = chainInfo.base;
+          const prop = chainInfo.prop,
             chain = chainInfo.chain;
           if (base instanceof Object === false && base === null) {
-            var props = property.split(".");
-            var propIndex = props.indexOf(prop);
-            var baseName = props[propIndex - 1];
-            var message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
+            const props = property.split(".");
+            const propIndex = props.indexOf(prop);
+            const baseName = props[propIndex - 1];
+            const message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
             logMessage(message, source.verbose);
             return;
           }
           if (chain) {
-            var setter = function setter(a) {
+            const setter = function setter(a) {
               base = a;
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
@@ -14883,7 +15583,7 @@
             });
             return;
           }
-          var currentValue = base[prop];
+          let currentValue = base[prop];
           setPropertyAccess(base, prop, {
             set: function set(value) {
               abort();
@@ -14902,7 +15602,7 @@
         return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
-        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -14910,14 +15610,14 @@
         return true;
       }
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf(".");
+        const pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        var prop = chain.slice(0, pos);
+        const prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -14925,7 +15625,7 @@
             chain: chain
           };
         }
-        var nextBase = base[prop];
+        const nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -14954,20 +15654,20 @@
         };
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function createOnErrorHandler(rid) {
-        var nativeOnError = window.onerror;
+        const nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
@@ -14976,7 +15676,7 @@
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            return nativeOnError.apply(this, [error].concat(args));
+            return nativeOnError.apply(this, [error, ...args]);
           }
           return false;
         };
@@ -14986,19 +15686,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -15012,15 +15712,28 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         debugCurrentInlineScript.apply(this, updatedArgs);
       } catch (e) {
@@ -15032,18 +15745,18 @@
         if (!property) {
           return;
         }
-        var rid = randomId();
-        var abort = function abort() {
+        const rid = randomId();
+        const abort = function abort() {
           hit(source);
           debugger;
         };
-        var setChainPropAccess = function setChainPropAccess(owner, property) {
-          var chainInfo = getPropertyInChain(owner, property);
-          var base = chainInfo.base;
-          var prop = chainInfo.prop,
+        const setChainPropAccess = function setChainPropAccess(owner, property) {
+          const chainInfo = getPropertyInChain(owner, property);
+          let base = chainInfo.base;
+          const prop = chainInfo.prop,
             chain = chainInfo.chain;
           if (chain) {
-            var setter = function setter(a) {
+            const setter = function setter(a) {
               base = a;
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
@@ -15069,7 +15782,7 @@
         return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
-        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -15077,14 +15790,14 @@
         return true;
       }
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf(".");
+        const pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        var prop = chain.slice(0, pos);
+        const prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -15092,7 +15805,7 @@
             chain: chain
           };
         }
-        var nextBase = base[prop];
+        const nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -15121,7 +15834,7 @@
         };
       }
       function createOnErrorHandler(rid) {
-        var nativeOnError = window.onerror;
+        const nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
@@ -15130,7 +15843,7 @@
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            return nativeOnError.apply(this, [error].concat(args));
+            return nativeOnError.apply(this, [error, ...args]);
           }
           return false;
         };
@@ -15140,19 +15853,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -15169,7 +15882,7 @@
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         debugOnPropertyRead.apply(this, updatedArgs);
       } catch (e) {
@@ -15181,18 +15894,18 @@
         if (!property) {
           return;
         }
-        var rid = randomId();
-        var abort = function abort() {
+        const rid = randomId();
+        const abort = function abort() {
           hit(source);
           debugger;
         };
-        var setChainPropAccess = function setChainPropAccess(owner, property) {
-          var chainInfo = getPropertyInChain(owner, property);
-          var base = chainInfo.base;
-          var prop = chainInfo.prop,
+        const setChainPropAccess = function setChainPropAccess(owner, property) {
+          const chainInfo = getPropertyInChain(owner, property);
+          let base = chainInfo.base;
+          const prop = chainInfo.prop,
             chain = chainInfo.chain;
           if (chain) {
-            var setter = function setter(a) {
+            const setter = function setter(a) {
               base = a;
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
@@ -15217,7 +15930,7 @@
         return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
-        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -15225,14 +15938,14 @@
         return true;
       }
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf(".");
+        const pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        var prop = chain.slice(0, pos);
+        const prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -15240,7 +15953,7 @@
             chain: chain
           };
         }
-        var nextBase = base[prop];
+        const nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -15269,7 +15982,7 @@
         };
       }
       function createOnErrorHandler(rid) {
-        var nativeOnError = window.onerror;
+        const nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
@@ -15278,7 +15991,7 @@
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            return nativeOnError.apply(this, [error].concat(args));
+            return nativeOnError.apply(this, [error, ...args]);
           }
           return false;
         };
@@ -15288,19 +16001,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -15316,7 +16029,7 @@
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         debugOnPropertyWrite.apply(this, updatedArgs);
       } catch (e) {
@@ -15325,7 +16038,7 @@
     }
     function dirString(source, args) {
       function dirString(source, times) {
-        var _console = console,
+        const _console = console,
           dir = _console.dir;
         function dirWrapper(object) {
           if (typeof dir === "function") {
@@ -15340,19 +16053,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -15365,7 +16078,7 @@
           window.__debug(source);
         }
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         dirString.apply(this, updatedArgs);
       } catch (e) {
@@ -15375,7 +16088,7 @@
     function disableNewtabLinks(source, args) {
       function disableNewtabLinks(source) {
         document.addEventListener("click", function (ev) {
-          var target = ev.target;
+          let target = ev.target;
           while (target !== null) {
             if (target.localName === "a" && target.hasAttribute("target")) {
               ev.stopPropagation();
@@ -15392,19 +16105,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -15417,7 +16130,7 @@
           window.__debug(source);
         }
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         disableNewtabLinks.apply(this, updatedArgs);
       } catch (e) {
@@ -15426,13 +16139,13 @@
     }
     function forceWindowClose(source, args) {
       function forceWindowClose(source) {
-        var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        let path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
         if (typeof window.close !== "function") {
-          var message = "window.close() is not a function so 'close-window' scriptlet is unavailable";
+          const message = "window.close() is not a function so 'close-window' scriptlet is unavailable";
           logMessage(source, message);
           return;
         }
-        var closeImmediately = function closeImmediately() {
+        const closeImmediately = function closeImmediately() {
           try {
             hit(source);
             window.close();
@@ -15440,8 +16153,8 @@
             logMessage(source, e);
           }
         };
-        var closeByExtension = function closeByExtension() {
-          var extCall = function extCall() {
+        const closeByExtension = function closeByExtension() {
+          const extCall = function extCall() {
             dispatchEvent(new Event("adguard:scriptlet-close-window"));
           };
           window.addEventListener("adguard:subscribed-to-close-window", extCall, {
@@ -15453,12 +16166,12 @@
             });
           }, 5e3);
         };
-        var shouldClose = function shouldClose() {
+        const shouldClose = function shouldClose() {
           if (path === "") {
             return true;
           }
-          var pathRegexp = toRegExp(path);
-          var currentPath = "".concat(window.location.pathname).concat(window.location.search);
+          const pathRegexp = toRegExp(path);
+          const currentPath = "".concat(window.location.pathname).concat(window.location.search);
           return pathRegexp.test(currentPath);
         };
         if (shouldClose()) {
@@ -15473,19 +16186,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -15499,25 +16212,38 @@
         }
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         forceWindowClose.apply(this, updatedArgs);
       } catch (e) {
@@ -15529,15 +16255,15 @@
         if (!Element.prototype.attachShadow) {
           return;
         }
-        var hideElement = function hideElement(targetElement) {
-          var DISPLAY_NONE_CSS = "display:none!important;";
+        const hideElement = function hideElement(targetElement) {
+          const DISPLAY_NONE_CSS = "display:none!important;";
           targetElement.style.cssText = DISPLAY_NONE_CSS;
         };
-        var hideHandler = function hideHandler() {
-          var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
+        const hideHandler = function hideHandler() {
+          let hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
           while (hostElements.length !== 0) {
-            var isHidden = false;
-            var _pierceShadowDom = pierceShadowDom(selector, hostElements),
+            let isHidden = false;
+            const _pierceShadowDom = pierceShadowDom(selector, hostElements),
               targets = _pierceShadowDom.targets,
               innerHosts = _pierceShadowDom.innerHosts;
             targets.forEach(function (targetEl) {
@@ -15558,19 +16284,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -15584,11 +16310,11 @@
         }
       }
       function observeDOMChanges(callback) {
-        var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-        var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-        var THROTTLE_DELAY_MS = 20;
-        var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-        var connect = function connect() {
+        let observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        let attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+        const THROTTLE_DELAY_MS = 20;
+        const observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+        const connect = function connect() {
           if (attrsToObserve.length > 0) {
             observer.observe(document.documentElement, {
               childList: true,
@@ -15604,7 +16330,7 @@
             });
           }
         };
-        var disconnect = function disconnect() {
+        const disconnect = function disconnect() {
           observer.disconnect();
         };
         function callbackWrapper() {
@@ -15615,8 +16341,8 @@
         connect();
       }
       function findHostElements(rootElement) {
-        var hosts = [];
-        var domElems = rootElement.querySelectorAll("*");
+        const hosts = [];
+        const domElems = rootElement.querySelectorAll("*");
         domElems.forEach(function (el) {
           if (el.shadowRoot) {
             hosts.push(el);
@@ -15625,30 +16351,30 @@
         return hosts;
       }
       function pierceShadowDom(selector, hostElements) {
-        var targets = [];
-        var innerHostsAcc = [];
+        let targets = [];
+        const innerHostsAcc = [];
         hostElements.forEach(function (host) {
-          var simpleElems = host.querySelectorAll(selector);
+          const simpleElems = host.querySelectorAll(selector);
           targets = targets.concat([].slice.call(simpleElems));
-          var shadowRootElem = host.shadowRoot;
-          var shadowChildren = shadowRootElem.querySelectorAll(selector);
+          const shadowRootElem = host.shadowRoot;
+          const shadowChildren = shadowRootElem.querySelectorAll(selector);
           targets = targets.concat([].slice.call(shadowChildren));
           innerHostsAcc.push(findHostElements(shadowRootElem));
         });
-        var innerHosts = flatten(innerHostsAcc);
+        const innerHosts = flatten(innerHostsAcc);
         return {
           targets: targets,
           innerHosts: innerHosts
         };
       }
       function flatten(input) {
-        var stack = [];
+        const stack = [];
         input.forEach(function (el) {
           return stack.push(el);
         });
-        var res = [];
+        const res = [];
         while (stack.length) {
-          var next = stack.pop();
+          const next = stack.pop();
           if (Array.isArray(next)) {
             next.forEach(function (el) {
               return stack.push(el);
@@ -15660,9 +16386,9 @@
         return res.reverse();
       }
       function throttle(cb, delay) {
-        var wait = false;
-        var savedArgs;
-        var wrapper = function wrapper() {
+        let wait = false;
+        let savedArgs;
+        const wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
@@ -15670,7 +16396,7 @@
             savedArgs = args;
             return;
           }
-          cb.apply(void 0, args);
+          cb(...args);
           wait = true;
           setTimeout(function () {
             wait = false;
@@ -15682,9 +16408,107 @@
         };
         return wrapper;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         hideInShadowDom.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+    function injectCssInShadowDom(source, args) {
+      function injectCssInShadowDom(source, cssRule) {
+        let hostSelector = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+        if (!Element.prototype.attachShadow || typeof Proxy === "undefined" || typeof Reflect === "undefined") {
+          return;
+        }
+        if (cssRule.match(/(url|image-set)\(.*\)/i)) {
+          logMessage(source, '"url()" function is not allowed for css rules');
+          return;
+        }
+        const callback = function callback(shadowRoot) {
+          try {
+            const stylesheet = new CSSStyleSheet();
+            try {
+              stylesheet.insertRule(cssRule);
+            } catch (e) {
+              logMessage(source, "Unable to apply the rule '".concat(cssRule, "' due to: \n'").concat(e.message, "'"));
+              return;
+            }
+            shadowRoot.adoptedStyleSheets = [...shadowRoot.adoptedStyleSheets, stylesheet];
+          } catch (_unused) {
+            const styleTag = document.createElement("style");
+            styleTag.innerText = cssRule;
+            shadowRoot.appendChild(styleTag);
+          }
+          hit(source);
+        };
+        hijackAttachShadow(window, hostSelector, callback);
+      }
+      function hit(source) {
+        if (source.verbose !== true) {
+          return;
+        }
+        try {
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
+          if (source.domainName) {
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+            const rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+          log("".concat(prefix, " trace start"));
+          if (trace) {
+            trace();
+          }
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+      function logMessage(source, message) {
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
+        }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
+      }
+      function hijackAttachShadow(context, hostSelector, callback) {
+        const handlerWrapper = function handlerWrapper(target, thisArg, args) {
+          const shadowRoot = Reflect.apply(target, thisArg, args);
+          if (thisArg && thisArg.matches(hostSelector || "*")) {
+            callback(shadowRoot);
+          }
+          return shadowRoot;
+        };
+        const attachShadowHandler = {
+          apply: handlerWrapper
+        };
+        context.Element.prototype.attachShadow = new Proxy(context.Element.prototype.attachShadow, attachShadowHandler);
+      }
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      try {
+        injectCssInShadowDom.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
@@ -15694,40 +16518,40 @@
         if (!!stack && !matchStackTrace(stack, new Error().stack)) {
           return;
         }
-        var prunePaths = propsToRemove !== undefined && propsToRemove !== "" ? propsToRemove.split(/ +/) : [];
-        var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== "" ? requiredInitialProps.split(/ +/) : [];
+        const prunePaths = propsToRemove !== undefined && propsToRemove !== "" ? propsToRemove.split(/ +/) : [];
+        const requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== "" ? requiredInitialProps.split(/ +/) : [];
         function isPruningNeeded(root) {
           if (!root) {
             return false;
           }
-          var shouldProcess;
+          let shouldProcess;
           if (prunePaths.length === 0 && requiredPaths.length > 0) {
-            var rootString = JSON.stringify(root);
-            var matchRegex = toRegExp(requiredPaths.join(""));
-            var shouldLog = matchRegex.test(rootString);
+            const rootString = JSON.stringify(root);
+            const matchRegex = toRegExp(requiredPaths.join(""));
+            const shouldLog = matchRegex.test(rootString);
             if (shouldLog) {
               logMessage(source, "".concat(window.location.hostname, " ").concat(objectToString(root)), true);
               shouldProcess = false;
               return shouldProcess;
             }
           }
-          for (var i = 0; i < requiredPaths.length; i += 1) {
-            var requiredPath = requiredPaths[i];
-            var lastNestedPropName = requiredPath.split(".").pop();
-            var hasWildcard = requiredPath.indexOf(".*.") > -1 || requiredPath.indexOf("*.") > -1 || requiredPath.indexOf(".*") > -1 || requiredPath.indexOf(".[].") > -1 || requiredPath.indexOf("[].") > -1 || requiredPath.indexOf(".[]") > -1;
-            var details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
+          for (let i = 0; i < requiredPaths.length; i += 1) {
+            const requiredPath = requiredPaths[i];
+            const lastNestedPropName = requiredPath.split(".").pop();
+            const hasWildcard = requiredPath.indexOf(".*.") > -1 || requiredPath.indexOf("*.") > -1 || requiredPath.indexOf(".*") > -1 || requiredPath.indexOf(".[].") > -1 || requiredPath.indexOf("[].") > -1 || requiredPath.indexOf(".[]") > -1;
+            const details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
             shouldProcess = !hasWildcard;
-            for (var _i = 0; _i < details.length; _i += 1) {
+            for (let i = 0; i < details.length; i += 1) {
               if (hasWildcard) {
-                shouldProcess = !(details[_i].base[lastNestedPropName] === undefined) || shouldProcess;
+                shouldProcess = !(details[i].base[lastNestedPropName] === undefined) || shouldProcess;
               } else {
-                shouldProcess = !(details[_i].base[lastNestedPropName] === undefined) && shouldProcess;
+                shouldProcess = !(details[i].base[lastNestedPropName] === undefined) && shouldProcess;
               }
             }
           }
           return shouldProcess;
         }
-        var jsonPruner = function jsonPruner(root) {
+        const jsonPruner = function jsonPruner(root) {
           if (prunePaths.length === 0 && requiredPaths.length === 0) {
             logMessage(source, "".concat(window.location.hostname, " ").concat(objectToString(root)), true);
             return root;
@@ -15737,7 +16561,7 @@
               return root;
             }
             prunePaths.forEach(function (path) {
-              var ownerObjArr = getWildcardPropertyInChain(root, path, true);
+              const ownerObjArr = getWildcardPropertyInChain(root, path, true);
               ownerObjArr.forEach(function (ownerObj) {
                 if (ownerObj !== undefined && ownerObj.base) {
                   delete ownerObj.base[ownerObj.prop];
@@ -15750,19 +16574,19 @@
           }
           return root;
         };
-        var nativeJSONParse = JSON.parse;
-        var jsonParseWrapper = function jsonParseWrapper() {
+        const nativeJSONParse = JSON.parse;
+        const jsonParseWrapper = function jsonParseWrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
-          var root = nativeJSONParse.apply(JSON, args);
+          const root = nativeJSONParse.apply(JSON, args);
           return jsonPruner(root);
         };
         jsonParseWrapper.toString = nativeJSONParse.toString.bind(nativeJSONParse);
         JSON.parse = jsonParseWrapper;
-        var nativeResponseJson = Response.prototype.json;
-        var responseJsonWrapper = function responseJsonWrapper() {
-          var promise = nativeResponseJson.apply(this);
+        const nativeResponseJson = Response.prototype.json;
+        const responseJsonWrapper = function responseJsonWrapper() {
+          const promise = nativeResponseJson.apply(this);
           return promise.then(function (obj) {
             return jsonPruner(obj);
           });
@@ -15777,19 +16601,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -15809,19 +16633,19 @@
         if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
           return true;
         }
-        var stackRegexp = toRegExp(stackMatch);
-        var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
+        const stackRegexp = toRegExp(stackMatch);
+        const refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         }).join("\n");
         return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
       }
       function getWildcardPropertyInChain(base, chain) {
-        var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
-        var pos = chain.indexOf(".");
+        let lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+        const pos = chain.indexOf(".");
         if (pos === -1) {
           if (chain === "*" || chain === "[]") {
-            for (var key in base) {
+            for (const key in base) {
               if (Object.prototype.hasOwnProperty.call(base, key)) {
                 output.push({
                   base: base,
@@ -15837,17 +16661,17 @@
           }
           return output;
         }
-        var prop = chain.slice(0, pos);
-        var shouldLookThrough = prop === "[]" && Array.isArray(base) || prop === "*" && base instanceof Object;
+        const prop = chain.slice(0, pos);
+        const shouldLookThrough = prop === "[]" && Array.isArray(base) || prop === "*" && base instanceof Object;
         if (shouldLookThrough) {
-          var nextProp = chain.slice(pos + 1);
-          var baseKeys = Object.keys(base);
+          const nextProp = chain.slice(pos + 1);
+          const baseKeys = Object.keys(base);
           baseKeys.forEach(function (key) {
-            var item = base[key];
+            const item = base[key];
             getWildcardPropertyInChain(item, nextProp, lookThrough, output);
           });
         }
-        var nextBase = base[prop];
+        const nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if (nextBase !== undefined) {
           getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
@@ -15855,16 +16679,29 @@
         return output;
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function objectToString(obj) {
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
-          var key = pair[0];
-          var value = pair[1];
-          var recordValueStr = value;
+          const key = pair[0];
+          const value = pair[1];
+          let recordValueStr = value;
           if (value instanceof Object) {
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
@@ -15872,24 +16709,24 @@
         }).join(" ");
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getObjectEntries(object) {
-        var keys = Object.keys(object);
-        var entries = [];
+        const keys = Object.keys(object);
+        const entries = [];
         keys.forEach(function (key) {
           return entries.push([key, object[key]]);
         });
@@ -15899,37 +16736,37 @@
         return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
       }
       function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
-        var INLINE_SCRIPT_STRING = "inlineScript";
-        var INJECTED_SCRIPT_STRING = "injectedScript";
-        var INJECTED_SCRIPT_MARKER = "<anonymous>";
-        var isInlineScript = function isInlineScript(stackMatch) {
+        const INLINE_SCRIPT_STRING = "inlineScript";
+        const INJECTED_SCRIPT_STRING = "injectedScript";
+        const INJECTED_SCRIPT_MARKER = "<anonymous>";
+        const isInlineScript = function isInlineScript(stackMatch) {
           return stackMatch.indexOf(INLINE_SCRIPT_STRING) > -1;
         };
-        var isInjectedScript = function isInjectedScript(stackMatch) {
+        const isInjectedScript = function isInjectedScript(stackMatch) {
           return stackMatch.indexOf(INJECTED_SCRIPT_STRING) > -1;
         };
         if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
           return false;
         }
-        var documentURL = window.location.href;
-        var pos = documentURL.indexOf("#");
+        let documentURL = window.location.href;
+        const pos = documentURL.indexOf("#");
         if (pos !== -1) {
           documentURL = documentURL.slice(0, pos);
         }
-        var stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
+        const stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         });
-        var stackLines = stackSteps.map(function (line) {
-          var stack;
-          var getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
+        const stackLines = stackSteps.map(function (line) {
+          let stack;
+          const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
           if (getStackTraceURL) {
-            var stackURL = getStackTraceURL[2];
+            let stackURL = getStackTraceURL[2];
             if (startsWith(stackURL, "(")) {
               stackURL = stackURL.slice(1);
             }
             if (startsWith(stackURL, INJECTED_SCRIPT_MARKER)) {
               stackURL = INJECTED_SCRIPT_STRING;
-              var stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
+              let stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
               if (startsWith(stackFunction, "at")) {
                 stackFunction = stackFunction.slice(2).trim();
               }
@@ -15943,7 +16780,7 @@
           return stack;
         });
         if (stackLines) {
-          for (var index = 0; index < stackLines.length; index += 1) {
+          for (let index = 0; index < stackLines.length; index += 1) {
             if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
               return true;
             }
@@ -15954,7 +16791,7 @@
         }
         return false;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         jsonPrune.apply(this, updatedArgs);
       } catch (e) {
@@ -15968,7 +16805,7 @@
         }
         console.log(args);
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         log.apply(this, updatedArgs);
       } catch (e) {
@@ -15977,26 +16814,26 @@
     }
     function logAddEventListener(source, args) {
       function logAddEventListener(source) {
-        var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+        const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
         function addEventListenerWrapper(type, listener) {
           var _this$constructor;
           if (validateType(type) && validateListener(listener)) {
-            var _message = 'addEventListener("'.concat(type, '", ').concat(listenerToString(listener), ")");
-            logMessage(source, _message, true);
+            const message = 'addEventListener("'.concat(type, '", ').concat(listenerToString(listener), ")");
+            logMessage(source, message, true);
             hit(source);
           }
-          var message = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
+          const message = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
           logMessage(source, message, true);
-          var context = this;
+          let context = this;
           if (this && ((_this$constructor = this.constructor) === null || _this$constructor === void 0 ? void 0 : _this$constructor.name) === "Window" && this !== window) {
             context = window;
           }
           for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
             args[_key - 2] = arguments[_key];
           }
-          return nativeAddEventListener.apply(context, [type, listener].concat(args));
+          return nativeAddEventListener.apply(context, [type, listener, ...args]);
         }
-        var descriptor = {
+        const descriptor = {
           configurable: true,
           set: function set() {},
           get: function get() {
@@ -16012,19 +16849,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -16047,7 +16884,7 @@
         return typeof listener === "function" ? listener.toString() : listener.handleEvent.toString();
       }
       function convertTypeToString(value) {
-        var output;
+        let output;
         if (typeof value === "undefined") {
           output = "undefined";
         } else if (typeof value === "object") {
@@ -16062,16 +16899,29 @@
         return output;
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function objectToString(obj) {
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
-          var key = pair[0];
-          var value = pair[1];
-          var recordValueStr = value;
+          const key = pair[0];
+          const value = pair[1];
+          let recordValueStr = value;
           if (value instanceof Object) {
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
@@ -16082,14 +16932,14 @@
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getObjectEntries(object) {
-        var keys = Object.keys(object);
-        var entries = [];
+        const keys = Object.keys(object);
+        const entries = [];
         keys.forEach(function (key) {
           return entries.push([key, object[key]]);
         });
         return entries;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         logAddEventListener.apply(this, updatedArgs);
       } catch (e) {
@@ -16098,21 +16948,21 @@
     }
     function logEval(source, args) {
       function logEval(source) {
-        var nativeEval = window.eval;
+        const nativeEval = window.eval;
         function evalWrapper(str) {
           hit(source);
           logMessage(source, 'eval("'.concat(str, '")'), true);
           return nativeEval(str);
         }
         window.eval = evalWrapper;
-        var nativeFunction = window.Function;
+        const nativeFunction = window.Function;
         function FunctionWrapper() {
           hit(source);
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
           logMessage(source, "new Function(".concat(args.join(", "), ")"), true);
-          return nativeFunction.apply(this, [].concat(args));
+          return nativeFunction.apply(this, [...args]);
         }
         FunctionWrapper.prototype = Object.create(nativeFunction.prototype);
         FunctionWrapper.prototype.constructor = FunctionWrapper;
@@ -16123,19 +16973,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -16149,12 +16999,25 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         logEval.apply(this, updatedArgs);
       } catch (e) {
@@ -16166,15 +17029,15 @@
         if (!property) {
           return;
         }
-        var refineStackTrace = function refineStackTrace(stackString) {
-          var stackSteps = stackString.split("\n").slice(2).map(function (line) {
+        const refineStackTrace = function refineStackTrace(stackString) {
+          const stackSteps = stackString.split("\n").slice(2).map(function (line) {
             return line.replace(/ {4}at /, "");
           });
-          var logInfoArray = stackSteps.map(function (line) {
-            var funcName;
-            var funcFullPath;
-            var reg = /\(([^\)]+)\)/;
-            var regFirefox = /(.*?@)(\S+)(:\d+):\d+\)?$/;
+          const logInfoArray = stackSteps.map(function (line) {
+            let funcName;
+            let funcFullPath;
+            const reg = /\(([^\)]+)\)/;
+            const regFirefox = /(.*?@)(\S+)(:\d+):\d+\)?$/;
             if (line.match(reg)) {
               funcName = line.split(" ").slice(0, -1).join(" ");
               funcFullPath = line.match(reg)[1];
@@ -16187,19 +17050,19 @@
             }
             return [funcName, funcFullPath];
           });
-          var logInfoObject = {};
+          const logInfoObject = {};
           logInfoArray.forEach(function (pair) {
             logInfoObject[pair[0]] = pair[1];
           });
           return logInfoObject;
         };
-        var setChainPropAccess = function setChainPropAccess(owner, property) {
-          var chainInfo = getPropertyInChain(owner, property);
-          var base = chainInfo.base;
-          var prop = chainInfo.prop,
+        const setChainPropAccess = function setChainPropAccess(owner, property) {
+          const chainInfo = getPropertyInChain(owner, property);
+          let base = chainInfo.base;
+          const prop = chainInfo.prop,
             chain = chainInfo.chain;
           if (chain) {
-            var setter = function setter(a) {
+            const setter = function setter(a) {
               base = a;
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
@@ -16213,15 +17076,15 @@
             });
             return;
           }
-          var value = base[prop];
+          let value = base[prop];
           setPropertyAccess(base, prop, {
-            get: function get() {
+            get() {
               hit(source);
               logMessage(source, "Get ".concat(prop), true);
               console.table(refineStackTrace(new Error().stack));
               return value;
             },
-            set: function set(newValue) {
+            set(newValue) {
               hit(source);
               logMessage(source, "Set ".concat(prop), true);
               console.table(refineStackTrace(new Error().stack));
@@ -16232,14 +17095,14 @@
         setChainPropAccess(window, property);
       }
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf(".");
+        const pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        var prop = chain.slice(0, pos);
+        const prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -16247,7 +17110,7 @@
             chain: chain
           };
         }
-        var nextBase = base[prop];
+        const nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -16276,7 +17139,7 @@
         };
       }
       function setPropertyAccess(object, property, descriptor) {
-        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -16288,19 +17151,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -16314,15 +17177,28 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         logOnStacktrace.apply(this, updatedArgs);
       } catch (e) {
@@ -16331,7 +17207,7 @@
     }
     function noTopics(source, args) {
       function noTopics(source) {
-        var TOPICS_PROPERTY_NAME = "browsingTopics";
+        const TOPICS_PROPERTY_NAME = "browsingTopics";
         if (Document instanceof Object === false) {
           return;
         }
@@ -16348,19 +17224,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -16374,13 +17250,13 @@
         }
       }
       function noopPromiseResolve() {
-        var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
-        var responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
-        var responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
+        let responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
+        let responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        let responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
         if (typeof Response === "undefined") {
           return;
         }
-        var response = new Response(responseBody, {
+        const response = new Response(responseBody, {
           status: 200,
           statusText: "OK"
         });
@@ -16394,7 +17270,7 @@
         });
         return Promise.resolve(response);
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         noTopics.apply(this, updatedArgs);
       } catch (e) {
@@ -16413,19 +17289,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -16439,12 +17315,25 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         noeval.apply(this, updatedArgs);
       } catch (e) {
@@ -16453,7 +17342,7 @@
     }
     function nowebrtc(source, args) {
       function nowebrtc(source) {
-        var propertyName = "";
+        let propertyName = "";
         if (window.RTCPeerConnection) {
           propertyName = "RTCPeerConnection";
         } else if (window.webkitRTCPeerConnection) {
@@ -16462,8 +17351,8 @@
         if (propertyName === "") {
           return;
         }
-        var rtcReplacement = function rtcReplacement(config) {
-          var message = "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config));
+        const rtcReplacement = function rtcReplacement(config) {
+          const message = "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config));
           logMessage(source, message);
           hit(source);
         };
@@ -16473,7 +17362,7 @@
           createOffer: noopFunc,
           setRemoteDescription: noopFunc
         };
-        var rtc = window[propertyName];
+        const rtc = window[propertyName];
         window[propertyName] = rtcReplacement;
         if (rtc.prototype) {
           rtc.prototype.createDataChannel = function (a, b) {
@@ -16489,19 +17378,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -16516,26 +17405,39 @@
       }
       function noopFunc() {}
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function convertRtcConfigToString(config) {
-        var UNDEF_STR = "undefined";
-        var str = UNDEF_STR;
+        const UNDEF_STR = "undefined";
+        let str = UNDEF_STR;
         if (config === null) {
           str = "null";
         } else if (config instanceof Object) {
-          var SERVERS_PROP_NAME = "iceServers";
-          var URLS_PROP_NAME = "urls";
+          const SERVERS_PROP_NAME = "iceServers";
+          const URLS_PROP_NAME = "urls";
           if (Object.prototype.hasOwnProperty.call(config, SERVERS_PROP_NAME) && Object.prototype.hasOwnProperty.call(config[SERVERS_PROP_NAME][0], URLS_PROP_NAME) && !!config[SERVERS_PROP_NAME][0][URLS_PROP_NAME]) {
             str = config[SERVERS_PROP_NAME][0][URLS_PROP_NAME].toString();
           }
         }
         return str;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         nowebrtc.apply(this, updatedArgs);
       } catch (e) {
@@ -16544,12 +17446,12 @@
     }
     function preventAddEventListener(source, args) {
       function preventAddEventListener(source, typeSearch, listenerSearch) {
-        var typeSearchRegexp = toRegExp(typeSearch);
-        var listenerSearchRegexp = toRegExp(listenerSearch);
-        var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+        const typeSearchRegexp = toRegExp(typeSearch);
+        const listenerSearchRegexp = toRegExp(listenerSearch);
+        const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
         function addEventListenerWrapper(type, listener) {
           var _this$constructor;
-          var shouldPrevent = false;
+          let shouldPrevent = false;
           if (validateType(type) && validateListener(listener)) {
             shouldPrevent = typeSearchRegexp.test(type.toString()) && listenerSearchRegexp.test(listenerToString(listener));
           }
@@ -16557,16 +17459,16 @@
             hit(source);
             return undefined;
           }
-          var context = this;
+          let context = this;
           if (this && ((_this$constructor = this.constructor) === null || _this$constructor === void 0 ? void 0 : _this$constructor.name) === "Window" && this !== window) {
             context = window;
           }
           for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
             args[_key - 2] = arguments[_key];
           }
-          return nativeAddEventListener.apply(context, [type, listener].concat(args));
+          return nativeAddEventListener.apply(context, [type, listener, ...args]);
         }
-        var descriptor = {
+        const descriptor = {
           configurable: true,
           set: function set() {},
           get: function get() {
@@ -16582,19 +17484,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -16608,16 +17510,16 @@
         }
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function validateType(type) {
@@ -16629,7 +17531,7 @@
       function listenerToString(listener) {
         return typeof listener === "function" ? listener.toString() : listener.handleEvent.toString();
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventAddEventListener.apply(this, updatedArgs);
       } catch (e) {
@@ -16638,45 +17540,45 @@
     }
     function preventAdfly(source, args) {
       function preventAdfly(source) {
-        var isDigit = function isDigit(data) {
+        const isDigit = function isDigit(data) {
           return /^\d$/.test(data);
         };
-        var handler = function handler(encodedURL) {
-          var evenChars = "";
-          var oddChars = "";
-          for (var i = 0; i < encodedURL.length; i += 1) {
+        const handler = function handler(encodedURL) {
+          let evenChars = "";
+          let oddChars = "";
+          for (let i = 0; i < encodedURL.length; i += 1) {
             if (i % 2 === 0) {
               evenChars += encodedURL.charAt(i);
             } else {
               oddChars = encodedURL.charAt(i) + oddChars;
             }
           }
-          var data = (evenChars + oddChars).split("");
-          for (var _i = 0; _i < data.length; _i += 1) {
-            if (isDigit(data[_i])) {
-              for (var ii = _i + 1; ii < data.length; ii += 1) {
+          let data = (evenChars + oddChars).split("");
+          for (let i = 0; i < data.length; i += 1) {
+            if (isDigit(data[i])) {
+              for (let ii = i + 1; ii < data.length; ii += 1) {
                 if (isDigit(data[ii])) {
-                  var temp = parseInt(data[_i], 10) ^ parseInt(data[ii], 10);
+                  const temp = parseInt(data[i], 10) ^ parseInt(data[ii], 10);
                   if (temp < 10) {
-                    data[_i] = temp.toString();
+                    data[i] = temp.toString();
                   }
-                  _i = ii;
+                  i = ii;
                   break;
                 }
               }
             }
           }
           data = data.join("");
-          var decodedURL = window.atob(data).slice(16, -16);
+          const decodedURL = window.atob(data).slice(16, -16);
           if (window.stop) {
             window.stop();
           }
           window.onbeforeunload = null;
           window.location.href = decodedURL;
         };
-        var val;
-        var applyHandler = true;
-        var result = setPropertyAccess(window, "ysmm", {
+        let val;
+        let applyHandler = true;
+        const result = setPropertyAccess(window, "ysmm", {
           configurable: false,
           set: function set(value) {
             if (applyHandler) {
@@ -16700,7 +17602,7 @@
         }
       }
       function setPropertyAccess(object, property, descriptor) {
-        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -16712,19 +17614,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -16738,12 +17640,25 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventAdfly.apply(this, updatedArgs);
       } catch (e) {
@@ -16752,29 +17667,29 @@
     }
     function preventBab(source, args) {
       function preventBab(source) {
-        var nativeSetTimeout = window.setTimeout;
-        var babRegex = /\.bab_elementid.$/;
-        var timeoutWrapper = function timeoutWrapper(callback) {
+        const nativeSetTimeout = window.setTimeout;
+        const babRegex = /\.bab_elementid.$/;
+        const timeoutWrapper = function timeoutWrapper(callback) {
           if (typeof callback !== "string" || !babRegex.test(callback)) {
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            return nativeSetTimeout.apply(window, [callback].concat(args));
+            return nativeSetTimeout.apply(window, [callback, ...args]);
           }
           hit(source);
         };
         window.setTimeout = timeoutWrapper;
-        var signatures = [["blockadblock"], ["babasbm"], [/getItem\('babn'\)/], ["getElementById", "String.fromCharCode", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", "charAt", "DOMContentLoaded", "AdBlock", "addEventListener", "doScroll", "fromCharCode", "<<2|r>>4", "sessionStorage", "clientWidth", "localStorage", "Math", "random"]];
-        var check = function check(str) {
+        const signatures = [["blockadblock"], ["babasbm"], [/getItem\('babn'\)/], ["getElementById", "String.fromCharCode", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", "charAt", "DOMContentLoaded", "AdBlock", "addEventListener", "doScroll", "fromCharCode", "<<2|r>>4", "sessionStorage", "clientWidth", "localStorage", "Math", "random"]];
+        const check = function check(str) {
           if (typeof str !== "string") {
             return false;
           }
-          for (var i = 0; i < signatures.length; i += 1) {
-            var tokens = signatures[i];
-            var match = 0;
-            for (var j = 0; j < tokens.length; j += 1) {
-              var token = tokens[j];
-              var found = token instanceof RegExp ? token.test(str) : str.indexOf(token) > -1;
+          for (let i = 0; i < signatures.length; i += 1) {
+            const tokens = signatures[i];
+            let match = 0;
+            for (let j = 0; j < tokens.length; j += 1) {
+              const token = tokens[j];
+              const found = token instanceof RegExp ? token.test(str) : str.indexOf(token) > -1;
               if (found) {
                 match += 1;
               }
@@ -16785,17 +17700,17 @@
           }
           return false;
         };
-        var nativeEval = window.eval;
-        var evalWrapper = function evalWrapper(str) {
+        const nativeEval = window.eval;
+        const evalWrapper = function evalWrapper(str) {
           if (!check(str)) {
             return nativeEval(str);
           }
           hit(source);
-          var bodyEl = document.body;
+          const bodyEl = document.body;
           if (bodyEl) {
             bodyEl.style.removeProperty("visibility");
           }
-          var el = document.getElementById("babasbmsgx");
+          const el = document.getElementById("babasbmsgx");
           if (el) {
             el.parentNode.removeChild(el);
           }
@@ -16807,19 +17722,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -16832,7 +17747,7 @@
           window.__debug(source);
         }
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventBab.apply(this, updatedArgs);
       } catch (e) {
@@ -16844,12 +17759,12 @@
         if (typeof Proxy === "undefined" || typeof Reflect === "undefined") {
           return;
         }
-        var srcMockData = {
+        const srcMockData = {
           script: "data:text/javascript;base64,KCk9Pnt9",
           img: "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==",
           iframe: "data:text/html;base64, PGRpdj48L2Rpdj4="
         };
-        var instance;
+        let instance;
         if (tagName === "script") {
           instance = HTMLScriptElement;
         } else if (tagName === "img") {
@@ -16859,8 +17774,8 @@
         } else {
           return;
         }
-        var hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === "function";
-        var policy;
+        const hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === "function";
+        let policy;
         if (hasTrustedTypes) {
           policy = window.trustedTypes.createPolicy("AGPolicy", {
             createScriptURL: function createScriptURL(arg) {
@@ -16868,20 +17783,20 @@
             }
           });
         }
-        var SOURCE_PROPERTY_NAME = "src";
-        var ONERROR_PROPERTY_NAME = "onerror";
-        var searchRegexp = toRegExp(match);
-        var setMatchedAttribute = function setMatchedAttribute(elem) {
+        const SOURCE_PROPERTY_NAME = "src";
+        const ONERROR_PROPERTY_NAME = "onerror";
+        const searchRegexp = toRegExp(match);
+        const setMatchedAttribute = function setMatchedAttribute(elem) {
           return elem.setAttribute(source.name, "matched");
         };
-        var setAttributeWrapper = function setAttributeWrapper(target, thisArg, args) {
+        const setAttributeWrapper = function setAttributeWrapper(target, thisArg, args) {
           if (!args[0] || !args[1]) {
             return Reflect.apply(target, thisArg, args);
           }
-          var nodeName = thisArg.nodeName.toLowerCase();
-          var attrName = args[0].toLowerCase();
-          var attrValue = args[1];
-          var isMatched = attrName === SOURCE_PROPERTY_NAME && tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(attrValue);
+          const nodeName = thisArg.nodeName.toLowerCase();
+          const attrName = args[0].toLowerCase();
+          const attrValue = args[1];
+          const isMatched = attrName === SOURCE_PROPERTY_NAME && tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(attrValue);
           if (!isMatched) {
             return Reflect.apply(target, thisArg, args);
           }
@@ -16889,29 +17804,29 @@
           setMatchedAttribute(thisArg);
           return Reflect.apply(target, thisArg, [attrName, srcMockData[nodeName]]);
         };
-        var setAttributeHandler = {
+        const setAttributeHandler = {
           apply: setAttributeWrapper
         };
         instance.prototype.setAttribute = new Proxy(Element.prototype.setAttribute, setAttributeHandler);
-        var origSrcDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
+        const origSrcDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
         if (!origSrcDescriptor) {
           return;
         }
         Object.defineProperty(instance.prototype, SOURCE_PROPERTY_NAME, {
           enumerable: true,
           configurable: true,
-          get: function get() {
+          get() {
             return origSrcDescriptor.get.call(this);
           },
-          set: function set(urlValue) {
-            var nodeName = this.nodeName.toLowerCase();
-            var isMatched = tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(urlValue);
+          set(urlValue) {
+            const nodeName = this.nodeName.toLowerCase();
+            const isMatched = tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(urlValue);
             if (!isMatched) {
               origSrcDescriptor.set.call(this, urlValue);
               return true;
             }
             if (policy && urlValue instanceof TrustedScriptURL) {
-              var trustedSrc = policy.createScriptURL(urlValue);
+              const trustedSrc = policy.createScriptURL(urlValue);
               origSrcDescriptor.set.call(this, trustedSrc);
               hit(source);
               return;
@@ -16921,18 +17836,18 @@
             hit(source);
           }
         });
-        var origOnerrorDescriptor = safeGetDescriptor(HTMLElement.prototype, ONERROR_PROPERTY_NAME);
+        const origOnerrorDescriptor = safeGetDescriptor(HTMLElement.prototype, ONERROR_PROPERTY_NAME);
         if (!origOnerrorDescriptor) {
           return;
         }
         Object.defineProperty(HTMLElement.prototype, ONERROR_PROPERTY_NAME, {
           enumerable: true,
           configurable: true,
-          get: function get() {
+          get() {
             return origOnerrorDescriptor.get.call(this);
           },
-          set: function set(cb) {
-            var isMatched = this.getAttribute(source.name) === "matched";
+          set(cb) {
+            const isMatched = this.getAttribute(source.name) === "matched";
             if (!isMatched) {
               origOnerrorDescriptor.set.call(this, cb);
               return true;
@@ -16941,18 +17856,18 @@
             return true;
           }
         });
-        var addEventListenerWrapper = function addEventListenerWrapper(target, thisArg, args) {
+        const addEventListenerWrapper = function addEventListenerWrapper(target, thisArg, args) {
           if (!args[0] || !args[1]) {
             return Reflect.apply(target, thisArg, args);
           }
-          var eventName = args[0];
-          var isMatched = typeof thisArg.getAttribute === "function" && thisArg.getAttribute(source.name) === "matched" && eventName === "error";
+          const eventName = args[0];
+          const isMatched = typeof thisArg.getAttribute === "function" && thisArg.getAttribute(source.name) === "matched" && eventName === "error";
           if (isMatched) {
             return Reflect.apply(target, thisArg, [eventName, noopFunc]);
           }
           return Reflect.apply(target, thisArg, args);
         };
-        var addEventListenerHandler = {
+        const addEventListenerHandler = {
           apply: addEventListenerWrapper
         };
         EventTarget.prototype.addEventListener = new Proxy(EventTarget.prototype.addEventListener, addEventListenerHandler);
@@ -16962,19 +17877,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -16988,27 +17903,27 @@
         }
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function safeGetDescriptor(obj, prop) {
-        var descriptor = Object.getOwnPropertyDescriptor(obj, prop);
+        const descriptor = Object.getOwnPropertyDescriptor(obj, prop);
         if (descriptor && descriptor.configurable) {
           return descriptor;
         }
         return null;
       }
       function noopFunc() {}
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventElementSrcLoading.apply(this, updatedArgs);
       } catch (e) {
@@ -17017,8 +17932,8 @@
     }
     function preventEvalIf(source, args) {
       function preventEvalIf(source, search) {
-        var searchRegexp = toRegExp(search);
-        var nativeEval = window.eval;
+        const searchRegexp = toRegExp(search);
+        const nativeEval = window.eval;
         window.eval = function (payload) {
           if (!searchRegexp.test(payload.toString())) {
             return nativeEval.call(window, payload);
@@ -17028,16 +17943,16 @@
         }.bind(window);
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function hit(source) {
@@ -17045,19 +17960,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -17070,7 +17985,7 @@
           window.__debug(source);
         }
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventEvalIf.apply(this, updatedArgs);
       } catch (e) {
@@ -17080,7 +17995,7 @@
     function preventFab(source, args) {
       function preventFab(source) {
         hit(source);
-        var Fab = function Fab() {};
+        const Fab = function Fab() {};
         Fab.prototype.check = noopFunc;
         Fab.prototype.clearEvent = noopFunc;
         Fab.prototype.emitEvent = noopFunc;
@@ -17100,18 +18015,18 @@
           set: noopFunc,
           get: noopFunc
         };
-        var fab = new Fab();
-        var getSetFab = {
-          get: function get() {
+        const fab = new Fab();
+        const getSetFab = {
+          get() {
             return Fab;
           },
-          set: function set() {}
+          set() {}
         };
-        var getsetfab = {
-          get: function get() {
+        const getsetfab = {
+          get() {
             return fab;
           },
-          set: function set() {}
+          set() {}
         };
         if (Object.prototype.hasOwnProperty.call(window, "FuckAdBlock")) {
           window.FuckAdBlock = Fab;
@@ -17149,19 +18064,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -17178,7 +18093,7 @@
       function noopThis() {
         return this;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventFab.apply(this, updatedArgs);
       } catch (e) {
@@ -17187,12 +18102,12 @@
     }
     function preventFetch(source, args) {
       function preventFetch(source, propsToMatch) {
-        var responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "emptyObj";
-        var responseType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "default";
+        let responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "emptyObj";
+        let responseType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "default";
         if (typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
           return;
         }
-        var strResponseBody;
+        let strResponseBody;
         if (responseBody === "" || responseBody === "emptyObj") {
           strResponseBody = "{}";
         } else if (responseBody === "emptyArr") {
@@ -17204,9 +18119,9 @@
           logMessage(source, "Invalid parameter: ".concat(responseType));
           return;
         }
-        var handlerWrapper = function handlerWrapper(target, thisArg, args) {
-          var shouldPrevent = false;
-          var fetchData = getFetchData(args);
+        const handlerWrapper = function handlerWrapper(target, thisArg, args) {
+          let shouldPrevent = false;
+          const fetchData = getFetchData(args);
           if (typeof propsToMatch === "undefined") {
             logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
             hit(source);
@@ -17219,7 +18134,7 @@
           }
           return Reflect.apply(target, thisArg, args);
         };
-        var fetchHandler = {
+        const fetchHandler = {
           apply: handlerWrapper
         };
         fetch = new Proxy(fetch, fetchHandler);
@@ -17229,19 +18144,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -17255,11 +18170,11 @@
         }
       }
       function getFetchData(args) {
-        var fetchPropsObj = {};
-        var fetchUrl;
-        var fetchInit;
+        const fetchPropsObj = {};
+        let fetchUrl;
+        let fetchInit;
         if (args[0] instanceof Request) {
-          var requestData = getRequestData(args[0]);
+          const requestData = getRequestData(args[0]);
           fetchUrl = requestData.url;
           fetchInit = requestData;
         } else {
@@ -17276,9 +18191,9 @@
       }
       function objectToString(obj) {
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
-          var key = pair[0];
-          var value = pair[1];
-          var recordValueStr = value;
+          const key = pair[0];
+          const value = pair[1];
+          let recordValueStr = value;
           if (value instanceof Object) {
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
@@ -17286,13 +18201,13 @@
         }).join(" ");
       }
       function noopPromiseResolve() {
-        var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
-        var responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
-        var responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
+        let responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
+        let responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        let responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
         if (typeof Response === "undefined") {
           return;
         }
-        var response = new Response(responseBody, {
+        const response = new Response(responseBody, {
           status: 200,
           statusText: "OK"
         });
@@ -17310,46 +18225,59 @@
         if (propsToMatch === "" || propsToMatch === "*") {
           return true;
         }
-        var isMatched;
-        var parsedData = parseMatchProps(propsToMatch);
+        let isMatched;
+        const parsedData = parseMatchProps(propsToMatch);
         if (!validateParsedData(parsedData)) {
           logMessage(source, "Invalid parameter: ".concat(propsToMatch));
           isMatched = false;
         } else {
-          var matchData = getMatchPropsData(parsedData);
+          const matchData = getMatchPropsData(parsedData);
           isMatched = Object.keys(matchData).every(function (matchKey) {
-            var matchValue = matchData[matchKey];
+            const matchValue = matchData[matchKey];
             return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
           });
         }
         return isMatched;
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function isValidStrPattern(input) {
-        var FORWARD_SLASH = "/";
-        var str = escapeRegExp(input);
+        const FORWARD_SLASH = "/";
+        let str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        var isValid;
+        let isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -17365,9 +18293,9 @@
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getRequestData(request) {
-        var requestInitOptions = getRequestProps();
-        var entries = requestInitOptions.map(function (key) {
-          var value = request[key];
+        const requestInitOptions = getRequestProps();
+        const entries = requestInitOptions.map(function (key) {
+          const value = request[key];
           return [key, value];
         });
         return getObjectFromEntries(entries);
@@ -17376,34 +18304,34 @@
         return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
       }
       function getObjectEntries(object) {
-        var keys = Object.keys(object);
-        var entries = [];
+        const keys = Object.keys(object);
+        const entries = [];
         keys.forEach(function (key) {
           return entries.push([key, object[key]]);
         });
         return entries;
       }
       function getObjectFromEntries(entries) {
-        var output = entries.reduce(function (acc, el) {
-          var key = el[0];
-          var value = el[1];
+        const output = entries.reduce(function (acc, el) {
+          const key = el[0];
+          const value = el[1];
           acc[key] = value;
           return acc;
         }, {});
         return output;
       }
       function parseMatchProps(propsToMatchStr) {
-        var PROPS_DIVIDER = " ";
-        var PAIRS_MARKER = ":";
-        var LEGAL_MATCH_PROPS = getRequestProps();
-        var propsObj = {};
-        var props = propsToMatchStr.split(PROPS_DIVIDER);
+        const PROPS_DIVIDER = " ";
+        const PAIRS_MARKER = ":";
+        const LEGAL_MATCH_PROPS = getRequestProps();
+        const propsObj = {};
+        const props = propsToMatchStr.split(PROPS_DIVIDER);
         props.forEach(function (prop) {
-          var dividerInd = prop.indexOf(PAIRS_MARKER);
-          var key = prop.slice(0, dividerInd);
-          var hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+          const dividerInd = prop.indexOf(PAIRS_MARKER);
+          const key = prop.slice(0, dividerInd);
+          const hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
           if (hasLegalMatchProp) {
-            var value = prop.slice(dividerInd + 1);
+            const value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
           } else {
             propsObj.url = prop;
@@ -17417,13 +18345,13 @@
         });
       }
       function getMatchPropsData(data) {
-        var matchData = {};
+        const matchData = {};
         Object.keys(data).forEach(function (key) {
           matchData[key] = toRegExp(data[key]);
         });
         return matchData;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventFetch.apply(this, updatedArgs);
       } catch (e) {
@@ -17432,8 +18360,8 @@
     }
     function preventPopadsNet(source, args) {
       function preventPopadsNet(source) {
-        var rid = randomId();
-        var throwError = function throwError() {
+        const rid = randomId();
+        const throwError = function throwError() {
           throw new ReferenceError(rid);
         };
         delete window.PopAds;
@@ -17450,7 +18378,7 @@
         hit(source);
       }
       function createOnErrorHandler(rid) {
-        var nativeOnError = window.onerror;
+        const nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
@@ -17459,7 +18387,7 @@
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            return nativeOnError.apply(this, [error].concat(args));
+            return nativeOnError.apply(this, [error, ...args]);
           }
           return false;
         };
@@ -17472,19 +18400,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -17497,7 +18425,7 @@
           window.__debug(source);
         }
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventPopadsNet.apply(this, updatedArgs);
       } catch (e) {
@@ -17506,8 +18434,8 @@
     }
     function preventRefresh(source, args) {
       function preventRefresh(source, delaySec) {
-        var getMetaElements = function getMetaElements() {
-          var metaNodes = [];
+        const getMetaElements = function getMetaElements() {
+          let metaNodes = [];
           try {
             metaNodes = document.querySelectorAll('meta[http-equiv="refresh" i][content]');
           } catch (e) {
@@ -17519,16 +18447,16 @@
           }
           return Array.from(metaNodes);
         };
-        var getMetaContentDelay = function getMetaContentDelay(metaElements) {
-          var delays = metaElements.map(function (meta) {
-            var contentString = meta.getAttribute("content");
+        const getMetaContentDelay = function getMetaContentDelay(metaElements) {
+          const delays = metaElements.map(function (meta) {
+            const contentString = meta.getAttribute("content");
             if (contentString.length === 0) {
               return null;
             }
-            var contentDelay;
-            var limiterIndex = contentString.indexOf(";");
+            let contentDelay;
+            const limiterIndex = contentString.indexOf(";");
             if (limiterIndex !== -1) {
-              var delaySubstring = contentString.substring(0, limiterIndex);
+              const delaySubstring = contentString.substring(0, limiterIndex);
               contentDelay = getNumberFromString(delaySubstring);
             } else {
               contentDelay = getNumberFromString(contentString);
@@ -17540,24 +18468,24 @@
           if (!delays.length) {
             return null;
           }
-          var minDelay = delays.reduce(function (a, b) {
+          const minDelay = delays.reduce(function (a, b) {
             return Math.min(a, b);
           });
           return minDelay;
         };
-        var stop = function stop() {
-          var metaElements = getMetaElements();
+        const stop = function stop() {
+          const metaElements = getMetaElements();
           if (metaElements.length === 0) {
             return;
           }
-          var secondsToRun = getNumberFromString(delaySec);
+          let secondsToRun = getNumberFromString(delaySec);
           if (secondsToRun === null) {
             secondsToRun = getMetaContentDelay(metaElements);
           }
           if (secondsToRun === null) {
             return;
           }
-          var delayMs = secondsToRun * 1e3;
+          const delayMs = secondsToRun * 1e3;
           setTimeout(function () {
             window.stop();
             hit(source);
@@ -17576,19 +18504,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -17602,21 +18530,34 @@
         }
       }
       function getNumberFromString(rawString) {
-        var parsedDelay = parseInt(rawString, 10);
-        var validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
+        const parsedDelay = parseInt(rawString, 10);
+        const validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
         return validDelay;
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN;
+        const native = Number.isNaN || window.isNaN;
         return native(num);
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventRefresh.apply(this, updatedArgs);
       } catch (e) {
@@ -17625,13 +18566,13 @@
     }
     function preventRequestAnimationFrame(source, args) {
       function preventRequestAnimationFrame(source, match) {
-        var nativeRequestAnimationFrame = window.requestAnimationFrame;
-        var shouldLog = typeof match === "undefined";
-        var _parseMatchArg = parseMatchArg(match),
+        const nativeRequestAnimationFrame = window.requestAnimationFrame;
+        const shouldLog = typeof match === "undefined";
+        const _parseMatchArg = parseMatchArg(match),
           isInvertedMatch = _parseMatchArg.isInvertedMatch,
           matchRegexp = _parseMatchArg.matchRegexp;
-        var rafWrapper = function rafWrapper(callback) {
-          var shouldPrevent = false;
+        const rafWrapper = function rafWrapper(callback) {
+          let shouldPrevent = false;
           if (shouldLog) {
             hit(source);
             logMessage(source, "requestAnimationFrame(".concat(String(callback), ")"), true);
@@ -17645,7 +18586,7 @@
           for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
             args[_key - 1] = arguments[_key];
           }
-          return nativeRequestAnimationFrame.apply(window, [callback].concat(args));
+          return nativeRequestAnimationFrame.apply(window, [callback, ...args]);
         };
         window.requestAnimationFrame = rafWrapper;
       }
@@ -17654,19 +18595,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -17681,22 +18622,22 @@
       }
       function noopFunc() {}
       function parseMatchArg(match) {
-        var INVERT_MARKER = "!";
-        var isInvertedMatch = startsWith(match, INVERT_MARKER);
-        var matchValue = isInvertedMatch ? match.slice(1) : match;
-        var matchRegexp = toRegExp(matchValue);
+        const INVERT_MARKER = "!";
+        const isInvertedMatch = startsWith(match, INVERT_MARKER);
+        const matchValue = isInvertedMatch ? match.slice(1) : match;
+        const matchRegexp = toRegExp(matchValue);
         return {
           isInvertedMatch: isInvertedMatch,
           matchRegexp: matchRegexp
         };
       }
       function isValidStrPattern(input) {
-        var FORWARD_SLASH = "/";
-        var str = escapeRegExp(input);
+        const FORWARD_SLASH = "/";
+        let str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        var isValid;
+        let isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -17709,31 +18650,44 @@
         return callback instanceof Function || typeof callback === "string";
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function escapeRegExp(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function startsWith(str, prefix) {
         return !!str && str.indexOf(prefix) === 0;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventRequestAnimationFrame.apply(this, updatedArgs);
       } catch (e) {
@@ -17742,35 +18696,11 @@
     }
     function preventSetInterval(source, args) {
       function preventSetInterval(source, matchCallback, matchDelay) {
-        var isProxySupported = typeof Proxy !== "undefined";
-        var nativeInterval = window.setInterval;
-        var shouldLog = typeof matchCallback === "undefined" && typeof matchDelay === "undefined";
-        var legacyIntervalWrapper = function legacyIntervalWrapper(callback, delay) {
-          var shouldPrevent = false;
-          if (shouldLog) {
-            hit(source);
-            logMessage(source, "setInterval(".concat(String(callback), ", ").concat(delay, ")"), true);
-          } else {
-            shouldPrevent = isPreventionNeeded({
-              callback: callback,
-              delay: delay,
-              matchCallback: matchCallback,
-              matchDelay: matchDelay
-            });
-          }
-          if (shouldPrevent) {
-            hit(source);
-            return nativeInterval(noopFunc, delay);
-          }
-          for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-            args[_key - 2] = arguments[_key];
-          }
-          return nativeInterval.apply(window, [callback, delay].concat(args));
-        };
-        var handlerWrapper = function handlerWrapper(target, thisArg, args) {
-          var callback = args[0];
-          var delay = args[1];
-          var shouldPrevent = false;
+        const shouldLog = typeof matchCallback === "undefined" && typeof matchDelay === "undefined";
+        const handlerWrapper = function handlerWrapper(target, thisArg, args) {
+          const callback = args[0];
+          const delay = args[1];
+          let shouldPrevent = false;
           if (shouldLog) {
             hit(source);
             logMessage(source, "setInterval(".concat(String(callback), ", ").concat(delay, ")"), true);
@@ -17788,29 +18718,29 @@
           }
           return target.apply(thisArg, args);
         };
-        var setIntervalHandler = {
+        const setIntervalHandler = {
           apply: handlerWrapper
         };
-        window.setInterval = isProxySupported ? new Proxy(window.setInterval, setIntervalHandler) : legacyIntervalWrapper;
+        window.setInterval = new Proxy(window.setInterval, setIntervalHandler);
       }
       function hit(source) {
         if (source.verbose !== true) {
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -17825,7 +18755,7 @@
       }
       function noopFunc() {}
       function isPreventionNeeded(_ref) {
-        var callback = _ref.callback,
+        let callback = _ref.callback,
           delay = _ref.delay,
           matchCallback = _ref.matchCallback,
           matchDelay = _ref.matchDelay;
@@ -17835,65 +18765,79 @@
         if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
           return false;
         }
-        var _parseMatchArg = parseMatchArg(matchCallback),
+        const _parseMatchArg = parseMatchArg(matchCallback),
           isInvertedMatch = _parseMatchArg.isInvertedMatch,
           matchRegexp = _parseMatchArg.matchRegexp;
-        var _parseDelayArg = parseDelayArg(matchDelay),
+        const _parseDelayArg = parseDelayArg(matchDelay),
           isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
           delayMatch = _parseDelayArg.delayMatch;
-        var shouldPrevent = false;
-        var callbackStr = String(callback);
+        const parsedDelay = parseRawDelay(delay);
+        let shouldPrevent = false;
+        const callbackStr = String(callback);
         if (delayMatch === null) {
           shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
         } else if (!matchCallback) {
-          shouldPrevent = delay === delayMatch !== isInvertedDelayMatch;
+          shouldPrevent = parsedDelay === delayMatch !== isInvertedDelayMatch;
         } else {
-          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && delay === delayMatch !== isInvertedDelayMatch;
+          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && parsedDelay === delayMatch !== isInvertedDelayMatch;
         }
         return shouldPrevent;
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function startsWith(str, prefix) {
         return !!str && str.indexOf(prefix) === 0;
       }
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN;
+        const native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function parseMatchArg(match) {
-        var INVERT_MARKER = "!";
-        var isInvertedMatch = startsWith(match, INVERT_MARKER);
-        var matchValue = isInvertedMatch ? match.slice(1) : match;
-        var matchRegexp = toRegExp(matchValue);
+        const INVERT_MARKER = "!";
+        const isInvertedMatch = startsWith(match, INVERT_MARKER);
+        const matchValue = isInvertedMatch ? match.slice(1) : match;
+        const matchRegexp = toRegExp(matchValue);
         return {
           isInvertedMatch: isInvertedMatch,
           matchRegexp: matchRegexp
         };
       }
       function parseDelayArg(delay) {
-        var INVERT_MARKER = "!";
-        var isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
-        var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
+        const INVERT_MARKER = "!";
+        const isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
+        let delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
         delayValue = parseInt(delayValue, 10);
-        var delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
+        const delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
         return {
           isInvertedDelayMatch: isInvertedDelayMatch,
           delayMatch: delayMatch
@@ -17903,20 +18847,20 @@
         return callback instanceof Function || typeof callback === "string";
       }
       function isValidMatchStr(match) {
-        var INVERT_MARKER = "!";
-        var str = match;
+        const INVERT_MARKER = "!";
+        let str = match;
         if (startsWith(match, INVERT_MARKER)) {
           str = match.slice(1);
         }
         return isValidStrPattern(str);
       }
       function isValidStrPattern(input) {
-        var FORWARD_SLASH = "/";
-        var str = escapeRegExp(input);
+        const FORWARD_SLASH = "/";
+        let str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        var isValid;
+        let isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -17929,19 +18873,23 @@
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       function nativeIsFinite(num) {
-        var native = Number.isFinite || window.isFinite;
+        const native = Number.isFinite || window.isFinite;
         return native(num);
       }
       function isValidMatchNumber(match) {
-        var INVERT_MARKER = "!";
-        var str = match;
+        const INVERT_MARKER = "!";
+        let str = match;
         if (startsWith(match, INVERT_MARKER)) {
           str = match.slice(1);
         }
-        var num = parseFloat(str);
+        const num = parseFloat(str);
         return !nativeIsNaN(num) && nativeIsFinite(num);
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      function parseRawDelay(delay) {
+        const parsedDelay = Math.floor(parseInt(delay, 10));
+        return typeof parsedDelay === "number" && !nativeIsNaN(parsedDelay) ? parsedDelay : delay;
+      }
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventSetInterval.apply(this, updatedArgs);
       } catch (e) {
@@ -17950,35 +18898,11 @@
     }
     function preventSetTimeout(source, args) {
       function preventSetTimeout(source, matchCallback, matchDelay) {
-        var isProxySupported = typeof Proxy !== "undefined";
-        var nativeTimeout = window.setTimeout;
-        var shouldLog = typeof matchCallback === "undefined" && typeof matchDelay === "undefined";
-        var legacyTimeoutWrapper = function legacyTimeoutWrapper(callback, delay) {
-          var shouldPrevent = false;
-          if (shouldLog) {
-            hit(source);
-            logMessage(source, "setTimeout(".concat(String(callback), ", ").concat(delay, ")"), true);
-          } else {
-            shouldPrevent = isPreventionNeeded({
-              callback: callback,
-              delay: delay,
-              matchCallback: matchCallback,
-              matchDelay: matchDelay
-            });
-          }
-          if (shouldPrevent) {
-            hit(source);
-            return nativeTimeout(noopFunc, delay);
-          }
-          for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-            args[_key - 2] = arguments[_key];
-          }
-          return nativeTimeout.apply(window, [callback, delay].concat(args));
-        };
-        var handlerWrapper = function handlerWrapper(target, thisArg, args) {
-          var callback = args[0];
-          var delay = args[1];
-          var shouldPrevent = false;
+        const shouldLog = typeof matchCallback === "undefined" && typeof matchDelay === "undefined";
+        const handlerWrapper = function handlerWrapper(target, thisArg, args) {
+          const callback = args[0];
+          const delay = args[1];
+          let shouldPrevent = false;
           if (shouldLog) {
             hit(source);
             logMessage(source, "setTimeout(".concat(String(callback), ", ").concat(delay, ")"), true);
@@ -17996,29 +18920,29 @@
           }
           return target.apply(thisArg, args);
         };
-        var setTimeoutHandler = {
+        const setTimeoutHandler = {
           apply: handlerWrapper
         };
-        window.setTimeout = isProxySupported ? new Proxy(window.setTimeout, setTimeoutHandler) : legacyTimeoutWrapper;
+        window.setTimeout = new Proxy(window.setTimeout, setTimeoutHandler);
       }
       function hit(source) {
         if (source.verbose !== true) {
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -18033,7 +18957,7 @@
       }
       function noopFunc() {}
       function isPreventionNeeded(_ref) {
-        var callback = _ref.callback,
+        let callback = _ref.callback,
           delay = _ref.delay,
           matchCallback = _ref.matchCallback,
           matchDelay = _ref.matchDelay;
@@ -18043,76 +18967,90 @@
         if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
           return false;
         }
-        var _parseMatchArg = parseMatchArg(matchCallback),
+        const _parseMatchArg = parseMatchArg(matchCallback),
           isInvertedMatch = _parseMatchArg.isInvertedMatch,
           matchRegexp = _parseMatchArg.matchRegexp;
-        var _parseDelayArg = parseDelayArg(matchDelay),
+        const _parseDelayArg = parseDelayArg(matchDelay),
           isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
           delayMatch = _parseDelayArg.delayMatch;
-        var shouldPrevent = false;
-        var callbackStr = String(callback);
+        const parsedDelay = parseRawDelay(delay);
+        let shouldPrevent = false;
+        const callbackStr = String(callback);
         if (delayMatch === null) {
           shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
         } else if (!matchCallback) {
-          shouldPrevent = delay === delayMatch !== isInvertedDelayMatch;
+          shouldPrevent = parsedDelay === delayMatch !== isInvertedDelayMatch;
         } else {
-          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && delay === delayMatch !== isInvertedDelayMatch;
+          shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && parsedDelay === delayMatch !== isInvertedDelayMatch;
         }
         return shouldPrevent;
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function parseMatchArg(match) {
-        var INVERT_MARKER = "!";
-        var isInvertedMatch = startsWith(match, INVERT_MARKER);
-        var matchValue = isInvertedMatch ? match.slice(1) : match;
-        var matchRegexp = toRegExp(matchValue);
+        const INVERT_MARKER = "!";
+        const isInvertedMatch = startsWith(match, INVERT_MARKER);
+        const matchValue = isInvertedMatch ? match.slice(1) : match;
+        const matchRegexp = toRegExp(matchValue);
         return {
           isInvertedMatch: isInvertedMatch,
           matchRegexp: matchRegexp
         };
       }
       function parseDelayArg(delay) {
-        var INVERT_MARKER = "!";
-        var isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
-        var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
+        const INVERT_MARKER = "!";
+        const isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
+        let delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
         delayValue = parseInt(delayValue, 10);
-        var delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
+        const delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
         return {
           isInvertedDelayMatch: isInvertedDelayMatch,
           delayMatch: delayMatch
         };
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function startsWith(str, prefix) {
         return !!str && str.indexOf(prefix) === 0;
       }
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN;
+        const native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function isValidCallback(callback) {
         return callback instanceof Function || typeof callback === "string";
       }
       function isValidMatchStr(match) {
-        var INVERT_MARKER = "!";
-        var str = match;
+        const INVERT_MARKER = "!";
+        let str = match;
         if (startsWith(match, INVERT_MARKER)) {
           str = match.slice(1);
         }
@@ -18122,12 +19060,12 @@
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       function isValidStrPattern(input) {
-        var FORWARD_SLASH = "/";
-        var str = escapeRegExp(input);
+        const FORWARD_SLASH = "/";
+        let str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        var isValid;
+        let isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -18137,19 +19075,23 @@
         return isValid;
       }
       function nativeIsFinite(num) {
-        var native = Number.isFinite || window.isFinite;
+        const native = Number.isFinite || window.isFinite;
         return native(num);
       }
       function isValidMatchNumber(match) {
-        var INVERT_MARKER = "!";
-        var str = match;
+        const INVERT_MARKER = "!";
+        let str = match;
         if (startsWith(match, INVERT_MARKER)) {
           str = match.slice(1);
         }
-        var num = parseFloat(str);
+        const num = parseFloat(str);
         return !nativeIsNaN(num) && nativeIsFinite(num);
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      function parseRawDelay(delay) {
+        const parsedDelay = Math.floor(parseInt(delay, 10));
+        return typeof parsedDelay === "number" && !nativeIsNaN(parsedDelay) ? parsedDelay : delay;
+      }
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventSetTimeout.apply(this, updatedArgs);
       } catch (e) {
@@ -18158,43 +19100,43 @@
     }
     function preventWindowOpen(source, args) {
       function preventWindowOpen(source) {
-        var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "*";
-        var delay = arguments.length > 2 ? arguments[2] : undefined;
-        var replacement = arguments.length > 3 ? arguments[3] : undefined;
-        var nativeOpen = window.open;
-        var isNewSyntax = match !== "0" && match !== "1";
-        var oldOpenWrapper = function oldOpenWrapper(str) {
+        let match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "*";
+        let delay = arguments.length > 2 ? arguments[2] : undefined;
+        let replacement = arguments.length > 3 ? arguments[3] : undefined;
+        const nativeOpen = window.open;
+        const isNewSyntax = match !== "0" && match !== "1";
+        const oldOpenWrapper = function oldOpenWrapper(str) {
           match = Number(match) > 0;
           for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
             args[_key - 1] = arguments[_key];
           }
           if (!isValidStrPattern(delay)) {
             logMessage(source, "Invalid parameter: ".concat(delay));
-            return nativeOpen.apply(window, [str].concat(args));
+            return nativeOpen.apply(window, [str, ...args]);
           }
-          var searchRegexp = toRegExp(delay);
+          const searchRegexp = toRegExp(delay);
           if (match !== searchRegexp.test(str)) {
-            return nativeOpen.apply(window, [str].concat(args));
+            return nativeOpen.apply(window, [str, ...args]);
           }
           hit(source);
           return handleOldReplacement(replacement);
         };
-        var newOpenWrapper = function newOpenWrapper(url) {
-          var shouldLog = replacement && replacement.indexOf("log") > -1;
+        const newOpenWrapper = function newOpenWrapper(url) {
+          const shouldLog = replacement && replacement.indexOf("log") > -1;
           for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
             args[_key2 - 1] = arguments[_key2];
           }
           if (shouldLog) {
-            var argsStr = args && args.length > 0 ? ", ".concat(args.join(", ")) : "";
-            var message = "".concat(url).concat(argsStr);
+            const argsStr = args && args.length > 0 ? ", ".concat(args.join(", ")) : "";
+            const message = "".concat(url).concat(argsStr);
             logMessage(source, message, true);
             hit(source);
           }
-          var shouldPrevent = false;
+          let shouldPrevent = false;
           if (match === "*") {
             shouldPrevent = true;
           } else if (isValidMatchStr(match)) {
-            var _parseMatchArg = parseMatchArg(match),
+            const _parseMatchArg = parseMatchArg(match),
               isInvertedMatch = _parseMatchArg.isInvertedMatch,
               matchRegexp = _parseMatchArg.matchRegexp;
             shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
@@ -18203,18 +19145,18 @@
             shouldPrevent = false;
           }
           if (shouldPrevent) {
-            var parsedDelay = parseInt(delay, 10);
-            var result;
+            const parsedDelay = parseInt(delay, 10);
+            let result;
             if (nativeIsNaN(parsedDelay)) {
               result = noopNull();
             } else {
-              var decoyArgs = {
+              const decoyArgs = {
                 replacement: replacement,
                 url: url,
                 delay: parsedDelay
               };
-              var decoy = createDecoy(decoyArgs);
-              var popup = decoy.contentWindow;
+              const decoy = createDecoy(decoyArgs);
+              let popup = decoy.contentWindow;
               if (typeof popup === "object" && popup !== null) {
                 Object.defineProperty(popup, "closed", {
                   value: false
@@ -18226,7 +19168,7 @@
                   value: null
                 });
               } else {
-                var nativeGetter = decoy.contentWindow && decoy.contentWindow.get;
+                const nativeGetter = decoy.contentWindow && decoy.contentWindow.get;
                 Object.defineProperty(decoy, "contentWindow", {
                   get: getPreventGetter(nativeGetter)
                 });
@@ -18237,7 +19179,7 @@
             hit(source);
             return result;
           }
-          return nativeOpen.apply(window, [url].concat(args));
+          return nativeOpen.apply(window, [url, ...args]);
         };
         window.open = isNewSyntax ? newOpenWrapper : oldOpenWrapper;
         window.open.toString = nativeOpen.toString.bind(nativeOpen);
@@ -18247,19 +19189,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -18273,12 +19215,12 @@
         }
       }
       function isValidStrPattern(input) {
-        var FORWARD_SLASH = "/";
-        var str = escapeRegExp(input);
+        const FORWARD_SLASH = "/";
+        let str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        var isValid;
+        let isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -18291,52 +19233,52 @@
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       function isValidMatchStr(match) {
-        var INVERT_MARKER = "!";
-        var str = match;
+        const INVERT_MARKER = "!";
+        let str = match;
         if (startsWith(match, INVERT_MARKER)) {
           str = match.slice(1);
         }
         return isValidStrPattern(str);
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN;
+        const native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function parseMatchArg(match) {
-        var INVERT_MARKER = "!";
-        var isInvertedMatch = startsWith(match, INVERT_MARKER);
-        var matchValue = isInvertedMatch ? match.slice(1) : match;
-        var matchRegexp = toRegExp(matchValue);
+        const INVERT_MARKER = "!";
+        const isInvertedMatch = startsWith(match, INVERT_MARKER);
+        const matchValue = isInvertedMatch ? match.slice(1) : match;
+        const matchRegexp = toRegExp(matchValue);
         return {
           isInvertedMatch: isInvertedMatch,
           matchRegexp: matchRegexp
         };
       }
       function handleOldReplacement(replacement) {
-        var result;
+        let result;
         if (!replacement) {
           result = noopFunc;
         } else if (replacement === "trueFunc") {
           result = trueFunc;
         } else if (replacement.indexOf("=") > -1) {
-          var isProp = startsWith(replacement, "{") && endsWith(replacement, "}");
+          const isProp = startsWith(replacement, "{") && endsWith(replacement, "}");
           if (isProp) {
-            var propertyPart = replacement.slice(1, -1);
-            var propertyName = substringBefore(propertyPart, "=");
-            var propertyValue = substringAfter(propertyPart, "=");
+            const propertyPart = replacement.slice(1, -1);
+            const propertyName = substringBefore(propertyPart, "=");
+            const propertyValue = substringAfter(propertyPart, "=");
             if (propertyValue === "noopFunc") {
               result = {};
               result[propertyName] = noopFunc;
@@ -18346,15 +19288,15 @@
         return result;
       }
       function createDecoy(args) {
-        var OBJECT_TAG_NAME = "object";
-        var OBJECT_URL_PROP_NAME = "data";
-        var IFRAME_TAG_NAME = "iframe";
-        var IFRAME_URL_PROP_NAME = "src";
-        var replacement = args.replacement,
+        const OBJECT_TAG_NAME = "object";
+        const OBJECT_URL_PROP_NAME = "data";
+        const IFRAME_TAG_NAME = "iframe";
+        const IFRAME_URL_PROP_NAME = "src";
+        const replacement = args.replacement,
           url = args.url,
           delay = args.delay;
-        var tag;
-        var urlProp;
+        let tag;
+        let urlProp;
         if (replacement === "obj") {
           tag = OBJECT_TAG_NAME;
           urlProp = OBJECT_URL_PROP_NAME;
@@ -18362,7 +19304,7 @@
           tag = IFRAME_TAG_NAME;
           urlProp = IFRAME_URL_PROP_NAME;
         }
-        var decoy = document.createElement(tag);
+        const decoy = document.createElement(tag);
         decoy[urlProp] = url;
         decoy.style.setProperty("height", "1px", "important");
         decoy.style.setProperty("position", "fixed", "important");
@@ -18375,7 +19317,7 @@
         return decoy;
       }
       function getPreventGetter(nativeGetter) {
-        var preventGetter = function preventGetter(target, prop) {
+        const preventGetter = function preventGetter(target, prop) {
           if (prop && prop === "closed") {
             return false;
           }
@@ -18390,10 +19332,23 @@
         return null;
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function noopFunc() {}
       function trueFunc() {
@@ -18409,17 +19364,17 @@
         if (!str || !separator) {
           return str;
         }
-        var index = str.indexOf(separator);
+        const index = str.indexOf(separator);
         return index < 0 ? str : str.substring(0, index);
       }
       function substringAfter(str, separator) {
         if (!str) {
           return str;
         }
-        var index = str.indexOf(separator);
+        const index = str.indexOf(separator);
         return index < 0 ? "" : str.substring(index + separator.length);
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventWindowOpen.apply(this, updatedArgs);
       } catch (e) {
@@ -18431,12 +19386,11 @@
         if (typeof Proxy === "undefined") {
           return;
         }
-        var shouldPrevent = false;
-        var response = "";
-        var responseText = "";
-        var responseUrl;
-        var openWrapper = function openWrapper(target, thisArg, args) {
-          var xhrData = {
+        let response = "";
+        let responseText = "";
+        let responseUrl;
+        const openWrapper = function openWrapper(target, thisArg, args) {
+          const xhrData = {
             method: args[0],
             url: args[1]
           };
@@ -18444,13 +19398,13 @@
           if (typeof propsToMatch === "undefined") {
             logMessage(source, "xhr( ".concat(objectToString(xhrData), " )"), true);
             hit(source);
-          } else {
-            shouldPrevent = matchRequestProps(source, propsToMatch, xhrData);
+          } else if (matchRequestProps(source, propsToMatch, xhrData)) {
+            thisArg.shouldBePrevented = true;
           }
           return Reflect.apply(target, thisArg, args);
         };
-        var sendWrapper = function sendWrapper(target, thisArg, args) {
-          if (!shouldPrevent) {
+        const sendWrapper = function sendWrapper(target, thisArg, args) {
+          if (!thisArg.shouldBePrevented) {
             return Reflect.apply(target, thisArg, args);
           }
           if (thisArg.responseType === "blob") {
@@ -18460,7 +19414,7 @@
             response = new ArrayBuffer();
           }
           if (customResponseText) {
-            var randomText = generateRandomResponse(customResponseText);
+            const randomText = generateRandomResponse(customResponseText);
             if (randomText) {
               responseText = randomText;
             } else {
@@ -18498,20 +19452,20 @@
             }
           });
           setTimeout(function () {
-            var stateEvent = new Event("readystatechange");
+            const stateEvent = new Event("readystatechange");
             thisArg.dispatchEvent(stateEvent);
-            var loadEvent = new Event("load");
+            const loadEvent = new Event("load");
             thisArg.dispatchEvent(loadEvent);
-            var loadEndEvent = new Event("loadend");
+            const loadEndEvent = new Event("loadend");
             thisArg.dispatchEvent(loadEndEvent);
           }, 1);
           hit(source);
           return undefined;
         };
-        var openHandler = {
+        const openHandler = {
           apply: openWrapper
         };
-        var sendHandler = {
+        const sendHandler = {
           apply: sendWrapper
         };
         XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
@@ -18522,19 +19476,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -18548,16 +19502,29 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function objectToString(obj) {
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
-          var key = pair[0];
-          var value = pair[1];
-          var recordValueStr = value;
+          const key = pair[0];
+          const value = pair[1];
+          let recordValueStr = value;
           if (value instanceof Object) {
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
@@ -18568,69 +19535,69 @@
         if (propsToMatch === "" || propsToMatch === "*") {
           return true;
         }
-        var isMatched;
-        var parsedData = parseMatchProps(propsToMatch);
+        let isMatched;
+        const parsedData = parseMatchProps(propsToMatch);
         if (!validateParsedData(parsedData)) {
           logMessage(source, "Invalid parameter: ".concat(propsToMatch));
           isMatched = false;
         } else {
-          var matchData = getMatchPropsData(parsedData);
+          const matchData = getMatchPropsData(parsedData);
           isMatched = Object.keys(matchData).every(function (matchKey) {
-            var matchValue = matchData[matchKey];
+            const matchValue = matchData[matchKey];
             return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
           });
         }
         return isMatched;
       }
       function generateRandomResponse(customResponseText) {
-        var customResponse = customResponseText;
+        let customResponse = customResponseText;
         if (customResponse === "true") {
           customResponse = Math.random().toString(36).slice(-10);
           return customResponse;
         }
         customResponse = customResponse.replace("length:", "");
-        var rangeRegex = /^\d+-\d+$/;
+        const rangeRegex = /^\d+-\d+$/;
         if (!rangeRegex.test(customResponse)) {
           return null;
         }
-        var rangeMin = getNumberFromString(customResponse.split("-")[0]);
-        var rangeMax = getNumberFromString(customResponse.split("-")[1]);
+        let rangeMin = getNumberFromString(customResponse.split("-")[0]);
+        let rangeMax = getNumberFromString(customResponse.split("-")[1]);
         if (!nativeIsFinite(rangeMin) || !nativeIsFinite(rangeMax)) {
           return null;
         }
         if (rangeMin > rangeMax) {
-          var temp = rangeMin;
+          const temp = rangeMin;
           rangeMin = rangeMax;
           rangeMax = temp;
         }
-        var LENGTH_RANGE_LIMIT = 500 * 1e3;
+        const LENGTH_RANGE_LIMIT = 500 * 1e3;
         if (rangeMax > LENGTH_RANGE_LIMIT) {
           return null;
         }
-        var length = getRandomIntInclusive(rangeMin, rangeMax);
+        const length = getRandomIntInclusive(rangeMin, rangeMax);
         customResponse = getRandomStrByLength(length);
         return customResponse;
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function isValidStrPattern(input) {
-        var FORWARD_SLASH = "/";
-        var str = escapeRegExp(input);
+        const FORWARD_SLASH = "/";
+        let str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        var isValid;
+        let isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -18646,38 +19613,38 @@
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getObjectEntries(object) {
-        var keys = Object.keys(object);
-        var entries = [];
+        const keys = Object.keys(object);
+        const entries = [];
         keys.forEach(function (key) {
           return entries.push([key, object[key]]);
         });
         return entries;
       }
       function getNumberFromString(rawString) {
-        var parsedDelay = parseInt(rawString, 10);
-        var validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
+        const parsedDelay = parseInt(rawString, 10);
+        const validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
         return validDelay;
       }
       function nativeIsFinite(num) {
-        var native = Number.isFinite || window.isFinite;
+        const native = Number.isFinite || window.isFinite;
         return native(num);
       }
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN;
+        const native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function parseMatchProps(propsToMatchStr) {
-        var PROPS_DIVIDER = " ";
-        var PAIRS_MARKER = ":";
-        var LEGAL_MATCH_PROPS = getRequestProps();
-        var propsObj = {};
-        var props = propsToMatchStr.split(PROPS_DIVIDER);
+        const PROPS_DIVIDER = " ";
+        const PAIRS_MARKER = ":";
+        const LEGAL_MATCH_PROPS = getRequestProps();
+        const propsObj = {};
+        const props = propsToMatchStr.split(PROPS_DIVIDER);
         props.forEach(function (prop) {
-          var dividerInd = prop.indexOf(PAIRS_MARKER);
-          var key = prop.slice(0, dividerInd);
-          var hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+          const dividerInd = prop.indexOf(PAIRS_MARKER);
+          const key = prop.slice(0, dividerInd);
+          const hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
           if (hasLegalMatchProp) {
-            var value = prop.slice(dividerInd + 1);
+            const value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
           } else {
             propsObj.url = prop;
@@ -18691,7 +19658,7 @@
         });
       }
       function getMatchPropsData(data) {
-        var matchData = {};
+        const matchData = {};
         Object.keys(data).forEach(function (key) {
           matchData[key] = toRegExp(data[key]);
         });
@@ -18706,15 +19673,15 @@
         return Math.floor(Math.random() * (max - min + 1) + min);
       }
       function getRandomStrByLength(length) {
-        var result = "";
-        var characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~";
-        var charactersLength = characters.length;
-        for (var i = 0; i < length; i += 1) {
+        let result = "";
+        const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~";
+        const charactersLength = characters.length;
+        for (let i = 0; i < length; i += 1) {
           result += characters.charAt(Math.floor(Math.random() * charactersLength));
         }
         return result;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventXHR.apply(this, updatedArgs);
       } catch (e) {
@@ -18723,7 +19690,7 @@
     }
     function removeAttr(source, args) {
       function removeAttr(source, attrs, selector) {
-        var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "asap stay";
+        let applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "asap stay";
         if (!attrs) {
           return;
         }
@@ -18731,14 +19698,14 @@
         if (!selector) {
           selector = "[".concat(attrs.join("],["), "]");
         }
-        var rmattr = function rmattr() {
-          var nodes = [];
+        const rmattr = function rmattr() {
+          let nodes = [];
           try {
             nodes = [].slice.call(document.querySelectorAll(selector));
           } catch (e) {
             logMessage(source, "Invalid selector arg: '".concat(selector, "'"));
           }
-          var removed = false;
+          let removed = false;
           nodes.forEach(function (node) {
             attrs.forEach(function (attr) {
               node.removeAttribute(attr);
@@ -18749,8 +19716,8 @@
             hit(source);
           }
         };
-        var flags = parseFlags(applying);
-        var run = function run() {
+        const flags = parseFlags(applying);
+        const run = function run() {
           rmattr();
           if (!flags.hasFlag(flags.STAY)) {
             return;
@@ -18782,19 +19749,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -18808,11 +19775,11 @@
         }
       }
       function observeDOMChanges(callback) {
-        var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-        var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-        var THROTTLE_DELAY_MS = 20;
-        var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-        var connect = function connect() {
+        let observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        let attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+        const THROTTLE_DELAY_MS = 20;
+        const observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+        const connect = function connect() {
           if (attrsToObserve.length > 0) {
             observer.observe(document.documentElement, {
               childList: true,
@@ -18828,7 +19795,7 @@
             });
           }
         };
-        var disconnect = function disconnect() {
+        const disconnect = function disconnect() {
           observer.disconnect();
         };
         function callbackWrapper() {
@@ -18839,33 +19806,46 @@
         connect();
       }
       function parseFlags(flags) {
-        var FLAGS_DIVIDER = " ";
-        var ASAP_FLAG = "asap";
-        var COMPLETE_FLAG = "complete";
-        var STAY_FLAG = "stay";
-        var VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
-        var passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
+        const FLAGS_DIVIDER = " ";
+        const ASAP_FLAG = "asap";
+        const COMPLETE_FLAG = "complete";
+        const STAY_FLAG = "stay";
+        const VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
+        const passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
           return VALID_FLAGS.indexOf(f) !== -1;
         });
         return {
           ASAP: ASAP_FLAG,
           COMPLETE: COMPLETE_FLAG,
           STAY: STAY_FLAG,
-          hasFlag: function hasFlag(flag) {
+          hasFlag(flag) {
             return passedFlags.indexOf(flag) !== -1;
           }
         };
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function throttle(cb, delay) {
-        var wait = false;
-        var savedArgs;
-        var wrapper = function wrapper() {
+        let wait = false;
+        let savedArgs;
+        const wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
@@ -18873,7 +19853,7 @@
             savedArgs = args;
             return;
           }
-          cb.apply(void 0, args);
+          cb(...args);
           wait = true;
           setTimeout(function () {
             wait = false;
@@ -18885,7 +19865,7 @@
         };
         return wrapper;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         removeAttr.apply(this, updatedArgs);
       } catch (e) {
@@ -18894,21 +19874,21 @@
     }
     function removeClass(source, args) {
       function removeClass(source, classNames, selector) {
-        var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "asap stay";
+        let applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "asap stay";
         if (!classNames) {
           return;
         }
         classNames = classNames.split(/\s*\|\s*/);
-        var selectors = [];
+        let selectors = [];
         if (!selector) {
           selectors = classNames.map(function (className) {
             return ".".concat(className);
           });
         }
-        var removeClassHandler = function removeClassHandler() {
-          var nodes = new Set();
+        const removeClassHandler = function removeClassHandler() {
+          const nodes = new Set();
           if (selector) {
-            var foundNodes = [];
+            let foundNodes = [];
             try {
               foundNodes = [].slice.call(document.querySelectorAll(selector));
             } catch (e) {
@@ -18919,14 +19899,14 @@
             });
           } else if (selectors.length > 0) {
             selectors.forEach(function (s) {
-              var elements = document.querySelectorAll(s);
-              for (var i = 0; i < elements.length; i += 1) {
-                var element = elements[i];
+              const elements = document.querySelectorAll(s);
+              for (let i = 0; i < elements.length; i += 1) {
+                const element = elements[i];
                 nodes.add(element);
               }
             });
           }
-          var removed = false;
+          let removed = false;
           nodes.forEach(function (node) {
             classNames.forEach(function (className) {
               if (node.classList.contains(className)) {
@@ -18939,9 +19919,9 @@
             hit(source);
           }
         };
-        var CLASS_ATTR_NAME = ["class"];
-        var flags = parseFlags(applying);
-        var run = function run() {
+        const CLASS_ATTR_NAME = ["class"];
+        const flags = parseFlags(applying);
+        const run = function run() {
           removeClassHandler();
           if (!flags.hasFlag(flags.STAY)) {
             return;
@@ -18973,19 +19953,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -18999,17 +19979,30 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function observeDOMChanges(callback) {
-        var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-        var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-        var THROTTLE_DELAY_MS = 20;
-        var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-        var connect = function connect() {
+        let observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        let attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+        const THROTTLE_DELAY_MS = 20;
+        const observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+        const connect = function connect() {
           if (attrsToObserve.length > 0) {
             observer.observe(document.documentElement, {
               childList: true,
@@ -19025,7 +20018,7 @@
             });
           }
         };
-        var disconnect = function disconnect() {
+        const disconnect = function disconnect() {
           observer.disconnect();
         };
         function callbackWrapper() {
@@ -19036,27 +20029,27 @@
         connect();
       }
       function parseFlags(flags) {
-        var FLAGS_DIVIDER = " ";
-        var ASAP_FLAG = "asap";
-        var COMPLETE_FLAG = "complete";
-        var STAY_FLAG = "stay";
-        var VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
-        var passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
+        const FLAGS_DIVIDER = " ";
+        const ASAP_FLAG = "asap";
+        const COMPLETE_FLAG = "complete";
+        const STAY_FLAG = "stay";
+        const VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
+        const passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
           return VALID_FLAGS.indexOf(f) !== -1;
         });
         return {
           ASAP: ASAP_FLAG,
           COMPLETE: COMPLETE_FLAG,
           STAY: STAY_FLAG,
-          hasFlag: function hasFlag(flag) {
+          hasFlag(flag) {
             return passedFlags.indexOf(flag) !== -1;
           }
         };
       }
       function throttle(cb, delay) {
-        var wait = false;
-        var savedArgs;
-        var wrapper = function wrapper() {
+        let wait = false;
+        let savedArgs;
+        const wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
@@ -19064,7 +20057,7 @@
             savedArgs = args;
             return;
           }
-          cb.apply(void 0, args);
+          cb(...args);
           wait = true;
           setTimeout(function () {
             wait = false;
@@ -19076,7 +20069,7 @@
         };
         return wrapper;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         removeClass.apply(this, updatedArgs);
       } catch (e) {
@@ -19085,13 +20078,13 @@
     }
     function removeCookie(source, args) {
       function removeCookie(source, match) {
-        var matchRegexp = toRegExp(match);
-        var removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
-          var cookieSpec = "".concat(cookieName, "=");
-          var domain1 = "; domain=".concat(hostName);
-          var domain2 = "; domain=.".concat(hostName);
-          var path = "; path=/";
-          var expiration = "; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        const matchRegexp = toRegExp(match);
+        const removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
+          const cookieSpec = "".concat(cookieName, "=");
+          const domain1 = "; domain=".concat(hostName);
+          const domain2 = "; domain=.".concat(hostName);
+          const path = "; path=/";
+          const expiration = "; expires=Thu, 01 Jan 1970 00:00:00 GMT";
           document.cookie = cookieSpec + expiration;
           document.cookie = cookieSpec + domain1 + expiration;
           document.cookie = cookieSpec + domain2 + expiration;
@@ -19100,19 +20093,19 @@
           document.cookie = cookieSpec + domain2 + path + expiration;
           hit(source);
         };
-        var rmCookie = function rmCookie() {
+        const rmCookie = function rmCookie() {
           document.cookie.split(";").forEach(function (cookieStr) {
-            var pos = cookieStr.indexOf("=");
+            const pos = cookieStr.indexOf("=");
             if (pos === -1) {
               return;
             }
-            var cookieName = cookieStr.slice(0, pos).trim();
+            const cookieName = cookieStr.slice(0, pos).trim();
             if (!matchRegexp.test(cookieName)) {
               return;
             }
-            var hostParts = document.location.hostname.split(".");
-            for (var i = 0; i <= hostParts.length - 1; i += 1) {
-              var hostName = hostParts.slice(i).join(".");
+            const hostParts = document.location.hostname.split(".");
+            for (let i = 0; i <= hostParts.length - 1; i += 1) {
+              const hostName = hostParts.slice(i).join(".");
               if (hostName) {
                 removeCookieFromHost(cookieName, hostName);
               }
@@ -19123,16 +20116,16 @@
         window.addEventListener("beforeunload", rmCookie);
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function hit(source) {
@@ -19140,19 +20133,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -19165,7 +20158,7 @@
           window.__debug(source);
         }
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         removeCookie.apply(this, updatedArgs);
       } catch (e) {
@@ -19177,14 +20170,14 @@
         if (!Element.prototype.attachShadow) {
           return;
         }
-        var removeElement = function removeElement(targetElement) {
+        const removeElement = function removeElement(targetElement) {
           targetElement.remove();
         };
-        var removeHandler = function removeHandler() {
-          var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
+        const removeHandler = function removeHandler() {
+          let hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
           while (hostElements.length !== 0) {
-            var isRemoved = false;
-            var _pierceShadowDom = pierceShadowDom(selector, hostElements),
+            let isRemoved = false;
+            const _pierceShadowDom = pierceShadowDom(selector, hostElements),
               targets = _pierceShadowDom.targets,
               innerHosts = _pierceShadowDom.innerHosts;
             targets.forEach(function (targetEl) {
@@ -19205,19 +20198,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -19231,11 +20224,11 @@
         }
       }
       function observeDOMChanges(callback) {
-        var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-        var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-        var THROTTLE_DELAY_MS = 20;
-        var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-        var connect = function connect() {
+        let observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        let attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+        const THROTTLE_DELAY_MS = 20;
+        const observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+        const connect = function connect() {
           if (attrsToObserve.length > 0) {
             observer.observe(document.documentElement, {
               childList: true,
@@ -19251,7 +20244,7 @@
             });
           }
         };
-        var disconnect = function disconnect() {
+        const disconnect = function disconnect() {
           observer.disconnect();
         };
         function callbackWrapper() {
@@ -19262,8 +20255,8 @@
         connect();
       }
       function findHostElements(rootElement) {
-        var hosts = [];
-        var domElems = rootElement.querySelectorAll("*");
+        const hosts = [];
+        const domElems = rootElement.querySelectorAll("*");
         domElems.forEach(function (el) {
           if (el.shadowRoot) {
             hosts.push(el);
@@ -19272,30 +20265,30 @@
         return hosts;
       }
       function pierceShadowDom(selector, hostElements) {
-        var targets = [];
-        var innerHostsAcc = [];
+        let targets = [];
+        const innerHostsAcc = [];
         hostElements.forEach(function (host) {
-          var simpleElems = host.querySelectorAll(selector);
+          const simpleElems = host.querySelectorAll(selector);
           targets = targets.concat([].slice.call(simpleElems));
-          var shadowRootElem = host.shadowRoot;
-          var shadowChildren = shadowRootElem.querySelectorAll(selector);
+          const shadowRootElem = host.shadowRoot;
+          const shadowChildren = shadowRootElem.querySelectorAll(selector);
           targets = targets.concat([].slice.call(shadowChildren));
           innerHostsAcc.push(findHostElements(shadowRootElem));
         });
-        var innerHosts = flatten(innerHostsAcc);
+        const innerHosts = flatten(innerHostsAcc);
         return {
           targets: targets,
           innerHosts: innerHosts
         };
       }
       function flatten(input) {
-        var stack = [];
+        const stack = [];
         input.forEach(function (el) {
           return stack.push(el);
         });
-        var res = [];
+        const res = [];
         while (stack.length) {
-          var next = stack.pop();
+          const next = stack.pop();
           if (Array.isArray(next)) {
             next.forEach(function (el) {
               return stack.push(el);
@@ -19307,9 +20300,9 @@
         return res.reverse();
       }
       function throttle(cb, delay) {
-        var wait = false;
-        var savedArgs;
-        var wrapper = function wrapper() {
+        let wait = false;
+        let savedArgs;
+        const wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
@@ -19317,7 +20310,7 @@
             savedArgs = args;
             return;
           }
-          cb.apply(void 0, args);
+          cb(...args);
           wait = true;
           setTimeout(function () {
             wait = false;
@@ -19329,7 +20322,7 @@
         };
         return wrapper;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         removeInShadowDom.apply(this, updatedArgs);
       } catch (e) {
@@ -19338,16 +20331,16 @@
     }
     function setAttr(source, args) {
       function setAttr(source, selector, attr) {
-        var value = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+        let value = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
         if (!selector || !attr) {
           return;
         }
         if (value.length !== 0 && (nativeIsNaN(parseInt(value, 10)) || parseInt(value, 10) < 0 || parseInt(value, 10) > 32767)) {
           return;
         }
-        var setAttr = function setAttr() {
-          var nodes = [].slice.call(document.querySelectorAll(selector));
-          var set = false;
+        const setAttr = function setAttr() {
+          const nodes = [].slice.call(document.querySelectorAll(selector));
+          let set = false;
           nodes.forEach(function (node) {
             node.setAttribute(attr, value);
             set = true;
@@ -19364,19 +20357,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -19390,11 +20383,11 @@
         }
       }
       function observeDOMChanges(callback) {
-        var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-        var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-        var THROTTLE_DELAY_MS = 20;
-        var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-        var connect = function connect() {
+        let observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        let attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+        const THROTTLE_DELAY_MS = 20;
+        const observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+        const connect = function connect() {
           if (attrsToObserve.length > 0) {
             observer.observe(document.documentElement, {
               childList: true,
@@ -19410,7 +20403,7 @@
             });
           }
         };
-        var disconnect = function disconnect() {
+        const disconnect = function disconnect() {
           observer.disconnect();
         };
         function callbackWrapper() {
@@ -19421,13 +20414,13 @@
         connect();
       }
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN;
+        const native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function throttle(cb, delay) {
-        var wait = false;
-        var savedArgs;
-        var wrapper = function wrapper() {
+        let wait = false;
+        let savedArgs;
+        const wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
@@ -19435,7 +20428,7 @@
             savedArgs = args;
             return;
           }
-          cb.apply(void 0, args);
+          cb(...args);
           wait = true;
           setTimeout(function () {
             wait = false;
@@ -19447,7 +20440,7 @@
         };
         return wrapper;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         setAttr.apply(this, updatedArgs);
       } catch (e) {
@@ -19459,9 +20452,9 @@
         if (!property || !matchStackTrace(stack, new Error().stack)) {
           return;
         }
-        var emptyArr = noopArray();
-        var emptyObj = noopObject();
-        var constantValue;
+        const emptyArr = noopArray();
+        const emptyObj = noopObject();
+        let constantValue;
         if (value === "undefined") {
           constantValue = undefined;
         } else if (value === "false") {
@@ -19476,10 +20469,14 @@
           constantValue = emptyObj;
         } else if (value === "noopFunc") {
           constantValue = noopFunc;
+        } else if (value === "noopCallbackFunc") {
+          constantValue = noopCallbackFunc;
         } else if (value === "trueFunc") {
           constantValue = trueFunc;
         } else if (value === "falseFunc") {
           constantValue = falseFunc;
+        } else if (value === "throwFunc") {
+          constantValue = throwFunc;
         } else if (value === "noopPromiseResolve") {
           constantValue = noopPromiseResolve;
         } else if (value === "noopPromiseReject") {
@@ -19503,23 +20500,23 @@
         } else {
           return;
         }
-        var canceled = false;
-        var mustCancel = function mustCancel(value) {
+        let canceled = false;
+        const mustCancel = function mustCancel(value) {
           if (canceled) {
             return canceled;
           }
           canceled = value !== undefined && constantValue !== undefined && typeof value !== typeof constantValue && value !== null;
           return canceled;
         };
-        var trapProp = function trapProp(base, prop, configurable, handler) {
+        const trapProp = function trapProp(base, prop, configurable, handler) {
           if (!handler.init(base[prop])) {
             return false;
           }
-          var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
-          var prevSetter;
+          const origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+          let prevSetter;
           if (origDescriptor instanceof Object) {
             if (!origDescriptor.configurable) {
-              var message = "Property '".concat(prop, "' is not configurable");
+              const message = "Property '".concat(prop, "' is not configurable");
               logMessage(source, message);
               return false;
             }
@@ -19530,10 +20527,10 @@
           }
           Object.defineProperty(base, prop, {
             configurable: configurable,
-            get: function get() {
+            get() {
               return handler.get();
             },
-            set: function set(a) {
+            set(a) {
               if (prevSetter !== undefined) {
                 prevSetter(a);
               }
@@ -19542,21 +20539,21 @@
           });
           return true;
         };
-        var setChainPropAccess = function setChainPropAccess(owner, property) {
-          var chainInfo = getPropertyInChain(owner, property);
-          var base = chainInfo.base;
-          var prop = chainInfo.prop,
+        const setChainPropAccess = function setChainPropAccess(owner, property) {
+          const chainInfo = getPropertyInChain(owner, property);
+          const base = chainInfo.base;
+          const prop = chainInfo.prop,
             chain = chainInfo.chain;
-          var inChainPropHandler = {
+          const inChainPropHandler = {
             factValue: undefined,
-            init: function init(a) {
+            init(a) {
               this.factValue = a;
               return true;
             },
-            get: function get() {
+            get() {
               return this.factValue;
             },
-            set: function set(a) {
+            set(a) {
               if (this.factValue === a) {
                 return;
               }
@@ -19566,17 +20563,17 @@
               }
             }
           };
-          var endPropHandler = {
-            init: function init(a) {
+          const endPropHandler = {
+            init(a) {
               if (mustCancel(a)) {
                 return false;
               }
               return true;
             },
-            get: function get() {
+            get() {
               return constantValue;
             },
-            set: function set(a) {
+            set(a) {
               if (!mustCancel(a)) {
                 return;
               }
@@ -19584,7 +20581,7 @@
             }
           };
           if (!chain) {
-            var isTrapped = trapProp(base, prop, false, endPropHandler);
+            const isTrapped = trapProp(base, prop, false, endPropHandler);
             if (isTrapped) {
               hit(source);
             }
@@ -19597,7 +20594,7 @@
           if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
             trapProp(base, prop, true, inChainPropHandler);
           }
-          var propValue = owner[prop];
+          const propValue = owner[prop];
           if (propValue instanceof Object || typeof propValue === "object" && propValue !== null) {
             setChainPropAccess(propValue, chain);
           }
@@ -19610,19 +20607,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -19636,10 +20633,23 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function noopArray() {
         return [];
@@ -19648,23 +20658,29 @@
         return {};
       }
       function noopFunc() {}
+      function noopCallbackFunc() {
+        return noopFunc;
+      }
       function trueFunc() {
         return true;
       }
       function falseFunc() {
         return false;
       }
+      function throwFunc() {
+        throw new Error();
+      }
       function noopPromiseReject() {
         return Promise.reject();
       }
       function noopPromiseResolve() {
-        var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
-        var responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
-        var responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
+        let responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
+        let responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        let responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
         if (typeof Response === "undefined") {
           return;
         }
-        var response = new Response(responseBody, {
+        const response = new Response(responseBody, {
           status: 200,
           statusText: "OK"
         });
@@ -19679,14 +20695,14 @@
         return Promise.resolve(response);
       }
       function getPropertyInChain(base, chain) {
-        var pos = chain.indexOf(".");
+        const pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        var prop = chain.slice(0, pos);
+        const prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -19694,7 +20710,7 @@
             chain: chain
           };
         }
-        var nextBase = base[prop];
+        const nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -19723,16 +20739,16 @@
         };
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function matchStackTrace(stackMatch, stackTrace) {
@@ -19742,14 +20758,14 @@
         if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
           return true;
         }
-        var stackRegexp = toRegExp(stackMatch);
-        var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
+        const stackRegexp = toRegExp(stackMatch);
+        const refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         }).join("\n");
         return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
       }
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN;
+        const native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function isEmptyObject(obj) {
@@ -19759,37 +20775,37 @@
         return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
       }
       function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
-        var INLINE_SCRIPT_STRING = "inlineScript";
-        var INJECTED_SCRIPT_STRING = "injectedScript";
-        var INJECTED_SCRIPT_MARKER = "<anonymous>";
-        var isInlineScript = function isInlineScript(stackMatch) {
+        const INLINE_SCRIPT_STRING = "inlineScript";
+        const INJECTED_SCRIPT_STRING = "injectedScript";
+        const INJECTED_SCRIPT_MARKER = "<anonymous>";
+        const isInlineScript = function isInlineScript(stackMatch) {
           return stackMatch.indexOf(INLINE_SCRIPT_STRING) > -1;
         };
-        var isInjectedScript = function isInjectedScript(stackMatch) {
+        const isInjectedScript = function isInjectedScript(stackMatch) {
           return stackMatch.indexOf(INJECTED_SCRIPT_STRING) > -1;
         };
         if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
           return false;
         }
-        var documentURL = window.location.href;
-        var pos = documentURL.indexOf("#");
+        let documentURL = window.location.href;
+        const pos = documentURL.indexOf("#");
         if (pos !== -1) {
           documentURL = documentURL.slice(0, pos);
         }
-        var stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
+        const stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         });
-        var stackLines = stackSteps.map(function (line) {
-          var stack;
-          var getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
+        const stackLines = stackSteps.map(function (line) {
+          let stack;
+          const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
           if (getStackTraceURL) {
-            var stackURL = getStackTraceURL[2];
+            let stackURL = getStackTraceURL[2];
             if (startsWith(stackURL, "(")) {
               stackURL = stackURL.slice(1);
             }
             if (startsWith(stackURL, INJECTED_SCRIPT_MARKER)) {
               stackURL = INJECTED_SCRIPT_STRING;
-              var stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
+              let stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
               if (startsWith(stackFunction, "at")) {
                 stackFunction = stackFunction.slice(2).trim();
               }
@@ -19803,7 +20819,7 @@
           return stack;
         });
         if (stackLines) {
-          for (var index = 0; index < stackLines.length; index += 1) {
+          for (let index = 0; index < stackLines.length; index += 1) {
             if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
               return true;
             }
@@ -19814,7 +20830,7 @@
         }
         return false;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         setConstant.apply(this, updatedArgs);
       } catch (e) {
@@ -19823,8 +20839,8 @@
     }
     function setCookie(source, args) {
       function setCookie(source, name, value) {
-        var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "/";
-        var validValue = getLimitedCookieValue(value);
+        let path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "/";
+        const validValue = getLimitedCookieValue(value);
         if (validValue === null) {
           logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
           return;
@@ -19833,7 +20849,7 @@
           logMessage(source, "Invalid cookie path: '".concat(path, "'"));
           return;
         }
-        var cookieToSet = concatCookieNameValuePath(name, validValue, path);
+        const cookieToSet = concatCookieNameValuePath(name, validValue, path);
         if (!cookieToSet) {
           return;
         }
@@ -19845,19 +20861,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -19871,20 +20887,33 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN;
+        const native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function getLimitedCookieValue(value) {
         if (!value) {
           return null;
         }
-        var validValue;
+        let validValue;
         if (value === "true") {
           validValue = "true";
         } else if (value === "True") {
@@ -19930,7 +20959,7 @@
         }
         return "";
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         setCookie.apply(this, updatedArgs);
       } catch (e) {
@@ -19939,11 +20968,11 @@
     }
     function setCookieReload(source, args) {
       function setCookieReload(source, name, value) {
-        var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "/";
+        let path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "/";
         if (isCookieSetWithValue(document.cookie, name, value)) {
           return;
         }
-        var validValue = getLimitedCookieValue(value);
+        const validValue = getLimitedCookieValue(value);
         if (validValue === null) {
           logMessage(source, "Invalid cookie value: '".concat(value, "'"));
           return;
@@ -19952,7 +20981,7 @@
           logMessage(source, "Invalid cookie path: '".concat(path, "'"));
           return;
         }
-        var cookieToSet = concatCookieNameValuePath(name, validValue, path);
+        const cookieToSet = concatCookieNameValuePath(name, validValue, path);
         if (!cookieToSet) {
           return;
         }
@@ -19967,19 +20996,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -19993,23 +21022,36 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN;
+        const native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function isCookieSetWithValue(cookieString, name, value) {
         return cookieString.split(";").some(function (cookieStr) {
-          var pos = cookieStr.indexOf("=");
+          const pos = cookieStr.indexOf("=");
           if (pos === -1) {
             return false;
           }
-          var cookieName = cookieStr.slice(0, pos).trim();
-          var cookieValue = cookieStr.slice(pos + 1).trim();
+          const cookieName = cookieStr.slice(0, pos).trim();
+          const cookieValue = cookieStr.slice(pos + 1).trim();
           return name === cookieName && value === cookieValue;
         });
       }
@@ -20017,7 +21059,7 @@
         if (!value) {
           return null;
         }
-        var validValue;
+        let validValue;
         if (value === "true") {
           validValue = "true";
         } else if (value === "True") {
@@ -20063,7 +21105,7 @@
         }
         return "";
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         setCookieReload.apply(this, updatedArgs);
       } catch (e) {
@@ -20076,14 +21118,14 @@
           logMessage(source, "Item key should be specified.");
           return;
         }
-        var validValue;
+        let validValue;
         try {
           validValue = getLimitedStorageItemValue(value);
         } catch (_unused) {
           logMessage(source, "Invalid storage item value: '".concat(value, "'"));
           return;
         }
-        var _window = window,
+        const _window = window,
           localStorage = _window.localStorage;
         setStorageItem(source, localStorage, key, validValue);
         hit(source);
@@ -20093,19 +21135,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -20119,20 +21161,33 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN;
+        const native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function setStorageItem(source, storage, key, value) {
         try {
           storage.setItem(key, value);
         } catch (e) {
-          var message = "Unable to set sessionStorage item due to: ".concat(e.message);
+          const message = "Unable to set sessionStorage item due to: ".concat(e.message);
           logMessage(source, message);
         }
       }
@@ -20140,7 +21195,7 @@
         if (typeof value !== "string") {
           throw new Error("Invalid value");
         }
-        var validValue;
+        let validValue;
         if (value === "undefined") {
           validValue = undefined;
         } else if (value === "false") {
@@ -20172,7 +21227,7 @@
         }
         return validValue;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         setLocalStorageItem.apply(this, updatedArgs);
       } catch (e) {
@@ -20203,19 +21258,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -20228,7 +21283,7 @@
           window.__debug(source);
         }
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         setPopadsDummy.apply(this, updatedArgs);
       } catch (e) {
@@ -20241,14 +21296,14 @@
           logMessage(source, "Item key should be specified.");
           return;
         }
-        var validValue;
+        let validValue;
         try {
           validValue = getLimitedStorageItemValue(value);
         } catch (_unused) {
           logMessage(source, "Invalid storage item value: '".concat(value, "'"));
           return;
         }
-        var _window = window,
+        const _window = window,
           sessionStorage = _window.sessionStorage;
         setStorageItem(source, sessionStorage, key, validValue);
         hit(source);
@@ -20258,19 +21313,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -20284,20 +21339,33 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function nativeIsNaN(num) {
-        var native = Number.isNaN || window.isNaN;
+        const native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function setStorageItem(source, storage, key, value) {
         try {
           storage.setItem(key, value);
         } catch (e) {
-          var message = "Unable to set sessionStorage item due to: ".concat(e.message);
+          const message = "Unable to set sessionStorage item due to: ".concat(e.message);
           logMessage(source, message);
         }
       }
@@ -20305,7 +21373,7 @@
         if (typeof value !== "string") {
           throw new Error("Invalid value");
         }
-        var validValue;
+        let validValue;
         if (value === "undefined") {
           validValue = undefined;
         } else if (value === "false") {
@@ -20337,7 +21405,7 @@
         }
         return validValue;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         setSessionStorageItem.apply(this, updatedArgs);
       } catch (e) {
@@ -20346,58 +21414,58 @@
     }
     function trustedClickElement(source, args) {
       function trustedClickElement(source, selectors) {
-        var extraMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
-        var delay = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : NaN;
+        let extraMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+        let delay = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : NaN;
         if (!selectors) {
           return;
         }
-        var OBSERVER_TIMEOUT_MS = 1e4;
-        var THROTTLE_DELAY_MS = 20;
-        var COOKIE_MATCH_MARKER = "cookie:";
-        var LOCAL_STORAGE_MATCH_MARKER = "localStorage:";
-        var SELECTORS_DELIMITER = ",";
-        var COOKIE_STRING_DELIMITER = ";";
-        var EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=cookie:|localStorage:)/;
-        var parsedDelay;
+        const OBSERVER_TIMEOUT_MS = 1e4;
+        const THROTTLE_DELAY_MS = 20;
+        const COOKIE_MATCH_MARKER = "cookie:";
+        const LOCAL_STORAGE_MATCH_MARKER = "localStorage:";
+        const SELECTORS_DELIMITER = ",";
+        const COOKIE_STRING_DELIMITER = ";";
+        const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=cookie:|localStorage:)/;
+        let parsedDelay;
         if (delay) {
           parsedDelay = parseInt(delay, 10);
-          var isValidDelay = !Number.isNaN(parsedDelay) || parsedDelay < OBSERVER_TIMEOUT_MS;
+          const isValidDelay = !Number.isNaN(parsedDelay) || parsedDelay < OBSERVER_TIMEOUT_MS;
           if (!isValidDelay) {
-            var message = "Passed delay '".concat(delay, "' is invalid or bigger than ").concat(OBSERVER_TIMEOUT_MS, " ms");
+            const message = "Passed delay '".concat(delay, "' is invalid or bigger than ").concat(OBSERVER_TIMEOUT_MS, " ms");
             logMessage(source, message);
             return;
           }
         }
-        var canClick = !parsedDelay;
-        var cookieMatches = [];
-        var localStorageMatches = [];
+        let canClick = !parsedDelay;
+        const cookieMatches = [];
+        const localStorageMatches = [];
         if (extraMatch) {
-          var parsedExtraMatch = extraMatch.split(EXTRA_MATCH_DELIMITER).map(function (matchStr) {
+          const parsedExtraMatch = extraMatch.split(EXTRA_MATCH_DELIMITER).map(function (matchStr) {
             return matchStr.trim();
           });
           parsedExtraMatch.forEach(function (matchStr) {
             if (matchStr.indexOf(COOKIE_MATCH_MARKER) > -1) {
-              var cookieMatch = matchStr.replace(COOKIE_MATCH_MARKER, "");
+              const cookieMatch = matchStr.replace(COOKIE_MATCH_MARKER, "");
               cookieMatches.push(cookieMatch);
             }
             if (matchStr.indexOf(LOCAL_STORAGE_MATCH_MARKER) > -1) {
-              var localStorageMatch = matchStr.replace(LOCAL_STORAGE_MATCH_MARKER, "");
+              const localStorageMatch = matchStr.replace(LOCAL_STORAGE_MATCH_MARKER, "");
               localStorageMatches.push(localStorageMatch);
             }
           });
         }
         if (cookieMatches.length > 0) {
-          var parsedCookieMatches = parseCookieString(cookieMatches.join(COOKIE_STRING_DELIMITER));
-          var parsedCookies = parseCookieString(document.cookie);
-          var cookieKeys = Object.keys(parsedCookies);
+          const parsedCookieMatches = parseCookieString(cookieMatches.join(COOKIE_STRING_DELIMITER));
+          const parsedCookies = parseCookieString(document.cookie);
+          const cookieKeys = Object.keys(parsedCookies);
           if (cookieKeys.length === 0) {
             return;
           }
-          var cookiesMatched = Object.keys(parsedCookieMatches).every(function (key) {
-            var valueMatch = parsedCookieMatches[key] ? toRegExp(parsedCookieMatches[key]) : null;
-            var keyMatch = toRegExp(key);
+          const cookiesMatched = Object.keys(parsedCookieMatches).every(function (key) {
+            const valueMatch = parsedCookieMatches[key] ? toRegExp(parsedCookieMatches[key]) : null;
+            const keyMatch = toRegExp(key);
             return cookieKeys.some(function (key) {
-              var keysMatched = keyMatch.test(key);
+              const keysMatched = keyMatch.test(key);
               if (!keysMatched) {
                 return false;
               }
@@ -20412,27 +21480,27 @@
           }
         }
         if (localStorageMatches.length > 0) {
-          var localStorageMatched = localStorageMatches.every(function (str) {
-            var itemValue = window.localStorage.getItem(str);
+          const localStorageMatched = localStorageMatches.every(function (str) {
+            const itemValue = window.localStorage.getItem(str);
             return itemValue || itemValue === "";
           });
           if (!localStorageMatched) {
             return;
           }
         }
-        var selectorsSequence = selectors.split(SELECTORS_DELIMITER).map(function (selector) {
+        let selectorsSequence = selectors.split(SELECTORS_DELIMITER).map(function (selector) {
           return selector.trim();
         });
-        var createElementObj = function createElementObj(element) {
+        const createElementObj = function createElementObj(element) {
           return {
             element: element || null,
             clicked: false
           };
         };
-        var elementsSequence = Array(selectorsSequence.length).fill(createElementObj());
-        var clickElementsBySequence = function clickElementsBySequence() {
-          for (var i = 0; i < elementsSequence.length; i += 1) {
-            var elementObj = elementsSequence[i];
+        const elementsSequence = Array(selectorsSequence.length).fill(createElementObj());
+        const clickElementsBySequence = function clickElementsBySequence() {
+          for (let i = 0; i < elementsSequence.length; i += 1) {
+            const elementObj = elementsSequence[i];
             if (!elementObj.element) {
               break;
             }
@@ -20441,27 +21509,27 @@
               elementObj.clicked = true;
             }
           }
-          var allElementsClicked = elementsSequence.every(function (elementObj) {
+          const allElementsClicked = elementsSequence.every(function (elementObj) {
             return elementObj.clicked === true;
           });
           if (allElementsClicked) {
             hit(source);
           }
         };
-        var handleElement = function handleElement(element, i) {
-          var elementObj = createElementObj(element);
+        const handleElement = function handleElement(element, i) {
+          const elementObj = createElementObj(element);
           elementsSequence[i] = elementObj;
           if (canClick) {
             clickElementsBySequence();
           }
         };
-        var findElements = function findElements(mutations, observer) {
-          var fulfilledSelectors = [];
+        const findElements = function findElements(mutations, observer) {
+          const fulfilledSelectors = [];
           selectorsSequence.forEach(function (selector, i) {
             if (!selector) {
               return;
             }
-            var element = document.querySelector(selector);
+            const element = document.querySelector(selector);
             if (!element) {
               return;
             }
@@ -20471,14 +21539,14 @@
           selectorsSequence = selectorsSequence.map(function (selector) {
             return fulfilledSelectors.indexOf(selector) === -1 ? selector : null;
           });
-          var allSelectorsFulfilled = selectorsSequence.every(function (selector) {
+          const allSelectorsFulfilled = selectorsSequence.every(function (selector) {
             return selector === null;
           });
           if (allSelectorsFulfilled) {
             observer.disconnect();
           }
         };
-        var observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
+        const observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
         observer.observe(document.documentElement, {
           attributes: true,
           childList: true,
@@ -20499,19 +21567,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -20525,27 +21593,27 @@
         }
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function parseCookieString(cookieString) {
-        var COOKIE_DELIMITER = "=";
-        var COOKIE_PAIRS_DELIMITER = ";";
-        var cookieChunks = cookieString.split(COOKIE_PAIRS_DELIMITER);
-        var cookieData = {};
+        const COOKIE_DELIMITER = "=";
+        const COOKIE_PAIRS_DELIMITER = ";";
+        const cookieChunks = cookieString.split(COOKIE_PAIRS_DELIMITER);
+        const cookieData = {};
         cookieChunks.forEach(function (singleCookie) {
-          var cookieKey;
-          var cookieValue;
-          var delimiterIndex = singleCookie.indexOf(COOKIE_DELIMITER);
+          let cookieKey;
+          let cookieValue;
+          const delimiterIndex = singleCookie.indexOf(COOKIE_DELIMITER);
           if (delimiterIndex === -1) {
             cookieKey = singleCookie.trim();
           } else {
@@ -20557,9 +21625,9 @@
         return cookieData;
       }
       function throttle(cb, delay) {
-        var wait = false;
-        var savedArgs;
-        var wrapper = function wrapper() {
+        let wait = false;
+        let savedArgs;
+        const wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
@@ -20567,7 +21635,7 @@
             savedArgs = args;
             return;
           }
-          cb.apply(void 0, args);
+          cb(...args);
           wait = true;
           setTimeout(function () {
             wait = false;
@@ -20580,12 +21648,25 @@
         return wrapper;
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         trustedClickElement.apply(this, updatedArgs);
       } catch (e) {
@@ -20594,21 +21675,21 @@
     }
     function trustedReplaceFetchResponse(source, args) {
       function trustedReplaceFetchResponse(source) {
-        var pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
-        var replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
-        var propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+        let pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        let replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+        let propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
         if (typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
           return;
         }
         if (pattern === "" && replacement !== "") {
-          logMessage(source, "Pattern argument should not be empty string.");
+          logMessage(source, "Pattern argument should not be empty string");
           return;
         }
-        var shouldLog = pattern === "" && replacement === "";
-        var nativeFetch = fetch;
-        var shouldReplace = false;
-        var fetchData;
-        var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+        const shouldLog = pattern === "" && replacement === "";
+        const nativeFetch = fetch;
+        let shouldReplace = false;
+        let fetchData;
+        const handlerWrapper = function handlerWrapper(target, thisArg, args) {
           fetchData = getFetchData(args);
           if (shouldLog) {
             logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
@@ -20619,8 +21700,8 @@
           if (!shouldReplace) {
             return Reflect.apply(target, thisArg, args);
           }
-          var forgeResponse = function forgeResponse(response, textContent) {
-            var bodyUsed = response.bodyUsed,
+          const forgeResponse = function forgeResponse(response, textContent) {
+            const bodyUsed = response.bodyUsed,
               headers = response.headers,
               ok = response.ok,
               redirected = response.redirected,
@@ -20628,7 +21709,7 @@
               statusText = response.statusText,
               type = response.type,
               url = response.url;
-            var forgedResponse = new Response(textContent, {
+            const forgedResponse = new Response(textContent, {
               status: status,
               statusText: statusText,
               headers: headers
@@ -20654,14 +21735,14 @@
           };
           return nativeFetch.apply(null, args).then(function (response) {
             return response.text().then(function (bodyText) {
-              var patternRegexp = pattern === "*" ? /(\n|.)*/ : toRegExp(pattern);
-              var modifiedTextContent = bodyText.replace(patternRegexp, replacement);
-              var forgedResponse = forgeResponse(response, modifiedTextContent);
+              const patternRegexp = pattern === "*" ? /(\n|.)*/ : toRegExp(pattern);
+              const modifiedTextContent = bodyText.replace(patternRegexp, replacement);
+              const forgedResponse = forgeResponse(response, modifiedTextContent);
               hit(source);
               return forgedResponse;
             }).catch(function () {
-              var fetchDataStr = objectToString(fetchData);
-              var message = "Response body can't be converted to text: ".concat(fetchDataStr);
+              const fetchDataStr = objectToString(fetchData);
+              const message = "Response body can't be converted to text: ".concat(fetchDataStr);
               logMessage(source, message);
               return Reflect.apply(target, thisArg, args);
             });
@@ -20669,7 +21750,7 @@
             return Reflect.apply(target, thisArg, args);
           });
         };
-        var fetchHandler = {
+        const fetchHandler = {
           apply: handlerWrapper
         };
         fetch = new Proxy(fetch, fetchHandler);
@@ -20679,19 +21760,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -20705,17 +21786,30 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function getFetchData(args) {
-        var fetchPropsObj = {};
-        var fetchUrl;
-        var fetchInit;
+        const fetchPropsObj = {};
+        let fetchUrl;
+        let fetchInit;
         if (args[0] instanceof Request) {
-          var requestData = getRequestData(args[0]);
+          const requestData = getRequestData(args[0]);
           fetchUrl = requestData.url;
           fetchInit = requestData;
         } else {
@@ -20732,9 +21826,9 @@
       }
       function objectToString(obj) {
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
-          var key = pair[0];
-          var value = pair[1];
-          var recordValueStr = value;
+          const key = pair[0];
+          const value = pair[1];
+          let recordValueStr = value;
           if (value instanceof Object) {
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
@@ -20745,40 +21839,40 @@
         if (propsToMatch === "" || propsToMatch === "*") {
           return true;
         }
-        var isMatched;
-        var parsedData = parseMatchProps(propsToMatch);
+        let isMatched;
+        const parsedData = parseMatchProps(propsToMatch);
         if (!validateParsedData(parsedData)) {
           logMessage(source, "Invalid parameter: ".concat(propsToMatch));
           isMatched = false;
         } else {
-          var matchData = getMatchPropsData(parsedData);
+          const matchData = getMatchPropsData(parsedData);
           isMatched = Object.keys(matchData).every(function (matchKey) {
-            var matchValue = matchData[matchKey];
+            const matchValue = matchData[matchKey];
             return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
           });
         }
         return isMatched;
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function isValidStrPattern(input) {
-        var FORWARD_SLASH = "/";
-        var str = escapeRegExp(input);
+        const FORWARD_SLASH = "/";
+        let str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        var isValid;
+        let isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -20794,9 +21888,9 @@
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getRequestData(request) {
-        var requestInitOptions = getRequestProps();
-        var entries = requestInitOptions.map(function (key) {
-          var value = request[key];
+        const requestInitOptions = getRequestProps();
+        const entries = requestInitOptions.map(function (key) {
+          const value = request[key];
           return [key, value];
         });
         return getObjectFromEntries(entries);
@@ -20805,34 +21899,34 @@
         return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
       }
       function getObjectEntries(object) {
-        var keys = Object.keys(object);
-        var entries = [];
+        const keys = Object.keys(object);
+        const entries = [];
         keys.forEach(function (key) {
           return entries.push([key, object[key]]);
         });
         return entries;
       }
       function getObjectFromEntries(entries) {
-        var output = entries.reduce(function (acc, el) {
-          var key = el[0];
-          var value = el[1];
+        const output = entries.reduce(function (acc, el) {
+          const key = el[0];
+          const value = el[1];
           acc[key] = value;
           return acc;
         }, {});
         return output;
       }
       function parseMatchProps(propsToMatchStr) {
-        var PROPS_DIVIDER = " ";
-        var PAIRS_MARKER = ":";
-        var LEGAL_MATCH_PROPS = getRequestProps();
-        var propsObj = {};
-        var props = propsToMatchStr.split(PROPS_DIVIDER);
+        const PROPS_DIVIDER = " ";
+        const PAIRS_MARKER = ":";
+        const LEGAL_MATCH_PROPS = getRequestProps();
+        const propsObj = {};
+        const props = propsToMatchStr.split(PROPS_DIVIDER);
         props.forEach(function (prop) {
-          var dividerInd = prop.indexOf(PAIRS_MARKER);
-          var key = prop.slice(0, dividerInd);
-          var hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+          const dividerInd = prop.indexOf(PAIRS_MARKER);
+          const key = prop.slice(0, dividerInd);
+          const hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
           if (hasLegalMatchProp) {
-            var value = prop.slice(dividerInd + 1);
+            const value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
           } else {
             propsObj.url = prop;
@@ -20846,13 +21940,13 @@
         });
       }
       function getMatchPropsData(data) {
-        var matchData = {};
+        const matchData = {};
         Object.keys(data).forEach(function (key) {
           matchData[key] = toRegExp(data[key]);
         });
         return matchData;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         trustedReplaceFetchResponse.apply(this, updatedArgs);
       } catch (e) {
@@ -20861,66 +21955,67 @@
     }
     function trustedReplaceXhrResponse(source, args) {
       function trustedReplaceXhrResponse(source) {
-        var pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
-        var replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
-        var propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+        let pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        let replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+        let propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
         if (typeof Proxy === "undefined") {
           return;
         }
         if (pattern === "" && replacement !== "") {
-          var message = "Pattern argument should not be empty string.";
+          const message = "Pattern argument should not be empty string.";
           logMessage(source, message);
           return;
         }
-        var shouldLog = pattern === "" && replacement === "";
-        var nativeOpen = window.XMLHttpRequest.prototype.open;
-        var nativeSend = window.XMLHttpRequest.prototype.send;
-        var shouldReplace = false;
-        var xhrData;
-        var requestHeaders = [];
-        var openWrapper = function openWrapper(target, thisArg, args) {
+        const shouldLog = pattern === "" && replacement === "";
+        const nativeOpen = window.XMLHttpRequest.prototype.open;
+        const nativeSend = window.XMLHttpRequest.prototype.send;
+        let xhrData;
+        const openWrapper = function openWrapper(target, thisArg, args) {
           xhrData = getXhrData.apply(null, args);
           if (shouldLog) {
-            var _message = "xhr( ".concat(objectToString(xhrData), " )");
-            logMessage(source, _message, true);
+            const message = "xhr( ".concat(objectToString(xhrData), " )");
+            logMessage(source, message, true);
             hit(source);
             return Reflect.apply(target, thisArg, args);
           }
-          shouldReplace = matchRequestProps(source, propsToMatch, xhrData);
-          if (shouldReplace) {
-            var setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
-              requestHeaders.push(args);
+          if (matchRequestProps(source, propsToMatch, xhrData)) {
+            thisArg.shouldBePrevented = true;
+          }
+          if (thisArg.shouldBePrevented) {
+            thisArg.collectedHeaders = [];
+            const setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+              thisArg.collectedHeaders.push(args);
               return Reflect.apply(target, thisArg, args);
             };
-            var setRequestHeaderHandler = {
+            const setRequestHeaderHandler = {
               apply: setRequestHeaderWrapper
             };
             thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
           }
           return Reflect.apply(target, thisArg, args);
         };
-        var sendWrapper = function sendWrapper(target, thisArg, args) {
-          if (!shouldReplace) {
+        const sendWrapper = function sendWrapper(target, thisArg, args) {
+          if (!thisArg.shouldBePrevented) {
             return Reflect.apply(target, thisArg, args);
           }
-          var forgedRequest = new XMLHttpRequest();
+          const forgedRequest = new XMLHttpRequest();
           forgedRequest.addEventListener("readystatechange", function () {
             if (forgedRequest.readyState !== 4) {
               return;
             }
-            var readyState = forgedRequest.readyState,
+            const readyState = forgedRequest.readyState,
               response = forgedRequest.response,
               responseText = forgedRequest.responseText,
               responseURL = forgedRequest.responseURL,
               responseXML = forgedRequest.responseXML,
               status = forgedRequest.status,
               statusText = forgedRequest.statusText;
-            var content = responseText || response;
+            const content = responseText || response;
             if (typeof content !== "string") {
               return;
             }
-            var patternRegexp = pattern === "*" ? /(\n|.)*/ : toRegExp(pattern);
-            var modifiedContent = content.replace(patternRegexp, replacement);
+            const patternRegexp = pattern === "*" ? /(\n|.)*/ : toRegExp(pattern);
+            const modifiedContent = content.replace(patternRegexp, replacement);
             Object.defineProperties(thisArg, {
               readyState: {
                 value: readyState
@@ -20945,22 +22040,22 @@
               }
             });
             setTimeout(function () {
-              var stateEvent = new Event("readystatechange");
+              const stateEvent = new Event("readystatechange");
               thisArg.dispatchEvent(stateEvent);
-              var loadEvent = new Event("load");
+              const loadEvent = new Event("load");
               thisArg.dispatchEvent(loadEvent);
-              var loadEndEvent = new Event("loadend");
+              const loadEndEvent = new Event("loadend");
               thisArg.dispatchEvent(loadEndEvent);
             }, 1);
             hit(source);
           });
           nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
-          requestHeaders.forEach(function (header) {
-            var name = header[0];
-            var value = header[1];
+          thisArg.collectedHeaders.forEach(function (header) {
+            const name = header[0];
+            const value = header[1];
             forgedRequest.setRequestHeader(name, value);
           });
-          requestHeaders = [];
+          thisArg.collectedHeaders = [];
           try {
             nativeSend.call(forgedRequest, args);
           } catch (_unused) {
@@ -20968,10 +22063,10 @@
           }
           return undefined;
         };
-        var openHandler = {
+        const openHandler = {
           apply: openWrapper
         };
-        var sendHandler = {
+        const sendHandler = {
           apply: sendWrapper
         };
         XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
@@ -20982,19 +22077,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -21008,29 +22103,42 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function objectToString(obj) {
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
-          var key = pair[0];
-          var value = pair[1];
-          var recordValueStr = value;
+          const key = pair[0];
+          const value = pair[1];
+          let recordValueStr = value;
           if (value instanceof Object) {
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
@@ -21041,15 +22149,15 @@
         if (propsToMatch === "" || propsToMatch === "*") {
           return true;
         }
-        var isMatched;
-        var parsedData = parseMatchProps(propsToMatch);
+        let isMatched;
+        const parsedData = parseMatchProps(propsToMatch);
         if (!validateParsedData(parsedData)) {
           logMessage(source, "Invalid parameter: ".concat(propsToMatch));
           isMatched = false;
         } else {
-          var matchData = getMatchPropsData(parsedData);
+          const matchData = getMatchPropsData(parsedData);
           isMatched = Object.keys(matchData).every(function (matchKey) {
-            var matchValue = matchData[matchKey];
+            const matchValue = matchData[matchKey];
             return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
           });
         }
@@ -21065,7 +22173,7 @@
         };
       }
       function getMatchPropsData(data) {
-        var matchData = {};
+        const matchData = {};
         Object.keys(data).forEach(function (key) {
           matchData[key] = toRegExp(data[key]);
         });
@@ -21080,17 +22188,17 @@
         });
       }
       function parseMatchProps(propsToMatchStr) {
-        var PROPS_DIVIDER = " ";
-        var PAIRS_MARKER = ":";
-        var LEGAL_MATCH_PROPS = getRequestProps();
-        var propsObj = {};
-        var props = propsToMatchStr.split(PROPS_DIVIDER);
+        const PROPS_DIVIDER = " ";
+        const PAIRS_MARKER = ":";
+        const LEGAL_MATCH_PROPS = getRequestProps();
+        const propsObj = {};
+        const props = propsToMatchStr.split(PROPS_DIVIDER);
         props.forEach(function (prop) {
-          var dividerInd = prop.indexOf(PAIRS_MARKER);
-          var key = prop.slice(0, dividerInd);
-          var hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+          const dividerInd = prop.indexOf(PAIRS_MARKER);
+          const key = prop.slice(0, dividerInd);
+          const hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
           if (hasLegalMatchProp) {
-            var value = prop.slice(dividerInd + 1);
+            const value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
           } else {
             propsObj.url = prop;
@@ -21099,12 +22207,12 @@
         return propsObj;
       }
       function isValidStrPattern(input) {
-        var FORWARD_SLASH = "/";
-        var str = escapeRegExp(input);
+        const FORWARD_SLASH = "/";
+        let str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        var isValid;
+        let isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -21120,48 +22228,389 @@
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getObjectEntries(object) {
-        var keys = Object.keys(object);
-        var entries = [];
+        const keys = Object.keys(object);
+        const entries = [];
         keys.forEach(function (key) {
           return entries.push([key, object[key]]);
         });
         return entries;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         trustedReplaceXhrResponse.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
+    function trustedSetConstant(source, args) {
+      function trustedSetConstant(source, property, value, stack) {
+        if (!property || !matchStackTrace(stack, new Error().stack)) {
+          return;
+        }
+        let constantValue;
+        try {
+          constantValue = inferValue(value);
+        } catch (e) {
+          logMessage(source, e);
+          return;
+        }
+        let canceled = false;
+        const mustCancel = function mustCancel(value) {
+          if (canceled) {
+            return canceled;
+          }
+          canceled = value !== undefined && constantValue !== undefined && typeof value !== typeof constantValue && value !== null;
+          return canceled;
+        };
+        const trapProp = function trapProp(base, prop, configurable, handler) {
+          if (!handler.init(base[prop])) {
+            return false;
+          }
+          const origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+          let prevSetter;
+          if (origDescriptor instanceof Object) {
+            if (!origDescriptor.configurable) {
+              const message = "Property '".concat(prop, "' is not configurable");
+              logMessage(source, message);
+              return false;
+            }
+            base[prop] = constantValue;
+            if (origDescriptor.set instanceof Function) {
+              prevSetter = origDescriptor.set;
+            }
+          }
+          Object.defineProperty(base, prop, {
+            configurable: configurable,
+            get() {
+              return handler.get();
+            },
+            set(a) {
+              if (prevSetter !== undefined) {
+                prevSetter(a);
+              }
+              handler.set(a);
+            }
+          });
+          return true;
+        };
+        const setChainPropAccess = function setChainPropAccess(owner, property) {
+          const chainInfo = getPropertyInChain(owner, property);
+          const base = chainInfo.base;
+          const prop = chainInfo.prop,
+            chain = chainInfo.chain;
+          const inChainPropHandler = {
+            factValue: undefined,
+            init(a) {
+              this.factValue = a;
+              return true;
+            },
+            get() {
+              return this.factValue;
+            },
+            set(a) {
+              if (this.factValue === a) {
+                return;
+              }
+              this.factValue = a;
+              if (a instanceof Object) {
+                setChainPropAccess(a, chain);
+              }
+            }
+          };
+          const endPropHandler = {
+            init(a) {
+              if (mustCancel(a)) {
+                return false;
+              }
+              return true;
+            },
+            get() {
+              return constantValue;
+            },
+            set(a) {
+              if (!mustCancel(a)) {
+                return;
+              }
+              constantValue = a;
+            }
+          };
+          if (!chain) {
+            const isTrapped = trapProp(base, prop, false, endPropHandler);
+            if (isTrapped) {
+              hit(source);
+            }
+            return;
+          }
+          if (base !== undefined && base[prop] === null) {
+            trapProp(base, prop, true, inChainPropHandler);
+            return;
+          }
+          if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
+            trapProp(base, prop, true, inChainPropHandler);
+          }
+          const propValue = owner[prop];
+          if (propValue instanceof Object || typeof propValue === "object" && propValue !== null) {
+            setChainPropAccess(propValue, chain);
+          }
+          trapProp(base, prop, true, inChainPropHandler);
+        };
+        setChainPropAccess(window, property);
+      }
+      function hit(source) {
+        if (source.verbose !== true) {
+          return;
+        }
+        try {
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
+          if (source.domainName) {
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+            const rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+          log("".concat(prefix, " trace start"));
+          if (trace) {
+            trace();
+          }
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+      function inferValue(value) {
+        if (value === "undefined") {
+          return undefined;
+        }
+        if (value === "false") {
+          return false;
+        }
+        if (value === "true") {
+          return true;
+        }
+        if (value === "null") {
+          return null;
+        }
+        if (value === "NaN") {
+          return NaN;
+        }
+        const MAX_ALLOWED_NUM = 32767;
+        const numVal = Number(value);
+        if (!nativeIsNaN(numVal)) {
+          if (Math.abs(numVal) > MAX_ALLOWED_NUM) {
+            throw new Error("number values bigger than 32767 are not allowed");
+          }
+          return numVal;
+        }
+        let errorMessage = "'".concat(value, "' value type can't be inferred");
+        try {
+          const parsableVal = JSON.parse(value);
+          if (parsableVal instanceof Object || typeof parsableVal === "string") {
+            return parsableVal;
+          }
+        } catch (e) {
+          errorMessage += ": ".concat(e);
+        }
+        throw new TypeError(errorMessage);
+      }
+      function logMessage(source, message) {
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
+        }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
+      }
+      function getPropertyInChain(base, chain) {
+        const pos = chain.indexOf(".");
+        if (pos === -1) {
+          return {
+            base: base,
+            prop: chain
+          };
+        }
+        const prop = chain.slice(0, pos);
+        if (base === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+        const nextBase = base[prop];
+        chain = chain.slice(pos + 1);
+        if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+        if (nextBase === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+        if (nextBase !== undefined) {
+          return getPropertyInChain(nextBase, chain);
+        }
+        Object.defineProperty(base, prop, {
+          configurable: true
+        });
+        return {
+          base: base,
+          prop: prop,
+          chain: chain
+        };
+      }
+      function toRegExp() {
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+      function matchStackTrace(stackMatch, stackTrace) {
+        if (!stackMatch || stackMatch === "") {
+          return true;
+        }
+        if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
+          return true;
+        }
+        const stackRegexp = toRegExp(stackMatch);
+        const refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
+          return line.trim();
+        }).join("\n");
+        return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
+      }
+      function nativeIsNaN(num) {
+        const native = Number.isNaN || window.isNaN;
+        return native(num);
+      }
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0 && !obj.prototype;
+      }
+      function getNativeRegexpTest() {
+        return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
+      }
+      function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
+        const INLINE_SCRIPT_STRING = "inlineScript";
+        const INJECTED_SCRIPT_STRING = "injectedScript";
+        const INJECTED_SCRIPT_MARKER = "<anonymous>";
+        const isInlineScript = function isInlineScript(stackMatch) {
+          return stackMatch.indexOf(INLINE_SCRIPT_STRING) > -1;
+        };
+        const isInjectedScript = function isInjectedScript(stackMatch) {
+          return stackMatch.indexOf(INJECTED_SCRIPT_STRING) > -1;
+        };
+        if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
+          return false;
+        }
+        let documentURL = window.location.href;
+        const pos = documentURL.indexOf("#");
+        if (pos !== -1) {
+          documentURL = documentURL.slice(0, pos);
+        }
+        const stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
+          return line.trim();
+        });
+        const stackLines = stackSteps.map(function (line) {
+          let stack;
+          const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
+          if (getStackTraceURL) {
+            let stackURL = getStackTraceURL[2];
+            if (startsWith(stackURL, "(")) {
+              stackURL = stackURL.slice(1);
+            }
+            if (startsWith(stackURL, INJECTED_SCRIPT_MARKER)) {
+              stackURL = INJECTED_SCRIPT_STRING;
+              let stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
+              if (startsWith(stackFunction, "at")) {
+                stackFunction = stackFunction.slice(2).trim();
+              }
+              stack = "".concat(stackFunction, " ").concat(stackURL).trim();
+            } else {
+              stack = stackURL;
+            }
+          } else {
+            stack = line;
+          }
+          return stack;
+        });
+        if (stackLines) {
+          for (let index = 0; index < stackLines.length; index += 1) {
+            if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
+              return true;
+            }
+            if (isInjectedScript(stackMatch) && startsWith(stackLines[index], INJECTED_SCRIPT_STRING)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      try {
+        trustedSetConstant.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
     function trustedSetCookie(source, args) {
       function trustedSetCookie(source, name, value) {
-        var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
-        var path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "/";
+        let offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+        let path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "/";
         if (typeof name === "undefined") {
-          logMessage(source, "Cookie name should be specified.");
+          logMessage(source, "Cookie name should be specified");
           return;
         }
         if (typeof value === "undefined") {
-          logMessage(source, "Cookie value should be specified.");
+          logMessage(source, "Cookie value should be specified");
           return;
         }
-        var parsedValue = parseKeywordValue(value);
+        const parsedValue = parseKeywordValue(value);
         if (!isValidCookiePath(path)) {
           logMessage(source, "Invalid cookie path: '".concat(path, "'"));
           return;
         }
-        var cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
+        let cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
         if (!cookieToSet) {
           return;
         }
         if (offsetExpiresSec) {
-          var parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
+          const parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
           if (!parsedOffsetMs) {
             logMessage(source, "Invalid offsetExpiresSec value: ".concat(offsetExpiresSec));
             return;
           }
-          var expires = Date.now() + parsedOffsetMs;
+          const expires = Date.now() + parsedOffsetMs;
           cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
         }
         document.cookie = cookieToSet;
@@ -21172,19 +22621,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -21198,10 +22647,23 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function concatCookieNameValuePath(rawName, rawValue, rawPath) {
         return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
@@ -21210,12 +22672,12 @@
         return rawPath === "/" || rawPath === "none";
       }
       function getTrustedCookieOffsetMs(offsetExpiresSec) {
-        var ONE_YEAR_EXPIRATION_KEYWORD = "1year";
-        var ONE_DAY_EXPIRATION_KEYWORD = "1day";
-        var MS_IN_SEC = 1e3;
-        var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
-        var SECONDS_IN_DAY = 24 * 60 * 60;
-        var parsedSec;
+        const ONE_YEAR_EXPIRATION_KEYWORD = "1year";
+        const ONE_DAY_EXPIRATION_KEYWORD = "1day";
+        const MS_IN_SEC = 1e3;
+        const SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
+        const SECONDS_IN_DAY = 24 * 60 * 60;
+        let parsedSec;
         if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
           parsedSec = SECONDS_IN_YEAR;
         } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
@@ -21229,9 +22691,9 @@
         return parsedSec * MS_IN_SEC;
       }
       function parseKeywordValue(rawValue) {
-        var NOW_VALUE_KEYWORD = "$now$";
-        var CURRENT_DATE_KEYWORD = "$currentDate$";
-        var parsedValue = rawValue;
+        const NOW_VALUE_KEYWORD = "$now$";
+        const CURRENT_DATE_KEYWORD = "$currentDate$";
+        let parsedValue = rawValue;
         if (rawValue === NOW_VALUE_KEYWORD) {
           parsedValue = Date.now().toString();
         } else if (rawValue === CURRENT_DATE_KEYWORD) {
@@ -21245,7 +22707,7 @@
         }
         return "";
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         trustedSetCookie.apply(this, updatedArgs);
       } catch (e) {
@@ -21254,35 +22716,35 @@
     }
     function trustedSetCookieReload(source, args) {
       function trustedSetCookieReload(source, name, value) {
-        var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
-        var path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "/";
+        let offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+        let path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "/";
         if (typeof name === "undefined") {
-          logMessage(source, "Cookie name should be specified.");
+          logMessage(source, "Cookie name should be specified");
           return;
         }
         if (typeof value === "undefined") {
-          logMessage(source, "Cookie value should be specified.");
+          logMessage(source, "Cookie value should be specified");
           return;
         }
         if (isCookieSetWithValue(document.cookie, name, value)) {
           return;
         }
-        var parsedValue = parseKeywordValue(value);
+        const parsedValue = parseKeywordValue(value);
         if (!isValidCookiePath(path)) {
           logMessage(source, "Invalid cookie path: '".concat(path, "'"));
           return;
         }
-        var cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
+        let cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
         if (!cookieToSet) {
           return;
         }
         if (offsetExpiresSec) {
-          var parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
+          const parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
           if (!parsedOffsetMs) {
             logMessage(source, "Invalid offsetExpiresSec value: ".concat(offsetExpiresSec));
             return;
           }
-          var expires = Date.now() + parsedOffsetMs;
+          const expires = Date.now() + parsedOffsetMs;
           cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
         }
         document.cookie = cookieToSet;
@@ -21296,19 +22758,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -21322,19 +22784,32 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function isCookieSetWithValue(cookieString, name, value) {
         return cookieString.split(";").some(function (cookieStr) {
-          var pos = cookieStr.indexOf("=");
+          const pos = cookieStr.indexOf("=");
           if (pos === -1) {
             return false;
           }
-          var cookieName = cookieStr.slice(0, pos).trim();
-          var cookieValue = cookieStr.slice(pos + 1).trim();
+          const cookieName = cookieStr.slice(0, pos).trim();
+          const cookieValue = cookieStr.slice(pos + 1).trim();
           return name === cookieName && value === cookieValue;
         });
       }
@@ -21345,12 +22820,12 @@
         return rawPath === "/" || rawPath === "none";
       }
       function getTrustedCookieOffsetMs(offsetExpiresSec) {
-        var ONE_YEAR_EXPIRATION_KEYWORD = "1year";
-        var ONE_DAY_EXPIRATION_KEYWORD = "1day";
-        var MS_IN_SEC = 1e3;
-        var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
-        var SECONDS_IN_DAY = 24 * 60 * 60;
-        var parsedSec;
+        const ONE_YEAR_EXPIRATION_KEYWORD = "1year";
+        const ONE_DAY_EXPIRATION_KEYWORD = "1day";
+        const MS_IN_SEC = 1e3;
+        const SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
+        const SECONDS_IN_DAY = 24 * 60 * 60;
+        let parsedSec;
         if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
           parsedSec = SECONDS_IN_YEAR;
         } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
@@ -21364,9 +22839,9 @@
         return parsedSec * MS_IN_SEC;
       }
       function parseKeywordValue(rawValue) {
-        var NOW_VALUE_KEYWORD = "$now$";
-        var CURRENT_DATE_KEYWORD = "$currentDate$";
-        var parsedValue = rawValue;
+        const NOW_VALUE_KEYWORD = "$now$";
+        const CURRENT_DATE_KEYWORD = "$currentDate$";
+        let parsedValue = rawValue;
         if (rawValue === NOW_VALUE_KEYWORD) {
           parsedValue = Date.now().toString();
         } else if (rawValue === CURRENT_DATE_KEYWORD) {
@@ -21380,7 +22855,7 @@
         }
         return "";
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         trustedSetCookieReload.apply(this, updatedArgs);
       } catch (e) {
@@ -21390,15 +22865,15 @@
     function trustedSetLocalStorageItem(source, args) {
       function trustedSetLocalStorageItem(source, key, value) {
         if (typeof key === "undefined") {
-          logMessage(source, "Item key should be specified.");
+          logMessage(source, "Item key should be specified");
           return;
         }
         if (typeof value === "undefined") {
-          logMessage(source, "Item value should be specified.");
+          logMessage(source, "Item value should be specified");
           return;
         }
-        var parsedValue = parseKeywordValue(value);
-        var _window = window,
+        const parsedValue = parseKeywordValue(value);
+        const _window = window,
           localStorage = _window.localStorage;
         setStorageItem(source, localStorage, key, parsedValue);
         hit(source);
@@ -21408,19 +22883,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -21434,23 +22909,36 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function setStorageItem(source, storage, key, value) {
         try {
           storage.setItem(key, value);
         } catch (e) {
-          var message = "Unable to set sessionStorage item due to: ".concat(e.message);
+          const message = "Unable to set sessionStorage item due to: ".concat(e.message);
           logMessage(source, message);
         }
       }
       function parseKeywordValue(rawValue) {
-        var NOW_VALUE_KEYWORD = "$now$";
-        var CURRENT_DATE_KEYWORD = "$currentDate$";
-        var parsedValue = rawValue;
+        const NOW_VALUE_KEYWORD = "$now$";
+        const CURRENT_DATE_KEYWORD = "$currentDate$";
+        let parsedValue = rawValue;
         if (rawValue === NOW_VALUE_KEYWORD) {
           parsedValue = Date.now().toString();
         } else if (rawValue === CURRENT_DATE_KEYWORD) {
@@ -21458,7 +22946,7 @@
         }
         return parsedValue;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         trustedSetLocalStorageItem.apply(this, updatedArgs);
       } catch (e) {
@@ -21468,31 +22956,31 @@
     function xmlPrune(source, args) {
       function xmlPrune(source, propsToRemove) {
         var _this = this;
-        var optionalProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
-        var urlToMatch = arguments.length > 3 ? arguments[3] : undefined;
+        let optionalProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+        let urlToMatch = arguments.length > 3 ? arguments[3] : undefined;
         if (typeof Reflect === "undefined" || typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
           return;
         }
-        var shouldPruneResponse = true;
+        let shouldPruneResponse = true;
         if (!propsToRemove) {
           shouldPruneResponse = false;
         }
-        var urlMatchRegexp = toRegExp(urlToMatch);
-        var isXML = function isXML(text) {
-          var trimedText = text.trim();
+        const urlMatchRegexp = toRegExp(urlToMatch);
+        const isXML = function isXML(text) {
+          const trimedText = text.trim();
           if (startsWith(trimedText, "<") && endsWith(trimedText, ">")) {
             return true;
           }
           return false;
         };
-        var pruneXML = function pruneXML(text) {
+        const pruneXML = function pruneXML(text) {
           if (!isXML(text)) {
             shouldPruneResponse = false;
             return text;
           }
-          var xmlParser = new DOMParser();
-          var xmlDoc = xmlParser.parseFromString(text, "text/xml");
-          var errorNode = xmlDoc.querySelector("parsererror");
+          const xmlParser = new DOMParser();
+          const xmlDoc = xmlParser.parseFromString(text, "text/xml");
+          const errorNode = xmlDoc.querySelector("parsererror");
           if (errorNode) {
             return text;
           }
@@ -21500,7 +22988,7 @@
             shouldPruneResponse = false;
             return text;
           }
-          var elems = xmlDoc.querySelectorAll(propsToRemove);
+          const elems = xmlDoc.querySelectorAll(propsToRemove);
           if (!elems.length) {
             shouldPruneResponse = false;
             return text;
@@ -21508,27 +22996,27 @@
           elems.forEach(function (elem) {
             elem.remove();
           });
-          var serializer = new XMLSerializer();
+          const serializer = new XMLSerializer();
           text = serializer.serializeToString(xmlDoc);
           return text;
         };
-        var xhrWrapper = function xhrWrapper(target, thisArg, args) {
-          var xhrURL = args[1];
+        const xhrWrapper = function xhrWrapper(target, thisArg, args) {
+          const xhrURL = args[1];
           if (typeof xhrURL !== "string" || xhrURL.length === 0) {
             return Reflect.apply(target, thisArg, args);
           }
           if (urlMatchRegexp.test(xhrURL)) {
             thisArg.addEventListener("readystatechange", function pruneResponse() {
               if (thisArg.readyState === 4) {
-                var response = thisArg.response;
+                const response = thisArg.response;
                 thisArg.removeEventListener("readystatechange", pruneResponse);
                 if (!shouldPruneResponse) {
                   if (isXML(response)) {
-                    var message = "XMLHttpRequest.open() URL: ".concat(xhrURL, "\nresponse: ").concat(response);
+                    const message = "XMLHttpRequest.open() URL: ".concat(xhrURL, "\nresponse: ").concat(response);
                     logMessage(message);
                   }
                 } else {
-                  var prunedResponseContent = pruneXML(response);
+                  const prunedResponseContent = pruneXML(response);
                   if (shouldPruneResponse) {
                     Object.defineProperty(thisArg, "response", {
                       value: prunedResponseContent
@@ -21545,13 +23033,13 @@
           }
           return Reflect.apply(target, thisArg, args);
         };
-        var xhrHandler = {
+        const xhrHandler = {
           apply: xhrWrapper
         };
         window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler);
-        var nativeFetch = window.fetch;
-        var fetchWrapper = function fetchWrapper(target, thisArg, args) {
-          var fetchURL = args[0];
+        const nativeFetch = window.fetch;
+        const fetchWrapper = function fetchWrapper(target, thisArg, args) {
+          const fetchURL = args[0];
           if (typeof fetchURL !== "string" || fetchURL.length === 0) {
             return Reflect.apply(target, thisArg, args);
           }
@@ -21564,7 +23052,7 @@
                   }
                   return Reflect.apply(target, thisArg, args);
                 }
-                var prunedText = pruneXML(text);
+                const prunedText = pruneXML(text);
                 if (shouldPruneResponse) {
                   hit(source);
                   return new Response(prunedText, {
@@ -21580,7 +23068,7 @@
           }
           return Reflect.apply(target, thisArg, args);
         };
-        var fetchHandler = {
+        const fetchHandler = {
           apply: fetchWrapper
         };
         window.fetch = new Proxy(window.fetch, fetchHandler);
@@ -21590,19 +23078,19 @@
           return;
         }
         try {
-          var log = console.log.bind(console);
-          var trace = console.trace.bind(console);
-          var prefix = source.ruleText || "";
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
           if (source.domainName) {
-            var AG_SCRIPTLET_MARKER = "#%#//";
-            var UBO_SCRIPTLET_MARKER = "##+js";
-            var ruleStartIndex;
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            var rulePart = source.ruleText.slice(ruleStartIndex);
+            const rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -21616,22 +23104,35 @@
         }
       }
       function logMessage(source, message) {
-        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        if (forced || source.verbose) {
-          console.log("".concat(source.name, ": ").concat(message));
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
         }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        console.log(messageStr);
       }
       function toRegExp() {
-        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        var DEFAULT_VALUE = ".?";
-        var FORWARD_SLASH = "/";
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function startsWith(str, prefix) {
@@ -21640,14 +23141,14 @@
       function endsWith(str, ending) {
         return !!str && str.lastIndexOf(ending) === str.length - ending.length;
       }
-      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         xmlPrune.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-    var scriptletsMap = {
+    const scriptletsMap = {
       "abort-current-inline-script": abortCurrentInlineScript,
       "abort-current-script.js": abortCurrentInlineScript,
       "ubo-abort-current-script.js": abortCurrentInlineScript,
@@ -21714,6 +23215,7 @@
       "ubo-window-close-if.js": forceWindowClose,
       "ubo-window-close-if": forceWindowClose,
       "hide-in-shadow-dom": hideInShadowDom,
+      "inject-css-in-shadow-dom": injectCssInShadowDom,
       "json-prune": jsonPrune,
       "json-prune.js": jsonPrune,
       "ubo-json-prune.js": jsonPrune,
@@ -21860,6 +23362,7 @@
       "trusted-click-element": trustedClickElement,
       "trusted-replace-fetch-response": trustedReplaceFetchResponse,
       "trusted-replace-xhr-response": trustedReplaceXhrResponse,
+      "trusted-set-constant": trustedSetConstant,
       "trusted-set-cookie": trustedSetCookie,
       "trusted-set-cookie-reload": trustedSetCookieReload,
       "trusted-set-local-storage-item": trustedSetLocalStorageItem,
@@ -21878,7 +23381,7 @@
      * @property {Array<string>} args Arguments for scriptlet function
      * @property {'extension'|'corelibs'|'test'} engine -
      * Defines the final form of scriptlet string presentation
-     * @property {string} [version]
+     * @property {string} [version] extension version
      * @property {boolean} [verbose] flag to enable printing to console debug information
      * @property {string} [ruleText] Source rule text is used for debugging purposes
      * @property {string} [domainName] domain name where scriptlet is applied; for debugging purposes
@@ -21886,15 +23389,23 @@
 
     /**
      * Returns scriptlet code by param
-     * @param {Source} source
+     *
+     * @param {Object} source scriptlet properties
      * @returns {string|null} scriptlet code
+     * @throws on unknown scriptlet name
      */
     function getScriptletCode(source) {
       if (!validator.isValidScriptletName(source.name)) {
         return null;
       }
-      var scriptletFunction = getScriptletFunction(source.name).toString();
-      var result = source.engine === 'corelibs' || source.engine === 'test' ? wrapInNonameFunc(scriptletFunction) : passSourceAndProps(source, scriptletFunction);
+      const scriptletFunction = getScriptletFunction(source.name);
+      // In case isValidScriptletName check will pass invalid scriptlet name,
+      // for example when there is a bad alias
+      if (typeof scriptletFunction !== 'function') {
+        throw new Error("Error: cannot invoke scriptlet with name: '".concat(source.name, "'"));
+      }
+      const scriptletFunctionString = scriptletFunction.toString();
+      const result = source.engine === 'corelibs' || source.engine === 'test' ? wrapInNonameFunc(scriptletFunctionString) : passSourceAndProps(source, scriptletFunctionString);
       return result;
     }
 
@@ -21905,20 +23416,20 @@
      * `invoke` method receives one argument with `Source` type
      * `validate` method receives one argument with `String` type
      */
-    var scriptletsObject = function () {
+    const scriptletsObject = function () {
       return {
         invoke: getScriptletCode,
-        getScriptletFunction: getScriptletFunction,
+        getScriptletFunction,
         isValidScriptletName: validator.isValidScriptletName,
-        isValidScriptletRule: isValidScriptletRule,
+        isValidScriptletRule,
         isAdgScriptletRule: validator.isAdgScriptletRule,
         isUboScriptletRule: validator.isUboScriptletRule,
         isAbpSnippetRule: validator.isAbpSnippetRule,
         convertUboToAdg: convertUboScriptletToAdg,
         convertAbpToAdg: convertAbpSnippetToAdg,
-        convertScriptletToAdg: convertScriptletToAdg,
+        convertScriptletToAdg,
         convertAdgToUbo: convertAdgScriptletToUbo,
-        redirects: redirects
+        redirects
       };
     }();
 
