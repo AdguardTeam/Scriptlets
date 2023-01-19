@@ -12,6 +12,7 @@
 * [dir-string](#dir-string)
 * [disable-newtab-links](#disable-newtab-links)
 * [hide-in-shadow-dom](#hide-in-shadow-dom)
+* [inject-css-in-shadow-dom](#inject-css-in-shadow-dom)
 * [json-prune](#json-prune)
 * [log-addEventListener](#log-addeventlistener)
 * [log-eval](#log-eval)
@@ -445,6 +446,33 @@ virustotal.com#%#//scriptlet('hide-in-shadow-dom', 'vt-ui-contact-fab')
 ```
 
 [Scriptlet source](../src/scriptlets/hide-in-shadow-dom.js)
+* * *
+
+### <a id="inject-css-in-shadow-dom"></a> ⚡️ inject-css-in-shadow-dom
+
+Injects CSS rule into selected Shadow DOM subtrees on a page
+
+**Syntax**
+```
+example.org#%#//scriptlet('inject-css-in-shadow-dom', cssRule[, hostSelector])
+```
+
+- `cssRule` - required, string representing a single css rule
+- `hostSelector` - optional, string, selector to match shadow host elements. CSS rule will be only applied to shadow roots inside these elements.
+Defaults to injecting css rule into all available roots.
+
+**Examples**
+1. Apply style to all shadow dom subtrees
+```
+example.org#%#//scriptlet('inject-css-in-shadow-dom', '#advertisement { display: none !important; }')
+```
+
+2. Apply style to a specific shadow dom subtree
+```
+example.org#%#//scriptlet('inject-css-in-shadow-dom', '#content { margin-top: 0 !important; }', '.row > #hidden')
+```
+
+[Scriptlet source](../src/scriptlets/inject-css-in-shadow-dom.js)
 * * *
 
 ### <a id="json-prune"></a> ⚡️ json-prune
@@ -970,6 +998,7 @@ If not set, prevents all `setInterval` calls due to specified `matchDelay`.
 - `matchDelay` - optional, must be an integer.
 If starts with `!`, scriptlet will not match the delay but all other will be defused.
 If do not start with `!`, the delay passed to the `setInterval` call will be matched.
+Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
 
 > If `prevent-setInterval` log looks like `setInterval(undefined, 1000)`,
 it means that no callback was passed to setInterval() and that's not scriptlet issue
@@ -1045,6 +1074,21 @@ and obviously it can not be matched by `matchCallback`.
     }, 500);
     ```
 
+5. Prevents `setInterval` calls if the callback contains `value` and delay is a decimal.
+    ```
+    example.org#%#//scriptlet('prevent-setInterval', 'value', '300')
+    ```
+
+    For instance, the following calls will be prevented:
+    ```javascript
+    setInterval(function () {
+        window.test = "value";
+    }, 300);
+    setInterval(function () {
+        window.test = "value";
+    }, 300 + Math.random());
+    ```
+
 [Scriptlet source](../src/scriptlets/prevent-setInterval.js)
 * * *
 
@@ -1072,6 +1116,7 @@ If not set, prevents all `setTimeout` calls due to specified `matchDelay`.
 - `matchDelay` - optional, must be an integer.
 If starts with `!`, scriptlet will not match the delay but all other will be defused.
 If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
+Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
 
 > If `prevent-setTimeout` log looks like `setTimeout(undefined, 1000)`,
 it means that no callback was passed to setTimeout() and that's not scriptlet issue
@@ -1145,6 +1190,21 @@ and obviously it can not be matched by `matchCallback`.
     setTimeout(function () {
         window.value = "test -- executed";
     }, 500);
+    ```
+
+5. Prevents `setTimeout` calls if the callback contains `value` and delay is a decimal.
+    ```
+    example.org#%#//scriptlet('prevent-setTimeout', 'value', '300')
+    ```
+
+    For instance, the following calls will be prevented:
+    ```javascript
+    setTimeout(function () {
+        window.test = "value";
+    }, 300);
+    setTimeout(function () {
+        window.test = "value";
+    }, 300 + Math.random());
     ```
 
 [Scriptlet source](../src/scriptlets/prevent-setTimeout.js)
@@ -1538,8 +1598,10 @@ example.org#%#//scriptlet('set-constant', property, value[, stack])
         - `emptyObj` - empty object
         - `emptyArr` - empty array
         - `noopFunc` - function with empty body
+        - `noopCallbackFunc` - function returning noopFunc
         - `trueFunc` - function returning true
         - `falseFunc` - function returning false
+        - `throwFunc` - function throwing an error
         - `noopPromiseResolve` - function returning Promise object that is resolved with an empty response
         - `noopPromiseReject` - function returning Promise.reject()
         - `''` - empty string
@@ -1731,7 +1793,6 @@ example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '
 ### <a id="xml-prune"></a> ⚡️ xml-prune
 
 Removes an element from the specified XML.
-
 
 **Syntax**
 ```
