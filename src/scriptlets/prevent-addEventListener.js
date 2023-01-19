@@ -9,7 +9,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet prevent-addEventListener
- *
  * @description
  * Prevents adding event listeners for the specified events and callbacks.
  *
@@ -31,7 +30,7 @@ import {
  *     ```
  *     example.org#%#//scriptlet('prevent-addEventListener', 'click')
  *     ```
-
+ *
 2. Prevent 'click' listeners with the callback body containing `searchString`.
  *     ```
  *     example.org#%#//scriptlet('prevent-addEventListener', 'click', 'searchString')

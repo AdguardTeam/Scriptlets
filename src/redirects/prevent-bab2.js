@@ -3,7 +3,6 @@ import { hit } from '../helpers/index';
 
 /**
  * @redirect prevent-bab2
- *
  * @description
  * Prevents BlockAdblock script from detecting an ad blocker.
  *
@@ -18,7 +17,6 @@ import { hit } from '../helpers/index';
  * ```
  */
 export function preventBab2(source) {
-    // eslint-disable-next-line compat/compat
     const script = document.currentScript;
     if (script === null) {
         return;

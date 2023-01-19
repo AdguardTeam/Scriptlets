@@ -143,7 +143,9 @@ const getJsRedirects = async (options = {}) => {
     // TODO: seems like duplicate of already existed code
     /**
      * Returns first line of describing comment from redirect resource file
+     *
      * @param {string} rrName redirect resource name
+     * @returns {string|undefined}
      */
     const getComment = (rrName) => {
         const { description } = redirectsDescriptions.find((rr) => rr.name === rrName);
@@ -197,7 +199,7 @@ export const getPreparedRedirects = async (options) => {
 /**
  * Copies non-static redirects sources to dist
  *
- * @param redirectsData
+ * @param {object[]} redirectsData
  */
 const buildJsRedirectFiles = async (redirectsData) => {
     const saveRedirectData = async (redirect) => {
@@ -212,7 +214,7 @@ const buildJsRedirectFiles = async (redirectsData) => {
 /**
  * Prepares static redirects sources to dist
  *
- * @param redirectsData
+ * @param {object[]} redirectsData
  */
 const buildStaticRedirectFiles = async (redirectsData) => {
     const prepareRedirectData = async (redirect) => {

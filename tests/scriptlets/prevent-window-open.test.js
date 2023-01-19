@@ -207,7 +207,6 @@ test('new syntax: log checking - url + args', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        // eslint-disable-next-line max-len
         const EXPECTED_LOG_STR = `${name}: ${testUrl}, ${testWindowName}, ${testWindowFeatures}`;
         assert.strictEqual(input, EXPECTED_LOG_STR, 'console.hit input');
     };

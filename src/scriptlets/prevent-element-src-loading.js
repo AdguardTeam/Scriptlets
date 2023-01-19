@@ -8,7 +8,6 @@ import {
 /* eslint-disable max-len, consistent-return */
 /**
  * @scriptlet prevent-element-src-loading
- *
  * @description
  * Prevents target element source loading without triggering 'onerror' listeners and not breaking 'onload' ones.
  *

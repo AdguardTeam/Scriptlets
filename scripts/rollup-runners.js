@@ -5,7 +5,8 @@ const { log } = console;
 
 /**
  * Builds scriptlets
- * @param config config may be list of configs or one config
+ *
+ * @param {object|object[]} config config may be list of configs or one config
  */
 export const rollupStandard = async (config) => {
     const runOneConfig = async (config) => {
@@ -26,7 +27,8 @@ export const rollupStandard = async (config) => {
 
 /**
  * Builds scriptlets in the watch mode
- * @param config - config may be list of configs or one config
+ *
+ * @param {object|object[]} config - config may be list of configs or one config
  */
 export const rollupWatch = (config) => {
     const watcher = rollup.watch(config);

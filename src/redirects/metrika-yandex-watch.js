@@ -2,7 +2,6 @@ import { hit, noopFunc, noopArray } from '../helpers/index';
 
 /**
  * @redirect metrika-yandex-watch
- *
  * @description
  * Mocks the old Yandex Metrika API.
  * https://yandex.ru/support/metrica/objects/_method-reference.html
@@ -17,6 +16,7 @@ export function metrikaYandexWatch(source) {
 
     /**
      * Gets callback and its context from options and call it in async way
+     *
      * @param {Object} options Yandex Metrika API options
      */
     const asyncCallbackFromOptions = (options = {}) => {

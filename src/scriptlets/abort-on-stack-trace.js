@@ -20,7 +20,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet abort-on-stack-trace
- *
  * @description
  * Aborts a script when it attempts to utilize (read or write to) the specified property and it's error stack trace contains given value.
  *

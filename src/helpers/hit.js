@@ -1,7 +1,9 @@
 /* eslint-disable no-console, no-underscore-dangle */
+
 /**
  * Hit used only for debug purposes now
- * @param {Source} source
+ *
+ * @param {Object} source scriptlet properties
  * use LOG_MARKER = 'log: ' at the start of a message
  * for logging scriptlets
  */
@@ -12,7 +14,7 @@ export const hit = (source) => {
 
     try {
         const log = console.log.bind(console);
-        const trace = console.trace.bind(console); // eslint-disable-line compat/compat
+        const trace = console.trace.bind(console);
 
         let prefix = source.ruleText || '';
 

@@ -2,7 +2,6 @@ import { noeval } from '../scriptlets/noeval';
 
 /**
  * @redirect noeval
- *
  * @description
  * Redirects request to the source which sets static properties to PopAds and popns objects.
  *

@@ -9,7 +9,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet set-session-storage-item
- *
  * @description
  * Adds specified key and its value to sessionStorage object, or updates the value of the key if it already exists.
  * Scriptlet won't set item if storage is full.

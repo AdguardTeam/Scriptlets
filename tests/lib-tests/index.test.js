@@ -442,6 +442,10 @@ test('Test REDIRECT-RULE converting - UBO -> ADG', (assert) => {
     uboRule = '||googlesyndication.com^$script,redirect-rule=googlesyndication_adsbygoogle.js,domain=darmowa-tv.ws';
     expectedAdgRule = '||googlesyndication.com^$script,redirect-rule=googlesyndication-adsbygoogle,domain=darmowa-tv.ws';
     assert.strictEqual(convertRedirectToAdg(uboRule), expectedAdgRule);
+
+    uboRule = '||googletagmanager.com/gtag/js$script,redirect-rule=googletagmanager_gtm.js';
+    expectedAdgRule = '||googletagmanager.com/gtag/js$script,redirect-rule=googletagmanager-gtm';
+    assert.strictEqual(convertRedirectToAdg(uboRule), expectedAdgRule);
 });
 
 test('Test REDIRECT converting - ABP -> ADG', (assert) => {

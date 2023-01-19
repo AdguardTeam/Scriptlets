@@ -16,7 +16,8 @@ const TEST_FILE_NAME_MARKER = '.html';
 const testServer = server.init();
 /**
  * Returns false if test failed and true if test passed
- * @param indexFile
+ *
+ * @param {string} indexFile
  * @returns {Promise<boolean>}
  */
 const runQunit = async (indexFile) => {

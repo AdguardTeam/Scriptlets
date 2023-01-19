@@ -2,7 +2,6 @@ import { hit, noopFunc } from '../helpers/index';
 
 /**
  * @redirect ati-smarttag
- *
  * @description
  * Mocks AT Internat SmartTag.
  * https://developers.atinternet-solutions.com/as2-tagging-en/javascript-en/getting-started-javascript-en/tracker-initialisation-javascript-en/
@@ -88,9 +87,7 @@ export function ATInternetSmartTag(source) {
 
     const smartTagWrapper = {
         Tracker: {
-            Tag() {
-                return new tag(); // eslint-disable-line new-cap
-            },
+            Tag: tag,
         },
     };
 

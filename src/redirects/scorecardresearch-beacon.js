@@ -2,7 +2,6 @@ import { hit } from '../helpers/index';
 
 /**
  * @redirect scorecardresearch-beacon
- *
  * @description
  * Mocks Scorecard Research API.
  *

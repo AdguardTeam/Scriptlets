@@ -2,7 +2,6 @@ import { hit } from '../helpers/index';
 
 /**
  * @scriptlet disable-newtab-links
- *
  * @description
  * Prevents opening new tabs and windows if there is `target` attribute in element.
  *

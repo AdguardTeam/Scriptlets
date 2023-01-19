@@ -14,7 +14,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet set-cookie
- *
  * @description
  * Sets a cookie with the specified name, value, and path.
  *

@@ -1,6 +1,6 @@
 {
     "name": "@adguard/scriptlets",
-    "version": "1.7.23",
+    "version": "1.8.0",
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "scripts": {
         "build": "babel-node bundler.js",
@@ -19,11 +19,6 @@
         "{src,tests,scripts}/**/*.js": [
             "eslint"
         ]
-    },
-    "husky": {
-        "hooks": {
-            "pre-commit": "lint-staged"
-        }
     },
     "author": "AdGuard",
     "license": "GPL-3.0",
@@ -48,15 +43,12 @@
         "js-yaml": "^3.13.1"
     },
     "devDependencies": {
-        "@babel/cli": "^7.8.4",
-        "@babel/core": "^7.20.5",
-        "@babel/eslint-parser": "^7.16.5",
-        "@babel/node": "^7.8.7",
-        "@babel/plugin-proposal-class-properties": "^7.16.5",
-        "@babel/plugin-proposal-private-methods": "^7.16.5",
-        "@babel/plugin-transform-regenerator": "^7.7.0",
+        "@babel/cli": "^7.20.7",
+        "@babel/core": "^7.20.12",
+        "@babel/eslint-parser": "^7.19.1",
+        "@babel/node": "^7.20.7",
         "@babel/plugin-transform-runtime": "^7.6.2",
-        "@babel/preset-env": "^7.9.0",
+        "@babel/preset-env": "^7.20.2",
         "@rollup/plugin-babel": "^5.0.4",
         "@rollup/plugin-commonjs": "^17.0.0",
         "@rollup/plugin-json": "^4.1.0",
@@ -72,10 +64,10 @@
         "dox": "^0.9.0",
         "eslint": "^7.25.0",
         "eslint-config-airbnb-base": "^14.2.1",
-        "eslint-plugin-compat": "^3.9.0",
         "eslint-plugin-import": "^2.22.1",
+        "eslint-plugin-jsdoc": "^39.6.4",
         "fs-extra": "^10.0.1",
-        "husky": "^3.1.0",
+        "husky": "~8.0.2",
         "js-reporters": "^2.1.0",
         "kleur": "^4.1.4",
         "lint-staged": "^12.1.2",
@@ -91,11 +83,5 @@
     },
     "files": [
         "dist"
-    ],
-    "browserslist": [
-        "last 1 versions",
-        "chrome >= 55",
-        "safari >= 10",
-        "ie >= 9"
     ]
 }

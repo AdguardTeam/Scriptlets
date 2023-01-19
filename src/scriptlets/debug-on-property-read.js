@@ -13,7 +13,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet debug-on-property-read
- *
  * @description
  * This scriptlet is basically the same as [abort-on-property-read](#abort-on-property-read), but instead of aborting it starts the debugger.
  *

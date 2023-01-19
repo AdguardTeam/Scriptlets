@@ -15,12 +15,12 @@ import {
     escapeRegExp,
     nativeIsFinite,
     isValidMatchNumber,
+    parseRawDelay,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
 /**
  * @scriptlet prevent-setInterval
- *
  * @description
  * Prevents a `setInterval` call if:
  * 1) the text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
@@ -44,6 +44,7 @@ import {
  * - `matchDelay` - optional, must be an integer.
  * If starts with `!`, scriptlet will not match the delay but all other will be defused.
  * If do not start with `!`, the delay passed to the `setInterval` call will be matched.
+ * Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
  *
  * > If `prevent-setInterval` log looks like `setInterval(undefined, 1000)`,
  * it means that no callback was passed to setInterval() and that's not scriptlet issue
@@ -118,39 +119,26 @@ import {
  *         window.value = "test -- executed";
  *     }, 500);
  *     ```
+ *
+ * 5. Prevents `setInterval` calls if the callback contains `value` and delay is a decimal.
+ *     ```
+ *     example.org#%#//scriptlet('prevent-setInterval', 'value', '300')
+ *     ```
+ *
+ *     For instance, the following calls will be prevented:
+ *     ```javascript
+ *     setInterval(function () {
+ *         window.test = "value";
+ *     }, 300);
+ *     setInterval(function () {
+ *         window.test = "value";
+ *     }, 300 + Math.random());
+ *     ```
  */
 /* eslint-enable max-len */
 export function preventSetInterval(source, matchCallback, matchDelay) {
-    // if browser does not support Proxy (e.g. Internet Explorer),
-    // we use none-proxy "legacy" wrapper for preventing
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-    const isProxySupported = typeof Proxy !== 'undefined';
-
-    const nativeInterval = window.setInterval;
-
     // logs setIntervals to console if no arguments have been specified
     const shouldLog = ((typeof matchCallback === 'undefined') && (typeof matchDelay === 'undefined'));
-
-    const legacyIntervalWrapper = (callback, delay, ...args) => {
-        let shouldPrevent = false;
-        if (shouldLog) {
-            hit(source);
-            // https://github.com/AdguardTeam/Scriptlets/issues/105
-            logMessage(source, `setInterval(${String(callback)}, ${delay})`, true);
-        } else {
-            shouldPrevent = isPreventionNeeded({
-                callback,
-                delay,
-                matchCallback,
-                matchDelay,
-            });
-        }
-        if (shouldPrevent) {
-            hit(source);
-            return nativeInterval(noopFunc, delay);
-        }
-        return nativeInterval.apply(window, [callback, delay, ...args]);
-    };
 
     const handlerWrapper = (target, thisArg, args) => {
         const callback = args[0];
@@ -179,9 +167,7 @@ export function preventSetInterval(source, matchCallback, matchDelay) {
         apply: handlerWrapper,
     };
 
-    window.setInterval = isProxySupported
-        ? new Proxy(window.setInterval, setIntervalHandler)
-        : legacyIntervalWrapper;
+    window.setInterval = new Proxy(window.setInterval, setIntervalHandler);
 }
 
 preventSetInterval.names = [
@@ -218,4 +204,5 @@ preventSetInterval.injections = [
     escapeRegExp,
     nativeIsFinite,
     isValidMatchNumber,
+    parseRawDelay,
 ];

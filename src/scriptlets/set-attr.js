@@ -10,7 +10,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet set-attr
- *
  * @description
  * Sets the specified attribute on the specified elements. This scriptlet runs once when the page loads
  * and after that and after that on DOM tree changes.
@@ -61,7 +60,7 @@ export function setAttr(source, selector, attr, value = '') {
     if (value.length !== 0
         && (nativeIsNaN(parseInt(value, 10))
             || parseInt(value, 10) < 0
-            || parseInt(value, 10) > 0x7FFF)) {
+            || parseInt(value, 10) > 32767)) {
         return;
     }
 

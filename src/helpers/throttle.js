@@ -1,8 +1,10 @@
 /**
  * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
  * Those calls that fall into the "cooldown" period, are ignored
- * @param {Function} method
- * @param {Number} delay - milliseconds
+ *
+ * @param {Function} cb callback
+ * @param {number} delay - milliseconds
+ * @returns {Function} throttled callback
  */
 export const throttle = (cb, delay) => {
     let wait = false;

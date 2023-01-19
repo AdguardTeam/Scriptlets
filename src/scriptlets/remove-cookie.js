@@ -3,7 +3,6 @@ import { hit, toRegExp } from '../helpers/index';
 /* eslint-disable max-len */
 /**
  * @scriptlet remove-cookie
- *
  * @description
  * Removes current page cookies by passed string matching with name. For current domain and subdomains. Runs on load and before unload.
  *

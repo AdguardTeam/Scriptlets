@@ -1,8 +1,8 @@
 /**
- * @typedef Chain
- * @property {Object} base
- * @property {string} prop
- * @property {string} [chain]
+ * @typedef ChainInfo
+ * @property {Object} base current chain base
+ * @property {string} prop current chain prop
+ * @property {string} [chain] string representation
  */
 
 /**
@@ -10,12 +10,12 @@
  * Similar to getPropertyInChain but upgraded for json-prune:
  * handle wildcard properties and does not define nonexistent base property as 'undefined'
  *
- * @param {Object} base
- * @param {string} chain
+ * @param {Object} base object that owns chain
+ * @param {string} chain chain of owner properties
  * @param {boolean} [lookThrough=false]
  * should the method look through it's props in order to wildcard
  * @param {Array} [output=[]] result acc
- * @returns {Chain[]} array of objects
+ * @returns {ChainInfo[]} array of objects
  */
 export function getWildcardPropertyInChain(base, chain, lookThrough = false, output = []) {
     const pos = chain.indexOf('.');

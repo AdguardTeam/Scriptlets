@@ -46,8 +46,9 @@ const aboutTrustedScriptletsPath = path.resolve(
 );
 
 /**
- * Collects required comments from files and
- * returns describing object for scriptlets and redirects
+ * Collects required comments from files
+ *
+ * @returns {Object} describing object for scriptlets and redirects
  */
 const manageDataFromFiles = () => {
     const dataFromScriptletsFiles = getDataFromFiles(
@@ -95,7 +96,6 @@ const manageDataFromFiles = () => {
  * Generates markdown list and describing text.
  *
  * @param {DescribingCommentData[]} dataItems array of comment data objects
- *
  * @returns {MarkdownData}
  */
 const getMarkdownData = (dataItems) => {

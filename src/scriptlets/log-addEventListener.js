@@ -13,7 +13,6 @@ import {
 
 /**
  * @scriptlet log-addEventListener
- *
  * @description
  * Logs all addEventListener calls to the console.
  *

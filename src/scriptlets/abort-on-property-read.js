@@ -12,7 +12,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet abort-on-property-read
- *
  * @description
  * Aborts a script when it attempts to **read** the specified property.
  *

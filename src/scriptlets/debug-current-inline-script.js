@@ -14,7 +14,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet debug-current-inline-script
- *
  * @description
  * This scriptlet is basically the same as [abort-current-inline-script](#abort-current-inline-script), but instead of aborting it starts the debugger.
  *
@@ -33,7 +32,7 @@ export function debugCurrentInlineScript(source, property, search) {
 
     const getCurrentScript = () => {
         if ('currentScript' in document) {
-            return document.currentScript; // eslint-disable-line compat/compat
+            return document.currentScript;
         }
         const scripts = document.getElementsByTagName('script');
         return scripts[scripts.length - 1];

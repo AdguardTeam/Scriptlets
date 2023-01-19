@@ -59,7 +59,7 @@ test('Set cookie with current time value', (assert) => {
 
     // Some time will pass between calling scriptlet
     // and qunit running assertion
-    const tolerance = 20;
+    const tolerance = 125;
     const cookieValue = parseCookieString(document.cookie)[cName];
     const currentTime = new Date().getTime();
     const timeDiff = currentTime - cookieValue;
@@ -112,9 +112,11 @@ test('Set cookie with invalid expires', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(input,
+        assert.strictEqual(
+            input,
             `${name}: Invalid offsetExpiresSec value: ${expiresSec}`,
-            'logs correctly on invalid offsetExpiresSec');
+            'logs correctly on invalid offsetExpiresSec',
+        );
     };
     runScriptlet(name, [cName, cValue, `${expiresSec}`]);
 

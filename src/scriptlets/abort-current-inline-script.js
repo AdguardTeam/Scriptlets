@@ -16,7 +16,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet abort-current-inline-script
- *
  * @description
  * Aborts an inline script when it attempts to **read** or **write to** the specified property
  * AND when the contents of the `<script>` element contains the specified
@@ -85,7 +84,7 @@ export function abortCurrentInlineScript(source, property, search) {
 
     const getCurrentScript = () => {
         if ('currentScript' in document) {
-            return document.currentScript; // eslint-disable-line compat/compat
+            return document.currentScript;
         }
         const scripts = document.getElementsByTagName('script');
         return scripts[scripts.length - 1];

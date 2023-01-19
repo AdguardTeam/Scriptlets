@@ -20,7 +20,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @trustedScriptlet trusted-replace-xhr-response
- *
  * @description
  * Replaces response content of `xhr` requests if **all** given parameters match.
  *
@@ -90,9 +89,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
     const nativeOpen = window.XMLHttpRequest.prototype.open;
     const nativeSend = window.XMLHttpRequest.prototype.send;
 
-    let shouldReplace = false;
     let xhrData;
-    let requestHeaders = [];
 
     const openWrapper = (target, thisArg, args) => {
         // eslint-disable-next-line prefer-spread
@@ -106,13 +103,16 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
             return Reflect.apply(target, thisArg, args);
         }
 
-        shouldReplace = matchRequestProps(source, propsToMatch, xhrData);
+        if (matchRequestProps(source, propsToMatch, xhrData)) {
+            thisArg.shouldBePrevented = true;
+        }
 
         // Trap setRequestHeader of target xhr object to mimic request headers later
-        if (shouldReplace) {
+        if (thisArg.shouldBePrevented) {
+            thisArg.collectedHeaders = [];
             const setRequestHeaderWrapper = (target, thisArg, args) => {
                 // Collect headers
-                requestHeaders.push(args);
+                thisArg.collectedHeaders.push(args);
                 return Reflect.apply(target, thisArg, args);
             };
 
@@ -129,7 +129,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
     };
 
     const sendWrapper = (target, thisArg, args) => {
-        if (!shouldReplace) {
+        if (!thisArg.shouldBePrevented) {
             return Reflect.apply(target, thisArg, args);
         }
 
@@ -197,13 +197,13 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
 
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
-        requestHeaders.forEach((header) => {
+        thisArg.collectedHeaders.forEach((header) => {
             const name = header[0];
             const value = header[1];
 
             forgedRequest.setRequestHeader(name, value);
         });
-        requestHeaders = [];
+        thisArg.collectedHeaders = [];
 
         try {
             nativeSend.call(forgedRequest, args);

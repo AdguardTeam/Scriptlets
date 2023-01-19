@@ -22,7 +22,9 @@ import { redirectsMap } from '../../tmp/redirects-map';
 
 /**
  * Finds redirect resource by it's name
+ *
  * @param {string} name - redirect name
+ * @returns {Function}
  */
 const getRedirectByName = (name) => {
     const redirects = Object.keys(redirectsList).map((key) => redirectsList[key]);
@@ -40,6 +42,7 @@ const getRedirectByName = (name) => {
 
 /**
  * Returns redirect code by param
+ *
  * @param {Source} source
  * @returns {string} redirect code
  */

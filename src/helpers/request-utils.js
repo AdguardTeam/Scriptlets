@@ -4,7 +4,8 @@ import { getObjectFromEntries } from './object-utils';
 /**
  * Returns array of request props that are supported by fetch/xhr scriptlets.
  * Includes common 'url' and 'method' props and all other fetch-specific props
- * @returns {string[]}
+ *
+ * @returns {string[]} list of request props
  */
 export const getRequestProps = () => [
     'url',
@@ -24,7 +25,8 @@ export const getRequestProps = () => [
 
 /**
  * Collects Request options to object
- * @param {Request} request
+ *
+ * @param {Request} request Request instance to collect properties from
  * @returns {Object} data object
  */
 export const getRequestData = (request) => {
@@ -40,7 +42,8 @@ export const getRequestData = (request) => {
 
 /**
  * Collects fetch args to object
- * @param {*} args fetch args
+ *
+ * @param {any} args fetch args
  * @returns {Object} data object
  */
 export const getFetchData = (args) => {
@@ -70,12 +73,13 @@ export const getFetchData = (args) => {
 
 /**
  * Collect xhr.open arguments to object
- * @param {string} method
- * @param {string} url
- * @param {string} async
- * @param {string} user
- * @param {string} password
- * @returns {Object}
+ *
+ * @param {string} method request method
+ * @param {string} url request url
+ * @param {string} async request async prop
+ * @param {string} user request user prop
+ * @param {string} password request password prop
+ * @returns {Object} aggregated request data
  */
 export const getXhrData = (method, url, async, user, password) => {
     return {
@@ -90,7 +94,8 @@ export const getXhrData = (method, url, async, user, password) => {
 /**
  * Parse propsToMatch input string into object;
  * used for prevent-fetch and prevent-xhr
- * @param {string} propsToMatchStr
+ *
+ * @param {string} propsToMatchStr string of space-separated request properties to match
  * @returns {Object} object where 'key' is prop name and 'value' is prop value
  */
 export const parseMatchProps = (propsToMatchStr) => {
@@ -123,8 +128,9 @@ export const parseMatchProps = (propsToMatchStr) => {
 
 /**
  * Validates parsed data values
- * @param {Object} data
- * @returns {boolean}
+ *
+ * @param {Object} data request data
+ * @returns {boolean} if data is valid
  */
 export const validateParsedData = (data) => {
     return Object.values(data)
@@ -133,8 +139,9 @@ export const validateParsedData = (data) => {
 
 /**
  * Converts valid parsed data to data obj for further matching
- * @param {Object} data
- * @returns {Object}
+ *
+ * @param {Object} data parsed request data
+ * @returns {Object} data obj ready for matching
  */
 export const getMatchPropsData = (data) => {
     const matchData = {};

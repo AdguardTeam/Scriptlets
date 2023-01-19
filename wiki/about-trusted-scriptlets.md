@@ -2,6 +2,7 @@
 * [trusted-click-element](#trusted-click-element)
 * [trusted-replace-fetch-response](#trusted-replace-fetch-response)
 * [trusted-replace-xhr-response](#trusted-replace-xhr-response)
+* [trusted-set-constant](#trusted-set-constant)
 * [trusted-set-cookie-reload](#trusted-set-cookie-reload)
 * [trusted-set-cookie](#trusted-set-cookie)
 * [trusted-set-local-storage-item](#trusted-set-local-storage-item)
@@ -169,6 +170,64 @@ which is useful for debugging but not permitted for production filter lists.
     ```
 
 [Scriptlet source](../src/scriptlets/trusted-replace-xhr-response.js)
+* * *
+
+### <a id="trusted-set-constant"></a> ⚡️ trusted-set-constant
+
+Creates a constant property and assigns it a specified value.
+
+> Actually, it's not a constant. Please note, that it can be rewritten with a value of a different type.
+
+> If empty object is present in chain it will be trapped until chain leftovers appear.
+
+> Use [set-constant](./about-scriptlets.md#set-constant) to set predefined values and functions.
+
+**Syntax**
+```
+example.org#%#//scriptlet('trusted-set-constant', property, value[, stack])
+```
+
+- `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`.
+- `value` - required, an arbitrary value to be set; value type is being inferred from the argument, e.g '500' will be set as number;
+to set string type value wrap argument into another pair of quotes: `'"500"'`;
+- `stack` - optional, string or regular expression that must match the current function call stack trace;
+if regular expression is invalid it will be skipped
+
+**Examples**
+1. Set property values of different types
+```
+! Set string value wrapping argument into another pair of quotes
+example.org#%#//scriptlet('trusted-set-constant', 'click_r', '"null"')
+
+✔ window.click_r === 'null'
+✔ typeof window.click_r === 'string'
+
+! Set inferred null value
+example.org#%#//scriptlet('trusted-set-constant', 'click_r', 'null')
+
+✔ window.click_r === null
+✔ typeof window.click_r === 'object'
+
+! Set number type value
+example.org#%#//scriptlet('trusted-set-constant', 'click_r', '48')
+
+✔ window.click_r === 48
+✔ typeof window.click_r === 'number'
+
+! Set array or object as property value, argument should be a JSON string
+example.org#%#//scriptlet('trusted-set-constant', 'click_r', '[1,"string"]')
+example.org#%#//scriptlet('trusted-set-constant', 'click_r', '{"aaa":123,"bbb":{"ccc":"string"}}')
+```
+
+2. Use script stack matching to set value
+```
+! `document.first` will return `1` if the method is related to `checking.js`
+example.org#%#//scriptlet('trusted-set-constant', 'document.first', '1', 'checking.js')
+
+✔ document.first === 1  // if the condition described above is met
+```
+
+[Scriptlet source](../src/scriptlets/trusted-set-constant.js)
 * * *
 
 ### <a id="trusted-set-cookie-reload"></a> ⚡️ trusted-set-cookie-reload

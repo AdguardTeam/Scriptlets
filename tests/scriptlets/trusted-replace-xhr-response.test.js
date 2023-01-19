@@ -194,6 +194,47 @@ if (isSupported) {
             done3();
         });
     });
+
+    test('Works correctly with different parallel XHR requests', async (assert) => {
+        const URL_TO_PASS = `${FETCH_OBJECTS_PATH}/test02.json`;
+        const INTACT_RESPONSE_PART = 'test';
+
+        const METHOD = 'GET';
+        const URL_TO_BLOCK = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const PATTERN = '*';
+        const REPLACEMENT = '';
+        const MATCH_DATA = [PATTERN, REPLACEMENT, 'test01'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done1 = assert.async();
+        const done2 = assert.async();
+
+        const xhr1 = new XMLHttpRequest();
+        const xhr2 = new XMLHttpRequest();
+
+        xhr1.open(METHOD, URL_TO_PASS);
+        xhr2.open(METHOD, URL_TO_BLOCK);
+
+        xhr1.onload = () => {
+            assert.strictEqual(xhr1.readyState, 4, 'Response done');
+            assert.ok(xhr1.response.includes(INTACT_RESPONSE_PART), 'Response is intact');
+            assert.strictEqual(window.hit, undefined, 'hit should not fire');
+            done1();
+        };
+
+        xhr2.onload = () => {
+            assert.strictEqual(xhr2.readyState, 4, 'Response done');
+            assert.ok(xhr2.response === '', 'Response has been removed');
+
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done2();
+        };
+
+        xhr1.send();
+        // use timeout to avoid hit collisions
+        setTimeout(() => xhr2.send(), 1);
+    });
 } else {
     test('unsupported', (assert) => {
         assert.ok(true, 'Browser does not support it');

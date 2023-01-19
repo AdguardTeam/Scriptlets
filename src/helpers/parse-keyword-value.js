@@ -6,8 +6,8 @@
  *   - '$now$' - returns current time in ms, e.g 1667915146503
  *   - '$currentDate$' - returns current date e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
  *
- * @param {string} rawValue
- * @returns {string}
+ * @param {string} rawValue keyword
+ * @returns {string} parsed value
  */
 export const parseKeywordValue = (rawValue) => {
     const NOW_VALUE_KEYWORD = '$now$';

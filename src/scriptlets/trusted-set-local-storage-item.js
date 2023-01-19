@@ -9,7 +9,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @trustedScriptlet trusted-set-local-storage-item
- *
  * @description
  * Adds item with arbitrary key and value to localStorage object, or updates the value of the key if it already exists.
  * Scriptlet won't set item if storage is full.
@@ -56,12 +55,12 @@ import {
 
 export function trustedSetLocalStorageItem(source, key, value) {
     if (typeof key === 'undefined') {
-        logMessage(source, 'Item key should be specified.');
+        logMessage(source, 'Item key should be specified');
         return;
     }
 
     if (typeof value === 'undefined') {
-        logMessage(source, 'Item value should be specified.');
+        logMessage(source, 'Item value should be specified');
         return;
     }
 

@@ -6,7 +6,6 @@ import {
 
 /**
  * @scriptlet close-window
- *
  * @description
  * Closes the browser tab immediately.
  *

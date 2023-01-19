@@ -15,7 +15,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @trustedScriptlet trusted-set-cookie-reload
- *
  * @description
  * Sets a cookie with arbitrary name and value,
  * and with optional ability to offset cookie attribute 'expires' and set path.
@@ -72,11 +71,11 @@ import {
 
 export function trustedSetCookieReload(source, name, value, offsetExpiresSec = '', path = '/') {
     if (typeof name === 'undefined') {
-        logMessage(source, 'Cookie name should be specified.');
+        logMessage(source, 'Cookie name should be specified');
         return;
     }
     if (typeof value === 'undefined') {
-        logMessage(source, 'Cookie value should be specified.');
+        logMessage(source, 'Cookie value should be specified');
         return;
     }
 

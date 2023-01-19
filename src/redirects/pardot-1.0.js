@@ -8,7 +8,6 @@ import {
 
 /**
  * @redirect pardot-1.0
- *
  * @description
  * Mocks the pd.js file of Salesforce.
  * https://pi.pardot.com/pd.js

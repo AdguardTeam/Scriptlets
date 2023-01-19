@@ -4,7 +4,6 @@ import { toRegExp, hit } from '../helpers/index';
 
 /**
  * @scriptlet prevent-eval-if
- *
  * @description
  * Prevents page to use eval matching payload.
  *
