@@ -1253,7 +1253,7 @@ for accessing its methods (blur(), focus() etc.) and will be removed after the d
     ```
     example.org#%#//scriptlet('prevent-window-open', '!example')
     ```
-P
+
 Old syntax of prevent-window-open parameters:
 - `match` - optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
 - `search` - optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
