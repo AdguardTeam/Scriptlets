@@ -1,6 +1,6 @@
 # Scriptlets and Redirect Resources Changelog
 
-## Unreleased 1.8.x
+## v1.8.1
 
 ### Added
 - new `trusted-set-constant` scriptlet [#137](https://github.com/AdguardTeam/Scriptlets/issues/137)
