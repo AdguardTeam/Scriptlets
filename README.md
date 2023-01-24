@@ -36,14 +36,23 @@ rule = [domains]  "#%#//scriptlet(" scriptletName arguments ")"
 * `arguments` (optional) a list of `String` arguments (no other types of arguments are supported)
 
 > **Remarks**
-> * The meanining of the arguments depends on the scriptlet.
+>
+> * The meaning of the arguments depends on the scriptlet.
+>
+> * Special characters in scriptlet argument must be escaped properly:
+>   * valid:
+>     * `'prop["nested"]'`
+>     * `"prop['nested']"`
+>     * `'prop[\'nested\']'`
+>     * `"prop[\"nested\"]"`
+>   * not valid:
+>     * `'prop['nested']'`
+>     * `"prop["nested"]"`
+>
 > * You can use either single or double quotes for the scriptlet name and arguments.
-> * Special characters must be escaped properly:
->     * `'prop["nested"]'` - valid
->     * `"prop['nested']"` - valid
->     * `"prop[\"nested\"]"` - also valid
->     * `"prop["nested"]"` - not valid
->     * `'prop['nested']'` - not valid
+> Single quote is recommended but not for cases when its usage makes readability worse,
+> e.g. `".css('display','block');"` is more preferred then `'.css(\'display\',\'block\');'`.
+
 
 **Example**
 
@@ -88,8 +97,8 @@ AdGuard uses the same filtering rule syntax as [uBlock Origin](https://github.co
 The value of the `$redirect` modifier must be the name of the resource, that will be used for redirection. See the list of resources [below](#available-resources).
 
 **Examples**
-* `||example.org/script.js$script,redirect=noopjs` -- redirects all requests to `script.js` to the resource named `noopjs`.
-* `||example.org/test.mp4$media,redirect=noopmp4-1s` -- requests to `example.org/test.mp4` will be redirected to the resource named `noopmp4-1s`.
+* `||example.org/script.js$script,redirect=noopjs` — redirects all requests to `script.js` to the resource named `noopjs`.
+* `||example.org/test.mp4$media,redirect=noopmp4-1s` — requests to `example.org/test.mp4` will be redirected to the resource named `noopmp4-1s`.
 
 > `$redirect` rules priority is higher than the regular basic blocking rules' priority. This means that if there's a basic blocking rule (even with `$important` modifier), `$redirect` rule will prevail over it. If there's a whitelist (`@@`) rule matching the same URL, it will disable redirecting as well (unless the `$redirect` rule is also marked as `$important`).
 
@@ -135,7 +144,7 @@ cd ./packages/tsurlfilter
 yarn build
 yarn link
 ```
-In extension directory install dependincies, link packages and build
+In extension directory install dependencies, link packages and build
 ```
 yarn
 
@@ -433,7 +442,7 @@ const redirect = redirect.getRedirect('noopjs');
 const isBlocking = redirect.isBlocking('click2load.html');
 
 /**
- * Redirect - object with following props
+ * Redirect — object with following props
  * {
  *      title: 1x1-transparent.gif
  *      comment: http://probablyprogramming.com/2009/03/15/the-tiniest-gif-ever
@@ -480,7 +489,7 @@ import './redirects/index.test';
 // import './helpers/index.test';
 ```
 
-> It is also possible to exclude libtests in `tests/lib-tests/index.test.js`
+> It is also possible to exclude library tests in `tests/lib-tests/index.test.js`
 
 Run specific scriptlet or redirect test by editing `build-tests.js`
 ```

@@ -186,3 +186,52 @@ test('event listeners should be added correctly -- invalid func regexp pattern',
     assert.strictEqual(window.hit, undefined, 'hit function not fired');
     assert.strictEqual(window[focusProp], 'focused', 'property should change');
 });
+
+test('match simple single quote mark', (assert) => {
+    const scriptletArgs = ['click', 'single\'quote'];
+    runScriptlet(name, scriptletArgs);
+
+    const testProp = 'testProp';
+    const element = document.createElement('div');
+    element.addEventListener('click', () => {
+        window[testProp] = "single'quote";
+    });
+    element.click();
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    assert.strictEqual(window[testProp], undefined, 'property should be undefined');
+    clearGlobalProps(testProp);
+});
+
+test('match single quote mark with one backslash before it', (assert) => {
+    // eslint-disable-next-line no-useless-escape
+    const scriptletArgs = ['click', "single\'quote"];
+    runScriptlet(name, scriptletArgs);
+
+    const testProp = 'testProp';
+    const element = document.createElement('div');
+    element.addEventListener('click', () => {
+        window[testProp] = "single'quote";
+    });
+    element.click();
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    assert.strictEqual(window[testProp], undefined, 'property should be undefined');
+    clearGlobalProps(testProp);
+});
+
+test('match escaped quote mark', (assert) => {
+    const scriptletArgs = ['click', "\\'quote"];
+    runScriptlet(name, scriptletArgs);
+
+    const testProp = 'testProp';
+    const element = document.createElement('div');
+    element.addEventListener('click', () => {
+        window[testProp] = "escaped\\'quote";
+    });
+    element.click();
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    assert.strictEqual(window[testProp], undefined, 'property should be undefined');
+    clearGlobalProps(testProp);
+});
