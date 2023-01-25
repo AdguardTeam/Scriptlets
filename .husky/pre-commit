@@ -1,5 +1,19 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+# 'dist/' directory should be updated only during the release build process.
+# because it triggers the scriptlets update in corelibs,
+# and it should be done only for scriptlets releases
+#
+# 1. staged files names should not contain 'dist/'
+# 2. allow to commit during the release build
+if ([[ `git diff --cached --name-only --diff-filter=ACM` == *"dist/"* ]] && [[ ! `git branch --show-current` == 'master' ]]); then
+    echo "\033[33;1mWARNING!\033[0m"
+    echo "\033[33m'dist/' directory SHOULD NOT be updated during the development\033[0m"
+    echo "\033[33mPlease, unstage dist changes:\033[0m"
+    git status
+    exit 1
+fi
+
 yarn lint-staged
 yarn test
