@@ -1,26 +1,19 @@
 import { nativeIsNaN } from './number-utils';
-import { logMessage } from './log-message';
-
-/**
- * @typedef { import('../scriptlets/index').Source } Source
- */
 
 /**
  * Checks whether the input path is supported
  *
  * @param {string} rawPath input path
- *
- * @returns {boolean}
+ * @returns {boolean} if cookie path is valid
  */
-export const isValidCookieRawPath = (rawPath) => rawPath === '/' || rawPath === 'none';
+export const isValidCookiePath = (rawPath) => rawPath === '/' || rawPath === 'none';
 
 /**
  * Returns 'path=/' if rawPath is '/'
  * or empty string '' for other cases, `rawPath === 'none'` included
  *
- * @param {string} rawPath
- *
- * @returns {string}
+ * @param {string} rawPath path argument of *set-cookie-* scriptlets
+ * @returns {string} cookie path
  */
 export const getCookiePath = (rawPath) => {
     if (rawPath === '/') {
@@ -28,38 +21,29 @@ export const getCookiePath = (rawPath) => {
     }
     // otherwise do not set path as invalid
     // the same for pathArg === 'none'
-    //
     return '';
 };
 
 /**
  * Combines input cookie name, value, and path into string.
  *
- * @param {Source} source
- * @param {string} rawName
- * @param {string} rawValue
- * @param {string} rawPath
- *
- * @returns {string} string OR `null` if path is not supported
+ * @param {string} rawName name argument of *set-cookie-* scriptlets
+ * @param {string} rawValue value argument of *set-cookie-* scriptlets
+ * @param {string} rawPath path argument of *set-cookie-* scriptlets
+ * @returns {string|null} string OR `null` if path is not supported
  */
-export const concatCookieNameValuePath = (source, rawName, rawValue, rawPath) => {
-    if (!isValidCookieRawPath(rawPath)) {
-        logMessage(source, `Invalid cookie path: '${rawPath}'`);
-        return null;
-    }
+export const concatCookieNameValuePath = (rawName, rawValue, rawPath) => {
     // eslint-disable-next-line max-len
-    return `${encodeURIComponent(rawName)}=${encodeURIComponent(rawValue)}; ${getCookiePath(rawPath)}`;
+    return `${encodeURIComponent(rawName)}=${encodeURIComponent(rawValue)}; ${getCookiePath(rawPath)};`;
 };
 
 /**
  * Gets supported cookie value
  *
- * @param {Source} source
  * @param {string} value input cookie value
- *
  * @returns {string|null} valid cookie string if ok OR null if not
  */
-export const getLimitedCookieValue = (source, value) => {
+export const getLimitedCookieValue = (value) => {
     if (!value) {
         return null;
     }
@@ -88,11 +72,9 @@ export const getLimitedCookieValue = (source, value) => {
     } else if (/^\d+$/.test(value)) {
         validValue = parseFloat(value);
         if (nativeIsNaN(validValue)) {
-            logMessage(source, `Invalid cookie value: '${value}'`);
             return null;
         }
         if (Math.abs(validValue) < 0 || Math.abs(validValue) > 15) {
-            logMessage(source, `Invalid cookie value: '${value}'`);
             return null;
         }
     } else {
@@ -104,6 +86,7 @@ export const getLimitedCookieValue = (source, value) => {
 
 /**
  * Parses cookie string into object
+ *
  * @param {string} cookieString string that conforms to document.cookie format
  * @returns {Object} key:value object that corresponds with incoming cookies keys and values
  */
@@ -134,10 +117,11 @@ export const parseCookieString = (cookieString) => {
 
 /**
  * Check if cookie with specified name and value is present in a cookie string
- * @param {string} cookieString
- * @param {string} name
- * @param {string} value
- * @returns {boolean}
+ *
+ * @param {string} cookieString 'document.cookie'-like string
+ * @param {string} name name argument of *set-cookie-* scriptlets
+ * @param {string} value value argument of *set-cookie-* scriptlets
+ * @returns {boolean} if cookie is already set
  */
 export const isCookieSetWithValue = (cookieString, name, value) => {
     return cookieString.split(';')
@@ -151,4 +135,34 @@ export const isCookieSetWithValue = (cookieString, name, value) => {
 
             return name === cookieName && value === cookieValue;
         });
+};
+
+/**
+ * Returns parsed offset expired number of ms or null if `offsetExpiresSec` is invalid
+ *
+ * @param {string} offsetExpiresSec input offset param in seconds
+ * @returns {number|null} number is milliseconds OR null
+ */
+export const getTrustedCookieOffsetMs = (offsetExpiresSec) => {
+    const ONE_YEAR_EXPIRATION_KEYWORD = '1year';
+    const ONE_DAY_EXPIRATION_KEYWORD = '1day';
+
+    const MS_IN_SEC = 1000;
+    const SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
+    const SECONDS_IN_DAY = 24 * 60 * 60;
+
+    let parsedSec;
+    // Set predefined expire value if corresponding keyword was passed
+    if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
+        parsedSec = SECONDS_IN_YEAR;
+    } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
+        parsedSec = SECONDS_IN_DAY;
+    } else {
+        parsedSec = Number.parseInt(offsetExpiresSec, 10);
+        // If offsetExpiresSec has been parsed to NaN - do not set cookie at all
+        if (Number.isNaN(parsedSec)) {
+            return null;
+        }
+    }
+    return parsedSec * MS_IN_SEC;
 };

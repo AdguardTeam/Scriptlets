@@ -65,6 +65,11 @@ declare module '@adguard/scriptlets' {
         contentType: string;
 
         /**
+         * Filename of the redirect.
+         */
+        file: string;
+
+        /**
          * If it's new type of redirects, i.e. click2load
          */
         isBlocking?: boolean;
@@ -81,6 +86,7 @@ declare module '@adguard/scriptlets' {
     class Redirects {
         constructor(rawYaml: string);
         getRedirect(title: string): Redirect;
+        isBlocking(title: string): boolean;
     }
 
     /**
@@ -117,7 +123,7 @@ declare module '@adguard/scriptlets' {
         /**
          * Object with redirects titles in the keys and RedirectSources
          */
-        Redirects: Redirects;
+        Redirects: typeof Redirects;
 
         /**
          * Returns filename with extension for requested alias

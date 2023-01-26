@@ -1,19 +1,20 @@
 /* eslint-disable no-console, no-underscore-dangle */
+
 /**
  * Hit used only for debug purposes now
- * @param {Source} source
- * @param {string} [message] - optional message;
+ *
+ * @param {Object} source scriptlet properties
  * use LOG_MARKER = 'log: ' at the start of a message
  * for logging scriptlets
  */
-export const hit = (source, message) => {
+export const hit = (source) => {
     if (source.verbose !== true) {
         return;
     }
 
     try {
         const log = console.log.bind(console);
-        const trace = console.trace.bind(console); // eslint-disable-line compat/compat
+        const trace = console.trace.bind(console);
 
         let prefix = source.ruleText || '';
 
@@ -30,17 +31,6 @@ export const hit = (source, message) => {
             const rulePart = source.ruleText.slice(ruleStartIndex);
             // prepare applied scriptlet rule for specific domain
             prefix = `${source.domainName}${rulePart}`;
-        }
-
-        // Used to check if scriptlet uses 'hit' function for logging
-        const LOG_MARKER = 'log: ';
-
-        if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-                log(`${prefix} message:\n${message}`);
-            } else {
-                log(message.slice(LOG_MARKER.length));
-            }
         }
 
         log(`${prefix} trace start`);

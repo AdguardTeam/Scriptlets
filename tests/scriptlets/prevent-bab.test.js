@@ -18,24 +18,6 @@ const afterEach = () => {
 
 module(name, { beforeEach, afterEach });
 
-test('Checking if alias name works', (assert) => {
-    const adgParams = {
-        name,
-        engine: 'test',
-        verbose: true,
-    };
-    const uboParams = {
-        name: 'nobab',
-        engine: 'test',
-        verbose: true,
-    };
-
-    const codeByAdgParams = window.scriptlets.invoke(adgParams);
-    const codeByUboParams = window.scriptlets.invoke(uboParams);
-
-    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
-});
-
 test('works eval with AdblockBlock', (assert) => {
     runScriptlet(name);
 

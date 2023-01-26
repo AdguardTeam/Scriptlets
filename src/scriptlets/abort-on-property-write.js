@@ -12,7 +12,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet abort-on-property-write
- *
  * @description
  * Aborts a script when it attempts to **write** the specified property.
  *

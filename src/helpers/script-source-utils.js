@@ -4,9 +4,10 @@ import { startsWith } from './string-utils';
  * Determines if type of script is inline or injected
  * and when it's one of them then return true, otherwise false
  * https://github.com/AdguardTeam/Scriptlets/issues/201
+ *
  * @param {string|undefined} stackMatch - input stack value to match
  * @param {string} stackTrace - script error stack trace
- * @returns {boolean}
+ * @returns {boolean} if stacks match
  */
 export const shouldAbortInlineOrInjectedScript = (stackMatch, stackTrace) => {
     const INLINE_SCRIPT_STRING = 'inlineScript';

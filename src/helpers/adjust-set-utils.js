@@ -4,7 +4,8 @@ export const shouldMatchAnyDelay = (delay) => delay === '*';
 
 /**
  * Handles input delay value
- * @param {*} delay
+ *
+ * @param {any} delay matchDelay argument of adjust-* scriptlets
  * @returns {number} proper number delay value
  */
 export const getMatchDelay = (delay) => {
@@ -18,9 +19,10 @@ export const getMatchDelay = (delay) => {
 
 /**
  * Checks delay match condition
- * @param {*} inputDelay
- * @param {number} realDelay
- * @returns {boolean}
+ *
+ * @param {any} inputDelay matchDelay argument of adjust-* scriptlets
+ * @param {number} realDelay delay argument of setTimeout/setInterval
+ * @returns {boolean} if given delays match
  */
 export const isDelayMatched = (inputDelay, realDelay) => {
     return shouldMatchAnyDelay(inputDelay)
@@ -29,7 +31,8 @@ export const isDelayMatched = (inputDelay, realDelay) => {
 
 /**
  * Handles input boost value
- * @param {*} boost
+ *
+ * @param {any} boost boost argument of adjust-* scriptlets
  * @returns {number} proper number boost multiplier value
  */
 export const getBoostMultiplier = (boost) => {

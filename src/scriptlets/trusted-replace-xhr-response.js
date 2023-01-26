@@ -8,6 +8,7 @@ import {
     // following helpers should be imported and injected
     // because they are used by helpers above
     getMatchPropsData,
+    getRequestProps,
     validateParsedData,
     parseMatchProps,
     isValidStrPattern,
@@ -19,7 +20,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @trustedScriptlet trusted-replace-xhr-response
- *
  * @description
  * Replaces response content of `xhr` requests if **all** given parameters match.
  *
@@ -89,28 +89,30 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
     const nativeOpen = window.XMLHttpRequest.prototype.open;
     const nativeSend = window.XMLHttpRequest.prototype.send;
 
-    let shouldReplace = false;
     let xhrData;
-    let requestHeaders = [];
 
     const openWrapper = (target, thisArg, args) => {
-        xhrData = getXhrData(...args);
+        // eslint-disable-next-line prefer-spread
+        xhrData = getXhrData.apply(null, args);
 
         if (shouldLog) {
             // Log if no propsToMatch given
-            const message = `log: xhr( ${objectToString(xhrData)} )`;
+            const message = `xhr( ${objectToString(xhrData)} )`;
             logMessage(source, message, true);
             hit(source);
             return Reflect.apply(target, thisArg, args);
         }
 
-        shouldReplace = matchRequestProps(source, propsToMatch, xhrData);
+        if (matchRequestProps(source, propsToMatch, xhrData)) {
+            thisArg.shouldBePrevented = true;
+        }
 
         // Trap setRequestHeader of target xhr object to mimic request headers later
-        if (shouldReplace) {
+        if (thisArg.shouldBePrevented) {
+            thisArg.collectedHeaders = [];
             const setRequestHeaderWrapper = (target, thisArg, args) => {
                 // Collect headers
-                requestHeaders.push(args);
+                thisArg.collectedHeaders.push(args);
                 return Reflect.apply(target, thisArg, args);
             };
 
@@ -126,8 +128,8 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
         return Reflect.apply(target, thisArg, args);
     };
 
-    const sendWrapper = async (target, thisArg, args) => {
-        if (!shouldReplace) {
+    const sendWrapper = (target, thisArg, args) => {
+        if (!thisArg.shouldBePrevented) {
             return Reflect.apply(target, thisArg, args);
         }
 
@@ -159,7 +161,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
             }
 
             const patternRegexp = pattern === '*'
-                ? toRegExp()
+                ? /(\n|.)*/
                 : toRegExp(pattern);
 
             const modifiedContent = content.replace(patternRegexp, replacement);
@@ -195,13 +197,13 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
 
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
-        requestHeaders.forEach((header) => {
+        thisArg.collectedHeaders.forEach((header) => {
             const name = header[0];
             const value = header[1];
 
             forgedRequest.setRequestHeader(name, value);
         });
-        requestHeaders = [];
+        thisArg.collectedHeaders = [];
 
         try {
             nativeSend.call(forgedRequest, args);
@@ -236,6 +238,7 @@ trustedReplaceXhrResponse.injections = [
     matchRequestProps,
     getXhrData,
     getMatchPropsData,
+    getRequestProps,
     validateParsedData,
     parseMatchProps,
     isValidStrPattern,

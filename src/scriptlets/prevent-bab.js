@@ -3,7 +3,6 @@ import { hit } from '../helpers/index';
 
 /**
  * @scriptlet prevent-bab
- *
  * @description
  * Prevents BlockAdblock script from detecting an ad blocker.
  *
@@ -34,7 +33,23 @@ export function preventBab(source) {
         ['blockadblock'],
         ['babasbm'],
         [/getItem\('babn'\)/],
-        ['getElementById', 'String.fromCharCode', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 'charAt', 'DOMContentLoaded', 'AdBlock', 'addEventListener', 'doScroll', 'fromCharCode', '<<2|r>>4', 'sessionStorage', 'clientWidth', 'localStorage', 'Math', 'random'],
+        [
+            'getElementById',
+            'String.fromCharCode',
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+            'charAt',
+            'DOMContentLoaded',
+            'AdBlock',
+            'addEventListener',
+            'doScroll',
+            'fromCharCode',
+            '<<2|r>>4',
+            'sessionStorage',
+            'clientWidth',
+            'localStorage',
+            'Math',
+            'random',
+        ],
     ];
     const check = (str) => {
         if (typeof str !== 'string') {
@@ -78,13 +93,7 @@ export function preventBab(source) {
 
 preventBab.names = [
     'prevent-bab',
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    'nobab.js',
-    'ubo-nobab.js',
-    'bab-defuser.js',
-    'ubo-bab-defuser.js',
-    'ubo-nobab',
-    'ubo-bab-defuser',
+    // there is no aliases for this scriptlet
 ];
 
 preventBab.injections = [hit];

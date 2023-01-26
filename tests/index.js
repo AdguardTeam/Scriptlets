@@ -14,7 +14,12 @@ const TESTS_DIST = './dist';
 const TEST_FILE_NAME_MARKER = '.html';
 
 const testServer = server.init();
-
+/**
+ * Returns false if test failed and true if test passed
+ *
+ * @param {string} indexFile
+ * @returns {Promise<boolean>}
+ */
 const runQunit = async (indexFile) => {
     const qunitArgs = {
         targetUrl: `http://localhost:${port}/${indexFile}?test`,
@@ -28,7 +33,9 @@ const runQunit = async (indexFile) => {
     printResultSummary(result, console);
     if (result.stats.failed > 0) {
         printFailedTests(result, console);
+        return false;
     }
+    return true;
 };
 
 (async () => {
@@ -39,6 +46,7 @@ const runQunit = async (indexFile) => {
         .filter((el) => el.includes(TEST_FILE_NAME_MARKER));
 
     let errorOccurred = false;
+    let testsPassed = true;
 
     try {
         console.log('Running tests..');
@@ -48,7 +56,8 @@ const runQunit = async (indexFile) => {
             // \n is needed to divide logging
             console.log(`\nTesting ${fileName}:`);
             // eslint-disable-next-line no-await-in-loop
-            await runQunit(fileName);
+            const testPassed = await runQunit(fileName);
+            testsPassed = testsPassed && testPassed;
         }
     } catch (e) {
         console.log(e);
@@ -57,7 +66,7 @@ const runQunit = async (indexFile) => {
         errorOccurred = true;
     }
 
-    if (errorOccurred) {
+    if (errorOccurred || !testsPassed) {
         process.exit(1);
     }
 

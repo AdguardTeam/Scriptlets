@@ -16,6 +16,7 @@ export const clearGlobalProps = (...props) => {
 
 /**
  * Returns random number from range inclusively min and max
+ *
  * @param {number} min minimum range limit
  * @param {number} max maximum range limit
  * @returns {number}
@@ -31,6 +32,7 @@ const evalWrapper = eval;
 
 /**
  * Runs scriptlet with given args
+ *
  * @param {string} name scriptlet name
  * @param {Array|undefined} args array of scriptlet args
  * @param {boolean} [verbose=true]
@@ -47,6 +49,7 @@ export const runScriptlet = (name, args, verbose = true) => {
 
 /**
  * Runs redirect
+ *
  * @param {string} name redirect name
  * @param {boolean} [verbose=true]
  */
@@ -61,6 +64,7 @@ export const runRedirect = (name, verbose = true) => {
 
 /**
  * Clear cookie by name
+ *
  * @param {string} cName
  */
 export const clearCookie = (cName) => {

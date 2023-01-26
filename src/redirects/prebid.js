@@ -8,7 +8,6 @@ import {
 
 /**
  * @redirect prebid
- *
  * @description
  * Mocks the prebid.js header bidding suit.
  * https://docs.prebid.org/

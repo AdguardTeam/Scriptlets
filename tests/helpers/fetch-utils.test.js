@@ -41,7 +41,11 @@ test('Test parseMatchProps with different url props, mixed input', (assert) => {
         url: URL1,
         [METHOD_PROP]: GET_METHOD,
     };
-    assert.deepEqual(parseMatchProps(INPUT1_PREFIXED), expectedPrefixed1, 'Has url match prop, no protocol, not regexp');
+    assert.deepEqual(
+        parseMatchProps(INPUT1_PREFIXED),
+        expectedPrefixed1,
+        'Has url match prop, no protocol, not regexp',
+    );
 
     const INPUT2 = `${URL2} ${METHOD_PROP}:${GET_METHOD}`;
     const expected2 = {
@@ -55,7 +59,11 @@ test('Test parseMatchProps with different url props, mixed input', (assert) => {
         url: URL2,
         [METHOD_PROP]: GET_METHOD,
     };
-    assert.deepEqual(parseMatchProps(INPUT2_PREFIXED), expectedPrefixed2, 'Has url match prop, has protocol, not regexp');
+    assert.deepEqual(
+        parseMatchProps(INPUT2_PREFIXED),
+        expectedPrefixed2,
+        'Has url match prop, has protocol, not regexp',
+    );
 
     const INPUT3 = `${URL3} ${METHOD_PROP}:${GET_METHOD}`;
     const expected3 = {
@@ -83,5 +91,9 @@ test('Test parseMatchProps with different url props, mixed input', (assert) => {
         url: URL4,
         [METHOD_PROP]: GET_METHOD,
     };
-    assert.deepEqual(parseMatchProps(INPUT4_PREFIXED), expectedPrefixed4, 'Has url match prop, has protocol, regexp, extra colon in url');
+    assert.deepEqual(
+        parseMatchProps(INPUT4_PREFIXED),
+        expectedPrefixed4,
+        'Has url match prop, has protocol, regexp, extra colon in url',
+    );
 });

@@ -1,4 +1,4 @@
-# AdGuard Scriptlets and Redirect resources
+# AdGuard Scriptlets and Redirect Resources
 
 AdGuard's Scriptlets and Redirect resources library which provides extended capabilities for content blocking.
 
@@ -161,9 +161,10 @@ And also there is a module at `dist/scriptlets.js` which has been exported to a 
 
 ```javascript
 /**
- * Returns scriptlet code
+ * Returns scriptlet code by param
  * @param {Source} source
- * @returns {string}
+ * @returns {string|null} scriptlet code
+ * @throws on unknown scriptlet name
  */
 scriptlets.invoke(source);
 ```
@@ -427,6 +428,11 @@ const redirects = new Redirects(rawYaml)
 const redirect = redirect.getRedirect('noopjs');
 
 /**
+ * Check if redirect is blocking, e.g. click2load.html
+ */
+const isBlocking = redirect.isBlocking('click2load.html');
+
+/**
  * Redirect - object with following props
  * {
  *      title: 1x1-transparent.gif
@@ -509,9 +515,14 @@ There are two scripts to update wiki:
 2. `yarn wiki:build-docs` — updates wiki pages `about-scriptlets.md` and `about-redirects.md`. They are being generated from JSDoc-type comments of corresponding scriptlets and redirects source files due to `@scriptlet`/`@redirect` and `@description` tags. Runs automatically while the release build.
 
 ## <a id="browser-compatibility"> Browser Compatibility
-| Chrome | Edge | Firefox | IE  | Opera | Safari |
-| ------ | ---- | ------- | --- | ----- | ------ |
-| 55     | 15   | 52      | 11  | 42    | 10     |
+| Browser               | Version   |
+|-----------------------|:----------|
+| Chrome                | ✅ 55     |
+| Firefox               | ✅ 52     |
+| Edge                  | ✅ 15     |
+| Opera                 | ✅ 42     |
+| Safari                | ✅ 11     |
+| Internet Explorer     | ❌        |
 
 ## <a id="used-by"> Projects using Scriptlets
 * [CoreLibs](https://github.com/AdguardTeam/CoreLibs) (updates automatically)

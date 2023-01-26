@@ -1,10 +1,10 @@
 import { isEmptyObject } from './object-utils';
 
 /**
- * @typedef Chain
- * @property {Object} base
- * @property {string} prop
- * @property {string} [chain]
+ * @typedef ChainInfo
+ * @property {Object} base current chain base
+ * @property {string} prop current chain prop
+ * @property {string} [chain] string representation
  */
 
 /**
@@ -14,9 +14,9 @@ import { isEmptyObject } from './object-utils';
  * defines this property as 'undefined'
  * and returns base, property name and remaining part of property chain
  *
- * @param {Object} base
- * @param {string} chain
- * @returns {Chain}
+ * @param {Object} base object that owns chain
+ * @param {string} chain chain of owner properties
+ * @returns {ChainInfo} chain info object
  */
 export function getPropertyInChain(base, chain) {
     const pos = chain.indexOf('.');

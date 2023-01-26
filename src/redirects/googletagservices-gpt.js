@@ -11,7 +11,6 @@ import {
 
 /**
  * @redirect googletagservices-gpt
- *
  * @description
  * Mocks Google Publisher Tag API.
  *
@@ -26,7 +25,11 @@ import {
 export function GoogleTagServicesGpt(source) {
     const slots = new Map();
     const slotsById = new Map();
+    const slotsPerPath = new Map();
+    const slotCreatives = new Map();
     const eventCallbacks = new Map();
+
+    const gTargeting = new Map();
 
     const addEventListener = function (name, listener) {
         if (!eventCallbacks.has(name)) {
@@ -44,7 +47,6 @@ export function GoogleTagServicesGpt(source) {
     };
 
     const fireSlotEvent = (name, slot) => {
-        // eslint-disable-next-line compat/compat
         return new Promise((resolve) => {
             requestAnimationFrame(() => {
                 const size = [0, 0];
@@ -56,6 +58,32 @@ export function GoogleTagServicesGpt(source) {
                 resolve();
             });
         });
+    };
+
+    const emptySlotElement = (slot) => {
+        const node = document.getElementById(slot.getSlotElementId());
+        while (node?.lastChild) {
+            node.lastChild.remove();
+        }
+    };
+
+    const recreateIframeForSlot = (slot) => {
+        const eid = `google_ads_iframe_${slot.getId()}`;
+        document.getElementById(eid)?.remove();
+        const node = document.getElementById(slot.getSlotElementId());
+        if (node) {
+            const f = document.createElement('iframe');
+            f.id = eid;
+            f.srcdoc = '<body></body>';
+            f.style = 'position:absolute; width:0; height:0; left:0; right:0; z-index:-1; border:0';
+            f.setAttribute('width', 0);
+            f.setAttribute('height', 0);
+            // https://github.com/AdguardTeam/Scriptlets/issues/259
+            f.setAttribute('data-load-complete', true);
+            f.setAttribute('data-google-container-id', true);
+            f.setAttribute('sandbox', true);
+            node.appendChild(f);
+        }
     };
 
     const displaySlot = (slot) => {
@@ -72,6 +100,8 @@ export function GoogleTagServicesGpt(source) {
             parent.appendChild(document.createElement('div'));
         }
 
+        emptySlotElement(slot);
+        recreateIframeForSlot(slot);
         fireSlotEvent('slotRenderEnded', slot);
         fireSlotEvent('slotRequested', slot);
         fireSlotEvent('slotResponseReceived', slot);
@@ -105,42 +135,132 @@ export function GoogleTagServicesGpt(source) {
     SizeMappingBuilder.prototype.addSize = noopThis;
     SizeMappingBuilder.prototype.build = noopNull;
 
-    function Slot(adUnitPath, creatives, optDiv) {
-        this.adUnitPath = adUnitPath;
-        this.creatives = creatives;
-        this.optDiv = optDiv;
+    const getTargetingValue = (v) => {
+        if (typeof v === 'string') {
+            return [v];
+        }
+        try {
+            return [Array.prototype.flat.call(v)[0]];
+        } catch {
+            // do nothing
+        }
+        return [];
+    };
 
+    const updateTargeting = (targeting, map) => {
+        if (typeof map === 'object') {
+            const entries = Object.entries(map || {});
+            for (const [k, v] of entries) {
+                targeting.set(k, getTargetingValue(v));
+            }
+        }
+    };
+
+    const defineSlot = (adUnitPath, creatives, optDiv) => {
         if (slotsById.has(optDiv)) {
             document.getElementById(optDiv)?.remove();
             return slotsById.get(optDiv);
         }
-        slotsById.set(optDiv, this);
-    } // constructor
-    Slot.prototype.addService = noopThis;
-    Slot.prototype.clearCategoryExclusions = noopThis;
-    Slot.prototype.clearTargeting = noopThis;
-    Slot.prototype.defineSizeMapping = noopThis;
-    Slot.prototype.get = noopNull;
-    Slot.prototype.getAdUnitPath = function () {
-        return this.adUnitPath;
+        const attributes = new Map();
+        const targeting = new Map();
+        const exclusions = new Set();
+        const response = {
+            advertiserId: undefined,
+            campaignId: undefined,
+            creativeId: undefined,
+            creativeTemplateId: undefined,
+            lineItemId: undefined,
+        };
+        const sizes = [
+            {
+                getHeight: () => 2,
+                getWidth: () => 2,
+            },
+        ];
+        const num = (slotsPerPath.get(adUnitPath) || 0) + 1;
+        slotsPerPath.set(adUnitPath, num);
+        const id = `${adUnitPath}_${num}`;
+        let clickUrl = '';
+        let collapseEmptyDiv = null;
+        const services = new Set();
+        const slot = {
+            addService(e) {
+                services.add(e);
+                return slot;
+            },
+            clearCategoryExclusions: noopThis,
+            clearTargeting(k) {
+                if (k === undefined) {
+                    targeting.clear();
+                } else {
+                    targeting.delete(k);
+                }
+            },
+            defineSizeMapping(mapping) {
+                slotCreatives.set(optDiv, mapping);
+                return this;
+            },
+            get: (k) => attributes.get(k),
+            getAdUnitPath: () => adUnitPath,
+            getAttributeKeys: () => Array.from(attributes.keys()),
+            getCategoryExclusions: () => Array.from(exclusions),
+            getClickUrl: () => clickUrl,
+            getCollapseEmptyDiv: () => collapseEmptyDiv,
+            getContentUrl: () => '',
+            getDivStartsCollapsed: () => null,
+            getDomId: () => optDiv,
+            getEscapedQemQueryId: () => '',
+            getFirstLook: () => 0,
+            getId: () => id,
+            getHtml: () => '',
+            getName: () => id,
+            getOutOfPage: () => false,
+            getResponseInformation: () => response,
+            getServices: () => Array.from(services),
+            getSizes: () => sizes,
+            getSlotElementId: () => optDiv,
+            getSlotId: () => slot,
+            getTargeting: (k) => targeting.get(k) || gTargeting.get(k) || [],
+            getTargetingKeys: () => Array.from(
+                new Set(Array.of(...gTargeting.keys(), ...targeting.keys())),
+            ),
+            getTargetingMap: () => Object.assign(
+                Object.fromEntries(gTargeting.entries()),
+                Object.fromEntries(targeting.entries()),
+            ),
+            set(k, v) {
+                attributes.set(k, v);
+                return slot;
+            },
+            setCategoryExclusion(e) {
+                exclusions.add(e);
+                return slot;
+            },
+            setClickUrl(u) {
+                clickUrl = u;
+                return slot;
+            },
+            setCollapseEmptyDiv(v) {
+                collapseEmptyDiv = !!v;
+                return slot;
+            },
+            setSafeFrameConfig: noopThis,
+            setTagForChildDirectedTreatment: noopThis,
+            setTargeting(k, v) {
+                targeting.set(k, getTargetingValue(v));
+                return slot;
+            },
+            toString: () => id,
+            updateTargetingFromMap(map) {
+                updateTargeting(targeting, map);
+                return slot;
+            },
+        };
+        slots.set(adUnitPath, slot);
+        slotsById.set(optDiv, slot);
+        slotCreatives.set(optDiv, creatives);
+        return slot;
     };
-    Slot.prototype.getAttributeKeys = noopArray;
-    Slot.prototype.getCategoryExclusions = noopArray;
-    Slot.prototype.getDomId = function () {
-        return this.optDiv;
-    };
-    Slot.prototype.getSlotElementId = function () {
-        return this.optDiv;
-    };
-    Slot.prototype.getSlotId = noopThis;
-    Slot.prototype.getSizes = noopArray;
-    Slot.prototype.getTargeting = noopArray;
-    Slot.prototype.getTargetingKeys = noopArray;
-    Slot.prototype.set = noopThis;
-    Slot.prototype.setCategoryExclusion = noopThis;
-    Slot.prototype.setClickUrl = noopThis;
-    Slot.prototype.setCollapseEmptyDiv = noopThis;
-    Slot.prototype.setTargeting = noopThis;
 
     const pubAdsService = {
         addEventListener,
@@ -148,7 +268,13 @@ export function GoogleTagServicesGpt(source) {
         clear: noopFunc,
         clearCategoryExclusions: noopThis,
         clearTagForChildDirectedTreatment: noopThis,
-        clearTargeting: noopThis,
+        clearTargeting(k) {
+            if (k === undefined) {
+                gTargeting.clear();
+            } else {
+                gTargeting.delete(k);
+            }
+        },
         collapseEmptyDivs: noopFunc,
         defineOutOfPagePassback() { return new PassbackSlot(); },
         definePassback() { return new PassbackSlot(); },
@@ -181,8 +307,6 @@ export function GoogleTagServicesGpt(source) {
         updateCorrelator: noopFunc,
     };
 
-    const getNewSlot = (adUnitPath, creatives, optDiv) => new Slot(adUnitPath, creatives, optDiv);
-
     const { googletag = {} } = window;
     const { cmd = [] } = googletag;
 
@@ -197,8 +321,8 @@ export function GoogleTagServicesGpt(source) {
     };
     googletag.companionAds = () => companionAdsService;
     googletag.content = () => contentService;
-    googletag.defineOutOfPageSlot = getNewSlot;
-    googletag.defineSlot = getNewSlot;
+    googletag.defineOutOfPageSlot = defineSlot;
+    googletag.defineSlot = defineSlot;
     googletag.destroySlots = function () {
         slots.clear();
         slotsById.clear();

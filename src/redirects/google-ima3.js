@@ -7,7 +7,6 @@ import {
 
 /**
  * @redirect google-ima3
- *
  * @description
  * Mocks the IMA SDK of Google.
  *
@@ -478,7 +477,13 @@ export function GoogleIma3(source) {
     hit(source);
 }
 
-GoogleIma3.names = ['google-ima3'];
+GoogleIma3.names = [
+    'google-ima3',
+    // prefixed name
+    'ubo-google-ima.js',
+    // original ubo name
+    'google-ima.js',
+];
 
 GoogleIma3.injections = [
     hit,

@@ -20,10 +20,6 @@ test('Test getNumberFromString for all data types inputs', (assert) => {
     inputValue = undefined;
     assert.strictEqual(getNumberFromString(inputValue), null);
 
-    // undefined
-    inputValue = undefined;
-    assert.strictEqual(getNumberFromString(inputValue), null);
-
     // number
     inputValue = 123;
     assert.strictEqual(getNumberFromString(inputValue), 123);

@@ -7,7 +7,6 @@ import {
 
 /**
  * @redirect google-analytics
- *
  * @description
  * Mocks Google's Analytics and Tag Manager APIs.
  * [Covers obsolete googletagmanager-gtm redirect functionality](https://github.com/AdguardTeam/Scriptlets/issues/127).
@@ -78,9 +77,9 @@ export function GoogleAnalytics(source) {
 
     /**
      * checks data object and delays callback
-     * @param {Object|Array} data gtag payload
+     *
+     * @param {object|Array} dataObj gtag payload
      * @param {string} funcName callback prop name
-     * @returns
      */
     const handleCallback = (dataObj, funcName) => {
         if (dataObj && typeof dataObj[funcName] === 'function') {
@@ -111,7 +110,8 @@ export function GoogleAnalytics(source) {
     }
 
     // https://github.com/AdguardTeam/Scriptlets/issues/81
-    if (google_optimize instanceof Object && typeof google_optimize.get === 'function') { // eslint-disable-line camelcase
+    // eslint-disable-next-line camelcase
+    if (google_optimize instanceof Object && typeof google_optimize.get === 'function') {
         const googleOptimizeWrapper = {
             get: noopFunc,
         };

@@ -72,11 +72,17 @@ const redirects = [
         ubo: 'google-analytics_ga.js',
     },
     {
+        // https://github.com/AdguardTeam/Scriptlets/issues/260
+        adg: 'googletagmanager-gtm',
+        ubo: 'googletagmanager_gtm.js',
+    },
+    {
         adg: 'googletagservices-gpt',
         ubo: 'googletagservices_gpt.js',
     },
     {
         adg: 'google-ima3',
+        ubo: 'google-ima.js',
     },
     {
         adg: 'gemius',

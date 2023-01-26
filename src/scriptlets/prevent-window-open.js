@@ -23,7 +23,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet prevent-window-open
- *
  * @description
  * Prevents `window.open` calls when URL either matches or not matches the specified string/regexp. Using it without parameters prevents all `window.open` calls.
  *
@@ -48,36 +47,36 @@ import {
  *
  * **Examples**
  * 1. Prevent all `window.open` calls:
- * ```
+ *     ```
  *     example.org#%#//scriptlet('prevent-window-open')
- * ```
+ *     ```
  *
  * 2. Prevent `window.open` for all URLs containing `example`:
- * ```
+ *     ```
  *     example.org#%#//scriptlet('prevent-window-open', 'example')
- * ```
+ *     ```
  *
  * 3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
- * ```
+ *     ```
  *     example.org#%#//scriptlet('prevent-window-open', '/example\./')
- * ```
+ *     ```
  *
  * 4. Prevent `window.open` for all URLs **NOT** containing `example`:
- * ```
+ *     ```
  *     example.org#%#//scriptlet('prevent-window-open', '!example')
- * ```
- *
+ *     ```
+ *P
  * Old syntax of prevent-window-open parameters:
  * - `match` - optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
  * - `search` - optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
  * - `replacement` - optional, string to return prop value or property instead of window.open; defaults to return noopFunc.
  * **Examples**
- * ```
+ *     ```
  *     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
  *     example.org#%#//scriptlet('prevent-window-open', '0', 'example')
  *     example.org#%#//scriptlet('prevent-window-open', '', '', 'trueFunc')
  *     example.org#%#//scriptlet('prevent-window-open', '1', '', '{propName=noopFunc}')
- * ```
+ *     ```
  *
  * > For better compatibility with uBO, old syntax is not recommended to use.
  */
@@ -109,7 +108,7 @@ export function preventWindowOpen(source, match = '*', delay, replacement) {
             const argsStr = args && args.length > 0
                 ? `, ${args.join(', ')}`
                 : '';
-            const message = `window-open: ${url}${argsStr}`;
+            const message = `${url}${argsStr}`;
             logMessage(source, message, true);
             hit(source);
         }

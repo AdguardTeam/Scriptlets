@@ -46,8 +46,9 @@ const aboutTrustedScriptletsPath = path.resolve(
 );
 
 /**
- * Collects required comments from files and
- * returns describing object for scriptlets and redirects
+ * Collects required comments from files
+ *
+ * @returns {Object} describing object for scriptlets and redirects
  */
 const manageDataFromFiles = () => {
     const dataFromScriptletsFiles = getDataFromFiles(
@@ -95,7 +96,6 @@ const manageDataFromFiles = () => {
  * Generates markdown list and describing text.
  *
  * @param {DescribingCommentData[]} dataItems array of comment data objects
- *
  * @returns {MarkdownData}
  */
 const getMarkdownData = (dataItems) => {
@@ -105,11 +105,13 @@ const getMarkdownData = (dataItems) => {
         description,
         source,
     }) => {
-        acc.list.push(`* [${name}](#${name})${EOL}`);
+        // low case name should be used as anchor
+        acc.list.push(`* [${name}](#${name.toLowerCase()})${EOL}`);
 
-        const typeOfSrc = type === 'scriptlet' ? 'Scriptlet' : 'Redirect';
+        const typeOfSrc = type.toLowerCase().includes('scriptlet') ? 'Scriptlet' : 'Redirect';
 
-        const body = `### <a id="${name}"></a> ⚡️ ${name}
+        // low case name should be used as anchor
+        const body = `### <a id="${name.toLowerCase()}"></a> ⚡️ ${name}
 ${description}${EOL}
 [${typeOfSrc} source](${source})
 * * *${EOL}${EOL}`;

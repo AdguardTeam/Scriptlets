@@ -1,8 +1,7 @@
-import { preventBab } from '../scriptlets/prevent-bab';
+import { preventBab as preventBabScriptlet } from '../scriptlets/prevent-bab';
 
 /**
  * @redirect prevent-bab
- *
  * @description
  * Prevents BlockAdblock script from detecting an ad blocker.
  *
@@ -17,4 +16,16 @@ import { preventBab } from '../scriptlets/prevent-bab';
  * /blockadblock.$script,redirect=prevent-bab
  * ```
  */
+const preventBab = preventBabScriptlet;
+preventBab.names = [
+    'prevent-bab',
+    // list of prevent-bab redirect aliases
+    'nobab.js',
+    'ubo-nobab.js',
+    'bab-defuser.js',
+    'ubo-bab-defuser.js',
+    'ubo-nobab',
+    'ubo-bab-defuser',
+];
+
 export { preventBab };

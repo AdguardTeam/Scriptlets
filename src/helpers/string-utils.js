@@ -8,29 +8,33 @@ import {
 
 /**
  * String.prototype.replaceAll polyfill
+ *
  * @param {string} input input string
  * @param {string} substr to look for
  * @param {string} newSubstr replacement
- * @returns {string}
+ * @returns {string} result string
  */
 export const replaceAll = (input, substr, newSubstr) => input.split(substr).join(newSubstr);
 
 /**
  * Escapes special chars in string
- * @param {string} str
- * @returns {string}
+ *
+ * @param {string} str raw string
+ * @returns {string} string with escaped special characters
  */
 export const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
  * A literal string or regexp pattern wrapped in forward slashes.
  * For example, 'simpleStr' or '/adblock|_0x/'.
+ *
  * @typedef {string} RawStrPattern
  */
 
 /**
  * Converts string to the regexp
  * TODO think about nested dependencies, but be careful with dependency loops
+ *
  * @param {RawStrPattern} [input=''] literal string or regexp pattern; defaults to '' (empty string)
  * @returns {RegExp} regular expression; defaults to /.?/
  * @throws {SyntaxError} Throw an error for invalid regex pattern
@@ -50,8 +54,9 @@ export const toRegExp = (input = '') => {
 
 /**
  * Checks whether the input string can be converted to regexp
+ *
  * @param {RawStrPattern} input literal string or regexp pattern
- * @returns {boolean}
+ * @returns {boolean} if input can be converted to regexp
  */
 export const isValidStrPattern = (input) => {
     const FORWARD_SLASH = '/';
@@ -72,8 +77,10 @@ export const isValidStrPattern = (input) => {
 
 /**
  * Get string before regexp first match
- * @param {string} str
- * @param {RegExp} rx
+ *
+ * @param {string} str input string
+ * @param {RegExp} rx find pattern
+ * @returns {string} result string
  */
 export const getBeforeRegExp = (str, rx) => {
     const index = str.search(rx);
@@ -82,9 +89,10 @@ export const getBeforeRegExp = (str, rx) => {
 
 /**
  * Checks whether the string starts with the substring
+ *
  * @param {string} str full string
  * @param {string} prefix substring
- * @returns {boolean}
+ * @returns {boolean} if string start with the substring
  */
 export const startsWith = (str, prefix) => {
     // if str === '', (str && false) will return ''
@@ -94,9 +102,10 @@ export const startsWith = (str, prefix) => {
 
 /**
  * Checks whether the string ends with the substring
+ *
  * @param {string} str full string
  * @param {string} ending substring
- * @returns {boolean}
+ * @returns {boolean} string ends with the substring
  */
 export const endsWith = (str, ending) => {
     // if str === '', (str && false) will return ''
@@ -122,7 +131,9 @@ export const substringBefore = (str, separator) => {
 
 /**
  * Wrap str in single quotes and replaces single quotes to double one
- * @param {string} str
+ *
+ * @param {string} str input string
+ * @returns {string} string with swapped quotes
  */
 export const wrapInSingleQuotes = (str) => {
     if ((str[0] === '\'' && str[str.length - 1] === '\'')
@@ -137,7 +148,9 @@ export const wrapInSingleQuotes = (str) => {
 
 /**
  * Returns substring enclosed in the widest braces
- * @param {string} str
+ *
+ * @param {string} str input string
+ * @returns {string} substring
  */
 export const getStringInBraces = (str) => {
     const firstIndex = str.indexOf('(');
@@ -147,9 +160,10 @@ export const getStringInBraces = (str) => {
 
 /**
  * Prepares RTCPeerConnection config as string for proper logging
- * @param {*} config
+ *
+ * @param {any} config RTC config
  * @returns {string} stringified config
-*/
+ */
 export const convertRtcConfigToString = (config) => {
     const UNDEF_STR = 'undefined';
     let str = UNDEF_STR;
@@ -178,8 +192,9 @@ export const convertRtcConfigToString = (config) => {
 /**
  * Checks whether the match input string can be converted to regexp,
  * used for match inputs with possible negation
+ *
  * @param {string} match literal string or regexp pattern
- * @returns {boolean}
+ * @returns {boolean} true if input can be converted to regexp
  */
 export const isValidMatchStr = (match) => {
     const INVERT_MARKER = '!';
@@ -193,8 +208,9 @@ export const isValidMatchStr = (match) => {
 /**
  * Validates the match input number,
  * used for match inputs with possible negation
+ *
  * @param {string} match string of match number
- * @returns {boolean}
+ * @returns {boolean} if match number is valid
  */
 export const isValidMatchNumber = (match) => {
     const INVERT_MARKER = '!';
@@ -208,16 +224,17 @@ export const isValidMatchNumber = (match) => {
 
 /**
  * @typedef {Object} MatchData
- * @property {boolean} isInvertedMatch
- * @property {RegExp} matchRegexp
+ * @property {boolean} isInvertedMatch if matching should be inverted
+ * @property {RegExp} matchRegexp match value parsed into regex
  */
 
 /**
  * Parses match arg with possible negation for no matching.
  * Needed for prevent-setTimeout, prevent-setInterval,
  * prevent-requestAnimationFrame and prevent-window-open
- * @param {string} match
- * @returns {MatchData}
+ *
+ * @param {string} match matching arg
+ * @returns {MatchData} data prepared for matching
  */
 export const parseMatchArg = (match) => {
     const INVERT_MARKER = '!';
@@ -229,17 +246,16 @@ export const parseMatchArg = (match) => {
 
 /**
  * @typedef {Object} DelayData
- * @property {boolean} isInvertedDelayMatch
- * @property {number|null} delayMatch
+ * @property {boolean} isInvertedDelayMatch if matching should be inverted
+ * @property {number|null} delayMatch parsed delay or null if delay is invalid
  */
 
 /**
  * Parses delay arg with possible negation for no matching.
  * Needed for prevent-setTimeout and prevent-setInterval
- * @param {string} delay
- * @returns {DelayData} `{ isInvertedDelayMatch, delayMatch }` where:
- * `isInvertedDelayMatch` is boolean,
- * `delayMatch` is number OR null for invalid `delay`
+ *
+ * @param {string} delay scriptlet's delay arg
+ * @returns {DelayData} parsed delay data
  */
 export const parseDelayArg = (delay) => {
     const INVERT_MARKER = '!';
@@ -252,8 +268,9 @@ export const parseDelayArg = (delay) => {
 
 /**
  * Converts object to string for logging
+ *
  * @param {Object} obj data object
- * @returns {string}
+ * @returns {string} object's string representation
  */
 export const objectToString = (obj) => {
     return isEmptyObject(obj)
@@ -273,8 +290,9 @@ export const objectToString = (obj) => {
 
 /**
  * Converts types into a string
- * @param {*} value
- * @returns {string}
+ *
+ * @param {any} value input value type
+ * @returns {string} type's string representation
  */
 export const convertTypeToString = (value) => {
     let output;
@@ -295,8 +313,9 @@ export const convertTypeToString = (value) => {
 
 /**
  * Generate a random string, a length of the string is provided as an argument
- * @param {number} length
- * @returns {string}
+ *
+ * @param {number} length output's length
+ * @returns {string} random string
  */
 export function getRandomStrByLength(length) {
     let result = '';
@@ -310,7 +329,8 @@ export function getRandomStrByLength(length) {
 
 /**
  * Generate a random string
- * @param {string} customResponseText
+ *
+ * @param {string} customResponseText response text to include in output
  * @returns {string|null} random string or null if passed argument is invalid
  */
 export function generateRandomResponse(customResponseText) {
@@ -351,4 +371,53 @@ export function generateRandomResponse(customResponseText) {
     const length = getRandomIntInclusive(rangeMin, rangeMax);
     customResponse = getRandomStrByLength(length);
     return customResponse;
+}
+
+/**
+ * Infers value from string argument
+ * Inferring goes from more specific to more ambiguous options
+ * Arrays, objects and strings are parsed via JSON.parse
+ *
+ * @param {string} value arbitrary string
+ * @returns {any} converted value
+ * @throws an error on unexpected input
+ */
+export function inferValue(value) {
+    if (value === 'undefined') {
+        return undefined;
+    } if (value === 'false') {
+        return false;
+    } if (value === 'true') {
+        return true;
+    } if (value === 'null') {
+        return null;
+    } if (value === 'NaN') {
+        return NaN;
+    }
+
+    // Number class constructor works 2 times faster than JSON.parse
+    // and wont interpret mixed inputs like '123asd' as parseFloat would
+    const MAX_ALLOWED_NUM = 32767;
+    const numVal = Number(value);
+    if (!nativeIsNaN(numVal)) {
+        if (Math.abs(numVal) > MAX_ALLOWED_NUM) {
+            throw new Error('number values bigger than 32767 are not allowed');
+        }
+        return numVal;
+    }
+
+    let errorMessage = `'${value}' value type can't be inferred`;
+    try {
+        // Parse strings, arrays and objects represented as JSON strings
+        // '[1,2,3,"string"]' > [1, 2, 3, 'string']
+        // '"arbitrary string"' > 'arbitrary string'
+        const parsableVal = JSON.parse(value);
+        if (parsableVal instanceof Object || typeof parsableVal === 'string') {
+            return parsableVal;
+        }
+    } catch (e) {
+        errorMessage += `: ${e}`;
+    }
+
+    throw new TypeError(errorMessage);
 }

@@ -3,7 +3,6 @@ import { hit, noopFunc } from '../helpers/index';
 
 /**
  * @redirect matomo
- *
  * @description
  * Mocks the piwik.js file of Matomo (formerly Piwik).
  *
@@ -23,12 +22,8 @@ export function Matomo(source) {
     AsyncTracker.prototype.addListener = noopFunc;
 
     const matomoWrapper = {
-        getTracker() {
-            return new Tracker();
-        },
-        getAsyncTracker() {
-            return new AsyncTracker();
-        },
+        getTracker: Tracker,
+        getAsyncTracker: AsyncTracker,
     };
 
     window.Piwik = matomoWrapper;

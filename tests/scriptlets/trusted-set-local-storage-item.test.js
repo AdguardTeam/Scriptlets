@@ -124,14 +124,16 @@ if (isSafariBrowser()) {
         assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
 
         const value = localStorage.getItem(iName);
-        const dateObj = new Date();
-        const year = dateObj.getFullYear();
-        const month = dateObj.getMonth();
-        const hours = dateObj.getHours();
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth();
+        const currentHour = currentDate.getHours();
 
-        assert.ok(value.includes(year), 'Years matched');
-        assert.ok(value.includes(month), 'Month matched');
-        assert.ok(value.includes(hours), 'Hours matched');
+        const currentValue = new Date(value);
+
+        assert.strictEqual(currentValue.getFullYear(), currentYear, 'Years matched');
+        assert.strictEqual(currentValue.getMonth(), currentMonth, 'Years matched');
+        assert.strictEqual(currentValue.getHours(), currentHour, 'Years matched');
 
         clearStorageItem(iName);
     });

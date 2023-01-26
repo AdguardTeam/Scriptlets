@@ -109,8 +109,14 @@ test('no selector + multiple attrs for different elements', (assert) => {
         // clean up test element
         elem0.remove();
         elem1.remove();
-        done();
     }, 150);
+
+    setTimeout(() => {
+        // clean up test element
+        elem0.remove();
+        elem1.remove();
+        done();
+    }, 250);
 });
 
 test('single attr + single selector', (assert) => {
@@ -294,17 +300,21 @@ test('invalid selector — no match', (assert) => {
     const attrs = ['testAttr'];
     const selector = '..test';
     const scriptletArgs = [attrs.join('|'), `${selector}`];
-    runScriptlet(name, scriptletArgs);
 
     // eslint-disable-next-line no-console
     console.log = function log(input) {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        assert.strictEqual(input, `Invalid remove-attr selector arg: '${selector}'`, 'logged error for invalid remove-attr selector');
+        assert.strictEqual(
+            input,
+            `${name}: Invalid selector arg: '${selector}'`,
+            'logged error for invalid remove-attr selector;',
+        );
     };
 
-    assert.strictEqual(window.hit, undefined, 'hit SHOULD NOT fire');
+    runScriptlet(name, scriptletArgs);
 
+    assert.strictEqual(window.hit, undefined, 'hit SHOULD NOT fire');
     clearGlobalProps('hit');
 });

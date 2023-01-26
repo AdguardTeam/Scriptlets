@@ -1,4 +1,5 @@
 /* eslint-disable no-underscore-dangle */
+import { parseCookieString } from '../../src/helpers';
 import {
     runScriptlet,
     clearGlobalProps,
@@ -31,7 +32,7 @@ test('Set cookie string', (assert) => {
 
     cName = '__test-cookie_0';
     cValue = 0;
-    runScriptlet(name, [cName, cValue, '', '']);
+    runScriptlet(name, [cName, cValue]);
     assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
     assert.strictEqual(document.cookie.includes(cName), true, 'Cookie name has been set');
     assert.strictEqual(document.cookie.includes(cValue), true, 'Cookie value has been set');
@@ -48,7 +49,7 @@ test('Set cookie string', (assert) => {
 });
 
 test('Set cookie with current time value', (assert) => {
-    const cName = '__test-cookie_OK';
+    const cName = '__test-cookie_current_time';
     const cValue = '$now$';
 
     runScriptlet(name, [cName, cValue]);
@@ -58,13 +59,12 @@ test('Set cookie with current time value', (assert) => {
 
     // Some time will pass between calling scriptlet
     // and qunit running assertion
-    const tolerance = 20;
-    const cookieValue = document.cookie.split('=')[1];
+    const tolerance = 125;
+    const cookieValue = parseCookieString(document.cookie)[cName];
     const currentTime = new Date().getTime();
     const timeDiff = currentTime - cookieValue;
 
     assert.ok(timeDiff < tolerance, 'Cookie value has been set to current time');
-
     clearCookie(cName);
 });
 
@@ -106,7 +106,18 @@ test('Set cookie with invalid expires', (assert) => {
     const cName = '__test-cookie_expires_invalid';
     const cValue = 'expires';
     const expiresSec = 'invalid_value';
-
+    assert.expect(4);
+    // eslint-disable-next-line no-console
+    console.log = function log(input) {
+        if (input.indexOf('trace') > -1) {
+            return;
+        }
+        assert.strictEqual(
+            input,
+            `${name}: Invalid offsetExpiresSec value: ${expiresSec}`,
+            'logs correctly on invalid offsetExpiresSec',
+        );
+    };
     runScriptlet(name, [cName, cValue, `${expiresSec}`]);
 
     assert.strictEqual(window.hit, undefined, 'Hit was not fired');

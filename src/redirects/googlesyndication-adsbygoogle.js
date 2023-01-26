@@ -3,7 +3,6 @@ import { hit } from '../helpers/index';
 /* eslint-disable max-len */
 /**
  * @redirect googlesyndication-adsbygoogle
- *
  * @description
  * Mocks Google AdSense API.
  *

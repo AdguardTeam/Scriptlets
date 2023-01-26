@@ -9,7 +9,6 @@ import {
 
 /**
  * @redirect didomi-loader
- *
  * @description
  * Mocks Didomi's CMP loader script.
  * https://developers.didomi.io/

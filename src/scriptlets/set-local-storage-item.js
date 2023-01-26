@@ -9,7 +9,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet set-local-storage-item
- *
  * @description
  * Adds specified key and its value to localStorage object, or updates the value of the key if it already exists.
  * Scriptlet won't set item if storage is full.
@@ -48,9 +47,11 @@ export function setLocalStorageItem(source, key, value) {
         return;
     }
 
-    const validValue = getLimitedStorageItemValue(source, value);
-    if (validValue === null) {
-        logMessage(source, `Invalid cookie value: '${validValue}'`);
+    let validValue;
+    try {
+        validValue = getLimitedStorageItemValue(value);
+    } catch {
+        logMessage(source, `Invalid storage item value: '${value}'`);
         return;
     }
 

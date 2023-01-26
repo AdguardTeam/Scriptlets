@@ -184,7 +184,7 @@ test('new syntax: log checking - only url', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        const EXPECTED_LOG_STR = `window-open: ${testUrl}`;
+        const EXPECTED_LOG_STR = `${name}: ${testUrl}`;
         assert.strictEqual(input, EXPECTED_LOG_STR, 'console.hit input');
     };
 
@@ -207,8 +207,7 @@ test('new syntax: log checking - url + args', (assert) => {
         if (input.indexOf('trace') > -1) {
             return;
         }
-        // eslint-disable-next-line max-len
-        const EXPECTED_LOG_STR = `window-open: ${testUrl}, ${testWindowName}, ${testWindowFeatures}`;
+        const EXPECTED_LOG_STR = `${name}: ${testUrl}, ${testWindowName}, ${testWindowFeatures}`;
         assert.strictEqual(input, EXPECTED_LOG_STR, 'console.hit input');
     };
 

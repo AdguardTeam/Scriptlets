@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.7.3
+ * Version 1.7.20
  */
 
 (function (factory) {
@@ -14,20 +14,21 @@
      */
     function attachDependencies(scriptlet) {
       var _scriptlet$injections = scriptlet.injections,
-          injections = _scriptlet$injections === void 0 ? [] : _scriptlet$injections;
+        injections = _scriptlet$injections === void 0 ? [] : _scriptlet$injections;
       return injections.reduce(function (accum, dep) {
         return "".concat(accum, "\n").concat(dep.toString());
       }, scriptlet.toString());
     }
+
     /**
      * Add scriptlet call to existing code
      * @param {Function} scriptlet
      * @param {string} code
      */
-
     function addCall(scriptlet, code) {
       return "".concat(code, "\n    const updatedArgs = args ? [].concat(source).concat(args) : [source];\n    try {\n        ").concat(scriptlet.name, ".apply(this, updatedArgs);\n    } catch (e) {\n        console.log(e);\n    }");
     }
+
     /**
      * Wrap function into IIFE (Immediately invoked function expression)
      *
@@ -51,29 +52,24 @@
      *      noeval.apply(this, args);
      * )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])`
      */
-
     function passSourceAndProps(source, code) {
       var redirect = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
       if (source.hit) {
         source.hit = source.hit.toString();
       }
-
       var sourceString = JSON.stringify(source);
       var argsString = source.args ? "[".concat(source.args.map(JSON.stringify), "]") : undefined;
       var params = argsString ? "".concat(sourceString, ", ").concat(argsString) : sourceString;
-
       if (redirect) {
         return "(function(source, args){\n".concat(code, "\n})(").concat(params, ");");
       }
-
       return "(".concat(code, ")(").concat(params, ");");
     }
+
     /**
      * Wrap code in no name function
      * @param {string} code which must be wrapped
      */
-
     function wrapInNonameFunc(code) {
       return "function(source, args){\n".concat(code, "\n}");
     }
@@ -93,6 +89,7 @@
       });
       return entries;
     };
+
     /**
      * Converts array of pairs to object.
      * Object.fromEntries() polyfill because it is not supported by IE
@@ -100,7 +97,6 @@
      * @param {Array} entries - array of pairs
      * @returns {Object}
      */
-
     var getObjectFromEntries = function getObjectFromEntries(entries) {
       var output = entries.reduce(function (acc, el) {
         var key = el[0];
@@ -110,31 +106,30 @@
       }, {});
       return output;
     };
+
     /**
      * Checks whether the obj is an empty object
      * @param {Object} obj
      * @returns {boolean}
      */
-
     var isEmptyObject = function isEmptyObject(obj) {
-      return Object.keys(obj).length === 0;
+      return Object.keys(obj).length === 0 && !obj.prototype;
     };
+
     /**
      * Checks whether the obj is an empty object
      * @param {Object} obj
      * @param {string} prop
      * @returns {Object|null}
      */
-
     var safeGetDescriptor = function safeGetDescriptor(obj, prop) {
       var descriptor = Object.getOwnPropertyDescriptor(obj, prop);
-
       if (descriptor && descriptor.configurable) {
         return descriptor;
       }
-
       return null;
     };
+
     /**
      * Set getter and setter to property if it's configurable
      * @param {Object} object target object with property
@@ -142,14 +137,11 @@
      * @param {PropertyDescriptor} descriptor contains getter and setter functions
      * @returns {boolean} is operation successful
      */
-
     function setPropertyAccess(object, property, descriptor) {
       var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
-
       if (currentDescriptor && !currentDescriptor.configurable) {
         return false;
       }
-
       Object.defineProperty(object, property, descriptor);
       return true;
     }
@@ -165,29 +157,30 @@
       var native = Number.isNaN || window.isNaN;
       return native(num);
     };
+
     /**
      * Determines whether the passed value is a finite number
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isFinite
      * @param {*} num
      * @returns {boolean}
      */
-
     var nativeIsFinite = function nativeIsFinite(num) {
       // eslint-disable-next-line no-restricted-properties
       var native = Number.isFinite || window.isFinite;
       return native(num);
     };
+
     /**
      * Parses string for a number, if possible, otherwise returns null.
      * @param {*} rawString
      * @returns {number|null}
      */
-
     var getNumberFromString = function getNumberFromString(rawString) {
       var parsedDelay = parseInt(rawString, 10);
       var validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
       return validDelay;
     };
+
     /**
      * Generate a random integer between two values, inclusive
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#getting_a_random_integer_between_two_values_inclusive
@@ -195,7 +188,6 @@
      * @param {number} max
      * @returns {number}
      */
-
     function getRandomIntInclusive(min, max) {
       min = Math.ceil(min);
       max = Math.floor(max);
@@ -209,19 +201,19 @@
      * @param {string} newSubstr replacement
      * @returns {string}
      */
-
     var replaceAll = function replaceAll(input, substr, newSubstr) {
       return input.split(substr).join(newSubstr);
     };
+
     /**
      * Escapes special chars in string
      * @param {string} str
      * @returns {string}
      */
-
     var escapeRegExp = function escapeRegExp(str) {
       return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     };
+
     /**
      * A literal string or regexp pattern wrapped in forward slashes.
      * For example, 'simpleStr' or '/adblock|_0x/'.
@@ -235,77 +227,69 @@
      * @returns {RegExp} regular expression; defaults to /.?/
      * @throws {SyntaxError} Throw an error for invalid regex pattern
      */
-
     var toRegExp = function toRegExp() {
       var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
       var DEFAULT_VALUE = '.?';
       var FORWARD_SLASH = '/';
-
       if (input === '') {
         return new RegExp(DEFAULT_VALUE);
       }
-
       if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
         return new RegExp(input.slice(1, -1));
       }
-
       var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       return new RegExp(escaped);
     };
+
     /**
      * Checks whether the input string can be converted to regexp
      * @param {RawStrPattern} input literal string or regexp pattern
      * @returns {boolean}
      */
-
     var isValidStrPattern = function isValidStrPattern(input) {
       var FORWARD_SLASH = '/';
       var str = escapeRegExp(input);
-
       if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
         str = input.slice(1, -1);
       }
-
       var isValid;
-
       try {
         isValid = new RegExp(str);
         isValid = true;
       } catch (e) {
         isValid = false;
       }
-
       return isValid;
     };
+
     /**
      * Get string before regexp first match
      * @param {string} str
      * @param {RegExp} rx
      */
-
     var getBeforeRegExp = function getBeforeRegExp(str, rx) {
       var index = str.search(rx);
       return str.substring(0, index);
     };
+
     /**
      * Checks whether the string starts with the substring
      * @param {string} str full string
      * @param {string} prefix substring
      * @returns {boolean}
      */
-
-    var startsWith = function startsWith(str, prefix) {
+    var startsWith$1 = function startsWith(str, prefix) {
       // if str === '', (str && false) will return ''
       // that's why it has to be !!str
       return !!str && str.indexOf(prefix) === 0;
     };
+
     /**
      * Checks whether the string ends with the substring
      * @param {string} str full string
      * @param {string} ending substring
      * @returns {boolean}
      */
-
     var endsWith = function endsWith(str, ending) {
       // if str === '', (str && false) will return ''
       // that's why it has to be !!str
@@ -315,7 +299,6 @@
       if (!str) {
         return str;
       }
-
       var index = str.indexOf(separator);
       return index < 0 ? '' : str.substring(index + separator.length);
     };
@@ -323,44 +306,41 @@
       if (!str || !separator) {
         return str;
       }
-
       var index = str.indexOf(separator);
       return index < 0 ? str : str.substring(0, index);
     };
+
     /**
      * Wrap str in single quotes and replaces single quotes to double one
      * @param {string} str
      */
-
     var wrapInSingleQuotes = function wrapInSingleQuotes(str) {
       if (str[0] === '\'' && str[str.length - 1] === '\'' || str[0] === '"' && str[str.length - 1] === '"') {
         str = str.substring(1, str.length - 1);
-      } // eslint-disable-next-line no-useless-escape
-
-
+      }
+      // eslint-disable-next-line no-useless-escape
       str = str.replace(/\'/g, '"');
       return "'".concat(str, "'");
     };
+
     /**
      * Returns substring enclosed in the widest braces
      * @param {string} str
      */
-
     var getStringInBraces = function getStringInBraces(str) {
       var firstIndex = str.indexOf('(');
       var lastIndex = str.lastIndexOf(')');
       return str.substring(firstIndex + 1, lastIndex);
     };
+
     /**
      * Prepares RTCPeerConnection config as string for proper logging
      * @param {*} config
      * @returns {string} stringified config
     */
-
     var convertRtcConfigToString = function convertRtcConfigToString(config) {
       var UNDEF_STR = 'undefined';
       var str = UNDEF_STR;
-
       if (config === null) {
         str = 'null';
       } else if (config instanceof Object) {
@@ -373,49 +353,44 @@
                 ],
             };
         */
-
         if (Object.prototype.hasOwnProperty.call(config, SERVERS_PROP_NAME) && Object.prototype.hasOwnProperty.call(config[SERVERS_PROP_NAME][0], URLS_PROP_NAME) && !!config[SERVERS_PROP_NAME][0][URLS_PROP_NAME]) {
           str = config[SERVERS_PROP_NAME][0][URLS_PROP_NAME].toString();
         }
       }
-
       return str;
     };
+
     /**
      * Checks whether the match input string can be converted to regexp,
      * used for match inputs with possible negation
      * @param {string} match literal string or regexp pattern
      * @returns {boolean}
      */
-
     var isValidMatchStr = function isValidMatchStr(match) {
       var INVERT_MARKER = '!';
       var str = match;
-
-      if (startsWith(match, INVERT_MARKER)) {
+      if (startsWith$1(match, INVERT_MARKER)) {
         str = match.slice(1);
       }
-
       return isValidStrPattern(str);
     };
+
     /**
      * Validates the match input number,
      * used for match inputs with possible negation
      * @param {string} match string of match number
      * @returns {boolean}
      */
-
     var isValidMatchNumber = function isValidMatchNumber(match) {
       var INVERT_MARKER = '!';
       var str = match;
-
-      if (startsWith(match, INVERT_MARKER)) {
+      if (startsWith$1(match, INVERT_MARKER)) {
         str = match.slice(1);
       }
-
       var num = parseFloat(str);
       return !nativeIsNaN(num) && nativeIsFinite(num);
     };
+
     /**
      * @typedef {Object} MatchData
      * @property {boolean} isInvertedMatch
@@ -429,10 +404,9 @@
      * @param {string} match
      * @returns {MatchData}
      */
-
     var parseMatchArg = function parseMatchArg(match) {
       var INVERT_MARKER = '!';
-      var isInvertedMatch = startsWith(match, INVERT_MARKER);
+      var isInvertedMatch = startsWith$1(match, INVERT_MARKER);
       var matchValue = isInvertedMatch ? match.slice(1) : match;
       var matchRegexp = toRegExp(matchValue);
       return {
@@ -440,6 +414,7 @@
         matchRegexp: matchRegexp
       };
     };
+
     /**
      * @typedef {Object} DelayData
      * @property {boolean} isInvertedDelayMatch
@@ -454,10 +429,9 @@
      * `isInvertedDelayMatch` is boolean,
      * `delayMatch` is number OR null for invalid `delay`
      */
-
     var parseDelayArg = function parseDelayArg(delay) {
       var INVERT_MARKER = '!';
-      var isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
+      var isInvertedDelayMatch = startsWith$1(delay, INVERT_MARKER);
       var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
       delayValue = parseInt(delayValue, 10);
       var delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
@@ -466,34 +440,31 @@
         delayMatch: delayMatch
       };
     };
+
     /**
      * Converts object to string for logging
      * @param {Object} obj data object
      * @returns {string}
      */
-
     var objectToString = function objectToString(obj) {
       return isEmptyObject(obj) ? '{}' : getObjectEntries(obj).map(function (pair) {
         var key = pair[0];
         var value = pair[1];
         var recordValueStr = value;
-
         if (value instanceof Object) {
           recordValueStr = "{ ".concat(objectToString(value), " }");
         }
-
         return "".concat(key, ":\"").concat(recordValueStr, "\"");
       }).join(' ');
     };
+
     /**
      * Converts types into a string
      * @param {*} value
      * @returns {string}
      */
-
     var convertTypeToString = function convertTypeToString(value) {
       var output;
-
       if (typeof value === 'undefined') {
         output = 'undefined';
       } else if (typeof value === 'object') {
@@ -505,68 +476,58 @@
       } else {
         output = value.toString();
       }
-
       return output;
     };
+
     /**
      * Generate a random string, a length of the string is provided as an argument
      * @param {number} length
      * @returns {string}
      */
-
     function getRandomStrByLength(length) {
       var result = '';
       var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~';
       var charactersLength = characters.length;
-
       for (var i = 0; i < length; i += 1) {
         result += characters.charAt(Math.floor(Math.random() * charactersLength));
       }
-
       return result;
     }
+
     /**
      * Generate a random string
      * @param {string} customResponseText
      * @returns {string|null} random string or null if passed argument is invalid
      */
-
     function generateRandomResponse(customResponseText) {
       var customResponse = customResponseText;
-
       if (customResponse === 'true') {
         // Generate random alphanumeric string of 10 symbols
         customResponse = Math.random().toString(36).slice(-10);
         return customResponse;
       }
-
       customResponse = customResponse.replace('length:', '');
-      var rangeRegex = /^\d+-\d+$/; // Return empty string if range is invalid
-
+      var rangeRegex = /^\d+-\d+$/;
+      // Return empty string if range is invalid
       if (!rangeRegex.test(customResponse)) {
         return null;
       }
-
       var rangeMin = getNumberFromString(customResponse.split('-')[0]);
       var rangeMax = getNumberFromString(customResponse.split('-')[1]);
-
       if (!nativeIsFinite(rangeMin) || !nativeIsFinite(rangeMax)) {
         return null;
-      } // If rangeMin > rangeMax, swap variables
+      }
 
-
+      // If rangeMin > rangeMax, swap variables
       if (rangeMin > rangeMax) {
         var temp = rangeMin;
         rangeMin = rangeMax;
         rangeMax = temp;
       }
-
       var LENGTH_RANGE_LIMIT = 500 * 1000;
-
       if (rangeMax > LENGTH_RANGE_LIMIT) {
         return null;
       }
-
       var length = getRandomIntInclusive(rangeMin, rangeMax);
       customResponse = getRandomStrByLength(length);
       return customResponse;
@@ -583,10 +544,8 @@
       } else {
         obj[key] = value;
       }
-
       return obj;
     }
-
     var defineProperty = _defineProperty;
 
     /**
@@ -598,76 +557,65 @@
      */
     function iterateWithTransitions(iterable, transitions, init, args) {
       var state = init || Object.keys(transitions)[0];
-
       for (var i = 0; i < iterable.length; i += 1) {
         state = transitions[state](iterable, i, args);
       }
-
       return state;
     }
+
     /**
      * AdGuard scriptlet rule mask
      */
-
-
     var ADG_SCRIPTLET_MASK = '#//scriptlet';
+
     /**
      * Helper to accumulate an array of strings char by char
      */
-
     var wordSaver = function wordSaver() {
       var str = '';
       var strs = [];
-
       var saveSymb = function saveSymb(s) {
         str += s;
         return str;
       };
-
       var saveStr = function saveStr() {
         strs.push(str);
         str = '';
       };
-
       var getAll = function getAll() {
         return [].concat(strs);
       };
-
       return {
         saveSymb: saveSymb,
         saveStr: saveStr,
         getAll: getAll
       };
     };
-
     var substringAfter = function substringAfter(str, separator) {
       if (!str) {
         return str;
       }
-
       var index = str.indexOf(separator);
       return index < 0 ? '' : str.substring(index + separator.length);
     };
+
     /**
      * Parse and validate scriptlet rule
      * @param {*} ruleText
      * @returns {{name: string, args: Array<string>}}
      */
-
-
     var parseRule = function parseRule(ruleText) {
       var _transitions;
-
       ruleText = substringAfter(ruleText, ADG_SCRIPTLET_MASK);
       /**
        * Transition names
        */
-
       var TRANSITION = {
         OPENED: 'opened',
         PARAM: 'param',
         CLOSED: 'closed'
       };
+
       /**
        * Transition function: the current index position in start, end or between params
        * @param {string} rule
@@ -675,12 +623,10 @@
        * @param {Object} Object
        * @property {Object} Object.sep contains prop symb with current separator char
        */
-
       var opened = function opened(rule, index, _ref) {
         var sep = _ref.sep;
         var char = rule[index];
         var transition;
-
         switch (char) {
           case ' ':
           case '(':
@@ -689,7 +635,6 @@
               transition = TRANSITION.OPENED;
               break;
             }
-
           case '\'':
           case '"':
             {
@@ -697,19 +642,16 @@
               transition = TRANSITION.PARAM;
               break;
             }
-
           case ')':
             {
               transition = index === rule.length - 1 ? TRANSITION.CLOSED : TRANSITION.OPENED;
               break;
             }
-
           default:
             {
               throw new Error('The rule is not a scriptlet');
             }
         }
-
         return transition;
       };
       /**
@@ -720,20 +662,16 @@
        * @property {Object} Object.sep contains prop `symb` with current separator char
        * @property {Object} Object.saver helper which allow to save strings by car by char
        */
-
-
       var param = function param(rule, index, _ref2) {
         var saver = _ref2.saver,
-            sep = _ref2.sep;
+          sep = _ref2.sep;
         var char = rule[index];
-
         switch (char) {
           case '\'':
           case '"':
             {
               var preIndex = index - 1;
               var before = rule[preIndex];
-
               if (char === sep.symb && before !== '\\') {
                 sep.symb = null;
                 saver.saveStr();
@@ -741,7 +679,6 @@
               }
             }
           // eslint-disable-next-line no-fallthrough
-
           default:
             {
               saver.saveSymb(char);
@@ -749,7 +686,6 @@
             }
         }
       };
-
       var transitions = (_transitions = {}, defineProperty(_transitions, TRANSITION.OPENED, opened), defineProperty(_transitions, TRANSITION.PARAM, param), defineProperty(_transitions, TRANSITION.CLOSED, function () {}), _transitions);
       var sep = {
         symb: null
@@ -759,11 +695,9 @@
         sep: sep,
         saver: saver
       });
-
       if (state !== 'closed') {
         throw new Error("Invalid scriptlet rule ".concat(ruleText));
       }
-
       var args = saver.getAll();
       return {
         name: args[0],
@@ -780,24 +714,25 @@
       // https://github.com/AdguardTeam/Scriptlets/issues/125
       return typeof type !== 'undefined';
     };
+
     /**
      * Validates event listener
      * @param {*} listener
      * @returns {boolean}
      */
-
     var validateListener = function validateListener(listener) {
       // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#parameters
-      return typeof listener !== 'undefined' && (typeof listener === 'function' || typeof listener === 'object' // https://github.com/AdguardTeam/Scriptlets/issues/76
+      return typeof listener !== 'undefined' && (typeof listener === 'function' || typeof listener === 'object'
+      // https://github.com/AdguardTeam/Scriptlets/issues/76
       && listener !== null && typeof listener.handleEvent === 'function');
     };
+
     /**
      * Serialize valid event listener
      * https://developer.mozilla.org/en-US/docs/Web/API/EventListener
      * @param {EventListener} listener valid listener
      * @returns {string}
      */
-
     var listenerToString = function listenerToString(listener) {
       return typeof listener === 'function' ? listener.toString() : listener.handleEvent.toString();
     };
@@ -805,12 +740,12 @@
     var shouldMatchAnyDelay = function shouldMatchAnyDelay(delay) {
       return delay === '*';
     };
+
     /**
      * Handles input delay value
      * @param {*} delay
      * @returns {number} proper number delay value
      */
-
     var getMatchDelay = function getMatchDelay(delay) {
       var DEFAULT_DELAY = 1000;
       var parsedDelay = parseInt(delay, 10);
@@ -818,22 +753,22 @@
       : parsedDelay;
       return delayMatch;
     };
+
     /**
      * Checks delay match condition
      * @param {*} inputDelay
      * @param {number} realDelay
      * @returns {boolean}
      */
-
     var isDelayMatched = function isDelayMatched(inputDelay, realDelay) {
       return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
     };
+
     /**
      * Handles input boost value
      * @param {*} boost
      * @returns {number} proper number boost multiplier value
      */
-
     var getBoostMultiplier = function getBoostMultiplier(boost) {
       var DEFAULT_MULTIPLIER = 0.05;
       var MIN_MULTIPLIER = 0.02;
@@ -841,15 +776,12 @@
       var parsedBoost = parseFloat(boost);
       var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER // default scriptlet value
       : parsedBoost;
-
       if (boostMultiplier < MIN_MULTIPLIER) {
         boostMultiplier = MIN_MULTIPLIER;
       }
-
       if (boostMultiplier > MAX_MULTIPLIER) {
         boostMultiplier = MAX_MULTIPLIER;
       }
-
       return boostMultiplier;
     };
 
@@ -865,11 +797,9 @@
         return stack.push(el);
       });
       var res = [];
-
       while (stack.length) {
         // pop value from stack
         var next = stack.pop();
-
         if (Array.isArray(next)) {
           // push back array items, won't modify the original input
           next.forEach(function (el) {
@@ -878,41 +808,18 @@
         } else {
           res.push(next);
         }
-      } // reverse to restore input order
-
-
+      }
+      // reverse to restore input order
       return res.reverse();
     };
+
     /**
      * Predicate method to check if the array item exists
      * @param {any} item
      * @returns {boolean}
      */
-
     var isExisting = function isExisting(item) {
       return !!item;
-    };
-
-    /**
-     * @typedef { import('../scriptlets/index').Source } Source
-     */
-
-    /**
-     * Conditionally logs message to console.
-     * Convention is to log messages by source.verbose if such log
-     * is not a part of scriptlet's functionality, eg on invalid input,
-     * and use 'forced' argument otherwise.
-     * @param {Source} source required
-     * @param {string} message required, message to log
-     * @param {boolean} [forced=false] to log message unconditionally
-     */
-    var logMessage = function logMessage(source, message) {
-      var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
-      if (forced || source.verbose) {
-        // eslint-disable-next-line no-console
-        console.log("".concat(source.name, ": ").concat(message));
-      }
     };
 
     /**
@@ -926,10 +833,10 @@
      *
      * @returns {boolean}
      */
-
-    var isValidCookieRawPath = function isValidCookieRawPath(rawPath) {
+    var isValidCookiePath = function isValidCookiePath(rawPath) {
       return rawPath === '/' || rawPath === 'none';
     };
+
     /**
      * Returns 'path=/' if rawPath is '/'
      * or empty string '' for other cases, `rawPath === 'none'` included
@@ -938,53 +845,41 @@
      *
      * @returns {string}
      */
-
     var getCookiePath = function getCookiePath(rawPath) {
       if (rawPath === '/') {
         return 'path=/';
-      } // otherwise do not set path as invalid
+      }
+      // otherwise do not set path as invalid
       // the same for pathArg === 'none'
-      //
-
-
       return '';
     };
+
     /**
      * Combines input cookie name, value, and path into string.
      *
-     * @param {Source} source
      * @param {string} rawName
      * @param {string} rawValue
      * @param {string} rawPath
      *
-     * @returns {string} string OR `null` if path is not supported
+     * @returns {string|null} string OR `null` if path is not supported
      */
-
-    var concatCookieNameValuePath = function concatCookieNameValuePath(source, rawName, rawValue, rawPath) {
-      if (!isValidCookieRawPath(rawPath)) {
-        logMessage(source, "Invalid cookie path: '".concat(rawPath, "'"));
-        return null;
-      } // eslint-disable-next-line max-len
-
-
-      return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath));
+    var concatCookieNameValuePath = function concatCookieNameValuePath(rawName, rawValue, rawPath) {
+      // eslint-disable-next-line max-len
+      return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
     };
+
     /**
      * Gets supported cookie value
      *
-     * @param {Source} source
      * @param {string} value input cookie value
      *
      * @returns {string|null} valid cookie string if ok OR null if not
      */
-
-    var getLimitedCookieValue = function getLimitedCookieValue(source, value) {
+    var getLimitedCookieValue = function getLimitedCookieValue(value) {
       if (!value) {
         return null;
       }
-
       var validValue;
-
       if (value === 'true') {
         validValue = 'true';
       } else if (value === 'True') {
@@ -1007,51 +902,46 @@
         validValue = 'OK';
       } else if (/^\d+$/.test(value)) {
         validValue = parseFloat(value);
-
         if (nativeIsNaN(validValue)) {
-          logMessage(source, "Invalid cookie value: '".concat(value, "'"));
           return null;
         }
-
         if (Math.abs(validValue) < 0 || Math.abs(validValue) > 15) {
-          logMessage(source, "Invalid cookie value: '".concat(value, "'"));
           return null;
         }
       } else {
         return null;
       }
-
       return validValue;
     };
+
     /**
      * Parses cookie string into object
      * @param {string} cookieString string that conforms to document.cookie format
      * @returns {Object} key:value object that corresponds with incoming cookies keys and values
      */
-
     var parseCookieString = function parseCookieString(cookieString) {
       var COOKIE_DELIMITER = '=';
-      var COOKIE_PAIRS_DELIMITER = ';'; // Get raw cookies
+      var COOKIE_PAIRS_DELIMITER = ';';
 
+      // Get raw cookies
       var cookieChunks = cookieString.split(COOKIE_PAIRS_DELIMITER);
       var cookieData = {};
       cookieChunks.forEach(function (singleCookie) {
         var cookieKey;
         var cookieValue;
         var delimiterIndex = singleCookie.indexOf(COOKIE_DELIMITER);
-
         if (delimiterIndex === -1) {
           cookieKey = singleCookie.trim();
         } else {
           cookieKey = singleCookie.slice(0, delimiterIndex).trim();
           cookieValue = singleCookie.slice(delimiterIndex + 1);
-        } // Save cookie key=value data with null instead of empty ('') values
-
-
+        }
+        // Save cookie key=value data with null instead of empty ('') values
         cookieData[cookieKey] = cookieValue || null;
       });
       return cookieData;
     };
+
     /**
      * Check if cookie with specified name and value is present in a cookie string
      * @param {string} cookieString
@@ -1059,15 +949,12 @@
      * @param {string} value
      * @returns {boolean}
      */
-
     var isCookieSetWithValue = function isCookieSetWithValue(cookieString, name, value) {
       return cookieString.split(';').some(function (cookieStr) {
         var pos = cookieStr.indexOf('=');
-
         if (pos === -1) {
           return false;
         }
-
         var cookieName = cookieStr.slice(0, pos).trim();
         var cookieValue = cookieStr.slice(pos + 1).trim();
         return name === cookieName && value === cookieValue;
@@ -1075,69 +962,97 @@
     };
 
     /**
+     * Returns parsed offset expired number of ms or null if `offsetExpiresSec` is invalid
+     *
+     * @param {string} offsetExpiresSec input offset param in seconds
+     * @returns {number|null} number is milliseconds OR null
+     */
+    var getTrustedCookieOffsetMs = function getTrustedCookieOffsetMs(offsetExpiresSec) {
+      var ONE_YEAR_EXPIRATION_KEYWORD = '1year';
+      var ONE_DAY_EXPIRATION_KEYWORD = '1day';
+      var MS_IN_SEC = 1000;
+      var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
+      var SECONDS_IN_DAY = 24 * 60 * 60;
+      var parsedSec;
+      // Set predefined expire value if corresponding keyword was passed
+      if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
+        parsedSec = SECONDS_IN_YEAR;
+      } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
+        parsedSec = SECONDS_IN_DAY;
+      } else {
+        parsedSec = Number.parseInt(offsetExpiresSec, 10);
+        // If offsetExpiresSec has been parsed to NaN - do not set cookie at all
+        if (Number.isNaN(parsedSec)) {
+          return null;
+        }
+      }
+      return parsedSec * MS_IN_SEC;
+    };
+
+    /**
      * Noop function
      * @return {undefined} undefined
      */
     var noopFunc = function noopFunc() {};
+
     /**
      * Function returns null
      * @return {null} null
      */
-
     var noopNull = function noopNull() {
       return null;
     };
+
     /**
      * Function returns true
      * @return {boolean} true
      */
-
     var trueFunc = function trueFunc() {
       return true;
     };
+
     /**
      * Function returns false
      * @return {boolean} false
      */
-
     var falseFunc = function falseFunc() {
       return false;
     };
+
     /**
      * Function returns this
      */
-
     function noopThis() {
       return this;
     }
+
     /**
      * Function returns empty string
      * @return {string} empty string
      */
-
     var noopStr = function noopStr() {
       return '';
     };
+
     /**
      * Function returns empty array
      * @return {Array} empty array
      */
-
     var noopArray = function noopArray() {
       return [];
     };
+
     /**
      * Function returns empty object
      * @return {Object} empty object
      */
-
     var noopObject = function noopObject() {
       return {};
     };
+
     /**
      * Function returns Promise.reject()
      */
-
     var noopPromiseReject = function noopPromiseReject() {
       return Promise.reject();
     }; // eslint-disable-line compat/compat
@@ -1147,23 +1062,21 @@
      * @param {string} [url=''] value of response url to set on response object
      * @param {string} [response='default'] value of response type to set on response object
      */
-
     var noopPromiseResolve = function noopPromiseResolve() {
       var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '{}';
       var responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
       var responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'default';
-
       if (typeof Response === 'undefined') {
         return;
-      } // eslint-disable-next-line compat/compat
-
-
+      }
+      // eslint-disable-next-line compat/compat
       var response = new Response(responseBody, {
         status: 200,
         statusText: 'OK'
-      }); // Mock response' url & type to avoid adb checks
-      // https://github.com/AdguardTeam/Scriptlets/issues/216
+      });
 
+      // Mock response' url & type to avoid adb checks
+      // https://github.com/AdguardTeam/Scriptlets/issues/216
       Object.defineProperties(response, {
         url: {
           value: responseUrl
@@ -1171,8 +1084,9 @@
         type: {
           value: responseType
         }
-      }); // eslint-disable-next-line compat/compat, consistent-return
+      });
 
+      // eslint-disable-next-line compat/compat, consistent-return
       return Promise.resolve(response);
     };
 
@@ -1184,60 +1098,49 @@
      * @param {string} stackTrace - script error stack trace
      * @returns {boolean}
      */
-
-    var shouldAbortInlineOrInjectedScript$1 = function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
+    var shouldAbortInlineOrInjectedScript = function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
       var INLINE_SCRIPT_STRING = 'inlineScript';
       var INJECTED_SCRIPT_STRING = 'injectedScript';
       var INJECTED_SCRIPT_MARKER = '<anonymous>';
-
       var isInlineScript = function isInlineScript(stackMatch) {
         return stackMatch.indexOf(INLINE_SCRIPT_STRING) > -1;
       };
-
       var isInjectedScript = function isInjectedScript(stackMatch) {
         return stackMatch.indexOf(INJECTED_SCRIPT_STRING) > -1;
       };
-
       if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
         return false;
       }
-
       var documentURL = window.location.href;
-      var pos = documentURL.indexOf('#'); // Remove URL hash
+      var pos = documentURL.indexOf('#');
+      // Remove URL hash
       // in Chrome, URL in stackTrace doesn't contain hash
       // so, it's necessary to remove it, otherwise location.href
       // will not match with location from stackTrace
-
       if (pos !== -1) {
         documentURL = documentURL.slice(0, pos);
       }
-
       var stackSteps = stackTrace.split('\n').slice(2).map(function (line) {
         return line.trim();
       });
       var stackLines = stackSteps.map(function (line) {
-        var stack; // Get stack trace URL
+        var stack;
+        // Get stack trace URL
         // in Firefox stack trace looks like this: advanceTaskQueue@http://127.0.0.1:8080/scriptlets/tests/dist/qunit.js:1834:20
         // in Chrome like this: at Assert.throws (http://127.0.0.1:8080/scriptlets/tests/dist/qunit.js:3178:16)
         // so, first group "(.*?@)" is required for Firefox, second group contains URL
-
         var getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
-
         if (getStackTraceURL) {
           var stackURL = getStackTraceURL[2];
-
-          if (startsWith(stackURL, '(')) {
+          if (startsWith$1(stackURL, '(')) {
             stackURL = stackURL.slice(1);
           }
-
-          if (startsWith(stackURL, INJECTED_SCRIPT_MARKER)) {
+          if (startsWith$1(stackURL, INJECTED_SCRIPT_MARKER)) {
             stackURL = INJECTED_SCRIPT_STRING;
             var stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
-
-            if (startsWith(stackFunction, 'at')) {
+            if (startsWith$1(stackFunction, 'at')) {
               stackFunction = stackFunction.slice(2).trim();
             }
-
             stack = "".concat(stackFunction, " ").concat(stackURL).trim();
           } else {
             stack = stackURL;
@@ -1245,22 +1148,18 @@
         } else {
           stack = line;
         }
-
         return stack;
       });
-
       if (stackLines) {
         for (var index = 0; index < stackLines.length; index += 1) {
           if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
             return true;
           }
-
-          if (isInjectedScript(stackMatch) && startsWith(stackLines[index], INJECTED_SCRIPT_STRING)) {
+          if (isInjectedScript(stackMatch) && startsWith$1(stackLines[index], INJECTED_SCRIPT_STRING)) {
             return true;
           }
         }
       }
-
       return false;
     };
 
@@ -1269,13 +1168,12 @@
      * @param {HTMLElement} rootElement
      * @returns {HTMLElement[]} shadow-dom hosts
      */
-
     var findHostElements = function findHostElements(rootElement) {
-      var hosts = []; // Element.querySelectorAll() returns list of elements
+      var hosts = [];
+      // Element.querySelectorAll() returns list of elements
       // which are defined in DOM of Element.
       // Meanwhile, inner DOM of the element with shadowRoot property
       // is absolutely another DOM and which can not be reached by querySelectorAll('*')
-
       var domElems = rootElement.querySelectorAll('*');
       domElems.forEach(function (el) {
         if (el.shadowRoot) {
@@ -1284,6 +1182,7 @@
       });
       return hosts;
     };
+
     /**
      * A collection of nodes.
      *
@@ -1305,23 +1204,25 @@
      * @param {HTMLElement[]|external:NodeList} hostElements
      * @returns {PierceData}
      */
-
     var pierceShadowDom = function pierceShadowDom(selector, hostElements) {
       var targets = [];
-      var innerHostsAcc = []; // it's possible to get a few hostElements found by baseSelector on the page
+      var innerHostsAcc = [];
 
+      // it's possible to get a few hostElements found by baseSelector on the page
       hostElements.forEach(function (host) {
         // check presence of selector element inside base element if it's not in shadow-dom
         var simpleElems = host.querySelectorAll(selector);
         targets = targets.concat([].slice.call(simpleElems));
         var shadowRootElem = host.shadowRoot;
         var shadowChildren = shadowRootElem.querySelectorAll(selector);
-        targets = targets.concat([].slice.call(shadowChildren)); // find inner shadow-dom hosts inside processing shadow-dom
+        targets = targets.concat([].slice.call(shadowChildren));
 
+        // find inner shadow-dom hosts inside processing shadow-dom
         innerHostsAcc.push(findHostElements(shadowRootElem));
-      }); // if there were more than one host element,
-      // innerHostsAcc is an array of arrays and should be flatten
+      });
 
+      // if there were more than one host element,
+      // innerHostsAcc is an array of arrays and should be flatten
       var innerHosts = flatten(innerHostsAcc);
       return {
         targets: targets,
@@ -1334,13 +1235,14 @@
      * @param {*} callback
      * @returns {boolean}
      */
-
     var isValidCallback = function isValidCallback(callback) {
-      return callback instanceof Function // passing string as 'code' arg is not recommended
+      return callback instanceof Function
+      // passing string as 'code' arg is not recommended
       // but it is possible and not restricted
       // https://developer.mozilla.org/en-US/docs/Web/API/setTimeout#parameters
       || typeof callback === 'string';
     };
+
     /**
      * Checks whether 'callback' and 'delay' are matching
      * by given parameters 'matchCallback' and 'matchDelay'.
@@ -1348,36 +1250,29 @@
      * @param {Object} { callback, delay, matchCallback, matchDelay }
      * @returns {boolean}
      */
-
     var isPreventionNeeded = function isPreventionNeeded(_ref) {
       var callback = _ref.callback,
-          delay = _ref.delay,
-          matchCallback = _ref.matchCallback,
-          matchDelay = _ref.matchDelay;
-
+        delay = _ref.delay,
+        matchCallback = _ref.matchCallback,
+        matchDelay = _ref.matchDelay;
       // if callback is has not valid type
       // scriptlet can not prevent it
       // so no need for more checking and do not call hit() later
       if (!isValidCallback(callback)) {
         return false;
       }
-
       if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
         return false;
       }
-
       var _parseMatchArg = parseMatchArg(matchCallback),
-          isInvertedMatch = _parseMatchArg.isInvertedMatch,
-          matchRegexp = _parseMatchArg.matchRegexp;
-
+        isInvertedMatch = _parseMatchArg.isInvertedMatch,
+        matchRegexp = _parseMatchArg.matchRegexp;
       var _parseDelayArg = parseDelayArg(matchDelay),
-          isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
-          delayMatch = _parseDelayArg.delayMatch;
-
-      var shouldPrevent = false; // https://github.com/AdguardTeam/Scriptlets/issues/105
-
+        isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
+        delayMatch = _parseDelayArg.delayMatch;
+      var shouldPrevent = false;
+      // https://github.com/AdguardTeam/Scriptlets/issues/105
       var callbackStr = String(callback);
-
       if (delayMatch === null) {
         shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
       } else if (!matchCallback) {
@@ -1385,13 +1280,12 @@
       } else {
         shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && delay === delayMatch !== isInvertedDelayMatch;
       }
-
       return shouldPrevent;
     };
 
     var handleOldReplacement = function handleOldReplacement(replacement) {
-      var result; // defaults to return noopFunc instead of window.open
-
+      var result;
+      // defaults to return noopFunc instead of window.open
       if (!replacement) {
         result = noopFunc;
       } else if (replacement === 'trueFunc') {
@@ -1400,20 +1294,17 @@
         // We should return noopFunc instead of window.open
         // but with some property if website checks it (examples 5, 6)
         // https://github.com/AdguardTeam/Scriptlets/issues/71
-        var isProp = startsWith(replacement, '{') && endsWith(replacement, '}');
-
+        var isProp = startsWith$1(replacement, '{') && endsWith(replacement, '}');
         if (isProp) {
           var propertyPart = replacement.slice(1, -1);
           var propertyName = substringBefore(propertyPart, '=');
           var propertyValue = substringAfter$1(propertyPart, '=');
-
           if (propertyValue === 'noopFunc') {
             result = {};
             result[propertyName] = noopFunc;
           }
         }
       }
-
       return result;
     };
     var createDecoy = function createDecoy(args) {
@@ -1422,11 +1313,10 @@
       var IFRAME_TAG_NAME = 'iframe';
       var IFRAME_URL_PROP_NAME = 'src';
       var replacement = args.replacement,
-          url = args.url,
-          delay = args.delay;
+        url = args.url,
+        delay = args.delay;
       var tag;
       var urlProp;
-
       if (replacement === 'obj') {
         tag = OBJECT_TAG_NAME;
         urlProp = OBJECT_URL_PROP_NAME;
@@ -1434,7 +1324,6 @@
         tag = IFRAME_TAG_NAME;
         urlProp = IFRAME_URL_PROP_NAME;
       }
-
       var decoy = document.createElement(tag);
       decoy[urlProp] = url;
       decoy.style.setProperty('height', '1px', 'important');
@@ -1452,14 +1341,11 @@
         if (prop && prop === 'closed') {
           return false;
         }
-
         if (typeof nativeGetter === 'function') {
           return noopFunc;
         }
-
         return prop && target[prop];
       };
-
       return preventGetter;
     };
 
@@ -1472,19 +1358,17 @@
      * Includes common 'url' and 'method' props and all other fetch-specific props
      * @returns {string[]}
      */
-
-    var getRequestProps$1 = function getRequestProps() {
+    var getRequestProps = function getRequestProps() {
       return ['url', 'method', 'headers', 'body', 'mode', 'credentials', 'cache', 'redirect', 'referrer', 'referrerPolicy', 'integrity', 'keepalive', 'signal'];
     };
+
     /**
      * Collects Request options to object
      * @param {Request} request
      * @returns {Object} data object
      */
-
-
     var getRequestData = function getRequestData(request) {
-      var requestInitOptions = getRequestProps$1();
+      var requestInitOptions = getRequestProps();
       var entries = requestInitOptions.map(function (key) {
         // if request has no such option, value will be undefined
         var value = request[key];
@@ -1492,17 +1376,16 @@
       });
       return getObjectFromEntries(entries);
     };
+
     /**
      * Collects fetch args to object
      * @param {*} args fetch args
      * @returns {Object} data object
      */
-
     var getFetchData = function getFetchData(args) {
       var fetchPropsObj = {};
       var fetchUrl;
       var fetchInit;
-
       if (args[0] instanceof Request) {
         // if Request passed to fetch, it will be in array
         var requestData = getRequestData(args[0]);
@@ -1510,20 +1393,18 @@
         fetchInit = requestData;
       } else {
         fetchUrl = args[0]; // eslint-disable-line prefer-destructuring
-
         fetchInit = args[1]; // eslint-disable-line prefer-destructuring
       }
 
       fetchPropsObj.url = fetchUrl;
-
       if (fetchInit instanceof Object) {
         Object.keys(fetchInit).forEach(function (prop) {
           fetchPropsObj[prop] = fetchInit[prop];
         });
       }
-
       return fetchPropsObj;
     };
+
     /**
      * Collect xhr.open arguments to object
      * @param {string} method
@@ -1533,7 +1414,6 @@
      * @param {string} password
      * @returns {Object}
      */
-
     var getXhrData = function getXhrData(method, url, async, user, password) {
       return {
         method: method,
@@ -1543,24 +1423,23 @@
         password: password
       };
     };
+
     /**
      * Parse propsToMatch input string into object;
      * used for prevent-fetch and prevent-xhr
      * @param {string} propsToMatchStr
      * @returns {Object} object where 'key' is prop name and 'value' is prop value
      */
-
     var parseMatchProps = function parseMatchProps(propsToMatchStr) {
       var PROPS_DIVIDER = ' ';
       var PAIRS_MARKER = ':';
-      var LEGAL_MATCH_PROPS = getRequestProps$1();
+      var LEGAL_MATCH_PROPS = getRequestProps();
       var propsObj = {};
       var props = propsToMatchStr.split(PROPS_DIVIDER);
       props.forEach(function (prop) {
         var dividerInd = prop.indexOf(PAIRS_MARKER);
         var key = prop.slice(0, dividerInd);
         var hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
-
         if (hasLegalMatchProp) {
           var value = prop.slice(dividerInd + 1);
           propsObj[key] = value;
@@ -1573,29 +1452,50 @@
       });
       return propsObj;
     };
+
     /**
      * Validates parsed data values
      * @param {Object} data
      * @returns {boolean}
      */
-
     var validateParsedData = function validateParsedData(data) {
       return Object.values(data).every(function (value) {
         return isValidStrPattern(value);
       });
     };
+
     /**
      * Converts valid parsed data to data obj for further matching
      * @param {Object} data
      * @returns {Object}
      */
-
     var getMatchPropsData = function getMatchPropsData(data) {
       var matchData = {};
       Object.keys(data).forEach(function (key) {
         matchData[key] = toRegExp(data[key]);
       });
       return matchData;
+    };
+
+    /**
+     * @typedef { import('../scriptlets/index').Source } Source
+     */
+
+    /**
+     * Conditionally logs message to console.
+     * Convention is to log messages by source.verbose if such log
+     * is not a part of scriptlet's functionality, eg on invalid input,
+     * and use 'forced' argument otherwise.
+     * @param {Source} source required
+     * @param {string} message required, message to log
+     * @param {boolean} [forced=false] to log message unconditionally
+     */
+    var logMessage = function logMessage(source, message) {
+      var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      if (forced || source.verbose) {
+        // eslint-disable-next-line no-console
+        console.log("".concat(source.name, ": ").concat(message));
+      }
     };
 
     /**
@@ -1610,7 +1510,6 @@
      * @param {string} value
      * @param {boolean} shouldLog determines if helper should log on a failed set attempt
      */
-
     var setStorageItem = function setStorageItem(source, storage, key, value) {
       // setItem() may throw an exception if the storage is full.
       try {
@@ -1620,21 +1519,17 @@
         logMessage(source, message);
       }
     };
+
     /**
      * Gets supported storage item value
-     * @param {Source} source
      * @param {string} value input item value
-     * @param {boolean} verbose if logging invalid values is required
      * @returns {string|null|undefined|boolean} valid item value if ok OR null if not
      */
-
-    var getLimitedStorageItemValue = function getLimitedStorageItemValue(source, value) {
-      if (!value) {
-        return null;
+    var getLimitedStorageItemValue = function getLimitedStorageItemValue(value) {
+      if (typeof value !== 'string') {
+        throw new Error('Invalid value');
       }
-
       var validValue;
-
       if (value === 'undefined') {
         validValue = undefined;
       } else if (value === 'false') {
@@ -1651,24 +1546,19 @@
         validValue = '';
       } else if (/^\d+$/.test(value)) {
         validValue = parseFloat(value);
-
         if (nativeIsNaN(validValue)) {
-          logMessage(source, "Invalid storage item value: '".concat(value, "'"));
-          return null;
+          throw new Error('Invalid value');
         }
-
         if (Math.abs(validValue) > 0x7FFF) {
-          logMessage(source, "Invalid storage item value: '".concat(value, "'"));
-          return null;
+          throw new Error('Invalid value');
         }
       } else if (value === 'yes') {
         validValue = 'yes';
       } else if (value === 'no') {
         validValue = 'no';
       } else {
-        return null;
+        throw new Error('Invalid value');
       }
-
       return validValue;
     };
 
@@ -1685,24 +1575,21 @@
         if (typeof error === 'string' && error.indexOf(rid) !== -1) {
           return true;
         }
-
         if (nativeOnError instanceof Function) {
           for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
             args[_key - 1] = arguments[_key];
           }
-
           return nativeOnError.apply(this, [error].concat(args));
         }
-
         return false;
       };
     }
 
     /**
-     * Generate random six symbols id
+     * Generate random seven symbols id
      */
     function randomId() {
-      return Math.random().toString(36).substr(2, 9);
+      return Math.random().toString(36).slice(2, 9);
     }
 
     /**
@@ -1715,29 +1602,27 @@
      *
      * @return {Object}
      */
-
     function getDescriptorAddon() {
       return {
         isAbortingSuspended: false,
         isolateCallback: function isolateCallback(cb) {
-          this.isAbortingSuspended = true; // try...catch is required in case if there are more than one inline scripts
+          this.isAbortingSuspended = true;
+          // try...catch is required in case if there are more than one inline scripts
           // which should be aborted.
           // so after the first successful abortion, `cb(...args);` will throw error,
           // and we should not stop on that and continue to abort other scripts
-
           try {
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-
             var result = cb.apply(void 0, args);
             this.isAbortingSuspended = false;
             return result;
           } catch (_unused) {
             var rid = randomId();
-            this.isAbortingSuspended = false; // It's necessary to throw error
+            this.isAbortingSuspended = false;
+            // It's necessary to throw error
             // otherwise script will be not aborted
-
             throw new ReferenceError(rid);
           }
         }
@@ -1762,19 +1647,17 @@
      * @param {string} chain
      * @returns {Chain}
      */
-
     function getPropertyInChain(base, chain) {
       var pos = chain.indexOf('.');
-
       if (pos === -1) {
         return {
           base: base,
           prop: chain
         };
       }
+      var prop = chain.slice(0, pos);
 
-      var prop = chain.slice(0, pos); // https://github.com/AdguardTeam/Scriptlets/issues/128
-
+      // https://github.com/AdguardTeam/Scriptlets/issues/128
       if (base === null) {
         // if base is null, return 'null' as base.
         // it's needed for triggering the reason logging while debugging
@@ -1784,10 +1667,8 @@
           chain: chain
         };
       }
-
       var nextBase = base[prop];
       chain = chain.slice(pos + 1);
-
       if ((base instanceof Object || typeof base === 'object') && isEmptyObject(base)) {
         // for empty objects in chain
         return {
@@ -1796,7 +1677,6 @@
           chain: chain
         };
       }
-
       if (nextBase === null) {
         return {
           base: base,
@@ -1804,11 +1684,9 @@
           chain: chain
         };
       }
-
       if (nextBase !== undefined) {
         return getPropertyInChain(nextBase, chain);
       }
-
       Object.defineProperty(base, prop, {
         configurable: true
       });
@@ -1842,7 +1720,6 @@
       var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
       var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
       var pos = chain.indexOf('.');
-
       if (pos === -1) {
         // for paths like 'a.b.*' every final nested prop should be processed
         if (chain === '*' || chain === '[]') {
@@ -1862,95 +1739,71 @@
             prop: chain
           });
         }
-
         return output;
       }
-
       var prop = chain.slice(0, pos);
       var shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === '*' && base instanceof Object;
-
       if (shouldLookThrough) {
         var nextProp = chain.slice(pos + 1);
-        var baseKeys = Object.keys(base); // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src ad.1.src'),
-        // each one of base keys should be considered as a potential chain prop in final path
+        var baseKeys = Object.keys(base);
 
+        // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src ad.1.src'),
+        // each one of base keys should be considered as a potential chain prop in final path
         baseKeys.forEach(function (key) {
           var item = base[key];
           getWildcardPropertyInChain(item, nextProp, lookThrough, output);
         });
       }
-
       var nextBase = base[prop];
       chain = chain.slice(pos + 1);
-
       if (nextBase !== undefined) {
         getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
       }
-
       return output;
     }
 
     /* eslint-disable no-console, no-underscore-dangle */
-
     /**
      * Hit used only for debug purposes now
      * @param {Source} source
-     * @param {string} [message] - optional message;
      * use LOG_MARKER = 'log: ' at the start of a message
      * for logging scriptlets
      */
-    var hit = function hit(source, message) {
+    var hit = function hit(source) {
       if (source.verbose !== true) {
         return;
       }
-
       try {
         var log = console.log.bind(console);
         var trace = console.trace.bind(console); // eslint-disable-line compat/compat
 
         var prefix = source.ruleText || '';
-
         if (source.domainName) {
           var AG_SCRIPTLET_MARKER = '#%#//';
           var UBO_SCRIPTLET_MARKER = '##+js';
           var ruleStartIndex;
-
           if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
             ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
           } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
             ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-          } // delete all domains from ruleText and leave just rule part
-
-
-          var rulePart = source.ruleText.slice(ruleStartIndex); // prepare applied scriptlet rule for specific domain
-
-          prefix = "".concat(source.domainName).concat(rulePart);
-        } // Used to check if scriptlet uses 'hit' function for logging
-
-
-        var LOG_MARKER = 'log: ';
-
-        if (message) {
-          if (message.indexOf(LOG_MARKER) === -1) {
-            log("".concat(prefix, " message:\n").concat(message));
-          } else {
-            log(message.slice(LOG_MARKER.length));
           }
+          // delete all domains from ruleText and leave just rule part
+          var rulePart = source.ruleText.slice(ruleStartIndex);
+          // prepare applied scriptlet rule for specific domain
+          prefix = "".concat(source.domainName).concat(rulePart);
         }
-
         log("".concat(prefix, " trace start"));
-
         if (trace) {
           trace();
         }
-
         log("".concat(prefix, " trace end"));
-      } catch (e) {// try catch for Edge 15
+      } catch (e) {
+        // try catch for Edge 15
         // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
         // console.log throws an error
-      } // This is necessary for unit-tests only!
+      }
 
-
+      // This is necessary for unit-tests only!
       if (typeof window.__debug === 'function') {
         window.__debug(source);
       }
@@ -1969,27 +1822,23 @@
      * @param {Object} requestData object with standard properties of fetch/xhr like url, method etc
      * @returns {boolean}
      */
-
     var matchRequestProps = function matchRequestProps(source, propsToMatch, requestData) {
       if (propsToMatch === '' || propsToMatch === '*') {
         return true;
       }
-
       var isMatched;
       var parsedData = parseMatchProps(propsToMatch);
-
       if (!validateParsedData(parsedData)) {
         logMessage(source, "Invalid parameter: ".concat(propsToMatch));
         isMatched = false;
       } else {
-        var matchData = getMatchPropsData(parsedData); // prevent only if all props match
-
+        var matchData = getMatchPropsData(parsedData);
+        // prevent only if all props match
         isMatched = Object.keys(matchData).every(function (matchKey) {
           var matchValue = matchData[matchKey];
           return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
         });
       }
-
       return isMatched;
     };
 
@@ -2000,16 +1849,13 @@
      * @param {string} stackTrace - script error stack trace
      * @returns {boolean}
      */
-
     var matchStackTrace = function matchStackTrace(stackMatch, stackTrace) {
       if (!stackMatch || stackMatch === '') {
         return true;
       }
-
-      if (shouldAbortInlineOrInjectedScript$1(stackMatch, stackTrace)) {
+      if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
         return true;
       }
-
       var stackRegexp = toRegExp(stackMatch);
       var refinedStackTrace = stackTrace.split('\n').slice(2) // get rid of our own functions in the stack trace
       .map(function (line) {
@@ -2028,29 +1874,24 @@
     var throttle = function throttle(cb, delay) {
       var wait = false;
       var savedArgs;
-
       var wrapper = function wrapper() {
         for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
           args[_key] = arguments[_key];
         }
-
         if (wait) {
           savedArgs = args;
           return;
         }
-
         cb.apply(void 0, args);
         wait = true;
         setTimeout(function () {
           wait = false;
-
           if (savedArgs) {
             wrapper(savedArgs);
             savedArgs = null;
           }
         }, delay);
       };
-
       return wrapper;
     };
 
@@ -2059,11 +1900,9 @@
      * @param {Function} callback
      * @param {boolean} observeAttrs - optional parameter - should observer check attributes changes
      */
-
     var observeDOMChanges = function observeDOMChanges(callback) {
       var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
       var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-
       /**
        * 'delay' in milliseconds for 'throttle' method
        */
@@ -2072,9 +1911,7 @@
        * Used for remove-class
        */
       // eslint-disable-next-line no-use-before-define, compat/compat
-
       var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-
       var connect = function connect() {
         if (attrsToObserve.length > 0) {
           observer.observe(document.documentElement, {
@@ -2091,17 +1928,14 @@
           });
         }
       };
-
       var disconnect = function disconnect() {
         observer.disconnect();
       };
-
       function callbackWrapper() {
         disconnect();
         callback();
         connect();
       }
-
       connect();
     };
 
@@ -2132,6 +1966,11 @@
     /**
      * Modifies passed keyword value according to its purpose.
      * Returns initial value if it's not a keyword.
+     *
+     * Supported keywords:
+     *   - '$now$' - returns current time in ms, e.g 1667915146503
+     *   - '$currentDate$' - returns current date e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+     *
      * @param {string} rawValue
      * @returns {string}
      */
@@ -2139,7 +1978,6 @@
       var NOW_VALUE_KEYWORD = '$now$';
       var CURRENT_DATE_KEYWORD = '$currentDate$';
       var parsedValue = rawValue;
-
       if (rawValue === NOW_VALUE_KEYWORD) {
         // Set to current time in ms, e.g 1667915146503
         parsedValue = Date.now().toString();
@@ -2147,12 +1985,10 @@
         // Set to current date e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
         parsedValue = Date();
       }
-
       return parsedValue;
     };
 
     /* eslint-disable max-len */
-
     /**
      * @trustedScriptlet trusted-click-element
      *
@@ -2184,7 +2020,7 @@
      *
      * 3. Click multiple elements by selector with a delay
      * ```
-     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name='check"], input[type="submit"][value="akkoord"]', '', '500')
+     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name="check"], input[type="submit"][value="akkoord"]', '', '500')
      * ```
      *
      * 4. Match cookies by keys using regex and string
@@ -2207,31 +2043,25 @@
      * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], input[type="submit"][value="akkoord"]', 'cookie:cmpconsent, localStorage:promo', '250')
      * ```
      */
-
     /* eslint-enable max-len */
-
     function trustedClickElement$1(source, selectors) {
       var extraMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
       var delay = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : NaN;
-
       if (!selectors) {
         return;
       }
-
       var OBSERVER_TIMEOUT_MS = 10000;
       var THROTTLE_DELAY_MS = 20;
       var COOKIE_MATCH_MARKER = 'cookie:';
       var LOCAL_STORAGE_MATCH_MARKER = 'localStorage:';
       var SELECTORS_DELIMITER = ',';
-      var COOKIE_STRING_DELIMITER = ';'; // Regex to split match pairs by commas, avoiding the ones included in regexes
-
+      var COOKIE_STRING_DELIMITER = ';';
+      // Regex to split match pairs by commas, avoiding the ones included in regexes
       var EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=cookie:|localStorage:)/;
       var parsedDelay;
-
       if (delay) {
         parsedDelay = parseInt(delay, 10);
         var isValidDelay = !Number.isNaN(parsedDelay) || parsedDelay < OBSERVER_TIMEOUT_MS;
-
         if (!isValidDelay) {
           // eslint-disable-next-line max-len
           var message = "Passed delay '".concat(delay, "' is invalid or bigger than ").concat(OBSERVER_TIMEOUT_MS, " ms");
@@ -2239,39 +2069,34 @@
           return;
         }
       }
-
       var canClick = !parsedDelay;
       var cookieMatches = [];
       var localStorageMatches = [];
-
       if (extraMatch) {
         // Get all match marker:value pairs from argument
         var parsedExtraMatch = extraMatch.split(EXTRA_MATCH_DELIMITER).map(function (matchStr) {
           return matchStr.trim();
-        }); // Filter match pairs by marker
+        });
 
+        // Filter match pairs by marker
         parsedExtraMatch.forEach(function (matchStr) {
           if (matchStr.indexOf(COOKIE_MATCH_MARKER) > -1) {
             var cookieMatch = matchStr.replace(COOKIE_MATCH_MARKER, '');
             cookieMatches.push(cookieMatch);
           }
-
           if (matchStr.indexOf(LOCAL_STORAGE_MATCH_MARKER) > -1) {
             var localStorageMatch = matchStr.replace(LOCAL_STORAGE_MATCH_MARKER, '');
             localStorageMatches.push(localStorageMatch);
           }
         });
       }
-
       if (cookieMatches.length > 0) {
         var parsedCookieMatches = parseCookieString(cookieMatches.join(COOKIE_STRING_DELIMITER));
         var parsedCookies = parseCookieString(document.cookie);
         var cookieKeys = Object.keys(parsedCookies);
-
         if (cookieKeys.length === 0) {
           return;
         }
-
         var cookiesMatched = Object.keys(parsedCookieMatches).every(function (key) {
           // Avoid getting /.?/ result from toRegExp on undefined
           // as cookie may be set without value,
@@ -2280,35 +2105,31 @@
           var keyMatch = toRegExp(key);
           return cookieKeys.some(function (key) {
             var keysMatched = keyMatch.test(key);
-
             if (!keysMatched) {
               return false;
-            } // Key matching is enough if cookie value match is not specified
+            }
 
-
+            // Key matching is enough if cookie value match is not specified
             if (!valueMatch) {
               return true;
             }
-
             return valueMatch.test(parsedCookies[key]);
           });
         });
-
         if (!cookiesMatched) {
           return;
         }
       }
-
       if (localStorageMatches.length > 0) {
         var localStorageMatched = localStorageMatches.every(function (str) {
           var itemValue = window.localStorage.getItem(str);
           return itemValue || itemValue === '';
         });
-
         if (!localStorageMatched) {
           return;
         }
       }
+
       /**
        * Create selectors array and swap selectors to null on finding it's element
        *
@@ -2317,60 +2138,52 @@
        * - always know on what index corresponding element should be put
        * - prevent selectors from being queried multiple times
        */
-
-
       var selectorsSequence = selectors.split(SELECTORS_DELIMITER).map(function (selector) {
         return selector.trim();
       });
-
       var createElementObj = function createElementObj(element) {
         return {
           element: element || null,
           clicked: false
         };
       };
-
       var elementsSequence = Array(selectorsSequence.length).fill(createElementObj());
+
       /**
        * Go through elementsSequence from left to right, clicking on found elements
        *
        * Element should not be clicked if it is already clicked,
        * or a previous element is not found or clicked yet
        */
-
       var clickElementsBySequence = function clickElementsBySequence() {
         for (var i = 0; i < elementsSequence.length; i += 1) {
-          var elementObj = elementsSequence[i]; // Stop clicking if that pos element is not found yet
-
+          var elementObj = elementsSequence[i];
+          // Stop clicking if that pos element is not found yet
           if (!elementObj.element) {
             break;
-          } // Skip already clicked elements
-
-
+          }
+          // Skip already clicked elements
           if (!elementObj.clicked) {
             elementObj.element.click();
             elementObj.clicked = true;
           }
         }
-
         var allElementsClicked = elementsSequence.every(function (elementObj) {
           return elementObj.clicked === true;
         });
-
         if (allElementsClicked) {
           // At this stage observer is already disconnected
           hit(source);
         }
       };
-
       var handleElement = function handleElement(element, i) {
         var elementObj = createElementObj(element);
         elementsSequence[i] = elementObj;
-
         if (canClick) {
           clickElementsBySequence();
         }
       };
+
       /**
        * Query all selectors from queue on each mutation
        * Each selector is swapped to null in selectorsSequence on founding corresponding element
@@ -2379,46 +2192,41 @@
        * when delay is getting off after the last mutation took place.
        *
        */
-
-
       var findElements = function findElements(mutations, observer) {
         var fulfilledSelectors = [];
         selectorsSequence.forEach(function (selector, i) {
           if (!selector) {
             return;
           }
-
           var element = document.querySelector(selector);
-
           if (!element) {
             return;
           }
-
           handleElement(element, i);
           fulfilledSelectors.push(selector);
-        }); // selectorsSequence should be modified after the loop to not break loop indexation
+        });
 
+        // selectorsSequence should be modified after the loop to not break loop indexation
         selectorsSequence = selectorsSequence.map(function (selector) {
           return fulfilledSelectors.indexOf(selector) === -1 ? selector : null;
-        }); // Disconnect observer after finding all elements
+        });
 
+        // Disconnect observer after finding all elements
         var allSelectorsFulfilled = selectorsSequence.every(function (selector) {
           return selector === null;
         });
-
         if (allSelectorsFulfilled) {
           observer.disconnect();
         }
-      }; // eslint-disable-next-line compat/compat
+      };
 
-
+      // eslint-disable-next-line compat/compat
       var observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
       observer.observe(document.documentElement, {
         attributes: true,
         childList: true,
         subtree: true
       });
-
       if (parsedDelay) {
         setTimeout(function () {
           // Click previously collected elements
@@ -2426,17 +2234,17 @@
           canClick = true;
         }, parsedDelay);
       }
-
       setTimeout(function () {
         return observer.disconnect();
       }, OBSERVER_TIMEOUT_MS);
     }
-    trustedClickElement$1.names = ['trusted-click-element' // trusted scriptlets support no aliases
+    trustedClickElement$1.names = ['trusted-click-element'
+    // trusted scriptlets support no aliases
     ];
+
     trustedClickElement$1.injections = [hit, toRegExp, parseCookieString, throttle, logMessage];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet abort-on-property-read
      *
@@ -2465,36 +2273,28 @@
      * example.org#%#//scriptlet('abort-on-property-read', 'navigator.language')
      * ```
      */
-
     /* eslint-enable max-len */
-
     function abortOnPropertyRead$1(source, property) {
       if (!property) {
         return;
       }
-
       var rid = randomId();
-
       var abort = function abort() {
         hit(source);
         throw new ReferenceError(rid);
       };
-
       var setChainPropAccess = function setChainPropAccess(owner, property) {
         var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
-            chain = chainInfo.chain;
-
+          chain = chainInfo.chain;
         if (chain) {
           var setter = function setter(a) {
             base = a;
-
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
             }
           };
-
           Object.defineProperty(owner, prop, {
             get: function get() {
               return base;
@@ -2503,22 +2303,20 @@
           });
           return;
         }
-
         setPropertyAccess(base, prop, {
           get: abort,
           set: function set() {}
         });
       };
-
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
-    abortOnPropertyRead$1.names = ['abort-on-property-read', // aliases are needed for matching the related scriptlet converted into our syntax
+    abortOnPropertyRead$1.names = ['abort-on-property-read',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-property-read.js', 'ubo-abort-on-property-read.js', 'aopr.js', 'ubo-aopr.js', 'ubo-abort-on-property-read', 'ubo-aopr', 'abp-abort-on-property-read'];
     abortOnPropertyRead$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isEmptyObject];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet abort-on-property-write
      *
@@ -2544,36 +2342,28 @@
      * example.org#%#//scriptlet('abort-on-property-write', 'adblock')
      * ```
      */
-
     /* eslint-enable max-len */
-
     function abortOnPropertyWrite$1(source, property) {
       if (!property) {
         return;
       }
-
       var rid = randomId();
-
       var abort = function abort() {
         hit(source);
         throw new ReferenceError(rid);
       };
-
       var setChainPropAccess = function setChainPropAccess(owner, property) {
         var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
-            chain = chainInfo.chain;
-
+          chain = chainInfo.chain;
         if (chain) {
           var setter = function setter(a) {
             base = a;
-
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
             }
           };
-
           Object.defineProperty(owner, prop, {
             get: function get() {
               return base;
@@ -2582,21 +2372,19 @@
           });
           return;
         }
-
         setPropertyAccess(base, prop, {
           set: abort
         });
       };
-
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
-    abortOnPropertyWrite$1.names = ['abort-on-property-write', // aliases are needed for matching the related scriptlet converted into our syntax
+    abortOnPropertyWrite$1.names = ['abort-on-property-write',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-property-write.js', 'ubo-abort-on-property-write.js', 'aopw.js', 'ubo-aopw.js', 'ubo-abort-on-property-write', 'ubo-aopw', 'abp-abort-on-property-write'];
     abortOnPropertyWrite$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isEmptyObject];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet prevent-setTimeout
      *
@@ -2698,24 +2486,21 @@
      *     }, 500);
      *     ```
      */
-
     /* eslint-enable max-len */
-
     function preventSetTimeout$1(source, matchCallback, matchDelay) {
       // if browser does not support Proxy (e.g. Internet Explorer),
       // we use none-proxy "legacy" wrapper for preventing
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
       var isProxySupported = typeof Proxy !== 'undefined';
-      var nativeTimeout = window.setTimeout; // logs setTimeouts to console if no arguments have been specified
+      var nativeTimeout = window.setTimeout;
 
+      // logs setTimeouts to console if no arguments have been specified
       var shouldLog = typeof matchCallback === 'undefined' && typeof matchDelay === 'undefined';
-
       var legacyTimeoutWrapper = function legacyTimeoutWrapper(callback, delay) {
         var shouldPrevent = false;
-
         if (shouldLog) {
-          hit(source); // https://github.com/AdguardTeam/Scriptlets/issues/105
-
+          hit(source);
+          // https://github.com/AdguardTeam/Scriptlets/issues/105
           logMessage(source, "setTimeout(".concat(String(callback), ", ").concat(delay, ")"), true);
         } else {
           shouldPrevent = isPreventionNeeded({
@@ -2725,27 +2510,22 @@
             matchDelay: matchDelay
           });
         }
-
         if (shouldPrevent) {
           hit(source);
           return nativeTimeout(noopFunc, delay);
         }
-
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
-
         return nativeTimeout.apply(window, [callback, delay].concat(args));
       };
-
       var handlerWrapper = function handlerWrapper(target, thisArg, args) {
         var callback = args[0];
         var delay = args[1];
         var shouldPrevent = false;
-
         if (shouldLog) {
-          hit(source); // https://github.com/AdguardTeam/Scriptlets/issues/105
-
+          hit(source);
+          // https://github.com/AdguardTeam/Scriptlets/issues/105
           logMessage(source, "setTimeout(".concat(String(callback), ", ").concat(delay, ")"), true);
         } else {
           shouldPrevent = isPreventionNeeded({
@@ -2755,32 +2535,33 @@
             matchDelay: matchDelay
           });
         }
-
         if (shouldPrevent) {
           hit(source);
           args[0] = noopFunc;
         }
-
         return target.apply(thisArg, args);
       };
-
       var setTimeoutHandler = {
         apply: handlerWrapper
       };
       window.setTimeout = isProxySupported ? new Proxy(window.setTimeout, setTimeoutHandler) : legacyTimeoutWrapper;
     }
-    preventSetTimeout$1.names = ['prevent-setTimeout', // aliases are needed for matching the related scriptlet converted into our syntax
-    'no-setTimeout-if.js', // new implementation of setTimeout-defuser.js
-    'ubo-no-setTimeout-if.js', 'nostif.js', // new short name of no-setTimeout-if
-    'ubo-nostif.js', 'ubo-no-setTimeout-if', 'ubo-nostif', // old scriptlet names which should be supported as well.
+    preventSetTimeout$1.names = ['prevent-setTimeout',
+    // aliases are needed for matching the related scriptlet converted into our syntax
+    'no-setTimeout-if.js',
+    // new implementation of setTimeout-defuser.js
+    'ubo-no-setTimeout-if.js', 'nostif.js',
+    // new short name of no-setTimeout-if
+    'ubo-nostif.js', 'ubo-no-setTimeout-if', 'ubo-nostif',
+    // old scriptlet names which should be supported as well.
     // should be removed eventually.
     // do not remove until other filter lists maintainers use them
     'setTimeout-defuser.js', 'ubo-setTimeout-defuser.js', 'ubo-setTimeout-defuser', 'std.js', 'ubo-std.js', 'ubo-std'];
-    preventSetTimeout$1.injections = [hit, noopFunc, isPreventionNeeded, logMessage, // following helpers should be injected as helpers above use them
-    parseMatchArg, parseDelayArg, toRegExp, startsWith, nativeIsNaN, isValidCallback, isValidMatchStr, escapeRegExp, isValidStrPattern, nativeIsFinite, isValidMatchNumber];
+    preventSetTimeout$1.injections = [hit, noopFunc, isPreventionNeeded, logMessage,
+    // following helpers should be injected as helpers above use them
+    parseMatchArg, parseDelayArg, toRegExp, startsWith$1, nativeIsNaN, isValidCallback, isValidMatchStr, escapeRegExp, isValidStrPattern, nativeIsFinite, isValidMatchNumber];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet prevent-setInterval
      *
@@ -2882,24 +2663,21 @@
      *     }, 500);
      *     ```
      */
-
     /* eslint-enable max-len */
-
     function preventSetInterval$1(source, matchCallback, matchDelay) {
       // if browser does not support Proxy (e.g. Internet Explorer),
       // we use none-proxy "legacy" wrapper for preventing
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
       var isProxySupported = typeof Proxy !== 'undefined';
-      var nativeInterval = window.setInterval; // logs setIntervals to console if no arguments have been specified
+      var nativeInterval = window.setInterval;
 
+      // logs setIntervals to console if no arguments have been specified
       var shouldLog = typeof matchCallback === 'undefined' && typeof matchDelay === 'undefined';
-
       var legacyIntervalWrapper = function legacyIntervalWrapper(callback, delay) {
         var shouldPrevent = false;
-
         if (shouldLog) {
-          hit(source); // https://github.com/AdguardTeam/Scriptlets/issues/105
-
+          hit(source);
+          // https://github.com/AdguardTeam/Scriptlets/issues/105
           logMessage(source, "setInterval(".concat(String(callback), ", ").concat(delay, ")"), true);
         } else {
           shouldPrevent = isPreventionNeeded({
@@ -2909,27 +2687,22 @@
             matchDelay: matchDelay
           });
         }
-
         if (shouldPrevent) {
           hit(source);
           return nativeInterval(noopFunc, delay);
         }
-
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
-
         return nativeInterval.apply(window, [callback, delay].concat(args));
       };
-
       var handlerWrapper = function handlerWrapper(target, thisArg, args) {
         var callback = args[0];
         var delay = args[1];
         var shouldPrevent = false;
-
         if (shouldLog) {
-          hit(source); // https://github.com/AdguardTeam/Scriptlets/issues/105
-
+          hit(source);
+          // https://github.com/AdguardTeam/Scriptlets/issues/105
           logMessage(source, "setInterval(".concat(String(callback), ", ").concat(delay, ")"), true);
         } else {
           shouldPrevent = isPreventionNeeded({
@@ -2939,31 +2712,33 @@
             matchDelay: matchDelay
           });
         }
-
         if (shouldPrevent) {
           hit(source);
           args[0] = noopFunc;
         }
-
         return target.apply(thisArg, args);
       };
-
       var setIntervalHandler = {
         apply: handlerWrapper
       };
       window.setInterval = isProxySupported ? new Proxy(window.setInterval, setIntervalHandler) : legacyIntervalWrapper;
     }
-    preventSetInterval$1.names = ['prevent-setInterval', // aliases are needed for matching the related scriptlet converted into our syntax
-    'no-setInterval-if.js', // new implementation of setInterval-defuser.js
-    'ubo-no-setInterval-if.js', 'setInterval-defuser.js', // old name should be supported as well
-    'ubo-setInterval-defuser.js', 'nosiif.js', // new short name of no-setInterval-if
-    'ubo-nosiif.js', 'sid.js', // old short scriptlet name
+    preventSetInterval$1.names = ['prevent-setInterval',
+    // aliases are needed for matching the related scriptlet converted into our syntax
+    'no-setInterval-if.js',
+    // new implementation of setInterval-defuser.js
+    'ubo-no-setInterval-if.js', 'setInterval-defuser.js',
+    // old name should be supported as well
+    'ubo-setInterval-defuser.js', 'nosiif.js',
+    // new short name of no-setInterval-if
+    'ubo-nosiif.js', 'sid.js',
+    // old short scriptlet name
     'ubo-sid.js', 'ubo-no-setInterval-if', 'ubo-setInterval-defuser', 'ubo-nosiif', 'ubo-sid'];
-    preventSetInterval$1.injections = [hit, noopFunc, isPreventionNeeded, logMessage, // following helpers should be injected as helpers above use them
-    toRegExp, startsWith, nativeIsNaN, parseMatchArg, parseDelayArg, isValidCallback, isValidMatchStr, isValidStrPattern, escapeRegExp, nativeIsFinite, isValidMatchNumber];
+    preventSetInterval$1.injections = [hit, noopFunc, isPreventionNeeded, logMessage,
+    // following helpers should be injected as helpers above use them
+    toRegExp, startsWith$1, nativeIsNaN, parseMatchArg, parseDelayArg, isValidCallback, isValidMatchStr, isValidStrPattern, escapeRegExp, nativeIsFinite, isValidMatchNumber];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet prevent-window-open
      *
@@ -3024,9 +2799,7 @@
      *
      * > For better compatibility with uBO, old syntax is not recommended to use.
      */
-
     /* eslint-enable max-len */
-
     function preventWindowOpen$1(source) {
       var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '*';
       var delay = arguments.length > 2 ? arguments[2] : undefined;
@@ -3035,62 +2808,49 @@
       // if scriptlet runs without args
       var nativeOpen = window.open;
       var isNewSyntax = match !== '0' && match !== '1';
-
       var oldOpenWrapper = function oldOpenWrapper(str) {
-        match = Number(match) > 0; // 'delay' was 'search' prop for matching in old syntax
-
+        match = Number(match) > 0;
+        // 'delay' was 'search' prop for matching in old syntax
         for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
           args[_key - 1] = arguments[_key];
         }
-
         if (!isValidStrPattern(delay)) {
           logMessage(source, "Invalid parameter: ".concat(delay));
           return nativeOpen.apply(window, [str].concat(args));
         }
-
         var searchRegexp = toRegExp(delay);
-
         if (match !== searchRegexp.test(str)) {
           return nativeOpen.apply(window, [str].concat(args));
         }
-
         hit(source);
         return handleOldReplacement(replacement);
       };
-
       var newOpenWrapper = function newOpenWrapper(url) {
         var shouldLog = replacement && replacement.indexOf('log') > -1;
-
         for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
           args[_key2 - 1] = arguments[_key2];
         }
-
         if (shouldLog) {
           var argsStr = args && args.length > 0 ? ", ".concat(args.join(', ')) : '';
-          var message = "window-open: ".concat(url).concat(argsStr);
+          var message = "".concat(url).concat(argsStr);
           logMessage(source, message, true);
           hit(source);
         }
-
         var shouldPrevent = false;
-
         if (match === '*') {
           shouldPrevent = true;
         } else if (isValidMatchStr(match)) {
           var _parseMatchArg = parseMatchArg(match),
-              isInvertedMatch = _parseMatchArg.isInvertedMatch,
-              matchRegexp = _parseMatchArg.matchRegexp;
-
+            isInvertedMatch = _parseMatchArg.isInvertedMatch,
+            matchRegexp = _parseMatchArg.matchRegexp;
           shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
         } else {
           logMessage(source, "Invalid parameter: ".concat(match));
           shouldPrevent = false;
         }
-
         if (shouldPrevent) {
           var parsedDelay = parseInt(delay, 10);
           var result;
-
           if (nativeIsNaN(parsedDelay)) {
             result = noopNull();
           } else {
@@ -3101,7 +2861,6 @@
             };
             var decoy = createDecoy(decoyArgs);
             var popup = decoy.contentWindow;
-
             if (typeof popup === 'object' && popup !== null) {
               Object.defineProperty(popup, 'closed', {
                 value: false
@@ -3119,27 +2878,24 @@
               });
               popup = decoy.contentWindow;
             }
-
             result = popup;
           }
-
           hit(source);
           return result;
         }
-
         return nativeOpen.apply(window, [url].concat(args));
       };
+      window.open = isNewSyntax ? newOpenWrapper : oldOpenWrapper;
 
-      window.open = isNewSyntax ? newOpenWrapper : oldOpenWrapper; // Protect window.open from native code check
-
+      // Protect window.open from native code check
       window.open.toString = nativeOpen.toString.bind(nativeOpen);
     }
-    preventWindowOpen$1.names = ['prevent-window-open', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventWindowOpen$1.names = ['prevent-window-open',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'window.open-defuser.js', 'ubo-window.open-defuser.js', 'ubo-window.open-defuser', 'nowoif.js', 'ubo-nowoif.js', 'ubo-nowoif'];
-    preventWindowOpen$1.injections = [hit, isValidStrPattern, escapeRegExp, isValidMatchStr, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, logMessage, noopFunc, trueFunc, startsWith, endsWith, substringBefore, substringAfter$1];
+    preventWindowOpen$1.injections = [hit, isValidStrPattern, escapeRegExp, isValidMatchStr, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, logMessage, noopFunc, trueFunc, startsWith$1, endsWith, substringBefore, substringAfter$1];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet abort-current-inline-script
      *
@@ -3202,14 +2958,11 @@
      *     <script>alert("Hi, little world");</script>
      *     ```
      */
-
     /* eslint-enable max-len */
-
     function abortCurrentInlineScript$1(source, property, search) {
       var searchRegexp = toRegExp(search);
       var rid = randomId();
       var SRC_DATA_MARKER = 'data:text/javascript;base64,';
-
       var getCurrentScript = function getCurrentScript() {
         if ('currentScript' in document) {
           return document.currentScript; // eslint-disable-line compat/compat
@@ -3218,49 +2971,42 @@
         var scripts = document.getElementsByTagName('script');
         return scripts[scripts.length - 1];
       };
-
       var ourScript = getCurrentScript();
-
       var abort = function abort() {
         var scriptEl = getCurrentScript();
-
         if (!scriptEl) {
           return;
         }
+        var content = scriptEl.textContent;
 
-        var content = scriptEl.textContent; // We are using Node.prototype.textContent property descriptor
+        // We are using Node.prototype.textContent property descriptor
         // to get the real script content
         // even when document.currentScript.textContent is replaced.
         // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
-
         try {
           var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
           content = textContentGetter.call(scriptEl);
         } catch (e) {} // eslint-disable-line no-empty
+
         // https://github.com/AdguardTeam/Scriptlets/issues/130
-
-
-        if (content.length === 0 && typeof scriptEl.src !== 'undefined' && startsWith(scriptEl.src, SRC_DATA_MARKER)) {
+        if (content.length === 0 && typeof scriptEl.src !== 'undefined' && startsWith$1(scriptEl.src, SRC_DATA_MARKER)) {
           var encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
           content = window.atob(encodedContent);
         }
-
         if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && searchRegexp.test(content)) {
           hit(source);
           throw new ReferenceError(rid);
         }
       };
-
       var setChainPropAccess = function setChainPropAccess(owner, property) {
         var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
-            chain = chainInfo.chain; // The scriptlet might be executed before the chain property has been created
+          chain = chainInfo.chain; // The scriptlet might be executed before the chain property has been created
         // (for instance, document.body before the HTML body was loaded).
         // In this case we're checking whether the base element exists or not
         // and if not, we simply exit without overriding anything.
         // e.g. https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
-
         if (base instanceof Object === false && base === null) {
           var props = property.split('.');
           var propIndex = props.indexOf(prop);
@@ -3269,16 +3015,13 @@
           logMessage(source, message);
           return;
         }
-
         if (chain) {
           var setter = function setter(a) {
             base = a;
-
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
             }
           };
-
           Object.defineProperty(owner, prop, {
             get: function get() {
               return base;
@@ -3287,33 +3030,27 @@
           });
           return;
         }
-
         var currentValue = base[prop];
         var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
-
         if (origDescriptor instanceof Object === false || origDescriptor.get instanceof Function === false) {
           currentValue = base[prop];
           origDescriptor = undefined;
         }
-
         var descriptorWrapper = Object.assign(getDescriptorAddon(), {
           currentValue: currentValue,
           get: function get() {
             if (!this.isAbortingSuspended) {
               this.isolateCallback(abort);
             }
-
             if (origDescriptor instanceof Object) {
               return origDescriptor.get.call(base);
             }
-
             return this.currentValue;
           },
           set: function set(newValue) {
             if (!this.isAbortingSuspended) {
               this.isolateCallback(abort);
             }
-
             if (origDescriptor instanceof Object) {
               origDescriptor.set.call(base, newValue);
             } else {
@@ -3331,18 +3068,19 @@
           }
         });
       };
-
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
-    abortCurrentInlineScript$1.names = ['abort-current-inline-script', // aliases are needed for matching the related scriptlet converted into our syntax
-    'abort-current-script.js', 'ubo-abort-current-script.js', 'acs.js', 'ubo-acs.js', // "ubo"-aliases with no "js"-ending
-    'ubo-abort-current-script', 'ubo-acs', // obsolete but supported aliases
+    abortCurrentInlineScript$1.names = ['abort-current-inline-script',
+    // aliases are needed for matching the related scriptlet converted into our syntax
+    'abort-current-script.js', 'ubo-abort-current-script.js', 'acs.js', 'ubo-acs.js',
+    // "ubo"-aliases with no "js"-ending
+    'ubo-abort-current-script', 'ubo-acs',
+    // obsolete but supported aliases
     'abort-current-inline-script.js', 'ubo-abort-current-inline-script.js', 'acis.js', 'ubo-acis.js', 'ubo-abort-current-inline-script', 'ubo-acis', 'abp-abort-current-inline-script'];
-    abortCurrentInlineScript$1.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, startsWith, createOnErrorHandler, hit, logMessage, isEmptyObject, getDescriptorAddon];
+    abortCurrentInlineScript$1.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, startsWith$1, createOnErrorHandler, hit, logMessage, isEmptyObject, getDescriptorAddon];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet set-constant
      *
@@ -3409,18 +3147,14 @@
      * ✔ document.third() === true  // if the condition described above is met
      * ```
      */
-
     /* eslint-enable max-len */
-
     function setConstant$1(source, property, value, stack) {
       if (!property || !matchStackTrace(stack, new Error().stack)) {
         return;
       }
-
       var emptyArr = noopArray();
       var emptyObj = noopObject();
       var constantValue;
-
       if (value === 'undefined') {
         constantValue = undefined;
       } else if (value === 'false') {
@@ -3445,11 +3179,9 @@
         constantValue = noopPromiseReject;
       } else if (/^\d+$/.test(value)) {
         constantValue = parseFloat(value);
-
         if (nativeIsNaN(constantValue)) {
           return;
         }
-
         if (Math.abs(constantValue) > 0x7FFF) {
           return;
         }
@@ -3464,41 +3196,33 @@
       } else {
         return;
       }
-
       var canceled = false;
-
       var mustCancel = function mustCancel(value) {
         if (canceled) {
           return canceled;
         }
-
         canceled = value !== undefined && constantValue !== undefined && typeof value !== typeof constantValue && value !== null;
         return canceled;
       };
-
       var trapProp = function trapProp(base, prop, configurable, handler) {
         if (!handler.init(base[prop])) {
           return false;
         }
-
         var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
-        var prevSetter; // This is required to prevent scriptlets overwrite each over
-
+        var prevSetter;
+        // This is required to prevent scriptlets overwrite each over
         if (origDescriptor instanceof Object) {
           // This check is required to avoid defining non-configurable props
           if (!origDescriptor.configurable) {
-            var message = "set-constant: property '".concat(prop, "' is not configurable");
+            var message = "Property '".concat(prop, "' is not configurable");
             logMessage(source, message);
             return false;
           }
-
           base[prop] = constantValue;
-
           if (origDescriptor.set instanceof Function) {
             prevSetter = origDescriptor.set;
           }
         }
-
         Object.defineProperty(base, prop, {
           configurable: configurable,
           get: function get() {
@@ -3508,20 +3232,17 @@
             if (prevSetter !== undefined) {
               prevSetter(a);
             }
-
             handler.set(a);
           }
         });
         return true;
       };
-
       var setChainPropAccess = function setChainPropAccess(owner, property) {
         var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
-            chain = chainInfo.chain; // Handler method init is used to keep track of factual value
+          chain = chainInfo.chain; // Handler method init is used to keep track of factual value
         // and apply mustCancel() check only on end prop
-
         var inChainPropHandler = {
           factValue: undefined,
           init: function init(a) {
@@ -3536,9 +3257,7 @@
             if (this.factValue === a) {
               return;
             }
-
             this.factValue = a;
-
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
             }
@@ -3549,7 +3268,6 @@
             if (mustCancel(a)) {
               return false;
             }
-
             return true;
           },
           get: function get() {
@@ -3559,51 +3277,50 @@
             if (!mustCancel(a)) {
               return;
             }
-
             constantValue = a;
           }
-        }; // End prop case
+        };
 
+        // End prop case
         if (!chain) {
           var isTrapped = trapProp(base, prop, false, endPropHandler);
-
           if (isTrapped) {
             hit(source);
           }
-
           return;
-        } // Null prop in chain
+        }
 
-
+        // Null prop in chain
         if (base !== undefined && base[prop] === null) {
           trapProp(base, prop, true, inChainPropHandler);
           return;
-        } // Empty object prop in chain
+        }
 
-
+        // Empty object prop in chain
         if ((base instanceof Object || typeof base === 'object') && isEmptyObject(base)) {
           trapProp(base, prop, true, inChainPropHandler);
-        } // Defined prop in chain
+        }
 
-
+        // Defined prop in chain
         var propValue = owner[prop];
-
         if (propValue instanceof Object || typeof propValue === 'object' && propValue !== null) {
           setChainPropAccess(propValue, chain);
-        } // Undefined prop in chain
+        }
 
-
+        // Undefined prop in chain
         trapProp(base, prop, true, inChainPropHandler);
       };
-
       setChainPropAccess(window, property);
     }
-    setConstant$1.names = ['set-constant', // aliases are needed for matching the related scriptlet converted into our syntax
+    setConstant$1.names = ['set-constant',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js', 'ubo-set-constant', 'ubo-set', 'abp-override-property-read'];
-    setConstant$1.injections = [hit, logMessage, noopArray, noopObject, noopFunc, trueFunc, falseFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, nativeIsNaN, isEmptyObject, getNativeRegexpTest];
+    setConstant$1.injections = [hit, logMessage, noopArray, noopObject, noopFunc, trueFunc, falseFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, nativeIsNaN, isEmptyObject, getNativeRegexpTest,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    shouldAbortInlineOrInjectedScript];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet remove-cookie
      *
@@ -3636,12 +3353,9 @@
      *     document.cookie = '__example=randomValue';
      *     ```
      */
-
     /* eslint-enable max-len */
-
     function removeCookie$1(source, match) {
       var matchRegexp = toRegExp(match);
-
       var removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
         var cookieSpec = "".concat(cookieName, "=");
         var domain1 = "; domain=".concat(hostName);
@@ -3656,42 +3370,34 @@
         document.cookie = cookieSpec + domain2 + path + expiration;
         hit(source);
       };
-
       var rmCookie = function rmCookie() {
         document.cookie.split(';').forEach(function (cookieStr) {
           var pos = cookieStr.indexOf('=');
-
           if (pos === -1) {
             return;
           }
-
           var cookieName = cookieStr.slice(0, pos).trim();
-
           if (!matchRegexp.test(cookieName)) {
             return;
           }
-
           var hostParts = document.location.hostname.split('.');
-
           for (var i = 0; i <= hostParts.length - 1; i += 1) {
             var hostName = hostParts.slice(i).join('.');
-
             if (hostName) {
               removeCookieFromHost(cookieName, hostName);
             }
           }
         });
       };
-
       rmCookie();
       window.addEventListener('beforeunload', rmCookie);
     }
-    removeCookie$1.names = ['remove-cookie', // aliases are needed for matching the related scriptlet converted into our syntax
+    removeCookie$1.names = ['remove-cookie',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'cookie-remover.js', 'ubo-cookie-remover.js', 'ubo-cookie-remover'];
     removeCookie$1.injections = [toRegExp, hit];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet prevent-addEventListener
      *
@@ -3729,51 +3435,53 @@
      *     });
      * ```
      */
-
     /* eslint-enable max-len */
-
     function preventAddEventListener$1(source, typeSearch, listenerSearch) {
       var typeSearchRegexp = toRegExp(typeSearch);
       var listenerSearchRegexp = toRegExp(listenerSearch);
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
-
       function addEventListenerWrapper(type, listener) {
+        var _this$constructor;
         var shouldPrevent = false;
-
         if (validateType(type) && validateListener(listener)) {
           shouldPrevent = typeSearchRegexp.test(type.toString()) && listenerSearchRegexp.test(listenerToString(listener));
         }
-
         if (shouldPrevent) {
           hit(source);
           return undefined;
         }
 
+        // Avoid illegal invocations due to lost context
+        // https://github.com/AdguardTeam/Scriptlets/issues/271
+        var context = this;
+        if (this && ((_this$constructor = this.constructor) === null || _this$constructor === void 0 ? void 0 : _this$constructor.name) === 'Window' && this !== window) {
+          context = window;
+        }
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
-
-        return nativeAddEventListener.apply(this, [type, listener].concat(args));
+        return nativeAddEventListener.apply(context, [type, listener].concat(args));
       }
-
       var descriptor = {
         configurable: true,
         set: function set() {},
         get: function get() {
           return addEventListenerWrapper;
         }
-      }; // https://github.com/AdguardTeam/Scriptlets/issues/215
+      };
+      // https://github.com/AdguardTeam/Scriptlets/issues/215
       // https://github.com/AdguardTeam/Scriptlets/issues/143
-
       Object.defineProperty(window.EventTarget.prototype, 'addEventListener', descriptor);
       Object.defineProperty(window, 'addEventListener', descriptor);
       Object.defineProperty(document, 'addEventListener', descriptor);
     }
-    preventAddEventListener$1.names = ['prevent-addEventListener', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventAddEventListener$1.names = ['prevent-addEventListener',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'addEventListener-defuser.js', 'ubo-addEventListener-defuser.js', 'aeld.js', 'ubo-aeld.js', 'ubo-addEventListener-defuser', 'ubo-aeld'];
     preventAddEventListener$1.injections = [hit, toRegExp, validateType, validateListener, listenerToString];
 
     /* eslint-disable consistent-return, no-eval */
+
     /**
      * @scriptlet prevent-bab
      *
@@ -3791,82 +3499,66 @@
      * example.org#%#//scriptlet('prevent-bab')
      * ```
      */
-
-    function preventBab$1(source) {
+    function preventBab$2(source) {
       var nativeSetTimeout = window.setTimeout;
       var babRegex = /\.bab_elementid.$/;
-
       var timeoutWrapper = function timeoutWrapper(callback) {
         if (typeof callback !== 'string' || !babRegex.test(callback)) {
           for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
             args[_key - 1] = arguments[_key];
           }
-
           return nativeSetTimeout.apply(window, [callback].concat(args));
         }
-
         hit(source);
       };
-
       window.setTimeout = timeoutWrapper;
       var signatures = [['blockadblock'], ['babasbm'], [/getItem\('babn'\)/], ['getElementById', 'String.fromCharCode', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 'charAt', 'DOMContentLoaded', 'AdBlock', 'addEventListener', 'doScroll', 'fromCharCode', '<<2|r>>4', 'sessionStorage', 'clientWidth', 'localStorage', 'Math', 'random']];
-
       var check = function check(str) {
         if (typeof str !== 'string') {
           return false;
         }
-
         for (var i = 0; i < signatures.length; i += 1) {
           var tokens = signatures[i];
           var match = 0;
-
           for (var j = 0; j < tokens.length; j += 1) {
             var token = tokens[j];
             var found = token instanceof RegExp ? token.test(str) : str.indexOf(token) > -1;
-
             if (found) {
               match += 1;
             }
           }
-
           if (match / tokens.length >= 0.8) {
             return true;
           }
         }
-
         return false;
       };
-
       var nativeEval = window.eval;
-
       var evalWrapper = function evalWrapper(str) {
         if (!check(str)) {
           return nativeEval(str);
         }
-
         hit(source);
         var bodyEl = document.body;
-
         if (bodyEl) {
           bodyEl.style.removeProperty('visibility');
         }
-
         var el = document.getElementById('babasbmsgx');
-
         if (el) {
           el.parentNode.removeChild(el);
         }
       };
-
       window.eval = evalWrapper.bind(window);
     }
-    preventBab$1.names = ['prevent-bab', // aliases are needed for matching the related scriptlet converted into our syntax
-    'nobab.js', 'ubo-nobab.js', 'bab-defuser.js', 'ubo-bab-defuser.js', 'ubo-nobab', 'ubo-bab-defuser'];
-    preventBab$1.injections = [hit];
+    preventBab$2.names = ['prevent-bab'
+    // there is no aliases for this scriptlet
+    ];
+
+    preventBab$2.injections = [hit];
 
     /* eslint-disable no-unused-vars, no-extra-bind, func-names */
-    /* eslint-disable max-len */
 
+    /* eslint-disable max-len */
     /**
      * @scriptlet nowebrtc
      *
@@ -3881,29 +3573,23 @@
      * example.org#%#//scriptlet('nowebrtc')
      * ```
      */
-
     /* eslint-enable max-len */
-
     function nowebrtc$1(source) {
       var propertyName = '';
-
       if (window.RTCPeerConnection) {
         propertyName = 'RTCPeerConnection';
       } else if (window.webkitRTCPeerConnection) {
         propertyName = 'webkitRTCPeerConnection';
       }
-
       if (propertyName === '') {
         return;
       }
-
       var rtcReplacement = function rtcReplacement(config) {
         // eslint-disable-next-line max-len
         var message = "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config));
         logMessage(source, message);
         hit(source);
       };
-
       rtcReplacement.prototype = {
         close: noopFunc,
         createDataChannel: noopFunc,
@@ -3912,7 +3598,6 @@
       };
       var rtc = window[propertyName];
       window[propertyName] = rtcReplacement;
-
       if (rtc.prototype) {
         rtc.prototype.createDataChannel = function (a, b) {
           return {
@@ -3922,7 +3607,8 @@
         }.bind(null);
       }
     }
-    nowebrtc$1.names = ['nowebrtc', // aliases are needed for matching the related scriptlet converted into our syntax
+    nowebrtc$1.names = ['nowebrtc',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'nowebrtc.js', 'ubo-nowebrtc.js', 'ubo-nowebrtc'];
     nowebrtc$1.injections = [hit, noopFunc, logMessage, convertRtcConfigToString];
 
@@ -3940,47 +3626,51 @@
      * example.org#%#//scriptlet('log-addEventListener')
      * ```
      */
-
     function logAddEventListener$1(source) {
       var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
-
       function addEventListenerWrapper(type, listener) {
+        var _this$constructor;
         if (validateType(type) && validateListener(listener)) {
           var _message = "addEventListener(\"".concat(type, "\", ").concat(listenerToString(listener), ")");
-
           logMessage(source, _message, true);
           hit(source);
-        } // logging while debugging
+        }
 
-
+        // logging while debugging
         var message = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
         logMessage(source, message, true);
 
+        // Avoid illegal invocations due to lost context
+        // https://github.com/AdguardTeam/Scriptlets/issues/271
+        var context = this;
+        if (this && ((_this$constructor = this.constructor) === null || _this$constructor === void 0 ? void 0 : _this$constructor.name) === 'Window' && this !== window) {
+          context = window;
+        }
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
-
-        return nativeAddEventListener.apply(this, [type, listener].concat(args));
+        return nativeAddEventListener.apply(context, [type, listener].concat(args));
       }
-
       var descriptor = {
         configurable: true,
         set: function set() {},
         get: function get() {
           return addEventListenerWrapper;
         }
-      }; // https://github.com/AdguardTeam/Scriptlets/issues/215
+      };
+      // https://github.com/AdguardTeam/Scriptlets/issues/215
       // https://github.com/AdguardTeam/Scriptlets/issues/143
-
       Object.defineProperty(window.EventTarget.prototype, 'addEventListener', descriptor);
       Object.defineProperty(window, 'addEventListener', descriptor);
       Object.defineProperty(document, 'addEventListener', descriptor);
     }
-    logAddEventListener$1.names = ['log-addEventListener', // aliases are needed for matching the related scriptlet converted into our syntax
+    logAddEventListener$1.names = ['log-addEventListener',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'addEventListener-logger.js', 'ubo-addEventListener-logger.js', 'aell.js', 'ubo-aell.js', 'ubo-addEventListener-logger', 'ubo-aell'];
     logAddEventListener$1.injections = [hit, validateType, validateListener, listenerToString, convertTypeToString, logMessage, objectToString, isEmptyObject, getObjectEntries];
 
     /* eslint-disable no-eval */
+
     /**
      * @scriptlet log-eval
      *
@@ -3992,32 +3682,26 @@
      * example.org#%#//scriptlet('log-eval')
      * ```
      */
-
     function logEval$1(source) {
       // wrap eval function
       var nativeEval = window.eval;
-
       function evalWrapper(str) {
         hit(source);
         logMessage(source, "eval(\"".concat(str, "\")"), true);
         return nativeEval(str);
       }
+      window.eval = evalWrapper;
 
-      window.eval = evalWrapper; // wrap new Function
-
+      // wrap new Function
       var nativeFunction = window.Function;
-
       function FunctionWrapper() {
         hit(source);
-
         for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
           args[_key] = arguments[_key];
         }
-
         logMessage(source, "new Function(".concat(args.join(', '), ")"), true);
         return nativeFunction.apply(this, [].concat(args));
       }
-
       FunctionWrapper.prototype = Object.create(nativeFunction.prototype);
       FunctionWrapper.prototype.constructor = FunctionWrapper;
       window.Function = FunctionWrapper;
@@ -4041,12 +3725,13 @@
       for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
         args[_key] = arguments[_key];
       }
-
       console.log(args); // eslint-disable-line no-console
     }
+
     log$1.names = ['log'];
 
     /* eslint-disable no-eval, no-extra-bind */
+
     /**
      * @scriptlet noeval
      *
@@ -4065,17 +3750,19 @@
      * example.org#%#//scriptlet('noeval')
      * ```
      */
-
     function noeval$1(source) {
       window.eval = function evalWrapper(s) {
-        hit(source, "AdGuard has prevented eval:\n".concat(s));
+        hit(source);
+        logMessage(source, "AdGuard has prevented eval:\n".concat(s), true);
       }.bind();
     }
-    noeval$1.names = ['noeval', // aliases are needed for matching the related scriptlet converted into our syntax
+    noeval$1.names = ['noeval',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'noeval.js', 'silent-noeval.js', 'ubo-noeval.js', 'ubo-silent-noeval.js', 'ubo-noeval', 'ubo-silent-noeval'];
-    noeval$1.injections = [hit];
+    noeval$1.injections = [hit, logMessage];
 
     /* eslint-disable no-eval, no-extra-bind, func-names */
+
     /**
      * @scriptlet prevent-eval-if
      *
@@ -4100,25 +3787,24 @@
      * example.org#%#//scriptlet('prevent-eval-if', 'test')
      * ```
      */
-
     function preventEvalIf$1(source, search) {
       var searchRegexp = toRegExp(search);
       var nativeEval = window.eval;
-
       window.eval = function (payload) {
         if (!searchRegexp.test(payload.toString())) {
           return nativeEval.call(window, payload);
         }
-
-        hit(source, payload);
+        hit(source);
         return undefined;
       }.bind(window);
     }
-    preventEvalIf$1.names = ['prevent-eval-if', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventEvalIf$1.names = ['prevent-eval-if',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'noeval-if.js', 'ubo-noeval-if.js', 'ubo-noeval-if'];
     preventEvalIf$1.injections = [toRegExp, hit];
 
     /* eslint-disable func-names, no-multi-assign */
+
     /**
      * @scriptlet prevent-fab-3.2.0
      *
@@ -4133,31 +3819,25 @@
      * example.org#%#//scriptlet('prevent-fab-3.2.0')
      * ```
      */
-
     function preventFab$1(source) {
-      hit(source); // redefines Fab function for adblock detection
+      hit(source);
 
+      // redefines Fab function for adblock detection
       var Fab = function Fab() {};
-
       Fab.prototype.check = noopFunc;
       Fab.prototype.clearEvent = noopFunc;
       Fab.prototype.emitEvent = noopFunc;
-
       Fab.prototype.on = function (a, b) {
         if (!a) {
           b();
         }
-
         return this;
       };
-
       Fab.prototype.onDetected = noopThis;
-
       Fab.prototype.onNotDetected = function (a) {
         a();
         return this;
       };
-
       Fab.prototype.setOption = noopFunc;
       Fab.prototype.options = {
         set: noopFunc,
@@ -4175,50 +3855,48 @@
           return fab;
         },
         set: function set() {}
-      }; // redefined Fab data properties which if 'FuckAdBlock' variable exists
+      };
 
+      // redefined Fab data properties which if 'FuckAdBlock' variable exists
       if (Object.prototype.hasOwnProperty.call(window, 'FuckAdBlock')) {
         window.FuckAdBlock = Fab;
       } else {
         // or redefined Fab accessor properties
         Object.defineProperty(window, 'FuckAdBlock', getSetFab);
       }
-
       if (Object.prototype.hasOwnProperty.call(window, 'BlockAdBlock')) {
         window.BlockAdBlock = Fab;
       } else {
         Object.defineProperty(window, 'BlockAdBlock', getSetFab);
       }
-
       if (Object.prototype.hasOwnProperty.call(window, 'SniffAdBlock')) {
         window.SniffAdBlock = Fab;
       } else {
         Object.defineProperty(window, 'SniffAdBlock', getSetFab);
       }
-
       if (Object.prototype.hasOwnProperty.call(window, 'fuckAdBlock')) {
         window.fuckAdBlock = fab;
       } else {
         Object.defineProperty(window, 'fuckAdBlock', getsetfab);
       }
-
       if (Object.prototype.hasOwnProperty.call(window, 'blockAdBlock')) {
         window.blockAdBlock = fab;
       } else {
         Object.defineProperty(window, 'blockAdBlock', getsetfab);
       }
-
       if (Object.prototype.hasOwnProperty.call(window, 'sniffAdBlock')) {
         window.sniffAdBlock = fab;
       } else {
         Object.defineProperty(window, 'sniffAdBlock', getsetfab);
       }
     }
-    preventFab$1.names = ['prevent-fab-3.2.0', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventFab$1.names = ['prevent-fab-3.2.0',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'nofab.js', 'ubo-nofab.js', 'fuckadblock.js-3.2.0', 'ubo-fuckadblock.js-3.2.0', 'ubo-nofab'];
     preventFab$1.injections = [hit, noopFunc, noopThis];
 
     /* eslint-disable func-names, no-multi-assign */
+
     /**
      * @scriptlet set-popads-dummy
      *
@@ -4233,7 +3911,6 @@
      * example.org#%#//scriptlet('set-popads-dummy')
      * ```
      */
-
     function setPopadsDummy$1(source) {
       delete window.PopAds;
       delete window.popns;
@@ -4252,7 +3929,8 @@
         }
       });
     }
-    setPopadsDummy$1.names = ['set-popads-dummy', // aliases are needed for matching the related scriptlet converted into our syntax
+    setPopadsDummy$1.names = ['set-popads-dummy',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'popads-dummy.js', 'ubo-popads-dummy.js', 'ubo-popads-dummy'];
     setPopadsDummy$1.injections = [hit];
 
@@ -4270,14 +3948,11 @@
      * example.org#%#//scriptlet('prevent-popads-net')
      * ```
      */
-
     function preventPopadsNet$1(source) {
       var rid = randomId();
-
       var throwError = function throwError() {
         throw new ReferenceError(rid);
       };
-
       delete window.PopAds;
       delete window.popns;
       Object.defineProperties(window, {
@@ -4291,11 +3966,13 @@
       window.onerror = createOnErrorHandler(rid).bind();
       hit(source);
     }
-    preventPopadsNet$1.names = ['prevent-popads-net', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventPopadsNet$1.names = ['prevent-popads-net',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'popads.net.js', 'ubo-popads.net.js', 'ubo-popads.net'];
     preventPopadsNet$1.injections = [createOnErrorHandler, randomId, hit];
 
     /* eslint-disable func-names */
+
     /**
      * @scriptlet prevent-adfly
      *
@@ -4310,16 +3987,13 @@
      * example.org#%#//scriptlet('prevent-adfly')
      * ```
      */
-
     function preventAdfly$1(source) {
       var isDigit = function isDigit(data) {
         return /^\d$/.test(data);
       };
-
       var handler = function handler(encodedURL) {
         var evenChars = '';
         var oddChars = '';
-
         for (var i = 0; i < encodedURL.length; i += 1) {
           if (i % 2 === 0) {
             evenChars += encodedURL.charAt(i);
@@ -4327,56 +4001,45 @@
             oddChars = encodedURL.charAt(i) + oddChars;
           }
         }
-
         var data = (evenChars + oddChars).split('');
-
         for (var _i = 0; _i < data.length; _i += 1) {
           if (isDigit(data[_i])) {
             for (var ii = _i + 1; ii < data.length; ii += 1) {
               if (isDigit(data[ii])) {
                 // eslint-disable-next-line no-bitwise
                 var temp = parseInt(data[_i], 10) ^ parseInt(data[ii], 10);
-
                 if (temp < 10) {
                   data[_i] = temp.toString();
                 }
-
                 _i = ii;
                 break;
               }
             }
           }
         }
-
         data = data.join('');
         var decodedURL = window.atob(data).slice(16, -16);
         /* eslint-disable compat/compat */
-
         if (window.stop) {
           window.stop();
         }
         /* eslint-enable compat/compat */
-
-
         window.onbeforeunload = null;
         window.location.href = decodedURL;
       };
-
-      var val; // Do not apply handler more than one time
-
+      var val;
+      // Do not apply handler more than one time
       var applyHandler = true;
       var result = setPropertyAccess(window, 'ysmm', {
         configurable: false,
         set: function set(value) {
           if (applyHandler) {
             applyHandler = false;
-
             try {
               if (typeof value === 'string') {
                 handler(value);
               }
             } catch (err) {} // eslint-disable-line no-empty
-
           }
 
           val = value;
@@ -4385,19 +4048,18 @@
           return val;
         }
       });
-
       if (result) {
         hit(source);
       } else {
         logMessage(source, 'Failed to set up prevent-adfly scriptlet');
       }
     }
-    preventAdfly$1.names = ['prevent-adfly', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventAdfly$1.names = ['prevent-adfly',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'adfly-defuser.js', 'ubo-adfly-defuser.js', 'ubo-adfly-defuser'];
     preventAdfly$1.injections = [setPropertyAccess, hit, logMessage];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet debug-on-property-read
      *
@@ -4414,16 +4076,12 @@
      * example.org#%#//scriptlet('debug-on-property-read', 'open')
      * ```
      */
-
     /* eslint-enable max-len */
-
     function debugOnPropertyRead$1(source, property) {
       if (!property) {
         return;
       }
-
       var rid = randomId();
-
       var abort = function abort() {
         hit(source);
         debugger; // eslint-disable-line no-debugger
@@ -4433,17 +4091,14 @@
         var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
-            chain = chainInfo.chain;
-
+          chain = chainInfo.chain;
         if (chain) {
           var setter = function setter(a) {
             base = a;
-
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
             }
           };
-
           Object.defineProperty(owner, prop, {
             get: function get() {
               return base;
@@ -4452,13 +4107,11 @@
           });
           return;
         }
-
         setPropertyAccess(base, prop, {
           get: abort,
           set: noopFunc
         });
       };
-
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
@@ -4466,7 +4119,6 @@
     debugOnPropertyRead$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, noopFunc, isEmptyObject];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet debug-on-property-write
      *
@@ -4481,16 +4133,12 @@
      * example.org#%#//scriptlet('debug-on-property-write', 'test')
      * ```
      */
-
     /* eslint-enable max-len */
-
     function debugOnPropertyWrite$1(source, property) {
       if (!property) {
         return;
       }
-
       var rid = randomId();
-
       var abort = function abort() {
         hit(source);
         debugger; // eslint-disable-line no-debugger
@@ -4500,17 +4148,14 @@
         var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
-            chain = chainInfo.chain;
-
+          chain = chainInfo.chain;
         if (chain) {
           var setter = function setter(a) {
             base = a;
-
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
             }
           };
-
           Object.defineProperty(owner, prop, {
             get: function get() {
               return base;
@@ -4519,12 +4164,10 @@
           });
           return;
         }
-
         setPropertyAccess(base, prop, {
           set: abort
         });
       };
-
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
@@ -4532,7 +4175,6 @@
     debugOnPropertyWrite$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isEmptyObject];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet debug-current-inline-script
      *
@@ -4547,13 +4189,10 @@
      * example.org#%#//scriptlet('debug-current-inline-script', 'alert')
      * ```
      */
-
     /* eslint-enable max-len */
-
     function debugCurrentInlineScript$1(source, property, search) {
       var searchRegexp = toRegExp(search);
       var rid = randomId();
-
       var getCurrentScript = function getCurrentScript() {
         if ('currentScript' in document) {
           return document.currentScript; // eslint-disable-line compat/compat
@@ -4562,26 +4201,22 @@
         var scripts = document.getElementsByTagName('script');
         return scripts[scripts.length - 1];
       };
-
       var ourScript = getCurrentScript();
-
       var abort = function abort() {
         var scriptEl = getCurrentScript();
-
         if (!scriptEl) {
           return;
         }
+        var content = scriptEl.textContent;
 
-        var content = scriptEl.textContent; // We are using Node.prototype.textContent property descriptor
+        // We are using Node.prototype.textContent property descriptor
         // to get the real script content
         // even when document.currentScript.textContent is replaced.
         // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
-
         try {
           var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
           content = textContentGetter.call(scriptEl);
         } catch (e) {} // eslint-disable-line no-empty
-
 
         if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && searchRegexp.test(content)) {
           hit(source);
@@ -4593,12 +4228,11 @@
         var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
-            chain = chainInfo.chain; // The scriptlet might be executed before the chain property has been created
+          chain = chainInfo.chain; // The scriptlet might be executed before the chain property has been created
         // (for instance, document.body before the HTML body was loaded).
         // In this case we're checking whether the base element exists or not
         // and if not, we simply exit without overriding anything.
         // e.g. https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
-
         if (base instanceof Object === false && base === null) {
           var props = property.split('.');
           var propIndex = props.indexOf(prop);
@@ -4607,16 +4241,13 @@
           logMessage(message, source.verbose);
           return;
         }
-
         if (chain) {
           var setter = function setter(a) {
             base = a;
-
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
             }
           };
-
           Object.defineProperty(owner, prop, {
             get: function get() {
               return base;
@@ -4625,7 +4256,6 @@
           });
           return;
         }
-
         var currentValue = base[prop];
         setPropertyAccess(base, prop, {
           set: function set(value) {
@@ -4638,7 +4268,6 @@
           }
         });
       };
-
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
@@ -4646,7 +4275,6 @@
     debugCurrentInlineScript$1.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit, logMessage, isEmptyObject];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet remove-attr
      *
@@ -4706,31 +4334,23 @@
      *     example.org#%#//scriptlet('remove-attr', 'example', 'html', 'asap complete')
      *     ```
      */
-
     /* eslint-enable max-len */
-
     function removeAttr$1(source, attrs, selector) {
       var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'asap stay';
-
       if (!attrs) {
         return;
       }
-
       attrs = attrs.split(/\s*\|\s*/);
-
       if (!selector) {
         selector = "[".concat(attrs.join('],['), "]");
       }
-
       var rmattr = function rmattr() {
         var nodes = [];
-
         try {
           nodes = [].slice.call(document.querySelectorAll(selector));
         } catch (e) {
           logMessage(source, "Invalid selector arg: '".concat(selector, "'"));
         }
-
         var removed = false;
         nodes.forEach(function (node) {
           attrs.forEach(function (attr) {
@@ -4738,25 +4358,19 @@
             removed = true;
           });
         });
-
         if (removed) {
           hit(source);
         }
       };
-
       var flags = parseFlags(applying);
-
       var run = function run() {
         rmattr();
-
         if (!flags.hasFlag(flags.STAY)) {
           return;
-        } // 'true' for observing attributes
-
-
+        }
+        // 'true' for observing attributes
         observeDOMChanges(rmattr, true);
       };
-
       if (flags.hasFlag(flags.ASAP)) {
         // https://github.com/AdguardTeam/Scriptlets/issues/245
         // Call rmattr on DOM content loaded
@@ -4769,7 +4383,6 @@
           rmattr();
         }
       }
-
       if (document.readyState !== 'complete' && flags.hasFlag(flags.COMPLETE)) {
         window.addEventListener('load', run, {
           once: true
@@ -4778,20 +4391,20 @@
         // Only call rmattr for single 'stay' flag
         if (!applying.indexOf(' ') !== -1) {
           rmattr();
-        } // 'true' for observing attributes
-
-
+        }
+        // 'true' for observing attributes
         observeDOMChanges(rmattr, true);
       }
     }
-    removeAttr$1.names = ['remove-attr', // aliases are needed for matching the related scriptlet converted into our syntax
+    removeAttr$1.names = ['remove-attr',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-attr.js', 'ubo-remove-attr.js', 'ra.js', 'ubo-ra.js', 'ubo-remove-attr', 'ubo-ra'];
-    removeAttr$1.injections = [hit, observeDOMChanges, parseFlags, logMessage, // following helpers should be imported and injected
+    removeAttr$1.injections = [hit, observeDOMChanges, parseFlags, logMessage,
+    // following helpers should be imported and injected
     // because they are used by helpers above
     throttle];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet set-attr
      *
@@ -4836,21 +4449,16 @@
      *     <a class="class" test-attribute>Some text</div>
      *     ```
      */
-
     /* eslint-enable max-len */
-
     function setAttr$1(source, selector, attr) {
       var value = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-
       if (!selector || !attr) {
         return;
-      } // Drop strings that cant be parsed into number, negative numbers and numbers below 32767
-
-
+      }
+      // Drop strings that cant be parsed into number, negative numbers and numbers below 32767
       if (value.length !== 0 && (nativeIsNaN(parseInt(value, 10)) || parseInt(value, 10) < 0 || parseInt(value, 10) > 0x7FFF)) {
         return;
       }
-
       var setAttr = function setAttr() {
         var nodes = [].slice.call(document.querySelectorAll(selector));
         var set = false;
@@ -4858,22 +4466,20 @@
           node.setAttribute(attr, value);
           set = true;
         });
-
         if (set) {
           hit(source);
         }
       };
-
       setAttr();
       observeDOMChanges(setAttr, true);
     }
     setAttr$1.names = ['set-attr'];
-    setAttr$1.injections = [hit, observeDOMChanges, nativeIsNaN, // following helpers should be imported and injected
+    setAttr$1.injections = [hit, observeDOMChanges, nativeIsNaN,
+    // following helpers should be imported and injected
     // because they are used by helpers above
     throttle];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet remove-class
      *
@@ -4937,51 +4543,41 @@
      *     example.org#%#//scriptlet('remove-class', 'branding', 'div[class^="inner"]', 'asap complete')
      *     ```
      */
-
     /* eslint-enable max-len */
 
     function removeClass$1(source, classNames, selector) {
       var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'asap stay';
-
       if (!classNames) {
         return;
       }
-
       classNames = classNames.split(/\s*\|\s*/);
       var selectors = [];
-
       if (!selector) {
         selectors = classNames.map(function (className) {
           return ".".concat(className);
         });
       }
-
       var removeClassHandler = function removeClassHandler() {
         var nodes = new Set();
-
         if (selector) {
           var foundNodes = [];
-
           try {
             foundNodes = [].slice.call(document.querySelectorAll(selector));
           } catch (e) {
             logMessage(source, "Invalid selector arg: '".concat(selector, "'"));
           }
-
           foundNodes.forEach(function (n) {
             return nodes.add(n);
           });
         } else if (selectors.length > 0) {
           selectors.forEach(function (s) {
             var elements = document.querySelectorAll(s);
-
             for (var i = 0; i < elements.length; i += 1) {
               var element = elements[i];
               nodes.add(element);
             }
           });
         }
-
         var removed = false;
         nodes.forEach(function (node) {
           classNames.forEach(function (className) {
@@ -4991,27 +4587,21 @@
             }
           });
         });
-
         if (removed) {
           hit(source);
         }
       };
-
       var CLASS_ATTR_NAME = ['class'];
       var flags = parseFlags(applying);
-
       var run = function run() {
         removeClassHandler();
-
         if (!flags.hasFlag(flags.STAY)) {
           return;
-        } // 'true' for observing attributes
+        }
+        // 'true' for observing attributes
         // 'class' for observing only classes
-
-
         observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
       };
-
       if (flags.hasFlag(flags.ASAP)) {
         // https://github.com/AdguardTeam/Scriptlets/issues/245
         // Call removeClassHandler on DOM content loaded
@@ -5024,7 +4614,6 @@
           removeClassHandler();
         }
       }
-
       if (document.readyState !== 'complete' && flags.hasFlag(flags.COMPLETE)) {
         window.addEventListener('load', run, {
           once: true
@@ -5034,13 +4623,14 @@
         if (!applying.indexOf(' ') !== -1) {
           removeClassHandler();
         }
-
         observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
       }
     }
-    removeClass$1.names = ['remove-class', // aliases are needed for matching the related scriptlet converted into our syntax
+    removeClass$1.names = ['remove-class',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-class.js', 'ubo-remove-class.js', 'rc.js', 'ubo-rc.js', 'ubo-remove-class', 'ubo-rc'];
-    removeClass$1.injections = [hit, logMessage, observeDOMChanges, parseFlags, // following helpers should be imported and injected
+    removeClass$1.injections = [hit, logMessage, observeDOMChanges, parseFlags,
+    // following helpers should be imported and injected
     // because they are used by helpers above
     throttle];
 
@@ -5058,11 +4648,9 @@
      * example.org#%#//scriptlet('disable-newtab-links')
      * ```
      */
-
     function disableNewtabLinks$1(source) {
       document.addEventListener('click', function (ev) {
         var target = ev.target;
-
         while (target !== null) {
           if (target.localName === 'a' && target.hasAttribute('target')) {
             ev.stopPropagation();
@@ -5070,17 +4658,16 @@
             hit(source);
             break;
           }
-
           target = target.parentNode;
         }
       });
     }
-    disableNewtabLinks$1.names = ['disable-newtab-links', // aliases are needed for matching the related scriptlet converted into our syntax
+    disableNewtabLinks$1.names = ['disable-newtab-links',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'disable-newtab-links.js', 'ubo-disable-newtab-links.js', 'ubo-disable-newtab-links'];
     disableNewtabLinks$1.injections = [hit];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet adjust-setInterval
      *
@@ -5129,13 +4716,10 @@
      *     example.org#%#//scriptlet('adjust-setInterval', '', '*', '0.02')
      *     ```
      */
-
     /* eslint-enable max-len */
-
     function adjustSetInterval$1(source, matchCallback, matchDelay, boost) {
       var nativeSetInterval = window.setInterval;
       var matchRegexp = toRegExp(matchCallback);
-
       var intervalWrapper = function intervalWrapper(callback, delay) {
         // https://github.com/AdguardTeam/Scriptlets/issues/221
         if (!isValidCallback(callback)) {
@@ -5146,23 +4730,21 @@
           delay *= getBoostMultiplier(boost);
           hit(source);
         }
-
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
-
         return nativeSetInterval.apply(window, [callback, delay].concat(args));
       };
-
       window.setInterval = intervalWrapper;
     }
-    adjustSetInterval$1.names = ['adjust-setInterval', // aliases are needed for matching the related scriptlet converted into our syntax
+    adjustSetInterval$1.names = ['adjust-setInterval',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'nano-setInterval-booster.js', 'ubo-nano-setInterval-booster.js', 'nano-sib.js', 'ubo-nano-sib.js', 'ubo-nano-setInterval-booster', 'ubo-nano-sib'];
-    adjustSetInterval$1.injections = [hit, isValidCallback, toRegExp, getBoostMultiplier, isDelayMatched, logMessage, // following helpers should be injected as helpers above use them
+    adjustSetInterval$1.injections = [hit, isValidCallback, toRegExp, getBoostMultiplier, isDelayMatched, logMessage,
+    // following helpers should be injected as helpers above use them
     nativeIsNaN, nativeIsFinite, getMatchDelay, shouldMatchAnyDelay];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet adjust-setTimeout
      *
@@ -5211,13 +4793,10 @@
      *     example.org#%#//scriptlet('adjust-setTimeout', 'test', '*')
      *     ```
      */
-
     /* eslint-enable max-len */
-
     function adjustSetTimeout$1(source, matchCallback, matchDelay, boost) {
       var nativeSetTimeout = window.setTimeout;
       var matchRegexp = toRegExp(matchCallback);
-
       var timeoutWrapper = function timeoutWrapper(callback, delay) {
         // https://github.com/AdguardTeam/Scriptlets/issues/221
         if (!isValidCallback(callback)) {
@@ -5228,23 +4807,21 @@
           delay *= getBoostMultiplier(boost);
           hit(source);
         }
-
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
-
         return nativeSetTimeout.apply(window, [callback, delay].concat(args));
       };
-
       window.setTimeout = timeoutWrapper;
     }
-    adjustSetTimeout$1.names = ['adjust-setTimeout', // aliases are needed for matching the related scriptlet converted into our syntax
+    adjustSetTimeout$1.names = ['adjust-setTimeout',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'nano-setTimeout-booster.js', 'ubo-nano-setTimeout-booster.js', 'nano-stb.js', 'ubo-nano-stb.js', 'ubo-nano-setTimeout-booster', 'ubo-nano-stb'];
-    adjustSetTimeout$1.injections = [hit, isValidCallback, toRegExp, getBoostMultiplier, isDelayMatched, logMessage, // following helpers should be injected as helpers above use them
+    adjustSetTimeout$1.injections = [hit, isValidCallback, toRegExp, getBoostMultiplier, isDelayMatched, logMessage,
+    // following helpers should be injected as helpers above use them
     nativeIsNaN, nativeIsFinite, getMatchDelay, shouldMatchAnyDelay];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet dir-string
      *
@@ -5270,38 +4847,23 @@
      * example.org#%#//scriptlet('dir-string', '2')
      * ```
      */
-
     /* eslint-enable max-len */
-
     function dirString$1(source, times) {
       var _console = console,
-          dir = _console.dir;
-      times = parseInt(times, 10);
-
+        dir = _console.dir;
       function dirWrapper(object) {
-        // eslint-disable-next-line no-unused-vars
-        var temp;
-
-        for (var i = 0; i < times; i += 1) {
-          // eslint-disable-next-line no-unused-expressions
-          temp = "".concat(object);
-        }
-
         if (typeof dir === 'function') {
           dir.call(this, object);
         }
-
-        hit(source, temp);
-      } // eslint-disable-next-line no-console
-
-
+        hit(source);
+      }
+      // eslint-disable-next-line no-console
       console.dir = dirWrapper;
     }
     dirString$1.names = ['dir-string', 'abp-dir-string'];
     dirString$1.injections = [hit];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet json-prune
      *
@@ -5377,45 +4939,40 @@
      *     example.org#%#//scriptlet('json-prune', '', '"id":"117458"')
      *     ```
      */
-
     /* eslint-enable max-len */
-
     function jsonPrune$1(source, propsToRemove, requiredInitialProps, stack) {
       if (!!stack && !matchStackTrace(stack, new Error().stack)) {
         return;
       }
-
       var prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
       var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
-
       function isPruningNeeded(root) {
         if (!root) {
           return false;
         }
+        var shouldProcess;
 
-        var shouldProcess; // Only log hostname and matched JSON payload if only second argument is present
-
+        // Only log hostname and matched JSON payload if only second argument is present
         if (prunePaths.length === 0 && requiredPaths.length > 0) {
           var rootString = JSON.stringify(root);
           var matchRegex = toRegExp(requiredPaths.join(''));
           var shouldLog = matchRegex.test(rootString);
-
           if (shouldLog) {
-            logMessage(source, "".concat(window.location.hostname, " ").concat(root), true);
+            logMessage(source, "".concat(window.location.hostname, " ").concat(objectToString(root)), true);
             shouldProcess = false;
             return shouldProcess;
           }
         }
-
         for (var i = 0; i < requiredPaths.length; i += 1) {
           var requiredPath = requiredPaths[i];
           var lastNestedPropName = requiredPath.split('.').pop();
-          var hasWildcard = requiredPath.indexOf('.*.') > -1 || requiredPath.indexOf('*.') > -1 || requiredPath.indexOf('.*') > -1 || requiredPath.indexOf('.[].') > -1 || requiredPath.indexOf('[].') > -1 || requiredPath.indexOf('.[]') > -1; // if the path has wildcard, getPropertyInChain should 'look through' chain props
+          var hasWildcard = requiredPath.indexOf('.*.') > -1 || requiredPath.indexOf('*.') > -1 || requiredPath.indexOf('.*') > -1 || requiredPath.indexOf('.[].') > -1 || requiredPath.indexOf('[].') > -1 || requiredPath.indexOf('.[]') > -1;
 
-          var details = getWildcardPropertyInChain(root, requiredPath, hasWildcard); // start value of 'shouldProcess' due to checking below
+          // if the path has wildcard, getPropertyInChain should 'look through' chain props
+          var details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
 
+          // start value of 'shouldProcess' due to checking below
           shouldProcess = !hasWildcard;
-
           for (var _i = 0; _i < details.length; _i += 1) {
             if (hasWildcard) {
               // if there is a wildcard,
@@ -5427,28 +4984,25 @@
             }
           }
         }
-
         return shouldProcess;
       }
+
       /**
        * Prunes properties of 'root' object
        * @param {Object} root
        */
-
-
       var jsonPruner = function jsonPruner(root) {
         if (prunePaths.length === 0 && requiredPaths.length === 0) {
-          logMessage(source, "".concat(window.location.hostname, " ").concat(root), true);
+          logMessage(source, "".concat(window.location.hostname, " ").concat(objectToString(root)), true);
           return root;
         }
-
         try {
           if (isPruningNeeded(root) === false) {
             return root;
-          } // if pruning is needed, we check every input pathToRemove
+          }
+
+          // if pruning is needed, we check every input pathToRemove
           // and delete it if root has it
-
-
           prunePaths.forEach(function (path) {
             var ownerObjArr = getWildcardPropertyInChain(root, path, true);
             ownerObjArr.forEach(function (ownerObj) {
@@ -5461,51 +5015,50 @@
         } catch (e) {
           logMessage(source, e);
         }
-
         return root;
       };
-
       var nativeJSONParse = JSON.parse;
-
       var jsonParseWrapper = function jsonParseWrapper() {
         for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
           args[_key] = arguments[_key];
         }
-
         // dealing with stringified json in args, which should be parsed.
         // so we call nativeJSONParse as JSON.parse which is bound to JSON object
         var root = nativeJSONParse.apply(JSON, args);
         return jsonPruner(root);
-      }; // JSON.parse mocking
+      };
 
-
+      // JSON.parse mocking
       jsonParseWrapper.toString = nativeJSONParse.toString.bind(nativeJSONParse);
-      JSON.parse = jsonParseWrapper; // eslint-disable-next-line compat/compat
+      JSON.parse = jsonParseWrapper;
 
-      var nativeResponseJson = Response.prototype.json; // eslint-disable-next-line func-names
-
+      // eslint-disable-next-line compat/compat
+      var nativeResponseJson = Response.prototype.json;
+      // eslint-disable-next-line func-names
       var responseJsonWrapper = function responseJsonWrapper() {
         var promise = nativeResponseJson.apply(this);
         return promise.then(function (obj) {
           return jsonPruner(obj);
         });
-      }; // do nothing if browser does not support Response (e.g. Internet Explorer)
+      };
+
+      // do nothing if browser does not support Response (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/API/Response
-
-
       if (typeof Response === 'undefined') {
         return;
-      } // eslint-disable-next-line compat/compat
+      }
 
-
+      // eslint-disable-next-line compat/compat
       Response.prototype.json = responseJsonWrapper;
     }
-    jsonPrune$1.names = ['json-prune', // aliases are needed for matching the related scriptlet converted into our syntax
+    jsonPrune$1.names = ['json-prune',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune.js', 'ubo-json-prune.js', 'ubo-json-prune', 'abp-json-prune'];
-    jsonPrune$1.injections = [hit, matchStackTrace, getWildcardPropertyInChain, logMessage, toRegExp, getNativeRegexpTest];
+    jsonPrune$1.injections = [hit, matchStackTrace, getWildcardPropertyInChain, logMessage, objectToString,
+    // following helpers are needed for helpers above
+    toRegExp, isEmptyObject, getObjectEntries, getNativeRegexpTest, shouldAbortInlineOrInjectedScript];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet prevent-requestAnimationFrame
      *
@@ -5573,49 +5126,43 @@
      *     });
      *     ```
      */
-
     /* eslint-enable max-len */
 
     function preventRequestAnimationFrame$1(source, match) {
-      var nativeRequestAnimationFrame = window.requestAnimationFrame; // logs requestAnimationFrame to console if no arguments have been specified
+      var nativeRequestAnimationFrame = window.requestAnimationFrame;
 
+      // logs requestAnimationFrame to console if no arguments have been specified
       var shouldLog = typeof match === 'undefined';
-
       var _parseMatchArg = parseMatchArg(match),
-          isInvertedMatch = _parseMatchArg.isInvertedMatch,
-          matchRegexp = _parseMatchArg.matchRegexp;
-
+        isInvertedMatch = _parseMatchArg.isInvertedMatch,
+        matchRegexp = _parseMatchArg.matchRegexp;
       var rafWrapper = function rafWrapper(callback) {
         var shouldPrevent = false;
-
         if (shouldLog) {
           hit(source);
           logMessage(source, "requestAnimationFrame(".concat(String(callback), ")"), true);
         } else if (isValidCallback(callback) && isValidStrPattern(match)) {
           shouldPrevent = matchRegexp.test(callback.toString()) !== isInvertedMatch;
         }
-
         if (shouldPrevent) {
           hit(source);
           return nativeRequestAnimationFrame(noopFunc);
         }
-
         for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
           args[_key - 1] = arguments[_key];
         }
-
         return nativeRequestAnimationFrame.apply(window, [callback].concat(args));
       };
-
       window.requestAnimationFrame = rafWrapper;
     }
-    preventRequestAnimationFrame$1.names = ['prevent-requestAnimationFrame', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventRequestAnimationFrame$1.names = ['prevent-requestAnimationFrame',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'no-requestAnimationFrame-if.js', 'ubo-no-requestAnimationFrame-if.js', 'norafif.js', 'ubo-norafif.js', 'ubo-no-requestAnimationFrame-if', 'ubo-norafif'];
-    preventRequestAnimationFrame$1.injections = [hit, noopFunc, parseMatchArg, isValidStrPattern, isValidCallback, logMessage, // following helpers should be injected as helpers above use them
-    escapeRegExp, toRegExp, startsWith];
+    preventRequestAnimationFrame$1.injections = [hit, noopFunc, parseMatchArg, isValidStrPattern, isValidCallback, logMessage,
+    // following helpers should be injected as helpers above use them
+    escapeRegExp, toRegExp, startsWith$1];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet set-cookie
      *
@@ -5649,27 +5196,27 @@
      * example.org#%#//scriptlet('set-cookie', 'cookie_consent', 'ok', 'none')
      * ```
      */
-
     /* eslint-enable max-len */
-
     function setCookie$1(source, name, value) {
       var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '/';
-      var validValue = getLimitedCookieValue(source, value);
-
+      var validValue = getLimitedCookieValue(value);
       if (validValue === null) {
         logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
         return;
       }
-
-      var cookieData = concatCookieNameValuePath(source, name, validValue, path);
-
-      if (cookieData) {
-        hit(source);
-        document.cookie = cookieData;
+      if (!isValidCookiePath(path)) {
+        logMessage(source, "Invalid cookie path: '".concat(path, "'"));
+        return;
       }
+      var cookieToSet = concatCookieNameValuePath(name, validValue, path);
+      if (!cookieToSet) {
+        return;
+      }
+      hit(source);
+      document.cookie = cookieToSet;
     }
     setCookie$1.names = ['set-cookie'];
-    setCookie$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, getLimitedCookieValue, concatCookieNameValuePath, isValidCookieRawPath, getCookiePath];
+    setCookie$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, getLimitedCookieValue, concatCookieNameValuePath, isValidCookiePath, getCookiePath];
 
     /**
      * @scriptlet set-cookie-reload
@@ -5706,35 +5253,35 @@
      * example.org#%#//scriptlet('set-cookie-reload', 'cookie-set', 'true', 'none')
      * ```
      */
-
     function setCookieReload$1(source, name, value) {
       var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '/';
-
-      if (isCookieSetWithValue(name, value)) {
+      if (isCookieSetWithValue(document.cookie, name, value)) {
         return;
       }
-
-      var validValue = getLimitedCookieValue(source, value);
-
+      var validValue = getLimitedCookieValue(value);
       if (validValue === null) {
-        logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
+        logMessage(source, "Invalid cookie value: '".concat(value, "'"));
         return;
       }
+      if (!isValidCookiePath(path)) {
+        logMessage(source, "Invalid cookie path: '".concat(path, "'"));
+        return;
+      }
+      var cookieToSet = concatCookieNameValuePath(name, validValue, path);
+      if (!cookieToSet) {
+        return;
+      }
+      document.cookie = cookieToSet;
+      hit(source);
 
-      var cookieData = concatCookieNameValuePath(source, name, validValue, path);
-
-      if (cookieData) {
-        document.cookie = cookieData;
-        hit(source); // Only reload the page if cookie was set
-        // https://github.com/AdguardTeam/Scriptlets/issues/212
-
-        if (isCookieSetWithValue(document.cookie, name, value)) {
-          window.location.reload();
-        }
+      // Only reload the page if cookie was set
+      // https://github.com/AdguardTeam/Scriptlets/issues/212
+      if (isCookieSetWithValue(document.cookie, name, value)) {
+        window.location.reload();
       }
     }
     setCookieReload$1.names = ['set-cookie-reload'];
-    setCookieReload$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, getLimitedCookieValue, concatCookieNameValuePath, isValidCookieRawPath, getCookiePath];
+    setCookieReload$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, getLimitedCookieValue, concatCookieNameValuePath, isValidCookiePath, getCookiePath];
 
     /**
      * @scriptlet hide-in-shadow-dom
@@ -5763,54 +5310,49 @@
      * virustotal.com#%#//scriptlet('hide-in-shadow-dom', 'vt-ui-contact-fab')
      * ```
      */
-
     function hideInShadowDom$1(source, selector, baseSelector) {
       // do nothing if browser does not support ShadowRoot
       // https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot
       if (!Element.prototype.attachShadow) {
         return;
       }
-
       var hideElement = function hideElement(targetElement) {
         var DISPLAY_NONE_CSS = 'display:none!important;';
         targetElement.style.cssText = DISPLAY_NONE_CSS;
       };
+
       /**
        * Handles shadow-dom piercing and hiding of found elements
        */
-
-
       var hideHandler = function hideHandler() {
         // start value of shadow-dom hosts for the page dom
-        var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector); // if there is shadow-dom host, they should be explored
+        var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
 
+        // if there is shadow-dom host, they should be explored
         while (hostElements.length !== 0) {
           var isHidden = false;
-
           var _pierceShadowDom = pierceShadowDom(selector, hostElements),
-              targets = _pierceShadowDom.targets,
-              innerHosts = _pierceShadowDom.innerHosts;
-
+            targets = _pierceShadowDom.targets,
+            innerHosts = _pierceShadowDom.innerHosts;
           targets.forEach(function (targetEl) {
             hideElement(targetEl);
             isHidden = true;
           });
-
           if (isHidden) {
             hit(source);
-          } // continue to pierce for inner shadow-dom hosts
+          }
+
+          // continue to pierce for inner shadow-dom hosts
           // and search inside them while the next iteration
-
-
           hostElements = innerHosts;
         }
       };
-
       hideHandler();
       observeDOMChanges(hideHandler, true);
     }
     hideInShadowDom$1.names = ['hide-in-shadow-dom'];
-    hideInShadowDom$1.injections = [hit, observeDOMChanges, findHostElements, pierceShadowDom, // following helpers should be imported and injected
+    hideInShadowDom$1.injections = [hit, observeDOMChanges, findHostElements, pierceShadowDom,
+    // following helpers should be imported and injected
     // because they are used by helpers above
     flatten, throttle];
 
@@ -5841,58 +5383,52 @@
      * virustotal.com#%#//scriptlet('remove-in-shadow-dom', 'vt-ui-contact-fab')
      * ```
      */
-
     function removeInShadowDom$1(source, selector, baseSelector) {
       // do nothing if browser does not support ShadowRoot
       // https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot
       if (!Element.prototype.attachShadow) {
         return;
       }
-
       var removeElement = function removeElement(targetElement) {
         targetElement.remove();
       };
+
       /**
        * Handles shadow-dom piercing and removing of found elements
        */
-
-
       var removeHandler = function removeHandler() {
         // start value of shadow-dom hosts for the page dom
-        var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector); // if there is shadow-dom host, they should be explored
+        var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
 
+        // if there is shadow-dom host, they should be explored
         while (hostElements.length !== 0) {
           var isRemoved = false;
-
           var _pierceShadowDom = pierceShadowDom(selector, hostElements),
-              targets = _pierceShadowDom.targets,
-              innerHosts = _pierceShadowDom.innerHosts;
-
+            targets = _pierceShadowDom.targets,
+            innerHosts = _pierceShadowDom.innerHosts;
           targets.forEach(function (targetEl) {
             removeElement(targetEl);
             isRemoved = true;
           });
-
           if (isRemoved) {
             hit(source);
-          } // continue to pierce for inner shadow-dom hosts
+          }
+
+          // continue to pierce for inner shadow-dom hosts
           // and search inside them while the next iteration
-
-
           hostElements = innerHosts;
         }
       };
-
       removeHandler();
       observeDOMChanges(removeHandler, true);
     }
     removeInShadowDom$1.names = ['remove-in-shadow-dom'];
-    removeInShadowDom$1.injections = [hit, observeDOMChanges, findHostElements, pierceShadowDom, // following helpers should be imported and injected
+    removeInShadowDom$1.injections = [hit, observeDOMChanges, findHostElements, pierceShadowDom,
+    // following helpers should be imported and injected
     // because they are used by helpers above
     flatten, throttle];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet prevent-fetch
      *
@@ -5958,68 +5494,63 @@
      *     ! Specify response body for all fetch calls
      *     example.org#%#//scriptlet('prevent-fetch', '', 'emptyArr')
      *     ```
+     *
+     * 7. Prevent all fetch calls and specify response type value
+     *     ```
+     *     example.org#%#//scriptlet('prevent-fetch', '*', '', 'opaque')
+     *     ```
      */
-
     /* eslint-enable max-len */
-
     function preventFetch$1(source, propsToMatch) {
       var responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'emptyObj';
       var responseType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'default';
-
       // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
       if (typeof fetch === 'undefined' || typeof Proxy === 'undefined' || typeof Response === 'undefined') {
         return;
       }
-
       var strResponseBody;
-
-      if (responseBody === 'emptyObj') {
+      if (responseBody === '' || responseBody === 'emptyObj') {
         strResponseBody = '{}';
       } else if (responseBody === 'emptyArr') {
         strResponseBody = '[]';
       } else {
         return;
-      } // Skip disallowed response types
+      }
 
-
+      // Skip disallowed response types
       if (!(responseType === 'default' || responseType === 'opaque')) {
         logMessage(source, "Invalid parameter: ".concat(responseType));
         return;
       }
-
       var handlerWrapper = function handlerWrapper(target, thisArg, args) {
         var shouldPrevent = false;
         var fetchData = getFetchData(args);
-
         if (typeof propsToMatch === 'undefined') {
           logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
           hit(source);
           return Reflect.apply(target, thisArg, args);
         }
-
         shouldPrevent = matchRequestProps(source, propsToMatch, fetchData);
-
         if (shouldPrevent) {
           hit(source);
           return noopPromiseResolve(strResponseBody, fetchData.url, responseType);
         }
-
         return Reflect.apply(target, thisArg, args);
       };
-
       var fetchHandler = {
         apply: handlerWrapper
       };
       fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
     }
-    preventFetch$1.names = ['prevent-fetch', // aliases are needed for matching the related scriptlet converted into our syntax
+
+    preventFetch$1.names = ['prevent-fetch',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'no-fetch-if.js', 'ubo-no-fetch-if.js', 'ubo-no-fetch-if'];
-    preventFetch$1.injections = [hit, getFetchData, objectToString, noopPromiseResolve, matchRequestProps, logMessage, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries, parseMatchProps, validateParsedData, getMatchPropsData];
+    preventFetch$1.injections = [hit, getFetchData, objectToString, noopPromiseResolve, matchRequestProps, logMessage, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getRequestProps, getObjectEntries, getObjectFromEntries, parseMatchProps, validateParsedData, getMatchPropsData];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet set-local-storage-item
      *
@@ -6053,7 +5584,6 @@
      * example.org#%#//scriptlet('set-local-storage-item', 'exit-intent-marketing', '1')
      * ```
      */
-
     /* eslint-enable max-len */
 
     function setLocalStorageItem$1(source, key, value) {
@@ -6061,16 +5591,15 @@
         logMessage(source, 'Item key should be specified.');
         return;
       }
-
-      var validValue = getLimitedStorageItemValue(source, value);
-
-      if (validValue === null) {
-        logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
+      var validValue;
+      try {
+        validValue = getLimitedStorageItemValue(value);
+      } catch (_unused) {
+        logMessage(source, "Invalid storage item value: '".concat(value, "'"));
         return;
       }
-
       var _window = window,
-          localStorage = _window.localStorage;
+        localStorage = _window.localStorage;
       setStorageItem(source, localStorage, key, validValue);
       hit(source);
     }
@@ -6078,7 +5607,6 @@
     setLocalStorageItem$1.injections = [hit, logMessage, nativeIsNaN, setStorageItem, getLimitedStorageItemValue];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet set-session-storage-item
      *
@@ -6112,7 +5640,6 @@
      * example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '1')
      * ```
      */
-
     /* eslint-enable max-len */
 
     function setSessionStorageItem$1(source, key, value) {
@@ -6120,23 +5647,22 @@
         logMessage(source, 'Item key should be specified.');
         return;
       }
-
-      var validValue = getLimitedStorageItemValue(source, value);
-
-      if (validValue === null) {
-        logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
+      var validValue;
+      try {
+        validValue = getLimitedStorageItemValue(value);
+      } catch (_unused) {
+        logMessage(source, "Invalid storage item value: '".concat(value, "'"));
         return;
       }
-
       var _window = window,
-          sessionStorage = _window.sessionStorage;
+        sessionStorage = _window.sessionStorage;
       setStorageItem(source, sessionStorage, key, validValue);
+      hit(source);
     }
     setSessionStorageItem$1.names = ['set-session-storage-item'];
     setSessionStorageItem$1.injections = [hit, logMessage, nativeIsNaN, setStorageItem, getLimitedStorageItemValue];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet abort-on-stack-trace
      *
@@ -6176,36 +5702,28 @@
      * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'injectedScript')
      * ```
      */
-
     /* eslint-enable max-len */
-
     function abortOnStackTrace$1(source, property, stack) {
       if (!property || !stack) {
         return;
       }
-
       var rid = randomId();
-
       var abort = function abort() {
         hit(source);
         throw new ReferenceError(rid);
       };
-
       var setChainPropAccess = function setChainPropAccess(owner, property) {
         var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
-            chain = chainInfo.chain;
-
+          chain = chainInfo.chain;
         if (chain) {
           var setter = function setter(a) {
             base = a;
-
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
             }
           };
-
           Object.defineProperty(owner, prop, {
             get: function get() {
               return base;
@@ -6214,27 +5732,24 @@
           });
           return;
         }
-
         if (!stack.match(/^(inlineScript|injectedScript)$/) && !isValidStrPattern(stack)) {
           logMessage(source, "Invalid parameter: ".concat(stack));
           return;
-        } // Prevent infinite loops when trapping prop used by helpers in getter/setter
+        }
 
-
+        // Prevent infinite loops when trapping prop used by helpers in getter/setter
         var descriptorWrapper = Object.assign(getDescriptorAddon(), {
           value: base[prop],
           get: function get() {
             if (!this.isAbortingSuspended && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
               abort();
             }
-
             return this.value;
           },
           set: function set(newValue) {
             if (!this.isAbortingSuspended && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
               abort();
             }
-
             this.value = newValue;
           }
         });
@@ -6248,16 +5763,15 @@
           }
         });
       };
-
       setChainPropAccess(window, property);
       window.onerror = createOnErrorHandler(rid).bind();
     }
-    abortOnStackTrace$1.names = ['abort-on-stack-trace', // aliases are needed for matching the related scriptlet converted into our syntax
+    abortOnStackTrace$1.names = ['abort-on-stack-trace',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-stack-trace.js', 'ubo-abort-on-stack-trace.js', 'aost.js', 'ubo-aost.js', 'ubo-abort-on-stack-trace', 'ubo-aost', 'abp-abort-on-stack-trace'];
-    abortOnStackTrace$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isValidStrPattern, escapeRegExp, matchStackTrace, getDescriptorAddon, logMessage, toRegExp, isEmptyObject, getNativeRegexpTest, startsWith, shouldAbortInlineOrInjectedScript$1];
+    abortOnStackTrace$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isValidStrPattern, escapeRegExp, matchStackTrace, getDescriptorAddon, logMessage, toRegExp, isEmptyObject, getNativeRegexpTest, startsWith$1, shouldAbortInlineOrInjectedScript];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet log-on-stack-trace
      *
@@ -6274,48 +5788,40 @@
      *
      * - `property` - required, path to a property. The property must be attached to window.
      */
-
     /* eslint-enable max-len */
-
     function logOnStacktrace$1(source, property) {
       if (!property) {
         return;
       }
-
       var refineStackTrace = function refineStackTrace(stackString) {
         // Split stack trace string by lines and remove first two elements ('Error' and getter call)
         // Remove '    at ' at the start of each string
         var stackSteps = stackString.split('\n').slice(2).map(function (line) {
           return line.replace(/ {4}at /, '');
-        }); // Trim each line extracting funcName : fullPath pair
-
+        });
+        // Trim each line extracting funcName : fullPath pair
         var logInfoArray = stackSteps.map(function (line) {
           var funcName;
           var funcFullPath;
           /* eslint-disable-next-line no-useless-escape */
-
           var reg = /\(([^\)]+)\)/;
           var regFirefox = /(.*?@)(\S+)(:\d+):\d+\)?$/;
-
           if (line.match(reg)) {
             funcName = line.split(' ').slice(0, -1).join(' ');
             /* eslint-disable-next-line prefer-destructuring */
-
             funcFullPath = line.match(reg)[1];
           } else if (line.match(regFirefox)) {
             funcName = line.split('@').slice(0, -1).join(' ');
             /* eslint-disable-next-line prefer-destructuring */
-
             funcFullPath = line.match(regFirefox)[2];
           } else {
             // For when func name is not available
             funcName = 'function name is not available';
             funcFullPath = line;
           }
-
           return [funcName, funcFullPath];
-        }); // Convert array into object for better display using console.table
-
+        });
+        // Convert array into object for better display using console.table
         var logInfoObject = {};
         logInfoArray.forEach(function (pair) {
           /* eslint-disable-next-line prefer-destructuring */
@@ -6323,22 +5829,18 @@
         });
         return logInfoObject;
       };
-
       var setChainPropAccess = function setChainPropAccess(owner, property) {
         var chainInfo = getPropertyInChain(owner, property);
         var base = chainInfo.base;
         var prop = chainInfo.prop,
-            chain = chainInfo.chain;
-
+          chain = chainInfo.chain;
         if (chain) {
           var setter = function setter(a) {
             base = a;
-
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
             }
           };
-
           Object.defineProperty(owner, prop, {
             get: function get() {
               return base;
@@ -6347,10 +5849,8 @@
           });
           return;
         }
-
         var value = base[prop];
         /* eslint-disable no-console, compat/compat */
-
         setPropertyAccess(base, prop, {
           get: function get() {
             hit(source);
@@ -6374,7 +5874,6 @@
     logOnStacktrace$1.injections = [getPropertyInChain, setPropertyAccess, hit, logMessage, isEmptyObject];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet prevent-xhr
      *
@@ -6440,21 +5939,17 @@
      *    example.org#%#//scriptlet('prevent-xhr', 'example.org', 'length:100-300')
      *     ```
      */
-
     /* eslint-enable max-len */
-
     function preventXHR$1(source, propsToMatch, customResponseText) {
       // do nothing if browser does not support Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
       if (typeof Proxy === 'undefined') {
         return;
       }
-
       var shouldPrevent = false;
       var response = '';
       var responseText = '';
       var responseUrl;
-
       var openWrapper = function openWrapper(target, thisArg, args) {
         // Get method and url from .open()
         var xhrData = {
@@ -6462,7 +5957,6 @@
           url: args[1]
         };
         responseUrl = xhrData.url;
-
         if (typeof propsToMatch === 'undefined') {
           // Log if no propsToMatch given
           logMessage(source, "xhr( ".concat(objectToString(xhrData), " )"), true);
@@ -6470,34 +5964,27 @@
         } else {
           shouldPrevent = matchRequestProps(source, propsToMatch, xhrData);
         }
-
         return Reflect.apply(target, thisArg, args);
       };
-
       var sendWrapper = function sendWrapper(target, thisArg, args) {
         if (!shouldPrevent) {
           return Reflect.apply(target, thisArg, args);
         }
-
         if (thisArg.responseType === 'blob') {
           response = new Blob();
         }
-
         if (thisArg.responseType === 'arraybuffer') {
           response = new ArrayBuffer();
         }
-
         if (customResponseText) {
           var randomText = generateRandomResponse(customResponseText);
-
           if (randomText) {
             responseText = randomText;
           } else {
             logMessage(source, "Invalid range: ".concat(customResponseText));
           }
-        } // Mock response object
-
-
+        }
+        // Mock response object
         Object.defineProperties(thisArg, {
           readyState: {
             value: 4,
@@ -6527,8 +6014,8 @@
             value: 'OK',
             writable: false
           }
-        }); // Mock events
-
+        });
+        // Mock events
         setTimeout(function () {
           var stateEvent = new Event('readystatechange');
           thisArg.dispatchEvent(stateEvent);
@@ -6540,7 +6027,6 @@
         hit(source);
         return undefined;
       };
-
       var openHandler = {
         apply: openWrapper
       };
@@ -6550,9 +6036,10 @@
       XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
       XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
     }
-    preventXHR$1.names = ['prevent-xhr', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventXHR$1.names = ['prevent-xhr',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'no-xhr-if.js', 'ubo-no-xhr-if.js', 'ubo-no-xhr-if'];
-    preventXHR$1.injections = [hit, logMessage, objectToString, matchRequestProps, generateRandomResponse, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getObjectEntries, getNumberFromString, nativeIsFinite, nativeIsNaN, parseMatchProps, validateParsedData, getMatchPropsData, getRandomIntInclusive, getRandomStrByLength];
+    preventXHR$1.injections = [hit, logMessage, objectToString, matchRequestProps, generateRandomResponse, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getObjectEntries, getNumberFromString, nativeIsFinite, nativeIsNaN, parseMatchProps, validateParsedData, getMatchPropsData, getRequestProps, getRandomIntInclusive, getRandomStrByLength];
 
     /**
      * @scriptlet close-window
@@ -6561,7 +6048,7 @@
      * Closes the browser tab immediately.
      *
      * > `window.close()` usage is restricted in Chrome. In this case
-     * tab will only be closed if using AdGuard browser extension.
+     * tab will only be closed when using AdGuard browser extension.
      *
      * **Syntax**
      * ```
@@ -6581,16 +6068,14 @@
      * example.org#%#//scriptlet('close-window', '/example-page.html')
      * ```
      */
-
     function forceWindowClose$1(source) {
       var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
-
       // https://github.com/AdguardTeam/Scriptlets/issues/158#issuecomment-993423036
       if (typeof window.close !== 'function') {
         var message = 'window.close() is not a function so \'close-window\' scriptlet is unavailable';
         logMessage(source, message);
+        return;
       }
-
       var closeImmediately = function closeImmediately() {
         try {
           hit(source);
@@ -6601,12 +6086,10 @@
           logMessage(source, e);
         }
       };
-
       var closeByExtension = function closeByExtension() {
         var extCall = function extCall() {
           dispatchEvent(new Event('adguard:scriptlet-close-window'));
         };
-
         window.addEventListener('adguard:subscribed-to-close-window', extCall, {
           once: true
         });
@@ -6616,20 +6099,16 @@
           });
         }, 5000);
       };
-
       var shouldClose = function shouldClose() {
         if (path === '') {
           return true;
         }
-
         var pathRegexp = toRegExp(path);
         var currentPath = "".concat(window.location.pathname).concat(window.location.search);
         return pathRegexp.test(currentPath);
       };
-
       if (shouldClose()) {
         closeImmediately();
-
         if (navigator.userAgent.indexOf('Chrome') > -1) {
           closeByExtension();
         }
@@ -6639,7 +6118,6 @@
     forceWindowClose$1.injections = [hit, toRegExp, logMessage];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet prevent-refresh
      *
@@ -6667,13 +6145,10 @@
      *     cryptodirectories.com#%#//scriptlet('prevent-refresh', 3)
      * ```
      */
-
     /* eslint-enable max-len */
-
     function preventRefresh$1(source, delaySec) {
       var getMetaElements = function getMetaElements() {
         var metaNodes = [];
-
         try {
           metaNodes = document.querySelectorAll('meta[http-equiv="refresh" i][content]');
         } catch (e) {
@@ -6684,72 +6159,59 @@
             logMessage(source, e);
           }
         }
-
         return Array.from(metaNodes);
       };
-
       var getMetaContentDelay = function getMetaContentDelay(metaElements) {
         var delays = metaElements.map(function (meta) {
           var contentString = meta.getAttribute('content');
-
           if (contentString.length === 0) {
             return null;
           }
-
-          var contentDelay; // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#attr-http-equiv
-
+          var contentDelay;
+          // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#attr-http-equiv
           var limiterIndex = contentString.indexOf(';');
-
           if (limiterIndex !== -1) {
             var delaySubstring = contentString.substring(0, limiterIndex);
             contentDelay = getNumberFromString(delaySubstring);
           } else {
             contentDelay = getNumberFromString(contentString);
           }
-
           return contentDelay;
         }).filter(function (delay) {
           return delay !== null;
-        }); // Check if "delays" array is empty, may happens when meta's content is invalid
+        });
+        // Check if "delays" array is empty, may happens when meta's content is invalid
         // and reduce() method cannot be used with empty arrays without initial value
-
         if (!delays.length) {
           return null;
-        } // Get smallest delay of all metas on the page
-
-
+        }
+        // Get smallest delay of all metas on the page
         var minDelay = delays.reduce(function (a, b) {
           return Math.min(a, b);
-        }); // eslint-disable-next-line consistent-return
-
+        });
+        // eslint-disable-next-line consistent-return
         return minDelay;
       };
-
       var stop = function stop() {
         var metaElements = getMetaElements();
-
         if (metaElements.length === 0) {
           return;
         }
-
-        var secondsToRun = getNumberFromString(delaySec); // Check if argument is provided
-
+        var secondsToRun = getNumberFromString(delaySec);
+        // Check if argument is provided
         if (secondsToRun === null) {
           secondsToRun = getMetaContentDelay(metaElements);
-        } // Check if meta tag has delay
-
-
+        }
+        // Check if meta tag has delay
         if (secondsToRun === null) {
           return;
         }
-
         var delayMs = secondsToRun * 1000;
         setTimeout(function () {
           window.stop();
           hit(source);
         }, delayMs);
       };
-
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', stop, {
           once: true
@@ -6758,15 +6220,16 @@
         stop();
       }
     }
-    preventRefresh$1.names = ['prevent-refresh', // Aliases are needed for matching the related scriptlet converted into our syntax
+    preventRefresh$1.names = ['prevent-refresh',
+    // Aliases are needed for matching the related scriptlet converted into our syntax
     // These are used by UBO rules syntax
     // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
-    'refresh-defuser.js', 'refresh-defuser', // Prefix 'ubo-' is required to run converted rules
+    'refresh-defuser.js', 'refresh-defuser',
+    // Prefix 'ubo-' is required to run converted rules
     'ubo-refresh-defuser.js', 'ubo-refresh-defuser'];
     preventRefresh$1.injections = [hit, getNumberFromString, logMessage, nativeIsNaN];
 
     /* eslint-disable max-len, consistent-return */
-
     /**
      * @scriptlet prevent-element-src-loading
      *
@@ -6790,15 +6253,12 @@
      *     example.org#%#//scriptlet('prevent-element-src-loading', 'script' ,'adsbygoogle')
      * ```
      */
-
     /* eslint-enable max-len */
-
     function preventElementSrcLoading$1(source, tagName, match) {
       // do nothing if browser does not support Proxy or Reflect
       if (typeof Proxy === 'undefined' || typeof Reflect === 'undefined') {
         return;
       }
-
       var srcMockData = {
         // "KCk9Pnt9" = "()=>{}"
         script: 'data:text/javascript;base64,KCk9Pnt9',
@@ -6808,7 +6268,6 @@
         iframe: 'data:text/html;base64, PGRpdj48L2Rpdj4='
       };
       var instance;
-
       if (tagName === 'script') {
         instance = HTMLScriptElement;
       } else if (tagName === 'img') {
@@ -6817,62 +6276,60 @@
         instance = HTMLIFrameElement;
       } else {
         return;
-      } // For websites that use Trusted Types
+      }
+
+      // For websites that use Trusted Types
       // https://w3c.github.io/webappsec-trusted-types/dist/spec/
-
-
       var hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === 'function';
       var policy;
-
       if (hasTrustedTypes) {
-        policy = window.trustedTypes.createPolicy('mock', {
+        // The name for the trusted-types policy should only be 'AGPolicy',because corelibs can
+        // allow our policy if the server has restricted the creation of a trusted-types policy with
+        // the directive 'Content-Security-Policy: trusted-types <policyName>;`.
+        // If such a header is presented in the server response, corelibs adds permission to create
+        // the 'AGPolicy' policy with the 'allow-duplicates' option to prevent errors.
+        // See AG-18204 for details.
+        policy = window.trustedTypes.createPolicy('AGPolicy', {
           createScriptURL: function createScriptURL(arg) {
             return arg;
           }
         });
       }
-
       var SOURCE_PROPERTY_NAME = 'src';
       var ONERROR_PROPERTY_NAME = 'onerror';
-      var searchRegexp = toRegExp(match); // This will be needed to silent error events on matched element,
-      // as url wont be available
+      var searchRegexp = toRegExp(match);
 
+      // This will be needed to silent error events on matched element,
+      // as url wont be available
       var setMatchedAttribute = function setMatchedAttribute(elem) {
         return elem.setAttribute(source.name, 'matched');
       };
-
       var setAttributeWrapper = function setAttributeWrapper(target, thisArg, args) {
         // Check if arguments are present
         if (!args[0] || !args[1]) {
           return Reflect.apply(target, thisArg, args);
         }
-
         var nodeName = thisArg.nodeName.toLowerCase();
         var attrName = args[0].toLowerCase();
         var attrValue = args[1];
         var isMatched = attrName === SOURCE_PROPERTY_NAME && tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(attrValue);
-
         if (!isMatched) {
           return Reflect.apply(target, thisArg, args);
         }
-
         hit(source);
-        setMatchedAttribute(thisArg); // Forward the URI that corresponds with element's MIME type
-
+        setMatchedAttribute(thisArg);
+        // Forward the URI that corresponds with element's MIME type
         return Reflect.apply(target, thisArg, [attrName, srcMockData[nodeName]]);
       };
-
       var setAttributeHandler = {
         apply: setAttributeWrapper
-      }; // eslint-disable-next-line max-len
-
+      };
+      // eslint-disable-next-line max-len
       instance.prototype.setAttribute = new Proxy(Element.prototype.setAttribute, setAttributeHandler);
       var origSrcDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
-
       if (!origSrcDescriptor) {
         return;
       }
-
       Object.defineProperty(instance.prototype, SOURCE_PROPERTY_NAME, {
         enumerable: true,
         configurable: true,
@@ -6882,33 +6339,30 @@
         set: function set(urlValue) {
           var nodeName = this.nodeName.toLowerCase();
           var isMatched = tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(urlValue);
-
           if (!isMatched) {
             origSrcDescriptor.set.call(this, urlValue);
             return true;
-          } // eslint-disable-next-line no-undef
+          }
 
-
+          // eslint-disable-next-line no-undef
           if (policy && urlValue instanceof TrustedScriptURL) {
             var trustedSrc = policy.createScriptURL(urlValue);
             origSrcDescriptor.set.call(this, trustedSrc);
             hit(source);
             return;
           }
-
           setMatchedAttribute(this);
           origSrcDescriptor.set.call(this, srcMockData[nodeName]);
           hit(source);
         }
-      }); // https://github.com/AdguardTeam/Scriptlets/issues/228
+      });
+
+      // https://github.com/AdguardTeam/Scriptlets/issues/228
       // Prevent error event being triggered by other sources
-
       var origOnerrorDescriptor = safeGetDescriptor(HTMLElement.prototype, ONERROR_PROPERTY_NAME);
-
       if (!origOnerrorDescriptor) {
         return;
       }
-
       Object.defineProperty(HTMLElement.prototype, ONERROR_PROPERTY_NAME, {
         enumerable: true,
         configurable: true,
@@ -6917,37 +6371,30 @@
         },
         set: function set(cb) {
           var isMatched = this.getAttribute(source.name) === 'matched';
-
           if (!isMatched) {
             origOnerrorDescriptor.set.call(this, cb);
             return true;
           }
-
           origOnerrorDescriptor.set.call(this, noopFunc);
           return true;
         }
       });
-
       var addEventListenerWrapper = function addEventListenerWrapper(target, thisArg, args) {
         // Check if arguments are present
         if (!args[0] || !args[1]) {
           return Reflect.apply(target, thisArg, args);
         }
-
         var eventName = args[0];
-        var isMatched = thisArg.getAttribute(source.name) === 'matched' && eventName === 'error';
-
+        var isMatched = typeof thisArg.getAttribute === 'function' && thisArg.getAttribute(source.name) === 'matched' && eventName === 'error';
         if (isMatched) {
           return Reflect.apply(target, thisArg, [eventName, noopFunc]);
         }
-
         return Reflect.apply(target, thisArg, args);
       };
-
       var addEventListenerHandler = {
         apply: addEventListenerWrapper
-      }; // eslint-disable-next-line max-len
-
+      };
+      // eslint-disable-next-line max-len
       EventTarget.prototype.addEventListener = new Proxy(EventTarget.prototype.addEventListener, addEventListenerHandler);
     }
     preventElementSrcLoading$1.names = ['prevent-element-src-loading'];
@@ -6965,851 +6412,26 @@
      * example.org#%#//scriptlet('no-topics')
      * ```
      */
-
     function noTopics$1(source) {
       var TOPICS_PROPERTY_NAME = 'browsingTopics';
-
       if (Document instanceof Object === false) {
         return;
       }
-
       if (!Object.prototype.hasOwnProperty.call(Document.prototype, TOPICS_PROPERTY_NAME) || Document.prototype[TOPICS_PROPERTY_NAME] instanceof Function === false) {
         return;
-      } // document.browsingTopics() is async function so it's better to return noopPromiseResolve()
+      }
+
+      // document.browsingTopics() is async function so it's better to return noopPromiseResolve()
       // https://github.com/patcg-individual-drafts/topics#the-api-and-how-it-works
-
-
       Document.prototype[TOPICS_PROPERTY_NAME] = function () {
         return noopPromiseResolve('[]');
       };
-
       hit(source);
     }
     noTopics$1.names = ['no-topics'];
     noTopics$1.injections = [hit, noopPromiseResolve];
 
-    function createCommonjsModule(fn) {
-      var module = { exports: {} };
-    	return fn(module, module.exports), module.exports;
-    }
-
-    function commonjsRequire (target) {
-    	throw new Error('Could not dynamically require "' + target + '". Please configure the dynamicRequireTargets option of @rollup/plugin-commonjs appropriately for this require call to behave properly.');
-    }
-
-    /**
-     * Copyright (c) 2014-present, Facebook, Inc.
-     *
-     * This source code is licensed under the MIT license found in the
-     * LICENSE file in the root directory of this source tree.
-     */
-    var runtime_1 = createCommonjsModule(function (module) {
-      var runtime = function (exports) {
-
-        var Op = Object.prototype;
-        var hasOwn = Op.hasOwnProperty;
-        var undefined$1; // More compressible than void 0.
-
-        var $Symbol = typeof Symbol === "function" ? Symbol : {};
-        var iteratorSymbol = $Symbol.iterator || "@@iterator";
-        var asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator";
-        var toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
-
-        function define(obj, key, value) {
-          Object.defineProperty(obj, key, {
-            value: value,
-            enumerable: true,
-            configurable: true,
-            writable: true
-          });
-          return obj[key];
-        }
-
-        try {
-          // IE 8 has a broken Object.defineProperty that only works on DOM objects.
-          define({}, "");
-        } catch (err) {
-          define = function define(obj, key, value) {
-            return obj[key] = value;
-          };
-        }
-
-        function wrap(innerFn, outerFn, self, tryLocsList) {
-          // If outerFn provided and outerFn.prototype is a Generator, then outerFn.prototype instanceof Generator.
-          var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator;
-          var generator = Object.create(protoGenerator.prototype);
-          var context = new Context(tryLocsList || []); // The ._invoke method unifies the implementations of the .next,
-          // .throw, and .return methods.
-
-          generator._invoke = makeInvokeMethod(innerFn, self, context);
-          return generator;
-        }
-
-        exports.wrap = wrap; // Try/catch helper to minimize deoptimizations. Returns a completion
-        // record like context.tryEntries[i].completion. This interface could
-        // have been (and was previously) designed to take a closure to be
-        // invoked without arguments, but in all the cases we care about we
-        // already have an existing method we want to call, so there's no need
-        // to create a new function object. We can even get away with assuming
-        // the method takes exactly one argument, since that happens to be true
-        // in every case, so we don't have to touch the arguments object. The
-        // only additional allocation required is the completion record, which
-        // has a stable shape and so hopefully should be cheap to allocate.
-
-        function tryCatch(fn, obj, arg) {
-          try {
-            return {
-              type: "normal",
-              arg: fn.call(obj, arg)
-            };
-          } catch (err) {
-            return {
-              type: "throw",
-              arg: err
-            };
-          }
-        }
-
-        var GenStateSuspendedStart = "suspendedStart";
-        var GenStateSuspendedYield = "suspendedYield";
-        var GenStateExecuting = "executing";
-        var GenStateCompleted = "completed"; // Returning this object from the innerFn has the same effect as
-        // breaking out of the dispatch switch statement.
-
-        var ContinueSentinel = {}; // Dummy constructor functions that we use as the .constructor and
-        // .constructor.prototype properties for functions that return Generator
-        // objects. For full spec compliance, you may wish to configure your
-        // minifier not to mangle the names of these two functions.
-
-        function Generator() {}
-
-        function GeneratorFunction() {}
-
-        function GeneratorFunctionPrototype() {} // This is a polyfill for %IteratorPrototype% for environments that
-        // don't natively support it.
-
-
-        var IteratorPrototype = {};
-
-        IteratorPrototype[iteratorSymbol] = function () {
-          return this;
-        };
-
-        var getProto = Object.getPrototypeOf;
-        var NativeIteratorPrototype = getProto && getProto(getProto(values([])));
-
-        if (NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol)) {
-          // This environment has a native %IteratorPrototype%; use it instead
-          // of the polyfill.
-          IteratorPrototype = NativeIteratorPrototype;
-        }
-
-        var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype);
-        GeneratorFunction.prototype = Gp.constructor = GeneratorFunctionPrototype;
-        GeneratorFunctionPrototype.constructor = GeneratorFunction;
-        GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"); // Helper for defining the .next, .throw, and .return methods of the
-        // Iterator interface in terms of a single ._invoke method.
-
-        function defineIteratorMethods(prototype) {
-          ["next", "throw", "return"].forEach(function (method) {
-            define(prototype, method, function (arg) {
-              return this._invoke(method, arg);
-            });
-          });
-        }
-
-        exports.isGeneratorFunction = function (genFun) {
-          var ctor = typeof genFun === "function" && genFun.constructor;
-          return ctor ? ctor === GeneratorFunction || // For the native GeneratorFunction constructor, the best we can
-          // do is to check its .name property.
-          (ctor.displayName || ctor.name) === "GeneratorFunction" : false;
-        };
-
-        exports.mark = function (genFun) {
-          if (Object.setPrototypeOf) {
-            Object.setPrototypeOf(genFun, GeneratorFunctionPrototype);
-          } else {
-            genFun.__proto__ = GeneratorFunctionPrototype;
-            define(genFun, toStringTagSymbol, "GeneratorFunction");
-          }
-
-          genFun.prototype = Object.create(Gp);
-          return genFun;
-        }; // Within the body of any async function, `await x` is transformed to
-        // `yield regeneratorRuntime.awrap(x)`, so that the runtime can test
-        // `hasOwn.call(value, "__await")` to determine if the yielded value is
-        // meant to be awaited.
-
-
-        exports.awrap = function (arg) {
-          return {
-            __await: arg
-          };
-        };
-
-        function AsyncIterator(generator, PromiseImpl) {
-          function invoke(method, arg, resolve, reject) {
-            var record = tryCatch(generator[method], generator, arg);
-
-            if (record.type === "throw") {
-              reject(record.arg);
-            } else {
-              var result = record.arg;
-              var value = result.value;
-
-              if (value && typeof value === "object" && hasOwn.call(value, "__await")) {
-                return PromiseImpl.resolve(value.__await).then(function (value) {
-                  invoke("next", value, resolve, reject);
-                }, function (err) {
-                  invoke("throw", err, resolve, reject);
-                });
-              }
-
-              return PromiseImpl.resolve(value).then(function (unwrapped) {
-                // When a yielded Promise is resolved, its final value becomes
-                // the .value of the Promise<{value,done}> result for the
-                // current iteration.
-                result.value = unwrapped;
-                resolve(result);
-              }, function (error) {
-                // If a rejected Promise was yielded, throw the rejection back
-                // into the async generator function so it can be handled there.
-                return invoke("throw", error, resolve, reject);
-              });
-            }
-          }
-
-          var previousPromise;
-
-          function enqueue(method, arg) {
-            function callInvokeWithMethodAndArg() {
-              return new PromiseImpl(function (resolve, reject) {
-                invoke(method, arg, resolve, reject);
-              });
-            }
-
-            return previousPromise = // If enqueue has been called before, then we want to wait until
-            // all previous Promises have been resolved before calling invoke,
-            // so that results are always delivered in the correct order. If
-            // enqueue has not been called before, then it is important to
-            // call invoke immediately, without waiting on a callback to fire,
-            // so that the async generator function has the opportunity to do
-            // any necessary setup in a predictable way. This predictability
-            // is why the Promise constructor synchronously invokes its
-            // executor callback, and why async functions synchronously
-            // execute code before the first await. Since we implement simple
-            // async functions in terms of async generators, it is especially
-            // important to get this right, even though it requires care.
-            previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, // Avoid propagating failures to Promises returned by later
-            // invocations of the iterator.
-            callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg();
-          } // Define the unified helper method that is used to implement .next,
-          // .throw, and .return (see defineIteratorMethods).
-
-
-          this._invoke = enqueue;
-        }
-
-        defineIteratorMethods(AsyncIterator.prototype);
-
-        AsyncIterator.prototype[asyncIteratorSymbol] = function () {
-          return this;
-        };
-
-        exports.AsyncIterator = AsyncIterator; // Note that simple async functions are implemented on top of
-        // AsyncIterator objects; they just return a Promise for the value of
-        // the final result produced by the iterator.
-
-        exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) {
-          if (PromiseImpl === void 0) PromiseImpl = Promise;
-          var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl);
-          return exports.isGeneratorFunction(outerFn) ? iter // If outerFn is a generator, return the full iterator.
-          : iter.next().then(function (result) {
-            return result.done ? result.value : iter.next();
-          });
-        };
-
-        function makeInvokeMethod(innerFn, self, context) {
-          var state = GenStateSuspendedStart;
-          return function invoke(method, arg) {
-            if (state === GenStateExecuting) {
-              throw new Error("Generator is already running");
-            }
-
-            if (state === GenStateCompleted) {
-              if (method === "throw") {
-                throw arg;
-              } // Be forgiving, per 25.3.3.3.3 of the spec:
-              // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-generatorresume
-
-
-              return doneResult();
-            }
-
-            context.method = method;
-            context.arg = arg;
-
-            while (true) {
-              var delegate = context.delegate;
-
-              if (delegate) {
-                var delegateResult = maybeInvokeDelegate(delegate, context);
-
-                if (delegateResult) {
-                  if (delegateResult === ContinueSentinel) continue;
-                  return delegateResult;
-                }
-              }
-
-              if (context.method === "next") {
-                // Setting context._sent for legacy support of Babel's
-                // function.sent implementation.
-                context.sent = context._sent = context.arg;
-              } else if (context.method === "throw") {
-                if (state === GenStateSuspendedStart) {
-                  state = GenStateCompleted;
-                  throw context.arg;
-                }
-
-                context.dispatchException(context.arg);
-              } else if (context.method === "return") {
-                context.abrupt("return", context.arg);
-              }
-
-              state = GenStateExecuting;
-              var record = tryCatch(innerFn, self, context);
-
-              if (record.type === "normal") {
-                // If an exception is thrown from innerFn, we leave state ===
-                // GenStateExecuting and loop back for another invocation.
-                state = context.done ? GenStateCompleted : GenStateSuspendedYield;
-
-                if (record.arg === ContinueSentinel) {
-                  continue;
-                }
-
-                return {
-                  value: record.arg,
-                  done: context.done
-                };
-              } else if (record.type === "throw") {
-                state = GenStateCompleted; // Dispatch the exception by looping back around to the
-                // context.dispatchException(context.arg) call above.
-
-                context.method = "throw";
-                context.arg = record.arg;
-              }
-            }
-          };
-        } // Call delegate.iterator[context.method](context.arg) and handle the
-        // result, either by returning a { value, done } result from the
-        // delegate iterator, or by modifying context.method and context.arg,
-        // setting context.delegate to null, and returning the ContinueSentinel.
-
-
-        function maybeInvokeDelegate(delegate, context) {
-          var method = delegate.iterator[context.method];
-
-          if (method === undefined$1) {
-            // A .throw or .return when the delegate iterator has no .throw
-            // method always terminates the yield* loop.
-            context.delegate = null;
-
-            if (context.method === "throw") {
-              // Note: ["return"] must be used for ES3 parsing compatibility.
-              if (delegate.iterator["return"]) {
-                // If the delegate iterator has a return method, give it a
-                // chance to clean up.
-                context.method = "return";
-                context.arg = undefined$1;
-                maybeInvokeDelegate(delegate, context);
-
-                if (context.method === "throw") {
-                  // If maybeInvokeDelegate(context) changed context.method from
-                  // "return" to "throw", let that override the TypeError below.
-                  return ContinueSentinel;
-                }
-              }
-
-              context.method = "throw";
-              context.arg = new TypeError("The iterator does not provide a 'throw' method");
-            }
-
-            return ContinueSentinel;
-          }
-
-          var record = tryCatch(method, delegate.iterator, context.arg);
-
-          if (record.type === "throw") {
-            context.method = "throw";
-            context.arg = record.arg;
-            context.delegate = null;
-            return ContinueSentinel;
-          }
-
-          var info = record.arg;
-
-          if (!info) {
-            context.method = "throw";
-            context.arg = new TypeError("iterator result is not an object");
-            context.delegate = null;
-            return ContinueSentinel;
-          }
-
-          if (info.done) {
-            // Assign the result of the finished delegate to the temporary
-            // variable specified by delegate.resultName (see delegateYield).
-            context[delegate.resultName] = info.value; // Resume execution at the desired location (see delegateYield).
-
-            context.next = delegate.nextLoc; // If context.method was "throw" but the delegate handled the
-            // exception, let the outer generator proceed normally. If
-            // context.method was "next", forget context.arg since it has been
-            // "consumed" by the delegate iterator. If context.method was
-            // "return", allow the original .return call to continue in the
-            // outer generator.
-
-            if (context.method !== "return") {
-              context.method = "next";
-              context.arg = undefined$1;
-            }
-          } else {
-            // Re-yield the result returned by the delegate method.
-            return info;
-          } // The delegate iterator is finished, so forget it and continue with
-          // the outer generator.
-
-
-          context.delegate = null;
-          return ContinueSentinel;
-        } // Define Generator.prototype.{next,throw,return} in terms of the
-        // unified ._invoke helper method.
-
-
-        defineIteratorMethods(Gp);
-        define(Gp, toStringTagSymbol, "Generator"); // A Generator should always return itself as the iterator object when the
-        // @@iterator function is called on it. Some browsers' implementations of the
-        // iterator prototype chain incorrectly implement this, causing the Generator
-        // object to not be returned from this call. This ensures that doesn't happen.
-        // See https://github.com/facebook/regenerator/issues/274 for more details.
-
-        Gp[iteratorSymbol] = function () {
-          return this;
-        };
-
-        Gp.toString = function () {
-          return "[object Generator]";
-        };
-
-        function pushTryEntry(locs) {
-          var entry = {
-            tryLoc: locs[0]
-          };
-
-          if (1 in locs) {
-            entry.catchLoc = locs[1];
-          }
-
-          if (2 in locs) {
-            entry.finallyLoc = locs[2];
-            entry.afterLoc = locs[3];
-          }
-
-          this.tryEntries.push(entry);
-        }
-
-        function resetTryEntry(entry) {
-          var record = entry.completion || {};
-          record.type = "normal";
-          delete record.arg;
-          entry.completion = record;
-        }
-
-        function Context(tryLocsList) {
-          // The root entry object (effectively a try statement without a catch
-          // or a finally block) gives us a place to store values thrown from
-          // locations where there is no enclosing try statement.
-          this.tryEntries = [{
-            tryLoc: "root"
-          }];
-          tryLocsList.forEach(pushTryEntry, this);
-          this.reset(true);
-        }
-
-        exports.keys = function (object) {
-          var keys = [];
-
-          for (var key in object) {
-            keys.push(key);
-          }
-
-          keys.reverse(); // Rather than returning an object with a next method, we keep
-          // things simple and return the next function itself.
-
-          return function next() {
-            while (keys.length) {
-              var key = keys.pop();
-
-              if (key in object) {
-                next.value = key;
-                next.done = false;
-                return next;
-              }
-            } // To avoid creating an additional object, we just hang the .value
-            // and .done properties off the next function object itself. This
-            // also ensures that the minifier will not anonymize the function.
-
-
-            next.done = true;
-            return next;
-          };
-        };
-
-        function values(iterable) {
-          if (iterable) {
-            var iteratorMethod = iterable[iteratorSymbol];
-
-            if (iteratorMethod) {
-              return iteratorMethod.call(iterable);
-            }
-
-            if (typeof iterable.next === "function") {
-              return iterable;
-            }
-
-            if (!isNaN(iterable.length)) {
-              var i = -1,
-                  next = function next() {
-                while (++i < iterable.length) {
-                  if (hasOwn.call(iterable, i)) {
-                    next.value = iterable[i];
-                    next.done = false;
-                    return next;
-                  }
-                }
-
-                next.value = undefined$1;
-                next.done = true;
-                return next;
-              };
-
-              return next.next = next;
-            }
-          } // Return an iterator with no values.
-
-
-          return {
-            next: doneResult
-          };
-        }
-
-        exports.values = values;
-
-        function doneResult() {
-          return {
-            value: undefined$1,
-            done: true
-          };
-        }
-
-        Context.prototype = {
-          constructor: Context,
-          reset: function reset(skipTempReset) {
-            this.prev = 0;
-            this.next = 0; // Resetting context._sent for legacy support of Babel's
-            // function.sent implementation.
-
-            this.sent = this._sent = undefined$1;
-            this.done = false;
-            this.delegate = null;
-            this.method = "next";
-            this.arg = undefined$1;
-            this.tryEntries.forEach(resetTryEntry);
-
-            if (!skipTempReset) {
-              for (var name in this) {
-                // Not sure about the optimal order of these conditions:
-                if (name.charAt(0) === "t" && hasOwn.call(this, name) && !isNaN(+name.slice(1))) {
-                  this[name] = undefined$1;
-                }
-              }
-            }
-          },
-          stop: function stop() {
-            this.done = true;
-            var rootEntry = this.tryEntries[0];
-            var rootRecord = rootEntry.completion;
-
-            if (rootRecord.type === "throw") {
-              throw rootRecord.arg;
-            }
-
-            return this.rval;
-          },
-          dispatchException: function dispatchException(exception) {
-            if (this.done) {
-              throw exception;
-            }
-
-            var context = this;
-
-            function handle(loc, caught) {
-              record.type = "throw";
-              record.arg = exception;
-              context.next = loc;
-
-              if (caught) {
-                // If the dispatched exception was caught by a catch block,
-                // then let that catch block handle the exception normally.
-                context.method = "next";
-                context.arg = undefined$1;
-              }
-
-              return !!caught;
-            }
-
-            for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-              var entry = this.tryEntries[i];
-              var record = entry.completion;
-
-              if (entry.tryLoc === "root") {
-                // Exception thrown outside of any try block that could handle
-                // it, so set the completion value of the entire function to
-                // throw the exception.
-                return handle("end");
-              }
-
-              if (entry.tryLoc <= this.prev) {
-                var hasCatch = hasOwn.call(entry, "catchLoc");
-                var hasFinally = hasOwn.call(entry, "finallyLoc");
-
-                if (hasCatch && hasFinally) {
-                  if (this.prev < entry.catchLoc) {
-                    return handle(entry.catchLoc, true);
-                  } else if (this.prev < entry.finallyLoc) {
-                    return handle(entry.finallyLoc);
-                  }
-                } else if (hasCatch) {
-                  if (this.prev < entry.catchLoc) {
-                    return handle(entry.catchLoc, true);
-                  }
-                } else if (hasFinally) {
-                  if (this.prev < entry.finallyLoc) {
-                    return handle(entry.finallyLoc);
-                  }
-                } else {
-                  throw new Error("try statement without catch or finally");
-                }
-              }
-            }
-          },
-          abrupt: function abrupt(type, arg) {
-            for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-              var entry = this.tryEntries[i];
-
-              if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) {
-                var finallyEntry = entry;
-                break;
-              }
-            }
-
-            if (finallyEntry && (type === "break" || type === "continue") && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc) {
-              // Ignore the finally entry if control is not jumping to a
-              // location outside the try/catch block.
-              finallyEntry = null;
-            }
-
-            var record = finallyEntry ? finallyEntry.completion : {};
-            record.type = type;
-            record.arg = arg;
-
-            if (finallyEntry) {
-              this.method = "next";
-              this.next = finallyEntry.finallyLoc;
-              return ContinueSentinel;
-            }
-
-            return this.complete(record);
-          },
-          complete: function complete(record, afterLoc) {
-            if (record.type === "throw") {
-              throw record.arg;
-            }
-
-            if (record.type === "break" || record.type === "continue") {
-              this.next = record.arg;
-            } else if (record.type === "return") {
-              this.rval = this.arg = record.arg;
-              this.method = "return";
-              this.next = "end";
-            } else if (record.type === "normal" && afterLoc) {
-              this.next = afterLoc;
-            }
-
-            return ContinueSentinel;
-          },
-          finish: function finish(finallyLoc) {
-            for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-              var entry = this.tryEntries[i];
-
-              if (entry.finallyLoc === finallyLoc) {
-                this.complete(entry.completion, entry.afterLoc);
-                resetTryEntry(entry);
-                return ContinueSentinel;
-              }
-            }
-          },
-          "catch": function _catch(tryLoc) {
-            for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-              var entry = this.tryEntries[i];
-
-              if (entry.tryLoc === tryLoc) {
-                var record = entry.completion;
-
-                if (record.type === "throw") {
-                  var thrown = record.arg;
-                  resetTryEntry(entry);
-                }
-
-                return thrown;
-              }
-            } // The context.catch method must only be called with a location
-            // argument that corresponds to a known catch block.
-
-
-            throw new Error("illegal catch attempt");
-          },
-          delegateYield: function delegateYield(iterable, resultName, nextLoc) {
-            this.delegate = {
-              iterator: values(iterable),
-              resultName: resultName,
-              nextLoc: nextLoc
-            };
-
-            if (this.method === "next") {
-              // Deliberately forget the last sent value so that we don't
-              // accidentally pass it on to the delegate.
-              this.arg = undefined$1;
-            }
-
-            return ContinueSentinel;
-          }
-        }; // Regardless of whether this script is executing as a CommonJS module
-        // or not, return the runtime object so that we can declare the variable
-        // regeneratorRuntime in the outer scope, which allows this module to be
-        // injected easily by `bin/regenerator --include-runtime script.js`.
-
-        return exports;
-      }( // If this script is executing as a CommonJS module, use module.exports
-      // as the regeneratorRuntime namespace. Otherwise create a new empty
-      // object. Either way, the resulting object will be used to initialize
-      // the regeneratorRuntime variable at the top of this file.
-      module.exports );
-
-      try {
-        regeneratorRuntime = runtime;
-      } catch (accidentalStrictMode) {
-        // This module should not be running in strict mode, so the above
-        // assignment should always work unless something is misconfigured. Just
-        // in case runtime.js accidentally runs in strict mode, we can escape
-        // strict mode using a global Function call. This could conceivably fail
-        // if a Content Security Policy forbids using Function, but in that case
-        // the proper solution is to fix the accidental strict mode problem. If
-        // you've misconfigured your bundler to force strict mode and applied a
-        // CSP to forbid Function, and you're not willing to fix either of those
-        // problems, please detail your unique predicament in a GitHub issue.
-        Function("r", "regeneratorRuntime = r")(runtime);
-      }
-    });
-
-    var regenerator$1 = runtime_1;
-
-    function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) {
-      try {
-        var info = gen[key](arg);
-        var value = info.value;
-      } catch (error) {
-        reject(error);
-        return;
-      }
-
-      if (info.done) {
-        resolve(value);
-      } else {
-        Promise.resolve(value).then(_next, _throw);
-      }
-    }
-
-    function _asyncToGenerator(fn) {
-      return function () {
-        var self = this,
-            args = arguments;
-        return new Promise(function (resolve, reject) {
-          var gen = fn.apply(self, args);
-
-          function _next(value) {
-            asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value);
-          }
-
-          function _throw(err) {
-            asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err);
-          }
-
-          _next(undefined);
-        });
-      };
-    }
-
-    var asyncToGenerator$1 = _asyncToGenerator;
-
-    function _arrayLikeToArray(arr, len) {
-      if (len == null || len > arr.length) len = arr.length;
-
-      for (var i = 0, arr2 = new Array(len); i < len; i++) {
-        arr2[i] = arr[i];
-      }
-
-      return arr2;
-    }
-
-    var arrayLikeToArray = _arrayLikeToArray;
-
-    function _arrayWithoutHoles(arr) {
-      if (Array.isArray(arr)) return arrayLikeToArray(arr);
-    }
-
-    var arrayWithoutHoles = _arrayWithoutHoles;
-
-    function _iterableToArray(iter) {
-      if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
-    }
-
-    var iterableToArray = _iterableToArray;
-
-    function _unsupportedIterableToArray(o, minLen) {
-      if (!o) return;
-      if (typeof o === "string") return arrayLikeToArray(o, minLen);
-      var n = Object.prototype.toString.call(o).slice(8, -1);
-      if (n === "Object" && o.constructor) n = o.constructor.name;
-      if (n === "Map" || n === "Set") return Array.from(o);
-      if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
-    }
-
-    var unsupportedIterableToArray = _unsupportedIterableToArray;
-
-    function _nonIterableSpread() {
-      throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-    }
-
-    var nonIterableSpread = _nonIterableSpread;
-
-    function _toConsumableArray(arr) {
-      return arrayWithoutHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableSpread();
-    }
-
-    var toConsumableArray$1 = _toConsumableArray;
-
     /* eslint-disable max-len */
-
     /**
      * @trustedScriptlet trusted-replace-xhr-response
      *
@@ -7862,179 +6484,141 @@
      *     example.org#%#//scriptlet('trusted-replace-xhr-response', '*', '', 'example.com')
      *     ```
      */
-
     /* eslint-enable max-len */
-
     function trustedReplaceXhrResponse$1(source) {
       var pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
       var replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
       var propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-
       // do nothing if browser does not support Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
       if (typeof Proxy === 'undefined') {
         return;
-      } // Only allow pattern as empty string for logging purposes
+      }
 
-
+      // Only allow pattern as empty string for logging purposes
       if (pattern === '' && replacement !== '') {
         var message = 'Pattern argument should not be empty string.';
         logMessage(source, message);
         return;
       }
-
       var shouldLog = pattern === '' && replacement === '';
       var nativeOpen = window.XMLHttpRequest.prototype.open;
       var nativeSend = window.XMLHttpRequest.prototype.send;
       var shouldReplace = false;
       var xhrData;
       var requestHeaders = [];
-
       var openWrapper = function openWrapper(target, thisArg, args) {
-        xhrData = getXhrData.apply(void 0, toConsumableArray$1(args));
-
+        // eslint-disable-next-line prefer-spread
+        xhrData = getXhrData.apply(null, args);
         if (shouldLog) {
           // Log if no propsToMatch given
-          var _message = "log: xhr( ".concat(objectToString(xhrData), " )");
-
+          var _message = "xhr( ".concat(objectToString(xhrData), " )");
           logMessage(source, _message, true);
           hit(source);
           return Reflect.apply(target, thisArg, args);
         }
+        shouldReplace = matchRequestProps(source, propsToMatch, xhrData);
 
-        shouldReplace = matchRequestProps(source, propsToMatch, xhrData); // Trap setRequestHeader of target xhr object to mimic request headers later
-
+        // Trap setRequestHeader of target xhr object to mimic request headers later
         if (shouldReplace) {
           var setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
             // Collect headers
             requestHeaders.push(args);
             return Reflect.apply(target, thisArg, args);
           };
-
           var setRequestHeaderHandler = {
             apply: setRequestHeaderWrapper
-          }; // setRequestHeader can only be called on open xhr object,
-          // so we can safely proxy it here
+          };
 
+          // setRequestHeader can only be called on open xhr object,
+          // so we can safely proxy it here
           thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
         }
-
         return Reflect.apply(target, thisArg, args);
       };
+      var sendWrapper = function sendWrapper(target, thisArg, args) {
+        if (!shouldReplace) {
+          return Reflect.apply(target, thisArg, args);
+        }
 
-      var sendWrapper = /*#__PURE__*/function () {
-        var _ref = asyncToGenerator$1( /*#__PURE__*/regenerator$1.mark(function _callee(target, thisArg, args) {
-          var forgedRequest;
-          return regenerator$1.wrap(function _callee$(_context) {
-            while (1) {
-              switch (_context.prev = _context.next) {
-                case 0:
-                  if (shouldReplace) {
-                    _context.next = 2;
-                    break;
-                  }
+        /**
+         * Create separate XHR request with original request's input
+         * to be able to collect response data without triggering
+         * listeners on original XHR object
+         */
+        var forgedRequest = new XMLHttpRequest();
+        forgedRequest.addEventListener('readystatechange', function () {
+          if (forgedRequest.readyState !== 4) {
+            return;
+          }
+          var readyState = forgedRequest.readyState,
+            response = forgedRequest.response,
+            responseText = forgedRequest.responseText,
+            responseURL = forgedRequest.responseURL,
+            responseXML = forgedRequest.responseXML,
+            status = forgedRequest.status,
+            statusText = forgedRequest.statusText; // Extract content from response
+          var content = responseText || response;
+          if (typeof content !== 'string') {
+            return;
+          }
+          var patternRegexp = pattern === '*' ? /(\n|.)*/ : toRegExp(pattern);
+          var modifiedContent = content.replace(patternRegexp, replacement);
 
-                  return _context.abrupt("return", Reflect.apply(target, thisArg, args));
-
-                case 2:
-                  /**
-                   * Create separate XHR request with original request's input
-                   * to be able to collect response data without triggering
-                   * listeners on original XHR object
-                   */
-                  forgedRequest = new XMLHttpRequest();
-                  forgedRequest.addEventListener('readystatechange', function () {
-                    if (forgedRequest.readyState !== 4) {
-                      return;
-                    }
-
-                    var readyState = forgedRequest.readyState,
-                        response = forgedRequest.response,
-                        responseText = forgedRequest.responseText,
-                        responseURL = forgedRequest.responseURL,
-                        responseXML = forgedRequest.responseXML,
-                        status = forgedRequest.status,
-                        statusText = forgedRequest.statusText; // Extract content from response
-
-                    var content = responseText || response;
-
-                    if (typeof content !== 'string') {
-                      return;
-                    }
-
-                    var patternRegexp = pattern === '*' ? toRegExp() : toRegExp(pattern);
-                    var modifiedContent = content.replace(patternRegexp, replacement); // Manually put required values into target XHR object
-                    // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
-
-                    Object.defineProperties(thisArg, {
-                      readyState: {
-                        value: readyState
-                      },
-                      response: {
-                        value: modifiedContent
-                      },
-                      responseText: {
-                        value: modifiedContent
-                      },
-                      responseURL: {
-                        value: responseURL
-                      },
-                      responseXML: {
-                        value: responseXML
-                      },
-                      status: {
-                        value: status
-                      },
-                      statusText: {
-                        value: statusText
-                      }
-                    }); // Mock events
-
-                    setTimeout(function () {
-                      var stateEvent = new Event('readystatechange');
-                      thisArg.dispatchEvent(stateEvent);
-                      var loadEvent = new Event('load');
-                      thisArg.dispatchEvent(loadEvent);
-                      var loadEndEvent = new Event('loadend');
-                      thisArg.dispatchEvent(loadEndEvent);
-                    }, 1);
-                    hit(source);
-                  });
-                  nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]); // Mimic request headers before sending
-                  // setRequestHeader can only be called on open request objects
-
-                  requestHeaders.forEach(function (header) {
-                    var name = header[0];
-                    var value = header[1];
-                    forgedRequest.setRequestHeader(name, value);
-                  });
-                  requestHeaders = [];
-                  _context.prev = 7;
-                  nativeSend.call(forgedRequest, args);
-                  _context.next = 14;
-                  break;
-
-                case 11:
-                  _context.prev = 11;
-                  _context.t0 = _context["catch"](7);
-                  return _context.abrupt("return", Reflect.apply(target, thisArg, args));
-
-                case 14:
-                  return _context.abrupt("return", undefined);
-
-                case 15:
-                case "end":
-                  return _context.stop();
-              }
+          // Manually put required values into target XHR object
+          // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
+          Object.defineProperties(thisArg, {
+            readyState: {
+              value: readyState
+            },
+            response: {
+              value: modifiedContent
+            },
+            responseText: {
+              value: modifiedContent
+            },
+            responseURL: {
+              value: responseURL
+            },
+            responseXML: {
+              value: responseXML
+            },
+            status: {
+              value: status
+            },
+            statusText: {
+              value: statusText
             }
-          }, _callee, null, [[7, 11]]);
-        }));
+          });
 
-        return function sendWrapper(_x, _x2, _x3) {
-          return _ref.apply(this, arguments);
-        };
-      }();
+          // Mock events
+          setTimeout(function () {
+            var stateEvent = new Event('readystatechange');
+            thisArg.dispatchEvent(stateEvent);
+            var loadEvent = new Event('load');
+            thisArg.dispatchEvent(loadEvent);
+            var loadEndEvent = new Event('loadend');
+            thisArg.dispatchEvent(loadEndEvent);
+          }, 1);
+          hit(source);
+        });
+        nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
 
+        // Mimic request headers before sending
+        // setRequestHeader can only be called on open request objects
+        requestHeaders.forEach(function (header) {
+          var name = header[0];
+          var value = header[1];
+          forgedRequest.setRequestHeader(name, value);
+        });
+        requestHeaders = [];
+        try {
+          nativeSend.call(forgedRequest, args);
+        } catch (_unused) {
+          return Reflect.apply(target, thisArg, args);
+        }
+        return undefined;
+      };
       var openHandler = {
         apply: openWrapper
       };
@@ -8044,12 +6628,13 @@
       XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
       XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
     }
-    trustedReplaceXhrResponse$1.names = ['trusted-replace-xhr-response' // trusted scriptlets support no aliases
+    trustedReplaceXhrResponse$1.names = ['trusted-replace-xhr-response'
+    // trusted scriptlets support no aliases
     ];
-    trustedReplaceXhrResponse$1.injections = [hit, logMessage, toRegExp, objectToString, matchRequestProps, getXhrData, getMatchPropsData, validateParsedData, parseMatchProps, isValidStrPattern, escapeRegExp, isEmptyObject, getObjectEntries];
+
+    trustedReplaceXhrResponse$1.injections = [hit, logMessage, toRegExp, objectToString, matchRequestProps, getXhrData, getMatchPropsData, getRequestProps, validateParsedData, parseMatchProps, isValidStrPattern, escapeRegExp, isEmptyObject, getObjectEntries];
 
     /* eslint-disable max-len */
-
     /**
      * @scriptlet xml-prune
      *
@@ -8094,15 +6679,12 @@
      *     example.org#%#//scriptlet('xml-prune', '', '', '.mpd')
      *     ```
      */
-
     /* eslint-enable max-len */
 
     function xmlPrune$1(source, propsToRemove) {
       var _this = this;
-
       var optionalProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
       var urlToMatch = arguments.length > 3 ? arguments[3] : undefined;
-
       // do nothing if browser does not support Reflect, fetch or Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -8110,55 +6692,42 @@
       if (typeof Reflect === 'undefined' || typeof fetch === 'undefined' || typeof Proxy === 'undefined' || typeof Response === 'undefined') {
         return;
       }
-
       var shouldPruneResponse = true;
-
       if (!propsToRemove) {
         // If "propsToRemove" is not defined, then response shouldn't be pruned
         // but it should be logged in browser console
         shouldPruneResponse = false;
       }
-
       var urlMatchRegexp = toRegExp(urlToMatch);
-
       var isXML = function isXML(text) {
         // Check if "text" starts with "<" and check if it ends with ">"
         // If so, then it might be an XML file and should be pruned or logged
         var trimedText = text.trim();
-
-        if (startsWith(trimedText, '<') && endsWith(trimedText, '>')) {
+        if (startsWith$1(trimedText, '<') && endsWith(trimedText, '>')) {
           return true;
         }
-
         return false;
       };
-
       var pruneXML = function pruneXML(text) {
         if (!isXML(text)) {
           shouldPruneResponse = false;
           return text;
         }
-
         var xmlParser = new DOMParser();
         var xmlDoc = xmlParser.parseFromString(text, 'text/xml');
         var errorNode = xmlDoc.querySelector('parsererror');
-
         if (errorNode) {
           return text;
         }
-
         if (optionalProp !== '' && xmlDoc.querySelector(optionalProp) === null) {
           shouldPruneResponse = false;
           return text;
         }
-
         var elems = xmlDoc.querySelectorAll(propsToRemove);
-
         if (!elems.length) {
           shouldPruneResponse = false;
           return text;
         }
-
         elems.forEach(function (elem) {
           elem.remove();
         });
@@ -8166,20 +6735,16 @@
         text = serializer.serializeToString(xmlDoc);
         return text;
       };
-
       var xhrWrapper = function xhrWrapper(target, thisArg, args) {
         var xhrURL = args[1];
-
         if (typeof xhrURL !== 'string' || xhrURL.length === 0) {
           return Reflect.apply(target, thisArg, args);
         }
-
         if (urlMatchRegexp.test(xhrURL)) {
           thisArg.addEventListener('readystatechange', function pruneResponse() {
             if (thisArg.readyState === 4) {
               var response = thisArg.response;
               thisArg.removeEventListener('readystatechange', pruneResponse);
-
               if (!shouldPruneResponse) {
                 if (isXML(response)) {
                   // eslint-disable-next-line max-len
@@ -8188,7 +6753,6 @@
                 }
               } else {
                 var prunedResponseContent = pruneXML(response);
-
                 if (shouldPruneResponse) {
                   Object.defineProperty(thisArg, 'response', {
                     value: prunedResponseContent
@@ -8197,36 +6761,31 @@
                     value: prunedResponseContent
                   });
                   hit(source);
-                } // In case if response shouldn't be pruned
+                }
+                // In case if response shouldn't be pruned
                 // pruneXML sets shouldPruneResponse to false
                 // so it's necessary to set it to true again
                 // otherwise response will be only logged
-
-
                 shouldPruneResponse = true;
               }
             }
           });
         }
-
         return Reflect.apply(target, thisArg, args);
       };
-
       var xhrHandler = {
         apply: xhrWrapper
-      }; // eslint-disable-next-line max-len
+      };
+      // eslint-disable-next-line max-len
+      window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler);
 
-      window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler); // eslint-disable-next-line compat/compat
-
+      // eslint-disable-next-line compat/compat
       var nativeFetch = window.fetch;
-
       var fetchWrapper = function fetchWrapper(target, thisArg, args) {
         var fetchURL = args[0];
-
         if (typeof fetchURL !== 'string' || fetchURL.length === 0) {
           return Reflect.apply(target, thisArg, args);
         }
-
         if (urlMatchRegexp.test(fetchURL)) {
           return nativeFetch.apply(_this, args).then(function (response) {
             return response.text().then(function (text) {
@@ -8234,12 +6793,9 @@
                 if (isXML(text)) {
                   logMessage("fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(text));
                 }
-
                 return Reflect.apply(target, thisArg, args);
               }
-
               var prunedText = pruneXML(text);
-
               if (shouldPruneResponse) {
                 hit(source);
                 return new Response(prunedText, {
@@ -8247,56 +6803,53 @@
                   statusText: response.statusText,
                   headers: response.headers
                 });
-              } // If response shouldn't be pruned
+              }
+              // If response shouldn't be pruned
               // pruneXML sets shouldPruneResponse to false
               // so it's necessary to set it to true again
               // otherwise response will be only logged
-
-
               shouldPruneResponse = true;
               return Reflect.apply(target, thisArg, args);
             });
           });
         }
-
         return Reflect.apply(target, thisArg, args);
       };
-
       var fetchHandler = {
         apply: fetchWrapper
-      }; // eslint-disable-next-line compat/compat
-
+      };
+      // eslint-disable-next-line compat/compat
       window.fetch = new Proxy(window.fetch, fetchHandler);
     }
-    xmlPrune$1.names = ['xml-prune', // aliases are needed for matching the related scriptlet converted into our syntax
+    xmlPrune$1.names = ['xml-prune',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'xml-prune.js', 'ubo-xml-prune.js', 'ubo-xml-prune'];
-    xmlPrune$1.injections = [hit, logMessage, toRegExp, startsWith, endsWith];
+    xmlPrune$1.injections = [hit, logMessage, toRegExp, startsWith$1, endsWith];
 
     /* eslint-disable max-len */
-
     /**
      * @trustedScriptlet trusted-set-cookie
      *
      * @description
-     * Sets a cookie with arbitrary name and value, with optional path
-     * and the ability to reload the page after cookie was set.
+     * Sets a cookie with arbitrary name and value,
+     * and with optional ability to offset cookie attribute 'expires' and set path.
      *
      * **Syntax**
      * ```
-     * example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[, reload[, path]]])
+     * example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[, path]])
      * ```
      *
      * - `name` - required, cookie name to be set
      * - `value` - required, cookie value. Possible values:
      *   - arbitrary value
      *   - empty string for no value
-     *   - `$now$` keyword for setting current time
-     * - 'offsetExpiresSec' - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
+     *   - `$now$` keyword for setting current time in ms, e.g 1667915146503
+     *   - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+     * - `offsetExpiresSec` - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
      * Possible values:
      *   - positive integer in seconds
      *   - `1year` keyword for setting expiration date to one year
      *   - `1day` keyword for setting expiration date to one day
-     * - 'reload' - optional, boolean. Argument for reloading page after cookie is set. Defaults to `false`
      * - `path` - optional, argument for setting cookie path, defaults to `/`; possible values:
      *   - `/` — root path
      *   - `none` — to set no path at all
@@ -8310,7 +6863,7 @@
      *
      * 2. Set cookie with `new Date().getTime()` value
      * ```
-     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '$now')
+     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '$now$')
      * ```
      *
      * 3. Set cookie which will expire in 3 days
@@ -8322,90 +6875,161 @@
      * ```
      * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept', '1year')
      * ```
-     * 5. Reload the page if cookie was successfully set
-     * ```
-     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'true')
-     * ```
      *
-     * 6. Set cookie with no path
+     * 5. Set cookie with no path
      * ```
-     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', '', 'none')
+     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'none')
      * ```
      */
-
     /* eslint-enable max-len */
 
     function trustedSetCookie$1(source, name, value) {
       var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-      var reload = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 'false';
-      var path = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : '/';
-
+      var path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '/';
       if (typeof name === 'undefined') {
         logMessage(source, 'Cookie name should be specified.');
         return;
       }
-
       if (typeof value === 'undefined') {
         logMessage(source, 'Cookie value should be specified.');
         return;
-      } // Prevent infinite reloads if cookie was already set or blocked by the browser
-      // https://github.com/AdguardTeam/Scriptlets/issues/212
-
-
-      if (reload === 'true' && isCookieSetWithValue(document.cookie, name, value)) {
+      }
+      var parsedValue = parseKeywordValue(value);
+      if (!isValidCookiePath(path)) {
+        logMessage(source, "Invalid cookie path: '".concat(path, "'"));
         return;
       }
-
-      var ONE_YEAR_EXPIRATION_KEYWORD = '1year';
-      var ONE_DAY_EXPIRATION_KEYWORD = '1day';
-      var parsedValue = parseKeywordValue(value);
-      var cookieToSet = concatCookieNameValuePath(source, name, parsedValue, path);
-
+      var cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
       if (!cookieToSet) {
         return;
-      } // Set expiration date if offsetExpiresSec was passed
-
-
+      }
       if (offsetExpiresSec) {
-        var MS_IN_SEC = 1000;
-        var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
-        var SECONDS_IN_DAY = 24 * 60 * 60;
-        var parsedOffsetExpiresSec; // Set predefined expire value if corresponding keyword was passed
-
-        if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
-          parsedOffsetExpiresSec = SECONDS_IN_YEAR;
-        } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
-          parsedOffsetExpiresSec = SECONDS_IN_DAY;
-        } else {
-          parsedOffsetExpiresSec = Number.parseInt(offsetExpiresSec, 10); // If offsetExpiresSec has been parsed to NaN - do not set cookie at all
-
-          if (Number.isNaN(parsedOffsetExpiresSec)) {
-            var message = "log: Invalid offsetExpiresSec value: ".concat(offsetExpiresSec);
-            logMessage(source, message);
-            return;
-          }
+        var parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
+        if (!parsedOffsetMs) {
+          logMessage(source, "Invalid offsetExpiresSec value: ".concat(offsetExpiresSec));
+          return;
         }
-
-        var expires = Date.now() + parsedOffsetExpiresSec * MS_IN_SEC;
+        var expires = Date.now() + parsedOffsetMs;
         cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
       }
-
-      if (cookieToSet) {
-        document.cookie = cookieToSet;
-        hit(source); // Only reload the page if cookie was set
-        // https://github.com/AdguardTeam/Scriptlets/issues/212
-
-        if (reload === 'true' && isCookieSetWithValue(document.cookie, name, value)) {
-          window.location.reload();
-        }
-      }
+      document.cookie = cookieToSet;
+      hit(source);
     }
-    trustedSetCookie$1.names = ['trusted-set-cookie' // trusted scriptlets support no aliases
+    trustedSetCookie$1.names = ['trusted-set-cookie'
+    // trusted scriptlets support no aliases
     ];
-    trustedSetCookie$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, concatCookieNameValuePath, isValidCookieRawPath, parseKeywordValue, getCookiePath];
+
+    trustedSetCookie$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, concatCookieNameValuePath, isValidCookiePath, getTrustedCookieOffsetMs, parseKeywordValue, getCookiePath];
 
     /* eslint-disable max-len */
+    /**
+     * @trustedScriptlet trusted-set-cookie-reload
+     *
+     * @description
+     * Sets a cookie with arbitrary name and value,
+     * and with optional ability to offset cookie attribute 'expires' and set path.
+     * Also reloads the current page after the cookie setting.
+     * If reloading option is not needed, use the [`trusted-set-cookie` scriptlet](#trusted-set-cookie).
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie-reload', name, value[, offsetExpiresSec[, path]])
+     * ```
+     *
+     * - `name` - required, cookie name to be set
+     * - `value` - required, cookie value. Possible values:
+     *   - arbitrary value
+     *   - empty string for no value
+     *   - `$now$` keyword for setting current time in ms, e.g 1667915146503
+     *   - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+     * - 'offsetExpiresSec' - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
+     * Possible values:
+     *   - positive integer in seconds
+     *   - `1year` keyword for setting expiration date to one year
+     *   - `1day` keyword for setting expiration date to one day
+     * - `path` - optional, argument for setting cookie path, defaults to `/`; possible values:
+     *   - `/` — root path
+     *   - `none` — to set no path at all
+     *
+     * **Examples**
+     * 1. Set cookie and reload the page after it
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept')
+     * ```
+     *
+     * 2. Set cookie with `new Date().getTime()` value and reload the page after it
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', '$now$')
+     * ```
+     *
+     * 3. Set cookie which will expire in 3 days and reload the page after it
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept', '259200')
+     * ```
+     *
+     * 4. Set cookie which will expire in one year and reload the page after it
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept', '1year')
+     * ```
+     *
+     * 5. Set cookie with no 'expire' and no path, reload the page after it
+     * ```
+     * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'decline', '', 'none')
+     * ```
+     */
+    /* eslint-enable max-len */
 
+    function trustedSetCookieReload$1(source, name, value) {
+      var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+      var path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '/';
+      if (typeof name === 'undefined') {
+        logMessage(source, 'Cookie name should be specified.');
+        return;
+      }
+      if (typeof value === 'undefined') {
+        logMessage(source, 'Cookie value should be specified.');
+        return;
+      }
+
+      // Prevent infinite reloads if cookie was already set or blocked by the browser
+      // https://github.com/AdguardTeam/Scriptlets/issues/212
+      if (isCookieSetWithValue(document.cookie, name, value)) {
+        return;
+      }
+      var parsedValue = parseKeywordValue(value);
+      if (!isValidCookiePath(path)) {
+        logMessage(source, "Invalid cookie path: '".concat(path, "'"));
+        return;
+      }
+      var cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
+      if (!cookieToSet) {
+        return;
+      }
+      if (offsetExpiresSec) {
+        var parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
+        if (!parsedOffsetMs) {
+          logMessage(source, "Invalid offsetExpiresSec value: ".concat(offsetExpiresSec));
+          return;
+        }
+        var expires = Date.now() + parsedOffsetMs;
+        cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
+      }
+      document.cookie = cookieToSet;
+      hit(source);
+
+      // Only reload the page if cookie was set
+      // https://github.com/AdguardTeam/Scriptlets/issues/212
+      if (isCookieSetWithValue(document.cookie, name, value)) {
+        window.location.reload();
+      }
+    }
+    trustedSetCookieReload$1.names = ['trusted-set-cookie-reload'
+    // trusted scriptlets support no aliases
+    ];
+
+    trustedSetCookieReload$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, concatCookieNameValuePath, isValidCookiePath, getTrustedCookieOffsetMs, parseKeywordValue, getCookiePath];
+
+    /* eslint-disable max-len */
     /**
      * @trustedScriptlet trusted-replace-fetch-response
      *
@@ -8461,146 +7085,112 @@
      *     example.org#%#//scriptlet('trusted-replace-fetch-response', '*', '', 'example.com')
      *     ```
      */
-
     /* eslint-enable max-len */
-
     function trustedReplaceFetchResponse$1(source) {
       var pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
       var replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
       var propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-
       // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
       if (typeof fetch === 'undefined' || typeof Proxy === 'undefined' || typeof Response === 'undefined') {
         return;
-      } // Only allow pattern as empty string for logging purposes
+      }
 
-
+      // Only allow pattern as empty string for logging purposes
       if (pattern === '' && replacement !== '') {
         logMessage(source, 'Pattern argument should not be empty string.');
         return;
       }
-
       var shouldLog = pattern === '' && replacement === '';
       var nativeFetch = fetch;
       var shouldReplace = false;
       var fetchData;
+      var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+        fetchData = getFetchData(args);
+        if (shouldLog) {
+          // log if no propsToMatch given
+          logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
+          hit(source);
+          return Reflect.apply(target, thisArg, args);
+        }
+        shouldReplace = matchRequestProps(source, propsToMatch, fetchData);
+        if (!shouldReplace) {
+          return Reflect.apply(target, thisArg, args);
+        }
 
-      var handlerWrapper = /*#__PURE__*/function () {
-        var _ref = asyncToGenerator$1( /*#__PURE__*/regenerator$1.mark(function _callee(target, thisArg, args) {
-          var forgeResponse;
-          return regenerator$1.wrap(function _callee$(_context) {
-            while (1) {
-              switch (_context.prev = _context.next) {
-                case 0:
-                  fetchData = getFetchData(args);
+        /**
+         * Create new Response object using original response' properties
+         * and given text as body content
+         * @param {Response} response original response to copy properties from
+         * @param {string} textContent text to set as body content
+         * @returns {Response}
+         */
+        var forgeResponse = function forgeResponse(response, textContent) {
+          var bodyUsed = response.bodyUsed,
+            headers = response.headers,
+            ok = response.ok,
+            redirected = response.redirected,
+            status = response.status,
+            statusText = response.statusText,
+            type = response.type,
+            url = response.url; // eslint-disable-next-line compat/compat
+          var forgedResponse = new Response(textContent, {
+            status: status,
+            statusText: statusText,
+            headers: headers
+          });
 
-                  if (!shouldLog) {
-                    _context.next = 5;
-                    break;
-                  }
-
-                  // log if no propsToMatch given
-                  logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
-                  hit(source);
-                  return _context.abrupt("return", Reflect.apply(target, thisArg, args));
-
-                case 5:
-                  shouldReplace = matchRequestProps(source, propsToMatch, fetchData);
-
-                  if (shouldReplace) {
-                    _context.next = 8;
-                    break;
-                  }
-
-                  return _context.abrupt("return", Reflect.apply(target, thisArg, args));
-
-                case 8:
-                  /**
-                   * Create new Response object using original response' properties
-                   * and given text as body content
-                   * @param {Response} response original response to copy properties from
-                   * @param {string} textContent text to set as body content
-                   * @returns {Response}
-                   */
-                  forgeResponse = function forgeResponse(response, textContent) {
-                    var bodyUsed = response.bodyUsed,
-                        headers = response.headers,
-                        ok = response.ok,
-                        redirected = response.redirected,
-                        status = response.status,
-                        statusText = response.statusText,
-                        type = response.type,
-                        url = response.url; // eslint-disable-next-line compat/compat
-
-                    var forgedResponse = new Response(textContent, {
-                      status: status,
-                      statusText: statusText,
-                      headers: headers
-                    }); // Manually set properties which can't be set by Response constructor
-
-                    Object.defineProperties(forgedResponse, {
-                      url: {
-                        value: url
-                      },
-                      type: {
-                        value: type
-                      },
-                      ok: {
-                        value: ok
-                      },
-                      bodyUsed: {
-                        value: bodyUsed
-                      },
-                      redirected: {
-                        value: redirected
-                      }
-                    });
-                    return forgedResponse;
-                  };
-
-                  return _context.abrupt("return", nativeFetch.apply(void 0, toConsumableArray$1(args)).then(function (response) {
-                    return response.text().then(function (bodyText) {
-                      var patternRegexp = pattern === '*' ? toRegExp() : toRegExp(pattern);
-                      var modifiedTextContent = bodyText.replace(patternRegexp, replacement);
-                      var forgedResponse = forgeResponse(response, modifiedTextContent);
-                      hit(source);
-                      return forgedResponse;
-                    }).catch(function () {
-                      // log if response body can't be converted to a string
-                      var fetchDataStr = objectToString(fetchData);
-                      var message = "Response body can't be converted to text: ".concat(fetchDataStr);
-                      logMessage(source, message);
-                      return Reflect.apply(target, thisArg, args);
-                    });
-                  }).catch(function () {
-                    return Reflect.apply(target, thisArg, args);
-                  }));
-
-                case 10:
-                case "end":
-                  return _context.stop();
-              }
+          // Manually set properties which can't be set by Response constructor
+          Object.defineProperties(forgedResponse, {
+            url: {
+              value: url
+            },
+            type: {
+              value: type
+            },
+            ok: {
+              value: ok
+            },
+            bodyUsed: {
+              value: bodyUsed
+            },
+            redirected: {
+              value: redirected
             }
-          }, _callee);
-        }));
-
-        return function handlerWrapper(_x, _x2, _x3) {
-          return _ref.apply(this, arguments);
+          });
+          return forgedResponse;
         };
-      }();
 
+        // eslint-disable-next-line prefer-spread
+        return nativeFetch.apply(null, args).then(function (response) {
+          return response.text().then(function (bodyText) {
+            var patternRegexp = pattern === '*' ? /(\n|.)*/ : toRegExp(pattern);
+            var modifiedTextContent = bodyText.replace(patternRegexp, replacement);
+            var forgedResponse = forgeResponse(response, modifiedTextContent);
+            hit(source);
+            return forgedResponse;
+          }).catch(function () {
+            // log if response body can't be converted to a string
+            var fetchDataStr = objectToString(fetchData);
+            var message = "Response body can't be converted to text: ".concat(fetchDataStr);
+            logMessage(source, message);
+            return Reflect.apply(target, thisArg, args);
+          });
+        }).catch(function () {
+          return Reflect.apply(target, thisArg, args);
+        });
+      };
       var fetchHandler = {
         apply: handlerWrapper
       };
       fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
     }
+
     trustedReplaceFetchResponse$1.names = ['trusted-replace-fetch-response'];
-    trustedReplaceFetchResponse$1.injections = [hit, logMessage, getFetchData, objectToString, matchRequestProps, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getObjectEntries, getObjectFromEntries, parseMatchProps, validateParsedData, getMatchPropsData];
+    trustedReplaceFetchResponse$1.injections = [hit, logMessage, getFetchData, objectToString, matchRequestProps, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getRequestProps, getObjectEntries, getObjectFromEntries, parseMatchProps, validateParsedData, getMatchPropsData];
 
     /* eslint-disable max-len */
-
     /**
      * @trustedScriptlet trusted-set-local-storage-item
      *
@@ -8646,7 +7236,6 @@
      * example.org#%#//scriptlet('trusted-set-local-storage-item', 'ppu_main_none', '')
      * ```
      */
-
     /* eslint-enable max-len */
 
     function trustedSetLocalStorageItem$1(source, key, value) {
@@ -8654,20 +7243,20 @@
         logMessage(source, 'Item key should be specified.');
         return;
       }
-
       if (typeof value === 'undefined') {
         logMessage(source, 'Item value should be specified.');
         return;
       }
-
       var parsedValue = parseKeywordValue(value);
       var _window = window,
-          localStorage = _window.localStorage;
+        localStorage = _window.localStorage;
       setStorageItem(source, localStorage, key, parsedValue);
       hit(source);
     }
-    trustedSetLocalStorageItem$1.names = ['trusted-set-local-storage-item' // trusted scriptlets support no aliases
+    trustedSetLocalStorageItem$1.names = ['trusted-set-local-storage-item'
+    // trusted scriptlets support no aliases
     ];
+
     trustedSetLocalStorageItem$1.injections = [hit, logMessage, nativeIsNaN, setStorageItem, parseKeywordValue];
 
     /**
@@ -8686,7 +7275,7 @@
         setConstant: setConstant$1,
         removeCookie: removeCookie$1,
         preventAddEventListener: preventAddEventListener$1,
-        preventBab: preventBab$1,
+        preventBab: preventBab$2,
         nowebrtc: nowebrtc$1,
         logAddEventListener: logAddEventListener$1,
         logEval: logEval$1,
@@ -8726,6 +7315,7 @@
         trustedReplaceXhrResponse: trustedReplaceXhrResponse$1,
         xmlPrune: xmlPrune$1,
         trustedSetCookie: trustedSetCookie$1,
+        trustedSetCookieReload: trustedSetCookieReload$1,
         trustedReplaceFetchResponse: trustedReplaceFetchResponse$1,
         trustedSetLocalStorageItem: trustedSetLocalStorageItem$1
     });
@@ -8791,7 +7381,8 @@
       adg: 'googletagservices-gpt',
       ubo: 'googletagservices_gpt.js'
     }, {
-      adg: 'google-ima3'
+      adg: 'google-ima3',
+      ubo: 'google-ima.js'
     }, {
       adg: 'gemius'
     }, {
@@ -8875,15 +7466,16 @@
 
     var JS_RULE_MARKER = '#%#';
     var COMMENT_MARKER = '!';
+
     /**
      * Checks if rule text is comment e.g. !!example.org##+js(set-constant.js, test, false)
      * @param {string} rule
      * @return {boolean}
      */
-
     var isComment = function isComment(rule) {
-      return startsWith(rule, COMMENT_MARKER);
+      return startsWith$1(rule, COMMENT_MARKER);
     };
+
     /* ************************************************************************
      *
      * Scriptlets
@@ -8893,85 +7485,79 @@
     /**
      * uBlock scriptlet rule mask
      */
-
-
     var UBO_SCRIPTLET_MASK_REG = /#@?#script:inject|#@?#\s*\+js/;
     var UBO_SCRIPTLET_MASK_1 = '##+js';
     var UBO_SCRIPTLET_MASK_2 = '##script:inject';
     var UBO_SCRIPTLET_EXCEPTION_MASK_1 = '#@#+js';
     var UBO_SCRIPTLET_EXCEPTION_MASK_2 = '#@#script:inject';
+
     /**
      * AdBlock Plus snippet rule mask
      */
-
     var ABP_SCRIPTLET_MASK = '#$#';
     var ABP_SCRIPTLET_EXCEPTION_MASK = '#@$#';
+
     /**
      * AdGuard CSS rule mask
      */
-
     var ADG_CSS_MASK_REG = /#@?\$#.+?\s*\{.*\}\s*$/g;
+
     /**
      * Checks if the `rule` is AdGuard scriptlet rule
      * @param {string} rule - rule text
      */
-
     var isAdgScriptletRule = function isAdgScriptletRule(rule) {
       return !isComment(rule) && rule.indexOf(ADG_SCRIPTLET_MASK) > -1;
     };
+
     /**
      * Checks if the `rule` is uBO scriptlet rule
      * @param {string} rule rule text
      */
-
-
     var isUboScriptletRule = function isUboScriptletRule(rule) {
       return (rule.indexOf(UBO_SCRIPTLET_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_MASK_2) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_2) > -1) && UBO_SCRIPTLET_MASK_REG.test(rule) && !isComment(rule);
     };
+
     /**
      * Checks if the `rule` is AdBlock Plus snippet
      * @param {string} rule rule text
      */
-
-
     var isAbpSnippetRule = function isAbpSnippetRule(rule) {
       return (rule.indexOf(ABP_SCRIPTLET_MASK) > -1 || rule.indexOf(ABP_SCRIPTLET_EXCEPTION_MASK) > -1) && rule.search(ADG_CSS_MASK_REG) === -1 && !isComment(rule);
     };
+
     /**
      * Finds scriptlet by it's name
      * @param {string} name - scriptlet name
      */
-
-
     var getScriptletByName = function getScriptletByName(name) {
       var scriptlets = Object.keys(scriptletList).map(function (key) {
         return scriptletList[key];
       });
       return scriptlets.find(function (s) {
-        return s.names // full match name checking
-        && (s.names.indexOf(name) > -1 // or check ubo alias name without '.js' at the end
+        return s.names
+        // full match name checking
+        && (s.names.indexOf(name) > -1
+        // or check ubo alias name without '.js' at the end
         || !endsWith(name, '.js') && s.names.indexOf("".concat(name, ".js")) > -1);
       });
     };
+
     /**
      * Checks if the scriptlet name is valid
      * @param {string} name - Scriptlet name
      */
-
-
     var isValidScriptletName = function isValidScriptletName(name) {
       if (!name) {
         return false;
       }
-
       var scriptlet = getScriptletByName(name);
-
       if (!scriptlet) {
         return false;
       }
-
       return true;
     };
+
     /* ************************************************************************
      *
      * Redirects
@@ -8981,18 +7567,16 @@
     /**
      * Redirect resources markers
      */
-
-
     var ADG_UBO_REDIRECT_MARKER = 'redirect=';
     var ADG_UBO_REDIRECT_RULE_MARKER = 'redirect-rule=';
     var ABP_REDIRECT_MARKER = 'rewrite=abp-resource:';
     var EMPTY_REDIRECT_MARKER = 'empty';
     var VALID_SOURCE_TYPES = ['image', 'media', 'subdocument', 'stylesheet', 'script', 'xmlhttprequest', 'other'];
+
     /**
      * Source types for redirect rules if there is no one of them.
      * Used for ADG -> UBO conversion.
      */
-
     var ABSENT_SOURCE_TYPE_REPLACEMENT = [{
       NAME: 'nooptext',
       TYPES: VALID_SOURCE_TYPES
@@ -9024,41 +7608,41 @@
     var validAdgRedirects = redirects$1.filter(function (el) {
       return el.adg;
     });
+
     /**
      * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
      * It's used for UBO -> ADG converting
      */
-
     var uboToAdgCompatibility = getObjectFromEntries(validAdgRedirects.filter(function (el) {
       return el.ubo;
     }).map(function (el) {
       return [el.ubo, el.adg];
     }));
+
     /**
      * Compatibility object where KEYS = ABP redirect names and VALUES = ADG redirect names
      * It's used for ABP -> ADG converting
      */
-
     var abpToAdgCompatibility = getObjectFromEntries(validAdgRedirects.filter(function (el) {
       return el.abp;
     }).map(function (el) {
       return [el.abp, el.adg];
     }));
+
     /**
      * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
      * It's used for ADG -> UBO converting
      */
-
     var adgToUboCompatibility = getObjectFromEntries(validAdgRedirects.filter(function (el) {
       return el.ubo;
     }).map(function (el) {
       return [el.adg, el.ubo];
     }));
+
     /**
      * Needed for AdGuard redirect names validation where KEYS = **valid** AdGuard redirect names
      * 'adgToUboCompatibility' is still needed for ADG -> UBO converting
      */
-
     var validAdgCompatibility = getObjectFromEntries(validAdgRedirects.map(function (el) {
       return [el.adg, 'valid adg redirect'];
     }));
@@ -9083,23 +7667,22 @@
         compatibility: abpToAdgCompatibility
       }
     };
+
     /**
      * Parses redirect rule modifiers
      * @param {string} rule
      * @returns {Array}
      */
-
     var parseModifiers = function parseModifiers(rule) {
       return substringAfter$1(rule, '$').split(',');
     };
+
     /**
      * Gets redirect resource name
      * @param {string} rule
      * @param {string} marker - specific Adg/Ubo or Abp redirect resources marker
      * @returns {string} - redirect resource name
      */
-
-
     var getRedirectName = function getRedirectName(rule, marker) {
       var ruleModifiers = parseModifiers(rule);
       var redirectNamePart = ruleModifiers.find(function (el) {
@@ -9107,104 +7690,95 @@
       });
       return substringAfter$1(redirectNamePart, marker);
     };
+
     /**
      * Checks if the `rule` is AdGuard redirect rule.
      * Discards comments and JS rules and checks if the `rule` has 'redirect' modifier.
      * @param {string} rule - rule text
      */
-
-
     var isAdgRedirectRule = function isAdgRedirectRule(rule) {
       var MARKER_IN_BASE_PART_MASK = '/((?!\\$|\\,).{1})redirect((-rule)?)=(.{0,}?)\\$(popup)?/';
-      return !isComment(rule) && (rule.indexOf(REDIRECT_RULE_TYPES.ADG.redirectMarker) > -1 || rule.indexOf(REDIRECT_RULE_TYPES.ADG.redirectRuleMarker) > -1) // some js rules may have 'redirect=' in it, so we should get rid of them
-      && rule.indexOf(JS_RULE_MARKER) === -1 // get rid of rules like '_redirect=*://look.$popup'
+      return !isComment(rule) && (rule.indexOf(REDIRECT_RULE_TYPES.ADG.redirectMarker) > -1 || rule.indexOf(REDIRECT_RULE_TYPES.ADG.redirectRuleMarker) > -1)
+      // some js rules may have 'redirect=' in it, so we should get rid of them
+      && rule.indexOf(JS_RULE_MARKER) === -1
+      // get rid of rules like '_redirect=*://look.$popup'
       && !toRegExp(MARKER_IN_BASE_PART_MASK).test(rule);
-    }; // const getRedirectResourceMarkerData = ()
+    };
+
+    // const getRedirectResourceMarkerData = ()
 
     /**
      * Checks if the `rule` satisfies the `type`
      * @param {string} rule - rule text
      * @param {'VALID_ADG'|'ADG'|'UBO'|'ABP'} type - type of a redirect rule
      */
-
-
     var isRedirectRuleByType = function isRedirectRuleByType(rule, type) {
       var _REDIRECT_RULE_TYPES$ = REDIRECT_RULE_TYPES[type],
-          redirectMarker = _REDIRECT_RULE_TYPES$.redirectMarker,
-          redirectRuleMarker = _REDIRECT_RULE_TYPES$.redirectRuleMarker,
-          compatibility = _REDIRECT_RULE_TYPES$.compatibility;
-
+        redirectMarker = _REDIRECT_RULE_TYPES$.redirectMarker,
+        redirectRuleMarker = _REDIRECT_RULE_TYPES$.redirectRuleMarker,
+        compatibility = _REDIRECT_RULE_TYPES$.compatibility;
       if (rule && !isComment(rule)) {
-        var marker; // check if there is a $redirect-rule modifier in rule
-
+        var marker;
+        // check if there is a $redirect-rule modifier in rule
         var markerIndex = redirectRuleMarker ? rule.indexOf(redirectRuleMarker) : -1;
-
         if (markerIndex > -1) {
           marker = redirectRuleMarker;
         } else {
           // check if there $redirect modifier in rule
           markerIndex = rule.indexOf(redirectMarker);
-
           if (markerIndex > -1) {
             marker = redirectMarker;
           } else {
             return false;
           }
         }
-
         var redirectName = getRedirectName(rule, marker);
-
         if (!redirectName) {
           return false;
         }
-
         return redirectName === Object.keys(compatibility).find(function (el) {
           return el === redirectName;
         });
       }
-
       return false;
     };
+
     /**
     * Checks if the `rule` is **valid** AdGuard redirect resource rule
     * @param {string} rule - rule text
     * @returns {boolean}
     */
-
-
     var isValidAdgRedirectRule = function isValidAdgRedirectRule(rule) {
       return isRedirectRuleByType(rule, 'VALID_ADG');
     };
+
     /**
     * Checks if the AdGuard redirect `rule` has Ubo analog. Needed for Adg->Ubo conversion
     * @param {string} rule - AdGuard rule text
     * @returns {boolean} - true if the rule can be converted to Ubo
     */
-
-
     var isAdgRedirectCompatibleWithUbo = function isAdgRedirectCompatibleWithUbo(rule) {
       return isAdgRedirectRule(rule) && isRedirectRuleByType(rule, 'ADG');
     };
+
     /**
     * Checks if the Ubo redirect `rule` has AdGuard analog. Needed for Ubo->Adg conversion
     * @param {string} rule - Ubo rule text
     * @returns {boolean} - true if the rule can be converted to AdGuard
     */
-
-
     var isUboRedirectCompatibleWithAdg = function isUboRedirectCompatibleWithAdg(rule) {
       return isRedirectRuleByType(rule, 'UBO');
     };
+
     /**
     * Checks if the Abp redirect `rule` has AdGuard analog. Needed for Abp->Adg conversion
     * @param {string} rule - Abp rule text
     * @returns {boolean} - true if the rule can be converted to AdGuard
     */
-
-
     var isAbpRedirectCompatibleWithAdg = function isAbpRedirectCompatibleWithAdg(rule) {
       return isRedirectRuleByType(rule, 'ABP');
     };
+
     /**
      * Checks if the rule has specified content type before Adg -> Ubo conversion.
      *
@@ -9221,26 +7795,21 @@
      * @param {string} rule
      * @returns {boolean}
      */
-
-
     var hasValidContentType = function hasValidContentType(rule) {
-      var ruleModifiers = parseModifiers(rule); // rule can have more than one source type modifier
-
+      var ruleModifiers = parseModifiers(rule);
+      // rule can have more than one source type modifier
       var sourceTypes = ruleModifiers.filter(function (el) {
         return VALID_SOURCE_TYPES.indexOf(el) > -1;
       });
-      var isSourceTypeSpecified = sourceTypes.length > 0; // eslint-disable-next-line max-len
-
+      var isSourceTypeSpecified = sourceTypes.length > 0;
+      // eslint-disable-next-line max-len
       var isEmptyRedirect = ruleModifiers.indexOf("".concat(ADG_UBO_REDIRECT_MARKER).concat(EMPTY_REDIRECT_MARKER)) > -1 || ruleModifiers.indexOf("".concat(ADG_UBO_REDIRECT_RULE_MARKER).concat(EMPTY_REDIRECT_MARKER)) > -1;
-
       if (isEmptyRedirect) {
         // no source type for 'empty' is allowed
         return true;
       }
-
       return isSourceTypeSpecified;
     };
-
     var validator = {
       UBO_SCRIPTLET_MASK_REG: UBO_SCRIPTLET_MASK_REG,
       ABP_SCRIPTLET_MASK: ABP_SCRIPTLET_MASK,
@@ -9264,49 +7833,89 @@
       hasValidContentType: hasValidContentType
     };
 
+    function _arrayLikeToArray(arr, len) {
+      if (len == null || len > arr.length) len = arr.length;
+      for (var i = 0, arr2 = new Array(len); i < len; i++) {
+        arr2[i] = arr[i];
+      }
+      return arr2;
+    }
+    var arrayLikeToArray = _arrayLikeToArray;
+
+    function _arrayWithoutHoles(arr) {
+      if (Array.isArray(arr)) return arrayLikeToArray(arr);
+    }
+    var arrayWithoutHoles = _arrayWithoutHoles;
+
+    function _iterableToArray(iter) {
+      if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
+    }
+    var iterableToArray = _iterableToArray;
+
+    function _unsupportedIterableToArray(o, minLen) {
+      if (!o) return;
+      if (typeof o === "string") return arrayLikeToArray(o, minLen);
+      var n = Object.prototype.toString.call(o).slice(8, -1);
+      if (n === "Object" && o.constructor) n = o.constructor.name;
+      if (n === "Map" || n === "Set") return Array.from(o);
+      if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
+    }
+    var unsupportedIterableToArray = _unsupportedIterableToArray;
+
+    function _nonIterableSpread() {
+      throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+    }
+    var nonIterableSpread = _nonIterableSpread;
+
+    function _toConsumableArray(arr) {
+      return arrayWithoutHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableSpread();
+    }
+    var toConsumableArray = _toConsumableArray;
+
     function _arrayWithHoles(arr) {
       if (Array.isArray(arr)) return arr;
     }
-
     var arrayWithHoles = _arrayWithHoles;
 
     function _nonIterableRest() {
       throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
     }
-
     var nonIterableRest = _nonIterableRest;
 
     function _toArray(arr) {
       return arrayWithHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableRest();
     }
-
     var toArray$1 = _toArray;
 
     /**
      * AdGuard scriptlet rule
      */
-
-    var ADGUARD_SCRIPTLET_MASK_REG = /#@?%#\/\/scriptlet\(.+\)/; // eslint-disable-next-line no-template-curly-in-string
-
-    var ADGUARD_SCRIPTLET_TEMPLATE = '${domains}#%#//scriptlet(${args})'; // eslint-disable-next-line no-template-curly-in-string
-
+    var ADGUARD_SCRIPTLET_MASK_REG = /#@?%#\/\/scriptlet\(.+\)/;
+    // eslint-disable-next-line no-template-curly-in-string
+    var ADGUARD_SCRIPTLET_TEMPLATE = '${domains}#%#//scriptlet(${args})';
+    // eslint-disable-next-line no-template-curly-in-string
     var ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@%#//scriptlet(${args})';
+
     /**
      * uBlock scriptlet rule mask
      */
     // eslint-disable-next-line no-template-curly-in-string
-
-    var UBO_SCRIPTLET_TEMPLATE = '${domains}##+js(${args})'; // eslint-disable-next-line no-template-curly-in-string
-
+    var UBO_SCRIPTLET_TEMPLATE = '${domains}##+js(${args})';
+    // eslint-disable-next-line no-template-curly-in-string
     var UBO_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@#+js(${args})';
     var UBO_ALIAS_NAME_MARKER = 'ubo-';
-    var UBO_SCRIPTLET_JS_ENDING = '.js'; // https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#xhr
+    var UBO_SCRIPTLET_JS_ENDING = '.js';
 
+    // https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#xhr
     var UBO_XHR_TYPE = 'xhr';
     var ADG_XHR_TYPE = 'xmlhttprequest';
     var ADG_SET_CONSTANT_NAME = 'set-constant';
     var ADG_SET_CONSTANT_EMPTY_STRING = '';
+    var ADG_SET_CONSTANT_EMPTY_ARRAY = 'emptyArr';
+    var ADG_SET_CONSTANT_EMPTY_OBJECT = 'emptyObj';
     var UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
+    var UBO_SET_CONSTANT_EMPTY_ARRAY = '[]';
+    var UBO_SET_CONSTANT_EMPTY_OBJECT = '{}';
     var ADG_PREVENT_FETCH_NAME = 'prevent-fetch';
     var ADG_PREVENT_FETCH_EMPTY_STRING = '';
     var ADG_PREVENT_FETCH_WILDCARD = '*';
@@ -9320,22 +7929,21 @@
     var ADG_REMOVE_ATTR_NAME = REMOVE_ATTR_ALIASES[0];
     var ADG_REMOVE_CLASS_NAME = REMOVE_CLASS_ALIASES[0];
     var REMOVE_ATTR_CLASS_APPLYING = ['asap', 'stay', 'complete'];
+
     /**
      * Returns array of strings separated by space which not in quotes
      * @param {string} str
      */
-
     var getSentences = function getSentences(str) {
       var reg = /'.*?'|".*?"|\S+/g;
       return str.match(reg);
     };
+
     /**
      * Replaces string with data by placeholders
      * @param {string} str
      * @param {Object} data - where keys are placeholders names
      */
-
-
     var replacePlaceholders = function replacePlaceholders(str, data) {
       return Object.keys(data).reduce(function (acc, key) {
         var reg = new RegExp("\\$\\{".concat(key, "\\}"), 'g');
@@ -9343,11 +7951,9 @@
         return acc;
       }, str);
     };
-
     var splitArgs = function splitArgs(str) {
       var args = [];
       var prevArgStart = 0;
-
       for (var i = 0; i < str.length; i += 1) {
         // do not split args by escaped comma
         // https://github.com/AdguardTeam/Scriptlets/issues/133
@@ -9355,39 +7961,35 @@
           args.push(str.slice(prevArgStart, i).trim());
           prevArgStart = i + 1;
         }
-      } // collect arg after last comma
-
-
+      }
+      // collect arg after last comma
       args.push(str.slice(prevArgStart, str.length).trim());
       return args;
     };
+
     /**
      * Validates remove-attr/class scriptlet args
      * @param {string[]} parsedArgs
      * @returns {string[]|Error} valid args OR error for invalid selector
      */
-
-
     var validateRemoveAttrClassArgs = function validateRemoveAttrClassArgs(parsedArgs) {
       var _parsedArgs = toArray$1(parsedArgs),
-          name = _parsedArgs[0],
-          value = _parsedArgs[1],
-          restArgs = _parsedArgs.slice(2); // no extra checking if there are only scriptlet name and value
+        name = _parsedArgs[0],
+        value = _parsedArgs[1],
+        restArgs = _parsedArgs.slice(2); // no extra checking if there are only scriptlet name and value
       // https://github.com/AdguardTeam/Scriptlets/issues/235
-
-
       if (restArgs.length === 0) {
         return [name, value];
-      } // remove-attr/class scriptlet might have multiple selectors separated by comma. so we should:
+      }
+
+      // remove-attr/class scriptlet might have multiple selectors separated by comma. so we should:
       // 1. check if last arg is 'applying' parameter
       // 2. join 'selector' into one arg
       // 3. combine all args
       // https://github.com/AdguardTeam/Scriptlets/issues/133
-
-
       var lastArg = restArgs.pop();
-      var applying; // check the last parsed arg for matching possible 'applying' vale
-
+      var applying;
+      // check the last parsed arg for matching possible 'applying' vale
       if (REMOVE_ATTR_CLASS_APPLYING.some(function (el) {
         return lastArg.indexOf(el) > -1;
       })) {
@@ -9395,57 +7997,46 @@
       } else {
         restArgs.push(lastArg);
       }
-
       var selector = replaceAll(restArgs.join(', '), ESCAPED_COMMA_SEPARATOR, COMMA_SEPARATOR);
-
       if (selector.length > 0 && typeof document !== 'undefined') {
         // empty selector is valid for these scriptlets as it applies to all elements,
         // all other selectors should be validated
         // e.g. #%#//scriptlet('ubo-remove-class.js', 'blur', ', html')
         document.querySelectorAll(selector);
       }
-
       var validArgs = applying ? [name, value, selector, applying] : [name, value, selector];
       return validArgs;
     };
+
     /**
      * Converts string of UBO scriptlet rule to AdGuard scriptlet rule
      * @param {string} rule - UBO scriptlet rule
      * @returns {string[]} - array with one AdGuard scriptlet rule
      */
-
-
     var convertUboScriptletToAdg = function convertUboScriptletToAdg(rule) {
       var domains = getBeforeRegExp(rule, validator.UBO_SCRIPTLET_MASK_REG);
       var mask = rule.match(validator.UBO_SCRIPTLET_MASK_REG)[0];
       var template;
-
       if (mask.indexOf('@') > -1) {
         template = ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
       } else {
         template = ADGUARD_SCRIPTLET_TEMPLATE;
       }
-
       var argsStr = getStringInBraces(rule);
       var parsedArgs = splitArgs(argsStr);
       var scriptletName = parsedArgs[0].indexOf(UBO_SCRIPTLET_JS_ENDING) > -1 ? "ubo-".concat(parsedArgs[0]) : "ubo-".concat(parsedArgs[0]).concat(UBO_SCRIPTLET_JS_ENDING);
-
       if (REMOVE_ATTR_ALIASES.indexOf(scriptletName) > -1 || REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1) {
         parsedArgs = validateRemoveAttrClassArgs(parsedArgs);
       }
-
       var args = parsedArgs.map(function (arg, index) {
         var outputArg = arg;
-
         if (index === 0) {
           outputArg = scriptletName;
-        } // for example: example.org##+js(abort-current-inline-script, $, popup)
-
-
+        }
+        // for example: example.org##+js(abort-current-inline-script, $, popup)
         if (arg === '$') {
           outputArg = '$$';
         }
-
         return outputArg;
       }).map(function (arg) {
         return wrapInSingleQuotes(arg);
@@ -9456,20 +8047,21 @@
       });
       return [adgRule];
     };
+
     /**
      * Convert string of ABP snippet rule to AdGuard scriptlet rule
      * @param {string} rule - ABP snippet rule
      * @returns {Array} - array of AdGuard scriptlet rules -
      * one or few items depends on Abp-rule
      */
-
     var convertAbpSnippetToAdg = function convertAbpSnippetToAdg(rule) {
       var SEMICOLON_DIVIDER = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
       var mask = rule.indexOf(validator.ABP_SCRIPTLET_MASK) > -1 ? validator.ABP_SCRIPTLET_MASK : validator.ABP_SCRIPTLET_EXCEPTION_MASK;
       var template = mask === validator.ABP_SCRIPTLET_MASK ? ADGUARD_SCRIPTLET_TEMPLATE : ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
       var domains = substringBefore(rule, mask);
       var args = substringAfter$1(rule, mask);
-      return args.split(SEMICOLON_DIVIDER) // abp-rule may have `;` at the end which makes last array item irrelevant
+      return args.split(SEMICOLON_DIVIDER)
+      // abp-rule may have `;` at the end which makes last array item irrelevant
       // https://github.com/AdguardTeam/Scriptlets/issues/236
       .filter(isExisting).map(function (args) {
         return getSentences(args).map(function (arg, index) {
@@ -9484,16 +8076,15 @@
         });
       });
     };
+
     /**
      * Converts scriptlet rule to AdGuard one
      * @param {string} rule
      * @returns {Array} - array of AdGuard scriptlet rules -
      * one item for Adg and Ubo or few items for Abp
      */
-
     var convertScriptletToAdg = function convertScriptletToAdg(rule) {
       var result;
-
       if (validator.isUboScriptletRule(rule)) {
         result = convertUboScriptletToAdg(rule);
       } else if (validator.isAbpSnippetRule(rule)) {
@@ -9501,44 +8092,48 @@
       } else if (validator.isAdgScriptletRule(rule) || validator.isComment(rule)) {
         result = [rule];
       }
-
       return result;
     };
+
     /**
      * Converts UBO scriptlet rule to AdGuard one
      * @param {string} rule - AdGuard scriptlet rule
      * @returns {string} - UBO scriptlet rule
      */
-
     var convertAdgScriptletToUbo = function convertAdgScriptletToUbo(rule) {
       var res;
-
       if (validator.isAdgScriptletRule(rule)) {
         var _parseRule = parseRule(rule),
-            parsedName = _parseRule.name,
-            parsedParams = _parseRule.args;
-
-        var preparedParams; // https://github.com/AdguardTeam/FiltersCompiler/issues/102
-
-        if (parsedName === ADG_SET_CONSTANT_NAME && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_STRING) {
+          parsedName = _parseRule.name,
+          parsedParams = _parseRule.args;
+        var preparedParams;
+        if (parsedName === ADG_SET_CONSTANT_NAME
+        // https://github.com/AdguardTeam/FiltersCompiler/issues/102
+        && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_STRING) {
           preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_STRING];
-        } else if (parsedName === ADG_PREVENT_FETCH_NAME // https://github.com/AdguardTeam/Scriptlets/issues/109
+        } else if (parsedName === ADG_SET_CONSTANT_NAME
+        // https://github.com/uBlockOrigin/uBlock-issues/issues/2411
+        && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_ARRAY) {
+          preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_ARRAY];
+        } else if (parsedName === ADG_SET_CONSTANT_NAME && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_OBJECT) {
+          preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_OBJECT];
+        } else if (parsedName === ADG_PREVENT_FETCH_NAME
+        // https://github.com/AdguardTeam/Scriptlets/issues/109
         && (parsedParams[0] === ADG_PREVENT_FETCH_WILDCARD || parsedParams[0] === ADG_PREVENT_FETCH_EMPTY_STRING)) {
           preparedParams = [UBO_NO_FETCH_IF_WILDCARD];
         } else if ((parsedName === ADG_REMOVE_ATTR_NAME || parsedName === ADG_REMOVE_CLASS_NAME) && parsedParams[1] && parsedParams[1].indexOf(COMMA_SEPARATOR) > -1) {
           preparedParams = [parsedParams[0], replaceAll(parsedParams[1], COMMA_SEPARATOR, ESCAPED_COMMA_SEPARATOR)];
         } else {
           preparedParams = parsedParams;
-        } // object of name and aliases for the Adg-scriptlet
+        }
 
-
+        // object of name and aliases for the Adg-scriptlet
         var adgScriptletObject = Object.keys(scriptletList).map(function (el) {
           return scriptletList[el];
         }).map(function (s) {
           var _s$names = toArray$1(s.names),
-              name = _s$names[0],
-              aliases = _s$names.slice(1);
-
+            name = _s$names[0],
+            aliases = _s$names.slice(1);
           return {
             name: name,
             aliases: aliases
@@ -9547,25 +8142,23 @@
           return el.name === parsedName || el.aliases.indexOf(parsedName) >= 0;
         });
         var aliases = adgScriptletObject.aliases;
-
         if (aliases.length > 0) {
-          var uboAlias = adgScriptletObject.aliases // eslint-disable-next-line no-restricted-properties
+          var uboAlias = adgScriptletObject.aliases
+          // eslint-disable-next-line no-restricted-properties
           .find(function (alias) {
             return alias.includes(UBO_ALIAS_NAME_MARKER);
           });
-
           if (uboAlias) {
             var mask = rule.match(ADGUARD_SCRIPTLET_MASK_REG)[0];
             var template;
-
             if (mask.indexOf('@') > -1) {
               template = UBO_SCRIPTLET_EXCEPTION_TEMPLATE;
             } else {
               template = UBO_SCRIPTLET_TEMPLATE;
             }
-
             var domains = getBeforeRegExp(rule, ADGUARD_SCRIPTLET_MASK_REG);
-            var uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '') // '.js' in the Ubo scriptlet name can be omitted
+            var uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '')
+            // '.js' in the Ubo scriptlet name can be omitted
             // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
             .replace(UBO_SCRIPTLET_JS_ENDING, '');
             var args = preparedParams.length > 0 ? "".concat(uboName, ", ").concat(preparedParams.join("".concat(COMMA_SEPARATOR, " "))) : uboName;
@@ -9577,30 +8170,30 @@
           }
         }
       }
-
       return res;
     };
+
     /**
      * Checks whether the ADG scriptlet exists or UBO/ABP scriptlet is compatible to ADG
      * @param {string} input - can be ADG or UBO or ABP scriptlet rule
      * @returns {boolean}
      */
-
     var isValidScriptletRule = function isValidScriptletRule(input) {
       if (!input) {
         return false;
-      } // ABP 'input' rule may contain more than one snippet
+      }
+      // ABP 'input' rule may contain more than one snippet
+      var rulesArray = convertScriptletToAdg(input);
 
-
-      var rulesArray = convertScriptletToAdg(input); // checking if each of parsed scriptlets is valid
+      // checking if each of parsed scriptlets is valid
       // if at least one of them is not valid - whole 'input' rule is not valid too
-
       var isValid = rulesArray.every(function (rule) {
         var parsedRule = parseRule(rule);
         return validator.isValidScriptletName(parsedRule.name);
       });
       return isValid;
     };
+
     /**
      * Gets index and redirect resource marker from UBO/ADG modifiers array
      * @param {string[]} modifiers
@@ -9608,39 +8201,34 @@
      * @param {string} rule
      * @returns {Object} { index, marker }
      */
-
     var getMarkerData = function getMarkerData(modifiers, redirectsData, rule) {
       var marker;
       var index = modifiers.findIndex(function (m) {
         return m.indexOf(redirectsData.redirectRuleMarker) > -1;
       });
-
       if (index > -1) {
         marker = redirectsData.redirectRuleMarker;
       } else {
         index = modifiers.findIndex(function (m) {
           return m.indexOf(redirectsData.redirectMarker) > -1;
         });
-
         if (index > -1) {
           marker = redirectsData.redirectMarker;
         } else {
           throw new Error("No redirect resource modifier found in rule: ".concat(rule));
         }
       }
-
       return {
         index: index,
         marker: marker
       };
     };
+
     /**
      * Converts Ubo redirect rule to Adg one
      * @param {string} rule
      * @returns {string}
      */
-
-
     var convertUboRedirectToAdg = function convertUboRedirectToAdg(rule) {
       var firstPartOfRule = substringBefore(rule, '$');
       var uboModifiers = validator.parseModifiers(rule);
@@ -9652,21 +8240,19 @@
           var adgMarker = uboMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER ? validator.REDIRECT_RULE_TYPES.ADG.redirectRuleMarker : validator.REDIRECT_RULE_TYPES.ADG.redirectMarker;
           return "".concat(adgMarker).concat(adgName);
         }
-
         if (modifier === UBO_XHR_TYPE) {
           return ADG_XHR_TYPE;
         }
-
         return modifier;
       }).join(COMMA_SEPARATOR);
       return "".concat(firstPartOfRule, "$").concat(adgModifiers);
     };
+
     /**
      * Converts Abp redirect rule to Adg one
      * @param {string} rule
      * @returns {string}
      */
-
     var convertAbpRedirectToAdg = function convertAbpRedirectToAdg(rule) {
       var firstPartOfRule = substringBefore(rule, '$');
       var abpModifiers = validator.parseModifiers(rule);
@@ -9676,20 +8262,18 @@
           var adgName = validator.REDIRECT_RULE_TYPES.ABP.compatibility[abpName];
           return "".concat(validator.REDIRECT_RULE_TYPES.ADG.redirectMarker).concat(adgName);
         }
-
         return modifier;
       }).join(COMMA_SEPARATOR);
       return "".concat(firstPartOfRule, "$").concat(adgModifiers);
     };
+
     /**
      * Converts redirect rule to AdGuard one
      * @param {string} rule
      * @returns {string}
      */
-
     var convertRedirectToAdg = function convertRedirectToAdg(rule) {
       var result;
-
       if (validator.isUboRedirectCompatibleWithAdg(rule)) {
         result = convertUboRedirectToAdg(rule);
       } else if (validator.isAbpRedirectCompatibleWithAdg(rule)) {
@@ -9697,9 +8281,9 @@
       } else if (validator.isValidAdgRedirectRule(rule)) {
         result = rule;
       }
-
       return result;
     };
+
     /**
      * Converts Adg redirect rule to Ubo one
      * 1. Checks if there is Ubo analog for Adg rule
@@ -9711,40 +8295,33 @@
      * @param {string} rule
      * @returns {string}
      */
-
     var convertAdgRedirectToUbo = function convertAdgRedirectToUbo(rule) {
       if (!validator.isAdgRedirectCompatibleWithUbo(rule)) {
         throw new Error("Unable to convert for uBO - unsupported redirect in rule: ".concat(rule));
       }
-
       var basePart = substringBefore(rule, '$');
       var adgModifiers = validator.parseModifiers(rule);
       var adgMarkerData = getMarkerData(adgModifiers, validator.REDIRECT_RULE_TYPES.ADG, rule);
       var adgRedirectName = adgModifiers[adgMarkerData.index].slice(adgMarkerData.marker.length);
-
       if (!validator.hasValidContentType(rule)) {
         // add missed source types as content type modifiers
         var sourceTypesData = validator.ABSENT_SOURCE_TYPE_REPLACEMENT.find(function (el) {
           return el.NAME === adgRedirectName;
         });
-
         if (typeof sourceTypesData === 'undefined') {
           // eslint-disable-next-line max-len
           throw new Error("Unable to convert for uBO - no types to add for specific redirect in rule: ".concat(rule));
         }
-
         var additionModifiers = sourceTypesData.TYPES;
-        adgModifiers.push.apply(adgModifiers, toConsumableArray$1(additionModifiers));
+        adgModifiers.push.apply(adgModifiers, toConsumableArray(additionModifiers));
       }
-
       var uboModifiers = adgModifiers.map(function (el, index) {
         if (index === adgMarkerData.index) {
-          var uboMarker = adgMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER ? validator.REDIRECT_RULE_TYPES.UBO.redirectRuleMarker : validator.REDIRECT_RULE_TYPES.UBO.redirectMarker; // eslint-disable-next-line max-len
-
+          var uboMarker = adgMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER ? validator.REDIRECT_RULE_TYPES.UBO.redirectRuleMarker : validator.REDIRECT_RULE_TYPES.UBO.redirectMarker;
+          // eslint-disable-next-line max-len
           var uboRedirectName = validator.REDIRECT_RULE_TYPES.ADG.compatibility[adgRedirectName];
           return "".concat(uboMarker).concat(uboRedirectName);
         }
-
         return el;
       }).join(COMMA_SEPARATOR);
       return "".concat(basePart, "$").concat(uboModifiers);
@@ -9766,30 +8343,24 @@
      * ||googletagmanager.com/gtm.js$script,redirect=googletagmanager-gtm
      * ```
      */
-
     function GoogleAnalytics(source) {
       // eslint-disable-next-line func-names
       var Tracker = function Tracker() {}; // constructor
-
-
       var proto = Tracker.prototype;
       proto.get = noopFunc;
       proto.set = noopFunc;
       proto.send = noopFunc;
-      var googleAnalyticsName = window.GoogleAnalyticsObject || 'ga'; // a -- fake arg for 'ga.length < 1' antiadblock checking
+      var googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';
+      // a -- fake arg for 'ga.length < 1' antiadblock checking
       // eslint-disable-next-line no-unused-vars
-
       function ga(a) {
         var len = arguments.length;
-
         if (len === 0) {
           return;
-        } // eslint-disable-next-line prefer-rest-params
-
-
+        }
+        // eslint-disable-next-line prefer-rest-params
         var lastArg = arguments[len - 1];
         var replacer;
-
         if (lastArg instanceof Object && lastArg !== null && typeof lastArg.hitCallback === 'function') {
           replacer = lastArg.hitCallback;
         } else if (typeof lastArg === 'function') {
@@ -9798,79 +8369,68 @@
             lastArg(ga.create());
           };
         }
-
         try {
-          setTimeout(replacer, 1); // eslint-disable-next-line no-empty
+          setTimeout(replacer, 1);
+          // eslint-disable-next-line no-empty
         } catch (ex) {}
       }
-
       ga.create = function () {
         return new Tracker();
-      }; // https://github.com/AdguardTeam/Scriptlets/issues/134
-
-
+      };
+      // https://github.com/AdguardTeam/Scriptlets/issues/134
       ga.getByName = function () {
         return new Tracker();
       };
-
       ga.getAll = function () {
         return [new Tracker()];
       };
-
       ga.remove = noopFunc;
       ga.loaded = true;
       window[googleAnalyticsName] = ga;
       var _window = window,
-          dataLayer = _window.dataLayer,
-          google_optimize = _window.google_optimize; // eslint-disable-line camelcase
-
+        dataLayer = _window.dataLayer,
+        google_optimize = _window.google_optimize; // eslint-disable-line camelcase
       if (dataLayer instanceof Object === false) {
         return;
       }
-
       if (dataLayer.hide instanceof Object && typeof dataLayer.hide.end === 'function') {
         dataLayer.hide.end();
       }
+
       /**
        * checks data object and delays callback
        * @param {Object|Array} data gtag payload
        * @param {string} funcName callback prop name
        * @returns
        */
-
-
       var handleCallback = function handleCallback(dataObj, funcName) {
         if (dataObj && typeof dataObj[funcName] === 'function') {
           setTimeout(dataObj[funcName]);
         }
       };
-
       if (typeof dataLayer.push === 'function') {
         dataLayer.push = function (data) {
           if (data instanceof Object) {
-            handleCallback(data, 'eventCallback'); // eslint-disable-next-line no-restricted-syntax, guard-for-in
-
+            handleCallback(data, 'eventCallback');
+            // eslint-disable-next-line no-restricted-syntax, guard-for-in
             for (var key in data) {
               handleCallback(data[key], 'event_callback');
-            } // eslint-disable-next-line no-prototype-builtins
-
-
+            }
+            // eslint-disable-next-line no-prototype-builtins
             if (!data.hasOwnProperty('eventCallback') && !data.hasOwnProperty('eventCallback')) {
               [].push.call(window.dataLayer, data);
             }
           }
-
           if (Array.isArray(data)) {
             data.forEach(function (arg) {
               handleCallback(arg, 'callback');
             });
           }
-
           return noopFunc;
         };
-      } // https://github.com/AdguardTeam/Scriptlets/issues/81
+      }
 
-
+      // https://github.com/AdguardTeam/Scriptlets/issues/81
       if (google_optimize instanceof Object && typeof google_optimize.get === 'function') {
         // eslint-disable-line camelcase
         var googleOptimizeWrapper = {
@@ -9878,14 +8438,15 @@
         };
         window.google_optimize = googleOptimizeWrapper;
       }
-
       hit(source);
     }
-    GoogleAnalytics.names = ['google-analytics', 'ubo-google-analytics_analytics.js', 'google-analytics_analytics.js', // https://github.com/AdguardTeam/Scriptlets/issues/127
+    GoogleAnalytics.names = ['google-analytics', 'ubo-google-analytics_analytics.js', 'google-analytics_analytics.js',
+    // https://github.com/AdguardTeam/Scriptlets/issues/127
     'googletagmanager-gtm', 'ubo-googletagmanager_gtm.js', 'googletagmanager_gtm.js'];
     GoogleAnalytics.injections = [hit, noopFunc, noopNull, noopArray];
 
     /* eslint-disable no-underscore-dangle */
+
     /**
      * @redirect google-analytics-ga
      *
@@ -9900,11 +8461,9 @@
      * ||google-analytics.com/ga.js$script,redirect=google-analytics-ga
      * ```
      */
-
     function GoogleAnalyticsGa(source) {
       // Gaq constructor
       function Gaq() {}
-
       Gaq.prototype.Na = noopFunc;
       Gaq.prototype.O = noopFunc;
       Gaq.prototype.Sa = noopFunc;
@@ -9913,80 +8472,67 @@
       Gaq.prototype._createAsyncTracker = noopFunc;
       Gaq.prototype._getAsyncTracker = noopFunc;
       Gaq.prototype._getPlugin = noopFunc;
-
       Gaq.prototype.push = function (data) {
         if (typeof data === 'function') {
           data();
           return;
         }
-
         if (Array.isArray(data) === false) {
           return;
-        } // https://developers.google.com/analytics/devguides/collection/gajs/methods/gaJSApiDomainDirectory#_gat.GA_Tracker_._link
+        }
+        // https://developers.google.com/analytics/devguides/collection/gajs/methods/gaJSApiDomainDirectory#_gat.GA_Tracker_._link
         // https://github.com/uBlockOrigin/uBlock-issues/issues/1807
-
-
         if (typeof data[0] === 'string' && /(^|\.)_link$/.test(data[0]) && typeof data[1] === 'string') {
           window.location.assign(data[1]);
-        } // https://github.com/gorhill/uBlock/issues/2162
-
-
+        }
+        // https://github.com/gorhill/uBlock/issues/2162
         if (data[0] === '_set' && data[1] === 'hitCallback' && typeof data[2] === 'function') {
           data[2]();
         }
       };
-
       var gaq = new Gaq();
       var asyncTrackers = window._gaq || [];
-
       if (Array.isArray(asyncTrackers)) {
         while (asyncTrackers[0]) {
           gaq.push(asyncTrackers.shift());
         }
-      } // eslint-disable-next-line no-multi-assign
+      }
+      // eslint-disable-next-line no-multi-assign
+      window._gaq = gaq.qf = gaq;
 
+      // Gat constructor
+      function Gat() {}
 
-      window._gaq = gaq.qf = gaq; // Gat constructor
-
-      function Gat() {} // Mock tracker api
-
-
+      // Mock tracker api
       var api = ['_addIgnoredOrganic', '_addIgnoredRef', '_addItem', '_addOrganic', '_addTrans', '_clearIgnoredOrganic', '_clearIgnoredRef', '_clearOrganic', '_cookiePathCopy', '_deleteCustomVar', '_getName', '_setAccount', '_getAccount', '_getClientInfo', '_getDetectFlash', '_getDetectTitle', '_getLinkerUrl', '_getLocalGifPath', '_getServiceMode', '_getVersion', '_getVisitorCustomVar', '_initData', '_link', '_linkByPost', '_setAllowAnchor', '_setAllowHash', '_setAllowLinker', '_setCampContentKey', '_setCampMediumKey', '_setCampNameKey', '_setCampNOKey', '_setCampSourceKey', '_setCampTermKey', '_setCampaignCookieTimeout', '_setCampaignTrack', '_setClientInfo', '_setCookiePath', '_setCookiePersistence', '_setCookieTimeout', '_setCustomVar', '_setDetectFlash', '_setDetectTitle', '_setDomainName', '_setLocalGifPath', '_setLocalRemoteServerMode', '_setLocalServerMode', '_setReferrerOverride', '_setRemoteServerMode', '_setSampleRate', '_setSessionTimeout', '_setSiteSpeedSampleRate', '_setSessionCookieTimeout', '_setVar', '_setVisitorCookieTimeout', '_trackEvent', '_trackPageLoadTime', '_trackPageview', '_trackSocial', '_trackTiming', '_trackTrans', '_visitCode'];
       var tracker = api.reduce(function (res, funcName) {
         res[funcName] = noopFunc;
         return res;
       }, {});
-
       tracker._getLinkerUrl = function (a) {
         return a;
-      }; // https://github.com/AdguardTeam/Scriptlets/issues/154
-
-
+      };
+      // https://github.com/AdguardTeam/Scriptlets/issues/154
       tracker._link = function (url) {
         if (typeof url !== 'string') {
           return;
         }
-
         try {
           window.location.assign(url);
         } catch (e) {
           logMessage(source, e);
         }
       };
-
       Gat.prototype._anonymizeIP = noopFunc;
       Gat.prototype._createTracker = noopFunc;
       Gat.prototype._forceSSL = noopFunc;
       Gat.prototype._getPlugin = noopFunc;
-
       Gat.prototype._getTracker = function () {
         return tracker;
       };
-
       Gat.prototype._getTrackerByName = function () {
         return tracker;
       };
-
       Gat.prototype._getTrackers = noopFunc;
       Gat.prototype.aa = noopFunc;
       Gat.prototype.ab = noopFunc;
@@ -10003,7 +8549,6 @@
     GoogleAnalyticsGa.injections = [hit, noopFunc, logMessage];
 
     /* eslint-disable max-len */
-
     /**
      * @redirect googlesyndication-adsbygoogle
      *
@@ -10018,9 +8563,7 @@
      * ||pagead2.googlesyndication.com/pagead/js/adsbygoogle.js$script,redirect=googlesyndication-adsbygoogle
      * ```
      */
-
     /* eslint-enable max-len */
-
     function GoogleSyndicationAdsByGoogle(source) {
       window.adsbygoogle = {
         // https://github.com/AdguardTeam/Scriptlets/issues/113
@@ -10032,12 +8575,10 @@
             this.length = 0;
             this.length += 1;
           }
-
           if (arg !== null && arg instanceof Object && arg.constructor.name === 'Object') {
             // eslint-disable-next-line no-restricted-syntax
             for (var _i = 0, _Object$keys = Object.keys(arg); _i < _Object$keys.length; _i++) {
               var key = _Object$keys[_i];
-
               if (typeof arg[key] === 'function') {
                 try {
                   // https://github.com/AdguardTeam/Scriptlets/issues/252
@@ -10057,22 +8598,21 @@
       var ASWIFT_IFRAME_MARKER = 'aswift_';
       var GOOGLE_ADS_IFRAME_MARKER = 'google_ads_iframe_';
       var executed = false;
-
       for (var i = 0; i < adElems.length; i += 1) {
         var adElemChildNodes = adElems[i].childNodes;
-        var childNodesQuantity = adElemChildNodes.length; // childNodes of .adsbygoogle can be defined if scriptlet was executed before
+        var childNodesQuantity = adElemChildNodes.length;
+        // childNodes of .adsbygoogle can be defined if scriptlet was executed before
         // so we should check that childNodes are exactly defined by us
         // TODO: remake after scriptlets context developing in 1.3
-
         var areIframesDefined = false;
-
         if (childNodesQuantity > 0) {
           // it should be only 2 child iframes if scriptlet was executed
-          areIframesDefined = childNodesQuantity === 2 // the first of child nodes should be aswift iframe
-          && adElemChildNodes[0].nodeName.toLowerCase() === 'iframe' && adElemChildNodes[0].id.indexOf(ASWIFT_IFRAME_MARKER) > -1 // the second of child nodes should be google_ads iframe
+          areIframesDefined = childNodesQuantity === 2
+          // the first of child nodes should be aswift iframe
+          && adElemChildNodes[0].nodeName.toLowerCase() === 'iframe' && adElemChildNodes[0].id.indexOf(ASWIFT_IFRAME_MARKER) > -1
+          // the second of child nodes should be google_ads iframe
           && adElemChildNodes[1].nodeName.toLowerCase() === 'iframe' && adElemChildNodes[1].id.indexOf(GOOGLE_ADS_IFRAME_MARKER) > -1;
         }
-
         if (!areIframesDefined) {
           // here we do the job if scriptlet has not been executed earlier
           adElems[i].setAttribute(statusAttrName, 'done');
@@ -10091,7 +8631,6 @@
           executed = true;
         }
       }
-
       if (executed) {
         hit(source);
       }
@@ -10100,6 +8639,7 @@
     GoogleSyndicationAdsByGoogle.injections = [hit];
 
     /* eslint-disable func-names */
+
     /**
      * @redirect googletagservices-gpt
      *
@@ -10114,29 +8654,23 @@
      * ||googletagservices.com/tag/js/gpt.js$script,redirect=googletagservices-gpt
      * ```
      */
-
     function GoogleTagServicesGpt(source) {
       var slots = new Map();
       var slotsById = new Map();
       var eventCallbacks = new Map();
-
       var addEventListener = function addEventListener(name, listener) {
         if (!eventCallbacks.has(name)) {
           eventCallbacks.set(name, new Set());
         }
-
         eventCallbacks.get(name).add(listener);
         return this;
       };
-
       var removeEventListener = function removeEventListener(name, listener) {
         if (eventCallbacks.has(name)) {
           return eventCallbacks.get(name).delete(listener);
         }
-
         return false;
       };
-
       var fireSlotEvent = function fireSlotEvent(name, slot) {
         // eslint-disable-next-line compat/compat
         return new Promise(function (resolve) {
@@ -10144,7 +8678,6 @@
             var size = [0, 0];
             var callbacksSet = eventCallbacks.get(name) || [];
             var callbackArray = Array.from(callbacksSet);
-
             for (var i = 0; i < callbackArray.length; i += 1) {
               callbackArray[i]({
                 isEmpty: true,
@@ -10152,36 +8685,28 @@
                 slot: slot
               });
             }
-
             resolve();
           });
         });
       };
-
       var displaySlot = function displaySlot(slot) {
         if (!slot) {
           return;
         }
-
         var id = slot.getSlotElementId();
-
         if (!document.getElementById(id)) {
           return;
         }
-
         var parent = document.getElementById(id);
-
         if (parent) {
           parent.appendChild(document.createElement('div'));
         }
-
         fireSlotEvent('slotRenderEnded', slot);
         fireSlotEvent('slotRequested', slot);
         fireSlotEvent('slotResponseReceived', slot);
         fireSlotEvent('slotOnload', slot);
         fireSlotEvent('impressionViewable', slot);
       };
-
       var companionAdsService = {
         addEventListener: addEventListener,
         removeEventListener: removeEventListener,
@@ -10194,9 +8719,7 @@
         removeEventListener: removeEventListener,
         setContent: noopFunc
       };
-
       function PassbackSlot() {} // constructor
-
 
       PassbackSlot.prototype.display = noopFunc;
       PassbackSlot.prototype.get = noopNull;
@@ -10205,50 +8728,36 @@
       PassbackSlot.prototype.setTagForChildDirectedTreatment = noopThis;
       PassbackSlot.prototype.setTargeting = noopThis;
       PassbackSlot.prototype.updateTargetingFromMap = noopThis;
-
       function SizeMappingBuilder() {} // constructor
-
-
       SizeMappingBuilder.prototype.addSize = noopThis;
       SizeMappingBuilder.prototype.build = noopNull;
-
       function Slot(adUnitPath, creatives, optDiv) {
         this.adUnitPath = adUnitPath;
         this.creatives = creatives;
         this.optDiv = optDiv;
-
         if (slotsById.has(optDiv)) {
           var _document$getElementB;
-
           (_document$getElementB = document.getElementById(optDiv)) === null || _document$getElementB === void 0 ? void 0 : _document$getElementB.remove();
           return slotsById.get(optDiv);
         }
-
         slotsById.set(optDiv, this);
       } // constructor
-
-
       Slot.prototype.addService = noopThis;
       Slot.prototype.clearCategoryExclusions = noopThis;
       Slot.prototype.clearTargeting = noopThis;
       Slot.prototype.defineSizeMapping = noopThis;
       Slot.prototype.get = noopNull;
-
       Slot.prototype.getAdUnitPath = function () {
         return this.adUnitPath;
       };
-
       Slot.prototype.getAttributeKeys = noopArray;
       Slot.prototype.getCategoryExclusions = noopArray;
-
       Slot.prototype.getDomId = function () {
         return this.optDiv;
       };
-
       Slot.prototype.getSlotElementId = function () {
         return this.optDiv;
       };
-
       Slot.prototype.getSlotId = noopThis;
       Slot.prototype.getSizes = noopArray;
       Slot.prototype.getTargeting = noopArray;
@@ -10300,48 +8809,38 @@
         setVideoContent: noopThis,
         updateCorrelator: noopFunc
       };
-
       var getNewSlot = function getNewSlot(adUnitPath, creatives, optDiv) {
         return new Slot(adUnitPath, creatives, optDiv);
       };
-
       var _window = window,
-          _window$googletag = _window.googletag,
-          googletag = _window$googletag === void 0 ? {} : _window$googletag;
+        _window$googletag = _window.googletag,
+        googletag = _window$googletag === void 0 ? {} : _window$googletag;
       var _googletag$cmd = googletag.cmd,
-          cmd = _googletag$cmd === void 0 ? [] : _googletag$cmd;
+        cmd = _googletag$cmd === void 0 ? [] : _googletag$cmd;
       googletag.apiReady = true;
       googletag.cmd = [];
-
       googletag.cmd.push = function (a) {
         try {
-          a(); // eslint-disable-next-line no-empty
+          a();
+          // eslint-disable-next-line no-empty
         } catch (ex) {}
-
         return 1;
       };
-
       googletag.companionAds = function () {
         return companionAdsService;
       };
-
       googletag.content = function () {
         return contentService;
       };
-
       googletag.defineOutOfPageSlot = getNewSlot;
       googletag.defineSlot = getNewSlot;
-
       googletag.destroySlots = function () {
         slots.clear();
         slotsById.clear();
       };
-
       googletag.disablePublisherConsole = noopFunc;
-
       googletag.display = function (arg) {
         var id;
-
         if (arg !== null && arg !== void 0 && arg.getSlotElementId) {
           id = arg.getSlotElementId();
         } else if (arg !== null && arg !== void 0 && arg.nodeType) {
@@ -10349,30 +8848,22 @@
         } else {
           id = String(arg);
         }
-
         displaySlot(slotsById.get(id));
       };
-
       googletag.enableServices = noopFunc;
       googletag.getVersion = noopStr;
-
       googletag.pubads = function () {
         return pubAdsService;
       };
-
       googletag.pubadsReady = true;
       googletag.setAdIframeTitle = noopFunc;
-
       googletag.sizeMapping = function () {
         return new SizeMappingBuilder();
       };
-
       window.googletag = googletag;
-
       while (cmd.length !== 0) {
         googletag.cmd.push(cmd.shift());
       }
-
       hit(source);
     }
     GoogleTagServicesGpt.names = ['googletagservices-gpt', 'ubo-googletagservices_gpt.js', 'googletagservices_gpt.js'];
@@ -10392,7 +8883,6 @@
      * ||sb.scorecardresearch.com/beacon.js$script,redirect=scorecardresearch-beacon
      * ```
      */
-
     function ScoreCardResearchBeacon(source) {
       window.COMSCORE = {
         purge: function purge() {
@@ -10418,13 +8908,11 @@
      * ||mc.yandex.ru/metrika/tag.js$script,redirect=metrika-yandex-tag
      * ```
      */
-
     function metrikaYandexTag(source) {
       var asyncCallbackFromOptions = function asyncCallbackFromOptions(id, param) {
         var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
         var callback = options.callback;
         var ctx = options.ctx;
-
         if (typeof callback === 'function') {
           callback = ctx !== undefined ? callback.bind(ctx) : callback;
           setTimeout(function () {
@@ -10432,50 +8920,48 @@
           });
         }
       };
+
       /**
        * https://yandex.ru/support/metrica/objects/addfileextension.html
        */
-
-
       var addFileExtension = noopFunc;
+
       /**
        * https://yandex.ru/support/metrica/objects/extlink.html
        */
-
       var extLink = asyncCallbackFromOptions;
+
       /**
        * https://yandex.ru/support/metrica/objects/file.html
        */
-
       var file = asyncCallbackFromOptions;
+
       /**
        * https://yandex.ru/support/metrica/objects/get-client-id.html
        * @param {Function} cb
        */
-
       var getClientID = function getClientID(id, cb) {
         if (!cb) {
           return;
         }
-
         setTimeout(cb(null));
       };
+
       /**
        * https://yandex.ru/support/metrica/objects/hit.html
        */
-
-
       var hitFunc = asyncCallbackFromOptions;
+
       /**
        * https://yandex.ru/support/metrica/objects/notbounce.html
        */
-
       var notBounce = asyncCallbackFromOptions;
+
       /**
        * https://yandex.ru/support/metrica/objects/params-method.html
        */
-
       var params = noopFunc;
+
       /**
        * https://yandex.ru/support/metrica/objects/reachgoal.html
        * @param {string} target
@@ -10483,25 +8969,24 @@
        * @param {Function} callback
        * @param {any} ctx
        */
-
       var reachGoal = function reachGoal(id, target, params, callback, ctx) {
         asyncCallbackFromOptions(null, null, {
           callback: callback,
           ctx: ctx
         });
       };
+
       /**
        * https://yandex.ru/support/metrica/objects/set-user-id.html
        */
-
-
       var setUserID = noopFunc;
+
       /**
        * https://yandex.ru/support/metrica/objects/user-params.html
        */
+      var userParams = noopFunc;
 
-      var userParams = noopFunc; // https://github.com/AdguardTeam/Scriptlets/issues/198
-
+      // https://github.com/AdguardTeam/Scriptlets/issues/198
       var destruct = noopFunc;
       var api = {
         addFileExtension: addFileExtension,
@@ -10516,21 +9001,17 @@
         userParams: userParams,
         destruct: destruct
       };
-
       function ym(id, funcName) {
         for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
           args[_key - 2] = arguments[_key];
         }
-
         return api[funcName] && api[funcName].apply(api, [id].concat(args));
       }
-
       function init(id) {
         // yaCounter object should provide api
         window["yaCounter".concat(id)] = api;
         document.dispatchEvent(new Event("yacounter".concat(id, "inited")));
       }
-
       if (typeof window.ym === 'undefined') {
         window.ym = ym;
         ym.a = [];
@@ -10543,7 +9024,6 @@
           init(id);
         });
       }
-
       hit(source);
     }
     metrikaYandexTag.names = ['metrika-yandex-tag'];
@@ -10561,19 +9041,17 @@
      * ||mc.yandex.ru/metrika/watch.js$script,redirect=metrika-yandex-watch
      * ```
      */
-
     function metrikaYandexWatch(source) {
       var cbName = 'yandex_metrika_callbacks';
+
       /**
        * Gets callback and its context from options and call it in async way
        * @param {Object} options Yandex Metrika API options
        */
-
       var asyncCallbackFromOptions = function asyncCallbackFromOptions() {
         var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
         var callback = options.callback;
         var ctx = options.ctx;
-
         if (typeof callback === 'function') {
           callback = ctx !== undefined ? callback.bind(ctx) : callback;
           setTimeout(function () {
@@ -10581,41 +9059,34 @@
           });
         }
       };
-
       function Metrika() {} // constructor
-
-
-      Metrika.counters = noopArray; // Methods without options
-
+      Metrika.counters = noopArray;
+      // Methods without options
       Metrika.prototype.addFileExtension = noopFunc;
       Metrika.prototype.getClientID = noopFunc;
       Metrika.prototype.setUserID = noopFunc;
       Metrika.prototype.userParams = noopFunc;
       Metrika.prototype.params = noopFunc;
-      Metrika.prototype.counters = noopArray; // Methods with options
-      // The order of arguments should be kept in according to API
+      Metrika.prototype.counters = noopArray;
 
+      // Methods with options
+      // The order of arguments should be kept in according to API
       Metrika.prototype.extLink = function (url, options) {
         asyncCallbackFromOptions(options);
       };
-
       Metrika.prototype.file = function (url, options) {
         asyncCallbackFromOptions(options);
       };
-
       Metrika.prototype.hit = function (url, options) {
         asyncCallbackFromOptions(options);
       };
-
       Metrika.prototype.reachGoal = function (target, params, cb, ctx) {
         asyncCallbackFromOptions({
           callback: cb,
           ctx: ctx
         });
       };
-
       Metrika.prototype.notBounce = asyncCallbackFromOptions;
-
       if (window.Ya) {
         window.Ya.Metrika = Metrika;
       } else {
@@ -10623,7 +9094,6 @@
           Metrika: Metrika
         };
       }
-
       if (window[cbName] && Array.isArray(window[cbName])) {
         window[cbName].forEach(function (func) {
           if (typeof func === 'function') {
@@ -10631,13 +9101,13 @@
           }
         });
       }
-
       hit(source);
     }
     metrikaYandexWatch.names = ['metrika-yandex-watch'];
     metrikaYandexWatch.injections = [hit, noopFunc, noopArray];
 
     /* eslint-disable func-names */
+
     /**
      * @redirect pardot-1.0
      *
@@ -10662,7 +9132,6 @@
       window.piGetParameter = noopNull;
       window.piSetCookie = noopFunc;
       window.piGetCookie = noopStr;
-
       function piTracker() {
         window.pi = {
           tracker: {
@@ -10674,7 +9143,6 @@
         };
         window.piScriptNum += 1;
       }
-
       window.piResponse = noopFunc;
       window.piTracker = piTracker;
       piTracker();
@@ -10682,6 +9150,28 @@
     }
     Pardot.names = ['pardot-1.0'];
     Pardot.injections = [hit, noopFunc, noopStr, noopNull];
+
+    /**
+     * @redirect prevent-bab
+     *
+     * @description
+     * Prevents BlockAdblock script from detecting an ad blocker.
+     *
+     * Mostly it is used as `scriptlet`.
+     * See [scriptlet description](../wiki/about-scriptlets.md#prevent-bab).
+     *
+     * Related UBO redirect resource:
+     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/nobab.js
+     *
+     * **Example**
+     * ```
+     * /blockadblock.$script,redirect=prevent-bab
+     * ```
+     */
+    var preventBab$1 = preventBab$2;
+    preventBab$1.names = ['prevent-bab',
+    // list of prevent-bab redirect aliases
+    'nobab.js', 'ubo-nobab.js', 'bab-defuser.js', 'ubo-bab-defuser.js', 'ubo-nobab', 'ubo-bab-defuser'];
 
     /**
      * @redirect amazon-apstag
@@ -10697,7 +9187,6 @@
      * ||amazon-adsystem.com/aax2/apstag.js$script,redirect=amazon-apstag
      * ```
      */
-
     function AmazonApstag(source) {
       var apstagWrapper = {
         fetchBids: function fetchBids(a, b) {
@@ -10716,6 +9205,7 @@
     AmazonApstag.injections = [hit, noopFunc];
 
     /* eslint-disable func-names */
+
     /**
      * @redirect matomo
      *
@@ -10730,14 +9220,11 @@
 
     function Matomo(source) {
       var Tracker = function Tracker() {};
-
       Tracker.prototype.setDoNotTrack = noopFunc;
       Tracker.prototype.setDomains = noopFunc;
       Tracker.prototype.setCustomDimension = noopFunc;
       Tracker.prototype.trackPageView = noopFunc;
-
       var AsyncTracker = function AsyncTracker() {};
-
       AsyncTracker.prototype.addListener = noopFunc;
       var matomoWrapper = {
         getTracker: function getTracker() {
@@ -10754,6 +9241,7 @@
     Matomo.injections = [hit, noopFunc];
 
     /* eslint-disable func-names */
+
     /**
      * @redirect fingerprintjs2
      *
@@ -10769,41 +9257,38 @@
      * ||the-japan-news.com/modules/js/lib/fgp/fingerprint2.js$script,redirect=fingerprintjs2
      * ```
      */
-
     function Fingerprintjs2(source) {
       var browserId = '';
-
       for (var i = 0; i < 8; i += 1) {
         browserId += (Math.random() * 0x10000 + 0x1000).toString(16).slice(-4);
       }
-
       var Fingerprint2 = function Fingerprint2() {};
-
       Fingerprint2.get = function (options, callback) {
         if (!callback) {
           callback = options;
         }
-
         setTimeout(function () {
           if (callback) {
             callback(browserId, []);
           }
         }, 1);
       };
-
       Fingerprint2.prototype = {
         get: Fingerprint2.get
       };
       window.Fingerprint2 = Fingerprint2;
       hit(source);
     }
-    Fingerprintjs2.names = ['fingerprintjs2', // redirect aliases are needed for conversion:
+    Fingerprintjs2.names = ['fingerprintjs2',
+    // redirect aliases are needed for conversion:
     // prefixed for us
-    'ubo-fingerprint2.js', // original ubo name
+    'ubo-fingerprint2.js',
+    // original ubo name
     'fingerprint2.js'];
     Fingerprintjs2.injections = [hit];
 
     /* eslint-disable func-names */
+
     /**
      * @redirect fingerprintjs3
      *
@@ -10819,20 +9304,15 @@
      * ||sephora.com/js/ufe/isomorphic/thirdparty/fp.min.js$script,redirect=fingerprintjs3
      * ```
      */
-
     function Fingerprintjs3(source) {
       var visitorId = function () {
         var id = '';
-
         for (var i = 0; i < 8; i += 1) {
           id += (Math.random() * 0x10000 + 0x1000).toString(16).slice(-4);
         }
-
         return id;
       }();
-
       var FingerprintJS = function FingerprintJS() {};
-
       FingerprintJS.prototype = {
         load: function load() {
           // eslint-disable-next-line compat/compat
@@ -10849,13 +9329,16 @@
       window.FingerprintJS = new FingerprintJS();
       hit(source);
     }
-    Fingerprintjs3.names = ['fingerprintjs3', // redirect aliases are needed for conversion:
+    Fingerprintjs3.names = ['fingerprintjs3',
+    // redirect aliases are needed for conversion:
     // prefixed for us
-    'ubo-fingerprint3.js', // original ubo name
+    'ubo-fingerprint3.js',
+    // original ubo name
     'fingerprint3.js'];
     Fingerprintjs3.injections = [hit, noopStr];
 
     /* eslint-disable func-names */
+
     /**
      * @redirect gemius
      *
@@ -10868,10 +9351,8 @@
      * ||gapt.hit.gemius.pl/gplayer.js$script,redirect=gemius
      * ```
      */
-
     function Gemius(source) {
       var GemiusPlayer = function GemiusPlayer() {};
-
       GemiusPlayer.prototype = {
         setVideoObject: noopFunc,
         newProgram: noopFunc,
@@ -10897,7 +9378,6 @@
      * ||bloctel.gouv.fr/assets/scripts/smarttag.js$script,redirect=ati-smarttag
      * ```
      */
-
     function ATInternetSmartTag(source) {
       var setNoopFuncWrapper = {
         set: noopFunc
@@ -10925,10 +9405,10 @@
         removeProduct: {
           products: setNoopFuncWrapper
         }
-      }; // eslint-disable-next-line new-cap, func-names
+      };
 
+      // eslint-disable-next-line new-cap, func-names
       var tag = function tag() {};
-
       tag.prototype = {
         setConfig: noopFunc,
         setParam: noopFunc,
@@ -10973,6 +9453,7 @@
           }
         }
       };
+
       window.ATInternet = smartTagWrapper;
       hit(source);
     }
@@ -10980,6 +9461,7 @@
     ATInternetSmartTag.injections = [hit, noopFunc];
 
     /* eslint-disable consistent-return, no-eval */
+
     /**
      * @redirect prevent-bab2
      *
@@ -10996,37 +9478,32 @@
      * /blockadblock.$script,redirect=prevent-bab2
      * ```
      */
-
     function preventBab2(source) {
       // eslint-disable-next-line compat/compat
       var script = document.currentScript;
-
       if (script === null) {
         return;
       }
-
       var url = script.src;
-
       if (typeof url !== 'string') {
         return;
       }
-
       var domainsStr = ['adclixx\\.net', 'adnetasia\\.com', 'adtrackers\\.net', 'bannertrack\\.net'].join('|');
       var matchStr = "^https?://[\\w-]+\\.(".concat(domainsStr, ")/.");
       var domainsRegex = new RegExp(matchStr);
-
       if (domainsRegex.test(url) === false) {
         return;
       }
-
       window.nH7eXzOsG = 858;
       hit(source);
     }
-    preventBab2.names = ['prevent-bab2', // aliases are needed for matching the related scriptlet converted into our syntax
+    preventBab2.names = ['prevent-bab2',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'nobab2.js'];
     preventBab2.injections = [hit];
 
     /* eslint-disable func-names, no-underscore-dangle */
+
     /**
      * @redirect google-ima3
      *
@@ -11042,14 +9519,10 @@
     function GoogleIma3(source) {
       var VERSION = '3.453.0';
       var ima = {};
-
       var AdDisplayContainer = function AdDisplayContainer() {};
-
       AdDisplayContainer.prototype.destroy = noopFunc;
       AdDisplayContainer.prototype.initialize = noopFunc;
-
       var ImaSdkSettings = function ImaSdkSettings() {};
-
       ImaSdkSettings.CompanionBackfillMode = {
         ALWAYS: 'always',
         ON_MASTER_AD: 'on_master_ad'
@@ -11153,16 +9626,13 @@
           INSECURE: 2
         }
       };
-
       var EventHandler = function EventHandler() {
         this.listeners = new Map();
-
         this._dispatch = function (e) {
-          var listeners = this.listeners.get(e.type) || []; // eslint-disable-next-line no-restricted-syntax
-
+          var listeners = this.listeners.get(e.type) || [];
+          // eslint-disable-next-line no-restricted-syntax
           for (var _i = 0, _Array$from = Array.from(listeners); _i < _Array$from.length; _i++) {
             var listener = _Array$from[_i];
-
             try {
               listener(e);
             } catch (r) {
@@ -11170,25 +9640,19 @@
             }
           }
         };
-
         this.addEventListener = function (t, c) {
           if (!this.listeners.has(t)) {
             this.listeners.set(t, new Set());
           }
-
           this.listeners.get(t).add(c);
         };
-
         this.removeEventListener = function (t, c) {
           var _this$listeners$get;
-
           (_this$listeners$get = this.listeners.get(t)) === null || _this$listeners$get === void 0 ? void 0 : _this$listeners$get.delete(c);
         };
       };
-
       var AdsManager = new EventHandler();
       /* eslint-disable no-use-before-define */
-
       AdsManager.volume = 1;
       AdsManager.collapse = noopFunc;
       AdsManager.configureAdsManager = noopFunc;
@@ -11196,57 +9660,43 @@
       AdsManager.discardAdBreak = noopFunc;
       AdsManager.expand = noopFunc;
       AdsManager.focus = noopFunc;
-
       AdsManager.getAdSkippableState = function () {
         return false;
       };
-
       AdsManager.getCuePoints = function () {
         return [0];
       };
-
       AdsManager.getCurrentAd = function () {
         return currentAd;
       };
-
       AdsManager.getCurrentAdCuePoints = function () {
         return [];
       };
-
       AdsManager.getRemainingTime = function () {
         return 0;
       };
-
       AdsManager.getVolume = function () {
         return this.volume;
       };
-
       AdsManager.init = noopFunc;
-
       AdsManager.isCustomClickTrackingUsed = function () {
         return false;
       };
-
       AdsManager.isCustomPlaybackUsed = function () {
         return false;
       };
-
       AdsManager.pause = noopFunc;
       AdsManager.requestNextAdBreak = noopFunc;
       AdsManager.resize = noopFunc;
       AdsManager.resume = noopFunc;
-
       AdsManager.setVolume = function (v) {
         this.volume = v;
       };
-
       AdsManager.skip = noopFunc;
-
       AdsManager.start = function () {
         // eslint-disable-next-line no-restricted-syntax
         for (var _i2 = 0, _arr = [AdEvent.Type.ALL_ADS_COMPLETED, AdEvent.Type.CONTENT_RESUME_REQUESTED]; _i2 < _arr.length; _i2++) {
           var type = _arr[_i2];
-
           try {
             this._dispatch(new ima.AdEvent(type));
           } catch (e) {
@@ -11254,19 +9704,16 @@
           }
         }
       };
-
       AdsManager.stop = noopFunc;
       AdsManager.updateAdsRenderingSettings = noopFunc;
       /* eslint-enable no-use-before-define */
 
       var manager = Object.create(AdsManager);
-
       var AdsManagerLoadedEvent = function AdsManagerLoadedEvent(type, adsRequest, userRequestContext) {
         this.type = type;
         this.adsRequest = adsRequest;
         this.userRequestContext = userRequestContext;
       };
-
       AdsManagerLoadedEvent.prototype = {
         getAdsManager: function getAdsManager() {
           return manager;
@@ -11275,7 +9722,6 @@
           if (this.userRequestContext) {
             return this.userRequestContext;
           }
-
           return {};
         }
       };
@@ -11286,22 +9732,17 @@
       AdsLoader.prototype.settings = new ImaSdkSettings();
       AdsLoader.prototype.contentComplete = noopFunc;
       AdsLoader.prototype.destroy = noopFunc;
-
       AdsLoader.prototype.getSettings = function () {
         return this.settings;
       };
-
       AdsLoader.prototype.getVersion = function () {
         return VERSION;
       };
-
       AdsLoader.prototype.requestAds = function (adsRequest, userRequestContext) {
         var _this = this;
-
         requestAnimationFrame(function () {
           var ADS_MANAGER_LOADED = AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED;
           var event = new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED, adsRequest, userRequestContext);
-
           _this._dispatch(event);
         });
         var e = new ima.AdError('adPlayError', 1205, 1205, 'The browser prevented playback initiated without user interaction.', adsRequest, userRequestContext);
@@ -11309,19 +9750,14 @@
           _this._dispatch(new ima.AdErrorEvent(e));
         });
       };
-
       var AdsRenderingSettings = noopFunc;
-
       var AdsRequest = function AdsRequest() {};
-
       AdsRequest.prototype = {
         setAdWillAutoPlay: noopFunc,
         setAdWillPlayMuted: noopFunc,
         setContinuousPlayback: noopFunc
       };
-
       var AdPodInfo = function AdPodInfo() {};
-
       AdPodInfo.prototype = {
         getAdPosition: function getAdPosition() {
           return 1;
@@ -11342,9 +9778,7 @@
           return 1;
         }
       };
-
       var Ad = function Ad() {};
-
       Ad.prototype = {
         pi: new AdPodInfo(),
         getAdId: function getAdId() {
@@ -11441,9 +9875,7 @@
           return true;
         }
       };
-
       var CompanionAd = function CompanionAd() {};
-
       CompanionAd.prototype = {
         getAdSlotId: function getAdSlotId() {
           return '';
@@ -11461,65 +9893,49 @@
           return 1;
         }
       };
-
       var AdError = function AdError(type, code, vast, message, adsRequest, userRequestContext) {
         this.errorCode = code;
         this.message = message;
         this.type = type;
         this.adsRequest = adsRequest;
         this.userRequestContext = userRequestContext;
-
         this.getErrorCode = function () {
           return this.errorCode;
         };
-
         this.getInnerError = function () {};
-
         this.getMessage = function () {
           return this.message;
         };
-
         this.getType = function () {
           return this.type;
         };
-
         this.getVastErrorCode = function () {
           return this.vastErrorCode;
         };
-
         this.toString = function () {
           return "AdError ".concat(this.errorCode, ": ").concat(this.message);
         };
       };
-
       AdError.ErrorCode = {};
       AdError.Type = {};
-
       var isEngadget = function isEngadget() {
         try {
           // eslint-disable-next-line no-restricted-syntax
           for (var _i3 = 0, _Object$values = Object.values(window.vidible._getContexts()); _i3 < _Object$values.length; _i3++) {
             var _ctx$getPlayer, _ctx$getPlayer$div;
-
             var ctx = _Object$values[_i3];
-
             // eslint-disable-next-line no-restricted-properties
             if ((_ctx$getPlayer = ctx.getPlayer()) !== null && _ctx$getPlayer !== void 0 && (_ctx$getPlayer$div = _ctx$getPlayer.div) !== null && _ctx$getPlayer$div !== void 0 && _ctx$getPlayer$div.innerHTML.includes('www.engadget.com')) {
               return true;
             }
           }
         } catch (e) {} // eslint-disable-line no-empty
-
-
         return false;
       };
-
       var currentAd = isEngadget() ? undefined : new Ad();
-
       var AdEvent = function AdEvent(type) {
         this.type = type;
       };
-
       AdEvent.prototype = {
         getAd: function getAd() {
           return currentAd;
@@ -11560,38 +9976,28 @@
         VOLUME_CHANGED: 'volumeChange',
         VOLUME_MUTED: 'mute'
       };
-
       var AdErrorEvent = function AdErrorEvent(error) {
         this.error = error;
         this.type = 'adError';
-
         this.getError = function () {
           return this.error;
         };
-
         this.getUserRequestContext = function () {
           var _this$error;
-
           if ((_this$error = this.error) !== null && _this$error !== void 0 && _this$error.userRequestContext) {
             return this.error.userRequestContext;
           }
-
           return {};
         };
       };
-
       AdErrorEvent.Type = {
         AD_ERROR: 'adError'
       };
-
       var CustomContentLoadedEvent = function CustomContentLoadedEvent() {};
-
       CustomContentLoadedEvent.Type = {
         CUSTOM_CONTENT_LOADED: 'deprecated-event'
       };
-
       var CompanionAdSelectionSettings = function CompanionAdSelectionSettings() {};
-
       CompanionAdSelectionSettings.CreativeType = {
         ALL: 'All',
         FLASH: 'Flash',
@@ -11608,9 +10014,7 @@
         SELECT_EXACT_MATCH: 'SelectExactMatch',
         SELECT_NEAR_MATCH: 'SelectNearMatch'
       };
-
       var AdCuePoints = function AdCuePoints() {};
-
       AdCuePoints.prototype = {
         getCuePoints: function getCuePoints() {
           return [];
@@ -11623,9 +10027,7 @@
         }
       };
       var AdProgressData = noopFunc;
-
       var UniversalAdIdInfo = function UniversalAdIdInfo() {};
-
       Object.assign(ima, {
         AdCuePoints: AdCuePoints,
         AdDisplayContainer: AdDisplayContainer,
@@ -11661,18 +10063,21 @@
           NORMAL: 'normal'
         }
       });
-
       if (!window.google) {
         window.google = {};
       }
-
       window.google.ima = ima;
       hit(source);
     }
-    GoogleIma3.names = ['google-ima3'];
+    GoogleIma3.names = ['google-ima3',
+    // prefixed name
+    'ubo-google-ima.js',
+    // original ubo name
+    'google-ima.js'];
     GoogleIma3.injections = [hit, noopFunc, logMessage];
 
     /* eslint-disable func-names, no-underscore-dangle */
+
     /**
      * @redirect didomi-loader
      *
@@ -11685,26 +10090,19 @@
      * ||sdk.privacy-center.org/fbf86806f86e/loader.js$script,redirect=didomi-loader
      * ```
      */
-
     function DidomiLoader(source) {
       function UserConsentStatusForVendorSubscribe() {}
-
       UserConsentStatusForVendorSubscribe.prototype.filter = function () {
         return new UserConsentStatusForVendorSubscribe();
       };
-
       UserConsentStatusForVendorSubscribe.prototype.subscribe = noopFunc;
-
       function UserConsentStatusForVendor() {}
-
       UserConsentStatusForVendor.prototype.first = function () {
         return new UserConsentStatusForVendorSubscribe();
       };
-
       UserConsentStatusForVendor.prototype.filter = function () {
         return new UserConsentStatusForVendorSubscribe();
       };
-
       UserConsentStatusForVendor.prototype.subscribe = noopFunc;
       var DidomiWrapper = {
         isConsentRequired: falseFunc,
@@ -11765,16 +10163,15 @@
         purpose: {
           consents: []
         }
-      }; // https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#how-does-the-cmp-provide-the-api
+      };
 
+      // https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#how-does-the-cmp-provide-the-api
       var __tcfapiWrapper = function __tcfapiWrapper(command, version, callback) {
         if (typeof callback !== 'function' || command === 'removeEventListener') {
           return;
         }
-
         callback(tcData, true);
       };
-
       window.__tcfapi = __tcfapiWrapper;
       var didomiEventListenersWrapper = {
         stub: true,
@@ -11787,7 +10184,6 @@
           if (typeof arg !== 'function') {
             return;
           }
-
           if (document.readyState !== 'complete') {
             window.addEventListener('load', function () {
               setTimeout(arg(window.Didomi));
@@ -11798,7 +10194,6 @@
         }
       };
       window.didomiOnReady = window.didomiOnReady || didomiOnReadyWrapper;
-
       if (Array.isArray(window.didomiOnReady)) {
         window.didomiOnReady.forEach(function (arg) {
           if (typeof arg === 'function') {
@@ -11810,13 +10205,13 @@
           }
         });
       }
-
       hit(source);
     }
     DidomiLoader.names = ['didomi-loader'];
     DidomiLoader.injections = [hit, noopFunc, noopArray, trueFunc, falseFunc];
 
     /* eslint-disable func-names */
+
     /**
      * @redirect prebid
      *
@@ -11840,7 +10235,6 @@
           }
         }
       };
-
       var pbjsWrapper = {
         addAdUnits: function addAdUnits() {},
         adServers: {
@@ -11880,6 +10274,7 @@
     Prebid.injections = [hit, noopFunc, noopStr, noopArray];
 
     /* eslint-disable func-names */
+
     /**
      * @redirect prebid-ads
      *
@@ -11893,7 +10288,6 @@
      * ||playerdrive.me/assets/js/prebid-ads.js$script,redirect=prebid-ads
      * ```
      */
-
     function prebidAds(source) {
       window.canRunAds = true;
       window.isAdBlockActive = false;
@@ -11903,6 +10297,7 @@
     prebidAds.injections = [hit];
 
     /* eslint-disable func-names */
+
     /**
      * @redirect naver-wcslog
      *
@@ -11960,7 +10355,6 @@
         throw new TypeError("Cannot call a class as a function");
       }
     }
-
     var classCallCheck = _classCallCheck;
 
     function _defineProperties(target, props) {
@@ -11972,58 +10366,45 @@
         Object.defineProperty(target, descriptor.key, descriptor);
       }
     }
-
     function _createClass(Constructor, protoProps, staticProps) {
       if (protoProps) _defineProperties(Constructor.prototype, protoProps);
       if (staticProps) _defineProperties(Constructor, staticProps);
       return Constructor;
     }
-
     var createClass = _createClass;
 
     function isNothing(subject) {
       return typeof subject === 'undefined' || subject === null;
     }
-
     function isObject(subject) {
       return typeof subject === 'object' && subject !== null;
     }
-
     function toArray(sequence) {
       if (Array.isArray(sequence)) return sequence;else if (isNothing(sequence)) return [];
       return [sequence];
     }
-
     function extend(target, source) {
       var index, length, key, sourceKeys;
-
       if (source) {
         sourceKeys = Object.keys(source);
-
         for (index = 0, length = sourceKeys.length; index < length; index += 1) {
           key = sourceKeys[index];
           target[key] = source[key];
         }
       }
-
       return target;
     }
-
     function repeat(string, count) {
       var result = '',
-          cycle;
-
+        cycle;
       for (cycle = 0; cycle < count; cycle += 1) {
         result += string;
       }
-
       return result;
     }
-
     function isNegativeZero(number) {
       return number === 0 && Number.NEGATIVE_INFINITY === 1 / number;
     }
-
     var isNothing_1 = isNothing;
     var isObject_1 = isObject;
     var toArray_1 = toArray;
@@ -12047,8 +10428,9 @@
       this.name = 'YAMLException';
       this.reason = reason;
       this.mark = mark;
-      this.message = (this.reason || '(unknown reason)') + (this.mark ? ' ' + this.mark.toString() : ''); // Include stack trace in error object
+      this.message = (this.reason || '(unknown reason)') + (this.mark ? ' ' + this.mark.toString() : '');
 
+      // Include stack trace in error object
       if (Error.captureStackTrace) {
         // Chrome and NodeJS
         Error.captureStackTrace(this, this.constructor);
@@ -12056,23 +10438,19 @@
         // FF, IE 10+ and Safari 6+. Fallback for others
         this.stack = new Error().stack || '';
       }
-    } // Inherit from Error
+    }
 
-
+    // Inherit from Error
     YAMLException$1.prototype = Object.create(Error.prototype);
     YAMLException$1.prototype.constructor = YAMLException$1;
-
     YAMLException$1.prototype.toString = function toString(compact) {
       var result = this.name + ': ';
       result += this.reason || '(unknown reason)';
-
       if (!compact && this.mark) {
         result += ' ' + this.mark.toString();
       }
-
       return result;
     };
-
     var exception = YAMLException$1;
 
     function Mark(name, buffer, position, line, column) {
@@ -12082,7 +10460,6 @@
       this.line = line;
       this.column = column;
     }
-
     Mark.prototype.getSnippet = function getSnippet(indent, maxLength) {
       var head, start, tail, end, snippet;
       if (!this.buffer) return null;
@@ -12090,63 +10467,48 @@
       maxLength = maxLength || 75;
       head = '';
       start = this.position;
-
       while (start > 0 && "\0\r\n\x85\u2028\u2029".indexOf(this.buffer.charAt(start - 1)) === -1) {
         start -= 1;
-
         if (this.position - start > maxLength / 2 - 1) {
           head = ' ... ';
           start += 5;
           break;
         }
       }
-
       tail = '';
       end = this.position;
-
       while (end < this.buffer.length && "\0\r\n\x85\u2028\u2029".indexOf(this.buffer.charAt(end)) === -1) {
         end += 1;
-
         if (end - this.position > maxLength / 2 - 1) {
           tail = ' ... ';
           end -= 5;
           break;
         }
       }
-
       snippet = this.buffer.slice(start, end);
       return common.repeat(' ', indent) + head + snippet + tail + '\n' + common.repeat(' ', indent + this.position - start + head.length) + '^';
     };
-
     Mark.prototype.toString = function toString(compact) {
       var snippet,
-          where = '';
-
+        where = '';
       if (this.name) {
         where += 'in "' + this.name + '" ';
       }
-
       where += 'at line ' + (this.line + 1) + ', column ' + (this.column + 1);
-
       if (!compact) {
         snippet = this.getSnippet();
-
         if (snippet) {
           where += ':\n' + snippet;
         }
       }
-
       return where;
     };
-
     var mark = Mark;
 
     var TYPE_CONSTRUCTOR_OPTIONS = ['kind', 'resolve', 'construct', 'instanceOf', 'predicate', 'represent', 'defaultStyle', 'styleAliases'];
     var YAML_NODE_KINDS = ['scalar', 'sequence', 'mapping'];
-
     function compileStyleAliases(map) {
       var result = {};
-
       if (map !== null) {
         Object.keys(map).forEach(function (style) {
           map[style].forEach(function (alias) {
@@ -12154,44 +10516,37 @@
           });
         });
       }
-
       return result;
     }
-
     function Type$1(tag, options) {
       options = options || {};
       Object.keys(options).forEach(function (name) {
         if (TYPE_CONSTRUCTOR_OPTIONS.indexOf(name) === -1) {
           throw new exception('Unknown option "' + name + '" is met in definition of "' + tag + '" YAML type.');
         }
-      }); // TODO: Add tag format check.
+      });
 
+      // TODO: Add tag format check.
       this.tag = tag;
       this.kind = options['kind'] || null;
-
       this.resolve = options['resolve'] || function () {
         return true;
       };
-
       this.construct = options['construct'] || function (data) {
         return data;
       };
-
       this.instanceOf = options['instanceOf'] || null;
       this.predicate = options['predicate'] || null;
       this.represent = options['represent'] || null;
       this.defaultStyle = options['defaultStyle'] || null;
       this.styleAliases = compileStyleAliases(options['styleAliases'] || null);
-
       if (YAML_NODE_KINDS.indexOf(this.kind) === -1) {
         throw new exception('Unknown kind "' + this.kind + '" is specified for "' + tag + '" YAML type.');
       }
     }
-
     var type = Type$1;
 
     /*eslint-disable max-len*/
-
 
     function compileList(schema, name, result) {
       var exclude = [];
@@ -12210,30 +10565,24 @@
         return exclude.indexOf(index) === -1;
       });
     }
-
-    function compileMap()
-    /* lists... */
-    {
+    function compileMap( /* lists... */
+    ) {
       var result = {
-        scalar: {},
-        sequence: {},
-        mapping: {},
-        fallback: {}
-      },
-          index,
-          length;
-
+          scalar: {},
+          sequence: {},
+          mapping: {},
+          fallback: {}
+        },
+        index,
+        length;
       function collectType(type) {
         result[type.kind][type.tag] = result['fallback'][type.tag] = type;
       }
-
       for (index = 0, length = arguments.length; index < length; index += 1) {
         arguments[index].forEach(collectType);
       }
-
       return result;
     }
-
     function Schema$1(definition) {
       this.include = definition.include || [];
       this.implicit = definition.implicit || [];
@@ -12247,48 +10596,38 @@
       this.compiledExplicit = compileList(this, 'explicit', []);
       this.compiledTypeMap = compileMap(this.compiledImplicit, this.compiledExplicit);
     }
-
     Schema$1.DEFAULT = null;
-
     Schema$1.create = function createSchema() {
       var schemas, types;
-
       switch (arguments.length) {
         case 1:
           schemas = Schema$1.DEFAULT;
           types = arguments[0];
           break;
-
         case 2:
           schemas = arguments[0];
           types = arguments[1];
           break;
-
         default:
           throw new exception('Wrong number of arguments for Schema.create function');
       }
-
       schemas = common.toArray(schemas);
       types = common.toArray(types);
-
       if (!schemas.every(function (schema) {
         return schema instanceof Schema$1;
       })) {
         throw new exception('Specified list of super schemas (or a single Schema object) contains a non-Schema object.');
       }
-
       if (!types.every(function (type$1) {
         return type$1 instanceof type;
       })) {
         throw new exception('Specified list of YAML types (or a single Type object) contains a non-Type object.');
       }
-
       return new Schema$1({
         include: schemas,
         explicit: types
       });
     };
-
     var schema = Schema$1;
 
     var str = new type('tag:yaml.org,2002:str', {
@@ -12321,15 +10660,12 @@
       var max = data.length;
       return max === 1 && data === '~' || max === 4 && (data === 'null' || data === 'Null' || data === 'NULL');
     }
-
     function constructYamlNull() {
       return null;
     }
-
     function isNull(object) {
       return object === null;
     }
-
     var _null = new type('tag:yaml.org,2002:null', {
       kind: 'scalar',
       resolve: resolveYamlNull,
@@ -12357,15 +10693,12 @@
       var max = data.length;
       return max === 4 && (data === 'true' || data === 'True' || data === 'TRUE') || max === 5 && (data === 'false' || data === 'False' || data === 'FALSE');
     }
-
     function constructYamlBoolean(data) {
       return data === 'true' || data === 'True' || data === 'TRUE';
     }
-
     function isBoolean(object) {
       return Object.prototype.toString.call(object) === '[object Boolean]';
     }
-
     var bool = new type('tag:yaml.org,2002:bool', {
       kind: 'scalar',
       resolve: resolveYamlBoolean,
@@ -12386,145 +10719,114 @@
     });
 
     function isHexCode(c) {
-      return 0x30
-      /* 0 */
-      <= c && c <= 0x39
-      /* 9 */
-      || 0x41
-      /* A */
-      <= c && c <= 0x46
-      /* F */
-      || 0x61
-      /* a */
-      <= c && c <= 0x66
-      /* f */
-      ;
+      return 0x30 /* 0 */ <= c && c <= 0x39 /* 9 */ || 0x41 /* A */ <= c && c <= 0x46 /* F */ || 0x61 /* a */ <= c && c <= 0x66 /* f */;
     }
 
     function isOctCode(c) {
-      return 0x30
-      /* 0 */
-      <= c && c <= 0x37
-      /* 7 */
-      ;
+      return 0x30 /* 0 */ <= c && c <= 0x37 /* 7 */;
     }
 
     function isDecCode(c) {
-      return 0x30
-      /* 0 */
-      <= c && c <= 0x39
-      /* 9 */
-      ;
+      return 0x30 /* 0 */ <= c && c <= 0x39 /* 9 */;
     }
 
     function resolveYamlInteger(data) {
       if (data === null) return false;
       var max = data.length,
-          index = 0,
-          hasDigits = false,
-          ch;
+        index = 0,
+        hasDigits = false,
+        ch;
       if (!max) return false;
-      ch = data[index]; // sign
+      ch = data[index];
 
+      // sign
       if (ch === '-' || ch === '+') {
         ch = data[++index];
       }
-
       if (ch === '0') {
         // 0
         if (index + 1 === max) return true;
-        ch = data[++index]; // base 2, base 8, base 16
+        ch = data[++index];
+
+        // base 2, base 8, base 16
 
         if (ch === 'b') {
           // base 2
           index++;
-
           for (; index < max; index++) {
             ch = data[index];
             if (ch === '_') continue;
             if (ch !== '0' && ch !== '1') return false;
             hasDigits = true;
           }
-
           return hasDigits && ch !== '_';
         }
-
         if (ch === 'x') {
           // base 16
           index++;
-
           for (; index < max; index++) {
             ch = data[index];
             if (ch === '_') continue;
             if (!isHexCode(data.charCodeAt(index))) return false;
             hasDigits = true;
           }
-
           return hasDigits && ch !== '_';
-        } // base 8
+        }
 
-
+        // base 8
         for (; index < max; index++) {
           ch = data[index];
           if (ch === '_') continue;
           if (!isOctCode(data.charCodeAt(index))) return false;
           hasDigits = true;
         }
-
         return hasDigits && ch !== '_';
-      } // base 10 (except 0) or base 60
+      }
+
+      // base 10 (except 0) or base 60
+
       // value should not start with `_`;
-
-
       if (ch === '_') return false;
-
       for (; index < max; index++) {
         ch = data[index];
         if (ch === '_') continue;
         if (ch === ':') break;
-
         if (!isDecCode(data.charCodeAt(index))) {
           return false;
         }
-
         hasDigits = true;
-      } // Should have digits and should not end with `_`
+      }
 
+      // Should have digits and should not end with `_`
+      if (!hasDigits || ch === '_') return false;
 
-      if (!hasDigits || ch === '_') return false; // if !base60 - done;
+      // if !base60 - done;
+      if (ch !== ':') return true;
 
-      if (ch !== ':') return true; // base60 almost not used, no needs to optimize
-
+      // base60 almost not used, no needs to optimize
       return /^(:[0-5]?[0-9])+$/.test(data.slice(index));
     }
-
     function constructYamlInteger(data) {
       var value = data,
-          sign = 1,
-          ch,
-          base,
-          digits = [];
-
+        sign = 1,
+        ch,
+        base,
+        digits = [];
       if (value.indexOf('_') !== -1) {
         value = value.replace(/_/g, '');
       }
-
       ch = value[0];
-
       if (ch === '-' || ch === '+') {
         if (ch === '-') sign = -1;
         value = value.slice(1);
         ch = value[0];
       }
-
       if (value === '0') return 0;
-
       if (ch === '0') {
         if (value[1] === 'b') return sign * parseInt(value.slice(2), 2);
         if (value[1] === 'x') return sign * parseInt(value, 16);
         return sign * parseInt(value, 8);
       }
-
       if (value.indexOf(':') !== -1) {
         value.split(':').forEach(function (v) {
           digits.unshift(parseInt(v, 10));
@@ -12537,14 +10839,11 @@
         });
         return sign * value;
       }
-
       return sign * parseInt(value, 10);
     }
-
     function isInteger(object) {
       return Object.prototype.toString.call(object) === '[object Number]' && object % 1 === 0 && !common.isNegativeZero(object);
     }
-
     var int = new type('tag:yaml.org,2002:int', {
       kind: 'scalar',
       resolve: resolveYamlInteger,
@@ -12560,7 +10859,6 @@
         decimal: function decimal(obj) {
           return obj.toString(10);
         },
-
         /* eslint-disable max-len */
         hexadecimal: function hexadecimal(obj) {
           return obj >= 0 ? '0x' + obj.toString(16).toUpperCase() : '-0x' + obj.toString(16).toUpperCase().slice(1);
@@ -12575,36 +10873,36 @@
       }
     });
 
-    var YAML_FLOAT_PATTERN = new RegExp( // 2.5e4, 2.5 and integers
-    '^(?:[-+]?(?:0|[1-9][0-9_]*)(?:\\.[0-9_]*)?(?:[eE][-+]?[0-9]+)?' + // .2e4, .2
+    var YAML_FLOAT_PATTERN = new RegExp(
+    // 2.5e4, 2.5 and integers
+    '^(?:[-+]?(?:0|[1-9][0-9_]*)(?:\\.[0-9_]*)?(?:[eE][-+]?[0-9]+)?' +
+    // .2e4, .2
     // special case, seems not from spec
-    '|\\.[0-9_]+(?:[eE][-+]?[0-9]+)?' + // 20:59
-    '|[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*' + // .inf
-    '|[-+]?\\.(?:inf|Inf|INF)' + // .nan
+    '|\\.[0-9_]+(?:[eE][-+]?[0-9]+)?' +
+    // 20:59
+    '|[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*' +
+    // .inf
+    '|[-+]?\\.(?:inf|Inf|INF)' +
+    // .nan
     '|\\.(?:nan|NaN|NAN))$');
-
     function resolveYamlFloat(data) {
       if (data === null) return false;
-
-      if (!YAML_FLOAT_PATTERN.test(data) || // Quick hack to not allow integers end with `_`
+      if (!YAML_FLOAT_PATTERN.test(data) ||
+      // Quick hack to not allow integers end with `_`
       // Probably should update regexp & check speed
       data[data.length - 1] === '_') {
         return false;
       }
-
       return true;
     }
-
     function constructYamlFloat(data) {
       var value, sign, base, digits;
       value = data.replace(/_/g, '').toLowerCase();
       sign = value[0] === '-' ? -1 : 1;
       digits = [];
-
       if ('+-'.indexOf(value[0]) >= 0) {
         value = value.slice(1);
       }
-
       if (value === '.inf') {
         return sign === 1 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
       } else if (value === '.nan') {
@@ -12621,23 +10919,17 @@
         });
         return sign * value;
       }
-
       return sign * parseFloat(value, 10);
     }
-
     var SCIENTIFIC_WITHOUT_DOT = /^[-+]?[0-9]+e/;
-
     function representYamlFloat(object, style) {
       var res;
-
       if (isNaN(object)) {
         switch (style) {
           case 'lowercase':
             return '.nan';
-
           case 'uppercase':
             return '.NAN';
-
           case 'camelcase':
             return '.NaN';
         }
@@ -12645,10 +10937,8 @@
         switch (style) {
           case 'lowercase':
             return '.inf';
-
           case 'uppercase':
             return '.INF';
-
           case 'camelcase':
             return '.Inf';
         }
@@ -12656,27 +10946,24 @@
         switch (style) {
           case 'lowercase':
             return '-.inf';
-
           case 'uppercase':
             return '-.INF';
-
           case 'camelcase':
             return '-.Inf';
         }
       } else if (common.isNegativeZero(object)) {
         return '-0.0';
       }
+      res = object.toString(10);
 
-      res = object.toString(10); // JS stringifier can build scientific format without dots: 5e-100,
+      // JS stringifier can build scientific format without dots: 5e-100,
       // while YAML requres dot: 5.e-100. Fix it with simple hack
 
       return SCIENTIFIC_WITHOUT_DOT.test(res) ? res.replace('e', '.e') : res;
     }
-
     function isFloat(object) {
       return Object.prototype.toString.call(object) === '[object Number]' && (object % 1 !== 0 || common.isNegativeZero(object));
     }
-
     var float = new type('tag:yaml.org,2002:float', {
       kind: 'scalar',
       resolve: resolveYamlFloat,
@@ -12695,19 +10982,30 @@
       include: [json]
     });
 
-    var YAML_DATE_REGEXP = new RegExp('^([0-9][0-9][0-9][0-9])' + // [1] year
-    '-([0-9][0-9])' + // [2] month
+    var YAML_DATE_REGEXP = new RegExp('^([0-9][0-9][0-9][0-9])' +
+    // [1] year
+    '-([0-9][0-9])' +
+    // [2] month
     '-([0-9][0-9])$'); // [3] day
 
-    var YAML_TIMESTAMP_REGEXP = new RegExp('^([0-9][0-9][0-9][0-9])' + // [1] year
-    '-([0-9][0-9]?)' + // [2] month
-    '-([0-9][0-9]?)' + // [3] day
-    '(?:[Tt]|[ \\t]+)' + // ...
-    '([0-9][0-9]?)' + // [4] hour
-    ':([0-9][0-9])' + // [5] minute
-    ':([0-9][0-9])' + // [6] second
-    '(?:\\.([0-9]*))?' + // [7] fraction
-    '(?:[ \\t]*(Z|([-+])([0-9][0-9]?)' + // [8] tz [9] tz_sign [10] tz_hour
+    var YAML_TIMESTAMP_REGEXP = new RegExp('^([0-9][0-9][0-9][0-9])' +
+    // [1] year
+    '-([0-9][0-9]?)' +
+    // [2] month
+    '-([0-9][0-9]?)' +
+    // [3] day
+    '(?:[Tt]|[ \\t]+)' +
+    // ...
+    '([0-9][0-9]?)' +
+    // [4] hour
+    ':([0-9][0-9])' +
+    // [5] minute
+    ':([0-9][0-9])' +
+    // [6] second
+    '(?:\\.([0-9]*))?' +
+    // [7] fraction
+    '(?:[ \\t]*(Z|([-+])([0-9][0-9]?)' +
+    // [8] tz [9] tz_sign [10] tz_hour
     '(?::([0-9][0-9]))?))?$'); // [11] tz_minute
 
     function resolveYamlTimestamp(data) {
@@ -12716,70 +11014,62 @@
       if (YAML_TIMESTAMP_REGEXP.exec(data) !== null) return true;
       return false;
     }
-
     function constructYamlTimestamp(data) {
       var match,
-          year,
-          month,
-          day,
-          hour,
-          minute,
-          second,
-          fraction = 0,
-          delta = null,
-          tz_hour,
-          tz_minute,
-          date;
+        year,
+        month,
+        day,
+        hour,
+        minute,
+        second,
+        fraction = 0,
+        delta = null,
+        tz_hour,
+        tz_minute,
+        date;
       match = YAML_DATE_REGEXP.exec(data);
       if (match === null) match = YAML_TIMESTAMP_REGEXP.exec(data);
-      if (match === null) throw new Error('Date resolve error'); // match: [1] year [2] month [3] day
+      if (match === null) throw new Error('Date resolve error');
+
+      // match: [1] year [2] month [3] day
 
       year = +match[1];
       month = +match[2] - 1; // JS month starts with 0
-
       day = +match[3];
-
       if (!match[4]) {
         // no hour
         return new Date(Date.UTC(year, month, day));
-      } // match: [4] hour [5] minute [6] second [7] fraction
+      }
 
+      // match: [4] hour [5] minute [6] second [7] fraction
 
       hour = +match[4];
       minute = +match[5];
       second = +match[6];
-
       if (match[7]) {
         fraction = match[7].slice(0, 3);
-
         while (fraction.length < 3) {
           // milli-seconds
           fraction += '0';
         }
-
         fraction = +fraction;
-      } // match: [8] tz [9] tz_sign [10] tz_hour [11] tz_minute
+      }
 
+      // match: [8] tz [9] tz_sign [10] tz_hour [11] tz_minute
 
       if (match[9]) {
         tz_hour = +match[10];
         tz_minute = +(match[11] || 0);
         delta = (tz_hour * 60 + tz_minute) * 60000; // delta in mili-seconds
-
         if (match[9] === '-') delta = -delta;
       }
-
       date = new Date(Date.UTC(year, month, day, hour, minute, second, fraction));
       if (delta) date.setTime(date.getTime() - delta);
       return date;
     }
-
-    function representYamlTimestamp(object
-    /*, style*/
-    ) {
+    function representYamlTimestamp(object /*, style*/) {
       return object.toISOString();
     }
-
     var timestamp = new type('tag:yaml.org,2002:timestamp', {
       kind: 'scalar',
       resolve: resolveYamlTimestamp,
@@ -12791,56 +11081,60 @@
     function resolveYamlMerge(data) {
       return data === '<<' || data === null;
     }
-
     var merge = new type('tag:yaml.org,2002:merge', {
       kind: 'scalar',
       resolve: resolveYamlMerge
     });
 
+    function commonjsRequire (target) {
+    	throw new Error('Could not dynamically require "' + target + '". Please configure the dynamicRequireTargets option of @rollup/plugin-commonjs appropriately for this require call to behave properly.');
+    }
+
     /*eslint-disable no-bitwise*/
 
-
     var NodeBuffer;
-
     try {
       // A trick for browserified version, to not include `Buffer` shim
       var _require$1 = commonjsRequire;
       NodeBuffer = _require$1('buffer').Buffer;
-    } catch (__) {} // [ 64, 65, 66 ] -> [ padding, CR, LF ]
+    } catch (__) {}
 
-
+    // [ 64, 65, 66 ] -> [ padding, CR, LF ]
     var BASE64_MAP = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=\n\r';
-
     function resolveYamlBinary(data) {
       if (data === null) return false;
       var code,
-          idx,
-          bitlen = 0,
-          max = data.length,
-          map = BASE64_MAP; // Convert one by one.
+        idx,
+        bitlen = 0,
+        max = data.length,
+        map = BASE64_MAP;
 
+      // Convert one by one.
       for (idx = 0; idx < max; idx++) {
-        code = map.indexOf(data.charAt(idx)); // Skip CR/LF
+        code = map.indexOf(data.charAt(idx));
 
-        if (code > 64) continue; // Fail on illegal characters
+        // Skip CR/LF
+        if (code > 64) continue;
 
+        // Fail on illegal characters
         if (code < 0) return false;
         bitlen += 6;
-      } // If there are any bits left, source was corrupted
+      }
 
-
+      // If there are any bits left, source was corrupted
       return bitlen % 8 === 0;
     }
-
     function constructYamlBinary(data) {
       var idx,
-          tailbits,
-          input = data.replace(/[\r\n=]/g, ''),
-          // remove CR/LF & padding to simplify scan
-      max = input.length,
-          map = BASE64_MAP,
-          bits = 0,
-          result = []; // Collect by 6*4 bits (3 bytes)
+        tailbits,
+        input = data.replace(/[\r\n=]/g, ''),
+        // remove CR/LF & padding to simplify scan
+        max = input.length,
+        map = BASE64_MAP,
+        bits = 0,
+        result = [];
+
+      // Collect by 6*4 bits (3 bytes)
 
       for (idx = 0; idx < max; idx++) {
         if (idx % 4 === 0 && idx) {
@@ -12848,13 +11142,12 @@
           result.push(bits >> 8 & 0xFF);
           result.push(bits & 0xFF);
         }
-
         bits = bits << 6 | map.indexOf(input.charAt(idx));
-      } // Dump tail
+      }
 
+      // Dump tail
 
       tailbits = max % 4 * 6;
-
       if (tailbits === 0) {
         result.push(bits >> 16 & 0xFF);
         result.push(bits >> 8 & 0xFF);
@@ -12864,26 +11157,24 @@
         result.push(bits >> 2 & 0xFF);
       } else if (tailbits === 12) {
         result.push(bits >> 4 & 0xFF);
-      } // Wrap into Buffer for NodeJS and leave Array for browser
+      }
 
-
+      // Wrap into Buffer for NodeJS and leave Array for browser
       if (NodeBuffer) {
         // Support node 6.+ Buffer API when available
         return NodeBuffer.from ? NodeBuffer.from(result) : new NodeBuffer(result);
       }
-
       return result;
     }
-
-    function representYamlBinary(object
-    /*, style*/
-    ) {
+    function representYamlBinary(object /*, style*/) {
       var result = '',
-          bits = 0,
-          idx,
-          tail,
-          max = object.length,
-          map = BASE64_MAP; // Convert every three bytes to 4 ASCII characters.
+        bits = 0,
+        idx,
+        tail,
+        max = object.length,
+        map = BASE64_MAP;
+
+      // Convert every three bytes to 4 ASCII characters.
 
       for (idx = 0; idx < max; idx++) {
         if (idx % 3 === 0 && idx) {
@@ -12892,13 +11183,12 @@
           result += map[bits >> 6 & 0x3F];
           result += map[bits & 0x3F];
         }
-
         bits = (bits << 8) + object[idx];
-      } // Dump tail
+      }
 
+      // Dump tail
 
       tail = max % 3;
-
       if (tail === 0) {
         result += map[bits >> 18 & 0x3F];
         result += map[bits >> 12 & 0x3F];
@@ -12915,14 +11205,11 @@
         result += map[64];
         result += map[64];
       }
-
       return result;
     }
-
     function isBinary(object) {
       return NodeBuffer && NodeBuffer.isBuffer(object);
     }
-
     var binary = new type('tag:yaml.org,2002:binary', {
       kind: 'scalar',
       resolve: resolveYamlBinary,
@@ -12933,39 +11220,32 @@
 
     var _hasOwnProperty$3 = Object.prototype.hasOwnProperty;
     var _toString$2 = Object.prototype.toString;
-
     function resolveYamlOmap(data) {
       if (data === null) return true;
       var objectKeys = [],
-          index,
-          length,
-          pair,
-          pairKey,
-          pairHasKey,
-          object = data;
-
+        index,
+        length,
+        pair,
+        pairKey,
+        pairHasKey,
+        object = data;
       for (index = 0, length = object.length; index < length; index += 1) {
         pair = object[index];
         pairHasKey = false;
         if (_toString$2.call(pair) !== '[object Object]') return false;
-
         for (pairKey in pair) {
           if (_hasOwnProperty$3.call(pair, pairKey)) {
             if (!pairHasKey) pairHasKey = true;else return false;
           }
         }
-
         if (!pairHasKey) return false;
         if (objectKeys.indexOf(pairKey) === -1) objectKeys.push(pairKey);else return false;
       }
-
       return true;
     }
-
     function constructYamlOmap(data) {
       return data !== null ? data : [];
     }
-
     var omap = new type('tag:yaml.org,2002:omap', {
       kind: 'sequence',
       resolve: resolveYamlOmap,
@@ -12973,17 +11253,15 @@
     });
 
     var _toString$1 = Object.prototype.toString;
-
     function resolveYamlPairs(data) {
       if (data === null) return true;
       var index,
-          length,
-          pair,
-          keys,
-          result,
-          object = data;
+        length,
+        pair,
+        keys,
+        result,
+        object = data;
       result = new Array(object.length);
-
       for (index = 0, length = object.length; index < length; index += 1) {
         pair = object[index];
         if (_toString$1.call(pair) !== '[object Object]') return false;
@@ -12991,29 +11269,24 @@
         if (keys.length !== 1) return false;
         result[index] = [keys[0], pair[keys[0]]];
       }
-
       return true;
     }
-
     function constructYamlPairs(data) {
       if (data === null) return [];
       var index,
-          length,
-          pair,
-          keys,
-          result,
-          object = data;
+        length,
+        pair,
+        keys,
+        result,
+        object = data;
       result = new Array(object.length);
-
       for (index = 0, length = object.length; index < length; index += 1) {
         pair = object[index];
         keys = Object.keys(pair);
         result[index] = [keys[0], pair[keys[0]]];
       }
-
       return result;
     }
-
     var pairs = new type('tag:yaml.org,2002:pairs', {
       kind: 'sequence',
       resolve: resolveYamlPairs,
@@ -13021,25 +11294,20 @@
     });
 
     var _hasOwnProperty$2 = Object.prototype.hasOwnProperty;
-
     function resolveYamlSet(data) {
       if (data === null) return true;
       var key,
-          object = data;
-
+        object = data;
       for (key in object) {
         if (_hasOwnProperty$2.call(object, key)) {
           if (object[key] !== null) return false;
         }
       }
-
       return true;
     }
-
     function constructYamlSet(data) {
       return data !== null ? data : {};
     }
-
     var set = new type('tag:yaml.org,2002:set', {
       kind: 'mapping',
       resolve: resolveYamlSet,
@@ -13055,20 +11323,16 @@
     function resolveJavascriptUndefined() {
       return true;
     }
-
     function constructJavascriptUndefined() {
       /*eslint-disable no-undefined*/
       return undefined;
     }
-
     function representJavascriptUndefined() {
       return '';
     }
-
     function isUndefined(object) {
       return typeof object === 'undefined';
     }
-
     var _undefined = new type('tag:yaml.org,2002:js/undefined', {
       kind: 'scalar',
       resolve: resolveJavascriptUndefined,
@@ -13081,47 +11345,41 @@
       if (data === null) return false;
       if (data.length === 0) return false;
       var regexp = data,
-          tail = /\/([gim]*)$/.exec(data),
-          modifiers = ''; // if regexp starts with '/' it can have modifiers and must be properly closed
-      // `/foo/gim` - modifiers tail can be maximum 3 chars
+        tail = /\/([gim]*)$/.exec(data),
+        modifiers = '';
 
+      // if regexp starts with '/' it can have modifiers and must be properly closed
+      // `/foo/gim` - modifiers tail can be maximum 3 chars
       if (regexp[0] === '/') {
         if (tail) modifiers = tail[1];
-        if (modifiers.length > 3) return false; // if expression starts with /, is should be properly terminated
-
+        if (modifiers.length > 3) return false;
+        // if expression starts with /, is should be properly terminated
         if (regexp[regexp.length - modifiers.length - 1] !== '/') return false;
       }
-
       return true;
     }
-
     function constructJavascriptRegExp(data) {
       var regexp = data,
-          tail = /\/([gim]*)$/.exec(data),
-          modifiers = ''; // `/foo/gim` - tail can be maximum 4 chars
+        tail = /\/([gim]*)$/.exec(data),
+        modifiers = '';
 
+      // `/foo/gim` - tail can be maximum 4 chars
       if (regexp[0] === '/') {
         if (tail) modifiers = tail[1];
         regexp = regexp.slice(1, regexp.length - modifiers.length - 1);
       }
-
       return new RegExp(regexp, modifiers);
     }
-
-    function representJavascriptRegExp(object
-    /*, style*/
-    ) {
+    function representJavascriptRegExp(object /*, style*/) {
       var result = '/' + object.source + '/';
       if (object.global) result += 'g';
       if (object.multiline) result += 'm';
       if (object.ignoreCase) result += 'i';
       return result;
     }
-
     function isRegExp(object) {
       return Object.prototype.toString.call(object) === '[object RegExp]';
     }
-
     var regexp = new type('tag:yaml.org,2002:js/regexp', {
       kind: 'scalar',
       resolve: resolveJavascriptRegExp,
@@ -13130,85 +11388,73 @@
       represent: representJavascriptRegExp
     });
 
-    var esprima; // Browserified version does not have esprima
+    var esprima;
+
+    // Browserified version does not have esprima
     //
     // 1. For node.js just require module as deps
     // 2. For browser try to require mudule via external AMD system.
     //    If not found - try to fallback to window.esprima. If not
     //    found too - then fail to parse.
     //
-
     try {
       // workaround to exclude package from browserify list.
       var _require = commonjsRequire;
       esprima = _require('esprima');
     } catch (_) {
       /* eslint-disable no-redeclare */
-
       /* global window */
       if (typeof window !== 'undefined') esprima = window.esprima;
     }
-
     function resolveJavascriptFunction(data) {
       if (data === null) return false;
-
       try {
         var source = '(' + data + ')',
-            ast = esprima.parse(source, {
-          range: true
-        });
-
+          ast = esprima.parse(source, {
+            range: true
+          });
         if (ast.type !== 'Program' || ast.body.length !== 1 || ast.body[0].type !== 'ExpressionStatement' || ast.body[0].expression.type !== 'ArrowFunctionExpression' && ast.body[0].expression.type !== 'FunctionExpression') {
           return false;
         }
-
         return true;
       } catch (err) {
         return false;
       }
     }
-
     function constructJavascriptFunction(data) {
       /*jslint evil:true*/
-      var source = '(' + data + ')',
-          ast = esprima.parse(source, {
-        range: true
-      }),
-          params = [],
-          body;
 
+      var source = '(' + data + ')',
+        ast = esprima.parse(source, {
+          range: true
+        }),
+        params = [],
+        body;
       if (ast.type !== 'Program' || ast.body.length !== 1 || ast.body[0].type !== 'ExpressionStatement' || ast.body[0].expression.type !== 'ArrowFunctionExpression' && ast.body[0].expression.type !== 'FunctionExpression') {
         throw new Error('Failed to resolve function');
       }
-
       ast.body[0].expression.params.forEach(function (param) {
         params.push(param.name);
       });
-      body = ast.body[0].expression.body.range; // Esprima's ranges include the first '{' and the last '}' characters on
-      // function expressions. So cut them out.
+      body = ast.body[0].expression.body.range;
 
+      // Esprima's ranges include the first '{' and the last '}' characters on
+      // function expressions. So cut them out.
       if (ast.body[0].expression.body.type === 'BlockStatement') {
         /*eslint-disable no-new-func*/
         return new Function(params, source.slice(body[0] + 1, body[1] - 1));
-      } // ES6 arrow functions can omit the BlockStatement. In that case, just return
+      }
+      // ES6 arrow functions can omit the BlockStatement. In that case, just return
       // the body.
-
       /*eslint-disable no-new-func*/
-
-
       return new Function(params, 'return ' + source.slice(body[0], body[1]));
     }
-
-    function representJavascriptFunction(object
-    /*, style*/
-    ) {
+    function representJavascriptFunction(object /*, style*/) {
       return object.toString();
     }
-
     function isFunction(object) {
       return Object.prototype.toString.call(object) === '[object Function]';
     }
-
     var _function = new type('tag:yaml.org,2002:js/function', {
       kind: 'scalar',
       resolve: resolveJavascriptFunction,
@@ -13224,7 +11470,6 @@
 
     /*eslint-disable max-len,no-use-before-define*/
 
-
     var _hasOwnProperty$1 = Object.prototype.hasOwnProperty;
     var CONTEXT_FLOW_IN = 1;
     var CONTEXT_FLOW_OUT = 2;
@@ -13238,173 +11483,74 @@
     var PATTERN_FLOW_INDICATORS = /[,\[\]\{\}]/;
     var PATTERN_TAG_HANDLE = /^(?:!|!!|![a-z\-]+!)$/i;
     var PATTERN_TAG_URI = /^(?:!|[^,\[\]\{\}])(?:%[0-9a-f]{2}|[0-9a-z\-#;\/\?:@&=\+\$,_\.!~\*'\(\)\[\]])*$/i;
-
     function _class(obj) {
       return Object.prototype.toString.call(obj);
     }
-
     function is_EOL(c) {
-      return c === 0x0A
-      /* LF */
-      || c === 0x0D
-      /* CR */
-      ;
+      return c === 0x0A /* LF */ || c === 0x0D /* CR */;
     }
 
     function is_WHITE_SPACE(c) {
-      return c === 0x09
-      /* Tab */
-      || c === 0x20
-      /* Space */
-      ;
+      return c === 0x09 /* Tab */ || c === 0x20 /* Space */;
     }
 
     function is_WS_OR_EOL(c) {
-      return c === 0x09
-      /* Tab */
-      || c === 0x20
-      /* Space */
-      || c === 0x0A
-      /* LF */
-      || c === 0x0D
-      /* CR */
-      ;
+      return c === 0x09 /* Tab */ || c === 0x20 /* Space */ || c === 0x0A /* LF */ || c === 0x0D /* CR */;
     }
 
     function is_FLOW_INDICATOR(c) {
-      return c === 0x2C
-      /* , */
-      || c === 0x5B
-      /* [ */
-      || c === 0x5D
-      /* ] */
-      || c === 0x7B
-      /* { */
-      || c === 0x7D
-      /* } */
-      ;
+      return c === 0x2C /* , */ || c === 0x5B /* [ */ || c === 0x5D /* ] */ || c === 0x7B /* { */ || c === 0x7D /* } */;
     }
 
     function fromHexCode(c) {
       var lc;
-
-      if (0x30
-      /* 0 */
-      <= c && c <= 0x39
-      /* 9 */
-      ) {
+      if (0x30 /* 0 */ <= c && c <= 0x39 /* 9 */) {
         return c - 0x30;
       }
+
       /*eslint-disable no-bitwise*/
-
-
       lc = c | 0x20;
-
-      if (0x61
-      /* a */
-      <= lc && lc <= 0x66
-      /* f */
-      ) {
+      if (0x61 /* a */ <= lc && lc <= 0x66 /* f */) {
         return lc - 0x61 + 10;
       }
-
       return -1;
     }
-
     function escapedHexLen(c) {
-      if (c === 0x78
-      /* x */
-      ) {
-          return 2;
-        }
-
-      if (c === 0x75
-      /* u */
-      ) {
-          return 4;
-        }
-
-      if (c === 0x55
-      /* U */
-      ) {
-          return 8;
-        }
-
+      if (c === 0x78 /* x */) {
+        return 2;
+      }
+      if (c === 0x75 /* u */) {
+        return 4;
+      }
+      if (c === 0x55 /* U */) {
+        return 8;
+      }
       return 0;
     }
-
     function fromDecimalCode(c) {
-      if (0x30
-      /* 0 */
-      <= c && c <= 0x39
-      /* 9 */
-      ) {
+      if (0x30 /* 0 */ <= c && c <= 0x39 /* 9 */) {
         return c - 0x30;
       }
-
       return -1;
     }
-
     function simpleEscapeSequence(c) {
       /* eslint-disable indent */
-      return c === 0x30
-      /* 0 */
-      ? '\x00' : c === 0x61
-      /* a */
-      ? '\x07' : c === 0x62
-      /* b */
-      ? '\x08' : c === 0x74
-      /* t */
-      ? '\x09' : c === 0x09
-      /* Tab */
-      ? '\x09' : c === 0x6E
-      /* n */
-      ? '\x0A' : c === 0x76
-      /* v */
-      ? '\x0B' : c === 0x66
-      /* f */
-      ? '\x0C' : c === 0x72
-      /* r */
-      ? '\x0D' : c === 0x65
-      /* e */
-      ? '\x1B' : c === 0x20
-      /* Space */
-      ? ' ' : c === 0x22
-      /* " */
-      ? '\x22' : c === 0x2F
-      /* / */
-      ? '/' : c === 0x5C
-      /* \ */
-      ? '\x5C' : c === 0x4E
-      /* N */
-      ? '\x85' : c === 0x5F
-      /* _ */
-      ? '\xA0' : c === 0x4C
-      /* L */
-      ? "\u2028" : c === 0x50
-      /* P */
-      ? "\u2029" : '';
+      return c === 0x30 /* 0 */ ? '\x00' : c === 0x61 /* a */ ? '\x07' : c === 0x62 /* b */ ? '\x08' : c === 0x74 /* t */ ? '\x09' : c === 0x09 /* Tab */ ? '\x09' : c === 0x6E /* n */ ? '\x0A' : c === 0x76 /* v */ ? '\x0B' : c === 0x66 /* f */ ? '\x0C' : c === 0x72 /* r */ ? '\x0D' : c === 0x65 /* e */ ? '\x1B' : c === 0x20 /* Space */ ? ' ' : c === 0x22 /* " */ ? '\x22' : c === 0x2F /* / */ ? '/' : c === 0x5C /* \ */ ? '\x5C' : c === 0x4E /* N */ ? '\x85' : c === 0x5F /* _ */ ? '\xA0' : c === 0x4C /* L */ ? "\u2028" : c === 0x50 /* P */ ? "\u2029" : '';
     }
-
     function charFromCodepoint(c) {
       if (c <= 0xFFFF) {
         return String.fromCharCode(c);
-      } // Encode UTF-16 surrogate pair
+      }
+      // Encode UTF-16 surrogate pair
       // https://en.wikipedia.org/wiki/UTF-16#Code_points_U.2B010000_to_U.2B10FFFF
-
-
       return String.fromCharCode((c - 0x010000 >> 10) + 0xD800, (c - 0x010000 & 0x03FF) + 0xDC00);
     }
-
     var simpleEscapeCheck = new Array(256); // integer, for fast access
-
     var simpleEscapeMap = new Array(256);
-
     for (var i = 0; i < 256; i++) {
       simpleEscapeCheck[i] = simpleEscapeSequence(i) ? 1 : 0;
       simpleEscapeMap[i] = simpleEscapeSequence(i);
     }
-
     function State$1(input, options) {
       this.input = input;
       this.filename = options['filename'] || null;
@@ -13421,6 +11567,7 @@
       this.lineStart = 0;
       this.lineIndent = 0;
       this.documents = [];
+
       /*
       this.version;
       this.checkLineBreaks;
@@ -13435,85 +11582,64 @@
     function generateError(state, message) {
       return new exception(message, new mark(state.filename, state.input, state.position, state.line, state.position - state.lineStart));
     }
-
     function throwError(state, message) {
       throw generateError(state, message);
     }
-
     function throwWarning(state, message) {
       if (state.onWarning) {
         state.onWarning.call(null, generateError(state, message));
       }
     }
-
     var directiveHandlers = {
       YAML: function handleYamlDirective(state, name, args) {
         var match, major, minor;
-
         if (state.version !== null) {
           throwError(state, 'duplication of %YAML directive');
         }
-
         if (args.length !== 1) {
           throwError(state, 'YAML directive accepts exactly one argument');
         }
-
         match = /^([0-9]+)\.([0-9]+)$/.exec(args[0]);
-
         if (match === null) {
           throwError(state, 'ill-formed argument of the YAML directive');
         }
-
         major = parseInt(match[1], 10);
         minor = parseInt(match[2], 10);
-
         if (major !== 1) {
           throwError(state, 'unacceptable YAML version of the document');
         }
-
         state.version = args[0];
         state.checkLineBreaks = minor < 2;
-
         if (minor !== 1 && minor !== 2) {
           throwWarning(state, 'unsupported YAML version of the document');
         }
       },
       TAG: function handleTagDirective(state, name, args) {
         var handle, prefix;
-
         if (args.length !== 2) {
           throwError(state, 'TAG directive accepts exactly two arguments');
         }
-
         handle = args[0];
         prefix = args[1];
-
         if (!PATTERN_TAG_HANDLE.test(handle)) {
           throwError(state, 'ill-formed tag handle (first argument) of the TAG directive');
         }
-
         if (_hasOwnProperty$1.call(state.tagMap, handle)) {
           throwError(state, 'there is a previously declared suffix for "' + handle + '" tag handle');
         }
-
         if (!PATTERN_TAG_URI.test(prefix)) {
           throwError(state, 'ill-formed tag prefix (second argument) of the TAG directive');
         }
-
         state.tagMap[handle] = prefix;
       }
     };
-
     function captureSegment(state, start, end, checkJson) {
       var _position, _length, _character, _result;
-
       if (start < end) {
         _result = state.input.slice(start, end);
-
         if (checkJson) {
           for (_position = 0, _length = _result.length; _position < _length; _position += 1) {
             _character = _result.charCodeAt(_position);
-
             if (!(_character === 0x09 || 0x20 <= _character && _character <= 0x10FFFF)) {
               throwError(state, 'expected valid JSON character');
             }
@@ -13521,62 +11647,51 @@
         } else if (PATTERN_NON_PRINTABLE.test(_result)) {
           throwError(state, 'the stream contains non-printable characters');
         }
-
         state.result += _result;
       }
     }
-
     function mergeMappings(state, destination, source, overridableKeys) {
       var sourceKeys, key, index, quantity;
-
       if (!common.isObject(source)) {
         throwError(state, 'cannot merge mappings; the provided source object is unacceptable');
       }
-
       sourceKeys = Object.keys(source);
-
       for (index = 0, quantity = sourceKeys.length; index < quantity; index += 1) {
         key = sourceKeys[index];
-
         if (!_hasOwnProperty$1.call(destination, key)) {
           destination[key] = source[key];
           overridableKeys[key] = true;
         }
       }
     }
-
     function storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, valueNode, startLine, startPos) {
-      var index, quantity; // The output is a plain object here, so keys can only be strings.
+      var index, quantity;
+
+      // The output is a plain object here, so keys can only be strings.
       // We need to convert keyNode to a string, but doing so can hang the process
       // (deeply nested arrays that explode exponentially using aliases).
-
       if (Array.isArray(keyNode)) {
         keyNode = Array.prototype.slice.call(keyNode);
-
         for (index = 0, quantity = keyNode.length; index < quantity; index += 1) {
           if (Array.isArray(keyNode[index])) {
             throwError(state, 'nested arrays are not supported inside keys');
           }
-
           if (typeof keyNode === 'object' && _class(keyNode[index]) === '[object Object]') {
             keyNode[index] = '[object Object]';
           }
         }
-      } // Avoid code execution in load() via toString property
+      }
+
+      // Avoid code execution in load() via toString property
       // (still use its own toString for arrays, timestamps,
       // and whatever user schema extensions happen to have @@toStringTag)
-
-
       if (typeof keyNode === 'object' && _class(keyNode) === '[object Object]') {
         keyNode = '[object Object]';
       }
-
       keyNode = String(keyNode);
-
       if (_result === null) {
         _result = {};
       }
-
       if (keyTag === 'tag:yaml.org,2002:merge') {
         if (Array.isArray(valueNode)) {
           for (index = 0, quantity = valueNode.length; index < quantity; index += 1) {
@@ -13591,70 +11706,45 @@
           state.position = startPos || state.position;
           throwError(state, 'duplicated mapping key');
         }
-
         _result[keyNode] = valueNode;
         delete overridableKeys[keyNode];
       }
-
       return _result;
     }
-
     function readLineBreak(state) {
       var ch;
       ch = state.input.charCodeAt(state.position);
-
-      if (ch === 0x0A
-      /* LF */
-      ) {
+      if (ch === 0x0A /* LF */) {
+        state.position++;
+      } else if (ch === 0x0D /* CR */) {
+        state.position++;
+        if (state.input.charCodeAt(state.position) === 0x0A /* LF */) {
           state.position++;
-        } else if (ch === 0x0D
-      /* CR */
-      ) {
-          state.position++;
-
-          if (state.input.charCodeAt(state.position) === 0x0A
-          /* LF */
-          ) {
-              state.position++;
-            }
-        } else {
+        }
+      } else {
         throwError(state, 'a line break is expected');
       }
-
       state.line += 1;
       state.lineStart = state.position;
     }
-
     function skipSeparationSpace(state, allowComments, checkIndent) {
       var lineBreaks = 0,
-          ch = state.input.charCodeAt(state.position);
-
+        ch = state.input.charCodeAt(state.position);
       while (ch !== 0) {
         while (is_WHITE_SPACE(ch)) {
           ch = state.input.charCodeAt(++state.position);
         }
-
-        if (allowComments && ch === 0x23
-        /* # */
-        ) {
-            do {
-              ch = state.input.charCodeAt(++state.position);
-            } while (ch !== 0x0A
-            /* LF */
-            && ch !== 0x0D
-            /* CR */
-            && ch !== 0);
-          }
-
+        if (allowComments && ch === 0x23 /* # */) {
+          do {
+            ch = state.input.charCodeAt(++state.position);
+          } while (ch !== 0x0A /* LF */ && ch !== 0x0D /* CR */ && ch !== 0);
+        }
         if (is_EOL(ch)) {
           readLineBreak(state);
           ch = state.input.charCodeAt(state.position);
           lineBreaks++;
           state.lineIndent = 0;
-
-          while (ch === 0x20
-          /* Space */
-          ) {
+          while (ch === 0x20 /* Space */) {
             state.lineIndent++;
             ch = state.input.charCodeAt(++state.position);
           }
@@ -13662,36 +11752,27 @@
           break;
         }
       }
-
       if (checkIndent !== -1 && lineBreaks !== 0 && state.lineIndent < checkIndent) {
         throwWarning(state, 'deficient indentation');
       }
-
       return lineBreaks;
     }
-
     function testDocumentSeparator(state) {
       var _position = state.position,
-          ch;
-      ch = state.input.charCodeAt(_position); // Condition state.position === state.lineStart is tested
-      // in parent on each call, for efficiency. No needs to test here again.
+        ch;
+      ch = state.input.charCodeAt(_position);
 
-      if ((ch === 0x2D
-      /* - */
-      || ch === 0x2E
-      /* . */
-      ) && ch === state.input.charCodeAt(_position + 1) && ch === state.input.charCodeAt(_position + 2)) {
+      // Condition state.position === state.lineStart is tested
+      // in parent on each call, for efficiency. No needs to test here again.
+      if ((ch === 0x2D /* - */ || ch === 0x2E /* . */) && ch === state.input.charCodeAt(_position + 1) && ch === state.input.charCodeAt(_position + 2)) {
         _position += 3;
         ch = state.input.charCodeAt(_position);
-
         if (ch === 0 || is_WS_OR_EOL(ch)) {
           return true;
         }
       }
-
       return false;
     }
-
     function writeFoldedLines(state, count) {
       if (count === 1) {
         state.result += ' ';
@@ -13699,90 +11780,50 @@
         state.result += common.repeat('\n', count - 1);
       }
     }
-
     function readPlainScalar(state, nodeIndent, withinFlowCollection) {
       var preceding,
-          following,
-          captureStart,
-          captureEnd,
-          hasPendingContent,
-          _line,
-          _lineStart,
-          _lineIndent,
-          _kind = state.kind,
-          _result = state.result,
-          ch;
-
+        following,
+        captureStart,
+        captureEnd,
+        hasPendingContent,
+        _line,
+        _lineStart,
+        _lineIndent,
+        _kind = state.kind,
+        _result = state.result,
+        ch;
       ch = state.input.charCodeAt(state.position);
-
-      if (is_WS_OR_EOL(ch) || is_FLOW_INDICATOR(ch) || ch === 0x23
-      /* # */
-      || ch === 0x26
-      /* & */
-      || ch === 0x2A
-      /* * */
-      || ch === 0x21
-      /* ! */
-      || ch === 0x7C
-      /* | */
-      || ch === 0x3E
-      /* > */
-      || ch === 0x27
-      /* ' */
-      || ch === 0x22
-      /* " */
-      || ch === 0x25
-      /* % */
-      || ch === 0x40
-      /* @ */
-      || ch === 0x60
-      /* ` */
-      ) {
+      if (is_WS_OR_EOL(ch) || is_FLOW_INDICATOR(ch) || ch === 0x23 /* # */ || ch === 0x26 /* & */ || ch === 0x2A /* * */ || ch === 0x21 /* ! */ || ch === 0x7C /* | */ || ch === 0x3E /* > */ || ch === 0x27 /* ' */ || ch === 0x22 /* " */ || ch === 0x25 /* % */ || ch === 0x40 /* @ */ || ch === 0x60 /* ` */) {
+        return false;
+      }
+      if (ch === 0x3F /* ? */ || ch === 0x2D /* - */) {
+        following = state.input.charCodeAt(state.position + 1);
+        if (is_WS_OR_EOL(following) || withinFlowCollection && is_FLOW_INDICATOR(following)) {
           return false;
         }
-
-      if (ch === 0x3F
-      /* ? */
-      || ch === 0x2D
-      /* - */
-      ) {
-          following = state.input.charCodeAt(state.position + 1);
-
-          if (is_WS_OR_EOL(following) || withinFlowCollection && is_FLOW_INDICATOR(following)) {
-            return false;
-          }
-        }
-
+      }
       state.kind = 'scalar';
       state.result = '';
       captureStart = captureEnd = state.position;
       hasPendingContent = false;
-
       while (ch !== 0) {
-        if (ch === 0x3A
-        /* : */
-        ) {
-            following = state.input.charCodeAt(state.position + 1);
-
-            if (is_WS_OR_EOL(following) || withinFlowCollection && is_FLOW_INDICATOR(following)) {
-              break;
-            }
-          } else if (ch === 0x23
-        /* # */
-        ) {
-            preceding = state.input.charCodeAt(state.position - 1);
-
-            if (is_WS_OR_EOL(preceding)) {
-              break;
-            }
-          } else if (state.position === state.lineStart && testDocumentSeparator(state) || withinFlowCollection && is_FLOW_INDICATOR(ch)) {
+        if (ch === 0x3A /* : */) {
+          following = state.input.charCodeAt(state.position + 1);
+          if (is_WS_OR_EOL(following) || withinFlowCollection && is_FLOW_INDICATOR(following)) {
+            break;
+          }
+        } else if (ch === 0x23 /* # */) {
+          preceding = state.input.charCodeAt(state.position - 1);
+          if (is_WS_OR_EOL(preceding)) {
+            break;
+          }
+        } else if (state.position === state.lineStart && testDocumentSeparator(state) || withinFlowCollection && is_FLOW_INDICATOR(ch)) {
           break;
         } else if (is_EOL(ch)) {
           _line = state.line;
           _lineStart = state.lineStart;
           _lineIndent = state.lineIndent;
           skipSeparationSpace(state, false, -1);
-
           if (state.lineIndent >= nodeIndent) {
             hasPendingContent = true;
             ch = state.input.charCodeAt(state.position);
@@ -13795,64 +11836,47 @@
             break;
           }
         }
-
         if (hasPendingContent) {
           captureSegment(state, captureStart, captureEnd, false);
           writeFoldedLines(state, state.line - _line);
           captureStart = captureEnd = state.position;
           hasPendingContent = false;
         }
-
         if (!is_WHITE_SPACE(ch)) {
           captureEnd = state.position + 1;
         }
-
         ch = state.input.charCodeAt(++state.position);
       }
-
       captureSegment(state, captureStart, captureEnd, false);
-
       if (state.result) {
         return true;
       }
-
       state.kind = _kind;
       state.result = _result;
       return false;
     }
-
     function readSingleQuotedScalar(state, nodeIndent) {
       var ch, captureStart, captureEnd;
       ch = state.input.charCodeAt(state.position);
-
-      if (ch !== 0x27
-      /* ' */
-      ) {
-          return false;
-        }
-
+      if (ch !== 0x27 /* ' */) {
+        return false;
+      }
       state.kind = 'scalar';
       state.result = '';
       state.position++;
       captureStart = captureEnd = state.position;
-
       while ((ch = state.input.charCodeAt(state.position)) !== 0) {
-        if (ch === 0x27
-        /* ' */
-        ) {
-            captureSegment(state, captureStart, state.position, true);
-            ch = state.input.charCodeAt(++state.position);
-
-            if (ch === 0x27
-            /* ' */
-            ) {
-                captureStart = state.position;
-                state.position++;
-                captureEnd = state.position;
-              } else {
-              return true;
-            }
-          } else if (is_EOL(ch)) {
+        if (ch === 0x27 /* ' */) {
+          captureSegment(state, captureStart, state.position, true);
+          ch = state.input.charCodeAt(++state.position);
+          if (ch === 0x27 /* ' */) {
+            captureStart = state.position;
+            state.position++;
+            captureEnd = state.position;
+          } else {
+            return true;
+          }
+        } else if (is_EOL(ch)) {
           captureSegment(state, captureStart, captureEnd, true);
           writeFoldedLines(state, skipSeparationSpace(state, false, nodeIndent));
           captureStart = captureEnd = state.position;
@@ -13863,65 +11887,51 @@
           captureEnd = state.position;
         }
       }
-
       throwError(state, 'unexpected end of the stream within a single quoted scalar');
     }
-
     function readDoubleQuotedScalar(state, nodeIndent) {
       var captureStart, captureEnd, hexLength, hexResult, tmp, ch;
       ch = state.input.charCodeAt(state.position);
-
-      if (ch !== 0x22
-      /* " */
-      ) {
-          return false;
-        }
-
+      if (ch !== 0x22 /* " */) {
+        return false;
+      }
       state.kind = 'scalar';
       state.result = '';
       state.position++;
       captureStart = captureEnd = state.position;
-
       while ((ch = state.input.charCodeAt(state.position)) !== 0) {
-        if (ch === 0x22
-        /* " */
-        ) {
-            captureSegment(state, captureStart, state.position, true);
+        if (ch === 0x22 /* " */) {
+          captureSegment(state, captureStart, state.position, true);
+          state.position++;
+          return true;
+        } else if (ch === 0x5C /* \ */) {
+          captureSegment(state, captureStart, state.position, true);
+          ch = state.input.charCodeAt(++state.position);
+          if (is_EOL(ch)) {
+            skipSeparationSpace(state, false, nodeIndent);
+
+            // TODO: rework to inline fn with no type cast?
+          } else if (ch < 256 && simpleEscapeCheck[ch]) {
+            state.result += simpleEscapeMap[ch];
             state.position++;
-            return true;
-          } else if (ch === 0x5C
-        /* \ */
-        ) {
-            captureSegment(state, captureStart, state.position, true);
-            ch = state.input.charCodeAt(++state.position);
-
-            if (is_EOL(ch)) {
-              skipSeparationSpace(state, false, nodeIndent); // TODO: rework to inline fn with no type cast?
-            } else if (ch < 256 && simpleEscapeCheck[ch]) {
-              state.result += simpleEscapeMap[ch];
-              state.position++;
-            } else if ((tmp = escapedHexLen(ch)) > 0) {
-              hexLength = tmp;
-              hexResult = 0;
-
-              for (; hexLength > 0; hexLength--) {
-                ch = state.input.charCodeAt(++state.position);
-
-                if ((tmp = fromHexCode(ch)) >= 0) {
-                  hexResult = (hexResult << 4) + tmp;
-                } else {
-                  throwError(state, 'expected hexadecimal character');
-                }
+          } else if ((tmp = escapedHexLen(ch)) > 0) {
+            hexLength = tmp;
+            hexResult = 0;
+            for (; hexLength > 0; hexLength--) {
+              ch = state.input.charCodeAt(++state.position);
+              if ((tmp = fromHexCode(ch)) >= 0) {
+                hexResult = (hexResult << 4) + tmp;
+              } else {
+                throwError(state, 'expected hexadecimal character');
               }
-
-              state.result += charFromCodepoint(hexResult);
-              state.position++;
-            } else {
-              throwError(state, 'unknown escape sequence');
             }
-
-            captureStart = captureEnd = state.position;
-          } else if (is_EOL(ch)) {
+            state.result += charFromCodepoint(hexResult);
+            state.position++;
+          } else {
+            throwError(state, 'unknown escape sequence');
+          }
+          captureStart = captureEnd = state.position;
+        } else if (is_EOL(ch)) {
           captureSegment(state, captureStart, captureEnd, true);
           writeFoldedLines(state, skipSeparationSpace(state, false, nodeIndent));
           captureStart = captureEnd = state.position;
@@ -13932,59 +11942,43 @@
           captureEnd = state.position;
         }
       }
-
       throwError(state, 'unexpected end of the stream within a double quoted scalar');
     }
-
     function readFlowCollection(state, nodeIndent) {
       var readNext = true,
-          _line,
-          _tag = state.tag,
-          _result,
-          _anchor = state.anchor,
-          following,
-          terminator,
-          isPair,
-          isExplicitPair,
-          isMapping,
-          overridableKeys = {},
-          keyNode,
-          keyTag,
-          valueNode,
-          ch;
-
+        _line,
+        _tag = state.tag,
+        _result,
+        _anchor = state.anchor,
+        following,
+        terminator,
+        isPair,
+        isExplicitPair,
+        isMapping,
+        overridableKeys = {},
+        keyNode,
+        keyTag,
+        valueNode,
+        ch;
       ch = state.input.charCodeAt(state.position);
-
-      if (ch === 0x5B
-      /* [ */
-      ) {
-          terminator = 0x5D;
-          /* ] */
-
-          isMapping = false;
-          _result = [];
-        } else if (ch === 0x7B
-      /* { */
-      ) {
-          terminator = 0x7D;
-          /* } */
-
-          isMapping = true;
-          _result = {};
-        } else {
+      if (ch === 0x5B /* [ */) {
+        terminator = 0x5D; /* ] */
+        isMapping = false;
+        _result = [];
+      } else if (ch === 0x7B /* { */) {
+        terminator = 0x7D; /* } */
+        isMapping = true;
+        _result = {};
+      } else {
         return false;
       }
-
       if (state.anchor !== null) {
         state.anchorMap[state.anchor] = _result;
       }
-
       ch = state.input.charCodeAt(++state.position);
-
       while (ch !== 0) {
         skipSeparationSpace(state, true, nodeIndent);
         ch = state.input.charCodeAt(state.position);
-
         if (ch === terminator) {
           state.position++;
           state.tag = _tag;
@@ -13995,39 +11989,29 @@
         } else if (!readNext) {
           throwError(state, 'missed comma between flow collection entries');
         }
-
         keyTag = keyNode = valueNode = null;
         isPair = isExplicitPair = false;
-
-        if (ch === 0x3F
-        /* ? */
-        ) {
-            following = state.input.charCodeAt(state.position + 1);
-
-            if (is_WS_OR_EOL(following)) {
-              isPair = isExplicitPair = true;
-              state.position++;
-              skipSeparationSpace(state, true, nodeIndent);
-            }
+        if (ch === 0x3F /* ? */) {
+          following = state.input.charCodeAt(state.position + 1);
+          if (is_WS_OR_EOL(following)) {
+            isPair = isExplicitPair = true;
+            state.position++;
+            skipSeparationSpace(state, true, nodeIndent);
           }
-
+        }
         _line = state.line;
         composeNode(state, nodeIndent, CONTEXT_FLOW_IN, false, true);
         keyTag = state.tag;
         keyNode = state.result;
         skipSeparationSpace(state, true, nodeIndent);
         ch = state.input.charCodeAt(state.position);
-
-        if ((isExplicitPair || state.line === _line) && ch === 0x3A
-        /* : */
-        ) {
-            isPair = true;
-            ch = state.input.charCodeAt(++state.position);
-            skipSeparationSpace(state, true, nodeIndent);
-            composeNode(state, nodeIndent, CONTEXT_FLOW_IN, false, true);
-            valueNode = state.result;
-          }
-
+        if ((isExplicitPair || state.line === _line) && ch === 0x3A /* : */) {
+          isPair = true;
+          ch = state.input.charCodeAt(++state.position);
+          skipSeparationSpace(state, true, nodeIndent);
+          composeNode(state, nodeIndent, CONTEXT_FLOW_IN, false, true);
+          valueNode = state.result;
+        }
         if (isMapping) {
           storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, valueNode);
         } else if (isPair) {
@@ -14035,67 +12019,47 @@
         } else {
           _result.push(keyNode);
         }
-
         skipSeparationSpace(state, true, nodeIndent);
         ch = state.input.charCodeAt(state.position);
-
-        if (ch === 0x2C
-        /* , */
-        ) {
-            readNext = true;
-            ch = state.input.charCodeAt(++state.position);
-          } else {
+        if (ch === 0x2C /* , */) {
+          readNext = true;
+          ch = state.input.charCodeAt(++state.position);
+        } else {
           readNext = false;
         }
       }
-
       throwError(state, 'unexpected end of the stream within a flow collection');
     }
-
     function readBlockScalar(state, nodeIndent) {
       var captureStart,
-          folding,
-          chomping = CHOMPING_CLIP,
-          didReadContent = false,
-          detectedIndent = false,
-          textIndent = nodeIndent,
-          emptyLines = 0,
-          atMoreIndented = false,
-          tmp,
-          ch;
+        folding,
+        chomping = CHOMPING_CLIP,
+        didReadContent = false,
+        detectedIndent = false,
+        textIndent = nodeIndent,
+        emptyLines = 0,
+        atMoreIndented = false,
+        tmp,
+        ch;
       ch = state.input.charCodeAt(state.position);
-
-      if (ch === 0x7C
-      /* | */
-      ) {
-          folding = false;
-        } else if (ch === 0x3E
-      /* > */
-      ) {
-          folding = true;
-        } else {
+      if (ch === 0x7C /* | */) {
+        folding = false;
+      } else if (ch === 0x3E /* > */) {
+        folding = true;
+      } else {
         return false;
       }
-
       state.kind = 'scalar';
       state.result = '';
-
       while (ch !== 0) {
         ch = state.input.charCodeAt(++state.position);
-
-        if (ch === 0x2B
-        /* + */
-        || ch === 0x2D
-        /* - */
-        ) {
-            if (CHOMPING_CLIP === chomping) {
-              chomping = ch === 0x2B
-              /* + */
-              ? CHOMPING_KEEP : CHOMPING_STRIP;
-            } else {
-              throwError(state, 'repeat of a chomping mode identifier');
-            }
-          } else if ((tmp = fromDecimalCode(ch)) >= 0) {
+        if (ch === 0x2B /* + */ || ch === 0x2D /* - */) {
+          if (CHOMPING_CLIP === chomping) {
+            chomping = ch === 0x2B /* + */ ? CHOMPING_KEEP : CHOMPING_STRIP;
+          } else {
+            throwError(state, 'repeat of a chomping mode identifier');
+          }
+        } else if ((tmp = fromDecimalCode(ch)) >= 0) {
           if (tmp === 0) {
             throwError(state, 'bad explicit indentation width of a block scalar; it cannot be less than one');
           } else if (!detectedIndent) {
@@ -14108,43 +12072,33 @@
           break;
         }
       }
-
       if (is_WHITE_SPACE(ch)) {
         do {
           ch = state.input.charCodeAt(++state.position);
         } while (is_WHITE_SPACE(ch));
-
-        if (ch === 0x23
-        /* # */
-        ) {
-            do {
-              ch = state.input.charCodeAt(++state.position);
-            } while (!is_EOL(ch) && ch !== 0);
-          }
+        if (ch === 0x23 /* # */) {
+          do {
+            ch = state.input.charCodeAt(++state.position);
+          } while (!is_EOL(ch) && ch !== 0);
+        }
       }
-
       while (ch !== 0) {
         readLineBreak(state);
         state.lineIndent = 0;
         ch = state.input.charCodeAt(state.position);
-
-        while ((!detectedIndent || state.lineIndent < textIndent) && ch === 0x20
-        /* Space */
-        ) {
+        while ((!detectedIndent || state.lineIndent < textIndent) && ch === 0x20 /* Space */) {
           state.lineIndent++;
           ch = state.input.charCodeAt(++state.position);
         }
-
         if (!detectedIndent && state.lineIndent > textIndent) {
           textIndent = state.lineIndent;
         }
-
         if (is_EOL(ch)) {
           emptyLines++;
           continue;
-        } // End of the scalar.
+        }
 
-
+        // End of the scalar.
         if (state.lineIndent < textIndent) {
           // Perform the chomping.
           if (chomping === CHOMPING_KEEP) {
@@ -14154,107 +12108,93 @@
               // i.e. only if the scalar is not empty.
               state.result += '\n';
             }
-          } // Break this `while` cycle and go to the funciton's epilogue.
+          }
 
-
+          // Break this `while` cycle and go to the funciton's epilogue.
           break;
-        } // Folded style: use fancy rules to handle line breaks.
+        }
 
-
+        // Folded style: use fancy rules to handle line breaks.
         if (folding) {
           // Lines starting with white space characters (more-indented lines) are not folded.
           if (is_WHITE_SPACE(ch)) {
-            atMoreIndented = true; // except for the first content line (cf. Example 8.1)
+            atMoreIndented = true;
+            // except for the first content line (cf. Example 8.1)
+            state.result += common.repeat('\n', didReadContent ? 1 + emptyLines : emptyLines);
 
-            state.result += common.repeat('\n', didReadContent ? 1 + emptyLines : emptyLines); // End of more-indented block.
+            // End of more-indented block.
           } else if (atMoreIndented) {
             atMoreIndented = false;
-            state.result += common.repeat('\n', emptyLines + 1); // Just one line break - perceive as the same line.
+            state.result += common.repeat('\n', emptyLines + 1);
+
+            // Just one line break - perceive as the same line.
           } else if (emptyLines === 0) {
             if (didReadContent) {
               // i.e. only if we have already read some scalar content.
               state.result += ' ';
-            } // Several line breaks - perceive as different lines.
+            }
 
+            // Several line breaks - perceive as different lines.
           } else {
             state.result += common.repeat('\n', emptyLines);
-          } // Literal style: just add exact number of line breaks between content lines.
+          }
 
+          // Literal style: just add exact number of line breaks between content lines.
         } else {
           // Keep all line breaks except the header line break.
           state.result += common.repeat('\n', didReadContent ? 1 + emptyLines : emptyLines);
         }
-
         didReadContent = true;
         detectedIndent = true;
         emptyLines = 0;
         captureStart = state.position;
-
         while (!is_EOL(ch) && ch !== 0) {
           ch = state.input.charCodeAt(++state.position);
         }
-
         captureSegment(state, captureStart, state.position, false);
       }
-
       return true;
     }
-
     function readBlockSequence(state, nodeIndent) {
       var _line,
-          _tag = state.tag,
-          _anchor = state.anchor,
-          _result = [],
-          following,
-          detected = false,
-          ch;
-
+        _tag = state.tag,
+        _anchor = state.anchor,
+        _result = [],
+        following,
+        detected = false,
+        ch;
       if (state.anchor !== null) {
         state.anchorMap[state.anchor] = _result;
       }
-
       ch = state.input.charCodeAt(state.position);
-
       while (ch !== 0) {
-        if (ch !== 0x2D
-        /* - */
-        ) {
-            break;
-          }
-
+        if (ch !== 0x2D /* - */) {
+          break;
+        }
         following = state.input.charCodeAt(state.position + 1);
-
         if (!is_WS_OR_EOL(following)) {
           break;
         }
-
         detected = true;
         state.position++;
-
         if (skipSeparationSpace(state, true, -1)) {
           if (state.lineIndent <= nodeIndent) {
             _result.push(null);
-
             ch = state.input.charCodeAt(state.position);
             continue;
           }
         }
-
         _line = state.line;
         composeNode(state, nodeIndent, CONTEXT_BLOCK_IN, false, true);
-
         _result.push(state.result);
-
         skipSeparationSpace(state, true, -1);
         ch = state.input.charCodeAt(state.position);
-
         if ((state.line === _line || state.lineIndent > nodeIndent) && ch !== 0) {
           throwError(state, 'bad indentation of a sequence entry');
         } else if (state.lineIndent < nodeIndent) {
           break;
         }
       }
-
       if (detected) {
         state.tag = _tag;
         state.anchor = _anchor;
@@ -14262,97 +12202,79 @@
         state.result = _result;
         return true;
       }
-
       return false;
     }
-
     function readBlockMapping(state, nodeIndent, flowIndent) {
       var following,
-          allowCompact,
-          _line,
-          _pos,
-          _tag = state.tag,
-          _anchor = state.anchor,
-          _result = {},
-          overridableKeys = {},
-          keyTag = null,
-          keyNode = null,
-          valueNode = null,
-          atExplicitKey = false,
-          detected = false,
-          ch;
-
+        allowCompact,
+        _line,
+        _pos,
+        _tag = state.tag,
+        _anchor = state.anchor,
+        _result = {},
+        overridableKeys = {},
+        keyTag = null,
+        keyNode = null,
+        valueNode = null,
+        atExplicitKey = false,
+        detected = false,
+        ch;
       if (state.anchor !== null) {
         state.anchorMap[state.anchor] = _result;
       }
-
       ch = state.input.charCodeAt(state.position);
-
       while (ch !== 0) {
         following = state.input.charCodeAt(state.position + 1);
         _line = state.line; // Save the current line.
+        _pos = state.position;
 
-        _pos = state.position; //
+        //
         // Explicit notation case. There are two separate blocks:
         // first for the key (denoted by "?") and second for the value (denoted by ":")
         //
-
-        if ((ch === 0x3F
-        /* ? */
-        || ch === 0x3A
-        /* : */
-        ) && is_WS_OR_EOL(following)) {
-          if (ch === 0x3F
-          /* ? */
-          ) {
-              if (atExplicitKey) {
-                storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, null);
-                keyTag = keyNode = valueNode = null;
-              }
-
-              detected = true;
-              atExplicitKey = true;
-              allowCompact = true;
-            } else if (atExplicitKey) {
+        if ((ch === 0x3F /* ? */ || ch === 0x3A /* : */) && is_WS_OR_EOL(following)) {
+          if (ch === 0x3F /* ? */) {
+            if (atExplicitKey) {
+              storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, null);
+              keyTag = keyNode = valueNode = null;
+            }
+            detected = true;
+            atExplicitKey = true;
+            allowCompact = true;
+          } else if (atExplicitKey) {
             // i.e. 0x3A/* : */ === character after the explicit key.
             atExplicitKey = false;
             allowCompact = true;
           } else {
             throwError(state, 'incomplete explicit mapping pair; a key node is missed; or followed by a non-tabulated empty line');
           }
-
           state.position += 1;
-          ch = following; //
+          ch = following;
+
+          //
           // Implicit notation case. Flow-style node as the key first, then ":", and the value.
           //
         } else if (composeNode(state, flowIndent, CONTEXT_FLOW_OUT, false, true)) {
           if (state.line === _line) {
             ch = state.input.charCodeAt(state.position);
-
             while (is_WHITE_SPACE(ch)) {
               ch = state.input.charCodeAt(++state.position);
             }
-
-            if (ch === 0x3A
-            /* : */
-            ) {
-                ch = state.input.charCodeAt(++state.position);
-
-                if (!is_WS_OR_EOL(ch)) {
-                  throwError(state, 'a whitespace character is expected after the key-value separator within a block mapping');
-                }
-
-                if (atExplicitKey) {
-                  storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, null);
-                  keyTag = keyNode = valueNode = null;
-                }
-
-                detected = true;
-                atExplicitKey = false;
-                allowCompact = false;
-                keyTag = state.tag;
-                keyNode = state.result;
-              } else if (detected) {
+            if (ch === 0x3A /* : */) {
+              ch = state.input.charCodeAt(++state.position);
+              if (!is_WS_OR_EOL(ch)) {
+                throwError(state, 'a whitespace character is expected after the key-value separator within a block mapping');
+              }
+              if (atExplicitKey) {
+                storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, null);
+                keyTag = keyNode = valueNode = null;
+              }
+              detected = true;
+              atExplicitKey = false;
+              allowCompact = false;
+              keyTag = state.tag;
+              keyNode = state.result;
+            } else if (detected) {
               throwError(state, 'can not read an implicit mapping pair; a colon is missed');
             } else {
               state.tag = _tag;
@@ -14367,12 +12289,12 @@
             return true; // Keep the result of `composeNode`.
           }
         } else {
-            break; // Reading is done. Go to the epilogue.
-          } //
+          break; // Reading is done. Go to the epilogue.
+        }
+
+        //
         // Common reading code for both explicit and implicit notations.
         //
-
-
         if (state.line === _line || state.lineIndent > nodeIndent) {
           if (composeNode(state, nodeIndent, CONTEXT_BLOCK_OUT, true, allowCompact)) {
             if (atExplicitKey) {
@@ -14381,84 +12303,66 @@
               valueNode = state.result;
             }
           }
-
           if (!atExplicitKey) {
             storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, valueNode, _line, _pos);
             keyTag = keyNode = valueNode = null;
           }
-
           skipSeparationSpace(state, true, -1);
           ch = state.input.charCodeAt(state.position);
         }
-
         if (state.lineIndent > nodeIndent && ch !== 0) {
           throwError(state, 'bad indentation of a mapping entry');
         } else if (state.lineIndent < nodeIndent) {
           break;
         }
-      } //
+      }
+
+      //
       // Epilogue.
       //
+
       // Special case: last mapping's node contains only the key in explicit notation.
-
-
       if (atExplicitKey) {
         storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, null);
-      } // Expose the resulting mapping.
+      }
 
-
+      // Expose the resulting mapping.
       if (detected) {
         state.tag = _tag;
         state.anchor = _anchor;
         state.kind = 'mapping';
         state.result = _result;
       }
-
       return detected;
     }
-
     function readTagProperty(state) {
       var _position,
-          isVerbatim = false,
-          isNamed = false,
-          tagHandle,
-          tagName,
-          ch;
-
+        isVerbatim = false,
+        isNamed = false,
+        tagHandle,
+        tagName,
+        ch;
       ch = state.input.charCodeAt(state.position);
-      if (ch !== 0x21
-      /* ! */
-      ) return false;
-
+      if (ch !== 0x21 /* ! */) return false;
       if (state.tag !== null) {
         throwError(state, 'duplication of a tag property');
       }
-
       ch = state.input.charCodeAt(++state.position);
-
-      if (ch === 0x3C
-      /* < */
-      ) {
-          isVerbatim = true;
-          ch = state.input.charCodeAt(++state.position);
-        } else if (ch === 0x21
-      /* ! */
-      ) {
-          isNamed = true;
-          tagHandle = '!!';
-          ch = state.input.charCodeAt(++state.position);
-        } else {
+      if (ch === 0x3C /* < */) {
+        isVerbatim = true;
+        ch = state.input.charCodeAt(++state.position);
+      } else if (ch === 0x21 /* ! */) {
+        isNamed = true;
+        tagHandle = '!!';
+        ch = state.input.charCodeAt(++state.position);
+      } else {
         tagHandle = '!';
       }
-
       _position = state.position;
-
       if (isVerbatim) {
         do {
           ch = state.input.charCodeAt(++state.position);
-        } while (ch !== 0 && ch !== 0x3E
-        /* > */
-        );
+        } while (ch !== 0 && ch !== 0x3E /* > */);
 
         if (state.position < state.length) {
           tagName = state.input.slice(_position, state.position);
@@ -14468,37 +12372,28 @@
         }
       } else {
         while (ch !== 0 && !is_WS_OR_EOL(ch)) {
-          if (ch === 0x21
-          /* ! */
-          ) {
-              if (!isNamed) {
-                tagHandle = state.input.slice(_position - 1, state.position + 1);
-
-                if (!PATTERN_TAG_HANDLE.test(tagHandle)) {
-                  throwError(state, 'named tag handle cannot contain such characters');
-                }
-
-                isNamed = true;
-                _position = state.position + 1;
-              } else {
-                throwError(state, 'tag suffix cannot contain exclamation marks');
+          if (ch === 0x21 /* ! */) {
+            if (!isNamed) {
+              tagHandle = state.input.slice(_position - 1, state.position + 1);
+              if (!PATTERN_TAG_HANDLE.test(tagHandle)) {
+                throwError(state, 'named tag handle cannot contain such characters');
               }
+              isNamed = true;
+              _position = state.position + 1;
+            } else {
+              throwError(state, 'tag suffix cannot contain exclamation marks');
             }
-
+          }
           ch = state.input.charCodeAt(++state.position);
         }
-
         tagName = state.input.slice(_position, state.position);
-
         if (PATTERN_FLOW_INDICATORS.test(tagName)) {
           throwError(state, 'tag suffix cannot contain flow indicator characters');
         }
       }
-
       if (tagName && !PATTERN_TAG_URI.test(tagName)) {
         throwError(state, 'tag name cannot contain such characters: ' + tagName);
       }
-
       if (isVerbatim) {
         state.tag = tagName;
       } else if (_hasOwnProperty$1.call(state.tagMap, tagHandle)) {
@@ -14510,94 +12405,70 @@
       } else {
         throwError(state, 'undeclared tag handle "' + tagHandle + '"');
       }
-
       return true;
     }
-
     function readAnchorProperty(state) {
       var _position, ch;
-
       ch = state.input.charCodeAt(state.position);
-      if (ch !== 0x26
-      /* & */
-      ) return false;
-
+      if (ch !== 0x26 /* & */) return false;
       if (state.anchor !== null) {
         throwError(state, 'duplication of an anchor property');
       }
-
       ch = state.input.charCodeAt(++state.position);
       _position = state.position;
-
       while (ch !== 0 && !is_WS_OR_EOL(ch) && !is_FLOW_INDICATOR(ch)) {
         ch = state.input.charCodeAt(++state.position);
       }
-
       if (state.position === _position) {
         throwError(state, 'name of an anchor node must contain at least one character');
       }
-
       state.anchor = state.input.slice(_position, state.position);
       return true;
     }
-
     function readAlias(state) {
       var _position, alias, ch;
-
       ch = state.input.charCodeAt(state.position);
-      if (ch !== 0x2A
-      /* * */
-      ) return false;
+      if (ch !== 0x2A /* * */) return false;
       ch = state.input.charCodeAt(++state.position);
       _position = state.position;
-
       while (ch !== 0 && !is_WS_OR_EOL(ch) && !is_FLOW_INDICATOR(ch)) {
         ch = state.input.charCodeAt(++state.position);
       }
-
       if (state.position === _position) {
         throwError(state, 'name of an alias node must contain at least one character');
       }
-
       alias = state.input.slice(_position, state.position);
-
       if (!_hasOwnProperty$1.call(state.anchorMap, alias)) {
         throwError(state, 'unidentified alias "' + alias + '"');
       }
-
       state.result = state.anchorMap[alias];
       skipSeparationSpace(state, true, -1);
       return true;
     }
-
     function composeNode(state, parentIndent, nodeContext, allowToSeek, allowCompact) {
       var allowBlockStyles,
-          allowBlockScalars,
-          allowBlockCollections,
-          indentStatus = 1,
-          // 1: this>parent, 0: this=parent, -1: this<parent
-      atNewLine = false,
-          hasContent = false,
-          typeIndex,
-          typeQuantity,
-          type,
-          flowIndent,
-          blockIndent;
-
+        allowBlockScalars,
+        allowBlockCollections,
+        indentStatus = 1,
+        // 1: this>parent, 0: this=parent, -1: this<parent
+        atNewLine = false,
+        hasContent = false,
+        typeIndex,
+        typeQuantity,
+        type,
+        flowIndent,
+        blockIndent;
       if (state.listener !== null) {
         state.listener('open', state);
       }
-
       state.tag = null;
       state.anchor = null;
       state.kind = null;
       state.result = null;
       allowBlockStyles = allowBlockScalars = allowBlockCollections = CONTEXT_BLOCK_OUT === nodeContext || CONTEXT_BLOCK_IN === nodeContext;
-
       if (allowToSeek) {
         if (skipSeparationSpace(state, true, -1)) {
           atNewLine = true;
-
           if (state.lineIndent > parentIndent) {
             indentStatus = 1;
           } else if (state.lineIndent === parentIndent) {
@@ -14607,13 +12478,11 @@
           }
         }
       }
-
       if (indentStatus === 1) {
         while (readTagProperty(state) || readAnchorProperty(state)) {
           if (skipSeparationSpace(state, true, -1)) {
             atNewLine = true;
             allowBlockCollections = allowBlockStyles;
-
             if (state.lineIndent > parentIndent) {
               indentStatus = 1;
             } else if (state.lineIndent === parentIndent) {
@@ -14626,20 +12495,16 @@
           }
         }
       }
-
       if (allowBlockCollections) {
         allowBlockCollections = atNewLine || allowCompact;
       }
-
       if (indentStatus === 1 || CONTEXT_BLOCK_OUT === nodeContext) {
         if (CONTEXT_FLOW_IN === nodeContext || CONTEXT_FLOW_OUT === nodeContext) {
           flowIndent = parentIndent;
         } else {
           flowIndent = parentIndent + 1;
         }
-
         blockIndent = state.position - state.lineStart;
-
         if (indentStatus === 1) {
           if (allowBlockCollections && (readBlockSequence(state, blockIndent) || readBlockMapping(state, blockIndent, flowIndent)) || readFlowCollection(state, flowIndent)) {
             hasContent = true;
@@ -14648,18 +12513,15 @@
               hasContent = true;
             } else if (readAlias(state)) {
               hasContent = true;
-
               if (state.tag !== null || state.anchor !== null) {
                 throwError(state, 'alias node should not have any properties');
               }
             } else if (readPlainScalar(state, flowIndent, CONTEXT_FLOW_IN === nodeContext)) {
               hasContent = true;
-
               if (state.tag === null) {
                 state.tag = '?';
               }
             }
-
             if (state.anchor !== null) {
               state.anchorMap[state.anchor] = state.result;
             }
@@ -14670,7 +12532,6 @@
           hasContent = allowBlockCollections && readBlockSequence(state, blockIndent);
         }
       }
-
       if (state.tag !== null && state.tag !== '!') {
         if (state.tag === '?') {
           // Implicit resolving is not allowed for non-scalar types, and '?'
@@ -14682,35 +12543,28 @@
           if (state.result !== null && state.kind !== 'scalar') {
             throwError(state, 'unacceptable node kind for !<?> tag; it should be "scalar", not "' + state.kind + '"');
           }
-
           for (typeIndex = 0, typeQuantity = state.implicitTypes.length; typeIndex < typeQuantity; typeIndex += 1) {
             type = state.implicitTypes[typeIndex];
-
             if (type.resolve(state.result)) {
               // `state.result` updated in resolver if matched
               state.result = type.construct(state.result);
               state.tag = type.tag;
-
               if (state.anchor !== null) {
                 state.anchorMap[state.anchor] = state.result;
               }
-
               break;
             }
           }
         } else if (_hasOwnProperty$1.call(state.typeMap[state.kind || 'fallback'], state.tag)) {
           type = state.typeMap[state.kind || 'fallback'][state.tag];
-
           if (state.result !== null && type.kind !== state.kind) {
             throwError(state, 'unacceptable node kind for !<' + state.tag + '> tag; it should be "' + type.kind + '", not "' + state.kind + '"');
           }
-
           if (!type.resolve(state.result)) {
             // `state.result` updated in resolver if matched
             throwError(state, 'cannot resolve a node with !<' + state.tag + '> explicit tag');
           } else {
             state.result = type.construct(state.result);
-
             if (state.anchor !== null) {
               state.anchorMap[state.anchor] = state.result;
             }
@@ -14719,220 +12573,158 @@
           throwError(state, 'unknown tag !<' + state.tag + '>');
         }
       }
-
       if (state.listener !== null) {
         state.listener('close', state);
       }
-
       return state.tag !== null || state.anchor !== null || hasContent;
     }
-
     function readDocument(state) {
       var documentStart = state.position,
-          _position,
-          directiveName,
-          directiveArgs,
-          hasDirectives = false,
-          ch;
-
+        _position,
+        directiveName,
+        directiveArgs,
+        hasDirectives = false,
+        ch;
       state.version = null;
       state.checkLineBreaks = state.legacy;
       state.tagMap = {};
       state.anchorMap = {};
-
       while ((ch = state.input.charCodeAt(state.position)) !== 0) {
         skipSeparationSpace(state, true, -1);
         ch = state.input.charCodeAt(state.position);
-
-        if (state.lineIndent > 0 || ch !== 0x25
-        /* % */
-        ) {
-            break;
-          }
-
+        if (state.lineIndent > 0 || ch !== 0x25 /* % */) {
+          break;
+        }
         hasDirectives = true;
         ch = state.input.charCodeAt(++state.position);
         _position = state.position;
-
         while (ch !== 0 && !is_WS_OR_EOL(ch)) {
           ch = state.input.charCodeAt(++state.position);
         }
-
         directiveName = state.input.slice(_position, state.position);
         directiveArgs = [];
-
         if (directiveName.length < 1) {
           throwError(state, 'directive name must not be less than one character in length');
         }
-
         while (ch !== 0) {
           while (is_WHITE_SPACE(ch)) {
             ch = state.input.charCodeAt(++state.position);
           }
-
-          if (ch === 0x23
-          /* # */
-          ) {
-              do {
-                ch = state.input.charCodeAt(++state.position);
-              } while (ch !== 0 && !is_EOL(ch));
-
-              break;
-            }
-
+          if (ch === 0x23 /* # */) {
+            do {
+              ch = state.input.charCodeAt(++state.position);
+            } while (ch !== 0 && !is_EOL(ch));
+            break;
+          }
           if (is_EOL(ch)) break;
           _position = state.position;
-
           while (ch !== 0 && !is_WS_OR_EOL(ch)) {
             ch = state.input.charCodeAt(++state.position);
           }
-
           directiveArgs.push(state.input.slice(_position, state.position));
         }
-
         if (ch !== 0) readLineBreak(state);
-
         if (_hasOwnProperty$1.call(directiveHandlers, directiveName)) {
           directiveHandlers[directiveName](state, directiveName, directiveArgs);
         } else {
           throwWarning(state, 'unknown document directive "' + directiveName + '"');
         }
       }
-
       skipSeparationSpace(state, true, -1);
-
-      if (state.lineIndent === 0 && state.input.charCodeAt(state.position) === 0x2D
-      /* - */
-      && state.input.charCodeAt(state.position + 1) === 0x2D
-      /* - */
-      && state.input.charCodeAt(state.position + 2) === 0x2D
-      /* - */
-      ) {
-          state.position += 3;
-          skipSeparationSpace(state, true, -1);
-        } else if (hasDirectives) {
+      if (state.lineIndent === 0 && state.input.charCodeAt(state.position) === 0x2D /* - */ && state.input.charCodeAt(state.position + 1) === 0x2D /* - */ && state.input.charCodeAt(state.position + 2) === 0x2D /* - */) {
+        state.position += 3;
+        skipSeparationSpace(state, true, -1);
+      } else if (hasDirectives) {
         throwError(state, 'directives end mark is expected');
       }
-
       composeNode(state, state.lineIndent - 1, CONTEXT_BLOCK_OUT, false, true);
       skipSeparationSpace(state, true, -1);
-
       if (state.checkLineBreaks && PATTERN_NON_ASCII_LINE_BREAKS.test(state.input.slice(documentStart, state.position))) {
         throwWarning(state, 'non-ASCII line breaks are interpreted as content');
       }
-
       state.documents.push(state.result);
-
       if (state.position === state.lineStart && testDocumentSeparator(state)) {
-        if (state.input.charCodeAt(state.position) === 0x2E
-        /* . */
-        ) {
-            state.position += 3;
-            skipSeparationSpace(state, true, -1);
-          }
-
+        if (state.input.charCodeAt(state.position) === 0x2E /* . */) {
+          state.position += 3;
+          skipSeparationSpace(state, true, -1);
+        }
         return;
       }
-
       if (state.position < state.length - 1) {
         throwError(state, 'end of the stream or a document separator is expected');
       } else {
         return;
       }
     }
-
     function loadDocuments(input, options) {
       input = String(input);
       options = options || {};
-
       if (input.length !== 0) {
         // Add tailing `\n` if not exists
-        if (input.charCodeAt(input.length - 1) !== 0x0A
-        /* LF */
-        && input.charCodeAt(input.length - 1) !== 0x0D
-        /* CR */
-        ) {
-            input += '\n';
-          } // Strip BOM
+        if (input.charCodeAt(input.length - 1) !== 0x0A /* LF */ && input.charCodeAt(input.length - 1) !== 0x0D /* CR */) {
+          input += '\n';
+        }
 
-
+        // Strip BOM
         if (input.charCodeAt(0) === 0xFEFF) {
           input = input.slice(1);
         }
       }
-
       var state = new State$1(input, options);
       var nullpos = input.indexOf('\0');
-
       if (nullpos !== -1) {
         state.position = nullpos;
         throwError(state, 'null byte is not allowed in input');
-      } // Use 0 as string terminator. That significantly simplifies bounds check.
+      }
 
-
+      // Use 0 as string terminator. That significantly simplifies bounds check.
       state.input += '\0';
-
-      while (state.input.charCodeAt(state.position) === 0x20
-      /* Space */
-      ) {
+      while (state.input.charCodeAt(state.position) === 0x20 /* Space */) {
         state.lineIndent += 1;
         state.position += 1;
       }
-
       while (state.position < state.length - 1) {
         readDocument(state);
       }
-
       return state.documents;
     }
-
     function loadAll$1(input, iterator, options) {
       if (iterator !== null && typeof iterator === 'object' && typeof options === 'undefined') {
         options = iterator;
         iterator = null;
       }
-
       var documents = loadDocuments(input, options);
-
       if (typeof iterator !== 'function') {
         return documents;
       }
-
       for (var index = 0, length = documents.length; index < length; index += 1) {
         iterator(documents[index]);
       }
     }
-
     function load$1(input, options) {
       var documents = loadDocuments(input, options);
-
       if (documents.length === 0) {
         /*eslint-disable no-undefined*/
         return undefined;
       } else if (documents.length === 1) {
         return documents[0];
       }
-
       throw new exception('expected a single document in the stream, but found more');
     }
-
     function safeLoadAll$1(input, iterator, options) {
       if (typeof iterator === 'object' && iterator !== null && typeof options === 'undefined') {
         options = iterator;
         iterator = null;
       }
-
       return loadAll$1(input, iterator, common.extend({
         schema: default_safe
       }, options));
     }
-
     function safeLoad$1(input, options) {
       return load$1(input, common.extend({
         schema: default_safe
       }, options));
     }
-
     var loadAll_1 = loadAll$1;
     var load_1 = load$1;
     var safeLoadAll_1 = safeLoadAll$1;
@@ -14946,80 +12738,32 @@
 
     /*eslint-disable no-use-before-define*/
 
-
     var _toString = Object.prototype.toString;
     var _hasOwnProperty = Object.prototype.hasOwnProperty;
-    var CHAR_TAB = 0x09;
-    /* Tab */
-
-    var CHAR_LINE_FEED = 0x0A;
-    /* LF */
-
-    var CHAR_CARRIAGE_RETURN = 0x0D;
-    /* CR */
-
-    var CHAR_SPACE = 0x20;
-    /* Space */
-
-    var CHAR_EXCLAMATION = 0x21;
-    /* ! */
-
-    var CHAR_DOUBLE_QUOTE = 0x22;
-    /* " */
-
-    var CHAR_SHARP = 0x23;
-    /* # */
-
-    var CHAR_PERCENT = 0x25;
-    /* % */
-
-    var CHAR_AMPERSAND = 0x26;
-    /* & */
-
-    var CHAR_SINGLE_QUOTE = 0x27;
-    /* ' */
-
-    var CHAR_ASTERISK = 0x2A;
-    /* * */
-
-    var CHAR_COMMA = 0x2C;
-    /* , */
-
-    var CHAR_MINUS = 0x2D;
-    /* - */
-
-    var CHAR_COLON = 0x3A;
-    /* : */
-
-    var CHAR_EQUALS = 0x3D;
-    /* = */
-
-    var CHAR_GREATER_THAN = 0x3E;
-    /* > */
-
-    var CHAR_QUESTION = 0x3F;
-    /* ? */
-
-    var CHAR_COMMERCIAL_AT = 0x40;
-    /* @ */
-
-    var CHAR_LEFT_SQUARE_BRACKET = 0x5B;
-    /* [ */
-
-    var CHAR_RIGHT_SQUARE_BRACKET = 0x5D;
-    /* ] */
-
-    var CHAR_GRAVE_ACCENT = 0x60;
-    /* ` */
-
-    var CHAR_LEFT_CURLY_BRACKET = 0x7B;
-    /* { */
-
-    var CHAR_VERTICAL_LINE = 0x7C;
-    /* | */
-
-    var CHAR_RIGHT_CURLY_BRACKET = 0x7D;
-    /* } */
+    var CHAR_TAB = 0x09; /* Tab */
+    var CHAR_LINE_FEED = 0x0A; /* LF */
+    var CHAR_CARRIAGE_RETURN = 0x0D; /* CR */
+    var CHAR_SPACE = 0x20; /* Space */
+    var CHAR_EXCLAMATION = 0x21; /* ! */
+    var CHAR_DOUBLE_QUOTE = 0x22; /* " */
+    var CHAR_SHARP = 0x23; /* # */
+    var CHAR_PERCENT = 0x25; /* % */
+    var CHAR_AMPERSAND = 0x26; /* & */
+    var CHAR_SINGLE_QUOTE = 0x27; /* ' */
+    var CHAR_ASTERISK = 0x2A; /* * */
+    var CHAR_COMMA = 0x2C; /* , */
+    var CHAR_MINUS = 0x2D; /* - */
+    var CHAR_COLON = 0x3A; /* : */
+    var CHAR_EQUALS = 0x3D; /* = */
+    var CHAR_GREATER_THAN = 0x3E; /* > */
+    var CHAR_QUESTION = 0x3F; /* ? */
+    var CHAR_COMMERCIAL_AT = 0x40; /* @ */
+    var CHAR_LEFT_SQUARE_BRACKET = 0x5B; /* [ */
+    var CHAR_RIGHT_SQUARE_BRACKET = 0x5D; /* ] */
+    var CHAR_GRAVE_ACCENT = 0x60; /* ` */
+    var CHAR_LEFT_CURLY_BRACKET = 0x7B; /* { */
+    var CHAR_VERTICAL_LINE = 0x7C; /* | */
+    var CHAR_RIGHT_CURLY_BRACKET = 0x7D; /* } */
 
     var ESCAPE_SEQUENCES = {};
     ESCAPE_SEQUENCES[0x00] = '\\0';
@@ -15038,37 +12782,28 @@
     ESCAPE_SEQUENCES[0x2028] = '\\L';
     ESCAPE_SEQUENCES[0x2029] = '\\P';
     var DEPRECATED_BOOLEANS_SYNTAX = ['y', 'Y', 'yes', 'Yes', 'YES', 'on', 'On', 'ON', 'n', 'N', 'no', 'No', 'NO', 'off', 'Off', 'OFF'];
-
     function compileStyleMap(schema, map) {
       var result, keys, index, length, tag, style, type;
       if (map === null) return {};
       result = {};
       keys = Object.keys(map);
-
       for (index = 0, length = keys.length; index < length; index += 1) {
         tag = keys[index];
         style = String(map[tag]);
-
         if (tag.slice(0, 2) === '!!') {
           tag = 'tag:yaml.org,2002:' + tag.slice(2);
         }
-
         type = schema.compiledTypeMap['fallback'][tag];
-
         if (type && _hasOwnProperty.call(type.styleAliases, style)) {
           style = type.styleAliases[style];
         }
-
         result[tag] = style;
       }
-
       return result;
     }
-
     function encodeHex(character) {
       var string, handle, length;
       string = character.toString(16).toUpperCase();
-
       if (character <= 0xFF) {
         handle = 'x';
         length = 2;
@@ -15081,10 +12816,8 @@
       } else {
         throw new exception('code point within a string may not be greater than 0xFFFFFFFF');
       }
-
       return '\\' + handle + common.repeat('0', length - string.length) + string;
     }
-
     function State(options) {
       this.schema = options['schema'] || default_full;
       this.indent = Math.max(1, options['indent'] || 2);
@@ -15103,20 +12836,18 @@
       this.result = '';
       this.duplicates = [];
       this.usedDuplicates = null;
-    } // Indents every line in a string. Empty lines (\n only) are not indented.
+    }
 
-
+    // Indents every line in a string. Empty lines (\n only) are not indented.
     function indentString(string, spaces) {
       var ind = common.repeat(' ', spaces),
-          position = 0,
-          next = -1,
-          result = '',
-          line,
-          length = string.length;
-
+        position = 0,
+        next = -1,
+        result = '',
+        line,
+        length = string.length;
       while (position < length) {
         next = string.indexOf('\n', position);
-
         if (next === -1) {
           line = string.slice(position);
           position = length;
@@ -15124,120 +12855,112 @@
           line = string.slice(position, next + 1);
           position = next + 1;
         }
-
         if (line.length && line !== '\n') result += ind;
         result += line;
       }
-
       return result;
     }
-
     function generateNextLine(state, level) {
       return '\n' + common.repeat(' ', state.indent * level);
     }
-
     function testImplicitResolving(state, str) {
       var index, length, type;
-
       for (index = 0, length = state.implicitTypes.length; index < length; index += 1) {
         type = state.implicitTypes[index];
-
         if (type.resolve(str)) {
           return true;
         }
       }
-
       return false;
-    } // [33] s-white ::= s-space | s-tab
+    }
 
-
+    // [33] s-white ::= s-space | s-tab
     function isWhitespace(c) {
       return c === CHAR_SPACE || c === CHAR_TAB;
-    } // Returns true if the character can be printed without escaping.
+    }
+
+    // Returns true if the character can be printed without escaping.
     // From YAML 1.2: "any allowed characters known to be non-printable
     // should also be escaped. [However,] This isn’t mandatory"
     // Derived from nb-char - \t - #x85 - #xA0 - #x2028 - #x2029.
-
-
     function isPrintable(c) {
-      return 0x00020 <= c && c <= 0x00007E || 0x000A1 <= c && c <= 0x00D7FF && c !== 0x2028 && c !== 0x2029 || 0x0E000 <= c && c <= 0x00FFFD && c !== 0xFEFF
-      /* BOM */
-      || 0x10000 <= c && c <= 0x10FFFF;
-    } // [34] ns-char ::= nb-char - s-white
+      return 0x00020 <= c && c <= 0x00007E || 0x000A1 <= c && c <= 0x00D7FF && c !== 0x2028 && c !== 0x2029 || 0x0E000 <= c && c <= 0x00FFFD && c !== 0xFEFF /* BOM */ || 0x10000 <= c && c <= 0x10FFFF;
+    }
+
+    // [34] ns-char ::= nb-char - s-white
     // [27] nb-char ::= c-printable - b-char - c-byte-order-mark
     // [26] b-char  ::= b-line-feed | b-carriage-return
     // [24] b-line-feed       ::=     #xA    /* LF */
     // [25] b-carriage-return ::=     #xD    /* CR */
     // [3]  c-byte-order-mark ::=     #xFEFF
-
-
     function isNsChar(c) {
-      return isPrintable(c) && !isWhitespace(c) // byte-order-mark
-      && c !== 0xFEFF // b-char
+      return isPrintable(c) && !isWhitespace(c)
+      // byte-order-mark
+      && c !== 0xFEFF
+      // b-char
       && c !== CHAR_CARRIAGE_RETURN && c !== CHAR_LINE_FEED;
-    } // Simplified test for values allowed after the first character in plain style.
+    }
 
-
+    // Simplified test for values allowed after the first character in plain style.
     function isPlainSafe(c, prev) {
       // Uses a subset of nb-char - c-flow-indicator - ":" - "#"
       // where nb-char ::= c-printable - b-char - c-byte-order-mark.
-      return isPrintable(c) && c !== 0xFEFF // - c-flow-indicator
-      && c !== CHAR_COMMA && c !== CHAR_LEFT_SQUARE_BRACKET && c !== CHAR_RIGHT_SQUARE_BRACKET && c !== CHAR_LEFT_CURLY_BRACKET && c !== CHAR_RIGHT_CURLY_BRACKET // - ":" - "#"
+      return isPrintable(c) && c !== 0xFEFF
+      // - c-flow-indicator
+      && c !== CHAR_COMMA && c !== CHAR_LEFT_SQUARE_BRACKET && c !== CHAR_RIGHT_SQUARE_BRACKET && c !== CHAR_LEFT_CURLY_BRACKET && c !== CHAR_RIGHT_CURLY_BRACKET
+      // - ":" - "#"
       // /* An ns-char preceding */ "#"
       && c !== CHAR_COLON && (c !== CHAR_SHARP || prev && isNsChar(prev));
-    } // Simplified test for values allowed as the first character in plain style.
+    }
 
-
+    // Simplified test for values allowed as the first character in plain style.
     function isPlainSafeFirst(c) {
       // Uses a subset of ns-char - c-indicator
       // where ns-char = nb-char - s-white.
       return isPrintable(c) && c !== 0xFEFF && !isWhitespace(c) // - s-white
       // - (c-indicator ::=
       // “-” | “?” | “:” | “,” | “[” | “]” | “{” | “}”
-      && c !== CHAR_MINUS && c !== CHAR_QUESTION && c !== CHAR_COLON && c !== CHAR_COMMA && c !== CHAR_LEFT_SQUARE_BRACKET && c !== CHAR_RIGHT_SQUARE_BRACKET && c !== CHAR_LEFT_CURLY_BRACKET && c !== CHAR_RIGHT_CURLY_BRACKET // | “#” | “&” | “*” | “!” | “|” | “=” | “>” | “'” | “"”
-      && c !== CHAR_SHARP && c !== CHAR_AMPERSAND && c !== CHAR_ASTERISK && c !== CHAR_EXCLAMATION && c !== CHAR_VERTICAL_LINE && c !== CHAR_EQUALS && c !== CHAR_GREATER_THAN && c !== CHAR_SINGLE_QUOTE && c !== CHAR_DOUBLE_QUOTE // | “%” | “@” | “`”)
+      && c !== CHAR_MINUS && c !== CHAR_QUESTION && c !== CHAR_COLON && c !== CHAR_COMMA && c !== CHAR_LEFT_SQUARE_BRACKET && c !== CHAR_RIGHT_SQUARE_BRACKET && c !== CHAR_LEFT_CURLY_BRACKET && c !== CHAR_RIGHT_CURLY_BRACKET
+      // | “#” | “&” | “*” | “!” | “|” | “=” | “>” | “'” | “"”
+      && c !== CHAR_SHARP && c !== CHAR_AMPERSAND && c !== CHAR_ASTERISK && c !== CHAR_EXCLAMATION && c !== CHAR_VERTICAL_LINE && c !== CHAR_EQUALS && c !== CHAR_GREATER_THAN && c !== CHAR_SINGLE_QUOTE && c !== CHAR_DOUBLE_QUOTE
+      // | “%” | “@” | “`”)
       && c !== CHAR_PERCENT && c !== CHAR_COMMERCIAL_AT && c !== CHAR_GRAVE_ACCENT;
-    } // Determines whether block indentation indicator is required.
+    }
 
-
+    // Determines whether block indentation indicator is required.
     function needIndentIndicator(string) {
       var leadingSpaceRe = /^\n* /;
       return leadingSpaceRe.test(string);
     }
-
     var STYLE_PLAIN = 1,
-        STYLE_SINGLE = 2,
-        STYLE_LITERAL = 3,
-        STYLE_FOLDED = 4,
-        STYLE_DOUBLE = 5; // Determines which scalar styles are possible and returns the preferred style.
+      STYLE_SINGLE = 2,
+      STYLE_LITERAL = 3,
+      STYLE_FOLDED = 4,
+      STYLE_DOUBLE = 5;
+
+    // Determines which scalar styles are possible and returns the preferred style.
     // lineWidth = -1 => no limit.
     // Pre-conditions: str.length > 0.
     // Post-conditions:
     //    STYLE_PLAIN or STYLE_SINGLE => no \n are in the string.
     //    STYLE_LITERAL => no lines are suitable for folding (or lineWidth is -1).
     //    STYLE_FOLDED => a line > lineWidth and can be folded (and lineWidth != -1).
-
     function chooseScalarStyle(string, singleLineOnly, indentPerLevel, lineWidth, testAmbiguousType) {
       var i;
       var char, prev_char;
       var hasLineBreak = false;
       var hasFoldableLine = false; // only checked if shouldTrackWidth
-
       var shouldTrackWidth = lineWidth !== -1;
       var previousLineBreak = -1; // count the first line correctly
-
       var plain = isPlainSafeFirst(string.charCodeAt(0)) && !isWhitespace(string.charCodeAt(string.length - 1));
-
       if (singleLineOnly) {
         // Case: no block styles.
         // Check for disallowed characters to rule out plain and single.
         for (i = 0; i < string.length; i++) {
           char = string.charCodeAt(i);
-
           if (!isPrintable(char)) {
             return STYLE_DOUBLE;
           }
-
           prev_char = i > 0 ? string.charCodeAt(i - 1) : null;
           plain = plain && isPlainSafe(char, prev_char);
         }
@@ -15245,62 +12968,55 @@
         // Case: block styles permitted.
         for (i = 0; i < string.length; i++) {
           char = string.charCodeAt(i);
-
           if (char === CHAR_LINE_FEED) {
-            hasLineBreak = true; // Check if any line can be folded.
-
+            hasLineBreak = true;
+            // Check if any line can be folded.
             if (shouldTrackWidth) {
-              hasFoldableLine = hasFoldableLine || // Foldable line = too long, and not more-indented.
+              hasFoldableLine = hasFoldableLine ||
+              // Foldable line = too long, and not more-indented.
               i - previousLineBreak - 1 > lineWidth && string[previousLineBreak + 1] !== ' ';
               previousLineBreak = i;
             }
           } else if (!isPrintable(char)) {
             return STYLE_DOUBLE;
           }
-
           prev_char = i > 0 ? string.charCodeAt(i - 1) : null;
           plain = plain && isPlainSafe(char, prev_char);
-        } // in case the end is missing a \n
-
-
+        }
+        // in case the end is missing a \n
         hasFoldableLine = hasFoldableLine || shouldTrackWidth && i - previousLineBreak - 1 > lineWidth && string[previousLineBreak + 1] !== ' ';
-      } // Although every style can represent \n without escaping, prefer block styles
+      }
+      // Although every style can represent \n without escaping, prefer block styles
       // for multiline, since they're more readable and they don't add empty lines.
       // Also prefer folding a super-long line.
-
-
       if (!hasLineBreak && !hasFoldableLine) {
         // Strings interpretable as another type have to be quoted;
         // e.g. the string 'true' vs. the boolean true.
         return plain && !testAmbiguousType(string) ? STYLE_PLAIN : STYLE_SINGLE;
-      } // Edge case: block indentation indicator can only have one digit.
-
-
+      }
+      // Edge case: block indentation indicator can only have one digit.
       if (indentPerLevel > 9 && needIndentIndicator(string)) {
         return STYLE_DOUBLE;
-      } // At this point we know block styles are valid.
+      }
+      // At this point we know block styles are valid.
       // Prefer literal style unless we want to fold.
-
-
       return hasFoldableLine ? STYLE_FOLDED : STYLE_LITERAL;
-    } // Note: line breaking/folding is implemented for only the folded style.
+    }
+
+    // Note: line breaking/folding is implemented for only the folded style.
     // NB. We drop the last trailing newline (if any) of a returned block scalar
     //  since the dumper adds its own newline. This always works:
     //    • No ending newline => unaffected; already using strip "-" chomping.
     //    • Ending newline    => removed then restored.
     //  Importantly, this keeps the "+" chomp indicator from gaining an extra line.
-
-
     function writeScalar(state, string, level, iskey) {
       state.dump = function () {
         if (string.length === 0) {
           return "''";
         }
-
         if (!state.noCompatMode && DEPRECATED_BOOLEANS_SYNTAX.indexOf(string) !== -1) {
           return "'" + string + "'";
         }
-
         var indent = state.indent * Math.max(1, level); // no 0-indent scalars
         // As indentation gets deeper, let the width decrease monotonically
         // to the lower bound min(state.lineWidth, 40).
@@ -15309,171 +13025,154 @@
         //  state.lineWidth > 40 + state.indent: width decreases until the lower bound.
         // This behaves better than a constant minimum width which disallows narrower options,
         // or an indent threshold which causes the width to suddenly increase.
+        var lineWidth = state.lineWidth === -1 ? -1 : Math.max(Math.min(state.lineWidth, 40), state.lineWidth - indent);
 
-        var lineWidth = state.lineWidth === -1 ? -1 : Math.max(Math.min(state.lineWidth, 40), state.lineWidth - indent); // Without knowing if keys are implicit/explicit, assume implicit for safety.
-
-        var singleLineOnly = iskey // No block styles in flow mode.
+        // Without knowing if keys are implicit/explicit, assume implicit for safety.
+        var singleLineOnly = iskey
+        // No block styles in flow mode.
         || state.flowLevel > -1 && level >= state.flowLevel;
-
         function testAmbiguity(string) {
           return testImplicitResolving(state, string);
         }
-
         switch (chooseScalarStyle(string, singleLineOnly, state.indent, lineWidth, testAmbiguity)) {
           case STYLE_PLAIN:
             return string;
-
           case STYLE_SINGLE:
             return "'" + string.replace(/'/g, "''") + "'";
-
           case STYLE_LITERAL:
             return '|' + blockHeader(string, state.indent) + dropEndingNewline(indentString(string, indent));
-
           case STYLE_FOLDED:
             return '>' + blockHeader(string, state.indent) + dropEndingNewline(indentString(foldString(string, lineWidth), indent));
-
           case STYLE_DOUBLE:
             return '"' + escapeString(string) + '"';
-
           default:
             throw new exception('impossible error: invalid scalar style');
         }
       }();
-    } // Pre-conditions: string is valid for a block scalar, 1 <= indentPerLevel <= 9.
+    }
 
-
+    // Pre-conditions: string is valid for a block scalar, 1 <= indentPerLevel <= 9.
     function blockHeader(string, indentPerLevel) {
-      var indentIndicator = needIndentIndicator(string) ? String(indentPerLevel) : ''; // note the special case: the string '\n' counts as a "trailing" empty line.
+      var indentIndicator = needIndentIndicator(string) ? String(indentPerLevel) : '';
 
+      // note the special case: the string '\n' counts as a "trailing" empty line.
       var clip = string[string.length - 1] === '\n';
       var keep = clip && (string[string.length - 2] === '\n' || string === '\n');
       var chomp = keep ? '+' : clip ? '' : '-';
       return indentIndicator + chomp + '\n';
-    } // (See the note for writeScalar.)
+    }
 
-
+    // (See the note for writeScalar.)
     function dropEndingNewline(string) {
       return string[string.length - 1] === '\n' ? string.slice(0, -1) : string;
-    } // Note: a long line without a suitable break point will exceed the width limit.
+    }
+
+    // Note: a long line without a suitable break point will exceed the width limit.
     // Pre-conditions: every char in str isPrintable, str.length > 0, width > 0.
-
-
     function foldString(string, width) {
       // In folded style, $k$ consecutive newlines output as $k+1$ newlines—
       // unless they're before or after a more-indented line, or at the very
       // beginning or end, in which case $k$ maps to $k$.
       // Therefore, parse each chunk as newline(s) followed by a content line.
-      var lineRe = /(\n+)([^\n]*)/g; // first line (possibly an empty line)
+      var lineRe = /(\n+)([^\n]*)/g;
 
+      // first line (possibly an empty line)
       var result = function () {
         var nextLF = string.indexOf('\n');
         nextLF = nextLF !== -1 ? nextLF : string.length;
         lineRe.lastIndex = nextLF;
         return foldLine(string.slice(0, nextLF), width);
-      }(); // If we haven't reached the first content line yet, don't add an extra \n.
-
-
+      }();
+      // If we haven't reached the first content line yet, don't add an extra \n.
       var prevMoreIndented = string[0] === '\n' || string[0] === ' ';
-      var moreIndented; // rest of the lines
+      var moreIndented;
 
+      // rest of the lines
       var match;
-
       while (match = lineRe.exec(string)) {
         var prefix = match[1],
-            line = match[2];
+          line = match[2];
         moreIndented = line[0] === ' ';
         result += prefix + (!prevMoreIndented && !moreIndented && line !== '' ? '\n' : '') + foldLine(line, width);
         prevMoreIndented = moreIndented;
       }
-
       return result;
-    } // Greedy line breaking.
+    }
+
+    // Greedy line breaking.
     // Picks the longest line under the limit each time,
     // otherwise settles for the shortest line over the limit.
     // NB. More-indented lines *cannot* be folded, as that would add an extra \n.
-
-
     function foldLine(line, width) {
-      if (line === '' || line[0] === ' ') return line; // Since a more-indented line adds a \n, breaks can't be followed by a space.
+      if (line === '' || line[0] === ' ') return line;
 
+      // Since a more-indented line adds a \n, breaks can't be followed by a space.
       var breakRe = / [^ ]/g; // note: the match index will always be <= length-2.
-
-      var match; // start is an inclusive index. end, curr, and next are exclusive.
-
+      var match;
+      // start is an inclusive index. end, curr, and next are exclusive.
       var start = 0,
-          end,
-          curr = 0,
-          next = 0;
-      var result = ''; // Invariants: 0 <= start <= length-1.
+        end,
+        curr = 0,
+        next = 0;
+      var result = '';
+
+      // Invariants: 0 <= start <= length-1.
       //   0 <= curr <= next <= max(0, length-2). curr - start <= width.
       // Inside the loop:
       //   A match implies length >= 2, so curr and next are <= length-2.
-
       while (match = breakRe.exec(line)) {
-        next = match.index; // maintain invariant: curr - start <= width
-
+        next = match.index;
+        // maintain invariant: curr - start <= width
         if (next - start > width) {
           end = curr > start ? curr : next; // derive end <= length-2
-
-          result += '\n' + line.slice(start, end); // skip the space that was output as \n
-
+          result += '\n' + line.slice(start, end);
+          // skip the space that was output as \n
           start = end + 1; // derive start <= length-1
         }
 
         curr = next;
-      } // By the invariants, start <= length-1, so there is something left over.
+      }
+
+      // By the invariants, start <= length-1, so there is something left over.
       // It is either the whole string or a part starting from non-whitespace.
-
-
-      result += '\n'; // Insert a break if the remainder is too long and there is a break available.
-
+      result += '\n';
+      // Insert a break if the remainder is too long and there is a break available.
       if (line.length - start > width && curr > start) {
         result += line.slice(start, curr) + '\n' + line.slice(curr + 1);
       } else {
         result += line.slice(start);
       }
-
       return result.slice(1); // drop extra \n joiner
-    } // Escapes a double-quoted string.
+    }
 
-
+    // Escapes a double-quoted string.
     function escapeString(string) {
       var result = '';
       var char, nextChar;
       var escapeSeq;
-
       for (var i = 0; i < string.length; i++) {
-        char = string.charCodeAt(i); // Check for surrogate pairs (reference Unicode 3.0 section "3.7 Surrogates").
-
-        if (char >= 0xD800 && char <= 0xDBFF
-        /* high surrogate */
-        ) {
-            nextChar = string.charCodeAt(i + 1);
-
-            if (nextChar >= 0xDC00 && nextChar <= 0xDFFF
-            /* low surrogate */
-            ) {
-                // Combine the surrogate pair and store it escaped.
-                result += encodeHex((char - 0xD800) * 0x400 + nextChar - 0xDC00 + 0x10000); // Advance index one extra since we already used that char here.
-
-                i++;
-                continue;
-              }
+        char = string.charCodeAt(i);
+        // Check for surrogate pairs (reference Unicode 3.0 section "3.7 Surrogates").
+        if (char >= 0xD800 && char <= 0xDBFF /* high surrogate */) {
+          nextChar = string.charCodeAt(i + 1);
+          if (nextChar >= 0xDC00 && nextChar <= 0xDFFF /* low surrogate */) {
+            // Combine the surrogate pair and store it escaped.
+            result += encodeHex((char - 0xD800) * 0x400 + nextChar - 0xDC00 + 0x10000);
+            // Advance index one extra since we already used that char here.
+            i++;
+            continue;
           }
-
+        }
         escapeSeq = ESCAPE_SEQUENCES[char];
         result += !escapeSeq && isPrintable(char) ? string[i] : escapeSeq || encodeHex(char);
       }
-
       return result;
     }
-
     function writeFlowSequence(state, level, object) {
       var _result = '',
-          _tag = state.tag,
-          index,
-          length;
-
+        _tag = state.tag,
+        index,
+        length;
       for (index = 0, length = object.length; index < length; index += 1) {
         // Write only valid elements.
         if (writeNode(state, level, object[index], false, false)) {
@@ -15481,86 +13180,77 @@
           _result += state.dump;
         }
       }
-
       state.tag = _tag;
       state.dump = '[' + _result + ']';
     }
-
     function writeBlockSequence(state, level, object, compact) {
       var _result = '',
-          _tag = state.tag,
-          index,
-          length;
-
+        _tag = state.tag,
+        index,
+        length;
       for (index = 0, length = object.length; index < length; index += 1) {
         // Write only valid elements.
         if (writeNode(state, level + 1, object[index], true, true)) {
           if (!compact || index !== 0) {
             _result += generateNextLine(state, level);
           }
-
           if (state.dump && CHAR_LINE_FEED === state.dump.charCodeAt(0)) {
             _result += '-';
           } else {
             _result += '- ';
           }
-
           _result += state.dump;
         }
       }
-
       state.tag = _tag;
       state.dump = _result || '[]'; // Empty sequence if no valid values.
     }
 
     function writeFlowMapping(state, level, object) {
       var _result = '',
-          _tag = state.tag,
-          objectKeyList = Object.keys(object),
-          index,
-          length,
-          objectKey,
-          objectValue,
-          pairBuffer;
-
+        _tag = state.tag,
+        objectKeyList = Object.keys(object),
+        index,
+        length,
+        objectKey,
+        objectValue,
+        pairBuffer;
       for (index = 0, length = objectKeyList.length; index < length; index += 1) {
         pairBuffer = '';
         if (index !== 0) pairBuffer += ', ';
         if (state.condenseFlow) pairBuffer += '"';
         objectKey = objectKeyList[index];
         objectValue = object[objectKey];
-
         if (!writeNode(state, level, objectKey, false, false)) {
           continue; // Skip this pair because of invalid key;
         }
 
         if (state.dump.length > 1024) pairBuffer += '? ';
         pairBuffer += state.dump + (state.condenseFlow ? '"' : '') + ':' + (state.condenseFlow ? '' : ' ');
-
         if (!writeNode(state, level, objectValue, false, false)) {
           continue; // Skip this pair because of invalid value.
         }
 
-        pairBuffer += state.dump; // Both key and value are valid.
+        pairBuffer += state.dump;
 
+        // Both key and value are valid.
         _result += pairBuffer;
       }
-
       state.tag = _tag;
       state.dump = '{' + _result + '}';
     }
-
     function writeBlockMapping(state, level, object, compact) {
       var _result = '',
-          _tag = state.tag,
-          objectKeyList = Object.keys(object),
-          index,
-          length,
-          objectKey,
-          objectValue,
-          explicitPair,
-          pairBuffer; // Allow sorting keys so that the output file is deterministic
+        _tag = state.tag,
+        objectKeyList = Object.keys(object),
+        index,
+        length,
+        objectKey,
+        objectValue,
+        explicitPair,
+        pairBuffer;
 
+      // Allow sorting keys so that the output file is deterministic
       if (state.sortKeys === true) {
         // Default sorting
         objectKeyList.sort();
@@ -15571,23 +13261,18 @@
         // Something is wrong
         throw new exception('sortKeys must be a boolean or a function');
       }
-
       for (index = 0, length = objectKeyList.length; index < length; index += 1) {
         pairBuffer = '';
-
         if (!compact || index !== 0) {
           pairBuffer += generateNextLine(state, level);
         }
-
         objectKey = objectKeyList[index];
         objectValue = object[objectKey];
-
         if (!writeNode(state, level + 1, objectKey, true, true, true)) {
           continue; // Skip this pair because of invalid key.
         }
 
         explicitPair = state.tag !== null && state.tag !== '?' || state.dump && state.dump.length > 1024;
-
         if (explicitPair) {
           if (state.dump && CHAR_LINE_FEED === state.dump.charCodeAt(0)) {
             pairBuffer += '?';
@@ -15595,13 +13280,10 @@
             pairBuffer += '? ';
           }
         }
-
         pairBuffer += state.dump;
-
         if (explicitPair) {
           pairBuffer += generateNextLine(state, level);
         }
-
         if (!writeNode(state, level + 1, objectValue, true, explicitPair)) {
           continue; // Skip this pair because of invalid value.
         }
@@ -15611,30 +13293,24 @@
         } else {
           pairBuffer += ': ';
         }
+        pairBuffer += state.dump;
 
-        pairBuffer += state.dump; // Both key and value are valid.
-
+        // Both key and value are valid.
         _result += pairBuffer;
       }
-
       state.tag = _tag;
       state.dump = _result || '{}'; // Empty mapping if no valid pairs.
     }
 
     function detectType(state, object, explicit) {
       var _result, typeList, index, length, type, style;
-
       typeList = explicit ? state.explicitTypes : state.implicitTypes;
-
       for (index = 0, length = typeList.length; index < length; index += 1) {
         type = typeList[index];
-
         if ((type.instanceOf || type.predicate) && (!type.instanceOf || typeof object === 'object' && object instanceof type.instanceOf) && (!type.predicate || type.predicate(object))) {
           state.tag = explicit ? type.tag : '?';
-
           if (type.represent) {
             style = state.styleMap[type.tag] || type.defaultStyle;
-
             if (_toString.call(type.represent) === '[object Function]') {
               _result = type.represent(object, style);
             } else if (_hasOwnProperty.call(type.represent, style)) {
@@ -15642,80 +13318,64 @@
             } else {
               throw new exception('!<' + type.tag + '> tag resolver accepts not "' + style + '" style');
             }
-
             state.dump = _result;
           }
-
           return true;
         }
       }
-
       return false;
-    } // Serializes `object` and writes it to global `result`.
+    }
+
+    // Serializes `object` and writes it to global `result`.
     // Returns true on success, or false on invalid object.
     //
-
-
     function writeNode(state, level, object, block, compact, iskey) {
       state.tag = null;
       state.dump = object;
-
       if (!detectType(state, object, false)) {
         detectType(state, object, true);
       }
-
       var type = _toString.call(state.dump);
-
       if (block) {
         block = state.flowLevel < 0 || state.flowLevel > level;
       }
-
       var objectOrArray = type === '[object Object]' || type === '[object Array]',
-          duplicateIndex,
-          duplicate;
-
+        duplicateIndex,
+        duplicate;
       if (objectOrArray) {
         duplicateIndex = state.duplicates.indexOf(object);
         duplicate = duplicateIndex !== -1;
       }
-
       if (state.tag !== null && state.tag !== '?' || duplicate || state.indent !== 2 && level > 0) {
         compact = false;
       }
-
       if (duplicate && state.usedDuplicates[duplicateIndex]) {
         state.dump = '*ref_' + duplicateIndex;
       } else {
         if (objectOrArray && duplicate && !state.usedDuplicates[duplicateIndex]) {
           state.usedDuplicates[duplicateIndex] = true;
         }
-
         if (type === '[object Object]') {
           if (block && Object.keys(state.dump).length !== 0) {
             writeBlockMapping(state, level, state.dump, compact);
-
             if (duplicate) {
               state.dump = '&ref_' + duplicateIndex + state.dump;
             }
           } else {
             writeFlowMapping(state, level, state.dump);
-
             if (duplicate) {
               state.dump = '&ref_' + duplicateIndex + ' ' + state.dump;
             }
           }
         } else if (type === '[object Array]') {
           var arrayLevel = state.noArrayIndent && level > 0 ? level - 1 : level;
-
           if (block && state.dump.length !== 0) {
             writeBlockSequence(state, arrayLevel, state.dump, compact);
-
             if (duplicate) {
               state.dump = '&ref_' + duplicateIndex + state.dump;
             }
           } else {
             writeFlowSequence(state, arrayLevel, state.dump);
-
             if (duplicate) {
               state.dump = '&ref_' + duplicateIndex + ' ' + state.dump;
             }
@@ -15728,49 +13388,39 @@
           if (state.skipInvalid) return false;
           throw new exception('unacceptable kind of an object to dump ' + type);
         }
-
         if (state.tag !== null && state.tag !== '?') {
           state.dump = '!<' + state.tag + '> ' + state.dump;
         }
       }
-
       return true;
     }
-
     function getDuplicateReferences(object, state) {
       var objects = [],
-          duplicatesIndexes = [],
-          index,
-          length;
+        duplicatesIndexes = [],
+        index,
+        length;
       inspectNode(object, objects, duplicatesIndexes);
-
       for (index = 0, length = duplicatesIndexes.length; index < length; index += 1) {
         state.duplicates.push(objects[duplicatesIndexes[index]]);
       }
-
       state.usedDuplicates = new Array(length);
     }
-
     function inspectNode(object, objects, duplicatesIndexes) {
       var objectKeyList, index, length;
-
       if (object !== null && typeof object === 'object') {
         index = objects.indexOf(object);
-
         if (index !== -1) {
           if (duplicatesIndexes.indexOf(index) === -1) {
             duplicatesIndexes.push(index);
           }
         } else {
           objects.push(object);
-
           if (Array.isArray(object)) {
             for (index = 0, length = object.length; index < length; index += 1) {
               inspectNode(object[index], objects, duplicatesIndexes);
             }
           } else {
             objectKeyList = Object.keys(object);
-
             for (index = 0, length = objectKeyList.length; index < length; index += 1) {
               inspectNode(object[objectKeyList[index]], objects, duplicatesIndexes);
             }
@@ -15778,7 +13428,6 @@
         }
       }
     }
-
     function dump$1(input, options) {
       options = options || {};
       var state = new State(options);
@@ -15786,13 +13435,11 @@
       if (writeNode(state, 0, input, true, true)) return state.dump + '\n';
       return '';
     }
-
     function safeDump$1(input, options) {
       return dump$1(input, common.extend({
         schema: default_safe
       }, options));
     }
-
     var dump_1 = dump$1;
     var safeDump_1 = safeDump$1;
     var dumper = {
@@ -15805,7 +13452,6 @@
         throw new Error('Function ' + name + ' is deprecated and cannot be used.');
       };
     }
-
     var Type = type;
     var Schema = schema;
     var FAILSAFE_SCHEMA = failsafe;
@@ -15819,12 +13465,14 @@
     var safeLoadAll = loader.safeLoadAll;
     var dump = dumper.dump;
     var safeDump = dumper.safeDump;
-    var YAMLException = exception; // Deprecated schema names from JS-YAML 2.0.x
+    var YAMLException = exception;
 
+    // Deprecated schema names from JS-YAML 2.0.x
     var MINIMAL_SCHEMA = failsafe;
     var SAFE_SCHEMA = default_safe;
-    var DEFAULT_SCHEMA = default_full; // Deprecated functions from JS-YAML 1.x.x
+    var DEFAULT_SCHEMA = default_full;
 
+    // Deprecated functions from JS-YAML 1.x.x
     var scan = deprecated('scan');
     var parse = deprecated('parse');
     var compose = deprecated('compose');
@@ -15855,9 +13503,9 @@
 
     var jsYaml = jsYaml$1;
 
-    function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+    function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
+    function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { defineProperty(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
 
-    function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
     /**
      * Redirect - object used to redirect some requests
      * e.g.
@@ -15872,10 +13520,10 @@
      * @property {string} comment
      * @property {string} content
      * @property {string} contentType
+     * @property {string} file
      * @property {boolean} [isBlocking]
      * @property {string} [sha]
      */
-
     var Redirects = /*#__PURE__*/function () {
       /**
        * Converts rawYaml into JS object with sources titles used as keys
@@ -15885,7 +13533,6 @@
        */
       function Redirects(rawYaml) {
         classCallCheck(this, Redirects);
-
         try {
           var arrOfRedirects = jsYaml.safeLoad(rawYaml);
           this.redirects = arrOfRedirects.reduce(function (acc, redirect) {
@@ -15897,38 +13544,48 @@
           throw e;
         }
       }
+
       /**
        * Returns redirect source object
        * @param {string} title
-       * @return {Redirect}
+       * @return {Redirect|undefined} Found redirect source object, or `undefined` if not found.
        */
-
-
       createClass(Redirects, [{
         key: "getRedirect",
         value: function getRedirect(title) {
           var _this = this;
-
           if (Object.prototype.hasOwnProperty.call(this.redirects, title)) {
             return this.redirects[title];
-          } // look title among aliases
+          }
 
-
+          // look title among aliases
           var values = Object.keys(this.redirects).map(function (key) {
             return _this.redirects[key];
           });
           return values.find(function (redirect) {
             var aliases = redirect.aliases;
-
             if (!aliases) {
               return false;
             }
-
             return aliases.indexOf(title) > -1;
           });
         }
+        /**
+         * Checks if redirect is blocking like click2load.html
+         * @param {string} title Title of the redirect.
+         * @returns True if redirect is blocking otherwise returns `false` even if redirect name is
+         * unknown.
+         */
+      }, {
+        key: "isBlocking",
+        value: function isBlocking(title) {
+          var redirect = this.redirects[title];
+          if (redirect) {
+            return !!redirect.isBlocking;
+          }
+          return false;
+        }
       }]);
-
       return Redirects;
     }();
 
@@ -15992,6 +13649,8 @@
       "ubo-googletagmanager_gtm.js": "google-analytics.js",
       "googletagmanager_gtm.js": "google-analytics.js",
       "google-ima3": "google-ima3.js",
+      "ubo-google-ima.js": "google-ima3.js",
+      "google-ima.js": "google-ima3.js",
       "googlesyndication-adsbygoogle": "googlesyndication-adsbygoogle.js",
       "ubo-googlesyndication_adsbygoogle.js": "googlesyndication-adsbygoogle.js",
       "googlesyndication_adsbygoogle.js": "googlesyndication-adsbygoogle.js",
@@ -16046,7 +13705,6 @@
      * Finds redirect resource by it's name
      * @param {string} name - redirect name
      */
-
     var getRedirectByName = function getRedirectByName(name) {
       var redirects = Object.keys(redirectsList).map(function (key) {
         return redirectsList[key];
@@ -16055,6 +13713,7 @@
         return r.names && r.names.indexOf(name) > -1;
       });
     };
+
     /**
      * @typedef {Object} Source - redirect properties
      * @property {string} name redirect name
@@ -16069,22 +13728,19 @@
      * @param {Source} source
      * @returns {string} redirect code
      */
-
-
     var getRedirectCode = function getRedirectCode(source) {
       var redirect = getRedirectByName(source.name);
       var result = attachDependencies(redirect);
-      result = addCall(redirect, result); // redirect code for different sources is checked in tests
-      // so it should be just a code without any source and props passed
+      result = addCall(redirect, result);
 
+      // redirect code for different sources is checked in tests
+      // so it should be just a code without any source and props passed
       result = source.engine === 'test' ? wrapInNonameFunc(result) : passSourceAndProps(source, result, true);
       return result;
     };
-
     var getRedirectFilename = function getRedirectFilename(name) {
       return redirectsMap[name];
     };
-
     var redirects = {
       Redirects: Redirects,
       getRedirectFilename: getRedirectFilename,
@@ -16105,49 +13761,38 @@
         var searchRegexp = toRegExp(search);
         var rid = randomId();
         var SRC_DATA_MARKER = "data:text/javascript;base64,";
-
         var getCurrentScript = function getCurrentScript() {
           if ("currentScript" in document) {
             return document.currentScript;
           }
-
           var scripts = document.getElementsByTagName("script");
           return scripts[scripts.length - 1];
         };
-
         var ourScript = getCurrentScript();
-
         var abort = function abort() {
           var scriptEl = getCurrentScript();
-
           if (!scriptEl) {
             return;
           }
-
           var content = scriptEl.textContent;
-
           try {
             var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").get;
             content = textContentGetter.call(scriptEl);
           } catch (e) {}
-
           if (content.length === 0 && typeof scriptEl.src !== "undefined" && startsWith(scriptEl.src, SRC_DATA_MARKER)) {
             var encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
             content = window.atob(encodedContent);
           }
-
           if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && searchRegexp.test(content)) {
             hit(source);
             throw new ReferenceError(rid);
           }
         };
-
         var setChainPropAccess = function setChainPropAccess(owner, property) {
           var chainInfo = getPropertyInChain(owner, property);
           var base = chainInfo.base;
           var prop = chainInfo.prop,
-              chain = chainInfo.chain;
-
+            chain = chainInfo.chain;
           if (base instanceof Object === false && base === null) {
             var props = property.split(".");
             var propIndex = props.indexOf(prop);
@@ -16156,16 +13801,13 @@
             logMessage(source, message);
             return;
           }
-
           if (chain) {
             var setter = function setter(a) {
               base = a;
-
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
               }
             };
-
             Object.defineProperty(owner, prop, {
               get: function get() {
                 return base;
@@ -16174,33 +13816,27 @@
             });
             return;
           }
-
           var currentValue = base[prop];
           var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
-
           if (origDescriptor instanceof Object === false || origDescriptor.get instanceof Function === false) {
             currentValue = base[prop];
             origDescriptor = undefined;
           }
-
           var descriptorWrapper = Object.assign(getDescriptorAddon(), {
             currentValue: currentValue,
             get: function get() {
               if (!this.isAbortingSuspended) {
                 this.isolateCallback(abort);
               }
-
               if (origDescriptor instanceof Object) {
                 return origDescriptor.get.call(base);
               }
-
               return this.currentValue;
             },
             set: function set(newValue) {
               if (!this.isAbortingSuspended) {
                 this.isolateCallback(abort);
               }
-
               if (origDescriptor instanceof Object) {
                 origDescriptor.set.call(base, newValue);
               } else {
@@ -16217,38 +13853,29 @@
             }
           });
         };
-
         setChainPropAccess(window, property);
         window.onerror = createOnErrorHandler(rid).bind();
       }
-
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
-
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
-
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
-
         Object.defineProperty(object, property, descriptor);
         return true;
       }
-
       function getPropertyInChain(base, chain) {
         var pos = chain.indexOf(".");
-
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-
         var prop = chain.slice(0, pos);
-
         if (base === null) {
           return {
             base: base,
@@ -16256,10 +13883,8 @@
             chain: chain
           };
         }
-
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
-
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
             base: base,
@@ -16267,7 +13892,6 @@
             chain: chain
           };
         }
-
         if (nextBase === null) {
           return {
             base: base,
@@ -16275,11 +13899,9 @@
             chain: chain
           };
         }
-
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
         }
-
         Object.defineProperty(base, prop, {
           configurable: true
         });
@@ -16289,119 +13911,85 @@
           chain: chain
         };
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function startsWith(str, prefix) {
         return !!str && str.indexOf(prefix) === 0;
       }
-
       function createOnErrorHandler(rid) {
         var nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
           }
-
           if (nativeOnError instanceof Function) {
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-
             return nativeOnError.apply(this, [error].concat(args));
           }
-
           return false;
         };
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
-
       function getDescriptorAddon() {
         return {
           isAbortingSuspended: false,
           isolateCallback: function isolateCallback(cb) {
             this.isAbortingSuspended = true;
-
             try {
               for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
                 args[_key - 1] = arguments[_key];
               }
-
               var result = cb.apply(void 0, args);
               this.isAbortingSuspended = false;
               return result;
@@ -16413,44 +14001,35 @@
           }
         };
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         abortCurrentInlineScript.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function abortOnPropertyRead(source, args) {
       function abortOnPropertyRead(source, property) {
         if (!property) {
           return;
         }
-
         var rid = randomId();
-
         var abort = function abort() {
           hit(source);
           throw new ReferenceError(rid);
         };
-
         var setChainPropAccess = function setChainPropAccess(owner, property) {
           var chainInfo = getPropertyInChain(owner, property);
           var base = chainInfo.base;
           var prop = chainInfo.prop,
-              chain = chainInfo.chain;
-
+            chain = chainInfo.chain;
           if (chain) {
             var setter = function setter(a) {
               base = a;
-
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
               }
             };
-
             Object.defineProperty(owner, prop, {
               get: function get() {
                 return base;
@@ -16459,44 +14038,34 @@
             });
             return;
           }
-
           setPropertyAccess(base, prop, {
             get: abort,
             set: function set() {}
           });
         };
-
         setChainPropAccess(window, property);
         window.onerror = createOnErrorHandler(rid).bind();
       }
-
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
-
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
-
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
-
         Object.defineProperty(object, property, descriptor);
         return true;
       }
-
       function getPropertyInChain(base, chain) {
         var pos = chain.indexOf(".");
-
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-
         var prop = chain.slice(0, pos);
-
         if (base === null) {
           return {
             base: base,
@@ -16504,10 +14073,8 @@
             chain: chain
           };
         }
-
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
-
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
             base: base,
@@ -16515,7 +14082,6 @@
             chain: chain
           };
         }
-
         if (nextBase === null) {
           return {
             base: base,
@@ -16523,11 +14089,9 @@
             chain: chain
           };
         }
-
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
         }
-
         Object.defineProperty(base, prop, {
           configurable: true
         });
@@ -16537,116 +14101,83 @@
           chain: chain
         };
       }
-
       function createOnErrorHandler(rid) {
         var nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
           }
-
           if (nativeOnError instanceof Function) {
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-
             return nativeOnError.apply(this, [error].concat(args));
           }
-
           return false;
         };
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         abortOnPropertyRead.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function abortOnPropertyWrite(source, args) {
       function abortOnPropertyWrite(source, property) {
         if (!property) {
           return;
         }
-
         var rid = randomId();
-
         var abort = function abort() {
           hit(source);
           throw new ReferenceError(rid);
         };
-
         var setChainPropAccess = function setChainPropAccess(owner, property) {
           var chainInfo = getPropertyInChain(owner, property);
           var base = chainInfo.base;
           var prop = chainInfo.prop,
-              chain = chainInfo.chain;
-
+            chain = chainInfo.chain;
           if (chain) {
             var setter = function setter(a) {
               base = a;
-
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
               }
             };
-
             Object.defineProperty(owner, prop, {
               get: function get() {
                 return base;
@@ -16655,43 +14186,33 @@
             });
             return;
           }
-
           setPropertyAccess(base, prop, {
             set: abort
           });
         };
-
         setChainPropAccess(window, property);
         window.onerror = createOnErrorHandler(rid).bind();
       }
-
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
-
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
-
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
-
         Object.defineProperty(object, property, descriptor);
         return true;
       }
-
       function getPropertyInChain(base, chain) {
         var pos = chain.indexOf(".");
-
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-
         var prop = chain.slice(0, pos);
-
         if (base === null) {
           return {
             base: base,
@@ -16699,10 +14220,8 @@
             chain: chain
           };
         }
-
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
-
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
             base: base,
@@ -16710,7 +14229,6 @@
             chain: chain
           };
         }
-
         if (nextBase === null) {
           return {
             base: base,
@@ -16718,11 +14236,9 @@
             chain: chain
           };
         }
-
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
         }
-
         Object.defineProperty(base, prop, {
           configurable: true
         });
@@ -16732,116 +14248,83 @@
           chain: chain
         };
       }
-
       function createOnErrorHandler(rid) {
         var nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
           }
-
           if (nativeOnError instanceof Function) {
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-
             return nativeOnError.apply(this, [error].concat(args));
           }
-
           return false;
         };
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         abortOnPropertyWrite.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function abortOnStackTrace(source, args) {
       function abortOnStackTrace(source, property, stack) {
         if (!property || !stack) {
           return;
         }
-
         var rid = randomId();
-
         var abort = function abort() {
           hit(source);
           throw new ReferenceError(rid);
         };
-
         var setChainPropAccess = function setChainPropAccess(owner, property) {
           var chainInfo = getPropertyInChain(owner, property);
           var base = chainInfo.base;
           var prop = chainInfo.prop,
-              chain = chainInfo.chain;
-
+            chain = chainInfo.chain;
           if (chain) {
             var setter = function setter(a) {
               base = a;
-
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
               }
             };
-
             Object.defineProperty(owner, prop, {
               get: function get() {
                 return base;
@@ -16850,26 +14333,22 @@
             });
             return;
           }
-
           if (!stack.match(/^(inlineScript|injectedScript)$/) && !isValidStrPattern(stack)) {
             logMessage(source, "Invalid parameter: ".concat(stack));
             return;
           }
-
           var descriptorWrapper = Object.assign(getDescriptorAddon(), {
             value: base[prop],
             get: function get() {
               if (!this.isAbortingSuspended && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
                 abort();
               }
-
               return this.value;
             },
             set: function set(newValue) {
               if (!this.isAbortingSuspended && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
                 abort();
               }
-
               this.value = newValue;
             }
           });
@@ -16882,38 +14361,29 @@
             }
           });
         };
-
         setChainPropAccess(window, property);
         window.onerror = createOnErrorHandler(rid).bind();
       }
-
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
-
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
-
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
-
         Object.defineProperty(object, property, descriptor);
         return true;
       }
-
       function getPropertyInChain(base, chain) {
         var pos = chain.indexOf(".");
-
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-
         var prop = chain.slice(0, pos);
-
         if (base === null) {
           return {
             base: base,
@@ -16921,10 +14391,8 @@
             chain: chain
           };
         }
-
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
-
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
             base: base,
@@ -16932,7 +14400,6 @@
             chain: chain
           };
         }
-
         if (nextBase === null) {
           return {
             base: base,
@@ -16940,11 +14407,9 @@
             chain: chain
           };
         }
-
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
         }
-
         Object.defineProperty(base, prop, {
           configurable: true
         });
@@ -16954,126 +14419,91 @@
           chain: chain
         };
       }
-
       function createOnErrorHandler(rid) {
         var nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
           }
-
           if (nativeOnError instanceof Function) {
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-
             return nativeOnError.apply(this, [error].concat(args));
           }
-
           return false;
         };
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = escapeRegExp(input);
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-
         var isValid;
-
         try {
           isValid = new RegExp(str);
           isValid = true;
         } catch (e) {
           isValid = false;
         }
-
         return isValid;
       }
-
       function escapeRegExp(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
-
       function matchStackTrace(stackMatch, stackTrace) {
         if (!stackMatch || stackMatch === "") {
           return true;
         }
-
         if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
           return true;
         }
-
         var stackRegexp = toRegExp(stackMatch);
         var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         }).join("\n");
         return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
       }
-
       function getDescriptorAddon() {
         return {
           isAbortingSuspended: false,
           isolateCallback: function isolateCallback(cb) {
             this.isAbortingSuspended = true;
-
             try {
               for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
                 args[_key - 1] = arguments[_key];
               }
-
               var result = cb.apply(void 0, args);
               this.isAbortingSuspended = false;
               return result;
@@ -17085,90 +14515,69 @@
           }
         };
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
-
       function getNativeRegexpTest() {
         return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
       }
-
       function startsWith(str, prefix) {
         return !!str && str.indexOf(prefix) === 0;
       }
-
       function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
         var INLINE_SCRIPT_STRING = "inlineScript";
         var INJECTED_SCRIPT_STRING = "injectedScript";
         var INJECTED_SCRIPT_MARKER = "<anonymous>";
-
         var isInlineScript = function isInlineScript(stackMatch) {
           return stackMatch.indexOf(INLINE_SCRIPT_STRING) > -1;
         };
-
         var isInjectedScript = function isInjectedScript(stackMatch) {
           return stackMatch.indexOf(INJECTED_SCRIPT_STRING) > -1;
         };
-
         if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
           return false;
         }
-
         var documentURL = window.location.href;
         var pos = documentURL.indexOf("#");
-
         if (pos !== -1) {
           documentURL = documentURL.slice(0, pos);
         }
-
         var stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         });
         var stackLines = stackSteps.map(function (line) {
           var stack;
           var getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
-
           if (getStackTraceURL) {
             var stackURL = getStackTraceURL[2];
-
             if (startsWith(stackURL, "(")) {
               stackURL = stackURL.slice(1);
             }
-
             if (startsWith(stackURL, INJECTED_SCRIPT_MARKER)) {
               stackURL = INJECTED_SCRIPT_STRING;
               var stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
-
               if (startsWith(stackFunction, "at")) {
                 stackFunction = stackFunction.slice(2).trim();
               }
-
               stack = "".concat(stackFunction, " ").concat(stackURL).trim();
             } else {
               stack = stackURL;
@@ -17176,39 +14585,31 @@
           } else {
             stack = line;
           }
-
           return stack;
         });
-
         if (stackLines) {
           for (var index = 0; index < stackLines.length; index += 1) {
             if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
               return true;
             }
-
             if (isInjectedScript(stackMatch) && startsWith(stackLines[index], INJECTED_SCRIPT_STRING)) {
               return true;
             }
           }
         }
-
         return false;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         abortOnStackTrace.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function adjustSetInterval(source, args) {
       function adjustSetInterval(source, matchCallback, matchDelay, boost) {
         var nativeSetInterval = window.setInterval;
         var matchRegexp = toRegExp(matchCallback);
-
         var intervalWrapper = function intervalWrapper(callback, delay) {
           if (!isValidCallback(callback)) {
             var message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'.");
@@ -17217,152 +14618,110 @@
             delay *= getBoostMultiplier(boost);
             hit(source);
           }
-
           for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
             args[_key - 2] = arguments[_key];
           }
-
           return nativeSetInterval.apply(window, [callback, delay].concat(args));
         };
-
         window.setInterval = intervalWrapper;
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function isValidCallback(callback) {
         return callback instanceof Function || typeof callback === "string";
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function getBoostMultiplier(boost) {
         var DEFAULT_MULTIPLIER = .05;
         var MIN_MULTIPLIER = .02;
         var MAX_MULTIPLIER = 50;
         var parsedBoost = parseFloat(boost);
         var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
-
         if (boostMultiplier < MIN_MULTIPLIER) {
           boostMultiplier = MIN_MULTIPLIER;
         }
-
         if (boostMultiplier > MAX_MULTIPLIER) {
           boostMultiplier = MAX_MULTIPLIER;
         }
-
         return boostMultiplier;
       }
-
       function isDelayMatched(inputDelay, realDelay) {
         return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
       }
-
       function nativeIsFinite(num) {
         var native = Number.isFinite || window.isFinite;
         return native(num);
       }
-
       function getMatchDelay(delay) {
         var DEFAULT_DELAY = 1e3;
         var parsedDelay = parseInt(delay, 10);
         var delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
         return delayMatch;
       }
-
       function shouldMatchAnyDelay(delay) {
         return delay === "*";
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         adjustSetInterval.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function adjustSetTimeout(source, args) {
       function adjustSetTimeout(source, matchCallback, matchDelay, boost) {
         var nativeSetTimeout = window.setTimeout;
         var matchRegexp = toRegExp(matchCallback);
-
         var timeoutWrapper = function timeoutWrapper(callback, delay) {
           if (!isValidCallback(callback)) {
             var message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'.");
@@ -17371,189 +14730,138 @@
             delay *= getBoostMultiplier(boost);
             hit(source);
           }
-
           for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
             args[_key - 2] = arguments[_key];
           }
-
           return nativeSetTimeout.apply(window, [callback, delay].concat(args));
         };
-
         window.setTimeout = timeoutWrapper;
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function isValidCallback(callback) {
         return callback instanceof Function || typeof callback === "string";
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function getBoostMultiplier(boost) {
         var DEFAULT_MULTIPLIER = .05;
         var MIN_MULTIPLIER = .02;
         var MAX_MULTIPLIER = 50;
         var parsedBoost = parseFloat(boost);
         var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
-
         if (boostMultiplier < MIN_MULTIPLIER) {
           boostMultiplier = MIN_MULTIPLIER;
         }
-
         if (boostMultiplier > MAX_MULTIPLIER) {
           boostMultiplier = MAX_MULTIPLIER;
         }
-
         return boostMultiplier;
       }
-
       function isDelayMatched(inputDelay, realDelay) {
         return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
       }
-
       function nativeIsFinite(num) {
         var native = Number.isFinite || window.isFinite;
         return native(num);
       }
-
       function getMatchDelay(delay) {
         var DEFAULT_DELAY = 1e3;
         var parsedDelay = parseInt(delay, 10);
         var delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
         return delayMatch;
       }
-
       function shouldMatchAnyDelay(delay) {
         return delay === "*";
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         adjustSetTimeout.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function debugCurrentInlineScript(source, args) {
       function debugCurrentInlineScript(source, property, search) {
         var searchRegexp = toRegExp(search);
         var rid = randomId();
-
         var getCurrentScript = function getCurrentScript() {
           if ("currentScript" in document) {
             return document.currentScript;
           }
-
           var scripts = document.getElementsByTagName("script");
           return scripts[scripts.length - 1];
         };
-
         var ourScript = getCurrentScript();
-
         var abort = function abort() {
           var scriptEl = getCurrentScript();
-
           if (!scriptEl) {
             return;
           }
-
           var content = scriptEl.textContent;
-
           try {
             var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").get;
             content = textContentGetter.call(scriptEl);
           } catch (e) {}
-
           if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && searchRegexp.test(content)) {
             hit(source);
             debugger;
           }
         };
-
         var setChainPropAccess = function setChainPropAccess(owner, property) {
           var chainInfo = getPropertyInChain(owner, property);
           var base = chainInfo.base;
           var prop = chainInfo.prop,
-              chain = chainInfo.chain;
-
+            chain = chainInfo.chain;
           if (base instanceof Object === false && base === null) {
             var props = property.split(".");
             var propIndex = props.indexOf(prop);
@@ -17562,16 +14870,13 @@
             logMessage(message, source.verbose);
             return;
           }
-
           if (chain) {
             var setter = function setter(a) {
               base = a;
-
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
               }
             };
-
             Object.defineProperty(owner, prop, {
               get: function get() {
                 return base;
@@ -17580,7 +14885,6 @@
             });
             return;
           }
-
           var currentValue = base[prop];
           setPropertyAccess(base, prop, {
             set: function set(value) {
@@ -17593,38 +14897,29 @@
             }
           });
         };
-
         setChainPropAccess(window, property);
         window.onerror = createOnErrorHandler(rid).bind();
       }
-
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
-
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
-
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
-
         Object.defineProperty(object, property, descriptor);
         return true;
       }
-
       function getPropertyInChain(base, chain) {
         var pos = chain.indexOf(".");
-
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-
         var prop = chain.slice(0, pos);
-
         if (base === null) {
           return {
             base: base,
@@ -17632,10 +14927,8 @@
             chain: chain
           };
         }
-
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
-
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
             base: base,
@@ -17643,7 +14936,6 @@
             chain: chain
           };
         }
-
         if (nextBase === null) {
           return {
             base: base,
@@ -17651,11 +14943,9 @@
             chain: chain
           };
         }
-
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
         }
-
         Object.defineProperty(base, prop, {
           configurable: true
         });
@@ -17665,141 +14955,102 @@
           chain: chain
         };
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function createOnErrorHandler(rid) {
         var nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
           }
-
           if (nativeOnError instanceof Function) {
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-
             return nativeOnError.apply(this, [error].concat(args));
           }
-
           return false;
         };
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         debugCurrentInlineScript.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function debugOnPropertyRead(source, args) {
       function debugOnPropertyRead(source, property) {
         if (!property) {
           return;
         }
-
         var rid = randomId();
-
         var abort = function abort() {
           hit(source);
           debugger;
         };
-
         var setChainPropAccess = function setChainPropAccess(owner, property) {
           var chainInfo = getPropertyInChain(owner, property);
           var base = chainInfo.base;
           var prop = chainInfo.prop,
-              chain = chainInfo.chain;
-
+            chain = chainInfo.chain;
           if (chain) {
             var setter = function setter(a) {
               base = a;
-
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
               }
             };
-
             Object.defineProperty(owner, prop, {
               get: function get() {
                 return base;
@@ -17808,44 +15059,34 @@
             });
             return;
           }
-
           setPropertyAccess(base, prop, {
             get: abort,
             set: noopFunc
           });
         };
-
         setChainPropAccess(window, property);
         window.onerror = createOnErrorHandler(rid).bind();
       }
-
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
-
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
-
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
-
         Object.defineProperty(object, property, descriptor);
         return true;
       }
-
       function getPropertyInChain(base, chain) {
         var pos = chain.indexOf(".");
-
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-
         var prop = chain.slice(0, pos);
-
         if (base === null) {
           return {
             base: base,
@@ -17853,10 +15094,8 @@
             chain: chain
           };
         }
-
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
-
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
             base: base,
@@ -17864,7 +15103,6 @@
             chain: chain
           };
         }
-
         if (nextBase === null) {
           return {
             base: base,
@@ -17872,11 +15110,9 @@
             chain: chain
           };
         }
-
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
         }
-
         Object.defineProperty(base, prop, {
           configurable: true
         });
@@ -17886,118 +15122,84 @@
           chain: chain
         };
       }
-
       function createOnErrorHandler(rid) {
         var nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
           }
-
           if (nativeOnError instanceof Function) {
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-
             return nativeOnError.apply(this, [error].concat(args));
           }
-
           return false;
         };
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function noopFunc() {}
-
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         debugOnPropertyRead.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function debugOnPropertyWrite(source, args) {
       function debugOnPropertyWrite(source, property) {
         if (!property) {
           return;
         }
-
         var rid = randomId();
-
         var abort = function abort() {
           hit(source);
           debugger;
         };
-
         var setChainPropAccess = function setChainPropAccess(owner, property) {
           var chainInfo = getPropertyInChain(owner, property);
           var base = chainInfo.base;
           var prop = chainInfo.prop,
-              chain = chainInfo.chain;
-
+            chain = chainInfo.chain;
           if (chain) {
             var setter = function setter(a) {
               base = a;
-
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
               }
             };
-
             Object.defineProperty(owner, prop, {
               get: function get() {
                 return base;
@@ -18006,43 +15208,33 @@
             });
             return;
           }
-
           setPropertyAccess(base, prop, {
             set: abort
           });
         };
-
         setChainPropAccess(window, property);
         window.onerror = createOnErrorHandler(rid).bind();
       }
-
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
-
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
-
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
-
         Object.defineProperty(object, property, descriptor);
         return true;
       }
-
       function getPropertyInChain(base, chain) {
         var pos = chain.indexOf(".");
-
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-
         var prop = chain.slice(0, pos);
-
         if (base === null) {
           return {
             base: base,
@@ -18050,10 +15242,8 @@
             chain: chain
           };
         }
-
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
-
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
             base: base,
@@ -18061,7 +15251,6 @@
             chain: chain
           };
         }
-
         if (nextBase === null) {
           return {
             base: base,
@@ -18069,11 +15258,9 @@
             chain: chain
           };
         }
-
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
         }
-
         Object.defineProperty(base, prop, {
           configurable: true
         });
@@ -18083,174 +15270,114 @@
           chain: chain
         };
       }
-
       function createOnErrorHandler(rid) {
         var nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
           }
-
           if (nativeOnError instanceof Function) {
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-
             return nativeOnError.apply(this, [error].concat(args));
           }
-
           return false;
         };
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         debugOnPropertyWrite.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function dirString(source, args) {
       function dirString(source, times) {
         var _console = console,
-            dir = _console.dir;
-        times = parseInt(times, 10);
-
+          dir = _console.dir;
         function dirWrapper(object) {
-          var temp;
-
-          for (var i = 0; i < times; i += 1) {
-            temp = "".concat(object);
-          }
-
           if (typeof dir === "function") {
             dir.call(this, object);
           }
-
-          hit(source, temp);
+          hit(source);
         }
-
         console.dir = dirWrapper;
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         dirString.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function disableNewtabLinks(source, args) {
       function disableNewtabLinks(source) {
         document.addEventListener("click", function (ev) {
           var target = ev.target;
-
           while (target !== null) {
             if (target.localName === "a" && target.hasAttribute("target")) {
               ev.stopPropagation();
@@ -18258,79 +15385,55 @@
               hit(source);
               break;
             }
-
             target = target.parentNode;
           }
         });
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         disableNewtabLinks.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function forceWindowClose(source, args) {
       function forceWindowClose(source) {
         var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
-
         if (typeof window.close !== "function") {
           var message = "window.close() is not a function so 'close-window' scriptlet is unavailable";
           logMessage(source, message);
+          return;
         }
-
         var closeImmediately = function closeImmediately() {
           try {
             hit(source);
@@ -18339,12 +15442,10 @@
             logMessage(source, e);
           }
         };
-
         var closeByExtension = function closeByExtension() {
           var extCall = function extCall() {
             dispatchEvent(new Event("adguard:scriptlet-close-window"));
           };
-
           window.addEventListener("adguard:subscribed-to-close-window", extCall, {
             once: true
           });
@@ -18354,202 +15455,141 @@
             });
           }, 5e3);
         };
-
         var shouldClose = function shouldClose() {
           if (path === "") {
             return true;
           }
-
           var pathRegexp = toRegExp(path);
           var currentPath = "".concat(window.location.pathname).concat(window.location.search);
           return pathRegexp.test(currentPath);
         };
-
         if (shouldClose()) {
           closeImmediately();
-
           if (navigator.userAgent.indexOf("Chrome") > -1) {
             closeByExtension();
           }
         }
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         forceWindowClose.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function hideInShadowDom(source, args) {
       function hideInShadowDom(source, selector, baseSelector) {
         if (!Element.prototype.attachShadow) {
           return;
         }
-
         var hideElement = function hideElement(targetElement) {
           var DISPLAY_NONE_CSS = "display:none!important;";
           targetElement.style.cssText = DISPLAY_NONE_CSS;
         };
-
         var hideHandler = function hideHandler() {
           var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
-
           while (hostElements.length !== 0) {
             var isHidden = false;
-
             var _pierceShadowDom = pierceShadowDom(selector, hostElements),
-                targets = _pierceShadowDom.targets,
-                innerHosts = _pierceShadowDom.innerHosts;
-
+              targets = _pierceShadowDom.targets,
+              innerHosts = _pierceShadowDom.innerHosts;
             targets.forEach(function (targetEl) {
               hideElement(targetEl);
               isHidden = true;
             });
-
             if (isHidden) {
               hit(source);
             }
-
             hostElements = innerHosts;
           }
         };
-
         hideHandler();
         observeDOMChanges(hideHandler, true);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function observeDOMChanges(callback) {
         var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
         var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
         var THROTTLE_DELAY_MS = 20;
         var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-
         var connect = function connect() {
           if (attrsToObserve.length > 0) {
             observer.observe(document.documentElement, {
@@ -18566,20 +15606,16 @@
             });
           }
         };
-
         var disconnect = function disconnect() {
           observer.disconnect();
         };
-
         function callbackWrapper() {
           disconnect();
           callback();
           connect();
         }
-
         connect();
       }
-
       function findHostElements(rootElement) {
         var hosts = [];
         var domElems = rootElement.querySelectorAll("*");
@@ -18590,7 +15626,6 @@
         });
         return hosts;
       }
-
       function pierceShadowDom(selector, hostElements) {
         var targets = [];
         var innerHostsAcc = [];
@@ -18608,17 +15643,14 @@
           innerHosts: innerHosts
         };
       }
-
       function flatten(input) {
         var stack = [];
         input.forEach(function (el) {
           return stack.push(el);
         });
         var res = [];
-
         while (stack.length) {
           var next = stack.pop();
-
           if (Array.isArray(next)) {
             next.forEach(function (el) {
               return stack.push(el);
@@ -18627,83 +15659,66 @@
             res.push(next);
           }
         }
-
         return res.reverse();
       }
-
       function throttle(cb, delay) {
         var wait = false;
         var savedArgs;
-
         var wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
-
           if (wait) {
             savedArgs = args;
             return;
           }
-
           cb.apply(void 0, args);
           wait = true;
           setTimeout(function () {
             wait = false;
-
             if (savedArgs) {
               wrapper(savedArgs);
               savedArgs = null;
             }
           }, delay);
         };
-
         return wrapper;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         hideInShadowDom.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function jsonPrune(source, args) {
       function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
         if (!!stack && !matchStackTrace(stack, new Error().stack)) {
           return;
         }
-
         var prunePaths = propsToRemove !== undefined && propsToRemove !== "" ? propsToRemove.split(/ +/) : [];
         var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== "" ? requiredInitialProps.split(/ +/) : [];
-
         function isPruningNeeded(root) {
           if (!root) {
             return false;
           }
-
           var shouldProcess;
-
           if (prunePaths.length === 0 && requiredPaths.length > 0) {
             var rootString = JSON.stringify(root);
             var matchRegex = toRegExp(requiredPaths.join(""));
             var shouldLog = matchRegex.test(rootString);
-
             if (shouldLog) {
-              logMessage(source, "".concat(window.location.hostname, " ").concat(root), true);
+              logMessage(source, "".concat(window.location.hostname, " ").concat(objectToString(root)), true);
               shouldProcess = false;
               return shouldProcess;
             }
           }
-
           for (var i = 0; i < requiredPaths.length; i += 1) {
             var requiredPath = requiredPaths[i];
             var lastNestedPropName = requiredPath.split(".").pop();
             var hasWildcard = requiredPath.indexOf(".*.") > -1 || requiredPath.indexOf("*.") > -1 || requiredPath.indexOf(".*") > -1 || requiredPath.indexOf(".[].") > -1 || requiredPath.indexOf("[].") > -1 || requiredPath.indexOf(".[]") > -1;
             var details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
             shouldProcess = !hasWildcard;
-
             for (var _i = 0; _i < details.length; _i += 1) {
               if (hasWildcard) {
                 shouldProcess = !(details[_i].base[lastNestedPropName] === undefined) || shouldProcess;
@@ -18712,21 +15727,17 @@
               }
             }
           }
-
           return shouldProcess;
         }
-
         var jsonPruner = function jsonPruner(root) {
           if (prunePaths.length === 0 && requiredPaths.length === 0) {
-            logMessage(source, "".concat(window.location.hostname, " ").concat(root), true);
+            logMessage(source, "".concat(window.location.hostname, " ").concat(objectToString(root)), true);
             return root;
           }
-
           try {
             if (isPruningNeeded(root) === false) {
               return root;
             }
-
             prunePaths.forEach(function (path) {
               var ownerObjArr = getWildcardPropertyInChain(root, path, true);
               ownerObjArr.forEach(function (ownerObj) {
@@ -18739,109 +15750,77 @@
           } catch (e) {
             logMessage(source, e);
           }
-
           return root;
         };
-
         var nativeJSONParse = JSON.parse;
-
         var jsonParseWrapper = function jsonParseWrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
-
           var root = nativeJSONParse.apply(JSON, args);
           return jsonPruner(root);
         };
-
         jsonParseWrapper.toString = nativeJSONParse.toString.bind(nativeJSONParse);
         JSON.parse = jsonParseWrapper;
         var nativeResponseJson = Response.prototype.json;
-
         var responseJsonWrapper = function responseJsonWrapper() {
           var promise = nativeResponseJson.apply(this);
           return promise.then(function (obj) {
             return jsonPruner(obj);
           });
         };
-
         if (typeof Response === "undefined") {
           return;
         }
-
         Response.prototype.json = responseJsonWrapper;
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function matchStackTrace(stackMatch, stackTrace) {
         if (!stackMatch || stackMatch === "") {
           return true;
         }
-
         if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
           return true;
         }
-
         var stackRegexp = toRegExp(stackMatch);
         var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         }).join("\n");
         return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
       }
-
       function getWildcardPropertyInChain(base, chain) {
         var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
         var pos = chain.indexOf(".");
-
         if (pos === -1) {
           if (chain === "*" || chain === "[]") {
             for (var key in base) {
@@ -18858,13 +15837,10 @@
               prop: chain
             });
           }
-
           return output;
         }
-
         var prop = chain.slice(0, pos);
         var shouldLookThrough = prop === "[]" && Array.isArray(base) || prop === "*" && base instanceof Object;
-
         if (shouldLookThrough) {
           var nextProp = chain.slice(pos + 1);
           var baseKeys = Object.keys(base);
@@ -18873,95 +15849,155 @@
             getWildcardPropertyInChain(item, nextProp, lookThrough, output);
           });
         }
-
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
-
         if (nextBase !== undefined) {
           getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
         }
-
         return output;
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
+      function objectToString(obj) {
+        return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
+          var key = pair[0];
+          var value = pair[1];
+          var recordValueStr = value;
+          if (value instanceof Object) {
+            recordValueStr = "{ ".concat(objectToString(value), " }");
+          }
+          return "".concat(key, ':"').concat(recordValueStr, '"');
+        }).join(" ");
+      }
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0 && !obj.prototype;
+      }
+      function getObjectEntries(object) {
+        var keys = Object.keys(object);
+        var entries = [];
+        keys.forEach(function (key) {
+          return entries.push([key, object[key]]);
+        });
+        return entries;
+      }
       function getNativeRegexpTest() {
         return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
       }
-
+      function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
+        var INLINE_SCRIPT_STRING = "inlineScript";
+        var INJECTED_SCRIPT_STRING = "injectedScript";
+        var INJECTED_SCRIPT_MARKER = "<anonymous>";
+        var isInlineScript = function isInlineScript(stackMatch) {
+          return stackMatch.indexOf(INLINE_SCRIPT_STRING) > -1;
+        };
+        var isInjectedScript = function isInjectedScript(stackMatch) {
+          return stackMatch.indexOf(INJECTED_SCRIPT_STRING) > -1;
+        };
+        if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
+          return false;
+        }
+        var documentURL = window.location.href;
+        var pos = documentURL.indexOf("#");
+        if (pos !== -1) {
+          documentURL = documentURL.slice(0, pos);
+        }
+        var stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
+          return line.trim();
+        });
+        var stackLines = stackSteps.map(function (line) {
+          var stack;
+          var getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
+          if (getStackTraceURL) {
+            var stackURL = getStackTraceURL[2];
+            if (startsWith(stackURL, "(")) {
+              stackURL = stackURL.slice(1);
+            }
+            if (startsWith(stackURL, INJECTED_SCRIPT_MARKER)) {
+              stackURL = INJECTED_SCRIPT_STRING;
+              var stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
+              if (startsWith(stackFunction, "at")) {
+                stackFunction = stackFunction.slice(2).trim();
+              }
+              stack = "".concat(stackFunction, " ").concat(stackURL).trim();
+            } else {
+              stack = stackURL;
+            }
+          } else {
+            stack = line;
+          }
+          return stack;
+        });
+        if (stackLines) {
+          for (var index = 0; index < stackLines.length; index += 1) {
+            if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
+              return true;
+            }
+            if (isInjectedScript(stackMatch) && startsWith(stackLines[index], INJECTED_SCRIPT_STRING)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         jsonPrune.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function log(source, args) {
       function log() {
         for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
           args[_key] = arguments[_key];
         }
-
         console.log(args);
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         log.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function logAddEventListener(source, args) {
       function logAddEventListener(source) {
         var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
-
         function addEventListenerWrapper(type, listener) {
+          var _this$constructor;
           if (validateType(type) && validateListener(listener)) {
             var _message = 'addEventListener("'.concat(type, '", ').concat(listenerToString(listener), ")");
-
             logMessage(source, _message, true);
             hit(source);
           }
-
           var message = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
           logMessage(source, message, true);
-
+          var context = this;
+          if (this && ((_this$constructor = this.constructor) === null || _this$constructor === void 0 ? void 0 : _this$constructor.name) === "Window" && this !== window) {
+            context = window;
+          }
           for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
             args[_key - 2] = arguments[_key];
           }
-
-          return nativeAddEventListener.apply(this, [type, listener].concat(args));
+          return nativeAddEventListener.apply(context, [type, listener].concat(args));
         }
-
         var descriptor = {
           configurable: true,
           set: function set() {},
@@ -18973,71 +16009,47 @@
         Object.defineProperty(window, "addEventListener", descriptor);
         Object.defineProperty(document, "addEventListener", descriptor);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function validateType(type) {
         return typeof type !== "undefined";
       }
-
       function validateListener(listener) {
         return typeof listener !== "undefined" && (typeof listener === "function" || typeof listener === "object" && listener !== null && typeof listener.handleEvent === "function");
       }
-
       function listenerToString(listener) {
         return typeof listener === "function" ? listener.toString() : listener.handleEvent.toString();
       }
-
       function convertTypeToString(value) {
         var output;
-
         if (typeof value === "undefined") {
           output = "undefined";
         } else if (typeof value === "object") {
@@ -19049,36 +16061,28 @@
         } else {
           output = value.toString();
         }
-
         return output;
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function objectToString(obj) {
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
           var key = pair[0];
           var value = pair[1];
           var recordValueStr = value;
-
           if (value instanceof Object) {
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
-
           return "".concat(key, ':"').concat(recordValueStr, '"');
         }).join(" ");
       }
-
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
-
       function getObjectEntries(object) {
         var keys = Object.keys(object);
         var entries = [];
@@ -19087,117 +16091,83 @@
         });
         return entries;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         logAddEventListener.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function logEval(source, args) {
       function logEval(source) {
         var nativeEval = window.eval;
-
         function evalWrapper(str) {
           hit(source);
           logMessage(source, 'eval("'.concat(str, '")'), true);
           return nativeEval(str);
         }
-
         window.eval = evalWrapper;
         var nativeFunction = window.Function;
-
         function FunctionWrapper() {
           hit(source);
-
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
-
           logMessage(source, "new Function(".concat(args.join(", "), ")"), true);
           return nativeFunction.apply(this, [].concat(args));
         }
-
         FunctionWrapper.prototype = Object.create(nativeFunction.prototype);
         FunctionWrapper.prototype.constructor = FunctionWrapper;
         window.Function = FunctionWrapper;
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         logEval.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function logOnStacktrace(source, args) {
       function logOnStacktrace(source, property) {
         if (!property) {
           return;
         }
-
         var refineStackTrace = function refineStackTrace(stackString) {
           var stackSteps = stackString.split("\n").slice(2).map(function (line) {
             return line.replace(/ {4}at /, "");
@@ -19207,7 +16177,6 @@
             var funcFullPath;
             var reg = /\(([^\)]+)\)/;
             var regFirefox = /(.*?@)(\S+)(:\d+):\d+\)?$/;
-
             if (line.match(reg)) {
               funcName = line.split(" ").slice(0, -1).join(" ");
               funcFullPath = line.match(reg)[1];
@@ -19218,7 +16187,6 @@
               funcName = "function name is not available";
               funcFullPath = line;
             }
-
             return [funcName, funcFullPath];
           });
           var logInfoObject = {};
@@ -19227,22 +16195,18 @@
           });
           return logInfoObject;
         };
-
         var setChainPropAccess = function setChainPropAccess(owner, property) {
           var chainInfo = getPropertyInChain(owner, property);
           var base = chainInfo.base;
           var prop = chainInfo.prop,
-              chain = chainInfo.chain;
-
+            chain = chainInfo.chain;
           if (chain) {
             var setter = function setter(a) {
               base = a;
-
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
               }
             };
-
             Object.defineProperty(owner, prop, {
               get: function get() {
                 return base;
@@ -19251,7 +16215,6 @@
             });
             return;
           }
-
           var value = base[prop];
           setPropertyAccess(base, prop, {
             get: function get() {
@@ -19268,22 +16231,17 @@
             }
           });
         };
-
         setChainPropAccess(window, property);
       }
-
       function getPropertyInChain(base, chain) {
         var pos = chain.indexOf(".");
-
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-
         var prop = chain.slice(0, pos);
-
         if (base === null) {
           return {
             base: base,
@@ -19291,10 +16249,8 @@
             chain: chain
           };
         }
-
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
-
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
             base: base,
@@ -19302,7 +16258,6 @@
             chain: chain
           };
         }
-
         if (nextBase === null) {
           return {
             base: base,
@@ -19310,11 +16265,9 @@
             chain: chain
           };
         }
-
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
         }
-
         Object.defineProperty(base, prop, {
           configurable: true
         });
@@ -19324,165 +16277,111 @@
           chain: chain
         };
       }
-
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
-
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
-
         Object.defineProperty(object, property, descriptor);
         return true;
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         logOnStacktrace.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function noTopics(source, args) {
       function noTopics(source) {
         var TOPICS_PROPERTY_NAME = "browsingTopics";
-
         if (Document instanceof Object === false) {
           return;
         }
-
         if (!Object.prototype.hasOwnProperty.call(Document.prototype, TOPICS_PROPERTY_NAME) || Document.prototype[TOPICS_PROPERTY_NAME] instanceof Function === false) {
           return;
         }
-
         Document.prototype[TOPICS_PROPERTY_NAME] = function () {
           return noopPromiseResolve("[]");
         };
-
         hit(source);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function noopPromiseResolve() {
         var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
         var responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
         var responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
-
         if (typeof Response === "undefined") {
           return;
         }
-
         var response = new Response(responseBody, {
           status: 200,
           statusText: "OK"
@@ -19497,101 +16396,79 @@
         });
         return Promise.resolve(response);
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         noTopics.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function noeval(source, args) {
       function noeval(source) {
         window.eval = function evalWrapper(s) {
-          hit(source, "AdGuard has prevented eval:\n".concat(s));
+          hit(source);
+          logMessage(source, "AdGuard has prevented eval:\n".concat(s), true);
         }.bind();
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         noeval.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function nowebrtc(source, args) {
       function nowebrtc(source) {
         var propertyName = "";
-
         if (window.RTCPeerConnection) {
           propertyName = "RTCPeerConnection";
         } else if (window.webkitRTCPeerConnection) {
           propertyName = "webkitRTCPeerConnection";
         }
-
         if (propertyName === "") {
           return;
         }
-
         var rtcReplacement = function rtcReplacement(config) {
           var message = "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config));
           logMessage(source, message);
           hit(source);
         };
-
         rtcReplacement.prototype = {
           close: noopFunc,
           createDataChannel: noopFunc,
@@ -19600,7 +16477,6 @@
         };
         var rtc = window[propertyName];
         window[propertyName] = rtcReplacement;
-
         if (rtc.prototype) {
           rtc.prototype.createDataChannel = function (a, b) {
             return {
@@ -19610,118 +16486,88 @@
           }.bind(null);
         }
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function noopFunc() {}
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function convertRtcConfigToString(config) {
         var UNDEF_STR = "undefined";
         var str = UNDEF_STR;
-
         if (config === null) {
           str = "null";
         } else if (config instanceof Object) {
           var SERVERS_PROP_NAME = "iceServers";
           var URLS_PROP_NAME = "urls";
-
           if (Object.prototype.hasOwnProperty.call(config, SERVERS_PROP_NAME) && Object.prototype.hasOwnProperty.call(config[SERVERS_PROP_NAME][0], URLS_PROP_NAME) && !!config[SERVERS_PROP_NAME][0][URLS_PROP_NAME]) {
             str = config[SERVERS_PROP_NAME][0][URLS_PROP_NAME].toString();
           }
         }
-
         return str;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         nowebrtc.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function preventAddEventListener(source, args) {
       function preventAddEventListener(source, typeSearch, listenerSearch) {
         var typeSearchRegexp = toRegExp(typeSearch);
         var listenerSearchRegexp = toRegExp(listenerSearch);
         var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
-
         function addEventListenerWrapper(type, listener) {
+          var _this$constructor;
           var shouldPrevent = false;
-
           if (validateType(type) && validateListener(listener)) {
             shouldPrevent = typeSearchRegexp.test(type.toString()) && listenerSearchRegexp.test(listenerToString(listener));
           }
-
           if (shouldPrevent) {
             hit(source);
             return undefined;
           }
-
+          var context = this;
+          if (this && ((_this$constructor = this.constructor) === null || _this$constructor === void 0 ? void 0 : _this$constructor.name) === "Window" && this !== window) {
+            context = window;
+          }
           for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
             args[_key - 2] = arguments[_key];
           }
-
-          return nativeAddEventListener.apply(this, [type, listener].concat(args));
+          return nativeAddEventListener.apply(context, [type, listener].concat(args));
         }
-
         var descriptor = {
           configurable: true,
           set: function set() {},
@@ -19733,104 +16579,73 @@
         Object.defineProperty(window, "addEventListener", descriptor);
         Object.defineProperty(document, "addEventListener", descriptor);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function validateType(type) {
         return typeof type !== "undefined";
       }
-
       function validateListener(listener) {
         return typeof listener !== "undefined" && (typeof listener === "function" || typeof listener === "object" && listener !== null && typeof listener.handleEvent === "function");
       }
-
       function listenerToString(listener) {
         return typeof listener === "function" ? listener.toString() : listener.handleEvent.toString();
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         preventAddEventListener.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function preventAdfly(source, args) {
       function preventAdfly(source) {
         var isDigit = function isDigit(data) {
           return /^\d$/.test(data);
         };
-
         var handler = function handler(encodedURL) {
           var evenChars = "";
           var oddChars = "";
-
           for (var i = 0; i < encodedURL.length; i += 1) {
             if (i % 2 === 0) {
               evenChars += encodedURL.charAt(i);
@@ -19838,37 +16653,29 @@
               oddChars = encodedURL.charAt(i) + oddChars;
             }
           }
-
           var data = (evenChars + oddChars).split("");
-
           for (var _i = 0; _i < data.length; _i += 1) {
             if (isDigit(data[_i])) {
               for (var ii = _i + 1; ii < data.length; ii += 1) {
                 if (isDigit(data[ii])) {
                   var temp = parseInt(data[_i], 10) ^ parseInt(data[ii], 10);
-
                   if (temp < 10) {
                     data[_i] = temp.toString();
                   }
-
                   _i = ii;
                   break;
                 }
               }
             }
           }
-
           data = data.join("");
           var decodedURL = window.atob(data).slice(16, -16);
-
           if (window.stop) {
             window.stop();
           }
-
           window.onbeforeunload = null;
           window.location.href = decodedURL;
         };
-
         var val;
         var applyHandler = true;
         var result = setPropertyAccess(window, "ysmm", {
@@ -19876,246 +16683,175 @@
           set: function set(value) {
             if (applyHandler) {
               applyHandler = false;
-
               try {
                 if (typeof value === "string") {
                   handler(value);
                 }
               } catch (err) {}
             }
-
             val = value;
           },
           get: function get() {
             return val;
           }
         });
-
         if (result) {
           hit(source);
         } else {
           logMessage(source, "Failed to set up prevent-adfly scriptlet");
         }
       }
-
       function setPropertyAccess(object, property, descriptor) {
         var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
-
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
-
         Object.defineProperty(object, property, descriptor);
         return true;
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         preventAdfly.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function preventBab(source, args) {
       function preventBab(source) {
         var nativeSetTimeout = window.setTimeout;
         var babRegex = /\.bab_elementid.$/;
-
         var timeoutWrapper = function timeoutWrapper(callback) {
           if (typeof callback !== "string" || !babRegex.test(callback)) {
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-
             return nativeSetTimeout.apply(window, [callback].concat(args));
           }
-
           hit(source);
         };
-
         window.setTimeout = timeoutWrapper;
         var signatures = [["blockadblock"], ["babasbm"], [/getItem\('babn'\)/], ["getElementById", "String.fromCharCode", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", "charAt", "DOMContentLoaded", "AdBlock", "addEventListener", "doScroll", "fromCharCode", "<<2|r>>4", "sessionStorage", "clientWidth", "localStorage", "Math", "random"]];
-
         var check = function check(str) {
           if (typeof str !== "string") {
             return false;
           }
-
           for (var i = 0; i < signatures.length; i += 1) {
             var tokens = signatures[i];
             var match = 0;
-
             for (var j = 0; j < tokens.length; j += 1) {
               var token = tokens[j];
               var found = token instanceof RegExp ? token.test(str) : str.indexOf(token) > -1;
-
               if (found) {
                 match += 1;
               }
             }
-
             if (match / tokens.length >= .8) {
               return true;
             }
           }
-
           return false;
         };
-
         var nativeEval = window.eval;
-
         var evalWrapper = function evalWrapper(str) {
           if (!check(str)) {
             return nativeEval(str);
           }
-
           hit(source);
           var bodyEl = document.body;
-
           if (bodyEl) {
             bodyEl.style.removeProperty("visibility");
           }
-
           var el = document.getElementById("babasbmsgx");
-
           if (el) {
             el.parentNode.removeChild(el);
           }
         };
-
         window.eval = evalWrapper.bind(window);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         preventBab.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function preventElementSrcLoading(source, args) {
       function preventElementSrcLoading(source, tagName, match) {
         if (typeof Proxy === "undefined" || typeof Reflect === "undefined") {
           return;
         }
-
         var srcMockData = {
           script: "data:text/javascript;base64,KCk9Pnt9",
           img: "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==",
           iframe: "data:text/html;base64, PGRpdj48L2Rpdj4="
         };
         var instance;
-
         if (tagName === "script") {
           instance = HTMLScriptElement;
         } else if (tagName === "img") {
@@ -20125,55 +16861,44 @@
         } else {
           return;
         }
-
         var hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === "function";
         var policy;
-
         if (hasTrustedTypes) {
-          policy = window.trustedTypes.createPolicy("mock", {
+          policy = window.trustedTypes.createPolicy("AGPolicy", {
             createScriptURL: function createScriptURL(arg) {
               return arg;
             }
           });
         }
-
         var SOURCE_PROPERTY_NAME = "src";
         var ONERROR_PROPERTY_NAME = "onerror";
         var searchRegexp = toRegExp(match);
-
         var setMatchedAttribute = function setMatchedAttribute(elem) {
           return elem.setAttribute(source.name, "matched");
         };
-
         var setAttributeWrapper = function setAttributeWrapper(target, thisArg, args) {
           if (!args[0] || !args[1]) {
             return Reflect.apply(target, thisArg, args);
           }
-
           var nodeName = thisArg.nodeName.toLowerCase();
           var attrName = args[0].toLowerCase();
           var attrValue = args[1];
           var isMatched = attrName === SOURCE_PROPERTY_NAME && tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(attrValue);
-
           if (!isMatched) {
             return Reflect.apply(target, thisArg, args);
           }
-
           hit(source);
           setMatchedAttribute(thisArg);
           return Reflect.apply(target, thisArg, [attrName, srcMockData[nodeName]]);
         };
-
         var setAttributeHandler = {
           apply: setAttributeWrapper
         };
         instance.prototype.setAttribute = new Proxy(Element.prototype.setAttribute, setAttributeHandler);
         var origSrcDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
-
         if (!origSrcDescriptor) {
           return;
         }
-
         Object.defineProperty(instance.prototype, SOURCE_PROPERTY_NAME, {
           enumerable: true,
           configurable: true,
@@ -20183,30 +16908,25 @@
           set: function set(urlValue) {
             var nodeName = this.nodeName.toLowerCase();
             var isMatched = tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(urlValue);
-
             if (!isMatched) {
               origSrcDescriptor.set.call(this, urlValue);
               return true;
             }
-
             if (policy && urlValue instanceof TrustedScriptURL) {
               var trustedSrc = policy.createScriptURL(urlValue);
               origSrcDescriptor.set.call(this, trustedSrc);
               hit(source);
               return;
             }
-
             setMatchedAttribute(this);
             origSrcDescriptor.set.call(this, srcMockData[nodeName]);
             hit(source);
           }
         });
         var origOnerrorDescriptor = safeGetDescriptor(HTMLElement.prototype, ONERROR_PROPERTY_NAME);
-
         if (!origOnerrorDescriptor) {
           return;
         }
-
         Object.defineProperty(HTMLElement.prototype, ONERROR_PROPERTY_NAME, {
           enumerable: true,
           configurable: true,
@@ -20215,240 +16935,168 @@
           },
           set: function set(cb) {
             var isMatched = this.getAttribute(source.name) === "matched";
-
             if (!isMatched) {
               origOnerrorDescriptor.set.call(this, cb);
               return true;
             }
-
             origOnerrorDescriptor.set.call(this, noopFunc);
             return true;
           }
         });
-
         var addEventListenerWrapper = function addEventListenerWrapper(target, thisArg, args) {
           if (!args[0] || !args[1]) {
             return Reflect.apply(target, thisArg, args);
           }
-
           var eventName = args[0];
-          var isMatched = thisArg.getAttribute(source.name) === "matched" && eventName === "error";
-
+          var isMatched = typeof thisArg.getAttribute === "function" && thisArg.getAttribute(source.name) === "matched" && eventName === "error";
           if (isMatched) {
             return Reflect.apply(target, thisArg, [eventName, noopFunc]);
           }
-
           return Reflect.apply(target, thisArg, args);
         };
-
         var addEventListenerHandler = {
           apply: addEventListenerWrapper
         };
         EventTarget.prototype.addEventListener = new Proxy(EventTarget.prototype.addEventListener, addEventListenerHandler);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function safeGetDescriptor(obj, prop) {
         var descriptor = Object.getOwnPropertyDescriptor(obj, prop);
-
         if (descriptor && descriptor.configurable) {
           return descriptor;
         }
-
         return null;
       }
-
       function noopFunc() {}
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         preventElementSrcLoading.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function preventEvalIf(source, args) {
       function preventEvalIf(source, search) {
         var searchRegexp = toRegExp(search);
         var nativeEval = window.eval;
-
         window.eval = function (payload) {
           if (!searchRegexp.test(payload.toString())) {
             return nativeEval.call(window, payload);
           }
-
-          hit(source, payload);
+          hit(source);
           return undefined;
         }.bind(window);
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         preventEvalIf.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function preventFab(source, args) {
       function preventFab(source) {
         hit(source);
-
         var Fab = function Fab() {};
-
         Fab.prototype.check = noopFunc;
         Fab.prototype.clearEvent = noopFunc;
         Fab.prototype.emitEvent = noopFunc;
-
         Fab.prototype.on = function (a, b) {
           if (!a) {
             b();
           }
-
           return this;
         };
-
         Fab.prototype.onDetected = noopThis;
-
         Fab.prototype.onNotDetected = function (a) {
           a();
           return this;
         };
-
         Fab.prototype.setOption = noopFunc;
         Fab.prototype.options = {
           set: noopFunc,
@@ -20467,212 +17115,151 @@
           },
           set: function set() {}
         };
-
         if (Object.prototype.hasOwnProperty.call(window, "FuckAdBlock")) {
           window.FuckAdBlock = Fab;
         } else {
           Object.defineProperty(window, "FuckAdBlock", getSetFab);
         }
-
         if (Object.prototype.hasOwnProperty.call(window, "BlockAdBlock")) {
           window.BlockAdBlock = Fab;
         } else {
           Object.defineProperty(window, "BlockAdBlock", getSetFab);
         }
-
         if (Object.prototype.hasOwnProperty.call(window, "SniffAdBlock")) {
           window.SniffAdBlock = Fab;
         } else {
           Object.defineProperty(window, "SniffAdBlock", getSetFab);
         }
-
         if (Object.prototype.hasOwnProperty.call(window, "fuckAdBlock")) {
           window.fuckAdBlock = fab;
         } else {
           Object.defineProperty(window, "fuckAdBlock", getsetfab);
         }
-
         if (Object.prototype.hasOwnProperty.call(window, "blockAdBlock")) {
           window.blockAdBlock = fab;
         } else {
           Object.defineProperty(window, "blockAdBlock", getsetfab);
         }
-
         if (Object.prototype.hasOwnProperty.call(window, "sniffAdBlock")) {
           window.sniffAdBlock = fab;
         } else {
           Object.defineProperty(window, "sniffAdBlock", getsetfab);
         }
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function noopFunc() {}
-
       function noopThis() {
         return this;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         preventFab.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function preventFetch(source, args) {
       function preventFetch(source, propsToMatch) {
         var responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "emptyObj";
         var responseType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "default";
-
         if (typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
           return;
         }
-
         var strResponseBody;
-
-        if (responseBody === "emptyObj") {
+        if (responseBody === "" || responseBody === "emptyObj") {
           strResponseBody = "{}";
         } else if (responseBody === "emptyArr") {
           strResponseBody = "[]";
         } else {
           return;
         }
-
         if (!(responseType === "default" || responseType === "opaque")) {
           logMessage(source, "Invalid parameter: ".concat(responseType));
           return;
         }
-
         var handlerWrapper = function handlerWrapper(target, thisArg, args) {
           var shouldPrevent = false;
           var fetchData = getFetchData(args);
-
           if (typeof propsToMatch === "undefined") {
             logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
             hit(source);
             return Reflect.apply(target, thisArg, args);
           }
-
           shouldPrevent = matchRequestProps(source, propsToMatch, fetchData);
-
           if (shouldPrevent) {
             hit(source);
             return noopPromiseResolve(strResponseBody, fetchData.url, responseType);
           }
-
           return Reflect.apply(target, thisArg, args);
         };
-
         var fetchHandler = {
           apply: handlerWrapper
         };
         fetch = new Proxy(fetch, fetchHandler);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function getFetchData(args) {
         var fetchPropsObj = {};
         var fetchUrl;
         var fetchInit;
-
         if (args[0] instanceof Request) {
           var requestData = getRequestData(args[0]);
           fetchUrl = requestData.url;
@@ -20681,41 +17268,32 @@
           fetchUrl = args[0];
           fetchInit = args[1];
         }
-
         fetchPropsObj.url = fetchUrl;
-
         if (fetchInit instanceof Object) {
           Object.keys(fetchInit).forEach(function (prop) {
             fetchPropsObj[prop] = fetchInit[prop];
           });
         }
-
         return fetchPropsObj;
       }
-
       function objectToString(obj) {
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
           var key = pair[0];
           var value = pair[1];
           var recordValueStr = value;
-
           if (value instanceof Object) {
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
-
           return "".concat(key, ':"').concat(recordValueStr, '"');
         }).join(" ");
       }
-
       function noopPromiseResolve() {
         var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
         var responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
         var responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
-
         if (typeof Response === "undefined") {
           return;
         }
-
         var response = new Response(responseBody, {
           status: 200,
           statusText: "OK"
@@ -20730,15 +17308,12 @@
         });
         return Promise.resolve(response);
       }
-
       function matchRequestProps(source, propsToMatch, requestData) {
         if (propsToMatch === "" || propsToMatch === "*") {
           return true;
         }
-
         var isMatched;
         var parsedData = parseMatchProps(propsToMatch);
-
         if (!validateParsedData(parsedData)) {
           logMessage(source, "Invalid parameter: ".concat(propsToMatch));
           isMatched = false;
@@ -20749,63 +17324,48 @@
             return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
           });
         }
-
         return isMatched;
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = escapeRegExp(input);
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-
         var isValid;
-
         try {
           isValid = new RegExp(str);
           isValid = true;
         } catch (e) {
           isValid = false;
         }
-
         return isValid;
       }
-
       function escapeRegExp(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
-
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
-
       function getRequestData(request) {
         var requestInitOptions = getRequestProps();
         var entries = requestInitOptions.map(function (key) {
@@ -20814,7 +17374,9 @@
         });
         return getObjectFromEntries(entries);
       }
-
+      function getRequestProps() {
+        return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
+      }
       function getObjectEntries(object) {
         var keys = Object.keys(object);
         var entries = [];
@@ -20823,7 +17385,6 @@
         });
         return entries;
       }
-
       function getObjectFromEntries(entries) {
         var output = entries.reduce(function (acc, el) {
           var key = el[0];
@@ -20833,7 +17394,6 @@
         }, {});
         return output;
       }
-
       function parseMatchProps(propsToMatchStr) {
         var PROPS_DIVIDER = " ";
         var PAIRS_MARKER = ":";
@@ -20844,7 +17404,6 @@
           var dividerInd = prop.indexOf(PAIRS_MARKER);
           var key = prop.slice(0, dividerInd);
           var hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
-
           if (hasLegalMatchProp) {
             var value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
@@ -20854,13 +17413,11 @@
         });
         return propsObj;
       }
-
       function validateParsedData(data) {
         return Object.values(data).every(function (value) {
           return isValidStrPattern(value);
         });
       }
-
       function getMatchPropsData(data) {
         var matchData = {};
         Object.keys(data).forEach(function (key) {
@@ -20868,24 +17425,19 @@
         });
         return matchData;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         preventFetch.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function preventPopadsNet(source, args) {
       function preventPopadsNet(source) {
         var rid = randomId();
-
         var throwError = function throwError() {
           throw new ReferenceError(rid);
         };
-
         delete window.PopAds;
         delete window.popns;
         Object.defineProperties(window, {
@@ -20899,93 +17451,65 @@
         window.onerror = createOnErrorHandler(rid).bind();
         hit(source);
       }
-
       function createOnErrorHandler(rid) {
         var nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.indexOf(rid) !== -1) {
             return true;
           }
-
           if (nativeOnError instanceof Function) {
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-
             return nativeOnError.apply(this, [error].concat(args));
           }
-
           return false;
         };
       }
-
       function randomId() {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).slice(2, 9);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         preventPopadsNet.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function preventRefresh(source, args) {
       function preventRefresh(source, delaySec) {
         var getMetaElements = function getMetaElements() {
           var metaNodes = [];
-
           try {
             metaNodes = document.querySelectorAll('meta[http-equiv="refresh" i][content]');
           } catch (e) {
@@ -20995,67 +17519,52 @@
               logMessage(source, e);
             }
           }
-
           return Array.from(metaNodes);
         };
-
         var getMetaContentDelay = function getMetaContentDelay(metaElements) {
           var delays = metaElements.map(function (meta) {
             var contentString = meta.getAttribute("content");
-
             if (contentString.length === 0) {
               return null;
             }
-
             var contentDelay;
             var limiterIndex = contentString.indexOf(";");
-
             if (limiterIndex !== -1) {
               var delaySubstring = contentString.substring(0, limiterIndex);
               contentDelay = getNumberFromString(delaySubstring);
             } else {
               contentDelay = getNumberFromString(contentString);
             }
-
             return contentDelay;
           }).filter(function (delay) {
             return delay !== null;
           });
-
           if (!delays.length) {
             return null;
           }
-
           var minDelay = delays.reduce(function (a, b) {
             return Math.min(a, b);
           });
           return minDelay;
         };
-
         var stop = function stop() {
           var metaElements = getMetaElements();
-
           if (metaElements.length === 0) {
             return;
           }
-
           var secondsToRun = getNumberFromString(delaySec);
-
           if (secondsToRun === null) {
             secondsToRun = getMetaContentDelay(metaElements);
           }
-
           if (secondsToRun === null) {
             return;
           }
-
           var delayMs = secondsToRun * 1e3;
           setTimeout(function () {
             window.stop();
             hit(source);
           }, delayMs);
         };
-
         if (document.readyState === "loading") {
           document.addEventListener("DOMContentLoaded", stop, {
             once: true
@@ -21064,169 +17573,115 @@
           stop();
         }
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function getNumberFromString(rawString) {
         var parsedDelay = parseInt(rawString, 10);
         var validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
         return validDelay;
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         preventRefresh.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function preventRequestAnimationFrame(source, args) {
       function preventRequestAnimationFrame(source, match) {
         var nativeRequestAnimationFrame = window.requestAnimationFrame;
         var shouldLog = typeof match === "undefined";
-
         var _parseMatchArg = parseMatchArg(match),
-            isInvertedMatch = _parseMatchArg.isInvertedMatch,
-            matchRegexp = _parseMatchArg.matchRegexp;
-
+          isInvertedMatch = _parseMatchArg.isInvertedMatch,
+          matchRegexp = _parseMatchArg.matchRegexp;
         var rafWrapper = function rafWrapper(callback) {
           var shouldPrevent = false;
-
           if (shouldLog) {
             hit(source);
             logMessage(source, "requestAnimationFrame(".concat(String(callback), ")"), true);
           } else if (isValidCallback(callback) && isValidStrPattern(match)) {
             shouldPrevent = matchRegexp.test(callback.toString()) !== isInvertedMatch;
           }
-
           if (shouldPrevent) {
             hit(source);
             return nativeRequestAnimationFrame(noopFunc);
           }
-
           for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
             args[_key - 1] = arguments[_key];
           }
-
           return nativeRequestAnimationFrame.apply(window, [callback].concat(args));
         };
-
         window.requestAnimationFrame = rafWrapper;
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function noopFunc() {}
-
       function parseMatchArg(match) {
         var INVERT_MARKER = "!";
         var isInvertedMatch = startsWith(match, INVERT_MARKER);
@@ -21237,82 +17692,63 @@
           matchRegexp: matchRegexp
         };
       }
-
       function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = escapeRegExp(input);
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-
         var isValid;
-
         try {
           isValid = new RegExp(str);
           isValid = true;
         } catch (e) {
           isValid = false;
         }
-
         return isValid;
       }
-
       function isValidCallback(callback) {
         return callback instanceof Function || typeof callback === "string";
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function escapeRegExp(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function startsWith(str, prefix) {
         return !!str && str.indexOf(prefix) === 0;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         preventRequestAnimationFrame.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function preventSetInterval(source, args) {
       function preventSetInterval(source, matchCallback, matchDelay) {
         var isProxySupported = typeof Proxy !== "undefined";
         var nativeInterval = window.setInterval;
         var shouldLog = typeof matchCallback === "undefined" && typeof matchDelay === "undefined";
-
         var legacyIntervalWrapper = function legacyIntervalWrapper(callback, delay) {
           var shouldPrevent = false;
-
           if (shouldLog) {
             hit(source);
             logMessage(source, "setInterval(".concat(String(callback), ", ").concat(delay, ")"), true);
@@ -21324,24 +17760,19 @@
               matchDelay: matchDelay
             });
           }
-
           if (shouldPrevent) {
             hit(source);
             return nativeInterval(noopFunc, delay);
           }
-
           for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
             args[_key - 2] = arguments[_key];
           }
-
           return nativeInterval.apply(window, [callback, delay].concat(args));
         };
-
         var handlerWrapper = function handlerWrapper(target, thisArg, args) {
           var callback = args[0];
           var delay = args[1];
           var shouldPrevent = false;
-
           if (shouldLog) {
             hit(source);
             logMessage(source, "setInterval(".concat(String(callback), ", ").concat(delay, ")"), true);
@@ -21353,97 +17784,67 @@
               matchDelay: matchDelay
             });
           }
-
           if (shouldPrevent) {
             hit(source);
             args[0] = noopFunc;
           }
-
           return target.apply(thisArg, args);
         };
-
         var setIntervalHandler = {
           apply: handlerWrapper
         };
         window.setInterval = isProxySupported ? new Proxy(window.setInterval, setIntervalHandler) : legacyIntervalWrapper;
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function noopFunc() {}
-
       function isPreventionNeeded(_ref) {
         var callback = _ref.callback,
-            delay = _ref.delay,
-            matchCallback = _ref.matchCallback,
-            matchDelay = _ref.matchDelay;
-
+          delay = _ref.delay,
+          matchCallback = _ref.matchCallback,
+          matchDelay = _ref.matchDelay;
         if (!isValidCallback(callback)) {
           return false;
         }
-
         if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
           return false;
         }
-
         var _parseMatchArg = parseMatchArg(matchCallback),
-            isInvertedMatch = _parseMatchArg.isInvertedMatch,
-            matchRegexp = _parseMatchArg.matchRegexp;
-
+          isInvertedMatch = _parseMatchArg.isInvertedMatch,
+          matchRegexp = _parseMatchArg.matchRegexp;
         var _parseDelayArg = parseDelayArg(matchDelay),
-            isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
-            delayMatch = _parseDelayArg.delayMatch;
-
+          isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
+          delayMatch = _parseDelayArg.delayMatch;
         var shouldPrevent = false;
         var callbackStr = String(callback);
-
         if (delayMatch === null) {
           shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
         } else if (!matchCallback) {
@@ -21451,44 +17852,34 @@
         } else {
           shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && delay === delayMatch !== isInvertedDelayMatch;
         }
-
         return shouldPrevent;
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function startsWith(str, prefix) {
         return !!str && str.indexOf(prefix) === 0;
       }
-
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
       }
-
       function parseMatchArg(match) {
         var INVERT_MARKER = "!";
         var isInvertedMatch = startsWith(match, INVERT_MARKER);
@@ -21499,7 +17890,6 @@
           matchRegexp: matchRegexp
         };
       }
-
       function parseDelayArg(delay) {
         var INVERT_MARKER = "!";
         var isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
@@ -21511,81 +17901,62 @@
           delayMatch: delayMatch
         };
       }
-
       function isValidCallback(callback) {
         return callback instanceof Function || typeof callback === "string";
       }
-
       function isValidMatchStr(match) {
         var INVERT_MARKER = "!";
         var str = match;
-
         if (startsWith(match, INVERT_MARKER)) {
           str = match.slice(1);
         }
-
         return isValidStrPattern(str);
       }
-
       function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = escapeRegExp(input);
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-
         var isValid;
-
         try {
           isValid = new RegExp(str);
           isValid = true;
         } catch (e) {
           isValid = false;
         }
-
         return isValid;
       }
-
       function escapeRegExp(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
-
       function nativeIsFinite(num) {
         var native = Number.isFinite || window.isFinite;
         return native(num);
       }
-
       function isValidMatchNumber(match) {
         var INVERT_MARKER = "!";
         var str = match;
-
         if (startsWith(match, INVERT_MARKER)) {
           str = match.slice(1);
         }
-
         var num = parseFloat(str);
         return !nativeIsNaN(num) && nativeIsFinite(num);
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         preventSetInterval.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function preventSetTimeout(source, args) {
       function preventSetTimeout(source, matchCallback, matchDelay) {
         var isProxySupported = typeof Proxy !== "undefined";
         var nativeTimeout = window.setTimeout;
         var shouldLog = typeof matchCallback === "undefined" && typeof matchDelay === "undefined";
-
         var legacyTimeoutWrapper = function legacyTimeoutWrapper(callback, delay) {
           var shouldPrevent = false;
-
           if (shouldLog) {
             hit(source);
             logMessage(source, "setTimeout(".concat(String(callback), ", ").concat(delay, ")"), true);
@@ -21597,24 +17968,19 @@
               matchDelay: matchDelay
             });
           }
-
           if (shouldPrevent) {
             hit(source);
             return nativeTimeout(noopFunc, delay);
           }
-
           for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
             args[_key - 2] = arguments[_key];
           }
-
           return nativeTimeout.apply(window, [callback, delay].concat(args));
         };
-
         var handlerWrapper = function handlerWrapper(target, thisArg, args) {
           var callback = args[0];
           var delay = args[1];
           var shouldPrevent = false;
-
           if (shouldLog) {
             hit(source);
             logMessage(source, "setTimeout(".concat(String(callback), ", ").concat(delay, ")"), true);
@@ -21626,97 +17992,67 @@
               matchDelay: matchDelay
             });
           }
-
           if (shouldPrevent) {
             hit(source);
             args[0] = noopFunc;
           }
-
           return target.apply(thisArg, args);
         };
-
         var setTimeoutHandler = {
           apply: handlerWrapper
         };
         window.setTimeout = isProxySupported ? new Proxy(window.setTimeout, setTimeoutHandler) : legacyTimeoutWrapper;
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function noopFunc() {}
-
       function isPreventionNeeded(_ref) {
         var callback = _ref.callback,
-            delay = _ref.delay,
-            matchCallback = _ref.matchCallback,
-            matchDelay = _ref.matchDelay;
-
+          delay = _ref.delay,
+          matchCallback = _ref.matchCallback,
+          matchDelay = _ref.matchDelay;
         if (!isValidCallback(callback)) {
           return false;
         }
-
         if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
           return false;
         }
-
         var _parseMatchArg = parseMatchArg(matchCallback),
-            isInvertedMatch = _parseMatchArg.isInvertedMatch,
-            matchRegexp = _parseMatchArg.matchRegexp;
-
+          isInvertedMatch = _parseMatchArg.isInvertedMatch,
+          matchRegexp = _parseMatchArg.matchRegexp;
         var _parseDelayArg = parseDelayArg(matchDelay),
-            isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
-            delayMatch = _parseDelayArg.delayMatch;
-
+          isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
+          delayMatch = _parseDelayArg.delayMatch;
         var shouldPrevent = false;
         var callbackStr = String(callback);
-
         if (delayMatch === null) {
           shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
         } else if (!matchCallback) {
@@ -21724,18 +18060,14 @@
         } else {
           shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && delay === delayMatch !== isInvertedDelayMatch;
         }
-
         return shouldPrevent;
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function parseMatchArg(match) {
         var INVERT_MARKER = "!";
         var isInvertedMatch = startsWith(match, INVERT_MARKER);
@@ -21746,7 +18078,6 @@
           matchRegexp: matchRegexp
         };
       }
-
       function parseDelayArg(delay) {
         var INVERT_MARKER = "!";
         var isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
@@ -21758,98 +18089,75 @@
           delayMatch: delayMatch
         };
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function startsWith(str, prefix) {
         return !!str && str.indexOf(prefix) === 0;
       }
-
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
       }
-
       function isValidCallback(callback) {
         return callback instanceof Function || typeof callback === "string";
       }
-
       function isValidMatchStr(match) {
         var INVERT_MARKER = "!";
         var str = match;
-
         if (startsWith(match, INVERT_MARKER)) {
           str = match.slice(1);
         }
-
         return isValidStrPattern(str);
       }
-
       function escapeRegExp(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
-
       function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = escapeRegExp(input);
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-
         var isValid;
-
         try {
           isValid = new RegExp(str);
           isValid = true;
         } catch (e) {
           isValid = false;
         }
-
         return isValid;
       }
-
       function nativeIsFinite(num) {
         var native = Number.isFinite || window.isFinite;
         return native(num);
       }
-
       function isValidMatchNumber(match) {
         var INVERT_MARKER = "!";
         var str = match;
-
         if (startsWith(match, INVERT_MARKER)) {
           str = match.slice(1);
         }
-
         var num = parseFloat(str);
         return !nativeIsNaN(num) && nativeIsFinite(num);
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         preventSetTimeout.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function preventWindowOpen(source, args) {
       function preventWindowOpen(source) {
         var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "*";
@@ -21857,62 +18165,48 @@
         var replacement = arguments.length > 3 ? arguments[3] : undefined;
         var nativeOpen = window.open;
         var isNewSyntax = match !== "0" && match !== "1";
-
         var oldOpenWrapper = function oldOpenWrapper(str) {
           match = Number(match) > 0;
-
           for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
             args[_key - 1] = arguments[_key];
           }
-
           if (!isValidStrPattern(delay)) {
             logMessage(source, "Invalid parameter: ".concat(delay));
             return nativeOpen.apply(window, [str].concat(args));
           }
-
           var searchRegexp = toRegExp(delay);
-
           if (match !== searchRegexp.test(str)) {
             return nativeOpen.apply(window, [str].concat(args));
           }
-
           hit(source);
           return handleOldReplacement(replacement);
         };
-
         var newOpenWrapper = function newOpenWrapper(url) {
           var shouldLog = replacement && replacement.indexOf("log") > -1;
-
           for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
             args[_key2 - 1] = arguments[_key2];
           }
-
           if (shouldLog) {
             var argsStr = args && args.length > 0 ? ", ".concat(args.join(", ")) : "";
-            var message = "window-open: ".concat(url).concat(argsStr);
+            var message = "".concat(url).concat(argsStr);
             logMessage(source, message, true);
             hit(source);
           }
-
           var shouldPrevent = false;
-
           if (match === "*") {
             shouldPrevent = true;
           } else if (isValidMatchStr(match)) {
             var _parseMatchArg = parseMatchArg(match),
-                isInvertedMatch = _parseMatchArg.isInvertedMatch,
-                matchRegexp = _parseMatchArg.matchRegexp;
-
+              isInvertedMatch = _parseMatchArg.isInvertedMatch,
+              matchRegexp = _parseMatchArg.matchRegexp;
             shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
           } else {
             logMessage(source, "Invalid parameter: ".concat(match));
             shouldPrevent = false;
           }
-
           if (shouldPrevent) {
             var parsedDelay = parseInt(delay, 10);
             var result;
-
             if (nativeIsNaN(parsedDelay)) {
               result = noopNull();
             } else {
@@ -21923,7 +18217,6 @@
               };
               var decoy = createDecoy(decoyArgs);
               var popup = decoy.contentWindow;
-
               if (typeof popup === "object" && popup !== null) {
                 Object.defineProperty(popup, "closed", {
                   value: false
@@ -21941,127 +18234,89 @@
                 });
                 popup = decoy.contentWindow;
               }
-
               result = popup;
             }
-
             hit(source);
             return result;
           }
-
           return nativeOpen.apply(window, [url].concat(args));
         };
-
         window.open = isNewSyntax ? newOpenWrapper : oldOpenWrapper;
         window.open.toString = nativeOpen.toString.bind(nativeOpen);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = escapeRegExp(input);
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-
         var isValid;
-
         try {
           isValid = new RegExp(str);
           isValid = true;
         } catch (e) {
           isValid = false;
         }
-
         return isValid;
       }
-
       function escapeRegExp(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
-
       function isValidMatchStr(match) {
         var INVERT_MARKER = "!";
         var str = match;
-
         if (startsWith(match, INVERT_MARKER)) {
           str = match.slice(1);
         }
-
         return isValidStrPattern(str);
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
       }
-
       function parseMatchArg(match) {
         var INVERT_MARKER = "!";
         var isInvertedMatch = startsWith(match, INVERT_MARKER);
@@ -22072,43 +18327,36 @@
           matchRegexp: matchRegexp
         };
       }
-
       function handleOldReplacement(replacement) {
         var result;
-
         if (!replacement) {
           result = noopFunc;
         } else if (replacement === "trueFunc") {
           result = trueFunc;
         } else if (replacement.indexOf("=") > -1) {
           var isProp = startsWith(replacement, "{") && endsWith(replacement, "}");
-
           if (isProp) {
             var propertyPart = replacement.slice(1, -1);
             var propertyName = substringBefore(propertyPart, "=");
             var propertyValue = substringAfter(propertyPart, "=");
-
             if (propertyValue === "noopFunc") {
               result = {};
               result[propertyName] = noopFunc;
             }
           }
         }
-
         return result;
       }
-
       function createDecoy(args) {
         var OBJECT_TAG_NAME = "object";
         var OBJECT_URL_PROP_NAME = "data";
         var IFRAME_TAG_NAME = "iframe";
         var IFRAME_URL_PROP_NAME = "src";
         var replacement = args.replacement,
-            url = args.url,
-            delay = args.delay;
+          url = args.url,
+          delay = args.delay;
         var tag;
         var urlProp;
-
         if (replacement === "obj") {
           tag = OBJECT_TAG_NAME;
           urlProp = OBJECT_URL_PROP_NAME;
@@ -22116,7 +18364,6 @@
           tag = IFRAME_TAG_NAME;
           urlProp = IFRAME_URL_PROP_NAME;
         }
-
         var decoy = document.createElement(tag);
         decoy[urlProp] = url;
         decoy.style.setProperty("height", "1px", "important");
@@ -22129,127 +18376,99 @@
         }, delay * 1e3);
         return decoy;
       }
-
       function getPreventGetter(nativeGetter) {
         var preventGetter = function preventGetter(target, prop) {
           if (prop && prop === "closed") {
             return false;
           }
-
           if (typeof nativeGetter === "function") {
             return noopFunc;
           }
-
           return prop && target[prop];
         };
-
         return preventGetter;
       }
-
       function noopNull() {
         return null;
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function noopFunc() {}
-
       function trueFunc() {
         return true;
       }
-
       function startsWith(str, prefix) {
         return !!str && str.indexOf(prefix) === 0;
       }
-
       function endsWith(str, ending) {
         return !!str && str.lastIndexOf(ending) === str.length - ending.length;
       }
-
       function substringBefore(str, separator) {
         if (!str || !separator) {
           return str;
         }
-
         var index = str.indexOf(separator);
         return index < 0 ? str : str.substring(0, index);
       }
-
       function substringAfter(str, separator) {
         if (!str) {
           return str;
         }
-
         var index = str.indexOf(separator);
         return index < 0 ? "" : str.substring(index + separator.length);
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         preventWindowOpen.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function preventXHR(source, args) {
       function preventXHR(source, propsToMatch, customResponseText) {
         if (typeof Proxy === "undefined") {
           return;
         }
-
         var shouldPrevent = false;
         var response = "";
         var responseText = "";
         var responseUrl;
-
         var openWrapper = function openWrapper(target, thisArg, args) {
           var xhrData = {
             method: args[0],
             url: args[1]
           };
           responseUrl = xhrData.url;
-
           if (typeof propsToMatch === "undefined") {
             logMessage(source, "xhr( ".concat(objectToString(xhrData), " )"), true);
             hit(source);
           } else {
             shouldPrevent = matchRequestProps(source, propsToMatch, xhrData);
           }
-
           return Reflect.apply(target, thisArg, args);
         };
-
         var sendWrapper = function sendWrapper(target, thisArg, args) {
           if (!shouldPrevent) {
             return Reflect.apply(target, thisArg, args);
           }
-
           if (thisArg.responseType === "blob") {
             response = new Blob();
           }
-
           if (thisArg.responseType === "arraybuffer") {
             response = new ArrayBuffer();
           }
-
           if (customResponseText) {
             var randomText = generateRandomResponse(customResponseText);
-
             if (randomText) {
               responseText = randomText;
             } else {
               logMessage(source, "Invalid range: ".concat(customResponseText));
             }
           }
-
           Object.defineProperties(thisArg, {
             readyState: {
               value: 4,
@@ -22291,7 +18510,6 @@
           hit(source);
           return undefined;
         };
-
         var openHandler = {
           apply: openWrapper
         };
@@ -22301,86 +18519,59 @@
         XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
         XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function objectToString(obj) {
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
           var key = pair[0];
           var value = pair[1];
           var recordValueStr = value;
-
           if (value instanceof Object) {
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
-
           return "".concat(key, ':"').concat(recordValueStr, '"');
         }).join(" ");
       }
-
       function matchRequestProps(source, propsToMatch, requestData) {
         if (propsToMatch === "" || propsToMatch === "*") {
           return true;
         }
-
         var isMatched;
         var parsedData = parseMatchProps(propsToMatch);
-
         if (!validateParsedData(parsedData)) {
           logMessage(source, "Invalid parameter: ".concat(propsToMatch));
           isMatched = false;
@@ -22391,94 +18582,71 @@
             return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
           });
         }
-
         return isMatched;
       }
-
       function generateRandomResponse(customResponseText) {
         var customResponse = customResponseText;
-
         if (customResponse === "true") {
           customResponse = Math.random().toString(36).slice(-10);
           return customResponse;
         }
-
         customResponse = customResponse.replace("length:", "");
         var rangeRegex = /^\d+-\d+$/;
-
         if (!rangeRegex.test(customResponse)) {
           return null;
         }
-
         var rangeMin = getNumberFromString(customResponse.split("-")[0]);
         var rangeMax = getNumberFromString(customResponse.split("-")[1]);
-
         if (!nativeIsFinite(rangeMin) || !nativeIsFinite(rangeMax)) {
           return null;
         }
-
         if (rangeMin > rangeMax) {
           var temp = rangeMin;
           rangeMin = rangeMax;
           rangeMax = temp;
         }
-
         var LENGTH_RANGE_LIMIT = 500 * 1e3;
-
         if (rangeMax > LENGTH_RANGE_LIMIT) {
           return null;
         }
-
         var length = getRandomIntInclusive(rangeMin, rangeMax);
         customResponse = getRandomStrByLength(length);
         return customResponse;
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = escapeRegExp(input);
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-
         var isValid;
-
         try {
           isValid = new RegExp(str);
           isValid = true;
         } catch (e) {
           isValid = false;
         }
-
         return isValid;
       }
-
       function escapeRegExp(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
-
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
-
       function getObjectEntries(object) {
         var keys = Object.keys(object);
         var entries = [];
@@ -22487,23 +18655,19 @@
         });
         return entries;
       }
-
       function getNumberFromString(rawString) {
         var parsedDelay = parseInt(rawString, 10);
         var validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
         return validDelay;
       }
-
       function nativeIsFinite(num) {
         var native = Number.isFinite || window.isFinite;
         return native(num);
       }
-
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
       }
-
       function parseMatchProps(propsToMatchStr) {
         var PROPS_DIVIDER = " ";
         var PAIRS_MARKER = ":";
@@ -22514,7 +18678,6 @@
           var dividerInd = prop.indexOf(PAIRS_MARKER);
           var key = prop.slice(0, dividerInd);
           var hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
-
           if (hasLegalMatchProp) {
             var value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
@@ -22524,13 +18687,11 @@
         });
         return propsObj;
       }
-
       function validateParsedData(data) {
         return Object.values(data).every(function (value) {
           return isValidStrPattern(value);
         });
       }
-
       function getMatchPropsData(data) {
         var matchData = {};
         Object.keys(data).forEach(function (key) {
@@ -22538,57 +18699,47 @@
         });
         return matchData;
       }
-
+      function getRequestProps() {
+        return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
+      }
       function getRandomIntInclusive(min, max) {
         min = Math.ceil(min);
         max = Math.floor(max);
         return Math.floor(Math.random() * (max - min + 1) + min);
       }
-
       function getRandomStrByLength(length) {
         var result = "";
         var characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~";
         var charactersLength = characters.length;
-
         for (var i = 0; i < length; i += 1) {
           result += characters.charAt(Math.floor(Math.random() * charactersLength));
         }
-
         return result;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         preventXHR.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function removeAttr(source, args) {
       function removeAttr(source, attrs, selector) {
         var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "asap stay";
-
         if (!attrs) {
           return;
         }
-
         attrs = attrs.split(/\s*\|\s*/);
-
         if (!selector) {
           selector = "[".concat(attrs.join("],["), "]");
         }
-
         var rmattr = function rmattr() {
           var nodes = [];
-
           try {
             nodes = [].slice.call(document.querySelectorAll(selector));
           } catch (e) {
             logMessage(source, "Invalid selector arg: '".concat(selector, "'"));
           }
-
           var removed = false;
           nodes.forEach(function (node) {
             attrs.forEach(function (attr) {
@@ -22596,24 +18747,18 @@
               removed = true;
             });
           });
-
           if (removed) {
             hit(source);
           }
         };
-
         var flags = parseFlags(applying);
-
         var run = function run() {
           rmattr();
-
           if (!flags.hasFlag(flags.STAY)) {
             return;
           }
-
           observeDOMChanges(rmattr, true);
         };
-
         if (flags.hasFlag(flags.ASAP)) {
           if (document.readyState === "loading") {
             window.addEventListener("DOMContentLoaded", rmattr, {
@@ -22623,7 +18768,6 @@
             rmattr();
           }
         }
-
         if (document.readyState !== "complete" && flags.hasFlag(flags.COMPLETE)) {
           window.addEventListener("load", run, {
             once: true
@@ -22632,66 +18776,44 @@
           if (!applying.indexOf(" ") !== -1) {
             rmattr();
           }
-
           observeDOMChanges(rmattr, true);
         }
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function observeDOMChanges(callback) {
         var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
         var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
         var THROTTLE_DELAY_MS = 20;
         var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-
         var connect = function connect() {
           if (attrsToObserve.length > 0) {
             observer.observe(document.documentElement, {
@@ -22708,20 +18830,16 @@
             });
           }
         };
-
         var disconnect = function disconnect() {
           observer.disconnect();
         };
-
         function callbackWrapper() {
           disconnect();
           callback();
           connect();
         }
-
         connect();
       }
-
       function parseFlags(flags) {
         var FLAGS_DIVIDER = " ";
         var ASAP_FLAG = "asap";
@@ -22740,96 +18858,76 @@
           }
         };
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function throttle(cb, delay) {
         var wait = false;
         var savedArgs;
-
         var wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
-
           if (wait) {
             savedArgs = args;
             return;
           }
-
           cb.apply(void 0, args);
           wait = true;
           setTimeout(function () {
             wait = false;
-
             if (savedArgs) {
               wrapper(savedArgs);
               savedArgs = null;
             }
           }, delay);
         };
-
         return wrapper;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         removeAttr.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function removeClass(source, args) {
       function removeClass(source, classNames, selector) {
         var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "asap stay";
-
         if (!classNames) {
           return;
         }
-
         classNames = classNames.split(/\s*\|\s*/);
         var selectors = [];
-
         if (!selector) {
           selectors = classNames.map(function (className) {
             return ".".concat(className);
           });
         }
-
         var removeClassHandler = function removeClassHandler() {
           var nodes = new Set();
-
           if (selector) {
             var foundNodes = [];
-
             try {
               foundNodes = [].slice.call(document.querySelectorAll(selector));
             } catch (e) {
               logMessage(source, "Invalid selector arg: '".concat(selector, "'"));
             }
-
             foundNodes.forEach(function (n) {
               return nodes.add(n);
             });
           } else if (selectors.length > 0) {
             selectors.forEach(function (s) {
               var elements = document.querySelectorAll(s);
-
               for (var i = 0; i < elements.length; i += 1) {
                 var element = elements[i];
                 nodes.add(element);
               }
             });
           }
-
           var removed = false;
           nodes.forEach(function (node) {
             classNames.forEach(function (className) {
@@ -22839,25 +18937,19 @@
               }
             });
           });
-
           if (removed) {
             hit(source);
           }
         };
-
         var CLASS_ATTR_NAME = ["class"];
         var flags = parseFlags(applying);
-
         var run = function run() {
           removeClassHandler();
-
           if (!flags.hasFlag(flags.STAY)) {
             return;
           }
-
           observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
         };
-
         if (flags.hasFlag(flags.ASAP)) {
           if (document.readyState === "loading") {
             window.addEventListener("DOMContentLoaded", removeClassHandler, {
@@ -22867,7 +18959,6 @@
             removeClassHandler();
           }
         }
-
         if (document.readyState !== "complete" && flags.hasFlag(flags.COMPLETE)) {
           window.addEventListener("load", run, {
             once: true
@@ -22876,74 +18967,50 @@
           if (!applying.indexOf(" ") !== -1) {
             removeClassHandler();
           }
-
           observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
         }
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function observeDOMChanges(callback) {
         var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
         var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
         var THROTTLE_DELAY_MS = 20;
         var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-
         var connect = function connect() {
           if (attrsToObserve.length > 0) {
             observer.observe(document.documentElement, {
@@ -22960,20 +19027,16 @@
             });
           }
         };
-
         var disconnect = function disconnect() {
           observer.disconnect();
         };
-
         function callbackWrapper() {
           disconnect();
           callback();
           connect();
         }
-
         connect();
       }
-
       function parseFlags(flags) {
         var FLAGS_DIVIDER = " ";
         var ASAP_FLAG = "asap";
@@ -22992,49 +19055,39 @@
           }
         };
       }
-
       function throttle(cb, delay) {
         var wait = false;
         var savedArgs;
-
         var wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
-
           if (wait) {
             savedArgs = args;
             return;
           }
-
           cb.apply(void 0, args);
           wait = true;
           setTimeout(function () {
             wait = false;
-
             if (savedArgs) {
               wrapper(savedArgs);
               savedArgs = null;
             }
           }, delay);
         };
-
         return wrapper;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         removeClass.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function removeCookie(source, args) {
       function removeCookie(source, match) {
         var matchRegexp = toRegExp(match);
-
         var removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
           var cookieSpec = "".concat(cookieName, "=");
           var domain1 = "; domain=".concat(hostName);
@@ -23049,204 +19102,141 @@
           document.cookie = cookieSpec + domain2 + path + expiration;
           hit(source);
         };
-
         var rmCookie = function rmCookie() {
           document.cookie.split(";").forEach(function (cookieStr) {
             var pos = cookieStr.indexOf("=");
-
             if (pos === -1) {
               return;
             }
-
             var cookieName = cookieStr.slice(0, pos).trim();
-
             if (!matchRegexp.test(cookieName)) {
               return;
             }
-
             var hostParts = document.location.hostname.split(".");
-
             for (var i = 0; i <= hostParts.length - 1; i += 1) {
               var hostName = hostParts.slice(i).join(".");
-
               if (hostName) {
                 removeCookieFromHost(cookieName, hostName);
               }
             }
           });
         };
-
         rmCookie();
         window.addEventListener("beforeunload", rmCookie);
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         removeCookie.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function removeInShadowDom(source, args) {
       function removeInShadowDom(source, selector, baseSelector) {
         if (!Element.prototype.attachShadow) {
           return;
         }
-
         var removeElement = function removeElement(targetElement) {
           targetElement.remove();
         };
-
         var removeHandler = function removeHandler() {
           var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
-
           while (hostElements.length !== 0) {
             var isRemoved = false;
-
             var _pierceShadowDom = pierceShadowDom(selector, hostElements),
-                targets = _pierceShadowDom.targets,
-                innerHosts = _pierceShadowDom.innerHosts;
-
+              targets = _pierceShadowDom.targets,
+              innerHosts = _pierceShadowDom.innerHosts;
             targets.forEach(function (targetEl) {
               removeElement(targetEl);
               isRemoved = true;
             });
-
             if (isRemoved) {
               hit(source);
             }
-
             hostElements = innerHosts;
           }
         };
-
         removeHandler();
         observeDOMChanges(removeHandler, true);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function observeDOMChanges(callback) {
         var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
         var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
         var THROTTLE_DELAY_MS = 20;
         var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-
         var connect = function connect() {
           if (attrsToObserve.length > 0) {
             observer.observe(document.documentElement, {
@@ -23263,20 +19253,16 @@
             });
           }
         };
-
         var disconnect = function disconnect() {
           observer.disconnect();
         };
-
         function callbackWrapper() {
           disconnect();
           callback();
           connect();
         }
-
         connect();
       }
-
       function findHostElements(rootElement) {
         var hosts = [];
         var domElems = rootElement.querySelectorAll("*");
@@ -23287,7 +19273,6 @@
         });
         return hosts;
       }
-
       function pierceShadowDom(selector, hostElements) {
         var targets = [];
         var innerHostsAcc = [];
@@ -23305,17 +19290,14 @@
           innerHosts: innerHosts
         };
       }
-
       function flatten(input) {
         var stack = [];
         input.forEach(function (el) {
           return stack.push(el);
         });
         var res = [];
-
         while (stack.length) {
           var next = stack.pop();
-
           if (Array.isArray(next)) {
             next.forEach(function (el) {
               return stack.push(el);
@@ -23324,60 +19306,47 @@
             res.push(next);
           }
         }
-
         return res.reverse();
       }
-
       function throttle(cb, delay) {
         var wait = false;
         var savedArgs;
-
         var wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
-
           if (wait) {
             savedArgs = args;
             return;
           }
-
           cb.apply(void 0, args);
           wait = true;
           setTimeout(function () {
             wait = false;
-
             if (savedArgs) {
               wrapper(savedArgs);
               savedArgs = null;
             }
           }, delay);
         };
-
         return wrapper;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         removeInShadowDom.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function setAttr(source, args) {
       function setAttr(source, selector, attr) {
         var value = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
-
         if (!selector || !attr) {
           return;
         }
-
         if (value.length !== 0 && (nativeIsNaN(parseInt(value, 10)) || parseInt(value, 10) < 0 || parseInt(value, 10) > 32767)) {
           return;
         }
-
         var setAttr = function setAttr() {
           var nodes = [].slice.call(document.querySelectorAll(selector));
           var set = false;
@@ -23385,71 +19354,48 @@
             node.setAttribute(attr, value);
             set = true;
           });
-
           if (set) {
             hit(source);
           }
         };
-
         setAttr();
         observeDOMChanges(setAttr, true);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function observeDOMChanges(callback) {
         var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
         var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
         var THROTTLE_DELAY_MS = 20;
         var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-
         var connect = function connect() {
           if (attrsToObserve.length > 0) {
             observer.observe(document.documentElement, {
@@ -23466,73 +19412,58 @@
             });
           }
         };
-
         var disconnect = function disconnect() {
           observer.disconnect();
         };
-
         function callbackWrapper() {
           disconnect();
           callback();
           connect();
         }
-
         connect();
       }
-
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
       }
-
       function throttle(cb, delay) {
         var wait = false;
         var savedArgs;
-
         var wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
-
           if (wait) {
             savedArgs = args;
             return;
           }
-
           cb.apply(void 0, args);
           wait = true;
           setTimeout(function () {
             wait = false;
-
             if (savedArgs) {
               wrapper(savedArgs);
               savedArgs = null;
             }
           }, delay);
         };
-
         return wrapper;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         setAttr.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function setConstant(source, args) {
       function setConstant(source, property, value, stack) {
         if (!property || !matchStackTrace(stack, new Error().stack)) {
           return;
         }
-
         var emptyArr = noopArray();
         var emptyObj = noopObject();
         var constantValue;
-
         if (value === "undefined") {
           constantValue = undefined;
         } else if (value === "false") {
@@ -23557,11 +19488,9 @@
           constantValue = noopPromiseReject;
         } else if (/^\d+$/.test(value)) {
           constantValue = parseFloat(value);
-
           if (nativeIsNaN(constantValue)) {
             return;
           }
-
           if (Math.abs(constantValue) > 32767) {
             return;
           }
@@ -23576,40 +19505,31 @@
         } else {
           return;
         }
-
         var canceled = false;
-
         var mustCancel = function mustCancel(value) {
           if (canceled) {
             return canceled;
           }
-
           canceled = value !== undefined && constantValue !== undefined && typeof value !== typeof constantValue && value !== null;
           return canceled;
         };
-
         var trapProp = function trapProp(base, prop, configurable, handler) {
           if (!handler.init(base[prop])) {
             return false;
           }
-
           var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
           var prevSetter;
-
           if (origDescriptor instanceof Object) {
             if (!origDescriptor.configurable) {
-              var message = "set-constant: property '".concat(prop, "' is not configurable");
+              var message = "Property '".concat(prop, "' is not configurable");
               logMessage(source, message);
               return false;
             }
-
             base[prop] = constantValue;
-
             if (origDescriptor.set instanceof Function) {
               prevSetter = origDescriptor.set;
             }
           }
-
           Object.defineProperty(base, prop, {
             configurable: configurable,
             get: function get() {
@@ -23619,18 +19539,16 @@
               if (prevSetter !== undefined) {
                 prevSetter(a);
               }
-
               handler.set(a);
             }
           });
           return true;
         };
-
         var setChainPropAccess = function setChainPropAccess(owner, property) {
           var chainInfo = getPropertyInChain(owner, property);
           var base = chainInfo.base;
           var prop = chainInfo.prop,
-              chain = chainInfo.chain;
+            chain = chainInfo.chain;
           var inChainPropHandler = {
             factValue: undefined,
             init: function init(a) {
@@ -23644,9 +19562,7 @@
               if (this.factValue === a) {
                 return;
               }
-
               this.factValue = a;
-
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
               }
@@ -23657,7 +19573,6 @@
               if (mustCancel(a)) {
                 return false;
               }
-
               return true;
             },
             get: function get() {
@@ -23667,130 +19582,90 @@
               if (!mustCancel(a)) {
                 return;
               }
-
               constantValue = a;
             }
           };
-
           if (!chain) {
             var isTrapped = trapProp(base, prop, false, endPropHandler);
-
             if (isTrapped) {
               hit(source);
             }
-
             return;
           }
-
           if (base !== undefined && base[prop] === null) {
             trapProp(base, prop, true, inChainPropHandler);
             return;
           }
-
           if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
             trapProp(base, prop, true, inChainPropHandler);
           }
-
           var propValue = owner[prop];
-
           if (propValue instanceof Object || typeof propValue === "object" && propValue !== null) {
             setChainPropAccess(propValue, chain);
           }
-
           trapProp(base, prop, true, inChainPropHandler);
         };
-
         setChainPropAccess(window, property);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function noopArray() {
         return [];
       }
-
       function noopObject() {
         return {};
       }
-
       function noopFunc() {}
-
       function trueFunc() {
         return true;
       }
-
       function falseFunc() {
         return false;
       }
-
       function noopPromiseReject() {
         return Promise.reject();
       }
-
       function noopPromiseResolve() {
         var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
         var responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
         var responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
-
         if (typeof Response === "undefined") {
           return;
         }
-
         var response = new Response(responseBody, {
           status: 200,
           statusText: "OK"
@@ -23805,19 +19680,15 @@
         });
         return Promise.resolve(response);
       }
-
       function getPropertyInChain(base, chain) {
         var pos = chain.indexOf(".");
-
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-
         var prop = chain.slice(0, pos);
-
         if (base === null) {
           return {
             base: base,
@@ -23825,10 +19696,8 @@
             chain: chain
           };
         }
-
         var nextBase = base[prop];
         chain = chain.slice(pos + 1);
-
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
             base: base,
@@ -23836,7 +19705,6 @@
             chain: chain
           };
         }
-
         if (nextBase === null) {
           return {
             base: base,
@@ -23844,11 +19712,9 @@
             chain: chain
           };
         }
-
         if (nextBase !== undefined) {
           return getPropertyInChain(nextBase, chain);
         }
-
         Object.defineProperty(base, prop, {
           configurable: true
         });
@@ -23858,149 +19724,169 @@
           chain: chain
         };
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function matchStackTrace(stackMatch, stackTrace) {
         if (!stackMatch || stackMatch === "") {
           return true;
         }
-
         if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
           return true;
         }
-
         var stackRegexp = toRegExp(stackMatch);
         var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         }).join("\n");
         return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
       }
-
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
       }
-
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
-
       function getNativeRegexpTest() {
         return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
       }
-
+      function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
+        var INLINE_SCRIPT_STRING = "inlineScript";
+        var INJECTED_SCRIPT_STRING = "injectedScript";
+        var INJECTED_SCRIPT_MARKER = "<anonymous>";
+        var isInlineScript = function isInlineScript(stackMatch) {
+          return stackMatch.indexOf(INLINE_SCRIPT_STRING) > -1;
+        };
+        var isInjectedScript = function isInjectedScript(stackMatch) {
+          return stackMatch.indexOf(INJECTED_SCRIPT_STRING) > -1;
+        };
+        if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
+          return false;
+        }
+        var documentURL = window.location.href;
+        var pos = documentURL.indexOf("#");
+        if (pos !== -1) {
+          documentURL = documentURL.slice(0, pos);
+        }
+        var stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
+          return line.trim();
+        });
+        var stackLines = stackSteps.map(function (line) {
+          var stack;
+          var getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
+          if (getStackTraceURL) {
+            var stackURL = getStackTraceURL[2];
+            if (startsWith(stackURL, "(")) {
+              stackURL = stackURL.slice(1);
+            }
+            if (startsWith(stackURL, INJECTED_SCRIPT_MARKER)) {
+              stackURL = INJECTED_SCRIPT_STRING;
+              var stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
+              if (startsWith(stackFunction, "at")) {
+                stackFunction = stackFunction.slice(2).trim();
+              }
+              stack = "".concat(stackFunction, " ").concat(stackURL).trim();
+            } else {
+              stack = stackURL;
+            }
+          } else {
+            stack = line;
+          }
+          return stack;
+        });
+        if (stackLines) {
+          for (var index = 0; index < stackLines.length; index += 1) {
+            if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
+              return true;
+            }
+            if (isInjectedScript(stackMatch) && startsWith(stackLines[index], INJECTED_SCRIPT_STRING)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         setConstant.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function setCookie(source, args) {
       function setCookie(source, name, value) {
         var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "/";
-        var validValue = getLimitedCookieValue(source, value);
-
+        var validValue = getLimitedCookieValue(value);
         if (validValue === null) {
           logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
           return;
         }
-
-        var cookieData = concatCookieNameValuePath(source, name, validValue, path);
-
-        if (cookieData) {
-          hit(source);
-          document.cookie = cookieData;
+        if (!isValidCookiePath(path)) {
+          logMessage(source, "Invalid cookie path: '".concat(path, "'"));
+          return;
         }
+        var cookieToSet = concatCookieNameValuePath(name, validValue, path);
+        if (!cookieToSet) {
+          return;
+        }
+        hit(source);
+        document.cookie = cookieToSet;
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
       }
-
-      function getLimitedCookieValue(source, value) {
+      function getLimitedCookieValue(value) {
         if (!value) {
           return null;
         }
-
         var validValue;
-
         if (value === "true") {
           validValue = "true";
         } else if (value === "True") {
@@ -24023,163 +19909,117 @@
           validValue = "OK";
         } else if (/^\d+$/.test(value)) {
           validValue = parseFloat(value);
-
           if (nativeIsNaN(validValue)) {
-            logMessage(source, "Invalid cookie value: '".concat(value, "'"));
             return null;
           }
-
           if (Math.abs(validValue) < 0 || Math.abs(validValue) > 15) {
-            logMessage(source, "Invalid cookie value: '".concat(value, "'"));
             return null;
           }
         } else {
           return null;
         }
-
         return validValue;
       }
-
-      function concatCookieNameValuePath(source, rawName, rawValue, rawPath) {
-        if (!isValidCookieRawPath(rawPath)) {
-          logMessage(source, "Invalid cookie path: '".concat(rawPath, "'"));
-          return null;
-        }
-
-        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath));
+      function concatCookieNameValuePath(rawName, rawValue, rawPath) {
+        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
       }
-
-      function isValidCookieRawPath(rawPath) {
+      function isValidCookiePath(rawPath) {
         return rawPath === "/" || rawPath === "none";
       }
-
       function getCookiePath(rawPath) {
         if (rawPath === "/") {
           return "path=/";
         }
-
         return "";
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         setCookie.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function setCookieReload(source, args) {
       function setCookieReload(source, name, value) {
         var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "/";
-
-        if (isCookieSetWithValue(name, value)) {
+        if (isCookieSetWithValue(document.cookie, name, value)) {
           return;
         }
-
-        var validValue = getLimitedCookieValue(source, value);
-
+        var validValue = getLimitedCookieValue(value);
         if (validValue === null) {
-          logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
+          logMessage(source, "Invalid cookie value: '".concat(value, "'"));
           return;
         }
-
-        var cookieData = concatCookieNameValuePath(source, name, validValue, path);
-
-        if (cookieData) {
-          document.cookie = cookieData;
-          hit(source);
-
-          if (isCookieSetWithValue(document.cookie, name, value)) {
-            window.location.reload();
-          }
+        if (!isValidCookiePath(path)) {
+          logMessage(source, "Invalid cookie path: '".concat(path, "'"));
+          return;
+        }
+        var cookieToSet = concatCookieNameValuePath(name, validValue, path);
+        if (!cookieToSet) {
+          return;
+        }
+        document.cookie = cookieToSet;
+        hit(source);
+        if (isCookieSetWithValue(document.cookie, name, value)) {
+          window.location.reload();
         }
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
       }
-
       function isCookieSetWithValue(cookieString, name, value) {
         return cookieString.split(";").some(function (cookieStr) {
           var pos = cookieStr.indexOf("=");
-
           if (pos === -1) {
             return false;
           }
-
           var cookieName = cookieStr.slice(0, pos).trim();
           var cookieValue = cookieStr.slice(pos + 1).trim();
           return name === cookieName && value === cookieValue;
         });
       }
-
-      function getLimitedCookieValue(source, value) {
+      function getLimitedCookieValue(value) {
         if (!value) {
           return null;
         }
-
         var validValue;
-
         if (value === "true") {
           validValue = "true";
         } else if (value === "True") {
@@ -24202,135 +20042,94 @@
           validValue = "OK";
         } else if (/^\d+$/.test(value)) {
           validValue = parseFloat(value);
-
           if (nativeIsNaN(validValue)) {
-            logMessage(source, "Invalid cookie value: '".concat(value, "'"));
             return null;
           }
-
           if (Math.abs(validValue) < 0 || Math.abs(validValue) > 15) {
-            logMessage(source, "Invalid cookie value: '".concat(value, "'"));
             return null;
           }
         } else {
           return null;
         }
-
         return validValue;
       }
-
-      function concatCookieNameValuePath(source, rawName, rawValue, rawPath) {
-        if (!isValidCookieRawPath(rawPath)) {
-          logMessage(source, "Invalid cookie path: '".concat(rawPath, "'"));
-          return null;
-        }
-
-        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath));
+      function concatCookieNameValuePath(rawName, rawValue, rawPath) {
+        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
       }
-
-      function isValidCookieRawPath(rawPath) {
+      function isValidCookiePath(rawPath) {
         return rawPath === "/" || rawPath === "none";
       }
-
       function getCookiePath(rawPath) {
         if (rawPath === "/") {
           return "path=/";
         }
-
         return "";
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         setCookieReload.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function setLocalStorageItem(source, args) {
       function setLocalStorageItem(source, key, value) {
         if (typeof key === "undefined") {
           logMessage(source, "Item key should be specified.");
           return;
         }
-
-        var validValue = getLimitedStorageItemValue(source, value);
-
-        if (validValue === null) {
-          logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
+        var validValue;
+        try {
+          validValue = getLimitedStorageItemValue(value);
+        } catch (_unused) {
+          logMessage(source, "Invalid storage item value: '".concat(value, "'"));
           return;
         }
-
         var _window = window,
-            localStorage = _window.localStorage;
+          localStorage = _window.localStorage;
         setStorageItem(source, localStorage, key, validValue);
         hit(source);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
       }
-
       function setStorageItem(source, storage, key, value) {
         try {
           storage.setItem(key, value);
@@ -24339,14 +20138,11 @@
           logMessage(source, message);
         }
       }
-
-      function getLimitedStorageItemValue(source, value) {
-        if (!value) {
-          return null;
+      function getLimitedStorageItemValue(value) {
+        if (typeof value !== "string") {
+          throw new Error("Invalid value");
         }
-
         var validValue;
-
         if (value === "undefined") {
           validValue = undefined;
         } else if (value === "false") {
@@ -24363,36 +20159,28 @@
           validValue = "";
         } else if (/^\d+$/.test(value)) {
           validValue = parseFloat(value);
-
           if (nativeIsNaN(validValue)) {
-            logMessage(source, "Invalid storage item value: '".concat(value, "'"));
-            return null;
+            throw new Error("Invalid value");
           }
-
           if (Math.abs(validValue) > 32767) {
-            logMessage(source, "Invalid storage item value: '".concat(value, "'"));
-            return null;
+            throw new Error("Invalid value");
           }
         } else if (value === "yes") {
           validValue = "yes";
         } else if (value === "no") {
           validValue = "no";
         } else {
-          return null;
+          throw new Error("Invalid value");
         }
-
         return validValue;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         setLocalStorageItem.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function setPopadsDummy(source, args) {
       function setPopadsDummy(source) {
         delete window.PopAds;
@@ -24412,97 +20200,101 @@
           }
         });
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         setPopadsDummy.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function setSessionStorageItem(source, args) {
       function setSessionStorageItem(source, key, value) {
         if (typeof key === "undefined") {
           logMessage(source, "Item key should be specified.");
           return;
         }
-
-        var validValue = getLimitedStorageItemValue(source, value);
-
-        if (validValue === null) {
-          logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
+        var validValue;
+        try {
+          validValue = getLimitedStorageItemValue(value);
+        } catch (_unused) {
+          logMessage(source, "Invalid storage item value: '".concat(value, "'"));
           return;
         }
-
         var _window = window,
-            sessionStorage = _window.sessionStorage;
+          sessionStorage = _window.sessionStorage;
         setStorageItem(source, sessionStorage, key, validValue);
+        hit(source);
       }
-
+      function hit(source) {
+        if (source.verbose !== true) {
+          return;
+        }
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+          log("".concat(prefix, " trace start"));
+          if (trace) {
+            trace();
+          }
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function nativeIsNaN(num) {
         var native = Number.isNaN || window.isNaN;
         return native(num);
       }
-
       function setStorageItem(source, storage, key, value) {
         try {
           storage.setItem(key, value);
@@ -24511,14 +20303,11 @@
           logMessage(source, message);
         }
       }
-
-      function getLimitedStorageItemValue(source, value) {
-        if (!value) {
-          return null;
+      function getLimitedStorageItemValue(value) {
+        if (typeof value !== "string") {
+          throw new Error("Invalid value");
         }
-
         var validValue;
-
         if (value === "undefined") {
           validValue = undefined;
         } else if (value === "false") {
@@ -24535,45 +20324,35 @@
           validValue = "";
         } else if (/^\d+$/.test(value)) {
           validValue = parseFloat(value);
-
           if (nativeIsNaN(validValue)) {
-            logMessage(source, "Invalid storage item value: '".concat(value, "'"));
-            return null;
+            throw new Error("Invalid value");
           }
-
           if (Math.abs(validValue) > 32767) {
-            logMessage(source, "Invalid storage item value: '".concat(value, "'"));
-            return null;
+            throw new Error("Invalid value");
           }
         } else if (value === "yes") {
           validValue = "yes";
         } else if (value === "no") {
           validValue = "no";
         } else {
-          return null;
+          throw new Error("Invalid value");
         }
-
         return validValue;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         setSessionStorageItem.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function trustedClickElement(source, args) {
       function trustedClickElement(source, selectors) {
         var extraMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
         var delay = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : NaN;
-
         if (!selectors) {
           return;
         }
-
         var OBSERVER_TIMEOUT_MS = 1e4;
         var THROTTLE_DELAY_MS = 20;
         var COOKIE_MATCH_MARKER = "cookie:";
@@ -24582,22 +20361,18 @@
         var COOKIE_STRING_DELIMITER = ";";
         var EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=cookie:|localStorage:)/;
         var parsedDelay;
-
         if (delay) {
           parsedDelay = parseInt(delay, 10);
           var isValidDelay = !Number.isNaN(parsedDelay) || parsedDelay < OBSERVER_TIMEOUT_MS;
-
           if (!isValidDelay) {
             var message = "Passed delay '".concat(delay, "' is invalid or bigger than ").concat(OBSERVER_TIMEOUT_MS, " ms");
             logMessage(source, message);
             return;
           }
         }
-
         var canClick = !parsedDelay;
         var cookieMatches = [];
         var localStorageMatches = [];
-
         if (extraMatch) {
           var parsedExtraMatch = extraMatch.split(EXTRA_MATCH_DELIMITER).map(function (matchStr) {
             return matchStr.trim();
@@ -24607,115 +20382,91 @@
               var cookieMatch = matchStr.replace(COOKIE_MATCH_MARKER, "");
               cookieMatches.push(cookieMatch);
             }
-
             if (matchStr.indexOf(LOCAL_STORAGE_MATCH_MARKER) > -1) {
               var localStorageMatch = matchStr.replace(LOCAL_STORAGE_MATCH_MARKER, "");
               localStorageMatches.push(localStorageMatch);
             }
           });
         }
-
         if (cookieMatches.length > 0) {
           var parsedCookieMatches = parseCookieString(cookieMatches.join(COOKIE_STRING_DELIMITER));
           var parsedCookies = parseCookieString(document.cookie);
           var cookieKeys = Object.keys(parsedCookies);
-
           if (cookieKeys.length === 0) {
             return;
           }
-
           var cookiesMatched = Object.keys(parsedCookieMatches).every(function (key) {
             var valueMatch = parsedCookieMatches[key] ? toRegExp(parsedCookieMatches[key]) : null;
             var keyMatch = toRegExp(key);
             return cookieKeys.some(function (key) {
               var keysMatched = keyMatch.test(key);
-
               if (!keysMatched) {
                 return false;
               }
-
               if (!valueMatch) {
                 return true;
               }
-
               return valueMatch.test(parsedCookies[key]);
             });
           });
-
           if (!cookiesMatched) {
             return;
           }
         }
-
         if (localStorageMatches.length > 0) {
           var localStorageMatched = localStorageMatches.every(function (str) {
             var itemValue = window.localStorage.getItem(str);
             return itemValue || itemValue === "";
           });
-
           if (!localStorageMatched) {
             return;
           }
         }
-
         var selectorsSequence = selectors.split(SELECTORS_DELIMITER).map(function (selector) {
           return selector.trim();
         });
-
         var createElementObj = function createElementObj(element) {
           return {
             element: element || null,
             clicked: false
           };
         };
-
         var elementsSequence = Array(selectorsSequence.length).fill(createElementObj());
-
         var clickElementsBySequence = function clickElementsBySequence() {
           for (var i = 0; i < elementsSequence.length; i += 1) {
             var elementObj = elementsSequence[i];
-
             if (!elementObj.element) {
               break;
             }
-
             if (!elementObj.clicked) {
               elementObj.element.click();
               elementObj.clicked = true;
             }
           }
-
           var allElementsClicked = elementsSequence.every(function (elementObj) {
             return elementObj.clicked === true;
           });
-
           if (allElementsClicked) {
             hit(source);
           }
         };
-
         var handleElement = function handleElement(element, i) {
           var elementObj = createElementObj(element);
           elementsSequence[i] = elementObj;
-
           if (canClick) {
             clickElementsBySequence();
           }
         };
-
         var findElements = function findElements(mutations, observer) {
           var fulfilledSelectors = [];
           selectorsSequence.forEach(function (selector, i) {
             if (!selector) {
               return;
             }
-
             var element = document.querySelector(selector);
-
             if (!element) {
               return;
             }
-
             handleElement(element, i);
             fulfilledSelectors.push(selector);
           });
@@ -24725,97 +20476,69 @@
           var allSelectorsFulfilled = selectorsSequence.every(function (selector) {
             return selector === null;
           });
-
           if (allSelectorsFulfilled) {
             observer.disconnect();
           }
         };
-
         var observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
         observer.observe(document.documentElement, {
           attributes: true,
           childList: true,
           subtree: true
         });
-
         if (parsedDelay) {
           setTimeout(function () {
             clickElementsBySequence();
             canClick = true;
           }, parsedDelay);
         }
-
         setTimeout(function () {
           return observer.disconnect();
         }, OBSERVER_TIMEOUT_MS);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function parseCookieString(cookieString) {
         var COOKIE_DELIMITER = "=";
         var COOKIE_PAIRS_DELIMITER = ";";
@@ -24825,246 +20548,174 @@
           var cookieKey;
           var cookieValue;
           var delimiterIndex = singleCookie.indexOf(COOKIE_DELIMITER);
-
           if (delimiterIndex === -1) {
             cookieKey = singleCookie.trim();
           } else {
             cookieKey = singleCookie.slice(0, delimiterIndex).trim();
             cookieValue = singleCookie.slice(delimiterIndex + 1);
           }
-
           cookieData[cookieKey] = cookieValue || null;
         });
         return cookieData;
       }
-
       function throttle(cb, delay) {
         var wait = false;
         var savedArgs;
-
         var wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
-
           if (wait) {
             savedArgs = args;
             return;
           }
-
           cb.apply(void 0, args);
           wait = true;
           setTimeout(function () {
             wait = false;
-
             if (savedArgs) {
               wrapper(savedArgs);
               savedArgs = null;
             }
           }, delay);
         };
-
         return wrapper;
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         trustedClickElement.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function trustedReplaceFetchResponse(source, args) {
       function trustedReplaceFetchResponse(source) {
         var pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
         var replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
         var propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
-
         if (typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
           return;
         }
-
         if (pattern === "" && replacement !== "") {
           logMessage(source, "Pattern argument should not be empty string.");
           return;
         }
-
         var shouldLog = pattern === "" && replacement === "";
         var nativeFetch = fetch;
         var shouldReplace = false;
         var fetchData;
-
-        var handlerWrapper = function () {
-          var _ref = asyncToGenerator(regenerator.mark(function _callee(target, thisArg, args) {
-            var forgeResponse;
-            return regenerator.wrap(function _callee$(_context) {
-              while (1) {
-                switch (_context.prev = _context.next) {
-                  case 0:
-                    fetchData = getFetchData(args);
-
-                    if (!shouldLog) {
-                      _context.next = 5;
-                      break;
-                    }
-
-                    logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
-                    hit(source);
-                    return _context.abrupt("return", Reflect.apply(target, thisArg, args));
-
-                  case 5:
-                    shouldReplace = matchRequestProps(source, propsToMatch, fetchData);
-
-                    if (shouldReplace) {
-                      _context.next = 8;
-                      break;
-                    }
-
-                    return _context.abrupt("return", Reflect.apply(target, thisArg, args));
-
-                  case 8:
-                    forgeResponse = function forgeResponse(response, textContent) {
-                      var bodyUsed = response.bodyUsed,
-                          headers = response.headers,
-                          ok = response.ok,
-                          redirected = response.redirected,
-                          status = response.status,
-                          statusText = response.statusText,
-                          type = response.type,
-                          url = response.url;
-                      var forgedResponse = new Response(textContent, {
-                        status: status,
-                        statusText: statusText,
-                        headers: headers
-                      });
-                      Object.defineProperties(forgedResponse, {
-                        url: {
-                          value: url
-                        },
-                        type: {
-                          value: type
-                        },
-                        ok: {
-                          value: ok
-                        },
-                        bodyUsed: {
-                          value: bodyUsed
-                        },
-                        redirected: {
-                          value: redirected
-                        }
-                      });
-                      return forgedResponse;
-                    };
-
-                    return _context.abrupt("return", nativeFetch.apply(void 0, toConsumableArray(args)).then(function (response) {
-                      return response.text().then(function (bodyText) {
-                        var patternRegexp = pattern === "*" ? toRegExp() : toRegExp(pattern);
-                        var modifiedTextContent = bodyText.replace(patternRegexp, replacement);
-                        var forgedResponse = forgeResponse(response, modifiedTextContent);
-                        hit(source);
-                        return forgedResponse;
-                      }).catch(function () {
-                        var fetchDataStr = objectToString(fetchData);
-                        var message = "Response body can't be converted to text: ".concat(fetchDataStr);
-                        logMessage(source, message);
-                        return Reflect.apply(target, thisArg, args);
-                      });
-                    }).catch(function () {
-                      return Reflect.apply(target, thisArg, args);
-                    }));
-
-                  case 10:
-                  case "end":
-                    return _context.stop();
-                }
+        var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+          fetchData = getFetchData(args);
+          if (shouldLog) {
+            logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
+            hit(source);
+            return Reflect.apply(target, thisArg, args);
+          }
+          shouldReplace = matchRequestProps(source, propsToMatch, fetchData);
+          if (!shouldReplace) {
+            return Reflect.apply(target, thisArg, args);
+          }
+          var forgeResponse = function forgeResponse(response, textContent) {
+            var bodyUsed = response.bodyUsed,
+              headers = response.headers,
+              ok = response.ok,
+              redirected = response.redirected,
+              status = response.status,
+              statusText = response.statusText,
+              type = response.type,
+              url = response.url;
+            var forgedResponse = new Response(textContent, {
+              status: status,
+              statusText: statusText,
+              headers: headers
+            });
+            Object.defineProperties(forgedResponse, {
+              url: {
+                value: url
+              },
+              type: {
+                value: type
+              },
+              ok: {
+                value: ok
+              },
+              bodyUsed: {
+                value: bodyUsed
+              },
+              redirected: {
+                value: redirected
               }
-            }, _callee);
-          }));
-
-          return function handlerWrapper(_x, _x2, _x3) {
-            return _ref.apply(this, arguments);
+            });
+            return forgedResponse;
           };
-        }();
-
+          return nativeFetch.apply(null, args).then(function (response) {
+            return response.text().then(function (bodyText) {
+              var patternRegexp = pattern === "*" ? /(\n|.)*/ : toRegExp(pattern);
+              var modifiedTextContent = bodyText.replace(patternRegexp, replacement);
+              var forgedResponse = forgeResponse(response, modifiedTextContent);
+              hit(source);
+              return forgedResponse;
+            }).catch(function () {
+              var fetchDataStr = objectToString(fetchData);
+              var message = "Response body can't be converted to text: ".concat(fetchDataStr);
+              logMessage(source, message);
+              return Reflect.apply(target, thisArg, args);
+            });
+          }).catch(function () {
+            return Reflect.apply(target, thisArg, args);
+          });
+        };
         var fetchHandler = {
           apply: handlerWrapper
         };
         fetch = new Proxy(fetch, fetchHandler);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function getFetchData(args) {
         var fetchPropsObj = {};
         var fetchUrl;
         var fetchInit;
-
         if (args[0] instanceof Request) {
           var requestData = getRequestData(args[0]);
           fetchUrl = requestData.url;
@@ -25073,40 +20724,31 @@
           fetchUrl = args[0];
           fetchInit = args[1];
         }
-
         fetchPropsObj.url = fetchUrl;
-
         if (fetchInit instanceof Object) {
           Object.keys(fetchInit).forEach(function (prop) {
             fetchPropsObj[prop] = fetchInit[prop];
           });
         }
-
         return fetchPropsObj;
       }
-
       function objectToString(obj) {
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
           var key = pair[0];
           var value = pair[1];
           var recordValueStr = value;
-
           if (value instanceof Object) {
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
-
           return "".concat(key, ':"').concat(recordValueStr, '"');
         }).join(" ");
       }
-
       function matchRequestProps(source, propsToMatch, requestData) {
         if (propsToMatch === "" || propsToMatch === "*") {
           return true;
         }
-
         var isMatched;
         var parsedData = parseMatchProps(propsToMatch);
-
         if (!validateParsedData(parsedData)) {
           logMessage(source, "Invalid parameter: ".concat(propsToMatch));
           isMatched = false;
@@ -25117,55 +20759,42 @@
             return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
           });
         }
-
         return isMatched;
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = escapeRegExp(input);
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-
         var isValid;
-
         try {
           isValid = new RegExp(str);
           isValid = true;
         } catch (e) {
           isValid = false;
         }
-
         return isValid;
       }
-
       function escapeRegExp(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
-
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
-
       function getRequestData(request) {
         var requestInitOptions = getRequestProps();
         var entries = requestInitOptions.map(function (key) {
@@ -25174,7 +20803,9 @@
         });
         return getObjectFromEntries(entries);
       }
-
+      function getRequestProps() {
+        return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
+      }
       function getObjectEntries(object) {
         var keys = Object.keys(object);
         var entries = [];
@@ -25183,7 +20814,6 @@
         });
         return entries;
       }
-
       function getObjectFromEntries(entries) {
         var output = entries.reduce(function (acc, el) {
           var key = el[0];
@@ -25193,7 +20823,6 @@
         }, {});
         return output;
       }
-
       function parseMatchProps(propsToMatchStr) {
         var PROPS_DIVIDER = " ";
         var PAIRS_MARKER = ":";
@@ -25204,7 +20833,6 @@
           var dividerInd = prop.indexOf(PAIRS_MARKER);
           var key = prop.slice(0, dividerInd);
           var hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
-
           if (hasLegalMatchProp) {
             var value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
@@ -25214,13 +20842,11 @@
         });
         return propsObj;
       }
-
       function validateParsedData(data) {
         return Object.values(data).every(function (value) {
           return isValidStrPattern(value);
         });
       }
-
       function getMatchPropsData(data) {
         var matchData = {};
         Object.keys(data).forEach(function (key) {
@@ -25228,169 +20854,122 @@
         });
         return matchData;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         trustedReplaceFetchResponse.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function trustedReplaceXhrResponse(source, args) {
       function trustedReplaceXhrResponse(source) {
         var pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
         var replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
         var propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
-
         if (typeof Proxy === "undefined") {
           return;
         }
-
         if (pattern === "" && replacement !== "") {
           var message = "Pattern argument should not be empty string.";
           logMessage(source, message);
           return;
         }
-
         var shouldLog = pattern === "" && replacement === "";
         var nativeOpen = window.XMLHttpRequest.prototype.open;
         var nativeSend = window.XMLHttpRequest.prototype.send;
         var shouldReplace = false;
         var xhrData;
         var requestHeaders = [];
-
         var openWrapper = function openWrapper(target, thisArg, args) {
-          xhrData = getXhrData.apply(void 0, toConsumableArray(args));
-
+          xhrData = getXhrData.apply(null, args);
           if (shouldLog) {
-            var _message = "log: xhr( ".concat(objectToString(xhrData), " )");
-
+            var _message = "xhr( ".concat(objectToString(xhrData), " )");
             logMessage(source, _message, true);
             hit(source);
             return Reflect.apply(target, thisArg, args);
           }
-
           shouldReplace = matchRequestProps(source, propsToMatch, xhrData);
-
           if (shouldReplace) {
             var setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
               requestHeaders.push(args);
               return Reflect.apply(target, thisArg, args);
             };
-
             var setRequestHeaderHandler = {
               apply: setRequestHeaderWrapper
             };
             thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
           }
-
           return Reflect.apply(target, thisArg, args);
         };
-
-        var sendWrapper = function () {
-          var _ref = asyncToGenerator(regenerator.mark(function _callee(target, thisArg, args) {
-            var forgedRequest;
-            return regenerator.wrap(function _callee$(_context) {
-              while (1) {
-                switch (_context.prev = _context.next) {
-                  case 0:
-                    if (shouldReplace) {
-                      _context.next = 2;
-                      break;
-                    }
-
-                    return _context.abrupt("return", Reflect.apply(target, thisArg, args));
-
-                  case 2:
-                    forgedRequest = new XMLHttpRequest();
-                    forgedRequest.addEventListener("readystatechange", function () {
-                      if (forgedRequest.readyState !== 4) {
-                        return;
-                      }
-
-                      var readyState = forgedRequest.readyState,
-                          response = forgedRequest.response,
-                          responseText = forgedRequest.responseText,
-                          responseURL = forgedRequest.responseURL,
-                          responseXML = forgedRequest.responseXML,
-                          status = forgedRequest.status,
-                          statusText = forgedRequest.statusText;
-                      var content = responseText || response;
-
-                      if (typeof content !== "string") {
-                        return;
-                      }
-
-                      var patternRegexp = pattern === "*" ? toRegExp() : toRegExp(pattern);
-                      var modifiedContent = content.replace(patternRegexp, replacement);
-                      Object.defineProperties(thisArg, {
-                        readyState: {
-                          value: readyState
-                        },
-                        response: {
-                          value: modifiedContent
-                        },
-                        responseText: {
-                          value: modifiedContent
-                        },
-                        responseURL: {
-                          value: responseURL
-                        },
-                        responseXML: {
-                          value: responseXML
-                        },
-                        status: {
-                          value: status
-                        },
-                        statusText: {
-                          value: statusText
-                        }
-                      });
-                      setTimeout(function () {
-                        var stateEvent = new Event("readystatechange");
-                        thisArg.dispatchEvent(stateEvent);
-                        var loadEvent = new Event("load");
-                        thisArg.dispatchEvent(loadEvent);
-                        var loadEndEvent = new Event("loadend");
-                        thisArg.dispatchEvent(loadEndEvent);
-                      }, 1);
-                      hit(source);
-                    });
-                    nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
-                    requestHeaders.forEach(function (header) {
-                      var name = header[0];
-                      var value = header[1];
-                      forgedRequest.setRequestHeader(name, value);
-                    });
-                    requestHeaders = [];
-                    _context.prev = 7;
-                    nativeSend.call(forgedRequest, args);
-                    _context.next = 14;
-                    break;
-
-                  case 11:
-                    _context.prev = 11;
-                    _context.t0 = _context["catch"](7);
-                    return _context.abrupt("return", Reflect.apply(target, thisArg, args));
-
-                  case 14:
-                    return _context.abrupt("return", undefined);
-
-                  case 15:
-                  case "end":
-                    return _context.stop();
-                }
+        var sendWrapper = function sendWrapper(target, thisArg, args) {
+          if (!shouldReplace) {
+            return Reflect.apply(target, thisArg, args);
+          }
+          var forgedRequest = new XMLHttpRequest();
+          forgedRequest.addEventListener("readystatechange", function () {
+            if (forgedRequest.readyState !== 4) {
+              return;
+            }
+            var readyState = forgedRequest.readyState,
+              response = forgedRequest.response,
+              responseText = forgedRequest.responseText,
+              responseURL = forgedRequest.responseURL,
+              responseXML = forgedRequest.responseXML,
+              status = forgedRequest.status,
+              statusText = forgedRequest.statusText;
+            var content = responseText || response;
+            if (typeof content !== "string") {
+              return;
+            }
+            var patternRegexp = pattern === "*" ? /(\n|.)*/ : toRegExp(pattern);
+            var modifiedContent = content.replace(patternRegexp, replacement);
+            Object.defineProperties(thisArg, {
+              readyState: {
+                value: readyState
+              },
+              response: {
+                value: modifiedContent
+              },
+              responseText: {
+                value: modifiedContent
+              },
+              responseURL: {
+                value: responseURL
+              },
+              responseXML: {
+                value: responseXML
+              },
+              status: {
+                value: status
+              },
+              statusText: {
+                value: statusText
               }
-            }, _callee, null, [[7, 11]]);
-          }));
-
-          return function sendWrapper(_x, _x2, _x3) {
-            return _ref.apply(this, arguments);
-          };
-        }();
-
+            });
+            setTimeout(function () {
+              var stateEvent = new Event("readystatechange");
+              thisArg.dispatchEvent(stateEvent);
+              var loadEvent = new Event("load");
+              thisArg.dispatchEvent(loadEvent);
+              var loadEndEvent = new Event("loadend");
+              thisArg.dispatchEvent(loadEndEvent);
+            }, 1);
+            hit(source);
+          });
+          nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
+          requestHeaders.forEach(function (header) {
+            var name = header[0];
+            var value = header[1];
+            forgedRequest.setRequestHeader(name, value);
+          });
+          requestHeaders = [];
+          try {
+            nativeSend.call(forgedRequest, args);
+          } catch (_unused) {
+            return Reflect.apply(target, thisArg, args);
+          }
+          return undefined;
+        };
         var openHandler = {
           apply: openWrapper
         };
@@ -25400,103 +20979,72 @@
         XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
         XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function objectToString(obj) {
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
           var key = pair[0];
           var value = pair[1];
           var recordValueStr = value;
-
           if (value instanceof Object) {
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
-
           return "".concat(key, ':"').concat(recordValueStr, '"');
         }).join(" ");
       }
-
       function matchRequestProps(source, propsToMatch, requestData) {
         if (propsToMatch === "" || propsToMatch === "*") {
           return true;
         }
-
         var isMatched;
         var parsedData = parseMatchProps(propsToMatch);
-
         if (!validateParsedData(parsedData)) {
           logMessage(source, "Invalid parameter: ".concat(propsToMatch));
           isMatched = false;
@@ -25507,10 +21055,8 @@
             return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
           });
         }
-
         return isMatched;
       }
-
       function getXhrData(method, url, async, user, password) {
         return {
           method: method,
@@ -25520,7 +21066,6 @@
           password: password
         };
       }
-
       function getMatchPropsData(data) {
         var matchData = {};
         Object.keys(data).forEach(function (key) {
@@ -25528,13 +21073,14 @@
         });
         return matchData;
       }
-
+      function getRequestProps() {
+        return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
+      }
       function validateParsedData(data) {
         return Object.values(data).every(function (value) {
           return isValidStrPattern(value);
         });
       }
-
       function parseMatchProps(propsToMatchStr) {
         var PROPS_DIVIDER = " ";
         var PAIRS_MARKER = ":";
@@ -25545,7 +21091,6 @@
           var dividerInd = prop.indexOf(PAIRS_MARKER);
           var key = prop.slice(0, dividerInd);
           var hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
-
           if (hasLegalMatchProp) {
             var value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
@@ -25555,35 +21100,27 @@
         });
         return propsObj;
       }
-
       function isValidStrPattern(input) {
         var FORWARD_SLASH = "/";
         var str = escapeRegExp(input);
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-
         var isValid;
-
         try {
           isValid = new RegExp(str);
           isValid = true;
         } catch (e) {
           isValid = false;
         }
-
         return isValid;
       }
-
       function escapeRegExp(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
-
       function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj).length === 0 && !obj.prototype;
       }
-
       function getObjectEntries(object) {
         var keys = Object.keys(object);
         var entries = [];
@@ -25592,270 +21129,318 @@
         });
         return entries;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         trustedReplaceXhrResponse.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function trustedSetCookie(source, args) {
       function trustedSetCookie(source, name, value) {
         var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
-        var reload = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "false";
-        var path = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : "/";
-
+        var path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "/";
         if (typeof name === "undefined") {
           logMessage(source, "Cookie name should be specified.");
           return;
         }
-
         if (typeof value === "undefined") {
           logMessage(source, "Cookie value should be specified.");
           return;
         }
-
-        if (reload === "true" && isCookieSetWithValue(document.cookie, name, value)) {
+        var parsedValue = parseKeywordValue(value);
+        if (!isValidCookiePath(path)) {
+          logMessage(source, "Invalid cookie path: '".concat(path, "'"));
           return;
         }
-
-        var ONE_YEAR_EXPIRATION_KEYWORD = "1year";
-        var ONE_DAY_EXPIRATION_KEYWORD = "1day";
-        var parsedValue = parseKeywordValue(value);
-        var cookieToSet = concatCookieNameValuePath(source, name, parsedValue, path);
-
+        var cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
         if (!cookieToSet) {
           return;
         }
-
         if (offsetExpiresSec) {
-          var MS_IN_SEC = 1e3;
-          var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
-          var SECONDS_IN_DAY = 24 * 60 * 60;
-          var parsedOffsetExpiresSec;
-
-          if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
-            parsedOffsetExpiresSec = SECONDS_IN_YEAR;
-          } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
-            parsedOffsetExpiresSec = SECONDS_IN_DAY;
-          } else {
-            parsedOffsetExpiresSec = Number.parseInt(offsetExpiresSec, 10);
-
-            if (Number.isNaN(parsedOffsetExpiresSec)) {
-              var message = "log: Invalid offsetExpiresSec value: ".concat(offsetExpiresSec);
-              logMessage(source, message);
-              return;
-            }
+          var parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
+          if (!parsedOffsetMs) {
+            logMessage(source, "Invalid offsetExpiresSec value: ".concat(offsetExpiresSec));
+            return;
           }
-
-          var expires = Date.now() + parsedOffsetExpiresSec * MS_IN_SEC;
+          var expires = Date.now() + parsedOffsetMs;
           cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
         }
-
-        if (cookieToSet) {
-          document.cookie = cookieToSet;
-          hit(source);
-
-          if (reload === "true" && isCookieSetWithValue(document.cookie, name, value)) {
-            window.location.reload();
-          }
-        }
+        document.cookie = cookieToSet;
+        hit(source);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
-      function isCookieSetWithValue(cookieString, name, value) {
-        return cookieString.split(";").some(function (cookieStr) {
-          var pos = cookieStr.indexOf("=");
-
-          if (pos === -1) {
-            return false;
-          }
-
-          var cookieName = cookieStr.slice(0, pos).trim();
-          var cookieValue = cookieStr.slice(pos + 1).trim();
-          return name === cookieName && value === cookieValue;
-        });
+      function concatCookieNameValuePath(rawName, rawValue, rawPath) {
+        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
       }
-
-      function concatCookieNameValuePath(source, rawName, rawValue, rawPath) {
-        if (!isValidCookieRawPath(rawPath)) {
-          logMessage(source, "Invalid cookie path: '".concat(rawPath, "'"));
-          return null;
-        }
-
-        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath));
-      }
-
-      function isValidCookieRawPath(rawPath) {
+      function isValidCookiePath(rawPath) {
         return rawPath === "/" || rawPath === "none";
       }
-
+      function getTrustedCookieOffsetMs(offsetExpiresSec) {
+        var ONE_YEAR_EXPIRATION_KEYWORD = "1year";
+        var ONE_DAY_EXPIRATION_KEYWORD = "1day";
+        var MS_IN_SEC = 1e3;
+        var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
+        var SECONDS_IN_DAY = 24 * 60 * 60;
+        var parsedSec;
+        if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
+          parsedSec = SECONDS_IN_YEAR;
+        } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
+          parsedSec = SECONDS_IN_DAY;
+        } else {
+          parsedSec = Number.parseInt(offsetExpiresSec, 10);
+          if (Number.isNaN(parsedSec)) {
+            return null;
+          }
+        }
+        return parsedSec * MS_IN_SEC;
+      }
       function parseKeywordValue(rawValue) {
         var NOW_VALUE_KEYWORD = "$now$";
         var CURRENT_DATE_KEYWORD = "$currentDate$";
         var parsedValue = rawValue;
-
         if (rawValue === NOW_VALUE_KEYWORD) {
           parsedValue = Date.now().toString();
         } else if (rawValue === CURRENT_DATE_KEYWORD) {
           parsedValue = Date();
         }
-
         return parsedValue;
       }
-
       function getCookiePath(rawPath) {
         if (rawPath === "/") {
           return "path=/";
         }
-
         return "";
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         trustedSetCookie.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
+    function trustedSetCookieReload(source, args) {
+      function trustedSetCookieReload(source, name, value) {
+        var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+        var path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "/";
+        if (typeof name === "undefined") {
+          logMessage(source, "Cookie name should be specified.");
+          return;
+        }
+        if (typeof value === "undefined") {
+          logMessage(source, "Cookie value should be specified.");
+          return;
+        }
+        if (isCookieSetWithValue(document.cookie, name, value)) {
+          return;
+        }
+        var parsedValue = parseKeywordValue(value);
+        if (!isValidCookiePath(path)) {
+          logMessage(source, "Invalid cookie path: '".concat(path, "'"));
+          return;
+        }
+        var cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
+        if (!cookieToSet) {
+          return;
+        }
+        if (offsetExpiresSec) {
+          var parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
+          if (!parsedOffsetMs) {
+            logMessage(source, "Invalid offsetExpiresSec value: ".concat(offsetExpiresSec));
+            return;
+          }
+          var expires = Date.now() + parsedOffsetMs;
+          cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
+        }
+        document.cookie = cookieToSet;
+        hit(source);
+        if (isCookieSetWithValue(document.cookie, name, value)) {
+          window.location.reload();
+        }
+      }
+      function hit(source) {
+        if (source.verbose !== true) {
+          return;
+        }
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+          log("".concat(prefix, " trace start"));
+          if (trace) {
+            trace();
+          }
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        if (forced || source.verbose) {
+          console.log("".concat(source.name, ": ").concat(message));
+        }
+      }
+      function isCookieSetWithValue(cookieString, name, value) {
+        return cookieString.split(";").some(function (cookieStr) {
+          var pos = cookieStr.indexOf("=");
+          if (pos === -1) {
+            return false;
+          }
+          var cookieName = cookieStr.slice(0, pos).trim();
+          var cookieValue = cookieStr.slice(pos + 1).trim();
+          return name === cookieName && value === cookieValue;
+        });
+      }
+      function concatCookieNameValuePath(rawName, rawValue, rawPath) {
+        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
+      }
+      function isValidCookiePath(rawPath) {
+        return rawPath === "/" || rawPath === "none";
+      }
+      function getTrustedCookieOffsetMs(offsetExpiresSec) {
+        var ONE_YEAR_EXPIRATION_KEYWORD = "1year";
+        var ONE_DAY_EXPIRATION_KEYWORD = "1day";
+        var MS_IN_SEC = 1e3;
+        var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
+        var SECONDS_IN_DAY = 24 * 60 * 60;
+        var parsedSec;
+        if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
+          parsedSec = SECONDS_IN_YEAR;
+        } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
+          parsedSec = SECONDS_IN_DAY;
+        } else {
+          parsedSec = Number.parseInt(offsetExpiresSec, 10);
+          if (Number.isNaN(parsedSec)) {
+            return null;
+          }
+        }
+        return parsedSec * MS_IN_SEC;
+      }
+      function parseKeywordValue(rawValue) {
+        var NOW_VALUE_KEYWORD = "$now$";
+        var CURRENT_DATE_KEYWORD = "$currentDate$";
+        var parsedValue = rawValue;
+        if (rawValue === NOW_VALUE_KEYWORD) {
+          parsedValue = Date.now().toString();
+        } else if (rawValue === CURRENT_DATE_KEYWORD) {
+          parsedValue = Date();
+        }
+        return parsedValue;
+      }
+      function getCookiePath(rawPath) {
+        if (rawPath === "/") {
+          return "path=/";
+        }
+        return "";
+      }
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      try {
+        trustedSetCookieReload.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
     function trustedSetLocalStorageItem(source, args) {
       function trustedSetLocalStorageItem(source, key, value) {
         if (typeof key === "undefined") {
           logMessage(source, "Item key should be specified.");
           return;
         }
-
         if (typeof value === "undefined") {
           logMessage(source, "Item value should be specified.");
           return;
         }
-
         var parsedValue = parseKeywordValue(value);
         var _window = window,
-            localStorage = _window.localStorage;
+          localStorage = _window.localStorage;
         setStorageItem(source, localStorage, key, parsedValue);
         hit(source);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function setStorageItem(source, storage, key, value) {
         try {
           storage.setItem(key, value);
@@ -25864,85 +21449,64 @@
           logMessage(source, message);
         }
       }
-
       function parseKeywordValue(rawValue) {
         var NOW_VALUE_KEYWORD = "$now$";
         var CURRENT_DATE_KEYWORD = "$currentDate$";
         var parsedValue = rawValue;
-
         if (rawValue === NOW_VALUE_KEYWORD) {
           parsedValue = Date.now().toString();
         } else if (rawValue === CURRENT_DATE_KEYWORD) {
           parsedValue = Date();
         }
-
         return parsedValue;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         trustedSetLocalStorageItem.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     function xmlPrune(source, args) {
       function xmlPrune(source, propsToRemove) {
         var _this = this;
-
         var optionalProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
         var urlToMatch = arguments.length > 3 ? arguments[3] : undefined;
-
         if (typeof Reflect === "undefined" || typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
           return;
         }
-
         var shouldPruneResponse = true;
-
         if (!propsToRemove) {
           shouldPruneResponse = false;
         }
-
         var urlMatchRegexp = toRegExp(urlToMatch);
-
         var isXML = function isXML(text) {
           var trimedText = text.trim();
-
           if (startsWith(trimedText, "<") && endsWith(trimedText, ">")) {
             return true;
           }
-
           return false;
         };
-
         var pruneXML = function pruneXML(text) {
           if (!isXML(text)) {
             shouldPruneResponse = false;
             return text;
           }
-
           var xmlParser = new DOMParser();
           var xmlDoc = xmlParser.parseFromString(text, "text/xml");
           var errorNode = xmlDoc.querySelector("parsererror");
-
           if (errorNode) {
             return text;
           }
-
           if (optionalProp !== "" && xmlDoc.querySelector(optionalProp) === null) {
             shouldPruneResponse = false;
             return text;
           }
-
           var elems = xmlDoc.querySelectorAll(propsToRemove);
-
           if (!elems.length) {
             shouldPruneResponse = false;
             return text;
           }
-
           elems.forEach(function (elem) {
             elem.remove();
           });
@@ -25950,20 +21514,16 @@
           text = serializer.serializeToString(xmlDoc);
           return text;
         };
-
         var xhrWrapper = function xhrWrapper(target, thisArg, args) {
           var xhrURL = args[1];
-
           if (typeof xhrURL !== "string" || xhrURL.length === 0) {
             return Reflect.apply(target, thisArg, args);
           }
-
           if (urlMatchRegexp.test(xhrURL)) {
             thisArg.addEventListener("readystatechange", function pruneResponse() {
               if (thisArg.readyState === 4) {
                 var response = thisArg.response;
                 thisArg.removeEventListener("readystatechange", pruneResponse);
-
                 if (!shouldPruneResponse) {
                   if (isXML(response)) {
                     var message = "XMLHttpRequest.open() URL: ".concat(xhrURL, "\nresponse: ").concat(response);
@@ -25971,7 +21531,6 @@
                   }
                 } else {
                   var prunedResponseContent = pruneXML(response);
-
                   if (shouldPruneResponse) {
                     Object.defineProperty(thisArg, "response", {
                       value: prunedResponseContent
@@ -25981,29 +21540,23 @@
                     });
                     hit(source);
                   }
-
                   shouldPruneResponse = true;
                 }
               }
             });
           }
-
           return Reflect.apply(target, thisArg, args);
         };
-
         var xhrHandler = {
           apply: xhrWrapper
         };
         window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler);
         var nativeFetch = window.fetch;
-
         var fetchWrapper = function fetchWrapper(target, thisArg, args) {
           var fetchURL = args[0];
-
           if (typeof fetchURL !== "string" || fetchURL.length === 0) {
             return Reflect.apply(target, thisArg, args);
           }
-
           if (urlMatchRegexp.test(fetchURL)) {
             return nativeFetch.apply(_this, args).then(function (response) {
               return response.text().then(function (text) {
@@ -26011,12 +21564,9 @@
                   if (isXML(text)) {
                     logMessage("fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(text));
                   }
-
                   return Reflect.apply(target, thisArg, args);
                 }
-
                 var prunedText = pruneXML(text);
-
                 if (shouldPruneResponse) {
                   hit(source);
                   return new Response(prunedText, {
@@ -26025,113 +21575,80 @@
                     headers: response.headers
                   });
                 }
-
                 shouldPruneResponse = true;
                 return Reflect.apply(target, thisArg, args);
               });
             });
           }
-
           return Reflect.apply(target, thisArg, args);
         };
-
         var fetchHandler = {
           apply: fetchWrapper
         };
         window.fetch = new Proxy(window.fetch, fetchHandler);
       }
-
-      function hit(source, message) {
+      function hit(source) {
         if (source.verbose !== true) {
           return;
         }
-
         try {
           var log = console.log.bind(console);
           var trace = console.trace.bind(console);
           var prefix = source.ruleText || "";
-
           if (source.domainName) {
             var AG_SCRIPTLET_MARKER = "#%#//";
             var UBO_SCRIPTLET_MARKER = "##+js";
             var ruleStartIndex;
-
             if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-
             var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
-
-          var LOG_MARKER = "log: ";
-
-          if (message) {
-            if (message.indexOf(LOG_MARKER) === -1) {
-              log("".concat(prefix, " message:\n").concat(message));
-            } else {
-              log(message.slice(LOG_MARKER.length));
-            }
-          }
-
           log("".concat(prefix, " trace start"));
-
           if (trace) {
             trace();
           }
-
           log("".concat(prefix, " trace end"));
         } catch (e) {}
-
         if (typeof window.__debug === "function") {
           window.__debug(source);
         }
       }
-
       function logMessage(source, message) {
         var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
         if (forced || source.verbose) {
           console.log("".concat(source.name, ": ").concat(message));
         }
       }
-
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         var DEFAULT_VALUE = ".?";
         var FORWARD_SLASH = "/";
-
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-
         var escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-
       function startsWith(str, prefix) {
         return !!str && str.indexOf(prefix) === 0;
       }
-
       function endsWith(str, ending) {
         return !!str && str.lastIndexOf(ending) === str.length - ending.length;
       }
-
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
-
       try {
         xmlPrune.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-
     var scriptletsMap = {
       "abort-current-inline-script": abortCurrentInlineScript,
       "abort-current-script.js": abortCurrentInlineScript,
@@ -26238,12 +21755,6 @@
       "ubo-adfly-defuser.js": preventAdfly,
       "ubo-adfly-defuser": preventAdfly,
       "prevent-bab": preventBab,
-      "nobab.js": preventBab,
-      "ubo-nobab.js": preventBab,
-      "bab-defuser.js": preventBab,
-      "ubo-bab-defuser.js": preventBab,
-      "ubo-nobab": preventBab,
-      "ubo-bab-defuser": preventBab,
       "prevent-element-src-loading": preventElementSrcLoading,
       "prevent-eval-if": preventEvalIf,
       "noeval-if.js": preventEvalIf,
@@ -26352,13 +21863,13 @@
       "trusted-replace-fetch-response": trustedReplaceFetchResponse,
       "trusted-replace-xhr-response": trustedReplaceXhrResponse,
       "trusted-set-cookie": trustedSetCookie,
+      "trusted-set-cookie-reload": trustedSetCookieReload,
       "trusted-set-local-storage-item": trustedSetLocalStorageItem,
       "xml-prune": xmlPrune,
       "xml-prune.js": xmlPrune,
       "ubo-xml-prune.js": xmlPrune,
       "ubo-xml-prune": xmlPrune
     };
-
     var getScriptletFunction = function getScriptletFunction(name) {
       return scriptletsMap[name];
     };
@@ -26380,16 +21891,15 @@
      * @param {Source} source
      * @returns {string|null} scriptlet code
      */
-
     function getScriptletCode(source) {
       if (!validator.isValidScriptletName(source.name)) {
         return null;
       }
-
       var scriptletFunction = getScriptletFunction(source.name).toString();
       var result = source.engine === 'corelibs' || source.engine === 'test' ? wrapInNonameFunc(scriptletFunction) : passSourceAndProps(source, scriptletFunction);
       return result;
     }
+
     /**
      * Scriptlets variable
      *
@@ -26397,8 +21907,6 @@
      * `invoke` method receives one argument with `Source` type
      * `validate` method receives one argument with `String` type
      */
-
-
     var scriptletsObject = function () {
       return {
         invoke: getScriptletCode,
@@ -26419,7 +21927,6 @@
     /**
      * Add module exports to be used as node package
      */
-
     module.exports = scriptletsObject;
 
 }));

@@ -2,6 +2,8 @@
 * [trusted-click-element](#trusted-click-element)
 * [trusted-replace-fetch-response](#trusted-replace-fetch-response)
 * [trusted-replace-xhr-response](#trusted-replace-xhr-response)
+* [trusted-set-constant](#trusted-set-constant)
+* [trusted-set-cookie-reload](#trusted-set-cookie-reload)
 * [trusted-set-cookie](#trusted-set-cookie)
 * [trusted-set-local-storage-item](#trusted-set-local-storage-item)
 * * *
@@ -21,6 +23,7 @@ Multiple conditions are allowed inside one `extraMatch` but they should be delim
    - `cookie` - test string or regex against cookies on a page
    - `localStorage` - check if localStorage item is present
 - 'delay' - optional, time in ms to delay scriptlet execution, defaults to instant execution.
+
 **Examples**
 1. Click single element by selector
 ```
@@ -34,7 +37,7 @@ example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '', '
 
 3. Click multiple elements by selector with a delay
 ```
-example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name='check"], input[type="submit"][value="akkoord"]', '', '500')
+example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name="check"], input[type="submit"][value="akkoord"]', '', '500')
 ```
 
 4. Match cookies by keys using regex and string
@@ -57,7 +60,7 @@ example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'loca
 example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], input[type="submit"][value="akkoord"]', 'cookie:cmpconsent, localStorage:promo', '250')
 ```
 
-[Redirect source](../src/scriptlets/trusted-click-element.js)
+[Scriptlet source](../src/scriptlets/trusted-click-element.js)
 * * *
 
 ### <a id="trusted-replace-fetch-response"></a> ⚡️ trusted-replace-fetch-response
@@ -113,7 +116,7 @@ which is useful for debugging but only allowed for production filter lists.
     example.org#%#//scriptlet('trusted-replace-fetch-response', '*', '', 'example.com')
     ```
 
-[Redirect source](../src/scriptlets/trusted-replace-fetch-response.js)
+[Scriptlet source](../src/scriptlets/trusted-replace-fetch-response.js)
 * * *
 
 ### <a id="trusted-replace-xhr-response"></a> ⚡️ trusted-replace-xhr-response
@@ -166,30 +169,144 @@ which is useful for debugging but not permitted for production filter lists.
     example.org#%#//scriptlet('trusted-replace-xhr-response', '*', '', 'example.com')
     ```
 
-[Redirect source](../src/scriptlets/trusted-replace-xhr-response.js)
+[Scriptlet source](../src/scriptlets/trusted-replace-xhr-response.js)
 * * *
 
-### <a id="trusted-set-cookie"></a> ⚡️ trusted-set-cookie
+### <a id="trusted-set-constant"></a> ⚡️ trusted-set-constant
 
-Sets a cookie with arbitrary name and value, with optional path
-and the ability to reload the page after cookie was set.
+Creates a constant property and assigns it a specified value.
+
+> Actually, it's not a constant. Please note, that it can be rewritten with a value of a different type.
+
+> If empty object is present in chain it will be trapped until chain leftovers appear.
+
+> Use [set-constant](./about-scriptlets.md#set-constant) to set predefined values and functions.
 
 **Syntax**
 ```
-example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[, reload[, path]]])
+example.org#%#//scriptlet('trusted-set-constant', property, value[, stack])
+```
+
+- `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`.
+- `value` - required, an arbitrary value to be set; value type is being inferred from the argument, e.g '500' will be set as number;
+to set string type value wrap argument into another pair of quotes: `'"500"'`;
+- `stack` - optional, string or regular expression that must match the current function call stack trace;
+if regular expression is invalid it will be skipped
+
+**Examples**
+1. Set property values of different types
+```
+! Set string value wrapping argument into another pair of quotes
+example.org#%#//scriptlet('trusted-set-constant', 'click_r', '"null"')
+
+✔ window.click_r === 'null'
+✔ typeof window.click_r === 'string'
+
+! Set inferred null value
+example.org#%#//scriptlet('trusted-set-constant', 'click_r', 'null')
+
+✔ window.click_r === null
+✔ typeof window.click_r === 'object'
+
+! Set number type value
+example.org#%#//scriptlet('trusted-set-constant', 'click_r', '48')
+
+✔ window.click_r === 48
+✔ typeof window.click_r === 'number'
+
+! Set array or object as property value, argument should be a JSON string
+example.org#%#//scriptlet('trusted-set-constant', 'click_r', '[1,"string"]')
+example.org#%#//scriptlet('trusted-set-constant', 'click_r', '{"aaa":123,"bbb":{"ccc":"string"}}')
+```
+
+2. Use script stack matching to set value
+```
+! `document.first` will return `1` if the method is related to `checking.js`
+example.org#%#//scriptlet('trusted-set-constant', 'document.first', '1', 'checking.js')
+
+✔ document.first === 1  // if the condition described above is met
+```
+
+[Scriptlet source](../src/scriptlets/trusted-set-constant.js)
+* * *
+
+### <a id="trusted-set-cookie-reload"></a> ⚡️ trusted-set-cookie-reload
+
+Sets a cookie with arbitrary name and value,
+and with optional ability to offset cookie attribute 'expires' and set path.
+Also reloads the current page after the cookie setting.
+If reloading option is not needed, use the [`trusted-set-cookie` scriptlet](#trusted-set-cookie).
+
+**Syntax**
+```
+example.org#%#//scriptlet('trusted-set-cookie-reload', name, value[, offsetExpiresSec[, path]])
 ```
 
 - `name` - required, cookie name to be set
 - `value` - required, cookie value. Possible values:
   - arbitrary value
   - empty string for no value
-  - `$now$` keyword for setting current time
+  - `$now$` keyword for setting current time in ms, e.g 1667915146503
+  - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
 - 'offsetExpiresSec' - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
 Possible values:
   - positive integer in seconds
   - `1year` keyword for setting expiration date to one year
   - `1day` keyword for setting expiration date to one day
-- 'reload' - optional, boolean. Argument for reloading page after cookie is set. Defaults to `false`
+- `path` - optional, argument for setting cookie path, defaults to `/`; possible values:
+  - `/` — root path
+  - `none` — to set no path at all
+
+**Examples**
+1. Set cookie and reload the page after it
+```
+example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept')
+```
+
+2. Set cookie with `new Date().getTime()` value and reload the page after it
+```
+example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', '$now$')
+```
+
+3. Set cookie which will expire in 3 days and reload the page after it
+```
+example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept', '259200')
+```
+
+4. Set cookie which will expire in one year and reload the page after it
+```
+example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept', '1year')
+```
+
+5. Set cookie with no 'expire' and no path, reload the page after it
+```
+example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'decline', '', 'none')
+```
+
+[Scriptlet source](../src/scriptlets/trusted-set-cookie-reload.js)
+* * *
+
+### <a id="trusted-set-cookie"></a> ⚡️ trusted-set-cookie
+
+Sets a cookie with arbitrary name and value,
+and with optional ability to offset cookie attribute 'expires' and set path.
+
+**Syntax**
+```
+example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[, path]])
+```
+
+- `name` - required, cookie name to be set
+- `value` - required, cookie value. Possible values:
+  - arbitrary value
+  - empty string for no value
+  - `$now$` keyword for setting current time in ms, e.g 1667915146503
+  - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+- `offsetExpiresSec` - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
+Possible values:
+  - positive integer in seconds
+  - `1year` keyword for setting expiration date to one year
+  - `1day` keyword for setting expiration date to one day
 - `path` - optional, argument for setting cookie path, defaults to `/`; possible values:
   - `/` — root path
   - `none` — to set no path at all
@@ -203,7 +320,7 @@ example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '1-accept_1')
 
 2. Set cookie with `new Date().getTime()` value
 ```
-example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '$now')
+example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '$now$')
 ```
 
 3. Set cookie which will expire in 3 days
@@ -215,17 +332,13 @@ example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept', '259200'
 ```
 example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept', '1year')
 ```
-5. Reload the page if cookie was successfully set
+
+5. Set cookie with no path
 ```
-example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'true')
+example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'none')
 ```
 
-6. Set cookie with no path
-```
-example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', '', 'none')
-```
-
-[Redirect source](../src/scriptlets/trusted-set-cookie.js)
+[Scriptlet source](../src/scriptlets/trusted-set-cookie.js)
 * * *
 
 ### <a id="trusted-set-local-storage-item"></a> ⚡️ trusted-set-local-storage-item
@@ -271,6 +384,6 @@ example.org#%#//scriptlet('trusted-set-local-storage-item', 'player.live.current
 example.org#%#//scriptlet('trusted-set-local-storage-item', 'ppu_main_none', '')
 ```
 
-[Redirect source](../src/scriptlets/trusted-set-local-storage-item.js)
+[Scriptlet source](../src/scriptlets/trusted-set-local-storage-item.js)
 * * *
 

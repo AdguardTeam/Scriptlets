@@ -3,7 +3,6 @@ import { hit, logMessage } from '../helpers/index';
 
 /**
  * @scriptlet log-eval
- *
  * @description
  * Logs all `eval()` or `new Function()` calls to the console.
  *

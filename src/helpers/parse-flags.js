@@ -1,7 +1,17 @@
 /**
+ * @typedef {Object} FlagsData object that holds info about valid flags
+ * and provides method for easy access
+ * @property {string} ASAP asap flag string
+ * @property {string} COMPLETE complete flag string
+ * @property {string} STAY stay flag string
+ * @property {Function} hasFlag to check if given flag is present
+ */
+
+/**
  * Behaviour flags string parser
+ *
  * @param {string} flags required, 'applying' argument string
- * @return {Object}
+ * @returns {FlagsData} object with parsed flags
  */
 export const parseFlags = (flags) => {
     const FLAGS_DIVIDER = ' ';

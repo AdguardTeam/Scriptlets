@@ -42,7 +42,11 @@ const ADG_XHR_TYPE = 'xmlhttprequest';
 
 const ADG_SET_CONSTANT_NAME = 'set-constant';
 const ADG_SET_CONSTANT_EMPTY_STRING = '';
+const ADG_SET_CONSTANT_EMPTY_ARRAY = 'emptyArr';
+const ADG_SET_CONSTANT_EMPTY_OBJECT = 'emptyObj';
 const UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
+const UBO_SET_CONSTANT_EMPTY_ARRAY = '[]';
+const UBO_SET_CONSTANT_EMPTY_OBJECT = '{}';
 
 const ADG_PREVENT_FETCH_NAME = 'prevent-fetch';
 const ADG_PREVENT_FETCH_EMPTY_STRING = '';
@@ -61,8 +65,10 @@ const ADG_REMOVE_CLASS_NAME = REMOVE_CLASS_ALIASES[0];
 const REMOVE_ATTR_CLASS_APPLYING = ['asap', 'stay', 'complete'];
 
 /**
- * Returns array of strings separated by space which not in quotes
- * @param {string} str
+ * Returns array of strings separated by space which is not in quotes
+ *
+ * @param {string} str arbitrary string
+ * @returns {string[]} result array
  */
 const getSentences = (str) => {
     const reg = /'.*?'|".*?"|\S+/g;
@@ -71,8 +77,10 @@ const getSentences = (str) => {
 
 /**
  * Replaces string with data by placeholders
- * @param {string} str
- * @param {Object} data - where keys are placeholders names
+ *
+ * @param {string} str string with placeholders
+ * @param {Object} data where keys are placeholders names
+ * @returns {string} string filled with data
  */
 const replacePlaceholders = (str, data) => {
     return Object.keys(data).reduce((acc, key) => {
@@ -100,7 +108,8 @@ const splitArgs = (str) => {
 
 /**
  * Validates remove-attr/class scriptlet args
- * @param {string[]} parsedArgs
+ *
+ * @param {string[]} parsedArgs scriptlet arguments
  * @returns {string[]|Error} valid args OR error for invalid selector
  */
 const validateRemoveAttrClassArgs = (parsedArgs) => {
@@ -143,8 +152,9 @@ const validateRemoveAttrClassArgs = (parsedArgs) => {
 
 /**
  * Converts string of UBO scriptlet rule to AdGuard scriptlet rule
- * @param {string} rule - UBO scriptlet rule
- * @returns {string[]} - array with one AdGuard scriptlet rule
+ *
+ * @param {string} rule UBO scriptlet rule
+ * @returns {string[]} array with one AdGuard scriptlet rule
  */
 export const convertUboScriptletToAdg = (rule) => {
     const domains = getBeforeRegExp(rule, validator.UBO_SCRIPTLET_MASK_REG);
@@ -189,9 +199,9 @@ export const convertUboScriptletToAdg = (rule) => {
 
 /**
  * Convert string of ABP snippet rule to AdGuard scriptlet rule
- * @param {string} rule - ABP snippet rule
- * @returns {Array} - array of AdGuard scriptlet rules -
- * one or few items depends on Abp-rule
+ *
+ * @param {string} rule ABP snippet rule
+ * @returns {Array} array of AdGuard scriptlet rules, one or few items depends on Abp-rule
  */
 export const convertAbpSnippetToAdg = (rule) => {
     const SEMICOLON_DIVIDER = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
@@ -217,9 +227,9 @@ export const convertAbpSnippetToAdg = (rule) => {
 
 /**
  * Converts scriptlet rule to AdGuard one
- * @param {string} rule
- * @returns {Array} - array of AdGuard scriptlet rules -
- * one item for Adg and Ubo or few items for Abp
+ *
+ * @param {string} rule scriptlet rule
+ * @returns {Array} array of AdGuard scriptlet rules, one item for Adg and Ubo or few items for Abp
  */
 export const convertScriptletToAdg = (rule) => {
     let result;
@@ -236,8 +246,9 @@ export const convertScriptletToAdg = (rule) => {
 
 /**
  * Converts UBO scriptlet rule to AdGuard one
- * @param {string} rule - AdGuard scriptlet rule
- * @returns {string} - UBO scriptlet rule
+ *
+ * @param {string} rule AdGuard scriptlet rule
+ * @returns {string} UBO scriptlet rule
  */
 export const convertAdgScriptletToUbo = (rule) => {
     let res;
@@ -246,10 +257,17 @@ export const convertAdgScriptletToUbo = (rule) => {
         const { name: parsedName, args: parsedParams } = parseRule(rule);
 
         let preparedParams;
-        // https://github.com/AdguardTeam/FiltersCompiler/issues/102
         if (parsedName === ADG_SET_CONSTANT_NAME
+            // https://github.com/AdguardTeam/FiltersCompiler/issues/102
             && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_STRING) {
             preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_STRING];
+        } else if (parsedName === ADG_SET_CONSTANT_NAME
+            // https://github.com/uBlockOrigin/uBlock-issues/issues/2411
+            && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_ARRAY) {
+            preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_ARRAY];
+        } else if (parsedName === ADG_SET_CONSTANT_NAME
+            && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_OBJECT) {
+            preparedParams = [parsedParams[0], UBO_SET_CONSTANT_EMPTY_OBJECT];
         } else if (parsedName === ADG_PREVENT_FETCH_NAME
             // https://github.com/AdguardTeam/Scriptlets/issues/109
             && (parsedParams[0] === ADG_PREVENT_FETCH_WILDCARD
@@ -317,8 +335,9 @@ export const convertAdgScriptletToUbo = (rule) => {
 
 /**
  * Checks whether the ADG scriptlet exists or UBO/ABP scriptlet is compatible to ADG
- * @param {string} input - can be ADG or UBO or ABP scriptlet rule
- * @returns {boolean}
+ *
+ * @param {string} input can be ADG or UBO or ABP scriptlet rule
+ * @returns {boolean} if scriptlet rule is valid
  */
 export const isValidScriptletRule = (input) => {
     if (!input) {
@@ -339,9 +358,10 @@ export const isValidScriptletRule = (input) => {
 
 /**
  * Gets index and redirect resource marker from UBO/ADG modifiers array
- * @param {string[]} modifiers
+ *
+ * @param {string[]} modifiers rule modifiers
  * @param {Object} redirectsData validator.REDIRECT_RULE_TYPES.(UBO|ADG)
- * @param {string} rule
+ * @param {string} rule rule string
  * @returns {Object} { index, marker }
  */
 const getMarkerData = (modifiers, redirectsData, rule) => {
@@ -362,8 +382,9 @@ const getMarkerData = (modifiers, redirectsData, rule) => {
 
 /**
  * Converts Ubo redirect rule to Adg one
- * @param {string} rule
- * @returns {string}
+ *
+ * @param {string} rule ubo redirect rule
+ * @returns {string} converted adg rule
  */
 export const convertUboRedirectToAdg = (rule) => {
     const firstPartOfRule = substringBefore(rule, '$');
@@ -392,8 +413,9 @@ export const convertUboRedirectToAdg = (rule) => {
 
 /**
  * Converts Abp redirect rule to Adg one
- * @param {string} rule
- * @returns {string}
+ *
+ * @param {string} rule abp redirect rule
+ * @returns {string} converted adg rule
  */
 export const convertAbpRedirectToAdg = (rule) => {
     const firstPartOfRule = substringBefore(rule, '$');
@@ -417,8 +439,9 @@ export const convertAbpRedirectToAdg = (rule) => {
 
 /**
  * Converts redirect rule to AdGuard one
- * @param {string} rule
- * @returns {string}
+ *
+ * @param {string} rule redirect rule
+ * @returns {string} converted adg rule
  */
 export const convertRedirectToAdg = (rule) => {
     let result;
@@ -441,8 +464,10 @@ export const convertRedirectToAdg = (rule) => {
  *    Source types are chosen according to redirect name
  *    e.g. ||ad.com^$redirect=<name>,important  ->>  ||ad.com^$redirect=<name>,important,script
  * 3. Replaces Adg redirect name by Ubo analog
- * @param {string} rule
- * @returns {string}
+ *
+ * @param {string} rule adg rule
+ * @returns {string} converted ubo rule
+ * @throws on incompatible rule
  */
 export const convertAdgRedirectToUbo = (rule) => {
     if (!validator.isAdgRedirectCompatibleWithUbo(rule)) {

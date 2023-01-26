@@ -1,7 +1,8 @@
 /**
  * Validates event type
- * @param {*} type
- * @returns {boolean}
+ *
+ * @param {any} type event type
+ * @returns {boolean} if type is valid
  */
 export const validateType = (type) => {
     // https://github.com/AdguardTeam/Scriptlets/issues/125
@@ -10,8 +11,9 @@ export const validateType = (type) => {
 
 /**
  * Validates event listener
- * @param {*} listener
- * @returns {boolean}
+ *
+ * @param {any} listener event listener
+ * @returns {boolean} if listener callback is valid
  */
 export const validateListener = (listener) => {
     // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#parameters
@@ -24,10 +26,15 @@ export const validateListener = (listener) => {
 };
 
 /**
+ * @typedef {object|Function|null} EventListener
+ */
+
+/**
  * Serialize valid event listener
  * https://developer.mozilla.org/en-US/docs/Web/API/EventListener
+ *
  * @param {EventListener} listener valid listener
- * @returns {string}
+ * @returns {string} listener string
  */
 export const listenerToString = (listener) => {
     return typeof listener === 'function'

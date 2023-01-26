@@ -11,7 +11,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet log-on-stack-trace
- *
  * @description
  * This scriptlet is basically the same as [abort-on-stack-trace](#abort-on-stack-trace), but instead of aborting it logs:
  * - function and source script names pairs that access the given property
@@ -85,7 +84,7 @@ export function logOnStacktrace(source, property) {
         }
 
         let value = base[prop];
-        /* eslint-disable no-console, compat/compat */
+        /* eslint-disable no-console */
         setPropertyAccess(base, prop, {
             get() {
                 hit(source);
@@ -100,7 +99,7 @@ export function logOnStacktrace(source, property) {
                 value = newValue;
             },
         });
-        /* eslint-enable no-console, compat/compat */
+        /* eslint-enable no-console */
     };
 
     setChainPropAccess(window, property);

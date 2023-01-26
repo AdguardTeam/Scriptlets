@@ -5,7 +5,6 @@ import {
 
 /**
  * @scriptlet no-topics
- *
  * @description
  * Prevents using The Topics API
  * https://developer.chrome.com/docs/privacy-sandbox/topics/

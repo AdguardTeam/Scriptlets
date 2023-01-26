@@ -23,15 +23,17 @@ import { writeFile } from './helpers';
 /**
  * Method creates string for file with scriptlets functions,
  * where dependencies are placed inside scriptlet functions
+ *
+ * @returns {string}
  */
 const getScriptletFunctionsString = () => {
     function wrapInFunc(name, code) {
         return `function ${name}(source, args){\n${code}\n}`;
     }
-
     // we require scriptlets list dynamically, because scriptletsList file can be not built in the
     // moment of this script execution
-    const scriptletsList = require('../tmp/scriptlets-list'); // eslint-disable-line global-require, import/no-unresolved
+    // eslint-disable-next-line import/no-unresolved,global-require
+    const scriptletsList = require('../tmp/scriptlets-list');
 
     const scriptletsFunctions = Object.values(scriptletsList);
 

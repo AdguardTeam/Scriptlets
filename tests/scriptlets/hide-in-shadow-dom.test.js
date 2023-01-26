@@ -133,8 +133,10 @@ if (!isSupported) {
         const SELECTOR = '#inner';
         runScriptlet(name, [SELECTOR]);
 
-        const firstElemToCheck = testHost.shadowRoot.querySelector('div#first').shadowRoot.querySelector('p#inner');
-        const secondElemToCheck = testHost.shadowRoot.querySelector('div#second').shadowRoot.querySelector('span#inner');
+        const root = testHost.shadowRoot;
+
+        const firstElemToCheck = root.querySelector('div#first').shadowRoot.querySelector('p#inner');
+        const secondElemToCheck = root.querySelector('div#second').shadowRoot.querySelector('span#inner');
         const firstStyleDisplayProp = window.getComputedStyle(firstElemToCheck).display;
         const secondStyleDisplayProp = window.getComputedStyle(secondElemToCheck).display;
         assert.strictEqual(firstStyleDisplayProp, 'none', `Element ${SELECTOR} hidden in first inner shadow dom`);
@@ -183,7 +185,9 @@ if (!isSupported) {
         const SELECTOR = '#inner';
         runScriptlet(name, [SELECTOR]);
 
-        const elemForFirstCheck = testHost.shadowRoot.querySelector('div#shadowInner').shadowRoot.querySelector('p#inner');
+        const root = testHost.shadowRoot;
+
+        const elemForFirstCheck = root.querySelector('div#shadowInner').shadowRoot.querySelector('p#inner');
         const elemForSecondCheck = testHost.querySelector('div#simpleChild').shadowRoot.querySelector('span#inner');
         const firstStyleDisplayProp = window.getComputedStyle(elemForFirstCheck).display;
         const secondStyleDisplayProp = window.getComputedStyle(elemForSecondCheck).display;
@@ -236,8 +240,10 @@ if (!isSupported) {
         const SELECTOR = '#inner';
         runScriptlet(name, [SELECTOR]);
 
-        const simpleElemCheck = testHost.shadowRoot.querySelector('div#simpleChild').querySelector('p#inner');
-        const shadowElemCheck = testHost.shadowRoot.querySelector('div#shadowChild').shadowRoot.querySelector('span#inner');
+        const root = testHost.shadowRoot;
+
+        const simpleElemCheck = root.querySelector('div#simpleChild').querySelector('p#inner');
+        const shadowElemCheck = root.querySelector('div#shadowChild').shadowRoot.querySelector('span#inner');
         const simpleElemStyleDisplayProp = window.getComputedStyle(simpleElemCheck).display;
         const shadowElemStyleDisplayProp = window.getComputedStyle(shadowElemCheck).display;
         assert.strictEqual(simpleElemStyleDisplayProp, 'none', `Element ${SELECTOR} hidden in first inner shadow dom`);

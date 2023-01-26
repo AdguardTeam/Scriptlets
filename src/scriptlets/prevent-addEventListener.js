@@ -9,7 +9,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet prevent-addEventListener
- *
  * @description
  * Prevents adding event listeners for the specified events and callbacks.
  *
@@ -28,21 +27,22 @@ import {
  *
  * **Examples**
  * 1. Prevent all `click` listeners:
- * ```
+ *     ```
  *     example.org#%#//scriptlet('prevent-addEventListener', 'click')
- * ```
-
+ *     ```
+ *
 2. Prevent 'click' listeners with the callback body containing `searchString`.
- * ```
+ *     ```
  *     example.org#%#//scriptlet('prevent-addEventListener', 'click', 'searchString')
- * ```
+ *     ```
  *
  *     For instance, this listener will not be called:
- * ```javascript
+ *
+ *     ```javascript
  *     el.addEventListener('click', () => {
  *         window.test = 'searchString';
  *     });
- * ```
+ *     ```
  */
 /* eslint-enable max-len */
 export function preventAddEventListener(source, typeSearch, listenerSearch) {
@@ -63,7 +63,13 @@ export function preventAddEventListener(source, typeSearch, listenerSearch) {
             return undefined;
         }
 
-        return nativeAddEventListener.apply(this, [type, listener, ...args]);
+        // Avoid illegal invocations due to lost context
+        // https://github.com/AdguardTeam/Scriptlets/issues/271
+        let context = this;
+        if (this && this.constructor?.name === 'Window' && this !== window) {
+            context = window;
+        }
+        return nativeAddEventListener.apply(context, [type, listener, ...args]);
     }
 
     const descriptor = {

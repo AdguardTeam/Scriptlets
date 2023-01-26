@@ -9,7 +9,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @trustedScriptlet trusted-click-element
- *
  * @description
  * Clicks selected elements in a strict sequence, ordered by selectors passed, and waiting for them to render in the DOM first.
  * Deactivates after all elements have been clicked or by 10s timeout.
@@ -25,6 +24,7 @@ import {
  *    - `cookie` - test string or regex against cookies on a page
  *    - `localStorage` - check if localStorage item is present
  * - 'delay' - optional, time in ms to delay scriptlet execution, defaults to instant execution.
+ *
  * **Examples**
  * 1. Click single element by selector
  * ```
@@ -38,7 +38,7 @@ import {
  *
  * 3. Click multiple elements by selector with a delay
  * ```
- * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name='check"], input[type="submit"][value="akkoord"]', '', '500')
+ * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name="check"], input[type="submit"][value="akkoord"]', '', '500')
  * ```
  *
  * 4. Match cookies by keys using regex and string
@@ -250,7 +250,6 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
         }
     };
 
-    // eslint-disable-next-line compat/compat
     const observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
     observer.observe(document.documentElement, {
         attributes: true,

@@ -9,19 +9,21 @@ import jsYaml from 'js-yaml';
  *      contentType: image/gif;base64
  *      content: R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
  * }
+ *
  * @typedef {Object} Redirect
- * @property {string} title
- * @property {string} comment
- * @property {string} content
- * @property {string} contentType
- * @property {boolean} [isBlocking]
- * @property {string} [sha]
+ * @property {string} title resource name
+ * @property {string} comment resource description
+ * @property {string} content encoded resource content
+ * @property {string} contentType MIME type
+ * @property {boolean} [isBlocking] e.g click2load redirect
+ * @property {string} [sha] hash
  */
 
 class Redirects {
     /**
      * Converts rawYaml into JS object with sources titles used as keys
-     * @param rawYaml
+     *
+     * @param {string} rawYaml
      * @returns {Object<Redirect>} - return object with titles in the keys and RedirectSources
      * in the values
      */
@@ -43,8 +45,9 @@ class Redirects {
 
     /**
      * Returns redirect source object
+     *
      * @param {string} title
-     * @return {Redirect}
+     * @returns {Redirect|undefined} Found redirect source object, or `undefined` if not found.
      */
     getRedirect(title) {
         if (Object.prototype.hasOwnProperty.call(this.redirects, title)) {
@@ -61,6 +64,21 @@ class Redirects {
             }
             return aliases.indexOf(title) > -1;
         });
+    }
+
+    /**
+     * Checks if redirect is blocking like click2load.html
+     *
+     * @param {string} title Title of the redirect.
+     * @returns {boolean} True if redirect is blocking otherwise returns `false` even if redirect name is
+     * unknown.
+     */
+    isBlocking(title) {
+        const redirect = this.redirects[title];
+        if (redirect) {
+            return !!redirect.isBlocking;
+        }
+        return false;
     }
 }
 

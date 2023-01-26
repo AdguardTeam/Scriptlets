@@ -11,6 +11,7 @@ import {
     escapeRegExp,
     isEmptyObject,
     getRequestData,
+    getRequestProps,
     getObjectEntries,
     getObjectFromEntries,
     parseMatchProps,
@@ -21,7 +22,6 @@ import {
 /* eslint-disable max-len */
 /**
  * @trustedScriptlet trusted-replace-fetch-response
- *
  * @description
  * Replaces response text content of `fetch` requests if **all** given parameters match.
  *
@@ -87,7 +87,7 @@ export function trustedReplaceFetchResponse(source, pattern = '', replacement = 
 
     // Only allow pattern as empty string for logging purposes
     if (pattern === '' && replacement !== '') {
-        logMessage(source, 'Pattern argument should not be empty string.');
+        logMessage(source, 'Pattern argument should not be empty string');
         return;
     }
     const shouldLog = pattern === '' && replacement === '';
@@ -97,7 +97,7 @@ export function trustedReplaceFetchResponse(source, pattern = '', replacement = 
     let shouldReplace = false;
     let fetchData;
 
-    const handlerWrapper = async (target, thisArg, args) => {
+    const handlerWrapper = (target, thisArg, args) => {
         fetchData = getFetchData(args);
 
         if (shouldLog) {
@@ -116,6 +116,7 @@ export function trustedReplaceFetchResponse(source, pattern = '', replacement = 
         /**
          * Create new Response object using original response' properties
          * and given text as body content
+         *
          * @param {Response} response original response to copy properties from
          * @param {string} textContent text to set as body content
          * @returns {Response}
@@ -132,7 +133,6 @@ export function trustedReplaceFetchResponse(source, pattern = '', replacement = 
                 url,
             } = response;
 
-            // eslint-disable-next-line compat/compat
             const forgedResponse = new Response(textContent, {
                 status,
                 statusText,
@@ -151,12 +151,13 @@ export function trustedReplaceFetchResponse(source, pattern = '', replacement = 
             return forgedResponse;
         };
 
-        return nativeFetch(...args)
+        // eslint-disable-next-line prefer-spread
+        return nativeFetch.apply(null, args)
             .then((response) => {
                 return response.text()
                     .then((bodyText) => {
                         const patternRegexp = pattern === '*'
-                            ? toRegExp()
+                            ? /(\n|.)*/
                             : toRegExp(pattern);
 
                         const modifiedTextContent = bodyText.replace(patternRegexp, replacement);
@@ -199,6 +200,7 @@ trustedReplaceFetchResponse.injections = [
     escapeRegExp,
     isEmptyObject,
     getRequestData,
+    getRequestProps,
     getObjectEntries,
     getObjectFromEntries,
     parseMatchProps,

@@ -31,6 +31,9 @@ if (isSupported) {
     test('No args, logging', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const ASYNC = true;
+        const USER = 'user';
+        const PASSWORD = 'password';
 
         const done = assert.async();
 
@@ -39,7 +42,8 @@ if (isSupported) {
             if (input.indexOf('trace') > -1) {
                 return;
             }
-            const EXPECTED_LOG_STR = `xhr( method:"${METHOD}" url:"${URL}" )`;
+            // eslint-disable-next-line max-len
+            const EXPECTED_LOG_STR = `${name}: xhr( method:"${METHOD}" url:"${URL}" async:"${ASYNC}" user:"${USER}" password:"${PASSWORD}" )`;
             assert.ok(startsWith(input, EXPECTED_LOG_STR), 'console.hit input');
         };
         const PATTERN = '';
@@ -48,7 +52,7 @@ if (isSupported) {
         runScriptlet(name, [PATTERN, REPLACEMENT]);
 
         const xhr = new XMLHttpRequest();
-        xhr.open(METHOD, URL);
+        xhr.open(METHOD, URL, ASYNC, USER, PASSWORD);
         xhr.onload = () => {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
             assert.ok(xhr.response, 'Response data exists');
@@ -61,8 +65,8 @@ if (isSupported) {
     test('Matched, string pattern', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
-        const PATTERN = /[-0-9]+/;
-        const REPLACEMENT = 'a';
+        const PATTERN = 'a1';
+        const REPLACEMENT = 'z9';
         const MATCH_DATA = [PATTERN, REPLACEMENT, `${URL} method:${METHOD}`];
 
         runScriptlet(name, MATCH_DATA);
@@ -73,8 +77,8 @@ if (isSupported) {
         xhr.open(METHOD, URL);
         xhr.onload = () => {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
-            assert.ok(!PATTERN.test(xhr.response), 'Response has been modified');
-            assert.ok(!PATTERN.test(xhr.responseText), 'Response text has been modified');
+            assert.notOk(xhr.response.includes(PATTERN), 'Response has been modified');
+            assert.ok(xhr.response.includes(REPLACEMENT), 'Response text has been modified');
 
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
@@ -85,9 +89,10 @@ if (isSupported) {
     test('Matched, regex pattern', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
-        const PATTERN = '/a1/';
+
+        const PATTERN = /a1/;
         const REPLACEMENT = 'x';
-        const MATCH_DATA = [PATTERN, REPLACEMENT, `${URL} method:${METHOD}`];
+        const MATCH_DATA = [`${PATTERN}`, REPLACEMENT, `${URL} method:${METHOD}`];
 
         runScriptlet(name, MATCH_DATA);
 
@@ -97,8 +102,36 @@ if (isSupported) {
         xhr.open(METHOD, URL);
         xhr.onload = () => {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
-            assert.ok(xhr.response.includes(REPLACEMENT) && !xhr.response.includes(PATTERN), 'Response has been modified');
-            assert.ok(xhr.responseText.includes(REPLACEMENT) && !xhr.responseText.includes(PATTERN), 'Response text has been modified');
+            assert.ok(xhr.response.includes(REPLACEMENT) && !PATTERN.test(xhr.response), 'Response has been modified');
+            assert.ok(
+                xhr.responseText.includes(REPLACEMENT) && !PATTERN.test(xhr.responseText),
+                'Response text has been modified',
+            );
+
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
+    test('Matched, replaces multiline content', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/empty.html`;
+
+        const PATTERN = '*';
+        const REPLACEMENT = '';
+        const MATCH_DATA = [`${PATTERN}`, REPLACEMENT, '*'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            assert.ok(xhr.response === '', 'Response has been modified');
+            assert.ok(xhr.responseText === '', 'Response text has been modified');
 
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
@@ -128,7 +161,7 @@ if (isSupported) {
             assert.notOk(xhr.response.includes(REPLACEMENT), 'Response is intact');
             assert.notOk(xhr.responseText.includes(REPLACEMENT), 'Response text is intact');
 
-            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            assert.strictEqual(window.hit, undefined, 'hit function fired');
             done();
         };
         xhr.send();
@@ -160,6 +193,47 @@ if (isSupported) {
         xhr.addEventListener('loadend', () => {
             done3();
         });
+    });
+
+    test('Works correctly with different parallel XHR requests', async (assert) => {
+        const URL_TO_PASS = `${FETCH_OBJECTS_PATH}/test02.json`;
+        const INTACT_RESPONSE_PART = 'test';
+
+        const METHOD = 'GET';
+        const URL_TO_BLOCK = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const PATTERN = '*';
+        const REPLACEMENT = '';
+        const MATCH_DATA = [PATTERN, REPLACEMENT, 'test01'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done1 = assert.async();
+        const done2 = assert.async();
+
+        const xhr1 = new XMLHttpRequest();
+        const xhr2 = new XMLHttpRequest();
+
+        xhr1.open(METHOD, URL_TO_PASS);
+        xhr2.open(METHOD, URL_TO_BLOCK);
+
+        xhr1.onload = () => {
+            assert.strictEqual(xhr1.readyState, 4, 'Response done');
+            assert.ok(xhr1.response.includes(INTACT_RESPONSE_PART), 'Response is intact');
+            assert.strictEqual(window.hit, undefined, 'hit should not fire');
+            done1();
+        };
+
+        xhr2.onload = () => {
+            assert.strictEqual(xhr2.readyState, 4, 'Response done');
+            assert.ok(xhr2.response === '', 'Response has been removed');
+
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done2();
+        };
+
+        xhr1.send();
+        // use timeout to avoid hit collisions
+        setTimeout(() => xhr2.send(), 1);
     });
 } else {
     test('unsupported', (assert) => {

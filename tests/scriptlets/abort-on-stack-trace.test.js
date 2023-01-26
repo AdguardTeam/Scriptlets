@@ -67,11 +67,12 @@ test('simple, matches stack', (assert) => {
 
 test('simple, matches stack with an empty object in chain', (assert) => {
     const PROPERTY = 'window.aaa.bbb';
-    window.aaa = {};
-    const scriptletArgs = [PROPERTY];
+    const stackArg = 'abort-on-stack-trace';
+    window.aaa = {
+        bbb: 'value',
+    };
+    const scriptletArgs = [PROPERTY, stackArg];
     runScriptlet(name, scriptletArgs);
-
-    window.aaa.bbb = 'value';
 
     assert.throws(
         () => window.aaa.bbb,
@@ -307,6 +308,7 @@ test('abort Math.random, injected script', (assert) => {
     const scriptElement = document.createElement('script');
     scriptElement.type = 'text/javascript';
     // set window.testPassed to true if script is aborted
+    // eslint-disable-next-line max-len
     scriptElement.innerText = 'try { Math.random(); } catch(error) { window.testPassed = true; console.log("Script aborted:", error); }';
     document.body.appendChild(scriptElement);
     scriptElement.parentNode.removeChild(scriptElement);
@@ -360,6 +362,7 @@ test('abort Math.max in injected script, but not abort inline script', (assert) 
         const scriptElement = document.createElement('script');
         scriptElement.type = 'text/javascript';
         // set window.testPassed to true if script is aborted
+        // eslint-disable-next-line max-len
         scriptElement.innerText = 'try { debugger; Math.max(10, 20); } catch(error) { window.testPassed = true; console.log("Script aborted:", error); }';
         document.body.appendChild(scriptElement);
         scriptElement.parentNode.removeChild(scriptElement);

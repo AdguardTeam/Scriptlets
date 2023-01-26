@@ -3,7 +3,6 @@ import { hit, noopFunc } from '../helpers/index';
 
 /**
  * @redirect gemius
- *
  * @description
  * Mocks Gemius Analytics.
  * https://flowplayer.com/developers/plugins/gemius

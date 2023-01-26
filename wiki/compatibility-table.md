@@ -30,6 +30,7 @@
 | [prevent-fetch](../wiki/about-scriptlets.md#prevent-fetch) | no-fetch-if.js |  |
 | [prevent-xhr](../wiki/about-scriptlets.md#prevent-xhr) | no-xhr-if.js |  |
 | [prevent-popads-net](../wiki/about-scriptlets.md#prevent-popads-net) |  |  |
+| [prevent-refresh](../wiki/about-scriptlets.md#prevent-refresh) | refresh-defuser.js |  |
 | [prevent-requestAnimationFrame](../wiki/about-scriptlets.md#prevent-requestAnimationFrame) | no-requestAnimationFrame-if.js (norafif.js) |  |
 | [prevent-setInterval](../wiki/about-scriptlets.md#prevent-setInterval) | no-setInterval-if.js (nosiif.js) |  |
 | [prevent-setTimeout](../wiki/about-scriptlets.md#prevent-setTimeout) | no-setTimeout-if.js (nostif.js, setTimeout-defuser.js) |  |
@@ -40,6 +41,7 @@
 | [set-attr](../wiki/about-scriptlets.md#set-attr) |  |  |
 | [set-constant](../wiki/about-scriptlets.md#set-constant) | set-constant.js (set.js) | override-property-read |
 | [set-popads-dummy](../wiki/about-scriptlets.md#set-popads-dummy) |  |  |
+| [xml-prune](../wiki/about-scriptlets.md#xml-prune) | xml-prune.js |  |
 |  | webrtc-if.js |  |
 |  | overlay-buster.js |  |
 |  | alert-buster.js |  |
@@ -69,10 +71,8 @@
 |  |  | abort-on-iframe-property-read |
 |  |  | abort-on-iframe-property-write |
 |  | abort-current-script.js (acs.js, abort-current-inline-script.js, acis.js) |  |
-|  | refresh-defuser.js |  |
 |  | no-floc.js |  |
 |  | window.name-defuser.js |  |
-|  | xml-prune.js |  |
 |  | m3u-prune.js |  |
 
 
@@ -91,6 +91,7 @@
 | [fingerprint3js](../wiki/about-redirects.md#fingerprint3js) | fingerprint3.js |  |
 | [google-analytics](../wiki/about-redirects.md#google-analytics) | google-analytics_analytics.js |  |
 | [google-analytics-ga](../wiki/about-redirects.md#google-analytics-ga) | google-analytics_ga.js |  |
+| [google-ima3](../wiki/about-redirects.md#google-ima3) | google-ima.js |  |
 | [googlesyndication-adsbygoogle](../wiki/about-redirects.md#googlesyndication-adsbygoogle) | googlesyndication_adsbygoogle.js |  |
 | [googletagservices-gpt](../wiki/about-redirects.md#googletagservices-gpt) | googletagservices_gpt.js |  |
 | [gemius](../wiki/about-redirects.md#gemius) |  |  |
@@ -133,5 +134,4 @@
 |  | window.open-defuser.js |  |
 |  | noeval.js |  |
 |  | mxpnl_mixpanel.js |  |
-|  | google-ima.js |  |
 |  | noop-0.5s.mp3 |  |

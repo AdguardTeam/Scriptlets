@@ -3,15 +3,18 @@ import {
     matchStackTrace,
     getWildcardPropertyInChain,
     logMessage,
+    objectToString,
     // following helpers are needed for helpers above
     toRegExp,
+    isEmptyObject,
+    getObjectEntries,
     getNativeRegexpTest,
+    shouldAbortInlineOrInjectedScript,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
 /**
  * @scriptlet json-prune
- *
  * @description
  * Removes specified properties from the result of calling JSON.parse and returns the caller
  *
@@ -110,7 +113,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
             const matchRegex = toRegExp(requiredPaths.join(''));
             const shouldLog = matchRegex.test(rootString);
             if (shouldLog) {
-                logMessage(source, `${window.location.hostname} ${root}`, true);
+                logMessage(source, `${window.location.hostname} ${objectToString(root)}`, true);
                 shouldProcess = false;
                 return shouldProcess;
             }
@@ -152,11 +155,13 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
 
     /**
      * Prunes properties of 'root' object
+     *
      * @param {Object} root
+     * @returns {Object} pruned root
      */
     const jsonPruner = (root) => {
         if (prunePaths.length === 0 && requiredPaths.length === 0) {
-            logMessage(source, `${window.location.hostname} ${root}`, true);
+            logMessage(source, `${window.location.hostname} ${objectToString(root)}`, true);
             return root;
         }
 
@@ -195,7 +200,6 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
     jsonParseWrapper.toString = nativeJSONParse.toString.bind(nativeJSONParse);
     JSON.parse = jsonParseWrapper;
 
-    // eslint-disable-next-line compat/compat
     const nativeResponseJson = Response.prototype.json;
     // eslint-disable-next-line func-names
     const responseJsonWrapper = function () {
@@ -211,7 +215,6 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
         return;
     }
 
-    // eslint-disable-next-line compat/compat
     Response.prototype.json = responseJsonWrapper;
 }
 
@@ -229,6 +232,11 @@ jsonPrune.injections = [
     matchStackTrace,
     getWildcardPropertyInChain,
     logMessage,
+    objectToString,
+    // following helpers are needed for helpers above
     toRegExp,
+    isEmptyObject,
+    getObjectEntries,
     getNativeRegexpTest,
+    shouldAbortInlineOrInjectedScript,
 ];

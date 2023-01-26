@@ -90,6 +90,7 @@ test('works with chained properties', (assert) => {
     `);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    clearGlobalProps('aaa');
 });
 
 test('Works with an empty object in chain', (assert) => {
@@ -100,10 +101,10 @@ test('Works with an empty object in chain', (assert) => {
 
     runScriptlet(name, scriptletArgs);
 
-    window.aaa.bbb = 1;
     addAndRemoveInlineScript('window.aaa.bbb = 4');
 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    clearGlobalProps('aaa');
 });
 
 test('should not work if chained properties are undefined', (assert) => {

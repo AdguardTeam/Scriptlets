@@ -2,7 +2,8 @@ import { flatten } from './array-utils';
 
 /**
  * Finds shadow-dom host (elements with shadowRoot property) in DOM of rootElement.
- * @param {HTMLElement} rootElement
+ *
+ * @param {HTMLElement} rootElement shadow dom root
  * @returns {HTMLElement[]} shadow-dom hosts
  */
 export const findHostElements = (rootElement) => {
@@ -37,9 +38,10 @@ export const findHostElements = (rootElement) => {
  * Pierces open shadow-dom in order to find:
  * - elements by 'selector' matching
  * - inner shadow-dom hosts
- * @param {string} selector
- * @param {HTMLElement[]|external:NodeList} hostElements
- * @returns {PierceData}
+ *
+ * @param {string} selector DOM elements selector
+ * @param {HTMLElement[]|external:NodeList} hostElements shadow-dom hosts
+ * @returns {PierceData} object with found elements and shadow-dom hosts
  */
 export const pierceShadowDom = (selector, hostElements) => {
     let targets = [];
