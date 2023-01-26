@@ -507,4 +507,22 @@ if (!isSupported) {
         };
         xhr.send();
     });
+
+    test('xhr - do nothing if response type is not a string', async (assert) => {
+        const METHOD = 'GET';
+        const M3U8_PATH = M3U8_OBJECTS_PATH_01;
+        const done = assert.async();
+
+        runScriptlet(name);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, M3U8_PATH);
+        xhr.responseType = 'blob';
+        xhr.onload = () => {
+            assert.ok(xhr.response instanceof Blob, 'Blob response');
+            assert.strictEqual(window.hit, undefined, 'should not hit');
+            done();
+        };
+        xhr.send();
+    });
 }

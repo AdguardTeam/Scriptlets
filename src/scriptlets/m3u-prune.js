@@ -244,16 +244,18 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
 
     /**
     * Determines if text contains "#EXTM3U" or "VMAP_AD_BREAK"
-    * @param {string} text
+    * @param {*} text
     * @returns {boolean}
     */
     const isM3U = (text) => {
-        // Check if "text" starts with "#EXTM3U" or with "VMAP_AD_BREAK"
-        // If so, then it might be an M3U file and should be pruned or logged
-        const trimmedText = text.trim();
-        if (startsWith(trimmedText, AD_MARKER.EXTM3U)
-            || startsWith(trimmedText, COMCAST_AD_MARKER.VMAP_AD_BREAK)) {
-            return true;
+        if (typeof text === 'string') {
+            // Check if "text" starts with "#EXTM3U" or with "VMAP_AD_BREAK"
+            // If so, then it might be an M3U file and should be pruned or logged
+            const trimmedText = text.trim();
+            if (startsWith(trimmedText, AD_MARKER.EXTM3U)
+                || startsWith(trimmedText, COMCAST_AD_MARKER.VMAP_AD_BREAK)) {
+                return true;
+            }
         }
         return false;
     };
