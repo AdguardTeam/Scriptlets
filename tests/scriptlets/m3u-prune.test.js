@@ -133,11 +133,26 @@ if (!isSupported) {
         const response = await fetch(M3U8_PATH);
         const responseM3U8 = await response.text();
 
-        assert.notOk(responseM3U8.indexOf('tvessaiprod.nbcuni.com/video/') > -1, 'check if "tvessaiprod.nbcuni.com/video/" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1, 'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-CUE-IN') > -1, 'check if "#EXT-X-CUE-IN" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-ASSET:CAID') > -1, 'check if "#EXT-X-ASSET:CAID" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-SCTE35:') > -1, 'check if "#EXT-X-SCTE35:" has been removed');
+        assert.notOk(
+            responseM3U8.indexOf('tvessaiprod.nbcuni.com/video/') > -1,
+            'check if "tvessaiprod.nbcuni.com/video/" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1,
+            'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-CUE-IN') > -1,
+            'check if "#EXT-X-CUE-IN" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-ASSET:CAID') > -1,
+            'check if "#EXT-X-ASSET:CAID" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-SCTE35:') > -1,
+            'check if "#EXT-X-SCTE35:" has been removed',
+        );
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -153,7 +168,10 @@ if (!isSupported) {
         const response = await fetch(M3U8_PATH);
         const responseM3U8 = await response.text();
 
-        assert.notOk(responseM3U8.indexOf('#EXT-X-VMAP-AD-BREAK') > -1, 'check if "#EXT-X-VMAP-AD-BREAK" has been removed');
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-VMAP-AD-BREAK') > -1,
+            'check if "#EXT-X-VMAP-AD-BREAK" has been removed',
+        );
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -169,7 +187,10 @@ if (!isSupported) {
         const response = await fetch(M3U8_PATH);
         const responseM3U8 = await response.text();
 
-        assert.notOk(responseM3U8.indexOf(',ad') > -1, 'check if "UPLYNK" ad segment has been removed');
+        assert.notOk(
+            responseM3U8.indexOf(',ad') > -1,
+            'check if "UPLYNK" ad segment has been removed',
+        );
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -185,7 +206,10 @@ if (!isSupported) {
         const response = await fetch(M3U8_PATH);
         const responseM3U8 = await response.text();
 
-        assert.notOk(responseM3U8.indexOf('dclk_video_ads') > -1, 'check if "dclk_video_ads" ad segment has been removed');
+        assert.notOk(
+            responseM3U8.indexOf('dclk_video_ads') > -1,
+            'check if "dclk_video_ads" ad segment has been removed',
+        );
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -202,11 +226,26 @@ if (!isSupported) {
         const response = await fetch(REQUEST);
         const responseM3U8 = await response.text();
 
-        assert.notOk(responseM3U8.indexOf('tvessaiprod.nbcuni.com/video/') > -1, 'check if "tvessaiprod.nbcuni.com/video/" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1, 'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-CUE-IN') > -1, 'check if "#EXT-X-CUE-IN" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-ASSET:CAID') > -1, 'check if "#EXT-X-ASSET:CAID" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-SCTE35:') > -1, 'check if "#EXT-X-SCTE35:" has been removed');
+        assert.notOk(
+            responseM3U8.indexOf('tvessaiprod.nbcuni.com/video/') > -1,
+            'check if "tvessaiprod.nbcuni.com/video/" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1,
+            'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-CUE-IN') > -1,
+            'check if "#EXT-X-CUE-IN" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-ASSET:CAID') > -1,
+            'check if "#EXT-X-ASSET:CAID" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-SCTE35:') > -1,
+            'check if "#EXT-X-SCTE35:" has been removed',
+        );
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -221,11 +260,23 @@ if (!isSupported) {
 
         const response = await fetch(M3U8_PATH);
         const responseM3U8 = await response.text();
-        assert.notOk(responseM3U8.indexOf('tvessaiprod.nbcuni.com/video/') > -1, 'check if "tvessaiprod.nbcuni.com/video/" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1, 'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-CUE-IN') > -1, 'check if "#EXT-X-CUE-IN" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-ASSET:CAID') > -1, 'check if "#EXT-X-ASSET:CAID" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-SCTE35:') > -1, 'check if "#EXT-X-SCTE35:" has been removed');
+        assert.notOk(
+            responseM3U8.indexOf('tvessaiprod.nbcuni.com/video/') > -1,
+            'check if "tvessaiprod.nbcuni.com/video/" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1,
+            'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-CUE-IN') > -1, 'check if "#EXT-X-CUE-IN" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-ASSET:CAID') > -1, 'check if "#EXT-X-ASSET:CAID" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-SCTE35:') > -1, 'check if "#EXT-X-SCTE35:" has been removed',
+        );
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -240,7 +291,10 @@ if (!isSupported) {
 
         const response = await fetch(M3U8_PATH);
         const responseM3U8 = await response.text();
-        assert.notOk(responseM3U8.indexOf('#EXT-X-VMAP-AD-BREAK') > -1, 'check if "#EXT-X-VMAP-AD-BREAK" has been removed');
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-VMAP-AD-BREAK') > -1,
+            'check if "#EXT-X-VMAP-AD-BREAK" has been removed',
+        );
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -257,11 +311,26 @@ if (!isSupported) {
 
         const response = await fetch(M3U8_PATH);
         const responseM3U8 = await response.text();
-        assert.notOk(responseM3U8.indexOf('tvessaiprod.nbcuni.com/video/') > -1, 'check if "tvessaiprod.nbcuni.com/video/" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1, 'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-CUE-IN') > -1, 'check if "#EXT-X-CUE-IN" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-ASSET:CAID') > -1, 'check if "#EXT-X-ASSET:CAID" has been removed');
-        assert.notOk(responseM3U8.indexOf('#EXT-X-SCTE35:') > -1, 'check if "#EXT-X-SCTE35:" has been removed');
+        assert.notOk(
+            responseM3U8.indexOf('tvessaiprod.nbcuni.com/video/') > -1,
+            'check if "tvessaiprod.nbcuni.com/video/" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1,
+            'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-CUE-IN') > -1,
+            'check if "#EXT-X-CUE-IN" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-ASSET:CAID') > -1,
+            'check if "#EXT-X-ASSET:CAID" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-SCTE35:') > -1,
+            'check if "#EXT-X-SCTE35:" has been removed',
+        );
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -278,7 +347,10 @@ if (!isSupported) {
 
         const response = await fetch(M3U8_PATH);
         const responseM3U8 = await response.text();
-        assert.notOk(responseM3U8.indexOf('#EXT-X-VMAP-AD-BREAK') > -1, 'check if "#EXT-X-VMAP-AD-BREAK" has been removed');
+        assert.notOk(
+            responseM3U8.indexOf('#EXT-X-VMAP-AD-BREAK') > -1,
+            'check if "#EXT-X-VMAP-AD-BREAK" has been removed',
+        );
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -293,7 +365,10 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.ok(xhr.responseText.indexOf('tvessaiprod.nbcuni.com/video/') > -1, 'line with "tvessaiprod.nbcuni.com/video/" should not be removed');
+            assert.ok(
+                xhr.responseText.indexOf('tvessaiprod.nbcuni.com/video/') > -1,
+                'line with "tvessaiprod.nbcuni.com/video/" should not be removed',
+            );
             assert.strictEqual(window.hit, undefined, 'should not hit');
             done();
         };
@@ -331,7 +406,10 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.ok(xhr.responseText.indexOf('tvessaiprod.nbcuni.com/video/') > -1, 'line with "tvessaiprod.nbcuni.com/video/" should not be removed');
+            assert.ok(
+                xhr.responseText.indexOf('tvessaiprod.nbcuni.com/video/') > -1,
+                'line with "tvessaiprod.nbcuni.com/video/" should not be removed',
+            );
             assert.strictEqual(window.hit, undefined, 'should not hit');
             done();
         };
@@ -352,7 +430,10 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.ok(xhr.responseText.indexOf('#EXT-X-VMAP-AD-BREAK') > -1, 'line with "#EXT-X-VMAP-AD-BREAK" should not be removed');
+            assert.ok(
+                xhr.responseText.indexOf('#EXT-X-VMAP-AD-BREAK') > -1,
+                'line with "#EXT-X-VMAP-AD-BREAK" should not be removed',
+            );
             assert.strictEqual(window.hit, undefined, 'should not hit');
             done();
         };
@@ -371,11 +452,26 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.notOk(xhr.responseText.indexOf('tvessaiprod.nbcuni.com/video/') > -1, 'check if "tvessaiprod.nbcuni.com/video/" has been removed');
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1, 'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed');
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-CUE-IN') > -1, 'check if "#EXT-X-CUE-IN" has been removed');
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-ASSET:CAID') > -1, 'check if "#EXT-X-ASSET:CAID" has been removed');
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-SCTE35:') > -1, 'check if "#EXT-X-SCTE35:" has been removed');
+            assert.notOk(
+                xhr.responseText.indexOf('tvessaiprod.nbcuni.com/video/') > -1,
+                'check if "tvessaiprod.nbcuni.com/video/" has been removed',
+            );
+            assert.notOk(
+                xhr.responseText.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1,
+                'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed',
+            );
+            assert.notOk(
+                xhr.responseText.indexOf('#EXT-X-CUE-IN') > -1,
+                'check if "#EXT-X-CUE-IN" has been removed',
+            );
+            assert.notOk(
+                xhr.responseText.indexOf('#EXT-X-ASSET:CAID') > -1,
+                'check if "#EXT-X-ASSET:CAID" has been removed',
+            );
+            assert.notOk(
+                xhr.responseText.indexOf('#EXT-X-SCTE35:') > -1,
+                'check if "#EXT-X-SCTE35:" has been removed',
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -394,7 +490,10 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-VMAP-AD-BREAK') > -1, 'check if "#EXT-X-VMAP-AD-BREAK" has been removed');
+            assert.notOk(
+                xhr.responseText.indexOf('#EXT-X-VMAP-AD-BREAK') > -1,
+                'check if "#EXT-X-VMAP-AD-BREAK" has been removed',
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -432,11 +531,26 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.notOk(xhr.responseText.indexOf('tvessaiprod.nbcuni.com/video/') > -1, 'check if "tvessaiprod.nbcuni.com/video/" has been removed');
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1, 'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed');
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-CUE-IN') > -1, 'check if "#EXT-X-CUE-IN" has been removed');
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-ASSET:CAID') > -1, 'check if "#EXT-X-ASSET:CAID" has been removed');
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-SCTE35:') > -1, 'check if "#EXT-X-SCTE35:" has been removed');
+            assert.notOk(
+                xhr.responseText.indexOf('tvessaiprod.nbcuni.com/video/') > -1,
+                'check if "tvessaiprod.nbcuni.com/video/" has been removed',
+            );
+            assert.notOk(
+                xhr.responseText.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1,
+                'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed',
+            );
+            assert.notOk(
+                xhr.responseText.indexOf('#EXT-X-CUE-IN') > -1,
+                'check if "#EXT-X-CUE-IN" has been removed',
+            );
+            assert.notOk(
+                xhr.responseText.indexOf('#EXT-X-ASSET:CAID') > -1,
+                'check if "#EXT-X-ASSET:CAID" has been removed',
+            );
+            assert.notOk(
+                xhr.responseText.indexOf('#EXT-X-SCTE35:') > -1,
+                'check if "#EXT-X-SCTE35:" has been removed',
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -455,7 +569,10 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-VMAP-AD-BREAK') > -1, 'check if "#EXT-X-VMAP-AD-BREAK" has been removed');
+            assert.notOk(
+                xhr.responseText.indexOf('#EXT-X-VMAP-AD-BREAK') > -1,
+                'check if "#EXT-X-VMAP-AD-BREAK" has been removed',
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -476,11 +593,26 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.notOk(xhr.responseText.indexOf('tvessaiprod.nbcuni.com/video/') > -1, 'check if "tvessaiprod.nbcuni.com/video/" has been removed');
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1, 'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed');
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-CUE-IN') > -1, 'check if "#EXT-X-CUE-IN" has been removed');
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-ASSET:CAID') > -1, 'check if "#EXT-X-ASSET:CAID" has been removed');
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-SCTE35:') > -1, 'check if "#EXT-X-SCTE35:" has been removed');
+            assert.notOk(
+                xhr.responseText.indexOf('tvessaiprod.nbcuni.com/video/') > -1,
+                'check if "tvessaiprod.nbcuni.com/video/" has been removed',
+            );
+            assert.notOk(
+                xhr.responseText.indexOf('#EXT-X-CUE:TYPE="SpliceOut"') > -1,
+                'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed',
+            );
+            assert.notOk(
+                xhr.responseText.indexOf('#EXT-X-CUE-IN') > -1,
+                'check if "#EXT-X-CUE-IN" has been removed',
+            );
+            assert.notOk(
+                xhr.responseText.indexOf('#EXT-X-ASSET:CAID') > -1,
+                'check if "#EXT-X-ASSET:CAID" has been removed',
+            );
+            assert.notOk(
+                xhr.responseText.indexOf('#EXT-X-SCTE35:') > -1,
+                'check if "#EXT-X-SCTE35:" has been removed',
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -501,7 +633,10 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, M3U8_PATH);
         xhr.onload = () => {
-            assert.notOk(xhr.responseText.indexOf('#EXT-X-VMAP-AD-BREAK') > -1, 'check if "#EXT-X-VMAP-AD-BREAK" has been removed');
+            assert.notOk(
+                xhr.responseText.indexOf('#EXT-X-VMAP-AD-BREAK') > -1,
+                'check if "#EXT-X-VMAP-AD-BREAK" has been removed',
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };

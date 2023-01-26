@@ -2,12 +2,12 @@ import {
     hit,
     toRegExp,
     startsWith,
+    logMessage,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
 /**
  * @scriptlet m3u-prune
- *
  * @description
  * Removes content from the specified M3U file.
  *
@@ -58,8 +58,6 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
     }
 
     let shouldPruneResponse = false;
-    // eslint-disable-next-line no-console
-    const log = console.log.bind(console);
 
     const urlMatchRegexp = toRegExp(urlToMatch);
 
@@ -104,12 +102,13 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
     };
 
     /**
-    * Sets an item in array to undefined, if it contains one of the
-    * AD_MARKER: AD_MARKER.EXTINF, AD_MARKER.DISCONTINUITY
-    * @param {Array} lines
-    * @param {number} i
-    * @returns {Object} { array, index }
-    */
+     * Sets an item in array to undefined, if it contains one of the
+     * AD_MARKER: AD_MARKER.EXTINF, AD_MARKER.DISCONTINUITY
+     *
+     * @param {Array} lines
+     * @param {number} i
+     * @returns {Object} { array, index }
+     */
     const pruneExtinfFromVmapBlock = (lines, i) => {
         let array = lines.slice();
         let index = i;
@@ -128,11 +127,12 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
     };
 
     /**
-    * Sets an item in array to undefined, if it contains one of the
-    * COMCAST_AD_MARKER: COMCAST_AD_MARKER.VMAP_AD, COMCAST_AD_MARKER.VAST, COMCAST_AD_MARKER.AD
-    * @param {Array} lines
-    * @returns {Array}
-    */
+     * Sets an item in array to undefined, if it contains one of the
+     * COMCAST_AD_MARKER: COMCAST_AD_MARKER.VMAP_AD, COMCAST_AD_MARKER.VAST, COMCAST_AD_MARKER.AD
+     *
+     * @param {Array} lines
+     * @returns {Array}
+     */
     const pruneVmapBlock = (lines) => {
         let array = lines.slice();
         for (let i = 0; i < array.length - 1; i += 1) {
@@ -154,12 +154,13 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
     };
 
     /**
-    * Sets an item in array to undefined, if it contains one of the
-    * AD_MARKER: AD_MARKER.CUE, AD_MARKER.ASSET, AD_MARKER.SCTE35, AD_MARKER.CUE_IN
-    * @param {Array} lines
-    * @param {number} i
-    * @returns {Array}
-    */
+     * Sets an item in array to undefined, if it contains one of the
+     * AD_MARKER: AD_MARKER.CUE, AD_MARKER.ASSET, AD_MARKER.SCTE35, AD_MARKER.CUE_IN
+     *
+     * @param {Array} lines
+     * @param {number} i
+     * @returns {Array}
+     */
     const pruneSpliceoutBlock = (lines, i) => {
         if (!startsWith(lines[i], AD_MARKER.CUE)) {
             return lines;
@@ -187,12 +188,13 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
     const removeM3ULineRegexp = toRegExp(propsToRemove);
 
     /**
-    * Sets an item in array to undefined, if it contains removeM3ULineRegexp and one of the
-    * AD_MARKER: AD_MARKER.EXTINF, AD_MARKER.DISCONTINUITY
-    * @param {Array} lines
-    * @param {number} i
-    * @returns {Array}
-    */
+     * Sets an item in array to undefined, if it contains removeM3ULineRegexp and one of the
+     * AD_MARKER: AD_MARKER.EXTINF, AD_MARKER.DISCONTINUITY
+     *
+     * @param {Array} lines
+     * @param {number} i
+     * @returns {Array}
+     */
     const pruneInfBlock = (lines, i) => {
         if (!startsWith(lines[i], AD_MARKER.EXTINF)) {
             return lines;
@@ -215,10 +217,11 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
     };
 
     /**
-    * Removes block of segments (if it contains removeM3ULineRegexp) until another segment occurs
-    * @param {Array} lines
-    * @returns {Array}
-    */
+     * Removes block of segments (if it contains removeM3ULineRegexp) until another segment occurs
+     *
+     * @param {Array} lines
+     * @returns {Array}
+     */
     const pruneSegments = (lines) => {
         for (let i = 0; i < lines.length - 1; i += 1) {
             if (startsWith(lines[i], SEGMENT_MARKER) && removeM3ULineRegexp.test(lines[i])) {
@@ -243,10 +246,11 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
     };
 
     /**
-    * Determines if text contains "#EXTM3U" or "VMAP_AD_BREAK"
-    * @param {*} text
-    * @returns {boolean}
-    */
+     * Determines if text contains "#EXTM3U" or "VMAP_AD_BREAK"
+     *
+     * @param {*} text
+     * @returns {boolean}
+     */
     const isM3U = (text) => {
         if (typeof text === 'string') {
             // Check if "text" starts with "#EXTM3U" or with "VMAP_AD_BREAK"
@@ -261,21 +265,23 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
     };
 
     /**
-    * Determines if pruning is needed
-    * @param {string} text
-    * @param {RegExp} regexp
-    * @returns {boolean}
-    */
+     * Determines if pruning is needed
+     *
+     * @param {string} text
+     * @param {RegExp} regexp
+     * @returns {boolean}
+     */
     const isPruningNeeded = (text, regexp) => {
         return isM3U(text)
             && regexp.test(text);
     };
 
     /**
-    * Prunes lines which contain removeM3ULineRegexp and specific AD_MARKER
-    * @param {string} text
-    * @returns {string}
-    */
+     * Prunes lines which contain removeM3ULineRegexp and specific AD_MARKER
+     *
+     * @param {string} text
+     * @returns {string}
+     */
     const pruneM3U = (text) => {
         let lines = text.split(/\n\r|\n|\r/);
 
@@ -305,7 +311,8 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
                     // If "propsToRemove" is not defined, then response should be logged only
                     if (!propsToRemove) {
                         if (isM3U(response)) {
-                            log(`XMLHttpRequest.open() URL: ${xhrURL}\nresponse: ${response}`);
+                            const message = `XMLHttpRequest.open() URL: ${xhrURL}\nresponse: ${response}`;
+                            logMessage(source, message);
                         }
                     } else {
                         shouldPruneResponse = isPruningNeeded(response, removeM3ULineRegexp);
@@ -332,7 +339,6 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
     // eslint-disable-next-line max-len
     window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler);
 
-    // eslint-disable-next-line compat/compat
     const nativeFetch = window.fetch;
 
     const fetchWrapper = (target, thisArg, args) => {
@@ -345,7 +351,8 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
                 return response.text().then((text) => {
                     // If "propsToRemove" is not defined, then response should be logged only
                     if (!propsToRemove && isM3U(text)) {
-                        log(`fetch URL: ${fetchURL}\nresponse text: ${text}`);
+                        const message = `fetch URL: ${fetchURL}\nresponse text: ${text}`;
+                        logMessage(source, message);
                         return Reflect.apply(target, thisArg, args);
                     }
                     shouldPruneResponse = isPruningNeeded(text, removeM3ULineRegexp);
@@ -368,7 +375,6 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
     const fetchHandler = {
         apply: fetchWrapper,
     };
-    // eslint-disable-next-line compat/compat
     window.fetch = new Proxy(window.fetch, fetchHandler);
 }
 
@@ -384,4 +390,5 @@ m3uPrune.injections = [
     hit,
     toRegExp,
     startsWith,
+    logMessage,
 ];
