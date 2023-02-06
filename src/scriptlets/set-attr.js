@@ -24,7 +24,7 @@ import {
  * - `value` — the value to assign to the attribute, defaults to ''. Possible values:
  *     - `''` - empty string
  *     - positive decimal integer `<= 32767`
- *     - `true` / `True`
+ *     - `true` / `True` - letter case is not checked, so it's possible to use any other form like `TRUE` or `trUe`, the same for `false`
  *     - `false` / `False`
  *
  * **Examples**
