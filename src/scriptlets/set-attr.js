@@ -24,8 +24,8 @@ import {
  * - `value` — the value to assign to the attribute, defaults to ''. Possible values:
  *     - `''` - empty string
  *     - positive decimal integer `<= 32767`
- *     - `true`
- *     - `false`
+ *     - `true` / `True`
+ *     - `false` / `False`
  *
  * **Examples**
  * 1.  Set attribute by selector
