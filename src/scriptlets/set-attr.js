@@ -24,6 +24,8 @@ import {
  * - `value` — the value to assign to the attribute, defaults to ''. Possible values:
  *     - `''` - empty string
  *     - positive decimal integer `<= 32767`
+ *     - `true`
+ *     - `false`
  *
  * **Examples**
  * 1.  Set attribute by selector
@@ -56,11 +58,16 @@ export function setAttr(source, selector, attr, value = '') {
     if (!selector || !attr) {
         return;
     }
+
+    const allowedValues = ['true', 'false'];
+
     // Drop strings that cant be parsed into number, negative numbers and numbers below 32767
     if (value.length !== 0
         && (nativeIsNaN(parseInt(value, 10))
             || parseInt(value, 10) < 0
-            || parseInt(value, 10) > 32767)) {
+            || parseInt(value, 10) > 32767)
+        && !allowedValues.includes(value.toLowerCase())
+    ) {
         return;
     }
 
