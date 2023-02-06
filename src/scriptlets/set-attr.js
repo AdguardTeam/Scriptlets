@@ -66,8 +66,7 @@ export function setAttr(source, selector, attr, value = '') {
         && (nativeIsNaN(parseInt(value, 10))
             || parseInt(value, 10) < 0
             || parseInt(value, 10) > 32767)
-        && !allowedValues.includes(value.toLowerCase())
-    ) {
+        && !allowedValues.includes(value.toLowerCase())) {
         return;
     }
 
