@@ -147,3 +147,88 @@ test('selector + attr + too big of a number', (assert) => {
     // Clean up test elements
     matchElem.remove();
 });
+
+test('selector + attr + true', (assert) => {
+    createHit();
+    const attr = 'test-attr-true';
+    const value = 'true';
+    const matchClassName = 'testClassTrue';
+    const mismatchClassName = 'none';
+
+    const matchElem = createElem(matchClassName);
+    const mismatchElem = createElem(mismatchClassName);
+
+    const scriptletArgs = [`.${matchClassName}`, attr, value];
+    runScriptlet(name, scriptletArgs);
+
+    assert.ok(matchElem.getAttribute(attr), `Attr ${attr} added to selector-matched element`);
+    assert.ok(matchElem.getAttribute(attr) === value, `New attr value ${value} is correct`);
+    assert.notOk(mismatchElem.getAttribute(attr), `Attr ${attr} is not added to mismatch element`);
+
+    assert.strictEqual(window.hit, 'FIRED');
+    clearGlobalProps('hit');
+
+    const done = assert.async();
+
+    changeAttr(matchElem, attr);
+    setTimeout(() => {
+        assert.ok(matchElem.getAttribute(attr) === value, `New attr val ${value} is still correct`);
+        assert.strictEqual(window.hit, 'FIRED');
+        // Clean up test elements
+        matchElem.remove();
+        mismatchElem.remove();
+        done();
+    }, 30);
+});
+
+test('selector + attr + False', (assert) => {
+    createHit();
+    const attr = 'test-attr-False';
+    const value = 'False';
+    const matchClassName = 'testClassFalse';
+    const mismatchClassName = 'none';
+
+    const matchElem = createElem(matchClassName);
+    const mismatchElem = createElem(mismatchClassName);
+
+    const scriptletArgs = [`.${matchClassName}`, attr, value];
+    runScriptlet(name, scriptletArgs);
+
+    assert.ok(matchElem.getAttribute(attr), `Attr ${attr} added to selector-matched element`);
+    assert.ok(matchElem.getAttribute(attr) === value, `New attr value ${value} is correct`);
+    assert.notOk(mismatchElem.getAttribute(attr), `Attr ${attr} is not added to mismatch element`);
+
+    assert.strictEqual(window.hit, 'FIRED');
+    clearGlobalProps('hit');
+
+    const done = assert.async();
+
+    changeAttr(matchElem, attr);
+    setTimeout(() => {
+        assert.ok(matchElem.getAttribute(attr) === value, `New attr val ${value} is still correct`);
+        assert.strictEqual(window.hit, 'FIRED');
+        // Clean up test elements
+        matchElem.remove();
+        mismatchElem.remove();
+        done();
+    }, 30);
+});
+
+test('selector + attr + not allowed string', (assert) => {
+    createHit();
+    const attr = 'test-attr';
+    const value = 'trueNotAllowed';
+    const matchClassName = 'testClassNotAllowed';
+
+    const matchElem = createElem(matchClassName);
+
+    const scriptletArgs = [`.${matchClassName}`, attr, value];
+    runScriptlet(name, scriptletArgs);
+
+    assert.notOk(matchElem.getAttribute(attr), `Attr ${attr} is not added`);
+
+    assert.strictEqual(window.hit, undefined, 'hit should not be fired');
+    clearGlobalProps('hit');
+    // Clean up test elements
+    matchElem.remove();
+});

@@ -5,7 +5,8 @@
 
 ### Added
 
-- new `m3u-prune` scriptlet [#137](https://github.com/AdguardTeam/Scriptlets/issues/277)
+- new `m3u-prune` scriptlet [#277](https://github.com/AdguardTeam/Scriptlets/issues/277)
+- `true` and `false` values for `set-attr` scriptlet [#283](https://github.com/AdguardTeam/Scriptlets/issues/283)
 
 
 ## v1.8.2
