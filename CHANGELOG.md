@@ -1,8 +1,17 @@
 # Scriptlets and Redirect Resources Changelog
 
+
+## Unreleased
+
+### Added
+
+- new `m3u-prune` scriptlet [#137](https://github.com/AdguardTeam/Scriptlets/issues/277)
+
+
 ## v1.8.2
 
 ### Added
+
 - new `trusted-set-constant` scriptlet [#137](https://github.com/AdguardTeam/Scriptlets/issues/137)
 - new `inject-css-in-shadow-dom` scriptlet [#267](https://github.com/AdguardTeam/Scriptlets/issues/267)
 - `throwFunc` and `noopCallbackFunc` prop values for `set-constant` scriptlet

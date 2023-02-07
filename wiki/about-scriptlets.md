@@ -18,6 +18,7 @@
 * [log-eval](#log-eval)
 * [log-on-stack-trace](#log-on-stack-trace)
 * [log](#log)
+* [m3u-prune](#m3u-prune)
 * [no-topics](#no-topics)
 * [noeval](#noeval)
 * [nowebrtc](#nowebrtc)
@@ -606,6 +607,39 @@ example.org#%#//scriptlet('log', 'arg1', 'arg2')
 ```
 
 [Scriptlet source](../src/scriptlets/log.js)
+* * *
+
+### <a id="m3u-prune"></a> ⚡️ m3u-prune
+
+Removes content from the specified M3U file.
+
+
+**Syntax**
+```
+example.org#%#//scriptlet('m3u-prune'[, propsToRemove[, urlToMatch[, optionalRegExp]]])
+```
+
+- `propsToRemove` - required, selector of elements which will be removed from M3U file
+- `urlToMatch` - optional, string or regular expression for matching the request's URL
+- `optionalRegExp` - optional, string or regular expression for matching a content which will be removed from response
+
+**Examples**
+1. Removes a tag which contains `tvessaiprod.nbcuni.com/video/`, from all requests
+    ```
+    example.org#%#//scriptlet('m3u-prune', 'tvessaiprod.nbcuni.com/video/')
+    ```
+
+2. Removes a tag which contains `tvessaiprod.nbcuni.com/video/`, only if request's URL contains `.m3u8`
+    ```
+    example.org#%#//scriptlet('m3u-prune', 'tvessaiprod.nbcuni.com/video/', '.m3u8')
+    ```
+
+2. Removes everything from response what is matched by RegExp, only if request's URL contains `.m3u8`
+    ```
+    example.org#%#//scriptlet('m3u-prune', 'VMAP-AD', '.m3u8', '/#EXTINF:.*\\n.*tvessaiprod\\.nbcuni\\.com\\/video\\/[\\s\\S]*?#EXT-X-DISCONTINUITY|#EXT-X-VMAP-AD-BREAK[\\s\\S]*?#EXT-X-ENDLIST/')
+    ```
+
+[Scriptlet source](../src/scriptlets/m3u-prune.js)
 * * *
 
 ### <a id="no-topics"></a> ⚡️ no-topics
