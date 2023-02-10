@@ -22,7 +22,7 @@ example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, dela
 Multiple conditions are allowed inside one `extraMatch` but they should be delimited by comma and each of them should match the syntax. Possible `name`s:
    - `cookie` - test string or regex against cookies on a page
    - `localStorage` - check if localStorage item is present
-- 'delay' - optional, time in ms to delay scriptlet execution, defaults to instant execution.
+- `delay` - optional, time in ms to delay scriptlet execution, defaults to instant execution.
 
 **Examples**
 1. Click single element by selector
@@ -74,7 +74,7 @@ example.org#%#//scriptlet('trusted-replace-fetch-response'[, pattern, replacemen
 
 - pattern - optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
 possible values:
-  - '*' to match all text content
+  - `*` to match all text content
   - non-empty string
   - regular expression
 - replacement — optional, should be set if `pattern` is set. String to replace the response text content matched by `pattern`.
@@ -130,7 +130,7 @@ example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[
 
 - pattern - optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
 possible values:
-  - '*' to match all text content
+  - `*` to match all text content
   - non-empty string
   - regular expression
 - replacement — optional, should be set if `pattern` is set. String to replace matched content with. Empty string to remove content.
@@ -248,7 +248,7 @@ example.org#%#//scriptlet('trusted-set-cookie-reload', name, value[, offsetExpir
   - empty string for no value
   - `$now$` keyword for setting current time in ms, e.g 1667915146503
   - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
-- 'offsetExpiresSec' - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
+- `offsetExpiresSec` - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
 Possible values:
   - positive integer in seconds
   - `1year` keyword for setting expiration date to one year
