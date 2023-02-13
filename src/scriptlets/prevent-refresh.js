@@ -20,7 +20,7 @@ import {
  * example.org#%#//scriptlet('prevent-refresh'[, delay])
  * ```
  *
- * - `delay` - optional, number of seconds for delay that indicates when scriptlet should run. If not set, source tag value will be applied.
+ * - `delay` — optional, number of seconds for delay that indicates when scriptlet should run. If not set, source tag value will be applied.
  *
  * **Examples**
  * 1. Prevent reloading of a document through a meta "refresh" tag.

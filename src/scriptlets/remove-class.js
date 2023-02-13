@@ -38,7 +38,7 @@ import {
  *     ```
  *
  *     ```html
- *     <!-- before  -->
+ *     <!-- before -->
  *     <div id="first" class="nice test">Some text</div>
  *     <div id="second" class="rare example for test">Some text</div>
  *     <div id="third" class="testing better example">Some text</div>

@@ -29,9 +29,9 @@ import {
  * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, stack]]])
  * ```
  *
- * - `propsToRemove` - optional, string of space-separated properties to remove
- * - `obligatoryProps` - optional, string of space-separated properties which must be all present for the pruning to occur
- * - `stack` - optional, string or regular expression that must match the current function call stack trace;
+ * - `propsToRemove` — optional, string of space-separated properties to remove
+ * - `obligatoryProps` — optional, string of space-separated properties which must be all present for the pruning to occur
+ * - `stack` — optional, string or regular expression that must match the current function call stack trace;
  * if regular expression is invalid it will be skipped
  *
  * > Note please that you can use wildcard `*` for chain property name.

@@ -15,8 +15,8 @@ import {
  * example.org#%#//scriptlet('inject-css-in-shadow-dom', cssRule[, hostSelector])
  * ```
  *
- * - `cssRule` - required, string representing a single css rule
- * - `hostSelector` - optional, string, selector to match shadow host elements. CSS rule will be only applied to shadow roots inside these elements.
+ * - `cssRule` — required, string representing a single css rule
+ * - `hostSelector` — optional, string, selector to match shadow host elements. CSS rule will be only applied to shadow roots inside these elements.
  * Defaults to injecting css rule into all available roots.
  *
  * **Examples**

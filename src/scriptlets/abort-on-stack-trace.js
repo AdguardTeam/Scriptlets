@@ -31,8 +31,8 @@ import {
  * example.com#%#//scriptlet('abort-on-stack-trace', property, stack)
  * ```
  *
- * - `property` - required, path to a property. The property must be attached to window.
- * - `stack` - required, string that must match the current function call stack trace.
+ * - `property` — required, path to a property. The property must be attached to window.
+ * - `stack` — required, string that must match the current function call stack trace.
  *     - values to abort inline or injected script, accordingly:
  *         - `inlineScript`
  *         - `injectedScript`

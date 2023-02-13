@@ -22,7 +22,7 @@ import {
  * example.com#%#//scriptlet('log-on-stack-trace', 'property')
  * ```
  *
- * - `property` - required, path to a property. The property must be attached to window.
+ * - `property` — required, path to a property. The property must be attached to window.
  */
 /* eslint-enable max-len */
 export function logOnStacktrace(source, property) {

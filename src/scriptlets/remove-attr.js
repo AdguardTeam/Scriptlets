@@ -38,7 +38,7 @@ import {
  *     ```
  *
  *     ```html
- *     <!-- before  -->
+ *     <!-- before -->
  *     <div example="true" test="true">Some text</div>
  *
  *     <!-- after -->

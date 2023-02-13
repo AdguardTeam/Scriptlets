@@ -40,10 +40,10 @@ import {
  * example.org#%#//scriptlet('trusted-set-constant', property, value[, stack])
  * ```
  *
- * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`.
- * - `value` - required, an arbitrary value to be set; value type is being inferred from the argument, e.g '500' will be set as number;
+ * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`.
+ * - `value` — required, an arbitrary value to be set; value type is being inferred from the argument, e.g '500' will be set as number;
  * to set string type value wrap argument into another pair of quotes: `'"500"'`;
- * - `stack` - optional, string or regular expression that must match the current function call stack trace;
+ * - `stack` — optional, string or regular expression that must match the current function call stack trace;
  * if regular expression is invalid it will be skipped
  *
  * **Examples**

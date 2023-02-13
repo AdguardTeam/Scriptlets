@@ -14,7 +14,7 @@ import { hit, toRegExp } from '../helpers/index';
  * example.org#%#//scriptlet('remove-cookie'[, match])
  * ```
  *
- * - `match` - optional, string or regex matching the cookie name. If not specified all accessible cookies will be removed.
+ * - `match` — optional, string or regex matching the cookie name. If not specified all accessible cookies will be removed.
  *
  * **Examples**
  * 1. Removes all cookies:

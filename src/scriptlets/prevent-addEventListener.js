@@ -20,9 +20,9 @@ import {
  * example.org#%#//scriptlet('prevent-addEventListener'[, typeSearch[, listenerSearch]])
  * ```
  *
- * - `typeSearch` - optional, string or regular expression matching the type (event name);
+ * - `typeSearch` — optional, string or regular expression matching the type (event name);
  * defaults to match all types; invalid regular expression will cause exit and rule will not work
- * - `listenerSearch` - optional, string or regular expression matching the listener function body;
+ * - `listenerSearch` — optional, string or regular expression matching the listener function body;
  * defaults to match all listeners; invalid regular expression will cause exit and rule will not work
  *
  * **Examples**

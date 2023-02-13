@@ -23,8 +23,8 @@ import {
  * example.org#%#//scriptlet('set-cookie-reload', name, value[, path])
  * ```
  *
- * - `name` - required, cookie name to be set
- * - `value` - required, cookie value; possible values:
+ * - `name` — required, cookie name to be set
+ * - `value` — required, cookie value; possible values:
  *     - number `>= 0 && <= 15`
  *     - one of the predefined constants:
  *         - `true` / `True`
@@ -32,7 +32,7 @@ import {
  *         - `yes` / `Yes` / `Y`
  *         - `no`
  *         - `ok` / `OK`
- * - `path` - optional, cookie path, defaults to `/`; possible values:
+ * - `path` — optional, cookie path, defaults to `/`; possible values:
  *     - `/` — root path
  *     - `none` — to set no path at all
  *

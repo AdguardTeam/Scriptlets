@@ -22,7 +22,7 @@ example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, dela
 Multiple conditions are allowed inside one `extraMatch` but they should be delimited by comma and each of them should match the syntax. Possible `name`s:
    - `cookie` - test string or regex against cookies on a page
    - `localStorage` - check if localStorage item is present
-- `delay` - optional, time in ms to delay scriptlet execution, defaults to instant execution.
+- `delay` — optional, time in ms to delay scriptlet execution, defaults to instant execution.
 
 **Examples**
 1. Click single element by selector
@@ -72,14 +72,14 @@ Replaces response text content of `fetch` requests if **all** given parameters m
 example.org#%#//scriptlet('trusted-replace-fetch-response'[, pattern, replacement[, propsToMatch]])
 ```
 
-- pattern - optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
+- `pattern` — optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
 possible values:
   - `*` to match all text content
   - non-empty string
   - regular expression
-- replacement — optional, should be set if `pattern` is set. String to replace the response text content matched by `pattern`.
+- `replacement` — optional, should be set if `pattern` is set. String to replace the response text content matched by `pattern`.
 Empty string to remove content. Defaults to empty string.
-- propsToMatch - optional, string of space-separated properties to match; possible props:
+- `propsToMatch` — optional, string of space-separated properties to match; possible props:
   - string or regular expression for matching the URL passed to fetch call; empty string, wildcard `*` or invalid regular expression will match all fetch calls
   - colon-separated pairs `name:value` where
     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
@@ -128,17 +128,17 @@ Replaces response content of `xhr` requests if **all** given parameters match.
 example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[, propsToMatch]])
 ```
 
-- pattern - optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
+- `pattern` — optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
 possible values:
   - `*` to match all text content
   - non-empty string
   - regular expression
-- replacement — optional, should be set if `pattern` is set. String to replace matched content with. Empty string to remove content.
-- propsToMatch — optional, string of space-separated properties to match for extra condition; possible props:
-  - string or regular expression for matching the URL passed to `.open()` call;
-  - colon-separated pairs name:value where
-    - name - name is string or regular expression for matching XMLHttpRequest property name
-    - value is string or regular expression for matching the value of the option passed to `.open()` call
+- `replacement` — optional, should be set if `pattern` is set. String to replace matched content with. Empty string to remove content.
+- `propsToMatch` — optional, string of space-separated properties to match for extra condition; possible props:
+  - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call;
+  - colon-separated pairs `name:value` where
+    - `name` — string or regular expression for matching XMLHttpRequest property name
+    - `value` — string or regular expression for matching the value of the option passed to `XMLHttpRequest.open()` call
 
 > Usage with no arguments will log XMLHttpRequest objects to browser console;
 which is useful for debugging but not permitted for production filter lists.
@@ -187,10 +187,10 @@ Creates a constant property and assigns it a specified value.
 example.org#%#//scriptlet('trusted-set-constant', property, value[, stack])
 ```
 
-- `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`.
-- `value` - required, an arbitrary value to be set; value type is being inferred from the argument, e.g '500' will be set as number;
+- `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`.
+- `value` — required, an arbitrary value to be set; value type is being inferred from the argument, e.g '500' will be set as number;
 to set string type value wrap argument into another pair of quotes: `'"500"'`;
-- `stack` - optional, string or regular expression that must match the current function call stack trace;
+- `stack` — optional, string or regular expression that must match the current function call stack trace;
 if regular expression is invalid it will be skipped
 
 **Examples**
@@ -242,18 +242,18 @@ If reloading option is not needed, use the [`trusted-set-cookie` scriptlet](#tru
 example.org#%#//scriptlet('trusted-set-cookie-reload', name, value[, offsetExpiresSec[, path]])
 ```
 
-- `name` - required, cookie name to be set
-- `value` - required, cookie value. Possible values:
+- `name` — required, cookie name to be set
+- `value` — required, cookie value. Possible values:
   - arbitrary value
   - empty string for no value
   - `$now$` keyword for setting current time in ms, e.g 1667915146503
   - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
-- `offsetExpiresSec` - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
+- `offsetExpiresSec` — optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
 Possible values:
   - positive integer in seconds
   - `1year` keyword for setting expiration date to one year
   - `1day` keyword for setting expiration date to one day
-- `path` - optional, argument for setting cookie path, defaults to `/`; possible values:
+- `path` — optional, argument for setting cookie path, defaults to `/`; possible values:
   - `/` — root path
   - `none` — to set no path at all
 
@@ -296,18 +296,18 @@ and with optional ability to offset cookie attribute 'expires' and set path.
 example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[, path]])
 ```
 
-- `name` - required, cookie name to be set
-- `value` - required, cookie value. Possible values:
+- `name` — required, cookie name to be set
+- `value` — required, cookie value. Possible values:
   - arbitrary value
   - empty string for no value
   - `$now$` keyword for setting current time in ms, e.g 1667915146503
   - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
-- `offsetExpiresSec` - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
+- `offsetExpiresSec` — optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
 Possible values:
   - positive integer in seconds
   - `1year` keyword for setting expiration date to one year
   - `1day` keyword for setting expiration date to one day
-- `path` - optional, argument for setting cookie path, defaults to `/`; possible values:
+- `path` — optional, argument for setting cookie path, defaults to `/`; possible values:
   - `/` — root path
   - `none` — to set no path at all
 
@@ -352,7 +352,7 @@ example.com#%#//scriptlet('trusted-set-local-storage-item', 'key', 'value')
 ```
 
 - `key` — required, key name to be set.
-- `value` - required, key value; possible values:
+- `value` — required, key value; possible values:
   - arbitrary value
   - `$now$` keyword for setting current time in ms, corresponds to `Date.now()` and `(new Date).getTime()` calls
   - `$currentDate$` keyword for setting string representation of the current date and time, corresponds to `Date()` and `(new Date).toString()` calls

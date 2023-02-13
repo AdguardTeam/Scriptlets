@@ -16,8 +16,8 @@ import {
  * example.org#%#//scriptlet('m3u-prune'[, propsToRemove[, urlToMatch]])
  * ```
  *
- * - `propsToRemove` - optional, string or regular expression to match the URL line (segment) which will be removed alongside with its tags
- * - `urlToMatch` - optional, string or regular expression for matching the request's URL
+ * - `propsToRemove` — optional, string or regular expression to match the URL line (segment) which will be removed alongside with its tags
+ * - `urlToMatch` — optional, string or regular expression for matching the request's URL
  * > Usage with no arguments will log response payload and URL to browser console;
  * which is useful for debugging but prohibited for production filter lists.
  *

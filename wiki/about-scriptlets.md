@@ -66,8 +66,8 @@ https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f1
 example.org#%#//scriptlet('abort-current-inline-script', property[, search])
 ```
 
-- `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
-- `search` - optional, string or regular expression that must match the inline script content.
+- `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`
+- `search` — optional, string or regular expression that must match the inline script content.
 Defaults to abort all scripts which are trying to access the specified property.
 Invalid regular expression will cause exit and rule will not work.
 
@@ -127,7 +127,7 @@ https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f1
 example.org#%#//scriptlet('abort-on-property-read', property)
 ```
 
-- `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
+- `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`
 
 **Examples**
 ```
@@ -156,7 +156,7 @@ https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f1
 example.org#%#//scriptlet('abort-on-property-write', property)
 ```
 
-- `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
+- `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`
 
 **Examples**
 ```
@@ -179,8 +179,8 @@ https://github.com/gorhill/uBlock-for-firefox-legacy/commit/7099186ae54e70b588d5
 example.com#%#//scriptlet('abort-on-stack-trace', property, stack)
 ```
 
-- `property` - required, path to a property. The property must be attached to window.
-- `stack` - required, string that must match the current function call stack trace.
+- `property` — required, path to a property. The property must be attached to window.
+- `stack` — required, string that must match the current function call stack trace.
     - values to abort inline or injected script, accordingly:
         - `inlineScript`
         - `injectedScript`
@@ -219,10 +219,10 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-setinterval-booste
 example.org#%#//scriptlet('adjust-setInterval'[, matchCallback [, matchDelay[, boost]]])
 ```
 
-- `matchCallback` - optional, string or regular expression for stringified callback matching;
+- `matchCallback` — optional, string or regular expression for stringified callback matching;
 defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
-- `matchDelay` - optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
-- `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), setInterval delay multiplier
+- `matchDelay` — optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
+- `boost` — optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), setInterval delay multiplier
 
 **Examples**
 1. Adjust all setInterval() x20 times where delay equal 1000ms:
@@ -268,10 +268,10 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-settimeout-booster
 example.org#%#//scriptlet('adjust-setTimeout'[, matchCallback [, matchDelay[, boost]]])
 ```
 
-- `matchCallback` - optional, string or regular expression for stringified callback matching;
+- `matchCallback` — optional, string or regular expression for stringified callback matching;
 defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
-- `matchDelay` - optional, defaults to 1000, matching setTimeout delay; decimal integer OR '*' for any delay
-- `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), setTimeout delay multiplier
+- `matchDelay` — optional, defaults to 1000, matching setTimeout delay; decimal integer OR '*' for any delay
+- `boost` — optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), setTimeout delay multiplier
 
 **Examples**
 1. Adjust all setTimeout() x20 times where timeout equal 1000ms:
@@ -395,7 +395,7 @@ https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f1
 ```
 example.org#%#//scriptlet('dir-string'[, times])
 ```
-- `times` - optional, the number of times to call the `toString` method of the argument to `console.dir`
+- `times` — optional, the number of times to call the `toString` method of the argument to `console.dir`
 
 **Example**
 ```
@@ -458,8 +458,8 @@ Injects CSS rule into selected Shadow DOM subtrees on a page
 example.org#%#//scriptlet('inject-css-in-shadow-dom', cssRule[, hostSelector])
 ```
 
-- `cssRule` - required, string representing a single css rule
-- `hostSelector` - optional, string, selector to match shadow host elements. CSS rule will be only applied to shadow roots inside these elements.
+- `cssRule` — required, string representing a single css rule
+- `hostSelector` — optional, string, selector to match shadow host elements. CSS rule will be only applied to shadow roots inside these elements.
 Defaults to injecting css rule into all available roots.
 
 **Examples**
@@ -491,9 +491,9 @@ https://github.com/adblockplus/adblockpluscore/blob/master/lib/content/snippets.
 example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, stack]]])
 ```
 
-- `propsToRemove` - optional, string of space-separated properties to remove
-- `obligatoryProps` - optional, string of space-separated properties which must be all present for the pruning to occur
-- `stack` - optional, string or regular expression that must match the current function call stack trace;
+- `propsToRemove` — optional, string of space-separated properties to remove
+- `obligatoryProps` — optional, string of space-separated properties which must be all present for the pruning to occur
+- `stack` — optional, string or regular expression that must match the current function call stack trace;
 if regular expression is invalid it will be skipped
 
 > Note please that you can use wildcard `*` for chain property name.
@@ -591,7 +591,7 @@ This scriptlet is basically the same as [abort-on-stack-trace](#abort-on-stack-t
 example.com#%#//scriptlet('log-on-stack-trace', 'property')
 ```
 
-- `property` - required, path to a property. The property must be attached to window.
+- `property` — required, path to a property. The property must be attached to window.
 
 [Scriptlet source](../src/scriptlets/log-on-stack-trace.js)
 * * *
@@ -607,39 +607,6 @@ example.org#%#//scriptlet('log', 'arg1', 'arg2')
 ```
 
 [Scriptlet source](../src/scriptlets/log.js)
-* * *
-
-### <a id="m3u-prune"></a> ⚡️ m3u-prune
-
-Removes content from the specified M3U file.
-
-
-**Syntax**
-```
-example.org#%#//scriptlet('m3u-prune'[, propsToRemove[, urlToMatch[, optionalRegExp]]])
-```
-
-- `propsToRemove` - required, selector of elements which will be removed from M3U file
-- `urlToMatch` - optional, string or regular expression for matching the request's URL
-- `optionalRegExp` - optional, string or regular expression for matching a content which will be removed from response
-
-**Examples**
-1. Removes a tag which contains `tvessaiprod.nbcuni.com/video/`, from all requests
-    ```
-    example.org#%#//scriptlet('m3u-prune', 'tvessaiprod.nbcuni.com/video/')
-    ```
-
-2. Removes a tag which contains `tvessaiprod.nbcuni.com/video/`, only if request's URL contains `.m3u8`
-    ```
-    example.org#%#//scriptlet('m3u-prune', 'tvessaiprod.nbcuni.com/video/', '.m3u8')
-    ```
-
-2. Removes everything from response what is matched by RegExp, only if request's URL contains `.m3u8`
-    ```
-    example.org#%#//scriptlet('m3u-prune', 'VMAP-AD', '.m3u8', '/#EXTINF:.*\\n.*tvessaiprod\\.nbcuni\\.com\\/video\\/[\\s\\S]*?#EXT-X-DISCONTINUITY|#EXT-X-VMAP-AD-BREAK[\\s\\S]*?#EXT-X-ENDLIST/')
-    ```
-
-[Scriptlet source](../src/scriptlets/m3u-prune.js)
 * * *
 
 ### <a id="no-topics"></a> ⚡️ no-topics
@@ -701,9 +668,9 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-defuse
 example.org#%#//scriptlet('prevent-addEventListener'[, typeSearch[, listenerSearch]])
 ```
 
-- `typeSearch` - optional, string or regular expression matching the type (event name);
+- `typeSearch` — optional, string or regular expression matching the type (event name);
 defaults to match all types; invalid regular expression will cause exit and rule will not work
-- `listenerSearch` - optional, string or regular expression matching the listener function body;
+- `listenerSearch` — optional, string or regular expression matching the listener function body;
 defaults to match all listeners; invalid regular expression will cause exit and rule will not work
 
 **Examples**
@@ -770,11 +737,11 @@ Prevents target element source loading without triggering 'onerror' listeners an
 example.org#%#//scriptlet('prevent-element-src-loading', tagName, match)
 ```
 
-- `tagName` - required, case-insensitive target element tagName which `src` property resource loading will be silently prevented; possible values:
+- `tagName` — required, case-insensitive target element tagName which `src` property resource loading will be silently prevented; possible values:
     - `script`
     - `img`
     - `iframe`
-- `match` - required, string or regular expression for matching the element's URL;
+- `match` — required, string or regular expression for matching the element's URL;
 
 **Examples**
 1. Prevent script source loading:
@@ -797,7 +764,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
 example.org#%#//scriptlet('prevent-eval-if'[, search])
 ```
 
-- `search` - optional, string or regular expression matching the stringified eval payload;
+- `search` — optional, string or regular expression matching the stringified eval payload;
 defaults to match all stringified eval payloads;
 invalid regular expression will cause exit and rule will not work
 
@@ -837,17 +804,17 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#no-fetch-ifjs-
 example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, responseType]]])
 ```
 
-- `propsToMatch` - optional, string of space-separated properties to match; possible props:
+- `propsToMatch` — optional, string of space-separated properties to match; possible props:
   - string or regular expression for matching the URL passed to fetch call; empty string, wildcard `*` or invalid regular expression will match all fetch calls
   - colon-separated pairs `name:value` where
     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
     - `value` is string or regular expression for matching the value of the option passed to fetch call; invalid regular expression will cause any value matching
-- responseBody - optional, string for defining response body value, defaults to `emptyObj`. Possible values:
-   - `emptyObj` - empty object
-   - `emptyArr` - empty array
-- responseType - optional, string for defining response type, defaults to `default`. Possible values:
-   - default
-   - opaque
+- `responseBody` — optional, string for defining response body value, defaults to `emptyObj`. Possible values:
+   - `emptyObj` — empty object
+   - `emptyArr` — empty array
+- `responseType` — optional, string for defining response type, defaults to `default`. Possible values:
+   - `default`
+   - `opaque`
 
 > Usage with no arguments will log fetch calls to browser console;
 which is useful for debugging but not permitted for production filter lists.
@@ -924,7 +891,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#refresh-defuserjs-
 example.org#%#//scriptlet('prevent-refresh'[, delay])
 ```
 
-- `delay` - optional, number of seconds for delay that indicates when scriptlet should run. If not set, source tag value will be applied.
+- `delay` — optional, number of seconds for delay that indicates when scriptlet should run. If not set, source tag value will be applied.
 
 **Examples**
 1. Prevent reloading of a document through a meta "refresh" tag.
@@ -954,7 +921,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#no-requestanimationfram
 example.org#%#//scriptlet('prevent-requestAnimationFrame'[, search])
 ```
 
-- `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
+- `search` — optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
 If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
 If do not start with `!`, the stringified callback will be matched.
 
@@ -1025,11 +992,11 @@ example.org#%#//scriptlet('prevent-setInterval'[, matchCallback[, matchDelay]])
 
 Call with no arguments will log calls to setInterval while debugging (`log-setInterval` superseding),
 so production filter lists' rules definitely require at least one of the parameters:
-- `matchCallback` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
+- `matchCallback` — optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
 If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
 If do not start with `!`, the stringified callback will be matched.
 If not set, prevents all `setInterval` calls due to specified `matchDelay`.
-- `matchDelay` - optional, must be an integer.
+- `matchDelay` — optional, must be an integer.
 If starts with `!`, scriptlet will not match the delay but all other will be defused.
 If do not start with `!`, the delay passed to the `setInterval` call will be matched.
 Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
@@ -1143,11 +1110,11 @@ example.org#%#//scriptlet('prevent-setTimeout'[, matchCallback[, matchDelay]])
 
 Call with no arguments will log calls to setTimeout while debugging (`log-setTimeout` superseding),
 so production filter lists' rules definitely require at least one of the parameters:
-- `matchCallback` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
+- `matchCallback` — optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
 If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
 If do not start with `!`, the stringified callback will be matched.
 If not set, prevents all `setTimeout` calls due to specified `matchDelay`.
-- `matchDelay` - optional, must be an integer.
+- `matchDelay` — optional, must be an integer.
 If starts with `!`, scriptlet will not match the delay but all other will be defused.
 If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
 Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
@@ -1256,16 +1223,16 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#windowopen-defuserjs-
 example.org#%#//scriptlet('prevent-window-open'[, match[, delay[, replacement]]])
 ```
 
-- `match` - optional, string or regular expression. If not set or regular expression is invalid, all window.open calls will be matched.
+- `match` — optional, string or regular expression. If not set or regular expression is invalid, all window.open calls will be matched.
 If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
 If do not start with `!`, the stringified callback will be matched.
-- `delay` - optional, number of seconds. If not set, scriptlet will return `null`,
+- `delay` — optional, number of seconds. If not set, scriptlet will return `null`,
 otherwise valid sham window object as injected `iframe` will be returned
 for accessing its methods (blur(), focus() etc.) and will be removed after the delay.
-- `replacement` - optional, string; one of the predefined constants:
-    - `obj` - for returning an object instead of default iframe;
+- `replacement` — optional, string; one of the predefined constants:
+    - `obj` — for returning an object instead of default iframe;
        for cases when the page requires a valid `window` instance to be returned
-    - `log` - for logging window.open calls; permitted for production filter lists.
+    - `log` — for logging window.open calls; permitted for production filter lists.
 
 **Examples**
 1. Prevent all `window.open` calls:
@@ -1289,9 +1256,9 @@ for accessing its methods (blur(), focus() etc.) and will be removed after the d
     ```
 
 Old syntax of prevent-window-open parameters:
-- `match` - optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
-- `search` - optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
-- `replacement` - optional, string to return prop value or property instead of window.open; defaults to return noopFunc.
+- `match` — optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
+- `search` — optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
+- `replacement` — optional, string to return prop value or property instead of window.open; defaults to return noopFunc.
 **Examples**
     ```
     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
@@ -1317,16 +1284,16 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#no-xhr-ifjs-
 example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
 ```
 
-- propsToMatch - optional, string of space-separated properties to match; possible props:
-  - string or regular expression for matching the URL passed to `.open()` call; empty string or wildcard * for all `.open()` calls match
-  - colon-separated pairs name:value where
-    - name is XMLHttpRequest object property name
-    - value is string or regular expression for matching the value of the option passed to `.open()` call
-- randomize - defaults to `false` for empty responseText, optional argument to randomize responseText of matched XMLHttpRequest's response; possible values:
-  - boolean 'true' to randomize responseText, random alphanumeric string of 10 symbols
-  - string value to customize responseText data, colon-separated pairs name:value where
-      - name — only `length` supported for now
-      - value — range on numbers, for example `100-300`, limited to 500000 characters
+- `propsToMatch` — optional, string of space-separated properties to match; possible props:
+  - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call; empty string or wildcard `*` for all `XMLHttpRequest.open()` calls match
+  - colon-separated pairs `name:value` where
+    - `name` is XMLHttpRequest object property name
+    - `value` is string or regular expression for matching the value of the option passed to `XMLHttpRequest.open()` call
+- `randomize` — defaults to `false` for empty responseText, optional argument to randomize responseText of matched XMLHttpRequest's response; possible values:
+  - `true` to randomize responseText, random alphanumeric string of 10 symbols
+  - colon-separated pair `name:value` string value to customize responseText data where
+      - `name` — only `length` supported for now
+      - `value` — range on numbers, for example `100-300`, limited to 500000 characters
 
 > Usage with no arguments will log XMLHttpRequest objects to browser console;
 which is useful for debugging but not allowed for production filter lists.
@@ -1399,7 +1366,7 @@ example.org#%#//scriptlet('remove-attr', attrs[, selector, applying])
     ```
 
     ```html
-    <!-- before  -->
+    <!-- before -->
     <div example="true" test="true">Some text</div>
 
     <!-- after -->
@@ -1459,7 +1426,7 @@ If there is no `selector`, each class of `classes` independently will be removed
     ```
 
     ```html
-    <!-- before  -->
+    <!-- before -->
     <div id="first" class="nice test">Some text</div>
     <div id="second" class="rare example for test">Some text</div>
     <div id="third" class="testing better example">Some text</div>
@@ -1507,7 +1474,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#cookie-removerjs-
 example.org#%#//scriptlet('remove-cookie'[, match])
 ```
 
-- `match` - optional, string or regex matching the cookie name. If not specified all accessible cookies will be removed.
+- `match` — optional, string or regex matching the cookie name. If not specified all accessible cookies will be removed.
 
 **Examples**
 1. Removes all cookies:
@@ -1570,7 +1537,7 @@ example.org#%#//scriptlet('set-attr', selector, attr[, value])
 - `selector` — required, CSS selector, specifies DOM nodes to set attributes on
 - `attr` — required, attribute to be set
 - `value` — the value to assign to the attribute, defaults to ''. Possible values:
-    - `''` - empty string
+    - `''` — empty string
     - positive decimal integer `<= 32767`
 
 **Examples**
@@ -1580,7 +1547,7 @@ example.org#%#//scriptlet('set-attr', selector, attr[, value])
     ```
 
     ```html
-    <!-- before  -->
+    <!-- before -->
     <a class="class">Some text</div>
 
     <!-- after -->
@@ -1592,7 +1559,7 @@ example.org#%#//scriptlet('set-attr', selector, attr[, value])
     ```
 
     ```html
-    <!-- before  -->
+    <!-- before -->
     <a class="class">Some text</div>
 
     <!-- after -->
@@ -1621,28 +1588,28 @@ https://github.com/adblockplus/adblockpluscore/blob/adblockpluschrome-3.9.4/lib/
 example.org#%#//scriptlet('set-constant', property, value[, stack])
 ```
 
-- `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`.
-- `value` - required. Possible values:
+- `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`.
+- `value` — required. Possible values:
     - positive decimal integer `<= 32767`
     - one of the predefined constants:
         - `undefined`
         - `false`
         - `true`
         - `null`
-        - `emptyObj` - empty object
-        - `emptyArr` - empty array
-        - `noopFunc` - function with empty body
-        - `noopCallbackFunc` - function returning noopFunc
-        - `trueFunc` - function returning true
-        - `falseFunc` - function returning false
-        - `throwFunc` - function throwing an error
-        - `noopPromiseResolve` - function returning Promise object that is resolved with an empty response
-        - `noopPromiseReject` - function returning Promise.reject()
-        - `''` - empty string
-        - `-1` - number value `-1`
+        - `emptyObj` — empty object
+        - `emptyArr` — empty array
+        - `noopFunc` — function with empty body
+        - `noopCallbackFunc` — function returning noopFunc
+        - `trueFunc` — function returning true
+        - `falseFunc` — function returning false
+        - `throwFunc` — function throwing an error
+        - `noopPromiseResolve` — function returning Promise object that is resolved with an empty response
+        - `noopPromiseReject` — function returning Promise.reject()
+        - `''` — empty string
+        - `-1` — number value `-1`
         - `yes`
         - `no`
-- `stack` - optional, string or regular expression that must match the current function call stack trace;
+- `stack` — optional, string or regular expression that must match the current function call stack trace;
 if regular expression is invalid it will be skipped
 
 **Examples**
@@ -1682,8 +1649,8 @@ If reloading option is not needed, use [set-cookie](#set-cookie) scriptlet.
 example.org#%#//scriptlet('set-cookie-reload', name, value[, path])
 ```
 
-- `name` - required, cookie name to be set
-- `value` - required, cookie value; possible values:
+- `name` — required, cookie name to be set
+- `value` — required, cookie value; possible values:
     - number `>= 0 && <= 15`
     - one of the predefined constants:
         - `true` / `True`
@@ -1691,7 +1658,7 @@ example.org#%#//scriptlet('set-cookie-reload', name, value[, path])
         - `yes` / `Yes` / `Y`
         - `no`
         - `ok` / `OK`
-- `path` - optional, cookie path, defaults to `/`; possible values:
+- `path` — optional, cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
 
@@ -1716,8 +1683,8 @@ Sets a cookie with the specified name, value, and path.
 example.org#%#//scriptlet('set-cookie', name, value[, path])
 ```
 
-- `name` - required, cookie name to be set
-- `value` - required, cookie value; possible values:
+- `name` — required, cookie name to be set
+- `value` — required, cookie value; possible values:
     - number `>= 0 && <= 15`
     - one of the predefined constants:
         - `true` / `True`
@@ -1725,7 +1692,7 @@ example.org#%#//scriptlet('set-cookie', name, value[, path])
         - `yes` / `Yes` / `Y`
         - `no`
         - `ok` / `OK`
-- `path` - optional, cookie path, defaults to `/`; possible values:
+- `path` — optional, cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
 
@@ -1752,16 +1719,16 @@ example.com#%#//scriptlet('set-local-storage-item', 'key', 'value')
 ```
 
 - `key` — required, key name to be set.
-- `value` - required, key value; possible values:
+- `value` — required, key value; possible values:
     - positive decimal integer `<= 32767`
     - one of the predefined constants:
         - `undefined`
         - `false`
         - `true`
         - `null`
-        - `emptyObj` - empty object
-        - `emptyArr` - empty array
-        - `''` - empty string
+        - `emptyObj` — empty object
+        - `emptyArr` — empty array
+        - `''` — empty string
         - `yes`
         - `no`
 
@@ -1801,16 +1768,16 @@ example.com#%#//scriptlet('set-session-storage-item', 'key', 'value')
 ```
 
 - `key` — required, key name to be set.
-- `value` - required, key value; possible values:
+- `value` — required, key value; possible values:
     - positive decimal integer `<= 32767`
     - one of the predefined constants:
         - `undefined`
         - `false`
         - `true`
         - `null`
-        - `emptyObj` - empty object
-        - `emptyArr` - empty array
-        - `''` - empty string
+        - `emptyObj` — empty object
+        - `emptyArr` — empty array
+        - `''` — empty string
         - `yes`
         - `no`
 
@@ -1833,9 +1800,9 @@ Removes an element from the specified XML.
 example.org#%#//scriptlet('xml-prune'[, propsToMatch[, optionalProp[, urlToMatch]]])
 ```
 
-- `propsToMatch` - optional, selector of elements which will be removed from XML
-- `optionalProp` - optional, selector of elements that must occur in XML document
-- `urlToMatch` - optional, string or regular expression for matching the request's URL
+- `propsToMatch` — optional, selector of elements which will be removed from XML
+- `optionalProp` — optional, selector of elements that must occur in XML document
+- `urlToMatch` — optional, string or regular expression for matching the request's URL
 > Usage with no arguments will log response payload and URL to browser console;
 which is useful for debugging but prohibited for production filter lists.
 
@@ -1867,4 +1834,3 @@ which is useful for debugging but prohibited for production filter lists.
 
 [Scriptlet source](../src/scriptlets/xml-prune.js)
 * * *
-

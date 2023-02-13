@@ -17,9 +17,9 @@ import {
  * example.org#%#//scriptlet('xml-prune'[, propsToMatch[, optionalProp[, urlToMatch]]])
  * ```
  *
- * - `propsToMatch` - optional, selector of elements which will be removed from XML
- * - `optionalProp` - optional, selector of elements that must occur in XML document
- * - `urlToMatch` - optional, string or regular expression for matching the request's URL
+ * - `propsToMatch` — optional, selector of elements which will be removed from XML
+ * - `optionalProp` — optional, selector of elements that must occur in XML document
+ * - `urlToMatch` — optional, string or regular expression for matching the request's URL
  * > Usage with no arguments will log response payload and URL to browser console;
  * which is useful for debugging but prohibited for production filter lists.
  *

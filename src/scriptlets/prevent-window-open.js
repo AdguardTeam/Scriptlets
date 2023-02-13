@@ -34,16 +34,16 @@ import {
  * example.org#%#//scriptlet('prevent-window-open'[, match[, delay[, replacement]]])
  * ```
  *
- * - `match` - optional, string or regular expression. If not set or regular expression is invalid, all window.open calls will be matched.
+ * - `match` — optional, string or regular expression. If not set or regular expression is invalid, all window.open calls will be matched.
  * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
  * If do not start with `!`, the stringified callback will be matched.
- * - `delay` - optional, number of seconds. If not set, scriptlet will return `null`,
+ * - `delay` — optional, number of seconds. If not set, scriptlet will return `null`,
  * otherwise valid sham window object as injected `iframe` will be returned
  * for accessing its methods (blur(), focus() etc.) and will be removed after the delay.
- * - `replacement` - optional, string; one of the predefined constants:
- *     - `obj` - for returning an object instead of default iframe;
+ * - `replacement` — optional, string; one of the predefined constants:
+ *     - `obj` — for returning an object instead of default iframe;
  *        for cases when the page requires a valid `window` instance to be returned
- *     - `log` - for logging window.open calls; permitted for production filter lists.
+ *     - `log` — for logging window.open calls; permitted for production filter lists.
  *
  * **Examples**
  * 1. Prevent all `window.open` calls:
@@ -67,9 +67,9 @@ import {
  *     ```
  *
  * Old syntax of prevent-window-open parameters:
- * - `match` - optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
- * - `search` - optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
- * - `replacement` - optional, string to return prop value or property instead of window.open; defaults to return noopFunc.
+ * - `match` — optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
+ * - `search` — optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
+ * - `replacement` — optional, string to return prop value or property instead of window.open; defaults to return noopFunc.
  * **Examples**
  *     ```
  *     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')

@@ -43,28 +43,28 @@ import {
  * example.org#%#//scriptlet('set-constant', property, value[, stack])
  * ```
  *
- * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`.
- * - `value` - required. Possible values:
+ * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`.
+ * - `value` — required. Possible values:
  *     - positive decimal integer `<= 32767`
  *     - one of the predefined constants:
  *         - `undefined`
  *         - `false`
  *         - `true`
  *         - `null`
- *         - `emptyObj` - empty object
- *         - `emptyArr` - empty array
- *         - `noopFunc` - function with empty body
- *         - `noopCallbackFunc` - function returning noopFunc
- *         - `trueFunc` - function returning true
- *         - `falseFunc` - function returning false
- *         - `throwFunc` - function throwing an error
- *         - `noopPromiseResolve` - function returning Promise object that is resolved with an empty response
- *         - `noopPromiseReject` - function returning Promise.reject()
- *         - `''` - empty string
- *         - `-1` - number value `-1`
+ *         - `emptyObj` — empty object
+ *         - `emptyArr` — empty array
+ *         - `noopFunc` — function with empty body
+ *         - `noopCallbackFunc` — function returning noopFunc
+ *         - `trueFunc` — function returning true
+ *         - `falseFunc` — function returning false
+ *         - `throwFunc` — function throwing an error
+ *         - `noopPromiseResolve` — function returning Promise object that is resolved with an empty response
+ *         - `noopPromiseReject` — function returning Promise.reject()
+ *         - `''` — empty string
+ *         - `-1` — number value `-1`
  *         - `yes`
  *         - `no`
- * - `stack` - optional, string or regular expression that must match the current function call stack trace;
+ * - `stack` — optional, string or regular expression that must match the current function call stack trace;
  * if regular expression is invalid it will be skipped
  *
  * **Examples**

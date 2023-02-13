@@ -22,7 +22,7 @@ import {
  * - `selector` — required, CSS selector, specifies DOM nodes to set attributes on
  * - `attr` — required, attribute to be set
  * - `value` — the value to assign to the attribute, defaults to ''. Possible values:
- *     - `''` - empty string
+ *     - `''` — empty string
  *     - positive decimal integer `<= 32767`
  *     - `true` / `false` in any case variation
  *
@@ -33,7 +33,7 @@ import {
  *     ```
  *
  *     ```html
- *     <!-- before  -->
+ *     <!-- before -->
  *     <a class="class">Some text</div>
  *
  *     <!-- after -->
@@ -45,7 +45,7 @@ import {
  *     ```
  *
  *     ```html
- *     <!-- before  -->
+ *     <!-- before -->
  *     <a class="class">Some text</div>
  *
  *     <!-- after -->
@@ -57,7 +57,7 @@ import {
  *     ```
  *
  *     ```html
- *     <!-- before  -->
+ *     <!-- before -->
  *     <a class="class">Some text</div>
  *
  *     <!-- after -->
@@ -69,7 +69,7 @@ import {
  *     ```
  *
  *     ```html
- *     <!-- before  -->
+ *     <!-- before -->
  *     <a class="class">Some text</div>
  *
  *     <!-- after -->

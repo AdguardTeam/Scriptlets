@@ -30,14 +30,14 @@ import {
  * example.org#%#//scriptlet('trusted-replace-fetch-response'[, pattern, replacement[, propsToMatch]])
  * ```
  *
- * - pattern - optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
+ * - `pattern` — optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
  * possible values:
  *   - `*` to match all text content
  *   - non-empty string
  *   - regular expression
- * - replacement — optional, should be set if `pattern` is set. String to replace the response text content matched by `pattern`.
+ * - `replacement` — optional, should be set if `pattern` is set. String to replace the response text content matched by `pattern`.
  * Empty string to remove content. Defaults to empty string.
- * - propsToMatch - optional, string of space-separated properties to match; possible props:
+ * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
  *   - string or regular expression for matching the URL passed to fetch call; empty string, wildcard `*` or invalid regular expression will match all fetch calls
  *   - colon-separated pairs `name:value` where
  *     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)

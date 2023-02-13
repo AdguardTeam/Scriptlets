@@ -27,7 +27,7 @@ import {
  * example.org#%#//scriptlet('prevent-requestAnimationFrame'[, search])
  * ```
  *
- * - `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
+ * - `search` — optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
  * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
  * If do not start with `!`, the stringified callback will be matched.
  *

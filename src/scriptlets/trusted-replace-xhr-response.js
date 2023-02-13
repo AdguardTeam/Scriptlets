@@ -28,17 +28,17 @@ import {
  * example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[, propsToMatch]])
  * ```
  *
- * - pattern - optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
+ * - `pattern` — optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
  * possible values:
  *   - `*` to match all text content
  *   - non-empty string
  *   - regular expression
- * - replacement — optional, should be set if `pattern` is set. String to replace matched content with. Empty string to remove content.
- * - propsToMatch — optional, string of space-separated properties to match for extra condition; possible props:
- *   - string or regular expression for matching the URL passed to `.open()` call;
- *   - colon-separated pairs name:value where
- *     - name - name is string or regular expression for matching XMLHttpRequest property name
- *     - value is string or regular expression for matching the value of the option passed to `.open()` call
+ * - `replacement` — optional, should be set if `pattern` is set. String to replace matched content with. Empty string to remove content.
+ * - `propsToMatch` — optional, string of space-separated properties to match for extra condition; possible props:
+ *   - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call;
+ *   - colon-separated pairs `name:value` where
+ *     - `name` — string or regular expression for matching XMLHttpRequest property name
+ *     - `value` — string or regular expression for matching the value of the option passed to `XMLHttpRequest.open()` call
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
  * which is useful for debugging but not permitted for production filter lists.

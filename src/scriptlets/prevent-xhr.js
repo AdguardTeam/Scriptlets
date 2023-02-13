@@ -36,16 +36,16 @@ import {
  * example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
  * ```
  *
- * - propsToMatch - optional, string of space-separated properties to match; possible props:
- *   - string or regular expression for matching the URL passed to `.open()` call; empty string or wildcard * for all `.open()` calls match
- *   - colon-separated pairs name:value where
- *     - name is XMLHttpRequest object property name
- *     - value is string or regular expression for matching the value of the option passed to `.open()` call
- * - randomize - defaults to `false` for empty responseText, optional argument to randomize responseText of matched XMLHttpRequest's response; possible values:
- *   - boolean 'true' to randomize responseText, random alphanumeric string of 10 symbols
- *   - string value to customize responseText data, colon-separated pairs name:value where
- *       - name — only `length` supported for now
- *       - value — range on numbers, for example `100-300`, limited to 500000 characters
+ * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
+ *   - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call; empty string or wildcard `*` for all `XMLHttpRequest.open()` calls match
+ *   - colon-separated pairs `name:value` where
+ *     - `name` is XMLHttpRequest object property name
+ *     - `value` is string or regular expression for matching the value of the option passed to `XMLHttpRequest.open()` call
+ * - `randomize` — defaults to `false` for empty responseText, optional argument to randomize responseText of matched XMLHttpRequest's response; possible values:
+ *   - `true` to randomize responseText, random alphanumeric string of 10 symbols
+ *   - colon-separated pair `name:value` string value to customize responseText data where
+ *       - `name` — only `length` supported for now
+ *       - `value` — range on numbers, for example `100-300`, limited to 500000 characters
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
  * which is useful for debugging but not allowed for production filter lists.

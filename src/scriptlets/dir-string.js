@@ -17,7 +17,7 @@ import { hit } from '../helpers/index';
  * ```
  * example.org#%#//scriptlet('dir-string'[, times])
  * ```
- * - `times` - optional, the number of times to call the `toString` method of the argument to `console.dir`
+ * - `times` — optional, the number of times to call the `toString` method of the argument to `console.dir`
  *
  * **Example**
  * ```

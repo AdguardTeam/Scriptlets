@@ -26,7 +26,7 @@ import {
  * example.org#%#//scriptlet('abort-on-property-read', property)
  * ```
  *
- * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
+ * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`
  *
  * **Examples**
  * ```

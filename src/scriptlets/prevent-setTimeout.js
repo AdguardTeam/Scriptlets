@@ -37,11 +37,11 @@ import {
  *
  * Call with no arguments will log calls to setTimeout while debugging (`log-setTimeout` superseding),
  * so production filter lists' rules definitely require at least one of the parameters:
- * - `matchCallback` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
+ * - `matchCallback` — optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
  * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
  * If do not start with `!`, the stringified callback will be matched.
  * If not set, prevents all `setTimeout` calls due to specified `matchDelay`.
- * - `matchDelay` - optional, must be an integer.
+ * - `matchDelay` — optional, must be an integer.
  * If starts with `!`, scriptlet will not match the delay but all other will be defused.
  * If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
  * Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.

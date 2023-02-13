@@ -34,17 +34,17 @@ import {
  * example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, responseType]]])
  * ```
  *
- * - `propsToMatch` - optional, string of space-separated properties to match; possible props:
+ * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
  *   - string or regular expression for matching the URL passed to fetch call; empty string, wildcard `*` or invalid regular expression will match all fetch calls
  *   - colon-separated pairs `name:value` where
  *     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
  *     - `value` is string or regular expression for matching the value of the option passed to fetch call; invalid regular expression will cause any value matching
- * - responseBody - optional, string for defining response body value, defaults to `emptyObj`. Possible values:
- *    - `emptyObj` - empty object
- *    - `emptyArr` - empty array
- * - responseType - optional, string for defining response type, defaults to `default`. Possible values:
- *    - default
- *    - opaque
+ * - `responseBody` — optional, string for defining response body value, defaults to `emptyObj`. Possible values:
+ *    - `emptyObj` — empty object
+ *    - `emptyArr` — empty array
+ * - `responseType` — optional, string for defining response type, defaults to `default`. Possible values:
+ *    - `default`
+ *    - `opaque`
  *
  * > Usage with no arguments will log fetch calls to browser console;
  * which is useful for debugging but not permitted for production filter lists.

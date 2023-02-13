@@ -15,7 +15,7 @@ import { toRegExp, hit } from '../helpers/index';
  * example.org#%#//scriptlet('prevent-eval-if'[, search])
  * ```
  *
- * - `search` - optional, string or regular expression matching the stringified eval payload;
+ * - `search` — optional, string or regular expression matching the stringified eval payload;
  * defaults to match all stringified eval payloads;
  * invalid regular expression will cause exit and rule will not work
  *

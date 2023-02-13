@@ -19,16 +19,16 @@ import {
  * ```
  *
  * - `key` — required, key name to be set.
- * - `value` - required, key value; possible values:
+ * - `value` — required, key value; possible values:
  *     - positive decimal integer `<= 32767`
  *     - one of the predefined constants:
  *         - `undefined`
  *         - `false`
  *         - `true`
  *         - `null`
- *         - `emptyObj` - empty object
- *         - `emptyArr` - empty array
- *         - `''` - empty string
+ *         - `emptyObj` — empty object
+ *         - `emptyArr` — empty array
+ *         - `''` — empty string
  *         - `yes`
  *         - `no`
  *

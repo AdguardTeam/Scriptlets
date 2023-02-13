@@ -19,7 +19,7 @@ import {
  * ```
  *
  * - `key` — required, key name to be set.
- * - `value` - required, key value; possible values:
+ * - `value` — required, key value; possible values:
  *   - arbitrary value
  *   - `$now$` keyword for setting current time in ms, corresponds to `Date.now()` and `(new Date).getTime()` calls
  *   - `$currentDate$` keyword for setting string representation of the current date and time, corresponds to `Date()` and `(new Date).toString()` calls
