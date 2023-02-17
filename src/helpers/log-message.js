@@ -7,8 +7,9 @@
  * @param {Object} source required, scriptlet properties
  * @param {string} message required, message to log
  * @param {boolean} [forced=false] to log message unconditionally
+ * @param {boolean} [convertMessageToString=true] to convert message to string
  */
-export const logMessage = (source, message, forced = false) => {
+export const logMessage = (source, message, forced = false, convertMessageToString = true) => {
     const {
         name,
         ruleText,
@@ -16,6 +17,17 @@ export const logMessage = (source, message, forced = false) => {
     } = source;
 
     if (!forced && !verbose) {
+        return;
+    }
+
+    // eslint-disable-next-line no-console
+    const nativeConsole = console.log;
+
+    if (!convertMessageToString) {
+        // Template literals convert object to string,
+        // so 'message' should not be passed to template literals
+        // as it will not be logged correctly
+        nativeConsole(`${name}:`, message);
         return;
     }
 
@@ -30,7 +42,5 @@ export const logMessage = (source, message, forced = false) => {
             messageStr += `; cannot apply rule: ${ruleWithoutDomains}`;
         }
     }
-
-    // eslint-disable-next-line no-console
-    console.log(messageStr);
+    nativeConsole(messageStr);
 };

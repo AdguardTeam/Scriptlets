@@ -1,6 +1,5 @@
 /* eslint-disable no-underscore-dangle, no-console */
 import { runScriptlet, clearGlobalProps } from '../helpers';
-import { startsWith } from '../../src/helpers/string-utils';
 
 const { test, module } = QUnit;
 const name = 'xml-prune';
@@ -52,16 +51,21 @@ if (!isSupported) {
     });
 
     test('fetch - no prune (log)', async (assert) => {
-        const done = assert.async();
+        const done = assert.async(2);
 
         // mock console.log function for log checking
-        console.log = function log(input) {
-            if (input.indexOf('trace') > -1) {
-                return;
+        console.log = function log(...args) {
+            const input = args[0];
+            if (typeof input === 'string' && typeof args[1] === 'undefined') {
+                if (input.indexOf('trace') > -1) {
+                    return;
+                }
+                const EXPECTED_LOG_STR_START = `xml-prune: fetch URL: ${MPD_OBJECTS_PATH}`;
+                assert.ok(input.startsWith(EXPECTED_LOG_STR_START), 'console.hit input');
+                assert.ok(input.indexOf('pre-roll-1-ad-1') > -1);
+                done();
             }
-            const EXPECTED_LOG_STR_START = `fetch URL: ${MPD_OBJECTS_PATH}`;
-            assert.ok(startsWith(input, EXPECTED_LOG_STR_START), 'console.hit input');
-            assert.ok(input.indexOf('pre-roll-1-ad-1') > -1);
+            nativeConsole(...args);
         };
 
         runScriptlet(name);
@@ -179,16 +183,40 @@ if (!isSupported) {
         done();
     });
 
-    test('xhr - no prune (log)', async (assert) => {
+    test('fetch match URL - new Request() remove ads', async (assert) => {
+        const MATCH_DATA = "Period[id*='-ad-']";
+        const OPTIONAL_MATCH = '';
+        const MATCH_URL = '.mpd';
+        const REQUEST_URL = new Request(MPD_OBJECTS_PATH);
+        const scriptletArgs = [MATCH_DATA, OPTIONAL_MATCH, MATCH_URL];
+
+        runScriptlet(name, scriptletArgs);
+
         const done = assert.async();
 
-        console.log = function log(input) {
-            if (input.indexOf('trace') > -1) {
-                return;
+        const response = await fetch(REQUEST_URL);
+        const responseMPD = await response.text();
+
+        assert.notOk(responseMPD.indexOf('pre-roll-1-ad-1') > -1);
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('xhr - no prune (log)', async (assert) => {
+        const done = assert.async(2);
+
+        console.log = function log(...args) {
+            const input = args[0];
+            if (typeof input === 'string' && typeof args[1] === 'undefined') {
+                if (input.indexOf('trace') > -1) {
+                    return;
+                }
+                const EXPECTED_LOG_STR_START = `xml-prune: XMLHttpRequest.open() URL: ${MPD_OBJECTS_PATH}`;
+                assert.ok(input.startsWith(EXPECTED_LOG_STR_START), 'console.hit input');
+                assert.ok(input.indexOf('pre-roll-1-ad-1') > -1, 'console.hit input');
+                done();
             }
-            const EXPECTED_LOG_STR_START = `XMLHttpRequest.open() URL: ${MPD_OBJECTS_PATH}`;
-            assert.ok(startsWith(input, EXPECTED_LOG_STR_START), 'console.hit input');
-            assert.ok(input.indexOf('pre-roll-1-ad-1') > -1, 'console.hit input');
+            nativeConsole(...args);
         };
 
         runScriptlet(name);
@@ -315,6 +343,23 @@ if (!isSupported) {
         xhr.onload = () => {
             assert.notOk(xhr.responseText.indexOf('pre-roll-1-ad-1') > -1);
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
+    test('xhr - do nothing if response type is not a string', async (assert) => {
+        const METHOD = 'GET';
+        const done = assert.async();
+
+        runScriptlet(name);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, MPD_OBJECTS_PATH);
+        xhr.responseType = 'blob';
+        xhr.onload = () => {
+            assert.ok(xhr.response instanceof Blob, 'Blob response');
+            assert.strictEqual(window.hit, undefined, 'should not hit');
             done();
         };
         xhr.send();

@@ -2,8 +2,6 @@ import {
     hit,
     logMessage,
     toRegExp,
-    startsWith,
-    endsWith,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -74,13 +72,24 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch) {
     const urlMatchRegexp = toRegExp(urlToMatch);
 
     const isXML = (text) => {
-        // Check if "text" starts with "<" and check if it ends with ">"
-        // If so, then it might be an XML file and should be pruned or logged
-        const trimedText = text.trim();
-        if (startsWith(trimedText, '<') && endsWith(trimedText, '>')) {
-            return true;
+        // It's necessary to check the type of 'text'
+        // because 'text' is obtained from the xhr/fetch response,
+        // so it could also be Blob/ArrayBuffer/Object or another type
+        if (typeof text === 'string') {
+            // Check if "text" starts with "<" and check if it ends with ">"
+            // If so, then it might be an XML file and should be pruned or logged
+            const trimedText = text.trim();
+            if (trimedText.startsWith('<') && trimedText.endsWith('>')) {
+                return true;
+            }
         }
         return false;
+    };
+
+    const createXMLDocument = (text) => {
+        const xmlParser = new DOMParser();
+        const xmlDocument = xmlParser.parseFromString(text, 'text/xml');
+        return xmlDocument;
     };
 
     const pruneXML = (text) => {
@@ -88,8 +97,7 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch) {
             shouldPruneResponse = false;
             return text;
         }
-        const xmlParser = new DOMParser();
-        const xmlDoc = xmlParser.parseFromString(text, 'text/xml');
+        const xmlDoc = createXMLDocument(text);
         const errorNode = xmlDoc.querySelector('parsererror');
         if (errorNode) {
             return text;
@@ -123,9 +131,9 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch) {
                     thisArg.removeEventListener('readystatechange', pruneResponse);
                     if (!shouldPruneResponse) {
                         if (isXML(response)) {
-                            // eslint-disable-next-line max-len
                             const message = `XMLHttpRequest.open() URL: ${xhrURL}\nresponse: ${response}`;
-                            logMessage(message);
+                            logMessage(source, message);
+                            logMessage(source, createXMLDocument(response), true, false);
                         }
                     } else {
                         const prunedResponseContent = pruneXML(response);
@@ -159,7 +167,7 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch) {
     const nativeFetch = window.fetch;
 
     const fetchWrapper = (target, thisArg, args) => {
-        const fetchURL = args[0];
+        const fetchURL = args[0] instanceof Request ? args[0].url : args[0];
         if (typeof fetchURL !== 'string' || fetchURL.length === 0) {
             return Reflect.apply(target, thisArg, args);
         }
@@ -168,7 +176,9 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch) {
                 return response.text().then((text) => {
                     if (!shouldPruneResponse) {
                         if (isXML(text)) {
-                            logMessage(`fetch URL: ${fetchURL}\nresponse text: ${text}`);
+                            const message = `fetch URL: ${fetchURL}\nresponse text: ${text}`;
+                            logMessage(source, message);
+                            logMessage(source, createXMLDocument(text), true, false);
                         }
                         return Reflect.apply(target, thisArg, args);
                     }
@@ -212,6 +222,4 @@ xmlPrune.injections = [
     hit,
     logMessage,
     toRegExp,
-    startsWith,
-    endsWith,
 ];
