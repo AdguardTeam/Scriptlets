@@ -273,6 +273,11 @@ export const parseDelayArg = (delay) => {
  * @returns {string} object's string representation
  */
 export const objectToString = (obj) => {
+    // In case if the type of passed obj is different than Object
+    // https://github.com/AdguardTeam/Scriptlets/issues/282
+    if (!obj || typeof obj !== 'object') {
+        return String(obj);
+    }
     return isEmptyObject(obj)
         ? '{}'
         : getObjectEntries(obj)

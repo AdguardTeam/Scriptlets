@@ -5,7 +5,7 @@
  * and use 'forced' argument otherwise.
  *
  * @param {Object} source required, scriptlet properties
- * @param {string} message required, message to log
+ * @param {any} message required, message to log
  * @param {boolean} [forced=false] to log message unconditionally
  * @param {boolean} [convertMessageToString=true] to convert message to string
  */

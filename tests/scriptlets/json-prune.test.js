@@ -484,9 +484,13 @@ test('can NOT remove propsToRemove if nested requiredInitialProps has wildcard b
 });
 
 test('does NOT remove propsToRemove if invoked without parameter propsToRemove and return hostname', (assert) => {
-    console.log = (message) => {
-        assert.ok(message.includes(window.location.hostname), 'should log hostname in console');
-        assert.ok(message.includes('a:"1" b:"2"'), 'should log parameters in console');
+    assert.expect(2);
+    console.log = (...args) => {
+        if (args.length === 1) {
+            assert.ok(args[0].includes(window.location.hostname), 'should log hostname in console');
+            assert.ok(args[0].includes('"a": 1,\n  "b": 2'), 'should log parameters in console');
+        }
+        nativeConsole(...args);
     };
     runScriptlet('json-prune');
     JSON.parse('{"a":1, "b":2}');
@@ -494,9 +498,12 @@ test('does NOT remove propsToRemove if invoked without parameter propsToRemove a
 
 test('logs matched object and hostname if invoked with only second arg', (assert) => {
     assert.expect(2);
-    console.log = (message) => {
-        assert.ok(message.includes(window.location.hostname), 'should log hostname in console');
-        assert.ok(message.includes('a:"1"'), 'should log parameters in console');
+    console.log = (...args) => {
+        if (args.length === 1) {
+            assert.ok(args[0].includes(window.location.hostname), 'should log hostname in console');
+            assert.ok(args[0].includes('"a": 1'), 'should log parameters in console');
+        }
+        nativeConsole(...args);
     };
     runScriptlet('json-prune', '', '"a":1');
     JSON.parse('{"a":1}');
@@ -555,4 +562,37 @@ test('does not remove propsToRemove - invalid regexp pattern for stack match', (
     const stackArg = '/\\/';
     runScriptlet('json-prune', 'x', '', stackArg);
     assert.deepEqual(JSON.parse('{"x":1}'), { x: 1 }, 'should NOT remove propsToRemove');
+});
+
+test('logs null', (assert) => {
+    assert.expect(2);
+    console.log = (message) => {
+        assert.ok(message.includes(window.location.hostname), 'should log hostname in console');
+        assert.ok(message.includes('null'), 'should log parameters in console');
+        nativeConsole(message);
+    };
+    runScriptlet('json-prune');
+    JSON.parse(null);
+});
+
+test('logs 0', (assert) => {
+    assert.expect(2);
+    console.log = (message) => {
+        assert.ok(message.includes(window.location.hostname), 'should log hostname in console');
+        assert.ok(message.endsWith('0'), 'should log parameters in console');
+        nativeConsole(message);
+    };
+    runScriptlet('json-prune');
+    JSON.parse(0);
+});
+
+test('logs 10', (assert) => {
+    assert.expect(2);
+    console.log = (message) => {
+        assert.ok(message.includes(window.location.hostname), 'should log hostname in console');
+        assert.ok(message.endsWith('10'), 'should log parameters in console');
+        nativeConsole(message);
+    };
+    runScriptlet('json-prune');
+    JSON.parse(10);
 });
