@@ -37,7 +37,8 @@ export const isDelayMatched = (inputDelay, realDelay) => {
  */
 export const getBoostMultiplier = (boost) => {
     const DEFAULT_MULTIPLIER = 0.05;
-    const MIN_MULTIPLIER = 0.02;
+    // https://github.com/AdguardTeam/Scriptlets/issues/262
+    const MIN_MULTIPLIER = 0.001;
     const MAX_MULTIPLIER = 50;
     const parsedBoost = parseFloat(boost);
     let boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost)

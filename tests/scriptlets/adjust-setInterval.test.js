@@ -153,6 +153,29 @@ test('all params, boost < 1 (boosting)', (assert) => {
     }, 150);
 });
 
+test('all params, boost < 1 (boosting 0.001)', (assert) => {
+    const scriptletArgs = ['intervalValue', '100000', '0.001'];
+    runScriptlet(name, scriptletArgs);
+
+    const done1 = assert.async();
+    const done2 = assert.async();
+
+    const interval = setInterval(() => {
+        window.intervalValue = 'value';
+    }, 100000); // scriptlet should make it '100'
+
+    setTimeout(() => {
+        assert.notOk(window.intervalValue, 'Still not defined');
+        done1();
+    }, 50);
+
+    setTimeout(() => {
+        assert.strictEqual(window.intervalValue, 'value', 'Should be defined');
+        clearInterval(interval);
+        done2();
+    }, 150);
+});
+
 test('all params, invalid boost value --> 0.05 by default', (assert) => {
     const scriptletArgs = ['intervalValue', '1000', 'abc'];
     runScriptlet(name, scriptletArgs);
