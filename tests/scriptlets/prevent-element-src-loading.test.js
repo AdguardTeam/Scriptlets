@@ -292,3 +292,22 @@ test('setAttribute, prevent error trigger, setSrcAttribute & addErrorListener', 
 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
+
+test('setAttribute, matching script element, test addEventListener', (assert) => {
+    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_SCRIPT01_FILENAME}`;
+    const scriptletArgs = [SCRIPT_TARGET_NODE, TEST_SCRIPT01_FILENAME];
+    runScriptlet(name, scriptletArgs);
+
+    var elem = createTestTag(
+        assert,
+        SCRIPT_TARGET_NODE,
+        SOURCE_PATH,
+        SET_SRC_ATTRIBUTE, ONERROR_PROP,
+    );
+    // It's intentionally used without a specific target (like window/document) before addEventListener
+    // because in such case, thisArg in the addEventListenerWrapper is undefined
+    // https://github.com/AdguardTeam/Scriptlets/issues/270
+    addEventListener('visibilitychange', () => {});
+    assert.strictEqual(elem.src, srcMockData[SCRIPT_TARGET_NODE], 'src was mocked');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});

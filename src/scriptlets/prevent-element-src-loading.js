@@ -170,7 +170,7 @@ export function preventElementSrcLoading(source, tagName, match) {
 
     const addEventListenerWrapper = (target, thisArg, args) => {
         // Check if arguments are present
-        if (!args[0] || !args[1]) {
+        if (!args[0] || !args[1] || !thisArg) {
             return Reflect.apply(target, thisArg, args);
         }
 
