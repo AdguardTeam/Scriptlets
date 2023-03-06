@@ -9,6 +9,12 @@
 - `true` and `false` values for `set-attr` scriptlet [#283](https://github.com/AdguardTeam/Scriptlets/issues/283)
 
 
+## v1.8.3
+
+### Fixed
+- improve performance of the `isValidScriptletName()` method
+
+
 ## v1.8.2
 
 ### Added
@@ -29,6 +35,7 @@
 - `prevent-xhr` and `trusted-replace-xhr-response` closure bug on multiple requests [#261](https://github.com/AdguardTeam/Scriptlets/issues/261)
 - missing `googletagmanager-gtm` in compatibility table
 
+
 ## v1.7.20
 
 ### Added
@@ -40,12 +47,14 @@
 
 - Redirects types.
 
+
 ## v1.7.19
 
 ### Fixed
 
 - `prevent-addEventListener` and `log-addEventListener` loosing context when encountering already bound `.addEventListener`
 - `google-ima3` conversion
+
 
 ## v1.7.14
 
@@ -60,6 +69,7 @@
 
 * `isEmptyObject` helper not counting `prototype` as an object property
 
+
 ## v1.7.10
 
 ### Added
@@ -72,6 +82,7 @@
 - breakage of `prevent-element-src-loading` due to `window` getting into `apply` wrapper [#264](https://github.com/AdguardTeam/Scriptlets/issues/264)
 - spread of args bug at `getXhrData` call for `trusted-replace-xhr-response`
 - request properties array not being served to `getRequestData` and `parseMatchProps` helpers
+
 
 ## v1.7.3
 
