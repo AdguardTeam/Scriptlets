@@ -96,13 +96,26 @@ const isAbpSnippetRule = (rule) => {
 };
 
 /**
- * Finds scriptlet by it's name
+ * Returns array of scriptlet objects.
+ * Needed for scriptlet name validation which will check aliases names.
  *
- * @param {string} name - scriptlet name
- * @returns {Function} scriptlet function
+ * @returns {Array<Object>} Array of all scriptlet objects.
  */
-const getScriptletByName = (name) => {
-    const scriptlets = Object.keys(scriptletsList).map((key) => scriptletsList[key]);
+const getScriptletsListObj = () => {
+    return Object.keys(scriptletsList).map((key) => scriptletsList[key]);
+};
+
+/**
+ * Finds scriptlet by the `name`.
+ *
+ * @param {string} name Scriptlet name.
+ * @param {Array<Object>} scriptlets Array of all scriptlet objects.
+ * @returns {Function} Scriptlet function.
+ */
+const getScriptletByName = (name, scriptlets) => {
+    if (!scriptlets) {
+        scriptlets = getScriptletsListObj();
+    }
     return scriptlets
         .find((s) => {
             return s.names
@@ -114,21 +127,51 @@ const getScriptletByName = (name) => {
         });
 };
 
+const scriptletObjects = getScriptletsListObj();
+
 /**
- * Checks if the scriptlet name is valid
+ * Checks whether the scriptlet `name` is valid by checking the scriptlet list object.
  *
- * @param {string} name - Scriptlet name
- * @returns {boolean} if the scriptlet name is valid
+ * @param {string} name Scriptlet name.
+ * @returns {boolean} True if scriptlet name is valid.
+ */
+const isValidScriptletNameNotCached = (name) => {
+    if (!name) {
+        return false;
+    }
+    const scriptlet = getScriptletByName(name, scriptletObjects);
+    if (!scriptlet) {
+        return false;
+    }
+    return true;
+};
+
+/**
+ * Cache for better performance of scriptlet name validation.
+ */
+const scriptletNameValidationCache = new Map();
+
+/**
+ * Checks if the scriptlet name is valid.
+ * Uses cache for better performance.
+ *
+ * @param {string} name Scriptlet name.
+ * @returns {boolean} True if scriptlet name is valid.
  */
 const isValidScriptletName = (name) => {
     if (!name) {
         return false;
     }
-    const scriptlet = getScriptletByName(name);
-    if (!scriptlet) {
-        return false;
+    // if there is no cached validation value
+    if (!scriptletNameValidationCache.has(name)) {
+        // we should calculate it first
+        const isValid = isValidScriptletNameNotCached(name);
+        // and save it to the cache then
+        scriptletNameValidationCache.set(name, isValid);
+        return isValid;
     }
-    return true;
+    // otherwise return cached validation result
+    return scriptletNameValidationCache.get(name);
 };
 
 /* ************************************************************************
@@ -287,7 +330,7 @@ const parseModifiers = (rule) => substringAfter(rule, '$').split(',');
 const getRedirectName = (rule, marker) => {
     const ruleModifiers = parseModifiers(rule);
     const redirectNamePart = ruleModifiers
-        .find((el) => el.indexOf(marker) > -1);
+        .find((el) => el.includes(marker));
     return substringAfter(redirectNamePart, marker);
 };
 
@@ -302,10 +345,10 @@ const isAdgRedirectRule = (rule) => {
     const MARKER_IN_BASE_PART_MASK = '/((?!\\$|\\,).{1})redirect((-rule)?)=(.{0,}?)\\$(popup)?/';
     return (
         !isComment(rule)
-        && (rule.indexOf(REDIRECT_RULE_TYPES.ADG.redirectMarker) > -1
-            || rule.indexOf(REDIRECT_RULE_TYPES.ADG.redirectRuleMarker) > -1)
+        && (rule.includes(REDIRECT_RULE_TYPES.ADG.redirectMarker)
+            || rule.includes(REDIRECT_RULE_TYPES.ADG.redirectRuleMarker))
         // some js rules may have 'redirect=' in it, so we should get rid of them
-        && rule.indexOf(JS_RULE_MARKER) === -1
+        && !rule.includes(JS_RULE_MARKER)
         // get rid of rules like '_redirect=*://look.$popup'
         && !(toRegExp(MARKER_IN_BASE_PART_MASK).test(rule))
     );
@@ -416,12 +459,11 @@ const hasValidContentType = (rule) => {
     const ruleModifiers = parseModifiers(rule);
     // rule can have more than one source type modifier
     const sourceTypes = ruleModifiers
-        .filter((el) => VALID_SOURCE_TYPES.indexOf(el) > -1);
+        .filter((el) => VALID_SOURCE_TYPES.includes(el));
 
     const isSourceTypeSpecified = sourceTypes.length > 0;
-    // eslint-disable-next-line max-len
-    const isEmptyRedirect = ruleModifiers.indexOf(`${ADG_UBO_REDIRECT_MARKER}${EMPTY_REDIRECT_MARKER}`) > -1
-        || ruleModifiers.indexOf(`${ADG_UBO_REDIRECT_RULE_MARKER}${EMPTY_REDIRECT_MARKER}`) > -1;
+    const isEmptyRedirect = ruleModifiers.includes(`${ADG_UBO_REDIRECT_MARKER}${EMPTY_REDIRECT_MARKER}`)
+        || ruleModifiers.includes(`${ADG_UBO_REDIRECT_RULE_MARKER}${EMPTY_REDIRECT_MARKER}`);
 
     if (isEmptyRedirect) {
         // no source type for 'empty' is allowed

@@ -11,7 +11,7 @@ import { isExisting } from './array-utils';
 
 import validator from './validator';
 
-import { parseRule } from './parse-rule';
+import { ADG_SCRIPTLET_MASK, parseRule } from './parse-rule';
 
 import * as scriptletList from '../scriptlets/scriptlets-list';
 
@@ -334,6 +334,32 @@ export const convertAdgScriptletToUbo = (rule) => {
 };
 
 /**
+ * Returns scriptlet name from `rule`.
+ *
+ * @param {string} rule AdGuard syntax scriptlet rule.
+ * @returns {string|null} Scriptlet name or null.
+ */
+const getAdgScriptletName = (rule) => {
+    // get substring after '#//scriptlet('
+    let buffer = substringAfter(rule, `${ADG_SCRIPTLET_MASK}(`);
+    if (!buffer) {
+        return null;
+    }
+    // get the quote used for the first scriptlet parameter which is a name
+    const nameQuote = buffer[0];
+    // delete the quote from the buffer
+    buffer = buffer.slice(1);
+    if (!buffer) {
+        return null;
+    }
+    // get a supposed scriptlet name
+    const name = substringBefore(buffer, nameQuote);
+    return name === buffer
+        ? null
+        : name;
+};
+
+/**
  * Checks whether the ADG scriptlet exists or UBO/ABP scriptlet is compatible to ADG
  *
  * @param {string} input can be ADG or UBO or ABP scriptlet rule
@@ -349,8 +375,8 @@ export const isValidScriptletRule = (input) => {
     // checking if each of parsed scriptlets is valid
     // if at least one of them is not valid - whole 'input' rule is not valid too
     const isValid = rulesArray.every((rule) => {
-        const parsedRule = parseRule(rule);
-        return validator.isValidScriptletName(parsedRule.name);
+        const name = getAdgScriptletName(rule);
+        return validator.isValidScriptletName(name);
     });
 
     return isValid;

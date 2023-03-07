@@ -29,7 +29,7 @@ test('Test scriptlet rule validation', (assert) => {
 
     // no space between parameters
     inputRule = 'example.org##+js(aopr,__cad.cpm_popunder)';
-    assert.strictEqual(isValidScriptletRule(inputRule), true);
+    assert.strictEqual(isValidScriptletRule(inputRule), true, 'ubo aopr scriptlet, no space between args');
 
     // set-constant empty string
     inputRule = 'example.org##+js(set-constant, config.ads.desktopPreroll, \'\')';
@@ -41,13 +41,13 @@ test('Test scriptlet rule validation', (assert) => {
 
     // invalid scriptlet name
     inputRule = 'example.org#@%#//scriptlet("ubo-abort-scriptlet.js", "notDetected")';
-    assert.strictEqual(isValidScriptletRule(inputRule), false);
+    assert.strictEqual(isValidScriptletRule(inputRule), false, 'ubo-abort-scriptlet.js, exception rule');
 
     inputRule = 'example.org#$#hide-if-has-and-matches-style \'d[id^="_"]\' \'div > s\' \'display: none\'; hide-if-contains /.*/ .p \'a[href^="/ad__c?"]\'';
-    assert.strictEqual(isValidScriptletRule(inputRule), false);
+    assert.strictEqual(isValidScriptletRule(inputRule), false, 'few abp snippets rule');
 
     inputRule = 'example.org#$#hide-if-contains li.serp-item \'li.serp-item div.label\'';
-    assert.strictEqual(isValidScriptletRule(inputRule), false);
+    assert.strictEqual(isValidScriptletRule(inputRule), false, 'single abp snippet rule');
 });
 
 test('Test comment', (assert) => {

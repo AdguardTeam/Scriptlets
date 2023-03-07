@@ -17,6 +17,8 @@
 - `prevent-element-src-loading` throwing error if `thisArg` is `undefined` [#270](https://github.com/AdguardTeam/Scriptlets/issues/270)
 - logging `null` in `json-prune` [#282](https://github.com/AdguardTeam/Scriptlets/issues/282)
 - `xml-prune` does not prune a request if `new Request()` is used and issue with throwing error while logging some requests [#289](https://github.com/AdguardTeam/Scriptlets/issues/289)
+- improve performance of the `isValidScriptletName()` method
+
 
 ## v1.8.2
 
@@ -38,6 +40,7 @@
 - `prevent-xhr` and `trusted-replace-xhr-response` closure bug on multiple requests [#261](https://github.com/AdguardTeam/Scriptlets/issues/261)
 - missing `googletagmanager-gtm` in compatibility table
 
+
 ## v1.7.20
 
 ### Added
@@ -49,12 +52,14 @@
 
 - Redirects types.
 
+
 ## v1.7.19
 
 ### Fixed
 
 - `prevent-addEventListener` and `log-addEventListener` loosing context when encountering already bound `.addEventListener`
 - `google-ima3` conversion
+
 
 ## v1.7.14
 
@@ -69,6 +74,7 @@
 
 * `isEmptyObject` helper not counting `prototype` as an object property
 
+
 ## v1.7.10
 
 ### Added
@@ -81,6 +87,7 @@
 - breakage of `prevent-element-src-loading` due to `window` getting into `apply` wrapper [#264](https://github.com/AdguardTeam/Scriptlets/issues/264)
 - spread of args bug at `getXhrData` call for `trusted-replace-xhr-response`
 - request properties array not being served to `getRequestData` and `parseMatchProps` helpers
+
 
 ## v1.7.3
 
