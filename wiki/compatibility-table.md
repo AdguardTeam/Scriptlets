@@ -100,7 +100,7 @@
 | [metrika-yandex-tag](../wiki/about-redirects.md#metrika-yandex-tag) |  |  |
 | [naver-wcslog](../wiki/about-redirects.md#naver-wcslog) |  |  |
 | [noeval](../wiki/about-redirects.md#noeval) | noeval-silent.js |  |
-| [noopcss](../wiki/about-redirects.md#noopcss) |  | blank-css |
+| [noopcss](../wiki/about-redirects.md#noopcss) | noop.css | blank-css |
 | [noopframe](../wiki/about-redirects.md#noopframe) | noop.html | blank-html |
 | [noopjs](../wiki/about-redirects.md#noopjs) | noop.js | blank-js |
 | [noopjson](../wiki/about-redirects.md#noopjson) |  |  |

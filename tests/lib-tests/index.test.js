@@ -422,6 +422,10 @@ test('Test REDIRECT converting - UBO -> ADG', (assert) => {
     uboRule = '||imasdk.googleapis.com/js/sdkloader/ima3.js$script,important,redirect=google-ima.js,domain=example.org';
     expectedAdgRule = '||imasdk.googleapis.com/js/sdkloader/ima3.js$script,important,redirect=google-ima3,domain=example.org';
     assert.strictEqual(convertRedirectToAdg(uboRule), expectedAdgRule);
+
+    uboRule = '||example.org^$stylesheet,redirect=noop.css,third-party';
+    expectedAdgRule = '||example.org^$stylesheet,redirect=noopcss,third-party';
+    assert.strictEqual(convertRedirectToAdg(uboRule), expectedAdgRule, 'noop.css -> noopcss');
 });
 
 test('Test REDIRECT-RULE converting - UBO -> ADG', (assert) => {
@@ -524,6 +528,10 @@ test('Test REDIRECT converting - ADG -> UBO', (assert) => {
     expectedUboRule = '||example.com^$xmlhttprequest,redirect=noop.txt';
     assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
 
+    adgRule = '||example.com/*.css$important,redirect=noopcss';
+    expectedUboRule = '||example.com/*.css$important,redirect=noop.css,stylesheet';
+    assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule, 'noopcss -> noop.css');
+
     // image type is supported by nooptext too
     adgRule = '||example.com^$image,redirect=nooptext';
     expectedUboRule = '||example.com^$image,redirect=noop.txt';
@@ -533,8 +541,8 @@ test('Test REDIRECT converting - ADG -> UBO', (assert) => {
     expectedUboRule = '||example.com/images/*.png$image,important,redirect=1x1.gif,domain=example.com|example.org';
     assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
 
-    adgRule = '||example.com/vast/$important,redirect=empty,~thirt-party';
-    expectedUboRule = '||example.com/vast/$important,redirect=empty,~thirt-party';
+    adgRule = '||example.com/vast/$important,redirect=empty,~third-party';
+    expectedUboRule = '||example.com/vast/$important,redirect=empty,~third-party';
     assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
 
     assert.throws(() => {
@@ -542,14 +550,18 @@ test('Test REDIRECT converting - ADG -> UBO', (assert) => {
         convertAdgRedirectToUbo(adgRule);
     }, 'unable to convert -- no such ubo redirect');
 
-    // add source type modifiers while convertion if there is no one of them
+    // add source type modifiers while conversion if there is no one of them
     adgRule = '||example.com/images/*.png$redirect=1x1-transparent.gif,domain=example.com|example.org,important';
     expectedUboRule = '||example.com/images/*.png$redirect=1x1.gif,domain=example.com|example.org,important,image';
     assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
 
-    adgRule = '||example.com/*.mp4$important,redirect=noopmp4-1s,~thirt-party';
-    expectedUboRule = '||example.com/*.mp4$important,redirect=noop-1s.mp4,~thirt-party,media';
+    adgRule = '||example.com/*.mp4$important,redirect=noopmp4-1s,~third-party';
+    expectedUboRule = '||example.com/*.mp4$important,redirect=noop-1s.mp4,~third-party,media';
     assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
+
+    adgRule = '||example.com/*.css$important,redirect=noopcss';
+    expectedUboRule = '||example.com/*.css$important,redirect=noop.css,stylesheet';
+    assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule, 'add stylesheet type for noopcss -> noop.css');
 
     adgRule = '||ad.example.com^$redirect=nooptext,important';
     expectedUboRule = '||ad.example.com^$redirect=noop.txt,important,image,media,subdocument,stylesheet,script,xmlhttprequest,other';
@@ -586,8 +598,8 @@ test('Test REDIRECT-RULE converting - ADG -> UBO', (assert) => {
     expectedUboRule = '||example.com/images/*.png$image,important,redirect-rule=1x1.gif,domain=example.com|example.org';
     assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
 
-    adgRule = '||example.com/vast/$important,redirect-rule=empty,~thirt-party';
-    expectedUboRule = '||example.com/vast/$important,redirect-rule=empty,~thirt-party';
+    adgRule = '||example.com/vast/$important,redirect-rule=empty,~third-party';
+    expectedUboRule = '||example.com/vast/$important,redirect-rule=empty,~third-party';
     assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
 
     assert.throws(() => {
@@ -600,8 +612,8 @@ test('Test REDIRECT-RULE converting - ADG -> UBO', (assert) => {
     expectedUboRule = '||example.com/images/*.png$redirect-rule=1x1.gif,domain=example.com|example.org,important,image';
     assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
 
-    adgRule = '||example.com/*.mp4$important,redirect-rule=noopmp4-1s,~thirt-party';
-    expectedUboRule = '||example.com/*.mp4$important,redirect-rule=noop-1s.mp4,~thirt-party,media';
+    adgRule = '||example.com/*.mp4$important,redirect-rule=noopmp4-1s,~third-party';
+    expectedUboRule = '||example.com/*.mp4$important,redirect-rule=noop-1s.mp4,~third-party,media';
     assert.strictEqual(convertAdgRedirectToUbo(adgRule), expectedUboRule);
 
     adgRule = '||ad.example.com^$redirect-rule=nooptext,important';

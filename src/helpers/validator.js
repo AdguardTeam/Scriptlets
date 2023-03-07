@@ -208,6 +208,10 @@ const ABSENT_SOURCE_TYPE_REPLACEMENT = [
         TYPES: VALID_SOURCE_TYPES,
     },
     {
+        NAME: 'noopcss',
+        TYPES: ['stylesheet'],
+    },
+    {
         NAME: 'noopjs',
         TYPES: ['script'],
     },

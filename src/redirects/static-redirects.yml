@@ -86,6 +86,7 @@
     ||example.org/style.css$stylesheet,redirect=noopcss
     ```
   aliases:
+    - noop.css
     - blank-css
   file: noopcss.css
   contentType: text/css

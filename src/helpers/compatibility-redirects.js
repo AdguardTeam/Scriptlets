@@ -105,6 +105,7 @@ const redirects = [
     },
     {
         adg: 'noopcss',
+        ubo: 'noop.css',
         abp: 'blank-css',
     },
     {
