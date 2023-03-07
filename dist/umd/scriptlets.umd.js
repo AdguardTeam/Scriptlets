@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.8.2
+ * Version 1.9.1
  */
 
 (function (factory) {
@@ -477,6 +477,11 @@
      * @returns {string} object's string representation
      */
     const objectToString = function objectToString(obj) {
+      // In case if the type of passed obj is different than Object
+      // https://github.com/AdguardTeam/Scriptlets/issues/282
+      if (!obj || typeof obj !== 'object') {
+        return String(obj);
+      }
       return isEmptyObject(obj) ? '{}' : getObjectEntries(obj).map(function (pair) {
         const key = pair[0];
         const value = pair[1];
@@ -864,7 +869,8 @@
      */
     const getBoostMultiplier = function getBoostMultiplier(boost) {
       const DEFAULT_MULTIPLIER = 0.05;
-      const MIN_MULTIPLIER = 0.02;
+      // https://github.com/AdguardTeam/Scriptlets/issues/262
+      const MIN_MULTIPLIER = 0.001;
       const MAX_MULTIPLIER = 50;
       const parsedBoost = parseFloat(boost);
       let boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER // default scriptlet value
@@ -1638,15 +1644,27 @@
      * and use 'forced' argument otherwise.
      *
      * @param {Object} source required, scriptlet properties
-     * @param {string} message required, message to log
+     * @param {any} message required, message to log
      * @param {boolean} [forced=false] to log message unconditionally
+     * @param {boolean} [convertMessageToString=true] to convert message to string
      */
     const logMessage = function logMessage(source, message) {
       let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
       const name = source.name,
         ruleText = source.ruleText,
         verbose = source.verbose;
       if (!forced && !verbose) {
+        return;
+      }
+
+      // eslint-disable-next-line no-console
+      const nativeConsole = console.log;
+      if (!convertMessageToString) {
+        // Template literals convert object to string,
+        // so 'message' should not be passed to template literals
+        // as it will not be logged correctly
+        nativeConsole("".concat(name, ":"), message);
         return;
       }
       let messageStr = "".concat(name, ": ").concat(message);
@@ -1660,9 +1678,7 @@
           messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
         }
       }
-
-      // eslint-disable-next-line no-console
-      console.log(messageStr);
+      nativeConsole(messageStr);
     };
 
     /**
@@ -2221,7 +2237,7 @@
      * Multiple conditions are allowed inside one `extraMatch` but they should be delimited by comma and each of them should match the syntax. Possible `name`s:
      *    - `cookie` - test string or regex against cookies on a page
      *    - `localStorage` - check if localStorage item is present
-     * - 'delay' - optional, time in ms to delay scriptlet execution, defaults to instant execution.
+     * - `delay` — optional, time in ms to delay scriptlet execution, defaults to instant execution.
      *
      * **Examples**
      * 1. Click single element by selector
@@ -2475,7 +2491,7 @@
      * example.org#%#//scriptlet('abort-on-property-read', property)
      * ```
      *
-     * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
+     * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`
      *
      * **Examples**
      * ```
@@ -2546,7 +2562,7 @@
      * example.org#%#//scriptlet('abort-on-property-write', property)
      * ```
      *
-     * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
+     * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`
      *
      * **Examples**
      * ```
@@ -2615,11 +2631,11 @@
      *
      * Call with no arguments will log calls to setTimeout while debugging (`log-setTimeout` superseding),
      * so production filter lists' rules definitely require at least one of the parameters:
-     * - `matchCallback` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
+     * - `matchCallback` — optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
      * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
      * If do not start with `!`, the stringified callback will be matched.
      * If not set, prevents all `setTimeout` calls due to specified `matchDelay`.
-     * - `matchDelay` - optional, must be an integer.
+     * - `matchDelay` — optional, must be an integer.
      * If starts with `!`, scriptlet will not match the delay but all other will be defused.
      * If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
      * Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
@@ -2778,11 +2794,11 @@
      *
      * Call with no arguments will log calls to setInterval while debugging (`log-setInterval` superseding),
      * so production filter lists' rules definitely require at least one of the parameters:
-     * - `matchCallback` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
+     * - `matchCallback` — optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
      * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
      * If do not start with `!`, the stringified callback will be matched.
      * If not set, prevents all `setInterval` calls due to specified `matchDelay`.
-     * - `matchDelay` - optional, must be an integer.
+     * - `matchDelay` — optional, must be an integer.
      * If starts with `!`, scriptlet will not match the delay but all other will be defused.
      * If do not start with `!`, the delay passed to the `setInterval` call will be matched.
      * Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
@@ -2936,16 +2952,16 @@
      * example.org#%#//scriptlet('prevent-window-open'[, match[, delay[, replacement]]])
      * ```
      *
-     * - `match` - optional, string or regular expression. If not set or regular expression is invalid, all window.open calls will be matched.
+     * - `match` — optional, string or regular expression. If not set or regular expression is invalid, all window.open calls will be matched.
      * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
      * If do not start with `!`, the stringified callback will be matched.
-     * - `delay` - optional, number of seconds. If not set, scriptlet will return `null`,
+     * - `delay` — optional, number of seconds. If not set, scriptlet will return `null`,
      * otherwise valid sham window object as injected `iframe` will be returned
      * for accessing its methods (blur(), focus() etc.) and will be removed after the delay.
-     * - `replacement` - optional, string; one of the predefined constants:
-     *     - `obj` - for returning an object instead of default iframe;
+     * - `replacement` — optional, string; one of the predefined constants:
+     *     - `obj` — for returning an object instead of default iframe;
      *        for cases when the page requires a valid `window` instance to be returned
-     *     - `log` - for logging window.open calls; permitted for production filter lists.
+     *     - `log` — for logging window.open calls; permitted for production filter lists.
      *
      * **Examples**
      * 1. Prevent all `window.open` calls:
@@ -2969,9 +2985,9 @@
      *     ```
      *
      * Old syntax of prevent-window-open parameters:
-     * - `match` - optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
-     * - `search` - optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
-     * - `replacement` - optional, string to return prop value or property instead of window.open; defaults to return noopFunc.
+     * - `match` — optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
+     * - `search` — optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
+     * - `replacement` — optional, string to return prop value or property instead of window.open; defaults to return noopFunc.
      * **Examples**
      *     ```
      *     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
@@ -3097,8 +3113,8 @@
      * example.org#%#//scriptlet('abort-current-inline-script', property[, search])
      * ```
      *
-     * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`
-     * - `search` - optional, string or regular expression that must match the inline script content.
+     * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`
+     * - `search` — optional, string or regular expression that must match the inline script content.
      * Defaults to abort all scripts which are trying to access the specified property.
      * Invalid regular expression will cause exit and rule will not work.
      *
@@ -3284,28 +3300,28 @@
      * example.org#%#//scriptlet('set-constant', property, value[, stack])
      * ```
      *
-     * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`.
-     * - `value` - required. Possible values:
+     * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`.
+     * - `value` — required. Possible values:
      *     - positive decimal integer `<= 32767`
      *     - one of the predefined constants:
      *         - `undefined`
      *         - `false`
      *         - `true`
      *         - `null`
-     *         - `emptyObj` - empty object
-     *         - `emptyArr` - empty array
-     *         - `noopFunc` - function with empty body
-     *         - `noopCallbackFunc` - function returning noopFunc
-     *         - `trueFunc` - function returning true
-     *         - `falseFunc` - function returning false
-     *         - `throwFunc` - function throwing an error
-     *         - `noopPromiseResolve` - function returning Promise object that is resolved with an empty response
-     *         - `noopPromiseReject` - function returning Promise.reject()
-     *         - `''` - empty string
-     *         - `-1` - number value `-1`
+     *         - `emptyObj` — empty object
+     *         - `emptyArr` — empty array
+     *         - `noopFunc` — function with empty body
+     *         - `noopCallbackFunc` — function returning noopFunc
+     *         - `trueFunc` — function returning true
+     *         - `falseFunc` — function returning false
+     *         - `throwFunc` — function throwing an error
+     *         - `noopPromiseResolve` — function returning Promise object that is resolved with an empty response
+     *         - `noopPromiseReject` — function returning Promise.reject()
+     *         - `''` — empty string
+     *         - `-1` — number value `-1`
      *         - `yes`
      *         - `no`
-     * - `stack` - optional, string or regular expression that must match the current function call stack trace;
+     * - `stack` — optional, string or regular expression that must match the current function call stack trace;
      * if regular expression is invalid it will be skipped
      *
      * **Examples**
@@ -3549,7 +3565,7 @@
      * example.org#%#//scriptlet('remove-cookie'[, match])
      * ```
      *
-     * - `match` - optional, string or regex matching the cookie name. If not specified all accessible cookies will be removed.
+     * - `match` — optional, string or regex matching the cookie name. If not specified all accessible cookies will be removed.
      *
      * **Examples**
      * 1. Removes all cookies:
@@ -3626,9 +3642,9 @@
      * example.org#%#//scriptlet('prevent-addEventListener'[, typeSearch[, listenerSearch]])
      * ```
      *
-     * - `typeSearch` - optional, string or regular expression matching the type (event name);
+     * - `typeSearch` — optional, string or regular expression matching the type (event name);
      * defaults to match all types; invalid regular expression will cause exit and rule will not work
-     * - `listenerSearch` - optional, string or regular expression matching the listener function body;
+     * - `listenerSearch` — optional, string or regular expression matching the listener function body;
      * defaults to match all listeners; invalid regular expression will cause exit and rule will not work
      *
      * **Examples**
@@ -3985,7 +4001,7 @@
      * example.org#%#//scriptlet('prevent-eval-if'[, search])
      * ```
      *
-     * - `search` - optional, string or regular expression matching the stringified eval payload;
+     * - `search` — optional, string or regular expression matching the stringified eval payload;
      * defaults to match all stringified eval payloads;
      * invalid regular expression will cause exit and rule will not work
      *
@@ -4504,7 +4520,7 @@
      *     ```
      *
      *     ```html
-     *     <!-- before  -->
+     *     <!-- before -->
      *     <div example="true" test="true">Some text</div>
      *
      *     <!-- after -->
@@ -4618,8 +4634,9 @@
      * - `selector` — required, CSS selector, specifies DOM nodes to set attributes on
      * - `attr` — required, attribute to be set
      * - `value` — the value to assign to the attribute, defaults to ''. Possible values:
-     *     - `''` - empty string
+     *     - `''` — empty string
      *     - positive decimal integer `<= 32767`
+     *     - `true` / `false` in any case variation
      *
      * **Examples**
      * 1.  Set attribute by selector
@@ -4628,7 +4645,7 @@
      *     ```
      *
      *     ```html
-     *     <!-- before  -->
+     *     <!-- before -->
      *     <a class="class">Some text</div>
      *
      *     <!-- after -->
@@ -4640,11 +4657,35 @@
      *     ```
      *
      *     ```html
-     *     <!-- before  -->
+     *     <!-- before -->
      *     <a class="class">Some text</div>
      *
      *     <!-- after -->
      *     <a class="class" test-attribute>Some text</div>
+     *     ```
+     * 3.  Set attribute value to `TRUE`
+     *     ```
+     *     example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', 'TRUE')
+     *     ```
+     *
+     *     ```html
+     *     <!-- before -->
+     *     <a class="class">Some text</div>
+     *
+     *     <!-- after -->
+     *     <a class="class" test-attribute="TRUE">Some text</div>
+     *     ```
+     * 4.  Set attribute value to `fAlse`
+     *     ```
+     *     example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', 'fAlse')
+     *     ```
+     *
+     *     ```html
+     *     <!-- before -->
+     *     <a class="class">Some text</div>
+     *
+     *     <!-- after -->
+     *     <a class="class" test-attribute="fAlse">Some text</div>
      *     ```
      */
     /* eslint-enable max-len */
@@ -4653,8 +4694,10 @@
       if (!selector || !attr) {
         return;
       }
+      const allowedValues = ['true', 'false'];
+
       // Drop strings that cant be parsed into number, negative numbers and numbers below 32767
-      if (value.length !== 0 && (nativeIsNaN(parseInt(value, 10)) || parseInt(value, 10) < 0 || parseInt(value, 10) > 32767)) {
+      if (value.length !== 0 && (nativeIsNaN(parseInt(value, 10)) || parseInt(value, 10) < 0 || parseInt(value, 10) > 32767) && !allowedValues.includes(value.toLowerCase())) {
         return;
       }
       const setAttr = function setAttr() {
@@ -4707,7 +4750,7 @@
      *     ```
      *
      *     ```html
-     *     <!-- before  -->
+     *     <!-- before -->
      *     <div id="first" class="nice test">Some text</div>
      *     <div id="second" class="rare example for test">Some text</div>
      *     <div id="third" class="testing better example">Some text</div>
@@ -4877,10 +4920,10 @@
      * example.org#%#//scriptlet('adjust-setInterval'[, matchCallback [, matchDelay[, boost]]])
      * ```
      *
-     * - `matchCallback` - optional, string or regular expression for stringified callback matching;
+     * - `matchCallback` — optional, string or regular expression for stringified callback matching;
      * defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
-     * - `matchDelay` - optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
-     * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), setInterval delay multiplier
+     * - `matchDelay` — optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
+     * - `boost` — optional, default to 0.05, float, capped at 1000 times for up and 50 for down (0.001...50), setInterval delay multiplier
      *
      * **Examples**
      * 1. Adjust all setInterval() x20 times where delay equal 1000ms:
@@ -4906,7 +4949,11 @@
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval', '', '2000', '0.02')
      *     ```
-     * 6. Adjust all setInterval() x50 times where delay is randomized
+     * 6. Adjust all setInterval() x1000 times where delay equal 2000ms
+     *     ```
+     *     example.org#%#//scriptlet('adjust-setInterval', '', '2000', '0.001')
+     *     ```
+     * 7. Adjust all setInterval() x50 times where delay is randomized
      *     ```
      *     example.org#%#//scriptlet('adjust-setInterval', '', '*', '0.02')
      *     ```
@@ -4953,10 +5000,10 @@
      * example.org#%#//scriptlet('adjust-setTimeout'[, matchCallback [, matchDelay[, boost]]])
      * ```
      *
-     * - `matchCallback` - optional, string or regular expression for stringified callback matching;
+     * - `matchCallback` — optional, string or regular expression for stringified callback matching;
      * defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
-     * - `matchDelay` - optional, defaults to 1000, matching setTimeout delay; decimal integer OR '*' for any delay
-     * - `boost` - optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), setTimeout delay multiplier
+     * - `matchDelay` — optional, defaults to 1000, matching setTimeout delay; decimal integer OR '*' for any delay
+     * - `boost` — optional, default to 0.05, float, capped at 1000 times for up and 50 for down (0.001...50), setTimeout delay multiplier
      *
      * **Examples**
      * 1. Adjust all setTimeout() x20 times where timeout equal 1000ms:
@@ -4982,7 +5029,11 @@
      *     ```
      *     example.org#%#//scriptlet('adjust-setTimeout', '', '2000', '0.02')
      *     ```
-     * 6. Adjust all setTimeout() x20 times where callback matched with `test` and timeout is randomized
+     * 6. Adjust all setTimeout() x1000 times where timeout equal 2000ms
+     *     ```
+     *     example.org#%#//scriptlet('adjust-setTimeout', '', '2000', '0.001')
+     *     ```
+     * 7. Adjust all setTimeout() x20 times where callback matched with `test` and timeout is randomized
      *     ```
      *     example.org#%#//scriptlet('adjust-setTimeout', 'test', '*')
      *     ```
@@ -5032,7 +5083,7 @@
      * ```
      * example.org#%#//scriptlet('dir-string'[, times])
      * ```
-     * - `times` - optional, the number of times to call the `toString` method of the argument to `console.dir`
+     * - `times` — optional, the number of times to call the `toString` method of the argument to `console.dir`
      *
      * **Example**
      * ```
@@ -5073,9 +5124,9 @@
      * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, stack]]])
      * ```
      *
-     * - `propsToRemove` - optional, string of space-separated properties to remove
-     * - `obligatoryProps` - optional, string of space-separated properties which must be all present for the pruning to occur
-     * - `stack` - optional, string or regular expression that must match the current function call stack trace;
+     * - `propsToRemove` — optional, string of space-separated properties to remove
+     * - `obligatoryProps` — optional, string of space-separated properties which must be all present for the pruning to occur
+     * - `stack` — optional, string or regular expression that must match the current function call stack trace;
      * if regular expression is invalid it will be skipped
      *
      * > Note please that you can use wildcard `*` for chain property name.
@@ -5150,7 +5201,10 @@
           const matchRegex = toRegExp(requiredPaths.join(''));
           const shouldLog = matchRegex.test(rootString);
           if (shouldLog) {
-            logMessage(source, "".concat(window.location.hostname, " ").concat(objectToString(root)), true);
+            logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
+            if (root && typeof root === 'object') {
+              logMessage(source, root, true, false);
+            }
             shouldProcess = false;
             return shouldProcess;
           }
@@ -5187,7 +5241,10 @@
        */
       const jsonPruner = function jsonPruner(root) {
         if (prunePaths.length === 0 && requiredPaths.length === 0) {
-          logMessage(source, "".concat(window.location.hostname, " ").concat(objectToString(root)), true);
+          logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
+          if (root && typeof root === 'object') {
+            logMessage(source, root, true, false);
+          }
           return root;
         }
         try {
@@ -5244,9 +5301,9 @@
     jsonPrune$1.names = ['json-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune.js', 'ubo-json-prune.js', 'ubo-json-prune', 'abp-json-prune'];
-    jsonPrune$1.injections = [hit, matchStackTrace, getWildcardPropertyInChain, logMessage, objectToString,
+    jsonPrune$1.injections = [hit, matchStackTrace, getWildcardPropertyInChain, logMessage,
     // following helpers are needed for helpers above
-    toRegExp, isEmptyObject, getObjectEntries, getNativeRegexpTest, shouldAbortInlineOrInjectedScript];
+    toRegExp, getNativeRegexpTest, shouldAbortInlineOrInjectedScript];
 
     /* eslint-disable max-len */
     /**
@@ -5264,7 +5321,7 @@
      * example.org#%#//scriptlet('prevent-requestAnimationFrame'[, search])
      * ```
      *
-     * - `search` - optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
+     * - `search` — optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
      * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
      * If do not start with `!`, the stringified callback will be matched.
      *
@@ -5362,8 +5419,8 @@
      * example.org#%#//scriptlet('set-cookie', name, value[, path])
      * ```
      *
-     * - `name` - required, cookie name to be set
-     * - `value` - required, cookie value; possible values:
+     * - `name` — required, cookie name to be set
+     * - `value` — required, cookie value; possible values:
      *     - number `>= 0 && <= 15`
      *     - one of the predefined constants:
      *         - `true` / `True`
@@ -5371,7 +5428,7 @@
      *         - `yes` / `Yes` / `Y`
      *         - `no`
      *         - `ok` / `OK`
-     * - `path` - optional, cookie path, defaults to `/`; possible values:
+     * - `path` — optional, cookie path, defaults to `/`; possible values:
      *     - `/` — root path
      *     - `none` — to set no path at all
      *
@@ -5418,8 +5475,8 @@
      * example.org#%#//scriptlet('set-cookie-reload', name, value[, path])
      * ```
      *
-     * - `name` - required, cookie name to be set
-     * - `value` - required, cookie value; possible values:
+     * - `name` — required, cookie name to be set
+     * - `value` — required, cookie value; possible values:
      *     - number `>= 0 && <= 15`
      *     - one of the predefined constants:
      *         - `true` / `True`
@@ -5427,7 +5484,7 @@
      *         - `yes` / `Yes` / `Y`
      *         - `no`
      *         - `ok` / `OK`
-     * - `path` - optional, cookie path, defaults to `/`; possible values:
+     * - `path` — optional, cookie path, defaults to `/`; possible values:
      *     - `/` — root path
      *     - `none` — to set no path at all
      *
@@ -5627,17 +5684,17 @@
      * example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, responseType]]])
      * ```
      *
-     * - `propsToMatch` - optional, string of space-separated properties to match; possible props:
+     * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
      *   - string or regular expression for matching the URL passed to fetch call; empty string, wildcard `*` or invalid regular expression will match all fetch calls
      *   - colon-separated pairs `name:value` where
      *     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
      *     - `value` is string or regular expression for matching the value of the option passed to fetch call; invalid regular expression will cause any value matching
-     * - responseBody - optional, string for defining response body value, defaults to `emptyObj`. Possible values:
-     *    - `emptyObj` - empty object
-     *    - `emptyArr` - empty array
-     * - responseType - optional, string for defining response type, defaults to `default`. Possible values:
-     *    - default
-     *    - opaque
+     * - `responseBody` — optional, string for defining response body value, defaults to `emptyObj`. Possible values:
+     *    - `emptyObj` — empty object
+     *    - `emptyArr` — empty array
+     * - `responseType` — optional, string for defining response type, defaults to `default`. Possible values:
+     *    - `default`
+     *    - `opaque`
      *
      * > Usage with no arguments will log fetch calls to browser console;
      * which is useful for debugging but not permitted for production filter lists.
@@ -5747,16 +5804,16 @@
      * ```
      *
      * - `key` — required, key name to be set.
-     * - `value` - required, key value; possible values:
+     * - `value` — required, key value; possible values:
      *     - positive decimal integer `<= 32767`
      *     - one of the predefined constants:
      *         - `undefined`
      *         - `false`
      *         - `true`
      *         - `null`
-     *         - `emptyObj` - empty object
-     *         - `emptyArr` - empty array
-     *         - `''` - empty string
+     *         - `emptyObj` — empty object
+     *         - `emptyArr` — empty array
+     *         - `''` — empty string
      *         - `yes`
      *         - `no`
      *
@@ -5802,16 +5859,16 @@
      * ```
      *
      * - `key` — required, key name to be set.
-     * - `value` - required, key value; possible values:
+     * - `value` — required, key value; possible values:
      *     - positive decimal integer `<= 32767`
      *     - one of the predefined constants:
      *         - `undefined`
      *         - `false`
      *         - `true`
      *         - `null`
-     *         - `emptyObj` - empty object
-     *         - `emptyArr` - empty array
-     *         - `''` - empty string
+     *         - `emptyObj` — empty object
+     *         - `emptyArr` — empty array
+     *         - `''` — empty string
      *         - `yes`
      *         - `no`
      *
@@ -5858,8 +5915,8 @@
      * example.com#%#//scriptlet('abort-on-stack-trace', property, stack)
      * ```
      *
-     * - `property` - required, path to a property. The property must be attached to window.
-     * - `stack` - required, string that must match the current function call stack trace.
+     * - `property` — required, path to a property. The property must be attached to window.
+     * - `stack` — required, string that must match the current function call stack trace.
      *     - values to abort inline or injected script, accordingly:
      *         - `inlineScript`
      *         - `injectedScript`
@@ -5966,7 +6023,7 @@
      * example.com#%#//scriptlet('log-on-stack-trace', 'property')
      * ```
      *
-     * - `property` - required, path to a property. The property must be attached to window.
+     * - `property` — required, path to a property. The property must be attached to window.
      */
     /* eslint-enable max-len */
     function logOnStacktrace$1(source, property) {
@@ -6067,16 +6124,16 @@
      * example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
      * ```
      *
-     * - propsToMatch - optional, string of space-separated properties to match; possible props:
-     *   - string or regular expression for matching the URL passed to `.open()` call; empty string or wildcard * for all `.open()` calls match
-     *   - colon-separated pairs name:value where
-     *     - name is XMLHttpRequest object property name
-     *     - value is string or regular expression for matching the value of the option passed to `.open()` call
-     * - randomize - defaults to `false` for empty responseText, optional argument to randomize responseText of matched XMLHttpRequest's response; possible values:
-     *   - boolean 'true' to randomize responseText, random alphanumeric string of 10 symbols
-     *   - string value to customize responseText data, colon-separated pairs name:value where
-     *       - name — only `length` supported for now
-     *       - value — range on numbers, for example `100-300`, limited to 500000 characters
+     * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
+     *   - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call; empty string or wildcard `*` for all `XMLHttpRequest.open()` calls match
+     *   - colon-separated pairs `name:value` where
+     *     - `name` is XMLHttpRequest object property name
+     *     - `value` is string or regular expression for matching the value of the option passed to `XMLHttpRequest.open()` call
+     * - `randomize` — defaults to `false` for empty responseText, optional argument to randomize responseText of matched XMLHttpRequest's response; possible values:
+     *   - `true` to randomize responseText, random alphanumeric string of 10 symbols
+     *   - colon-separated pair `name:value` string value to customize responseText data where
+     *       - `name` — only `length` supported for now
+     *       - `value` — range on numbers, for example `100-300`, limited to 500000 characters
      *
      * > Usage with no arguments will log XMLHttpRequest objects to browser console;
      * which is useful for debugging but not allowed for production filter lists.
@@ -6308,7 +6365,7 @@
      * example.org#%#//scriptlet('prevent-refresh'[, delay])
      * ```
      *
-     * - `delay` - optional, number of seconds for delay that indicates when scriptlet should run. If not set, source tag value will be applied.
+     * - `delay` — optional, number of seconds for delay that indicates when scriptlet should run. If not set, source tag value will be applied.
      *
      * **Examples**
      * 1. Prevent reloading of a document through a meta "refresh" tag.
@@ -6416,11 +6473,11 @@
      * example.org#%#//scriptlet('prevent-element-src-loading', tagName, match)
      * ```
      *
-     * - `tagName` - required, case-insensitive target element tagName which `src` property resource loading will be silently prevented; possible values:
+     * - `tagName` — required, case-insensitive target element tagName which `src` property resource loading will be silently prevented; possible values:
      *     - `script`
      *     - `img`
      *     - `iframe`
-     * - `match` - required, string or regular expression for matching the element's URL;
+     * - `match` — required, string or regular expression for matching the element's URL;
      *
      * **Examples**
      * 1. Prevent script source loading:
@@ -6556,7 +6613,7 @@
       });
       const addEventListenerWrapper = function addEventListenerWrapper(target, thisArg, args) {
         // Check if arguments are present
-        if (!args[0] || !args[1]) {
+        if (!args[0] || !args[1] || !thisArg) {
           return Reflect.apply(target, thisArg, args);
         }
         const eventName = args[0];
@@ -6616,17 +6673,17 @@
      * example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[, propsToMatch]])
      * ```
      *
-     * - pattern - optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
+     * - `pattern` — optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
      * possible values:
-     *   - '*' to match all text content
+     *   - `*` to match all text content
      *   - non-empty string
      *   - regular expression
-     * - replacement — optional, should be set if `pattern` is set. String to replace matched content with. Empty string to remove content.
-     * - propsToMatch — optional, string of space-separated properties to match for extra condition; possible props:
-     *   - string or regular expression for matching the URL passed to `.open()` call;
-     *   - colon-separated pairs name:value where
-     *     - name - name is string or regular expression for matching XMLHttpRequest property name
-     *     - value is string or regular expression for matching the value of the option passed to `.open()` call
+     * - `replacement` — optional, should be set if `pattern` is set. String to replace matched content with. Empty string to remove content.
+     * - `propsToMatch` — optional, string of space-separated properties to match for extra condition; possible props:
+     *   - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call;
+     *   - colon-separated pairs `name:value` where
+     *     - `name` — string or regular expression for matching XMLHttpRequest property name
+     *     - `value` — string or regular expression for matching the value of the option passed to `XMLHttpRequest.open()` call
      *
      * > Usage with no arguments will log XMLHttpRequest objects to browser console;
      * which is useful for debugging but not permitted for production filter lists.
@@ -6821,9 +6878,9 @@
      * example.org#%#//scriptlet('xml-prune'[, propsToMatch[, optionalProp[, urlToMatch]]])
      * ```
      *
-     * - `propsToMatch` - optional, selector of elements which will be removed from XML
-     * - `optionalProp` - optional, selector of elements that must occur in XML document
-     * - `urlToMatch` - optional, string or regular expression for matching the request's URL
+     * - `propsToMatch` — optional, selector of elements which will be removed from XML
+     * - `optionalProp` — optional, selector of elements that must occur in XML document
+     * - `urlToMatch` — optional, string or regular expression for matching the request's URL
      * > Usage with no arguments will log response payload and URL to browser console;
      * which is useful for debugging but prohibited for production filter lists.
      *
@@ -6874,21 +6931,30 @@
       }
       const urlMatchRegexp = toRegExp(urlToMatch);
       const isXML = function isXML(text) {
-        // Check if "text" starts with "<" and check if it ends with ">"
-        // If so, then it might be an XML file and should be pruned or logged
-        const trimedText = text.trim();
-        if (startsWith$1(trimedText, '<') && endsWith(trimedText, '>')) {
-          return true;
+        // It's necessary to check the type of 'text'
+        // because 'text' is obtained from the xhr/fetch response,
+        // so it could also be Blob/ArrayBuffer/Object or another type
+        if (typeof text === 'string') {
+          // Check if "text" starts with "<" and check if it ends with ">"
+          // If so, then it might be an XML file and should be pruned or logged
+          const trimedText = text.trim();
+          if (trimedText.startsWith('<') && trimedText.endsWith('>')) {
+            return true;
+          }
         }
         return false;
+      };
+      const createXMLDocument = function createXMLDocument(text) {
+        const xmlParser = new DOMParser();
+        const xmlDocument = xmlParser.parseFromString(text, 'text/xml');
+        return xmlDocument;
       };
       const pruneXML = function pruneXML(text) {
         if (!isXML(text)) {
           shouldPruneResponse = false;
           return text;
         }
-        const xmlParser = new DOMParser();
-        const xmlDoc = xmlParser.parseFromString(text, 'text/xml');
+        const xmlDoc = createXMLDocument(text);
         const errorNode = xmlDoc.querySelector('parsererror');
         if (errorNode) {
           return text;
@@ -6921,9 +6987,9 @@
               thisArg.removeEventListener('readystatechange', pruneResponse);
               if (!shouldPruneResponse) {
                 if (isXML(response)) {
-                  // eslint-disable-next-line max-len
                   const message = "XMLHttpRequest.open() URL: ".concat(xhrURL, "\nresponse: ").concat(response);
-                  logMessage(message);
+                  logMessage(source, message);
+                  logMessage(source, createXMLDocument(response), true, false);
                 }
               } else {
                 const prunedResponseContent = pruneXML(response);
@@ -6954,7 +7020,7 @@
       window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler);
       const nativeFetch = window.fetch;
       const fetchWrapper = function fetchWrapper(target, thisArg, args) {
-        const fetchURL = args[0];
+        const fetchURL = args[0] instanceof Request ? args[0].url : args[0];
         if (typeof fetchURL !== 'string' || fetchURL.length === 0) {
           return Reflect.apply(target, thisArg, args);
         }
@@ -6963,7 +7029,9 @@
             return response.text().then(function (text) {
               if (!shouldPruneResponse) {
                 if (isXML(text)) {
-                  logMessage("fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(text));
+                  const message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(text);
+                  logMessage(source, message);
+                  logMessage(source, createXMLDocument(text), true, false);
                 }
                 return Reflect.apply(target, thisArg, args);
               }
@@ -6995,7 +7063,363 @@
     xmlPrune$1.names = ['xml-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'xml-prune.js', 'ubo-xml-prune.js', 'ubo-xml-prune'];
-    xmlPrune$1.injections = [hit, logMessage, toRegExp, startsWith$1, endsWith];
+    xmlPrune$1.injections = [hit, logMessage, toRegExp];
+
+    /* eslint-disable max-len */
+    /**
+     * @scriptlet m3u-prune
+     * @description
+     * Removes content from the specified M3U file.
+     *
+     *
+     * **Syntax**
+     * ```
+     * example.org#%#//scriptlet('m3u-prune'[, propsToRemove[, urlToMatch]])
+     * ```
+     *
+     * - `propsToRemove` — optional, string or regular expression to match the URL line (segment) which will be removed alongside with its tags
+     * - `urlToMatch` — optional, string or regular expression for matching the request's URL
+     * > Usage with no arguments will log response payload and URL to browser console;
+     * which is useful for debugging but prohibited for production filter lists.
+     *
+     * **Examples**
+     * 1. Removes a tag which contains `tvessaiprod.nbcuni.com/video/`, from all requests
+     *     ```
+     *     example.org#%#//scriptlet('m3u-prune', 'tvessaiprod.nbcuni.com/video/')
+     *     ```
+     *
+     * 2. Removes a line which contains `tvessaiprod.nbcuni.com/video/`, only if request's URL contains `.m3u8`
+     *     ```
+     *     example.org#%#//scriptlet('m3u-prune', 'tvessaiprod.nbcuni.com/video/', '.m3u8')
+     *     ```
+     *
+     * 3. Call with no arguments will log response payload and URL at the console
+     *     ```
+     *     example.org#%#//scriptlet('m3u-prune')
+     *     ```
+     *
+     * 4. Call with only `urlToMatch` argument will log response payload and URL only for the matched URL
+     *     ```
+     *     example.org#%#//scriptlet('m3u-prune', '', '.m3u8')
+     *     ```
+     */
+    /* eslint-enable max-len */
+
+    function m3uPrune$1(source, propsToRemove, urlToMatch) {
+      // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
+      // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
+      // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+      // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Reflect
+      if (typeof Reflect === 'undefined' || typeof fetch === 'undefined' || typeof Proxy === 'undefined' || typeof Response === 'undefined') {
+        return;
+      }
+      let shouldPruneResponse = false;
+      const urlMatchRegexp = toRegExp(urlToMatch);
+      const SEGMENT_MARKER = '#';
+      const AD_MARKER = {
+        ASSET: '#EXT-X-ASSET:',
+        CUE: '#EXT-X-CUE:',
+        CUE_IN: '#EXT-X-CUE-IN',
+        DISCONTINUITY: '#EXT-X-DISCONTINUITY',
+        EXTINF: '#EXTINF',
+        EXTM3U: '#EXTM3U',
+        SCTE35: '#EXT-X-SCTE35:'
+      };
+      const COMCAST_AD_MARKER = {
+        AD: '-AD-',
+        VAST: '-VAST-',
+        VMAP_AD: '-VMAP-AD-',
+        VMAP_AD_BREAK: '#EXT-X-VMAP-AD-BREAK:'
+      };
+
+      // List of tags which should not be removed
+      const TAGS_ALLOWLIST = ['#EXT-X-TARGETDURATION', '#EXT-X-MEDIA-SEQUENCE', '#EXT-X-DISCONTINUITY-SEQUENCE', '#EXT-X-ENDLIST', '#EXT-X-PLAYLIST-TYPE', '#EXT-X-I-FRAMES-ONLY', '#EXT-X-MEDIA', '#EXT-X-STREAM-INF', '#EXT-X-I-FRAME-STREAM-INF', '#EXT-X-SESSION-DATA', '#EXT-X-SESSION-KEY', '#EXT-X-INDEPENDENT-SEGMENTS', '#EXT-X-START'];
+      const isAllowedTag = function isAllowedTag(str) {
+        return TAGS_ALLOWLIST.some(function (el) {
+          return str.startsWith(el);
+        });
+      };
+
+      /**
+       * Sets an item in array to undefined, if it contains one of the
+       * AD_MARKER: AD_MARKER.EXTINF, AD_MARKER.DISCONTINUITY
+       *
+       * @param {Array} lines
+       * @param {number} i
+       * @returns {Object} { array, index }
+       */
+      const pruneExtinfFromVmapBlock = function pruneExtinfFromVmapBlock(lines, i) {
+        let array = lines.slice();
+        let index = i;
+        if (array[index].includes(AD_MARKER.EXTINF)) {
+          array[index] = undefined;
+          index += 1;
+          if (array[index].includes(AD_MARKER.DISCONTINUITY)) {
+            array[index] = undefined;
+            index += 1;
+            const prunedExtinf = pruneExtinfFromVmapBlock(array, index);
+            array = prunedExtinf.array;
+            index = prunedExtinf.index;
+          }
+        }
+        return {
+          array,
+          index
+        };
+      };
+
+      /**
+       * Sets an item in array to undefined, if it contains one of the
+       * COMCAST_AD_MARKER: COMCAST_AD_MARKER.VMAP_AD, COMCAST_AD_MARKER.VAST, COMCAST_AD_MARKER.AD
+       *
+       * @param {Array} lines
+       * @returns {Array}
+       */
+      const pruneVmapBlock = function pruneVmapBlock(lines) {
+        let array = lines.slice();
+        for (let i = 0; i < array.length - 1; i += 1) {
+          if (array[i].includes(COMCAST_AD_MARKER.VMAP_AD) || array[i].includes(COMCAST_AD_MARKER.VAST) || array[i].includes(COMCAST_AD_MARKER.AD)) {
+            array[i] = undefined;
+            if (array[i + 1].includes(AD_MARKER.EXTINF)) {
+              i += 1;
+              const prunedExtinf = pruneExtinfFromVmapBlock(array, i);
+              array = prunedExtinf.array;
+              // It's necessary to subtract 1 from "i",
+              // otherwise one line will be skipped
+              i = prunedExtinf.index - 1;
+            }
+          }
+        }
+        return array;
+      };
+
+      /**
+       * Sets an item in array to undefined, if it contains one of the
+       * AD_MARKER: AD_MARKER.CUE, AD_MARKER.ASSET, AD_MARKER.SCTE35, AD_MARKER.CUE_IN
+       *
+       * @param {string} line
+       * @param {number} index
+       * @param {Array} array
+       * @returns {string|undefined}
+       */
+
+      const pruneSpliceoutBlock = function pruneSpliceoutBlock(line, index, array) {
+        if (!line.startsWith(AD_MARKER.CUE)) {
+          return line;
+        }
+        line = undefined;
+        index += 1;
+        if (array[index].startsWith(AD_MARKER.ASSET)) {
+          array[index] = undefined;
+          index += 1;
+        }
+        if (array[index].startsWith(AD_MARKER.SCTE35)) {
+          array[index] = undefined;
+          index += 1;
+        }
+        if (array[index].startsWith(AD_MARKER.CUE_IN)) {
+          array[index] = undefined;
+          index += 1;
+        }
+        if (array[index].startsWith(AD_MARKER.SCTE35)) {
+          array[index] = undefined;
+        }
+        return line;
+      };
+      const removeM3ULineRegexp = toRegExp(propsToRemove);
+
+      /**
+       * Sets an item in array to undefined, if it contains removeM3ULineRegexp and one of the
+       * AD_MARKER: AD_MARKER.EXTINF, AD_MARKER.DISCONTINUITY
+       *
+       * @param {string} line
+       * @param {number} index
+       * @param {Array} array
+       * @returns {string|undefined}
+       */
+
+      const pruneInfBlock = function pruneInfBlock(line, index, array) {
+        if (!line.startsWith(AD_MARKER.EXTINF)) {
+          return line;
+        }
+        if (!removeM3ULineRegexp.test(array[index + 1])) {
+          return line;
+        }
+        if (!isAllowedTag(array[index])) {
+          array[index] = undefined;
+        }
+        index += 1;
+        if (!isAllowedTag(array[index])) {
+          array[index] = undefined;
+        }
+        index += 1;
+        if (array[index].startsWith(AD_MARKER.DISCONTINUITY)) {
+          array[index] = undefined;
+        }
+        return line;
+      };
+
+      /**
+       * Removes block of segments (if it contains removeM3ULineRegexp) until another segment occurs
+       *
+       * @param {Array} lines
+       * @returns {Array}
+       */
+      const pruneSegments = function pruneSegments(lines) {
+        for (let i = 0; i < lines.length - 1; i += 1) {
+          var _lines$i;
+          if ((_lines$i = lines[i]) !== null && _lines$i !== void 0 && _lines$i.startsWith(SEGMENT_MARKER) && removeM3ULineRegexp.test(lines[i])) {
+            const segmentName = lines[i].substring(0, lines[i].indexOf(':'));
+            if (!segmentName) {
+              return lines;
+            }
+            lines[i] = undefined;
+            i += 1;
+            for (let j = i; j < lines.length; j += 1) {
+              if (!lines[j].includes(segmentName) && !isAllowedTag(lines[j])) {
+                lines[j] = undefined;
+              } else {
+                i = j - 1;
+                break;
+              }
+            }
+          }
+        }
+        return lines;
+      };
+
+      /**
+       * Determines if text contains "#EXTM3U" or "VMAP_AD_BREAK"
+       *
+       * @param {*} text
+       * @returns {boolean}
+       */
+      const isM3U = function isM3U(text) {
+        if (typeof text === 'string') {
+          // Check if "text" starts with "#EXTM3U" or with "VMAP_AD_BREAK"
+          // If so, then it might be an M3U file and should be pruned or logged
+          const trimmedText = text.trim();
+          return trimmedText.startsWith(AD_MARKER.EXTM3U) || trimmedText.startsWith(COMCAST_AD_MARKER.VMAP_AD_BREAK);
+        }
+        return false;
+      };
+
+      /**
+       * Determines if pruning is needed
+       *
+       * @param {string} text
+       * @param {RegExp} regexp
+       * @returns {boolean}
+       */
+      const isPruningNeeded = function isPruningNeeded(text, regexp) {
+        return isM3U(text) && regexp.test(text);
+      };
+
+      /**
+       * Prunes lines which contain removeM3ULineRegexp and specific AD_MARKER
+       *
+       * @param {string} text
+       * @returns {string}
+       */
+      // TODO: make it compatible with $hls modifier
+      const pruneM3U = function pruneM3U(text) {
+        let lines = text.split(/\n\r|\n|\r/);
+        if (text.includes(COMCAST_AD_MARKER.VMAP_AD_BREAK)) {
+          lines = pruneVmapBlock(lines);
+          return lines.filter(function (l) {
+            return !!l;
+          }).join('\n');
+        }
+        lines = pruneSegments(lines);
+        return lines.map(function (line, index, array) {
+          if (typeof line === 'undefined') {
+            return line;
+          }
+          line = pruneSpliceoutBlock(line, index, array);
+          if (typeof line !== 'undefined') {
+            line = pruneInfBlock(line, index, array);
+          }
+          return line;
+        }).filter(function (l) {
+          return !!l;
+        }).join('\n');
+      };
+      const xhrWrapper = function xhrWrapper(target, thisArg, args) {
+        const xhrURL = args[1];
+        if (typeof xhrURL !== 'string' || xhrURL.length === 0) {
+          return Reflect.apply(target, thisArg, args);
+        }
+        if (urlMatchRegexp.test(xhrURL)) {
+          thisArg.addEventListener('readystatechange', function pruneResponse() {
+            if (thisArg.readyState === 4) {
+              const response = thisArg.response;
+              thisArg.removeEventListener('readystatechange', pruneResponse);
+              // If "propsToRemove" is not defined, then response should be logged only
+              if (!propsToRemove) {
+                if (isM3U(response)) {
+                  const message = "XMLHttpRequest.open() URL: ".concat(xhrURL, "\nresponse: ").concat(response);
+                  logMessage(source, message);
+                }
+              } else {
+                shouldPruneResponse = isPruningNeeded(response, removeM3ULineRegexp);
+              }
+              if (shouldPruneResponse) {
+                const prunedResponseContent = pruneM3U(response);
+                Object.defineProperty(thisArg, 'response', {
+                  value: prunedResponseContent
+                });
+                Object.defineProperty(thisArg, 'responseText', {
+                  value: prunedResponseContent
+                });
+                hit(source);
+              }
+            }
+          });
+        }
+        return Reflect.apply(target, thisArg, args);
+      };
+      const xhrHandler = {
+        apply: xhrWrapper
+      };
+      // eslint-disable-next-line max-len
+      window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler);
+      const nativeFetch = window.fetch;
+      const fetchWrapper = async function fetchWrapper(target, thisArg, args) {
+        const fetchURL = args[0] instanceof Request ? args[0].url : args[0];
+        if (typeof fetchURL !== 'string' || fetchURL.length === 0) {
+          return Reflect.apply(target, thisArg, args);
+        }
+        if (urlMatchRegexp.test(fetchURL)) {
+          const response = await nativeFetch(...args);
+          const responseText = await response.text();
+          // If "propsToRemove" is not defined, then response should be logged only
+          if (!propsToRemove && isM3U(responseText)) {
+            const message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(responseText);
+            logMessage(source, message);
+            return Reflect.apply(target, thisArg, args);
+          }
+          if (isPruningNeeded(responseText, removeM3ULineRegexp)) {
+            const prunedText = pruneM3U(responseText);
+            hit(source);
+            return new Response(prunedText, {
+              status: response.status,
+              statusText: response.statusText,
+              headers: response.headers
+            });
+          }
+          return Reflect.apply(target, thisArg, args);
+        }
+        return Reflect.apply(target, thisArg, args);
+      };
+      const fetchHandler = {
+        apply: fetchWrapper
+      };
+      window.fetch = new Proxy(window.fetch, fetchHandler);
+    }
+    m3uPrune$1.names = ['m3u-prune',
+    // aliases are needed for matching the related scriptlet converted into our syntax
+    'm3u-prune.js', 'ubo-m3u-prune.js', 'ubo-m3u-prune'];
+    m3uPrune$1.injections = [hit, toRegExp, logMessage];
 
     /* eslint-disable max-len */
     /**
@@ -7009,18 +7433,18 @@
      * example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[, path]])
      * ```
      *
-     * - `name` - required, cookie name to be set
-     * - `value` - required, cookie value. Possible values:
+     * - `name` — required, cookie name to be set
+     * - `value` — required, cookie value. Possible values:
      *   - arbitrary value
      *   - empty string for no value
      *   - `$now$` keyword for setting current time in ms, e.g 1667915146503
      *   - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
-     * - `offsetExpiresSec` - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
+     * - `offsetExpiresSec` — optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
      * Possible values:
      *   - positive integer in seconds
      *   - `1year` keyword for setting expiration date to one year
      *   - `1day` keyword for setting expiration date to one day
-     * - `path` - optional, argument for setting cookie path, defaults to `/`; possible values:
+     * - `path` — optional, argument for setting cookie path, defaults to `/`; possible values:
      *   - `/` — root path
      *   - `none` — to set no path at all
      *
@@ -7105,18 +7529,18 @@
      * example.org#%#//scriptlet('trusted-set-cookie-reload', name, value[, offsetExpiresSec[, path]])
      * ```
      *
-     * - `name` - required, cookie name to be set
-     * - `value` - required, cookie value. Possible values:
+     * - `name` — required, cookie name to be set
+     * - `value` — required, cookie value. Possible values:
      *   - arbitrary value
      *   - empty string for no value
      *   - `$now$` keyword for setting current time in ms, e.g 1667915146503
      *   - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
-     * - 'offsetExpiresSec' - optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
+     * - `offsetExpiresSec` — optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
      * Possible values:
      *   - positive integer in seconds
      *   - `1year` keyword for setting expiration date to one year
      *   - `1day` keyword for setting expiration date to one day
-     * - `path` - optional, argument for setting cookie path, defaults to `/`; possible values:
+     * - `path` — optional, argument for setting cookie path, defaults to `/`; possible values:
      *   - `/` — root path
      *   - `none` — to set no path at all
      *
@@ -7209,14 +7633,14 @@
      * example.org#%#//scriptlet('trusted-replace-fetch-response'[, pattern, replacement[, propsToMatch]])
      * ```
      *
-     * - pattern - optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
+     * - `pattern` — optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
      * possible values:
-     *   - '*' to match all text content
+     *   - `*` to match all text content
      *   - non-empty string
      *   - regular expression
-     * - replacement — optional, should be set if `pattern` is set. String to replace the response text content matched by `pattern`.
+     * - `replacement` — optional, should be set if `pattern` is set. String to replace the response text content matched by `pattern`.
      * Empty string to remove content. Defaults to empty string.
-     * - propsToMatch - optional, string of space-separated properties to match; possible props:
+     * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
      *   - string or regular expression for matching the URL passed to fetch call; empty string, wildcard `*` or invalid regular expression will match all fetch calls
      *   - colon-separated pairs `name:value` where
      *     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
@@ -7372,7 +7796,7 @@
      * ```
      *
      * - `key` — required, key name to be set.
-     * - `value` - required, key value; possible values:
+     * - `value` — required, key value; possible values:
      *   - arbitrary value
      *   - `$now$` keyword for setting current time in ms, corresponds to `Date.now()` and `(new Date).getTime()` calls
      *   - `$currentDate$` keyword for setting string representation of the current date and time, corresponds to `Date()` and `(new Date).toString()` calls
@@ -7444,10 +7868,10 @@
      * example.org#%#//scriptlet('trusted-set-constant', property, value[, stack])
      * ```
      *
-     * - `property` - required, path to a property (joined with `.` if needed). The property must be attached to `window`.
-     * - `value` - required, an arbitrary value to be set; value type is being inferred from the argument, e.g '500' will be set as number;
+     * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`.
+     * - `value` — required, an arbitrary value to be set; value type is being inferred from the argument, e.g '500' will be set as number;
      * to set string type value wrap argument into another pair of quotes: `'"500"'`;
-     * - `stack` - optional, string or regular expression that must match the current function call stack trace;
+     * - `stack` — optional, string or regular expression that must match the current function call stack trace;
      * if regular expression is invalid it will be skipped
      *
      * **Examples**
@@ -7659,8 +8083,8 @@
      * example.org#%#//scriptlet('inject-css-in-shadow-dom', cssRule[, hostSelector])
      * ```
      *
-     * - `cssRule` - required, string representing a single css rule
-     * - `hostSelector` - optional, string, selector to match shadow host elements. CSS rule will be only applied to shadow roots inside these elements.
+     * - `cssRule` — required, string representing a single css rule
+     * - `hostSelector` — optional, string, selector to match shadow host elements. CSS rule will be only applied to shadow roots inside these elements.
      * Defaults to injecting css rule into all available roots.
      *
      * **Examples**
@@ -7769,6 +8193,7 @@
         noTopics: noTopics$1,
         trustedReplaceXhrResponse: trustedReplaceXhrResponse$1,
         xmlPrune: xmlPrune$1,
+        m3uPrune: m3uPrune$1,
         trustedSetCookie: trustedSetCookie$1,
         trustedSetCookieReload: trustedSetCookieReload$1,
         trustedReplaceFetchResponse: trustedReplaceFetchResponse$1,
@@ -7859,6 +8284,7 @@
       ubo: 'noeval-silent.js'
     }, {
       adg: 'noopcss',
+      ubo: 'noop.css',
       abp: 'blank-css'
     }, {
       adg: 'noopframe',
@@ -7995,15 +8421,28 @@
     };
 
     /**
-     * Finds scriptlet by it's name
+     * Returns array of scriptlet objects.
+     * Needed for scriptlet name validation which will check aliases names.
      *
-     * @param {string} name - scriptlet name
-     * @returns {Function} scriptlet function
+     * @returns {Array<Object>} Array of all scriptlet objects.
      */
-    const getScriptletByName = function getScriptletByName(name) {
-      const scriptlets = Object.keys(scriptletList).map(function (key) {
+    const getScriptletsListObj = function getScriptletsListObj() {
+      return Object.keys(scriptletList).map(function (key) {
         return scriptletList[key];
       });
+    };
+
+    /**
+     * Finds scriptlet by the `name`.
+     *
+     * @param {string} name Scriptlet name.
+     * @param {Array<Object>} scriptlets Array of all scriptlet objects.
+     * @returns {Function} Scriptlet function.
+     */
+    const getScriptletByName = function getScriptletByName(name, scriptlets) {
+      if (!scriptlets) {
+        scriptlets = getScriptletsListObj();
+      }
       return scriptlets.find(function (s) {
         return s.names
         // full match name checking
@@ -8012,22 +8451,51 @@
         || !endsWith(name, '.js') && s.names.indexOf("".concat(name, ".js")) > -1);
       });
     };
+    const scriptletObjects = getScriptletsListObj();
 
     /**
-     * Checks if the scriptlet name is valid
+     * Checks whether the scriptlet `name` is valid by checking the scriptlet list object.
      *
-     * @param {string} name - Scriptlet name
-     * @returns {boolean} if the scriptlet name is valid
+     * @param {string} name Scriptlet name.
+     * @returns {boolean} True if scriptlet name is valid.
+     */
+    const isValidScriptletNameNotCached = function isValidScriptletNameNotCached(name) {
+      if (!name) {
+        return false;
+      }
+      const scriptlet = getScriptletByName(name, scriptletObjects);
+      if (!scriptlet) {
+        return false;
+      }
+      return true;
+    };
+
+    /**
+     * Cache for better performance of scriptlet name validation.
+     */
+    const scriptletNameValidationCache = new Map();
+
+    /**
+     * Checks if the scriptlet name is valid.
+     * Uses cache for better performance.
+     *
+     * @param {string} name Scriptlet name.
+     * @returns {boolean} True if scriptlet name is valid.
      */
     const isValidScriptletName = function isValidScriptletName(name) {
       if (!name) {
         return false;
       }
-      const scriptlet = getScriptletByName(name);
-      if (!scriptlet) {
-        return false;
+      // if there is no cached validation value
+      if (!scriptletNameValidationCache.has(name)) {
+        // we should calculate it first
+        const isValid = isValidScriptletNameNotCached(name);
+        // and save it to the cache then
+        scriptletNameValidationCache.set(name, isValid);
+        return isValid;
       }
-      return true;
+      // otherwise return cached validation result
+      return scriptletNameValidationCache.get(name);
     };
 
     /* ************************************************************************
@@ -8052,6 +8520,9 @@
     const ABSENT_SOURCE_TYPE_REPLACEMENT = [{
       NAME: 'nooptext',
       TYPES: VALID_SOURCE_TYPES
+    }, {
+      NAME: 'noopcss',
+      TYPES: ['stylesheet']
     }, {
       NAME: 'noopjs',
       TYPES: ['script']
@@ -8160,7 +8631,7 @@
     const getRedirectName = function getRedirectName(rule, marker) {
       const ruleModifiers = parseModifiers(rule);
       const redirectNamePart = ruleModifiers.find(function (el) {
-        return el.indexOf(marker) > -1;
+        return el.includes(marker);
       });
       return substringAfter$1(redirectNamePart, marker);
     };
@@ -8174,9 +8645,9 @@
      */
     const isAdgRedirectRule = function isAdgRedirectRule(rule) {
       const MARKER_IN_BASE_PART_MASK = '/((?!\\$|\\,).{1})redirect((-rule)?)=(.{0,}?)\\$(popup)?/';
-      return !isComment(rule) && (rule.indexOf(REDIRECT_RULE_TYPES.ADG.redirectMarker) > -1 || rule.indexOf(REDIRECT_RULE_TYPES.ADG.redirectRuleMarker) > -1)
+      return !isComment(rule) && (rule.includes(REDIRECT_RULE_TYPES.ADG.redirectMarker) || rule.includes(REDIRECT_RULE_TYPES.ADG.redirectRuleMarker))
       // some js rules may have 'redirect=' in it, so we should get rid of them
-      && rule.indexOf(JS_RULE_MARKER) === -1
+      && !rule.includes(JS_RULE_MARKER)
       // get rid of rules like '_redirect=*://look.$popup'
       && !toRegExp(MARKER_IN_BASE_PART_MASK).test(rule);
     };
@@ -8281,11 +8752,10 @@
       const ruleModifiers = parseModifiers(rule);
       // rule can have more than one source type modifier
       const sourceTypes = ruleModifiers.filter(function (el) {
-        return VALID_SOURCE_TYPES.indexOf(el) > -1;
+        return VALID_SOURCE_TYPES.includes(el);
       });
       const isSourceTypeSpecified = sourceTypes.length > 0;
-      // eslint-disable-next-line max-len
-      const isEmptyRedirect = ruleModifiers.indexOf("".concat(ADG_UBO_REDIRECT_MARKER).concat(EMPTY_REDIRECT_MARKER)) > -1 || ruleModifiers.indexOf("".concat(ADG_UBO_REDIRECT_RULE_MARKER).concat(EMPTY_REDIRECT_MARKER)) > -1;
+      const isEmptyRedirect = ruleModifiers.includes("".concat(ADG_UBO_REDIRECT_MARKER).concat(EMPTY_REDIRECT_MARKER)) || ruleModifiers.includes("".concat(ADG_UBO_REDIRECT_RULE_MARKER).concat(EMPTY_REDIRECT_MARKER));
       if (isEmptyRedirect) {
         // no source type for 'empty' is allowed
         return true;
@@ -8649,6 +9119,30 @@
     };
 
     /**
+     * Returns scriptlet name from `rule`.
+     *
+     * @param {string} rule AdGuard syntax scriptlet rule.
+     * @returns {string|null} Scriptlet name or null.
+     */
+    const getAdgScriptletName = function getAdgScriptletName(rule) {
+      // get substring after '#//scriptlet('
+      let buffer = substringAfter$1(rule, "".concat(ADG_SCRIPTLET_MASK, "("));
+      if (!buffer) {
+        return null;
+      }
+      // get the quote used for the first scriptlet parameter which is a name
+      const nameQuote = buffer[0];
+      // delete the quote from the buffer
+      buffer = buffer.slice(1);
+      if (!buffer) {
+        return null;
+      }
+      // get a supposed scriptlet name
+      const name = substringBefore(buffer, nameQuote);
+      return name === buffer ? null : name;
+    };
+
+    /**
      * Checks whether the ADG scriptlet exists or UBO/ABP scriptlet is compatible to ADG
      *
      * @param {string} input can be ADG or UBO or ABP scriptlet rule
@@ -8664,8 +9158,8 @@
       // checking if each of parsed scriptlets is valid
       // if at least one of them is not valid - whole 'input' rule is not valid too
       const isValid = rulesArray.every(function (rule) {
-        const parsedRule = parseRule(rule);
-        return validator.isValidScriptletName(parsedRule.name);
+        const name = getAdgScriptletName(rule);
+        return validator.isValidScriptletName(name);
       });
       return isValid;
     };
@@ -14251,6 +14745,7 @@
       "noop.html": "noopframe.html",
       "blank-html": "noopframe.html",
       noopcss: "noopcss.css",
+      "noop.css": "noopcss.css",
       "blank-css": "noopcss.css",
       noopjs: "noopjs.js",
       "noop.js": "noopjs.js",
@@ -14622,10 +15117,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -14637,7 +15138,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
@@ -15178,10 +15679,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -15193,7 +15700,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function toRegExp() {
         let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -15347,7 +15854,7 @@
       }
       function getBoostMultiplier(boost) {
         const DEFAULT_MULTIPLIER = .05;
-        const MIN_MULTIPLIER = .02;
+        const MIN_MULTIPLIER = .001;
         const MAX_MULTIPLIER = 50;
         const parsedBoost = parseFloat(boost);
         let boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
@@ -15364,10 +15871,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -15379,7 +15892,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function nativeIsNaN(num) {
         const native = Number.isNaN || window.isNaN;
@@ -15472,7 +15985,7 @@
       }
       function getBoostMultiplier(boost) {
         const DEFAULT_MULTIPLIER = .05;
-        const MIN_MULTIPLIER = .02;
+        const MIN_MULTIPLIER = .001;
         const MAX_MULTIPLIER = 50;
         const parsedBoost = parseFloat(boost);
         let boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
@@ -15489,10 +16002,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -15504,7 +16023,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function nativeIsNaN(num) {
         const native = Number.isNaN || window.isNaN;
@@ -15715,10 +16234,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -15730,7 +16255,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
@@ -16228,10 +16753,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -16243,7 +16774,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -16478,10 +17009,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -16493,7 +17030,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function hijackAttachShadow(context, hostSelector, callback) {
         const handlerWrapper = function handlerWrapper(target, thisArg, args) {
@@ -16532,7 +17069,10 @@
             const matchRegex = toRegExp(requiredPaths.join(""));
             const shouldLog = matchRegex.test(rootString);
             if (shouldLog) {
-              logMessage(source, "".concat(window.location.hostname, " ").concat(objectToString(root)), true);
+              logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
+              if (root && typeof root === "object") {
+                logMessage(source, root, true, false);
+              }
               shouldProcess = false;
               return shouldProcess;
             }
@@ -16555,7 +17095,10 @@
         }
         const jsonPruner = function jsonPruner(root) {
           if (prunePaths.length === 0 && requiredPaths.length === 0) {
-            logMessage(source, "".concat(window.location.hostname, " ").concat(objectToString(root)), true);
+            logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
+            if (root && typeof root === "object") {
+              logMessage(source, root, true, false);
+            }
             return root;
           }
           try {
@@ -16682,10 +17225,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -16697,18 +17246,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
-      }
-      function objectToString(obj) {
-        return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
-          const key = pair[0];
-          const value = pair[1];
-          let recordValueStr = value;
-          if (value instanceof Object) {
-            recordValueStr = "{ ".concat(objectToString(value), " }");
-          }
-          return "".concat(key, ':"').concat(recordValueStr, '"');
-        }).join(" ");
+        nativeConsole(messageStr);
       }
       function toRegExp() {
         let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -16722,17 +17260,6 @@
         }
         const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
-      }
-      function isEmptyObject(obj) {
-        return Object.keys(obj).length === 0 && !obj.prototype;
-      }
-      function getObjectEntries(object) {
-        const keys = Object.keys(object);
-        const entries = [];
-        keys.forEach(function (key) {
-          return entries.push([key, object[key]]);
-        });
-        return entries;
       }
       function getNativeRegexpTest() {
         return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
@@ -16902,10 +17429,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -16917,9 +17450,12 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function objectToString(obj) {
+        if (!obj || typeof obj !== "object") {
+          return String(obj);
+        }
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
           const key = pair[0];
           const value = pair[1];
@@ -17002,10 +17538,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -17017,7 +17559,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -17180,10 +17722,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -17195,7 +17743,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
@@ -17203,6 +17751,311 @@
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         logOnStacktrace.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+    function m3uPrune(source, args) {
+      function m3uPrune(source, propsToRemove, urlToMatch) {
+        if (typeof Reflect === "undefined" || typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
+          return;
+        }
+        let shouldPruneResponse = false;
+        const urlMatchRegexp = toRegExp(urlToMatch);
+        const SEGMENT_MARKER = "#";
+        const AD_MARKER = {
+          ASSET: "#EXT-X-ASSET:",
+          CUE: "#EXT-X-CUE:",
+          CUE_IN: "#EXT-X-CUE-IN",
+          DISCONTINUITY: "#EXT-X-DISCONTINUITY",
+          EXTINF: "#EXTINF",
+          EXTM3U: "#EXTM3U",
+          SCTE35: "#EXT-X-SCTE35:"
+        };
+        const COMCAST_AD_MARKER = {
+          AD: "-AD-",
+          VAST: "-VAST-",
+          VMAP_AD: "-VMAP-AD-",
+          VMAP_AD_BREAK: "#EXT-X-VMAP-AD-BREAK:"
+        };
+        const TAGS_ALLOWLIST = ["#EXT-X-TARGETDURATION", "#EXT-X-MEDIA-SEQUENCE", "#EXT-X-DISCONTINUITY-SEQUENCE", "#EXT-X-ENDLIST", "#EXT-X-PLAYLIST-TYPE", "#EXT-X-I-FRAMES-ONLY", "#EXT-X-MEDIA", "#EXT-X-STREAM-INF", "#EXT-X-I-FRAME-STREAM-INF", "#EXT-X-SESSION-DATA", "#EXT-X-SESSION-KEY", "#EXT-X-INDEPENDENT-SEGMENTS", "#EXT-X-START"];
+        const isAllowedTag = function isAllowedTag(str) {
+          return TAGS_ALLOWLIST.some(function (el) {
+            return str.startsWith(el);
+          });
+        };
+        const pruneExtinfFromVmapBlock = function pruneExtinfFromVmapBlock(lines, i) {
+          let array = lines.slice();
+          let index = i;
+          if (array[index].includes(AD_MARKER.EXTINF)) {
+            array[index] = undefined;
+            index += 1;
+            if (array[index].includes(AD_MARKER.DISCONTINUITY)) {
+              array[index] = undefined;
+              index += 1;
+              const prunedExtinf = pruneExtinfFromVmapBlock(array, index);
+              array = prunedExtinf.array;
+              index = prunedExtinf.index;
+            }
+          }
+          return {
+            array: array,
+            index: index
+          };
+        };
+        const pruneVmapBlock = function pruneVmapBlock(lines) {
+          let array = lines.slice();
+          for (let i = 0; i < array.length - 1; i += 1) {
+            if (array[i].includes(COMCAST_AD_MARKER.VMAP_AD) || array[i].includes(COMCAST_AD_MARKER.VAST) || array[i].includes(COMCAST_AD_MARKER.AD)) {
+              array[i] = undefined;
+              if (array[i + 1].includes(AD_MARKER.EXTINF)) {
+                i += 1;
+                const prunedExtinf = pruneExtinfFromVmapBlock(array, i);
+                array = prunedExtinf.array;
+                i = prunedExtinf.index - 1;
+              }
+            }
+          }
+          return array;
+        };
+        const pruneSpliceoutBlock = function pruneSpliceoutBlock(line, index, array) {
+          if (!line.startsWith(AD_MARKER.CUE)) {
+            return line;
+          }
+          line = undefined;
+          index += 1;
+          if (array[index].startsWith(AD_MARKER.ASSET)) {
+            array[index] = undefined;
+            index += 1;
+          }
+          if (array[index].startsWith(AD_MARKER.SCTE35)) {
+            array[index] = undefined;
+            index += 1;
+          }
+          if (array[index].startsWith(AD_MARKER.CUE_IN)) {
+            array[index] = undefined;
+            index += 1;
+          }
+          if (array[index].startsWith(AD_MARKER.SCTE35)) {
+            array[index] = undefined;
+          }
+          return line;
+        };
+        const removeM3ULineRegexp = toRegExp(propsToRemove);
+        const pruneInfBlock = function pruneInfBlock(line, index, array) {
+          if (!line.startsWith(AD_MARKER.EXTINF)) {
+            return line;
+          }
+          if (!removeM3ULineRegexp.test(array[index + 1])) {
+            return line;
+          }
+          if (!isAllowedTag(array[index])) {
+            array[index] = undefined;
+          }
+          index += 1;
+          if (!isAllowedTag(array[index])) {
+            array[index] = undefined;
+          }
+          index += 1;
+          if (array[index].startsWith(AD_MARKER.DISCONTINUITY)) {
+            array[index] = undefined;
+          }
+          return line;
+        };
+        const pruneSegments = function pruneSegments(lines) {
+          for (let i = 0; i < lines.length - 1; i += 1) {
+            var _lines$i;
+            if ((_lines$i = lines[i]) !== null && _lines$i !== void 0 && _lines$i.startsWith(SEGMENT_MARKER) && removeM3ULineRegexp.test(lines[i])) {
+              const segmentName = lines[i].substring(0, lines[i].indexOf(":"));
+              if (!segmentName) {
+                return lines;
+              }
+              lines[i] = undefined;
+              i += 1;
+              for (let j = i; j < lines.length; j += 1) {
+                if (!lines[j].includes(segmentName) && !isAllowedTag(lines[j])) {
+                  lines[j] = undefined;
+                } else {
+                  i = j - 1;
+                  break;
+                }
+              }
+            }
+          }
+          return lines;
+        };
+        const isM3U = function isM3U(text) {
+          if (typeof text === "string") {
+            const trimmedText = text.trim();
+            return trimmedText.startsWith(AD_MARKER.EXTM3U) || trimmedText.startsWith(COMCAST_AD_MARKER.VMAP_AD_BREAK);
+          }
+          return false;
+        };
+        const isPruningNeeded = function isPruningNeeded(text, regexp) {
+          return isM3U(text) && regexp.test(text);
+        };
+        const pruneM3U = function pruneM3U(text) {
+          let lines = text.split(/\n\r|\n|\r/);
+          if (text.includes(COMCAST_AD_MARKER.VMAP_AD_BREAK)) {
+            lines = pruneVmapBlock(lines);
+            return lines.filter(function (l) {
+              return !!l;
+            }).join("\n");
+          }
+          lines = pruneSegments(lines);
+          return lines.map(function (line, index, array) {
+            if (typeof line === "undefined") {
+              return line;
+            }
+            line = pruneSpliceoutBlock(line, index, array);
+            if (typeof line !== "undefined") {
+              line = pruneInfBlock(line, index, array);
+            }
+            return line;
+          }).filter(function (l) {
+            return !!l;
+          }).join("\n");
+        };
+        const xhrWrapper = function xhrWrapper(target, thisArg, args) {
+          const xhrURL = args[1];
+          if (typeof xhrURL !== "string" || xhrURL.length === 0) {
+            return Reflect.apply(target, thisArg, args);
+          }
+          if (urlMatchRegexp.test(xhrURL)) {
+            thisArg.addEventListener("readystatechange", function pruneResponse() {
+              if (thisArg.readyState === 4) {
+                const response = thisArg.response;
+                thisArg.removeEventListener("readystatechange", pruneResponse);
+                if (!propsToRemove) {
+                  if (isM3U(response)) {
+                    const message = "XMLHttpRequest.open() URL: ".concat(xhrURL, "\nresponse: ").concat(response);
+                    logMessage(source, message);
+                  }
+                } else {
+                  shouldPruneResponse = isPruningNeeded(response, removeM3ULineRegexp);
+                }
+                if (shouldPruneResponse) {
+                  const prunedResponseContent = pruneM3U(response);
+                  Object.defineProperty(thisArg, "response", {
+                    value: prunedResponseContent
+                  });
+                  Object.defineProperty(thisArg, "responseText", {
+                    value: prunedResponseContent
+                  });
+                  hit(source);
+                }
+              }
+            });
+          }
+          return Reflect.apply(target, thisArg, args);
+        };
+        const xhrHandler = {
+          apply: xhrWrapper
+        };
+        window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler);
+        const nativeFetch = window.fetch;
+        const fetchWrapper = async function fetchWrapper(target, thisArg, args) {
+          const fetchURL = args[0] instanceof Request ? args[0].url : args[0];
+          if (typeof fetchURL !== "string" || fetchURL.length === 0) {
+            return Reflect.apply(target, thisArg, args);
+          }
+          if (urlMatchRegexp.test(fetchURL)) {
+            const response = await nativeFetch(...args);
+            const responseText = await response.text();
+            if (!propsToRemove && isM3U(responseText)) {
+              const message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(responseText);
+              logMessage(source, message);
+              return Reflect.apply(target, thisArg, args);
+            }
+            if (isPruningNeeded(responseText, removeM3ULineRegexp)) {
+              const prunedText = pruneM3U(responseText);
+              hit(source);
+              return new Response(prunedText, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers
+              });
+            }
+            return Reflect.apply(target, thisArg, args);
+          }
+          return Reflect.apply(target, thisArg, args);
+        };
+        const fetchHandler = {
+          apply: fetchWrapper
+        };
+        window.fetch = new Proxy(window.fetch, fetchHandler);
+      }
+      function hit(source) {
+        if (source.verbose !== true) {
+          return;
+        }
+        try {
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
+          if (source.domainName) {
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
+            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+            const rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+          log("".concat(prefix, " trace start"));
+          if (trace) {
+            trace();
+          }
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+      function toRegExp() {
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+      function logMessage(source, message) {
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        const name = source.name,
+          ruleText = source.ruleText,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
+          return;
+        }
+        let messageStr = "".concat(name, ": ").concat(message);
+        if (ruleText) {
+          const RULE_MARKER = "#%#//scriptlet";
+          const markerIdx = ruleText.indexOf(RULE_MARKER);
+          if (markerIdx > -1) {
+            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
+            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+          }
+        }
+        nativeConsole(messageStr);
+      }
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      try {
+        m3uPrune.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
@@ -17318,10 +18171,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -17333,7 +18192,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -17408,10 +18267,16 @@
       function noopFunc() {}
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -17423,7 +18288,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function convertRtcConfigToString(config) {
         const UNDEF_STR = "undefined";
@@ -17643,10 +18508,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -17658,7 +18529,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -17859,7 +18730,7 @@
           }
         });
         const addEventListenerWrapper = function addEventListenerWrapper(target, thisArg, args) {
-          if (!args[0] || !args[1]) {
+          if (!args[0] || !args[1] || !thisArg) {
             return Reflect.apply(target, thisArg, args);
           }
           const eventName = args[0];
@@ -18192,6 +19063,9 @@
         return fetchPropsObj;
       }
       function objectToString(obj) {
+        if (!obj || typeof obj !== "object") {
+          return String(obj);
+        }
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
           const key = pair[0];
           const value = pair[1];
@@ -18243,10 +19117,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -18258,7 +19138,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function toRegExp() {
         let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -18538,10 +19418,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -18553,7 +19439,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function nativeIsNaN(num) {
         const native = Number.isNaN || window.isNaN;
@@ -18653,10 +19539,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -18668,7 +19560,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function escapeRegExp(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -18787,10 +19679,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -18802,7 +19700,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function toRegExp() {
         let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -18989,10 +19887,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -19004,7 +19908,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function parseMatchArg(match) {
         const INVERT_MARKER = "!";
@@ -19335,10 +20239,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -19350,7 +20260,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function noopFunc() {}
       function trueFunc() {
@@ -19505,10 +20415,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -19520,9 +20436,12 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function objectToString(obj) {
+        if (!obj || typeof obj !== "object") {
+          return String(obj);
+        }
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
           const key = pair[0];
           const value = pair[1];
@@ -19827,10 +20746,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -19842,7 +20767,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function throttle(cb, delay) {
         let wait = false;
@@ -19982,10 +20907,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -19997,7 +20928,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function observeDOMChanges(callback) {
         let observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
@@ -20337,7 +21268,8 @@
         if (!selector || !attr) {
           return;
         }
-        if (value.length !== 0 && (nativeIsNaN(parseInt(value, 10)) || parseInt(value, 10) < 0 || parseInt(value, 10) > 32767)) {
+        const allowedValues = ["true", "false"];
+        if (value.length !== 0 && (nativeIsNaN(parseInt(value, 10)) || parseInt(value, 10) < 0 || parseInt(value, 10) > 32767) && !allowedValues.includes(value.toLowerCase())) {
           return;
         }
         const setAttr = function setAttr() {
@@ -20636,10 +21568,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -20651,7 +21589,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function noopArray() {
         return [];
@@ -20890,10 +21828,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -20905,7 +21849,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function nativeIsNaN(num) {
         const native = Number.isNaN || window.isNaN;
@@ -21025,10 +21969,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -21040,7 +21990,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function nativeIsNaN(num) {
         const native = Number.isNaN || window.isNaN;
@@ -21164,10 +22114,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -21179,7 +22135,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function nativeIsNaN(num) {
         const native = Number.isNaN || window.isNaN;
@@ -21342,10 +22298,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -21357,7 +22319,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function nativeIsNaN(num) {
         const native = Number.isNaN || window.isNaN;
@@ -21651,10 +22613,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -21666,7 +22634,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -21789,10 +22757,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -21804,7 +22778,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function getFetchData(args) {
         const fetchPropsObj = {};
@@ -21827,6 +22801,9 @@
         return fetchPropsObj;
       }
       function objectToString(obj) {
+        if (!obj || typeof obj !== "object") {
+          return String(obj);
+        }
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
           const key = pair[0];
           const value = pair[1];
@@ -22106,10 +23083,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -22121,7 +23104,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function toRegExp() {
         let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -22137,6 +23120,9 @@
         return new RegExp(escaped);
       }
       function objectToString(obj) {
+        if (!obj || typeof obj !== "object") {
+          return String(obj);
+        }
         return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
           const key = pair[0];
           const value = pair[1];
@@ -22425,10 +23411,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -22440,7 +23432,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function getPropertyInChain(base, chain) {
         const pos = chain.indexOf(".");
@@ -22650,10 +23642,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -22665,7 +23663,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function concatCookieNameValuePath(rawName, rawValue, rawPath) {
         return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
@@ -22787,10 +23785,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -22802,7 +23806,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function isCookieSetWithValue(cookieString, name, value) {
         return cookieString.split(";").some(function (cookieStr) {
@@ -22912,10 +23916,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -22927,7 +23937,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function setStorageItem(source, storage, key, value) {
         try {
@@ -22969,19 +23979,25 @@
         }
         const urlMatchRegexp = toRegExp(urlToMatch);
         const isXML = function isXML(text) {
-          const trimedText = text.trim();
-          if (startsWith(trimedText, "<") && endsWith(trimedText, ">")) {
-            return true;
+          if (typeof text === "string") {
+            const trimedText = text.trim();
+            if (trimedText.startsWith("<") && trimedText.endsWith(">")) {
+              return true;
+            }
           }
           return false;
+        };
+        const createXMLDocument = function createXMLDocument(text) {
+          const xmlParser = new DOMParser();
+          const xmlDocument = xmlParser.parseFromString(text, "text/xml");
+          return xmlDocument;
         };
         const pruneXML = function pruneXML(text) {
           if (!isXML(text)) {
             shouldPruneResponse = false;
             return text;
           }
-          const xmlParser = new DOMParser();
-          const xmlDoc = xmlParser.parseFromString(text, "text/xml");
+          const xmlDoc = createXMLDocument(text);
           const errorNode = xmlDoc.querySelector("parsererror");
           if (errorNode) {
             return text;
@@ -23015,7 +24031,8 @@
                 if (!shouldPruneResponse) {
                   if (isXML(response)) {
                     const message = "XMLHttpRequest.open() URL: ".concat(xhrURL, "\nresponse: ").concat(response);
-                    logMessage(message);
+                    logMessage(source, message);
+                    logMessage(source, createXMLDocument(response), true, false);
                   }
                 } else {
                   const prunedResponseContent = pruneXML(response);
@@ -23041,7 +24058,7 @@
         window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler);
         const nativeFetch = window.fetch;
         const fetchWrapper = function fetchWrapper(target, thisArg, args) {
-          const fetchURL = args[0];
+          const fetchURL = args[0] instanceof Request ? args[0].url : args[0];
           if (typeof fetchURL !== "string" || fetchURL.length === 0) {
             return Reflect.apply(target, thisArg, args);
           }
@@ -23050,7 +24067,9 @@
               return response.text().then(function (text) {
                 if (!shouldPruneResponse) {
                   if (isXML(text)) {
-                    logMessage("fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(text));
+                    const message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(text);
+                    logMessage(source, message);
+                    logMessage(source, createXMLDocument(text), true, false);
                   }
                   return Reflect.apply(target, thisArg, args);
                 }
@@ -23107,10 +24126,16 @@
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
           ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
           return;
         }
         let messageStr = "".concat(name, ": ").concat(message);
@@ -23122,7 +24147,7 @@
             messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
           }
         }
-        console.log(messageStr);
+        nativeConsole(messageStr);
       }
       function toRegExp() {
         let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -23136,12 +24161,6 @@
         }
         const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
-      }
-      function startsWith(str, prefix) {
-        return !!str && str.indexOf(prefix) === 0;
-      }
-      function endsWith(str, ending) {
-        return !!str && str.lastIndexOf(ending) === str.length - ending.length;
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -23233,6 +24252,10 @@
       "ubo-aell": logAddEventListener,
       "log-eval": logEval,
       "log-on-stack-trace": logOnStacktrace,
+      "m3u-prune": m3uPrune,
+      "m3u-prune.js": m3uPrune,
+      "ubo-m3u-prune.js": m3uPrune,
+      "ubo-m3u-prune": m3uPrune,
       "no-topics": noTopics,
       noeval: noeval,
       "noeval.js": noeval,

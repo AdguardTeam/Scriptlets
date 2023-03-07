@@ -222,7 +222,7 @@ example.org#%#//scriptlet('adjust-setInterval'[, matchCallback [, matchDelay[, b
 - `matchCallback` — optional, string or regular expression for stringified callback matching;
 defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
 - `matchDelay` — optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
-- `boost` — optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), setInterval delay multiplier
+- `boost` — optional, default to 0.05, float, capped at 1000 times for up and 50 for down (0.001...50), setInterval delay multiplier
 
 **Examples**
 1. Adjust all setInterval() x20 times where delay equal 1000ms:
@@ -248,7 +248,11 @@ defaults to match all callbacks; invalid regular expression will cause exit and 
     ```
     example.org#%#//scriptlet('adjust-setInterval', '', '2000', '0.02')
     ```
-6. Adjust all setInterval() x50 times where delay is randomized
+6. Adjust all setInterval() x1000 times where delay equal 2000ms
+    ```
+    example.org#%#//scriptlet('adjust-setInterval', '', '2000', '0.001')
+    ```
+7. Adjust all setInterval() x50 times where delay is randomized
     ```
     example.org#%#//scriptlet('adjust-setInterval', '', '*', '0.02')
     ```
@@ -271,7 +275,7 @@ example.org#%#//scriptlet('adjust-setTimeout'[, matchCallback [, matchDelay[, bo
 - `matchCallback` — optional, string or regular expression for stringified callback matching;
 defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
 - `matchDelay` — optional, defaults to 1000, matching setTimeout delay; decimal integer OR '*' for any delay
-- `boost` — optional, default to 0.05, float, capped at 50 times for up and down (0.02...50), setTimeout delay multiplier
+- `boost` — optional, default to 0.05, float, capped at 1000 times for up and 50 for down (0.001...50), setTimeout delay multiplier
 
 **Examples**
 1. Adjust all setTimeout() x20 times where timeout equal 1000ms:
@@ -297,7 +301,11 @@ defaults to match all callbacks; invalid regular expression will cause exit and 
     ```
     example.org#%#//scriptlet('adjust-setTimeout', '', '2000', '0.02')
     ```
-6. Adjust all setTimeout() x20 times where callback matched with `test` and timeout is randomized
+6. Adjust all setTimeout() x1000 times where timeout equal 2000ms
+    ```
+    example.org#%#//scriptlet('adjust-setTimeout', '', '2000', '0.001')
+    ```
+7. Adjust all setTimeout() x20 times where callback matched with `test` and timeout is randomized
     ```
     example.org#%#//scriptlet('adjust-setTimeout', 'test', '*')
     ```
@@ -607,6 +615,45 @@ example.org#%#//scriptlet('log', 'arg1', 'arg2')
 ```
 
 [Scriptlet source](../src/scriptlets/log.js)
+* * *
+
+### <a id="m3u-prune"></a> ⚡️ m3u-prune
+
+Removes content from the specified M3U file.
+
+
+**Syntax**
+```
+example.org#%#//scriptlet('m3u-prune'[, propsToRemove[, urlToMatch]])
+```
+
+- `propsToRemove` — optional, string or regular expression to match the URL line (segment) which will be removed alongside with its tags
+- `urlToMatch` — optional, string or regular expression for matching the request's URL
+> Usage with no arguments will log response payload and URL to browser console;
+which is useful for debugging but prohibited for production filter lists.
+
+**Examples**
+1. Removes a tag which contains `tvessaiprod.nbcuni.com/video/`, from all requests
+    ```
+    example.org#%#//scriptlet('m3u-prune', 'tvessaiprod.nbcuni.com/video/')
+    ```
+
+2. Removes a line which contains `tvessaiprod.nbcuni.com/video/`, only if request's URL contains `.m3u8`
+    ```
+    example.org#%#//scriptlet('m3u-prune', 'tvessaiprod.nbcuni.com/video/', '.m3u8')
+    ```
+
+3. Call with no arguments will log response payload and URL at the console
+    ```
+    example.org#%#//scriptlet('m3u-prune')
+    ```
+
+4. Call with only `urlToMatch` argument will log response payload and URL only for the matched URL
+    ```
+    example.org#%#//scriptlet('m3u-prune', '', '.m3u8')
+    ```
+
+[Scriptlet source](../src/scriptlets/m3u-prune.js)
 * * *
 
 ### <a id="no-topics"></a> ⚡️ no-topics
@@ -1539,6 +1586,7 @@ example.org#%#//scriptlet('set-attr', selector, attr[, value])
 - `value` — the value to assign to the attribute, defaults to ''. Possible values:
     - `''` — empty string
     - positive decimal integer `<= 32767`
+    - `true` / `false` in any case variation
 
 **Examples**
 1.  Set attribute by selector
@@ -1564,6 +1612,30 @@ example.org#%#//scriptlet('set-attr', selector, attr[, value])
 
     <!-- after -->
     <a class="class" test-attribute>Some text</div>
+    ```
+3.  Set attribute value to `TRUE`
+    ```
+    example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', 'TRUE')
+    ```
+
+    ```html
+    <!-- before -->
+    <a class="class">Some text</div>
+
+    <!-- after -->
+    <a class="class" test-attribute="TRUE">Some text</div>
+    ```
+4.  Set attribute value to `fAlse`
+    ```
+    example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', 'fAlse')
+    ```
+
+    ```html
+    <!-- before -->
+    <a class="class">Some text</div>
+
+    <!-- after -->
+    <a class="class" test-attribute="fAlse">Some text</div>
     ```
 
 [Scriptlet source](../src/scriptlets/set-attr.js)
@@ -1834,3 +1906,4 @@ which is useful for debugging but prohibited for production filter lists.
 
 [Scriptlet source](../src/scriptlets/xml-prune.js)
 * * *
+
