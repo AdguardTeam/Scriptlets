@@ -8,6 +8,15 @@
 - new `m3u-prune` scriptlet [#277](https://github.com/AdguardTeam/Scriptlets/issues/277)
 - `true` and `false` values for `set-attr` scriptlet [#283](https://github.com/AdguardTeam/Scriptlets/issues/283)
 
+### Changed
+
+- decreased the minimal value for the `boost` parameter to `0.001` for `adjust-setTimeout` and `adjust-setInterval` [#262](https://github.com/AdguardTeam/Scriptlets/issues/262)
+
+### Fixed
+
+- `prevent-element-src-loading` throwing error if `thisArg` is `undefined` [#270](https://github.com/AdguardTeam/Scriptlets/issues/270)
+- logging `null` in `json-prune` [#282](https://github.com/AdguardTeam/Scriptlets/issues/282)
+- `xml-prune` does not prune a request if `new Request()` is used and issue with throwing error while logging some requests [#289](https://github.com/AdguardTeam/Scriptlets/issues/289)
 
 ## v1.8.2
 
