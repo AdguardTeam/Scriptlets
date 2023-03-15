@@ -21,7 +21,9 @@ export const throttle = (cb, delay) => {
         setTimeout(() => {
             wait = false;
             if (savedArgs) {
-                wrapper(savedArgs);
+                // "savedArgs" might contains few arguments, so it's necessary to use spread operator
+                // https://github.com/AdguardTeam/Scriptlets/issues/284#issuecomment-1419464354
+                wrapper(...savedArgs);
                 savedArgs = null;
             }
         }, delay);

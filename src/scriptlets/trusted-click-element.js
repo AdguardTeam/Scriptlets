@@ -69,12 +69,15 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
 
     const OBSERVER_TIMEOUT_MS = 10000;
     const THROTTLE_DELAY_MS = 20;
+    const STATIC_CLICK_DELAY_MS = 150;
     const COOKIE_MATCH_MARKER = 'cookie:';
     const LOCAL_STORAGE_MATCH_MARKER = 'localStorage:';
     const SELECTORS_DELIMITER = ',';
     const COOKIE_STRING_DELIMITER = ';';
     // Regex to split match pairs by commas, avoiding the ones included in regexes
     const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=cookie:|localStorage:)/;
+
+    const sleep = (delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs));
 
     let parsedDelay;
     if (delay) {
@@ -184,9 +187,14 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
      * Element should not be clicked if it is already clicked,
      * or a previous element is not found or clicked yet
      */
-    const clickElementsBySequence = () => {
+    const clickElementsBySequence = async () => {
         for (let i = 0; i < elementsSequence.length; i += 1) {
             const elementObj = elementsSequence[i];
+            // Add a delay between clicks to every element except the first one
+            // https://github.com/AdguardTeam/Scriptlets/issues/284
+            if (i >= 1) {
+                await sleep(STATIC_CLICK_DELAY_MS);
+            }
             // Stop clicking if that pos element is not found yet
             if (!elementObj.element) {
                 break;

@@ -129,7 +129,48 @@ test('Multiple elements clicked', (assert) => {
         assert.strictEqual(CLICK_ORDER.join(), window.clickOrder.join(), 'Elements were clicked in a given order');
         assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
         done();
-    }, 150);
+    }, 400);
+});
+
+test('Multiple elements clicked - delay test', (assert) => {
+    const CLICK_ORDER = [1, 2, 3];
+    // Assert elements for being clicked, hit func execution & click order
+    // & 2 x test delay with 3 tests (first - clicked|not clicked|not clicked; second - clicked|clicked|not clicked)
+    const ASSERTIONS = CLICK_ORDER.length + 2 + 3 + 3;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = createSelectorsString(CLICK_ORDER);
+
+    runScriptlet(name, [selectorsString]);
+    const panel = createPanel();
+    const clickables = [];
+    CLICK_ORDER.forEach((number) => {
+        const clickable = createClickable(number);
+        panel.appendChild(clickable);
+        clickables.push(clickable);
+    });
+
+    setTimeout(() => {
+        assert.ok(panel.querySelector('#clickable1').getAttribute('clicked'), 'Element should be clicked');
+        assert.notOk(panel.querySelector('#clickable2').getAttribute('clicked'), 'Element should not be clicked');
+        assert.notOk(panel.querySelector('#clickable3').getAttribute('clicked'), 'Element should not be clicked');
+    }, 100);
+
+    setTimeout(() => {
+        assert.ok(panel.querySelector('#clickable1').getAttribute('clicked'), 'Element should be clicked');
+        assert.ok(panel.querySelector('#clickable2').getAttribute('clicked'), 'Element should be clicked');
+        assert.notOk(panel.querySelector('#clickable3').getAttribute('clicked'), 'Element should not be clicked');
+    }, 200);
+
+    setTimeout(() => {
+        clickables.forEach((clickable) => {
+            assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        });
+        assert.strictEqual(CLICK_ORDER.join(), window.clickOrder.join(), 'Elements were clicked in a given order');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 400);
 });
 
 test('Multiple elements clicked, non-ordered render', (assert) => {
@@ -157,7 +198,7 @@ test('Multiple elements clicked, non-ordered render', (assert) => {
         assert.strictEqual(CLICK_ORDER.join(), window.clickOrder.join(), 'Elements were clicked in a given order');
         assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
         done();
-    }, 150);
+    }, 400);
 });
 
 test('extraMatch - single cookie match, matched', (assert) => {
@@ -332,4 +373,35 @@ test('extraMatch - complex string+regex cookie input & whitespaces & comma in re
         done();
     }, 150);
     clearCookie(cookieKey1);
+});
+
+// https://github.com/AdguardTeam/Scriptlets/issues/284#issuecomment-1419464354
+test('Test - wait for an element to click', (assert) => {
+    const ELEM_COUNT = 1;
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    assert.expect(1);
+    const done = assert.async();
+
+    runScriptlet(name, [selectorsString]);
+
+    setTimeout(() => {
+        createPanel();
+    }, 100);
+
+    setTimeout(() => {
+        const panel = createPanel();
+        const clickable = createClickable(1);
+        panel.appendChild(clickable);
+    }, 101);
+
+    setTimeout(() => {
+        createPanel();
+    }, 102);
+
+    setTimeout(() => {
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        removePanel();
+        done();
+    }, 200);
 });
