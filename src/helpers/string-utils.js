@@ -238,10 +238,11 @@ export const isValidMatchNumber = (match) => {
  */
 export const parseMatchArg = (match) => {
     const INVERT_MARKER = '!';
-    const isInvertedMatch = startsWith(match, INVERT_MARKER);
+    // In case if "match" is "undefined" return "false"
+    const isInvertedMatch = match ? match.startsWith(INVERT_MARKER) : false;
     const matchValue = isInvertedMatch ? match.slice(1) : match;
     const matchRegexp = toRegExp(matchValue);
-    return { isInvertedMatch, matchRegexp };
+    return { isInvertedMatch, matchRegexp, matchValue };
 };
 
 /**

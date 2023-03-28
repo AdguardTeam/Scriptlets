@@ -346,7 +346,7 @@ test('do NOT abort Math.round, test for injected script', (assert) => {
         // eslint-disable-next-line no-console
         console.log('Something went wrong', error);
     }
-    assert.strictEqual(testPassed, true, 'testPassed set to true, script has been aborted');
+    assert.strictEqual(testPassed, true, 'testPassed set to true, script has not been aborted');
     assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
 });
 

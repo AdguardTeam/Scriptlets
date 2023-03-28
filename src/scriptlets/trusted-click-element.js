@@ -4,6 +4,7 @@ import {
     parseCookieString,
     throttle,
     logMessage,
+    parseMatchArg,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -20,6 +21,7 @@ import {
  *
  * - `selectors` — required, string with query selectors delimited by comma
  * - `extraMatch` — optional, extra condition to check on a page; allows to match `cookie` and `localStorage`; can be set as `name:key[=value]` where `value` is optional.
+ * If `cookie`/`localStorage` starts with `!` then the element will only be clicked if specified cookie/localStorage item does not exist.
  * Multiple conditions are allowed inside one `extraMatch` but they should be delimited by comma and each of them should match the syntax. Possible `name`s:
  *    - `cookie` - test string or regex against cookies on a page
  *    - `localStorage` - check if localStorage item is present
@@ -60,6 +62,16 @@ import {
  * ```
  * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], input[type="submit"][value="akkoord"]', 'cookie:cmpconsent, localStorage:promo', '250')
  * ```
+ *
+ * 8. Click element only if cookie with name `cmpconsent` does not exist
+ * ```
+ * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:cmpconsent')
+ * ```
+ *
+ * 9. Click element only if specified cookie string and localStorage item does not exist
+ * ```
+ * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:cmpconsent, !localStorage:promo')
+ * ```
  */
 /* eslint-enable max-len */
 export function trustedClickElement(source, selectors, extraMatch = '', delay = NaN) {
@@ -75,7 +87,7 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
     const SELECTORS_DELIMITER = ',';
     const COOKIE_STRING_DELIMITER = ';';
     // Regex to split match pairs by commas, avoiding the ones included in regexes
-    const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=cookie:|localStorage:)/;
+    const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=!?cookie:|!?localStorage:)/;
 
     const sleep = (delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs));
 
@@ -95,6 +107,8 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
 
     const cookieMatches = [];
     const localStorageMatches = [];
+    let isInvertedMatchCookie = false;
+    let isInvertedMatchLocalStorage = false;
 
     if (extraMatch) {
         // Get all match marker:value pairs from argument
@@ -105,11 +119,15 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
         // Filter match pairs by marker
         parsedExtraMatch.forEach((matchStr) => {
             if (matchStr.indexOf(COOKIE_MATCH_MARKER) > -1) {
-                const cookieMatch = matchStr.replace(COOKIE_MATCH_MARKER, '');
+                const { isInvertedMatch, matchValue } = parseMatchArg(matchStr);
+                isInvertedMatchCookie = isInvertedMatch;
+                const cookieMatch = matchValue.replace(COOKIE_MATCH_MARKER, '');
                 cookieMatches.push(cookieMatch);
             }
             if (matchStr.indexOf(LOCAL_STORAGE_MATCH_MARKER) > -1) {
-                const localStorageMatch = matchStr.replace(LOCAL_STORAGE_MATCH_MARKER, '');
+                const { isInvertedMatch, matchValue } = parseMatchArg(matchStr);
+                isInvertedMatchLocalStorage = isInvertedMatch;
+                const localStorageMatch = matchValue.replace(LOCAL_STORAGE_MATCH_MARKER, '');
                 localStorageMatches.push(localStorageMatch);
             }
         });
@@ -145,7 +163,8 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
             });
         });
 
-        if (!cookiesMatched) {
+        const shouldRun = cookiesMatched !== isInvertedMatchCookie;
+        if (!shouldRun) {
             return;
         }
     }
@@ -156,7 +175,9 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
                 const itemValue = window.localStorage.getItem(str);
                 return itemValue || itemValue === '';
             });
-        if (!localStorageMatched) {
+
+        const shouldRun = localStorageMatched !== isInvertedMatchLocalStorage;
+        if (!shouldRun) {
             return;
         }
     }
@@ -287,4 +308,5 @@ trustedClickElement.injections = [
     parseCookieString,
     throttle,
     logMessage,
+    parseMatchArg,
 ];

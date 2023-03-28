@@ -38,7 +38,8 @@ const createPanel = () => {
 const removePanel = () => document.getElementById('panel').remove();
 
 const clearCookie = (cName) => {
-    document.cookie = `${cName}=; max-age=0`;
+    // Without "path=/;" cookie is not removed
+    document.cookie = `${cName}=; path=/; max-age=0`;
 };
 
 const beforeEach = () => {
@@ -373,6 +374,279 @@ test('extraMatch - complex string+regex cookie input & whitespaces & comma in re
         done();
     }, 150);
     clearCookie(cookieKey1);
+});
+
+test('extraMatch - single cookie match + single localStorage match, matched', (assert) => {
+    const cookieKey1 = 'cookieMatch';
+    const cookieData = concatCookieNameValuePath(cookieKey1, 'true', '/');
+    document.cookie = cookieData;
+    const itemName = 'itemMatch';
+    window.localStorage.setItem(itemName, 'value');
+    const EXTRA_MATCH_STR = `cookie:${cookieKey1}, localStorage:${itemName}`;
+
+    const ELEM_COUNT = 1;
+    // Check elements for being clicked and hit func execution
+    const ASSERTIONS = ELEM_COUNT + 1;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    runScriptlet(name, [selectorsString, EXTRA_MATCH_STR]);
+    const panel = createPanel();
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+    clearCookie(cookieKey1);
+    window.localStorage.clear();
+});
+
+test('extraMatch - single cookie revert, click', (assert) => {
+    const cookieKey = 'revertTest';
+    const EXTRA_MATCH_STR = `!cookie:${cookieKey}`;
+
+    const ELEM_COUNT = 1;
+    // Check elements for being clicked and hit func execution
+    const ASSERTIONS = ELEM_COUNT + 1;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    runScriptlet(name, [selectorsString, EXTRA_MATCH_STR]);
+    const panel = createPanel();
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
+test('extraMatch - single cookie with value revert match, should click', (assert) => {
+    const cookieKey = 'clickValue';
+    const cookieVal = 'true';
+    const cookieData = concatCookieNameValuePath(cookieKey, cookieVal, '/');
+    document.cookie = cookieData;
+    const EXTRA_MATCH_STR = `!cookie:${cookieKey}=false`;
+
+    const ELEM_COUNT = 1;
+    // Check elements for being clicked and hit func execution
+    const ASSERTIONS = ELEM_COUNT + 1;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    runScriptlet(name, [selectorsString, EXTRA_MATCH_STR]);
+    const panel = createPanel();
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        clearCookie(cookieKey);
+        done();
+    }, 150);
+});
+
+test('extraMatch - single cookie revert match, should not click', (assert) => {
+    const cookieKey = 'doNotClick';
+    const cookieData = concatCookieNameValuePath(cookieKey, 'true', '/');
+    document.cookie = cookieData;
+    const EXTRA_MATCH_STR = `!cookie:${cookieKey}`;
+
+    const ELEM_COUNT = 1;
+    // Check elements for being clicked and hit func execution
+    const ASSERTIONS = ELEM_COUNT + 1;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    runScriptlet(name, [selectorsString, EXTRA_MATCH_STR]);
+    const panel = createPanel();
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    setTimeout(() => {
+        assert.notOk(clickable.getAttribute('clicked'), 'Element should not be clicked');
+        assert.strictEqual(window.hit, undefined, 'hit should not fire');
+        clearCookie(cookieKey);
+        done();
+    }, 150);
+});
+
+test('extraMatch - single cookie with value revert match, should not click', (assert) => {
+    const cookieKey = 'doNotClickValue';
+    const cookieVal = 'true';
+    const cookieData = concatCookieNameValuePath(cookieKey, cookieVal, '/');
+    document.cookie = cookieData;
+    const EXTRA_MATCH_STR = `!cookie:${cookieKey}=${cookieVal}`;
+
+    const ELEM_COUNT = 1;
+    // Check elements for being clicked and hit func execution
+    const ASSERTIONS = ELEM_COUNT + 1;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    runScriptlet(name, [selectorsString, EXTRA_MATCH_STR]);
+    const panel = createPanel();
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    setTimeout(() => {
+        assert.notOk(clickable.getAttribute('clicked'), 'Element should not be clicked');
+        assert.strictEqual(window.hit, undefined, 'hit should not fire');
+        clearCookie(cookieKey);
+        done();
+    }, 150);
+});
+
+test('extraMatch - single localStorage revert, click', (assert) => {
+    const itemName = 'revertItem';
+    const EXTRA_MATCH_STR = `!localStorage:${itemName}`;
+
+    const ELEM_COUNT = 1;
+    // Check elements for being clicked and hit func execution
+    const ASSERTIONS = ELEM_COUNT + 1;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    runScriptlet(name, [selectorsString, EXTRA_MATCH_STR]);
+    const panel = createPanel();
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
+test('extraMatch - single localStorage revert match, should not click', (assert) => {
+    const itemName = 'revertItem2';
+    window.localStorage.setItem(itemName, 'value');
+    const EXTRA_MATCH_STR = `!localStorage:${itemName}`;
+
+    const ELEM_COUNT = 1;
+    // Check elements for being clicked and hit func execution
+    const ASSERTIONS = ELEM_COUNT + 1;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    runScriptlet(name, [selectorsString, EXTRA_MATCH_STR]);
+    const panel = createPanel();
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    setTimeout(() => {
+        assert.notOk(clickable.getAttribute('clicked'), 'Element should not be clicked');
+        assert.strictEqual(window.hit, undefined, 'hit should not fire');
+        done();
+    }, 150);
+    window.localStorage.clear();
+});
+
+test('extraMatch - single cookie match + single localStorage match, revert - click', (assert) => {
+    const cookieKey1 = 'cookieRevertAndItem';
+    const itemName = 'itemRevertAndCookie';
+    const EXTRA_MATCH_STR = `!cookie:${cookieKey1}, !localStorage:${itemName}`;
+
+    const ELEM_COUNT = 1;
+    // Check elements for being clicked and hit func execution
+    const ASSERTIONS = ELEM_COUNT + 1;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    runScriptlet(name, [selectorsString, EXTRA_MATCH_STR]);
+    const panel = createPanel();
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
+test('extraMatch - complex string+regex cookie input&whitespaces&comma in regex, revert should not click', (assert) => {
+    const cookieKey1 = 'first';
+    const cookieVal1 = 'true';
+    const cookieData1 = concatCookieNameValuePath(cookieKey1, cookieVal1, '/');
+    const cookieKey2 = 'sec';
+    const cookieVal2 = '1-1';
+    const cookieData2 = concatCookieNameValuePath(cookieKey2, cookieVal2, '/');
+    const cookieKey3 = 'third';
+    const cookieVal3 = 'true';
+    const cookieData3 = concatCookieNameValuePath(cookieKey3, cookieVal3, '/');
+
+    document.cookie = cookieData1;
+    document.cookie = cookieData2;
+    document.cookie = cookieData3;
+
+    const EXTRA_MATCH_STR = '!cookie:/firs/=true,cookie:sec=/(1-1){1,2}/,  !cookie:third=true';
+
+    const ELEM_COUNT = 1;
+    // Check elements for being clicked and hit func execution
+    const ASSERTIONS = ELEM_COUNT + 1;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    runScriptlet(name, [selectorsString, EXTRA_MATCH_STR]);
+    const panel = createPanel();
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    setTimeout(() => {
+        assert.notOk(clickable.getAttribute('clicked'), 'Element should not be clicked');
+        assert.strictEqual(window.hit, undefined, 'hit should not fire');
+        done();
+    }, 150);
+    clearCookie(cookieKey1);
+});
+
+test('extraMatch - complex string+regex cookie input&whitespaces&comma in regex, revert should click', (assert) => {
+    const EXTRA_MATCH_STR = '!cookie:/firs/=true,cookie:sec=/(1-1){1,2}/,  !cookie:third=true';
+
+    const ELEM_COUNT = 1;
+    // Check elements for being clicked and hit func execution
+    const ASSERTIONS = ELEM_COUNT + 1;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    runScriptlet(name, [selectorsString, EXTRA_MATCH_STR]);
+    const panel = createPanel();
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
 });
 
 // https://github.com/AdguardTeam/Scriptlets/issues/284#issuecomment-1419464354

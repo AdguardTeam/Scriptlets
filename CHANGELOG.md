@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- ability for `trusted-click-element` scriptlet to click element if `cookie`/`localStorage` item doesn't exist [#298](https://github.com/AdguardTeam/Scriptlets/issues/298)
 - static delay between multiple clicks in `trusted-click-element` [#284](https://github.com/AdguardTeam/Scriptlets/issues/284)
 
 ### Fixed
