@@ -31,6 +31,7 @@ module.exports = {
         'no-restricted-syntax': 0,
         // jsdoc rules
         'jsdoc/check-tag-names': ['error', { definedTags: ['scriptlet', 'trustedScriptlet', 'redirect'] }],
+        'jsdoc/tag-lines': 'off',
         'jsdoc/require-jsdoc': 0,
         'jsdoc/require-param': 0,
         'jsdoc/valid-types': 0,

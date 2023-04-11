@@ -24,6 +24,9 @@ test('Test scriptlet rule validation', (assert) => {
     inputRule = 'example.org##+js(setTimeout-defuser.js, [native code], 8000)';
     assert.strictEqual(isValidScriptletRule(inputRule), true);
 
+    inputRule = "example.org#%#//scriptlet('ubo-setTimeout-defuser.js', '[native code]', '8000')";
+    assert.strictEqual(isValidScriptletRule(inputRule), true, 'scriptlet rule converted from ubo syntax');
+
     inputRule = 'example.org#@%#//scriptlet("ubo-aopw.js", "notDetected")';
     assert.strictEqual(isValidScriptletRule(inputRule), true);
 
@@ -48,6 +51,9 @@ test('Test scriptlet rule validation', (assert) => {
 
     inputRule = 'example.org#$#hide-if-contains li.serp-item \'li.serp-item div.label\'';
     assert.strictEqual(isValidScriptletRule(inputRule), false, 'single abp snippet rule');
+
+    inputRule = 'example.com#%#//scriptlet("abp-abort-current-inline-script", console.log", "Hello")';
+    assert.strictEqual(isValidScriptletRule(inputRule), false, 'invalid due to missed arg quotes');
 });
 
 test('Test comment', (assert) => {
@@ -61,9 +67,14 @@ test('Test comment', (assert) => {
 });
 
 test('Test Adguard scriptlet rule', (assert) => {
+    // valid syntax rule
     const rule = "example.org#%#//scriptlet('abort-on-property-read', 'I10C')";
     const exp = "example.org#%#//scriptlet('abort-on-property-read', 'I10C')";
     assert.strictEqual(convertScriptletToAdg(rule)[0], exp);
+
+    // invalid syntax rule
+    const invalidRule = "example.org#%#//scriptlet('abort-on-property-read', I10C')";
+    assert.strictEqual(convertScriptletToAdg(invalidRule).length, 0, 'no rules converted — invalid syntax');
 });
 
 test('Test Adguard scriptlet rule exception', (assert) => {

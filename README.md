@@ -170,40 +170,63 @@ And also there is a module at `dist/scriptlets.js` which has been exported to a 
 
 ```javascript
 /**
- * Returns scriptlet code by param
- * @param {Source} source
- * @returns {string|null} scriptlet code
- * @throws on unknown scriptlet name
+ * Returns scriptlet code by `source`.
+ *
+ * @param {Source} source Scriptlet properties.
+ *
+ * @returns {string|null} Scriptlet code.
+ * @throws An error on unknown scriptlet name.
  */
 scriptlets.invoke(source);
+```
+where:
+```javascript
+/**
+ * @typedef {Object} Source — Scriptlet properties.
+ * @property {string} name — Scriptlet name.
+ * @property {Array<string>} args — Arguments for scriptlet function.
+ * @property {'extension'|'corelibs'} engine — Defines the final form of scriptlet string presentation.
+ * @property {string} [version] — Extension version.
+ * @property {boolean} [verbose] — Flag to enable debug information printing to console.
+ * @property {string} [ruleText] — Source rule text, needed for debug purposes.
+ * @property {string} [domainName] — Domain name where scriptlet is applied, needed for debug purposes.
+ */
 ```
 
 ```javascript
 /**
- * Returns scriptlet function by name
- * @param {string} name scriptlet name
- * @returns {Function}
+ * Returns scriptlet function by `name`.
+ *
+ * @param {string} name Scriptlet name
+ *
+ * @returns {Function} — Scriptlet function.
  */
 scriptlets.getScriptletFunction(name);
 ```
 
 ```javascript
 /**
- * Checks whether the `name` is valid scriptlet name
- * @param {string} name
- * @returns {boolean}
+ * Checks whether the `name` is valid scriptlet name.
+ * Uses cache for better performance.
+ *
+ * @param {string} name — Scriptlet name
+ * @returns {boolean} — True if scriptlet name is valid.
  */
 scriptlets.isValidScriptletName(name);
 ```
 
 ```javascript
 /**
- * Checks whether the ADG scriptlet exists or UBO/ABP scriptlet is compatible to ADG
+ * 1. For ADG scriptlet checks whether the scriptlet syntax and name are valid.
+ * 2. For UBO and ABP scriptlet first checks their compatibility with ADG
+ * by converting them into ADG syntax, and after that checks the name.
  *
  * ADG or UBO rules are "single-scriptlet", but ABP rule may contain more than one snippet
- * so if at least one of them is not valid — whole 'input' rule is not valid too.
- * @param {string} input — any scriptlet rule
- * @returns {boolean}
+ * so if at least one of them is not valid — whole `ruleText` rule is not valid too.
+ *
+ * @param {string} ruleText — Any scriptlet rule — ADG or UBO or ABP.
+ *
+ * @returns {boolean} — True if scriptlet name is valid in rule.
  */
 scriptlets.isValidScriptletRule(input);
 ```
@@ -240,9 +263,13 @@ scriptlets.convertAbpToAdg(rule);
 
 ```javascript
 /**
- * Checks whether the `rule` is any scriptlet rule and converts it to AdGuard syntax
- * @param {string} rule — any scriptlet rule
- * @returns {string[]} — array of AdGuard scriptlet rules: one item for Adg and Ubo or few items for Abp
+ * Converts any scriptlet rule into AdGuard syntax rule.
+ * Comment is returned as is.
+ *
+ * @param {string} rule — Scriptlet rule.
+ *
+ * @returns {string[]} — Array of AdGuard scriptlet rules: one array item for ADG and UBO or few items for ABP.
+ * For the ADG `rule`, validates its syntax and returns an empty array if it is invalid.
  */
 scriptlets.convertScriptletToAdg(rule);
 ```

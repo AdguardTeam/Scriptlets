@@ -226,18 +226,59 @@ export const convertAbpSnippetToAdg = (rule) => {
 };
 
 /**
- * Converts scriptlet rule to AdGuard one
+ * Validates ADG scriptlet rule syntax.
  *
- * @param {string} rule scriptlet rule
- * @returns {Array} array of AdGuard scriptlet rules, one item for Adg and Ubo or few items for Abp
+ * IMPORTANT! The method is not very fast as it parses the rule and checks its syntax.
+ *
+ * @param {string} adgRuleText Single ADG scriptlet rule.
+ *
+ * @returns {boolean} False if ADG scriptlet rule syntax is not valid
+ * or `adgRuleText` is not an ADG scriptlet rule.
+ */
+const isValidAdgScriptletRuleSyntax = (adgRuleText) => {
+    if (!adgRuleText) {
+        return false;
+    }
+    if (!validator.isAdgScriptletRule(adgRuleText)) {
+        return false;
+    }
+    // isAdgScriptletRule() does not check the rule syntax
+    let parsedRule;
+    try {
+        // parseRule() ensures that the rule syntax is valid
+        // and it will throw an error if it is not
+        parsedRule = parseRule(adgRuleText);
+        return validator.isValidScriptletName(parsedRule.name);
+    } catch (e) {
+        return false;
+    }
+};
+
+/**
+ * Converts any scriptlet rule into AdGuard syntax rule.
+ * Comment is returned as is.
+ *
+ * @param {string} rule Scriptlet rule.
+ *
+ * @returns {string[]} Array of AdGuard scriptlet rules: one array item for ADG and UBO or few items for ABP.
+ * For the ADG `rule`, validates its syntax and returns an empty array if it is invalid.
  */
 export const convertScriptletToAdg = (rule) => {
     let result;
+    // TODO: multiple conditions may be refactored
     if (validator.isUboScriptletRule(rule)) {
         result = convertUboScriptletToAdg(rule);
     } else if (validator.isAbpSnippetRule(rule)) {
         result = convertAbpSnippetToAdg(rule);
-    } else if (validator.isAdgScriptletRule(rule) || (validator.isComment(rule))) {
+    } else if (validator.isAdgScriptletRule(rule)) {
+        if (isValidAdgScriptletRuleSyntax(rule)) {
+            result = [rule];
+        } else {
+            // eslint-disable-next-line no-console
+            console.log(`Invalid AdGuard scriptlet rule: ${rule}`);
+            result = [];
+        }
+    } else if (validator.isComment(rule)) {
         result = [rule];
     }
 
@@ -360,20 +401,32 @@ const getAdgScriptletName = (rule) => {
 };
 
 /**
- * Checks whether the ADG scriptlet exists or UBO/ABP scriptlet is compatible to ADG
+ * 1. For ADG scriptlet checks whether the scriptlet syntax and name are valid.
+ * 2. For UBO and ABP scriptlet first checks their compatibility with ADG
+ * by converting them into ADG syntax, and after that checks the name.
  *
- * @param {string} input can be ADG or UBO or ABP scriptlet rule
- * @returns {boolean} if scriptlet rule is valid
+ * ADG or UBO rules are "single-scriptlet", but ABP rule may contain more than one snippet
+ * so if at least one of them is not valid — whole `ruleText` rule is not valid too.
+ *
+ * @param {string} ruleText Any scriptlet rule — ADG or UBO or ABP.
+ *
+ * @returns {boolean} True if scriptlet name is valid in rule.
  */
-export const isValidScriptletRule = (input) => {
-    if (!input) {
+export const isValidScriptletRule = (ruleText) => {
+    if (!ruleText) {
         return false;
     }
-    // ABP 'input' rule may contain more than one snippet
-    const rulesArray = convertScriptletToAdg(input);
+
+    // `ruleText` with ABP syntax may contain more than one snippet in one rule
+    const rulesArray = convertScriptletToAdg(ruleText);
+
+    // for ADG rule with invalid syntax convertScriptletToAdg() will return empty array
+    if (rulesArray.length === 0) {
+        return false;
+    }
 
     // checking if each of parsed scriptlets is valid
-    // if at least one of them is not valid - whole 'input' rule is not valid too
+    // if at least one of them is not valid - whole `ruleText` is not valid too
     const isValid = rulesArray.every((rule) => {
         const name = getAdgScriptletName(rule);
         return validator.isValidScriptletName(name);

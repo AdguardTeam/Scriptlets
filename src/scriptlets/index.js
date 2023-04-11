@@ -14,23 +14,23 @@ import {
 import { getScriptletFunction } from '../../tmp/scriptlets-func';
 
 /**
- * @typedef {Object} Source - scriptlet properties
- * @property {string} name Scriptlet name
- * @property {Array<string>} args Arguments for scriptlet function
- * @property {'extension'|'corelibs'|'test'} engine -
- * Defines the final form of scriptlet string presentation
- * @property {string} [version] extension version
- * @property {boolean} [verbose] flag to enable printing to console debug information
- * @property {string} [ruleText] Source rule text is used for debugging purposes
- * @property {string} [domainName] domain name where scriptlet is applied; for debugging purposes
+ * @typedef {Object} Source Scriptlet properties.
+ * @property {string} name Scriptlet name.
+ * @property {Array<string>} args Arguments for scriptlet function.
+ * @property {'extension'|'corelibs'|'test'} engine Defines the final form of scriptlet string presentation.
+ * @property {string} [version] Extension version.
+ * @property {boolean} [verbose] Flag to enable debug information printing to console.
+ * @property {string} [ruleText] Source rule text, needed for debug purposes.
+ * @property {string} [domainName] Domain name where scriptlet is applied, needed for debug purposes.
  */
 
 /**
- * Returns scriptlet code by param
+ * Returns scriptlet code by `source`.
  *
- * @param {Object} source scriptlet properties
- * @returns {string|null} scriptlet code
- * @throws on unknown scriptlet name
+ * @param {Source} source Scriptlet properties.
+ *
+ * @returns {string|null} Scriptlet code.
+ * @throws An error on unknown scriptlet name.
  */
 function getScriptletCode(source) {
     if (!validator.isValidScriptletName(source.name)) {

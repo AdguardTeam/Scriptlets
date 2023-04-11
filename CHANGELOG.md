@@ -1,4 +1,5 @@
 # Scriptlets and Redirect Resources Changelog
+
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -10,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - ability for `trusted-click-element` scriptlet to click element if `cookie`/`localStorage` item doesn't exist [#298](https://github.com/AdguardTeam/Scriptlets/issues/298)
 - static delay between multiple clicks in `trusted-click-element` [#284](https://github.com/AdguardTeam/Scriptlets/issues/284)
+
+### Changed
+
+- improved the `convertScriptletToAdg()` method — now it validates the input rule syntax if it is an ADG rule
 
 ### Fixed
 

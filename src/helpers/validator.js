@@ -101,8 +101,8 @@ const isAbpSnippetRule = (rule) => {
  *
  * @returns {Array<Object>} Array of all scriptlet objects.
  */
-const getScriptletsListObj = () => {
-    return Object.keys(scriptletsList).map((key) => scriptletsList[key]);
+const getScriptletsObjList = () => {
+    return Object.values(scriptletsList);
 };
 
 /**
@@ -114,7 +114,7 @@ const getScriptletsListObj = () => {
  */
 const getScriptletByName = (name, scriptlets) => {
     if (!scriptlets) {
-        scriptlets = getScriptletsListObj();
+        scriptlets = getScriptletsObjList();
     }
     return scriptlets
         .find((s) => {
@@ -127,7 +127,7 @@ const getScriptletByName = (name, scriptlets) => {
         });
 };
 
-const scriptletObjects = getScriptletsListObj();
+const scriptletObjects = getScriptletsObjList();
 
 /**
  * Checks whether the scriptlet `name` is valid by checking the scriptlet list object.
@@ -152,7 +152,7 @@ const isValidScriptletNameNotCached = (name) => {
 const scriptletNameValidationCache = new Map();
 
 /**
- * Checks if the scriptlet name is valid.
+ * Checks whether the `name` is valid scriptlet name.
  * Uses cache for better performance.
  *
  * @param {string} name Scriptlet name.

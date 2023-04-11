@@ -27,16 +27,16 @@ export const ADG_SCRIPTLET_MASK = '#//scriptlet';
  */
 const wordSaver = () => {
     let str = '';
-    const strs = [];
+    const strings = [];
     const saveSymb = (s) => {
         str += s;
         return str;
     };
     const saveStr = () => {
-        strs.push(str);
+        strings.push(str);
         str = '';
     };
-    const getAll = () => [...strs];
+    const getAll = () => [...strings];
 
     return { saveSymb, saveStr, getAll };
 };
@@ -50,11 +50,12 @@ const substringAfter = (str, separator) => {
 };
 
 /**
- * Parse and validate scriptlet rule
+ * Parses scriptlet rule and validates its syntax.
  *
- * @param {string} ruleText rule string
- * @returns {{name: string, args: Array<string>}} parsed rule
- * @throws
+ * @param {string} ruleText Rule string
+ *
+ * @returns {{name: string, args: Array<string>}} Parsed rule data.
+ * @throws An error on invalid rule syntax.
  */
 export const parseRule = (ruleText) => {
     ruleText = substringAfter(ruleText, ADG_SCRIPTLET_MASK);
