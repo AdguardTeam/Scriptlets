@@ -250,6 +250,14 @@ const buildRedirectsYamlFile = async (mergedRedirects) => {
         .join(`${EOL}- title:`)
         .trimStart();
 
+    // AG-21317
+    const SHA_COMMENT = `# To enable the redirect functionality to work within the extension
+  # the sha256 value of the file is calculated and included in the yaml file
+  # as the redirect is being used as a single file.
+  # This will allow the extension to retrieve the value and add it to its CSP.`;
+
+    yamlRedirects = yamlRedirects.replace(/sha:\s/, `${SHA_COMMENT}${EOL}  sha: `);
+
     // add version and title to the top
     yamlRedirects = `${banner}${yamlRedirects}`;
 
