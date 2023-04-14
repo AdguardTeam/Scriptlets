@@ -59,13 +59,17 @@
         },
         {
             "adg": "log-addEventListener",
-            "ubo": "addEventListener-logger.js (aell.js)"
+            "ubo": "addEventListener-logger.js (aell.js) (removed)"
         },
         {
             "adg": "log-eval"
         },
         {
             "adg": "log-on-stack-trace"
+        },
+        {
+            "adg": "m3u-prune",
+            "ubo": "m3u-prune.js"
         },
         {
             "adg": "noeval"
@@ -162,22 +166,28 @@
             "ubo": "alert-buster.js"
         },
         {
-            "ubo": "gpt-defuser.js"
+            "ubo": "gpt-defuser.js (removed)"
         },
         {
             "ubo": "golem.de.js"
         },
         {
-            "ubo": "upmanager-defuser.js"
+            "ubo": "upmanager-defuser.js (removed)"
         },
         {
-            "ubo": "smartadserver.com.js"
+            "ubo": "smartadserver.com.js (removed)"
         },
         {
-            "ubo": "damoh-defuser.js"
+            "ubo": "damoh-defuser.js (removed)"
         },
         {
-            "ubo": "twitch-videoad.js"
+            "ubo": "twitch-videoad.js (removed)"
+        },
+        {
+            "ubo": "href-sanitizer.js"
+        },
+        {
+            "ubo": "call-nothrow.js"
         },
         {
             "abp": "trace"
@@ -237,16 +247,10 @@
             "abp": "abort-on-iframe-property-write"
         },
         {
-            "ubo": "abort-current-script.js (acs.js, abort-current-inline-script.js, acis.js)"
-        },
-        {
-            "ubo": "no-floc.js"
+            "ubo": "no-floc.js (removed)"
         },
         {
             "ubo": "window.name-defuser.js"
-        },
-        {
-            "ubo": "m3u-prune.js"
         }
     ],
     "redirects": [

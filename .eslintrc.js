@@ -27,6 +27,7 @@ module.exports = {
         'import/prefer-default-export': 0,
         'arrow-body-style': 0,
         'import/no-extraneous-dependencies': 0,
+        'no-continue': 'off',
         'no-await-in-loop': 0,
         'no-restricted-syntax': 0,
         // jsdoc rules

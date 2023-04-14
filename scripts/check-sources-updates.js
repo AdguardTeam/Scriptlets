@@ -1,6 +1,8 @@
 /* eslint-disable no-console, camelcase */
 const fs = require('fs');
 const axios = require('axios');
+const { EOL } = require('os');
+
 const {
     REMOVED_MARKER,
     COMPATIBILITY_TABLE_DATA_PATH,
@@ -136,7 +138,13 @@ function markTableWithDiff(diff, ruleType, platform) {
  * UBO Scriptlets github raw resources
  */
 const UBO_SCRIPTLETS_FILE = 'https://raw.githubusercontent.com/gorhill/uBlock/master/assets/resources/scriptlets.js';
-const ALIAS_MARKER = 'alias';
+const SCRIPTLETS_START_MARKER = 'Injectable scriptlets';
+const DIVIDER_MARKER = 'builtinScriptlets.push';
+const COMMENT_MARKER = '//';
+const FUNCTION_MARKER = 'function ';
+const NAME_MARKER_START = "name: '";
+const NAME_MARKER_END = "',";
+const ALIASES_MARKER = 'aliases: ';
 
 /**
  * Make request to UBO repo(master), parses and returns the list of UBO scriptlets
@@ -146,41 +154,57 @@ async function getCurrentUBOScriptlets() {
     const { data } = await axios.get(UBO_SCRIPTLETS_FILE);
     console.log('UBO done');
 
-    const regexp = /\/\/\/\s(\S*\.js|alias\s\S*\.js)/g;
-    const parsedNames = [];
-
-    let result;
-    // eslint-disable-next-line no-cond-assign
-    while (result = regexp.exec(data)) {
-        // array of parsed UBO scriptlets and their aliases
-        parsedNames.push(result[1]);
+    const startIndex = data.indexOf(SCRIPTLETS_START_MARKER);
+    if (startIndex === -1) {
+        throw new Error('UBO file format has been changed');
     }
 
-    let nameRecord;
     const names = [];
-    let aliasName;
-    let aliases = [];
-    let i = 0;
-    while (i < parsedNames.length) {
-        let k = 1;
-        // check if scriptlet has aliases (which might be next after it)
-        while ((i + k < parsedNames.length) && (parsedNames[i + k].includes(ALIAS_MARKER))) {
-            aliasName = parsedNames[i + k].replace(/alias\s/, '');
-            aliases.push(aliasName);
-            k += 1;
+
+    const chunks = data.slice(startIndex).split(DIVIDER_MARKER);
+
+    chunks.forEach((chunk) => {
+        let name;
+        let aliases;
+
+        const functionDefinitionIndex = chunk.indexOf(FUNCTION_MARKER) || chunk.length;
+        const scriptletObjectText = chunk.slice(0, functionDefinitionIndex).trim();
+
+        const textLines = scriptletObjectText.split(EOL);
+        for (let i = 0; i < textLines.length; i += 1) {
+            const line = textLines[i].trim();
+            if (line.startsWith(COMMENT_MARKER)) {
+                continue;
+            }
+            // parse the name
+            if (line.startsWith(NAME_MARKER_START)) {
+                name = line.slice(NAME_MARKER_START.length, line.indexOf(NAME_MARKER_END));
+                continue;
+            }
+            // parse the aliases
+            if (line.startsWith(ALIASES_MARKER)) {
+                const aliasesStr = line
+                    .slice(ALIASES_MARKER.length)
+                    // prepare the string for JSON.parse
+                    .replace(/'/g, '"')
+                    .replace(/,?$/, '');
+                aliases = JSON.parse(aliasesStr);
+                // 'name' string goes first and 'aliases' string goes after it
+                // so if aliases are parsed, no need to continue lines iterating
+                break;
+            }
         }
 
-        if (aliases.length > 0) {
-            nameRecord = `${parsedNames[i]} (${aliases.join(', ')})`;
-            aliases = [];
-            i += k;
-        } else {
-            nameRecord = parsedNames[i];
-            i += 1;
+        if (!name) {
+            return;
         }
 
-        names.push(nameRecord);
-    }
+        let namesStr = name;
+        if (aliases) {
+            namesStr += ` (${aliases.join(', ')})`;
+        }
+        names.push(namesStr);
+    });
 
     return names;
 }

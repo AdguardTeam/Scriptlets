@@ -16,9 +16,10 @@
 | [disable-newtab-links](../wiki/about-scriptlets.md#disable-newtab-links) | disable-newtab-links.js |  |
 | [json-prune](../wiki/about-scriptlets.md#json-prune) | json-prune.js | json-prune |
 | [log](../wiki/about-scriptlets.md#log) |  | log |
-| [log-addEventListener](../wiki/about-scriptlets.md#log-addEventListener) | addEventListener-logger.js (aell.js) |  |
+| [log-addEventListener](../wiki/about-scriptlets.md#log-addEventListener) | addEventListener-logger.js (aell.js) (removed) |  |
 | [log-eval](../wiki/about-scriptlets.md#log-eval) |  |  |
 | [log-on-stack-trace](../wiki/about-scriptlets.md#log-on-stack-trace) |  |  |
+| [m3u-prune](../wiki/about-scriptlets.md#m3u-prune) | m3u-prune.js |  |
 | [noeval](../wiki/about-scriptlets.md#noeval) |  |  |
 | [nowebrtc](../wiki/about-scriptlets.md#nowebrtc) | nowebrtc.js |  |
 | [no-topics](../wiki/about-scriptlets.md#no-topics) |  |  |
@@ -45,12 +46,14 @@
 |  | webrtc-if.js |  |
 |  | overlay-buster.js |  |
 |  | alert-buster.js |  |
-|  | gpt-defuser.js |  |
+|  | gpt-defuser.js (removed) |  |
 |  | golem.de.js |  |
-|  | upmanager-defuser.js |  |
-|  | smartadserver.com.js |  |
-|  | damoh-defuser.js |  |
-|  | twitch-videoad.js |  |
+|  | upmanager-defuser.js (removed) |  |
+|  | smartadserver.com.js (removed) |  |
+|  | damoh-defuser.js (removed) |  |
+|  | twitch-videoad.js (removed) |  |
+|  | href-sanitizer.js |  |
+|  | call-nothrow.js |  |
 |  |  | trace |
 |  |  | hide-if-shadow-contains |
 |  |  | hide-if-contains |
@@ -70,10 +73,8 @@
 |  |  | commitInjection |
 |  |  | abort-on-iframe-property-read |
 |  |  | abort-on-iframe-property-write |
-|  | abort-current-script.js (acs.js, abort-current-inline-script.js, acis.js) |  |
-|  | no-floc.js |  |
+|  | no-floc.js (removed) |  |
 |  | window.name-defuser.js |  |
-|  | m3u-prune.js |  |
 
 
 # <a id="redirects"></a> Redirects compatibility table
