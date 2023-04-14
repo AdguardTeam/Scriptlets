@@ -19,6 +19,7 @@ example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, dela
 
 - `selectors` — required, string with query selectors delimited by comma
 - `extraMatch` — optional, extra condition to check on a page; allows to match `cookie` and `localStorage`; can be set as `name:key[=value]` where `value` is optional.
+If `cookie`/`localStorage` starts with `!` then the element will only be clicked if specified cookie/localStorage item does not exist.
 Multiple conditions are allowed inside one `extraMatch` but they should be delimited by comma and each of them should match the syntax. Possible `name`s:
    - `cookie` - test string or regex against cookies on a page
    - `localStorage` - check if localStorage item is present
@@ -58,6 +59,16 @@ example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'loca
 7. Click multiple elements with delay and matching by both cookie string and localStorage item
 ```
 example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], input[type="submit"][value="akkoord"]', 'cookie:cmpconsent, localStorage:promo', '250')
+```
+
+8. Click element only if cookie with name `cmpconsent` does not exist
+```
+example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:cmpconsent')
+```
+
+9. Click element only if specified cookie string and localStorage item does not exist
+```
+example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:cmpconsent, !localStorage:promo')
 ```
 
 [Scriptlet source](../src/scriptlets/trusted-click-element.js)

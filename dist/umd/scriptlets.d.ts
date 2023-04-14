@@ -98,21 +98,45 @@ declare module '@adguard/scriptlets' {
     function invoke(source: IConfiguration): string | null;
 
     /**
-     * Converts scriptlet rule to AdGuard one
+     * Converts any scriptlet rule into AdGuard syntax rule.
+     * Comment is returned as is.
      *
-     * @param ruleText
-     * @returns array of AdGuard scriptlet rules
+     * @param rule Scriptlet rule.
+     *
+     * @returns Array of AdGuard scriptlet rules: one array item for ADG and UBO or few items for ABP.
+     * For the ADG `rule`, validates its syntax and returns an empty array if it is invalid.
      */
     function convertScriptletToAdg(ruleText: string): string[];
 
     /**
-     * Checks if ruleText is valid scriptlet rule
-     * @param ruleText
+     * 1. For ADG scriptlet checks whether the scriptlet syntax and name are valid.
+     * 2. For UBO and ABP scriptlet first checks their compatibility with ADG
+     * by converting them into ADG syntax, and after that checks the name.
+     *
+     * ADG or UBO rules are "single-scriptlet", but ABP rule may contain more than one snippet
+     * so if at least one of them is not valid — whole `ruleText` rule is not valid too.
+     *
+     * @param ruleText Any scriptlet rule — ADG or UBO or ABP.
+     *
+     * @returns True if scriptlet name is valid in rule.
      */
     function isValidScriptletRule(ruleText: string): boolean;
 
     /**
-     * Returns scriptlet function by name
+     * Checks whether the `name` is valid scriptlet name.
+     * Uses cache for better performance.
+     *
+     * @param {string} name Scriptlet name.
+     * @returns {boolean} True if scriptlet name is valid.
+     */
+    function isValidScriptletName(rule: string): boolean;
+
+    /**
+     * Returns scriptlet function by `name`.
+     *
+     * @param {string} name Scriptlet name
+     *
+     * @returns {Function} Scriptlet function.
      */
     function getScriptletFunction(name: string): () => void
 
@@ -163,4 +187,3 @@ declare module '@adguard/scriptlets' {
         convertRedirectToAdg(rule: string): string;
     }
 }
-

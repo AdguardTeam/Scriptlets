@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.9.1
+ * Version 1.9.7
  */
 
 (function (factory) {
@@ -436,12 +436,14 @@
      */
     const parseMatchArg = function parseMatchArg(match) {
       const INVERT_MARKER = '!';
-      const isInvertedMatch = startsWith$1(match, INVERT_MARKER);
+      // In case if "match" is "undefined" return "false"
+      const isInvertedMatch = match ? match.startsWith(INVERT_MARKER) : false;
       const matchValue = isInvertedMatch ? match.slice(1) : match;
       const matchRegexp = toRegExp(matchValue);
       return {
         isInvertedMatch,
-        matchRegexp
+        matchRegexp,
+        matchValue
       };
     };
 
@@ -651,17 +653,17 @@
      */
     const wordSaver = function wordSaver() {
       let str = '';
-      const strs = [];
+      const strings = [];
       const saveSymb = function saveSymb(s) {
         str += s;
         return str;
       };
       const saveStr = function saveStr() {
-        strs.push(str);
+        strings.push(str);
         str = '';
       };
       const getAll = function getAll() {
-        return [...strs];
+        return [...strings];
       };
       return {
         saveSymb,
@@ -678,11 +680,12 @@
     };
 
     /**
-     * Parse and validate scriptlet rule
+     * Parses scriptlet rule and validates its syntax.
      *
-     * @param {string} ruleText rule string
-     * @returns {{name: string, args: Array<string>}} parsed rule
-     * @throws
+     * @param {string} ruleText Rule string
+     *
+     * @returns {{name: string, args: Array<string>}} Parsed rule data.
+     * @throws An error on invalid rule syntax.
      */
     const parseRule = function parseRule(ruleText) {
       ruleText = substringAfter(ruleText, ADG_SCRIPTLET_MASK);
@@ -2071,7 +2074,9 @@
         setTimeout(function () {
           wait = false;
           if (savedArgs) {
-            wrapper(savedArgs);
+            // "savedArgs" might contains few arguments, so it's necessary to use spread operator
+            // https://github.com/AdguardTeam/Scriptlets/issues/284#issuecomment-1419464354
+            wrapper(...savedArgs);
             savedArgs = null;
           }
         }, delay);
@@ -2234,6 +2239,7 @@
      *
      * - `selectors` — required, string with query selectors delimited by comma
      * - `extraMatch` — optional, extra condition to check on a page; allows to match `cookie` and `localStorage`; can be set as `name:key[=value]` where `value` is optional.
+     * If `cookie`/`localStorage` starts with `!` then the element will only be clicked if specified cookie/localStorage item does not exist.
      * Multiple conditions are allowed inside one `extraMatch` but they should be delimited by comma and each of them should match the syntax. Possible `name`s:
      *    - `cookie` - test string or regex against cookies on a page
      *    - `localStorage` - check if localStorage item is present
@@ -2274,6 +2280,16 @@
      * ```
      * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], input[type="submit"][value="akkoord"]', 'cookie:cmpconsent, localStorage:promo', '250')
      * ```
+     *
+     * 8. Click element only if cookie with name `cmpconsent` does not exist
+     * ```
+     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:cmpconsent')
+     * ```
+     *
+     * 9. Click element only if specified cookie string and localStorage item does not exist
+     * ```
+     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:cmpconsent, !localStorage:promo')
+     * ```
      */
     /* eslint-enable max-len */
     function trustedClickElement$1(source, selectors) {
@@ -2284,12 +2300,18 @@
       }
       const OBSERVER_TIMEOUT_MS = 10000;
       const THROTTLE_DELAY_MS = 20;
+      const STATIC_CLICK_DELAY_MS = 150;
       const COOKIE_MATCH_MARKER = 'cookie:';
       const LOCAL_STORAGE_MATCH_MARKER = 'localStorage:';
       const SELECTORS_DELIMITER = ',';
       const COOKIE_STRING_DELIMITER = ';';
       // Regex to split match pairs by commas, avoiding the ones included in regexes
-      const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=cookie:|localStorage:)/;
+      const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=!?cookie:|!?localStorage:)/;
+      const sleep = function sleep(delayMs) {
+        return new Promise(function (resolve) {
+          return setTimeout(resolve, delayMs);
+        });
+      };
       let parsedDelay;
       if (delay) {
         parsedDelay = parseInt(delay, 10);
@@ -2304,6 +2326,8 @@
       let canClick = !parsedDelay;
       const cookieMatches = [];
       const localStorageMatches = [];
+      let isInvertedMatchCookie = false;
+      let isInvertedMatchLocalStorage = false;
       if (extraMatch) {
         // Get all match marker:value pairs from argument
         const parsedExtraMatch = extraMatch.split(EXTRA_MATCH_DELIMITER).map(function (matchStr) {
@@ -2313,11 +2337,19 @@
         // Filter match pairs by marker
         parsedExtraMatch.forEach(function (matchStr) {
           if (matchStr.indexOf(COOKIE_MATCH_MARKER) > -1) {
-            const cookieMatch = matchStr.replace(COOKIE_MATCH_MARKER, '');
+            const _parseMatchArg = parseMatchArg(matchStr),
+              isInvertedMatch = _parseMatchArg.isInvertedMatch,
+              matchValue = _parseMatchArg.matchValue;
+            isInvertedMatchCookie = isInvertedMatch;
+            const cookieMatch = matchValue.replace(COOKIE_MATCH_MARKER, '');
             cookieMatches.push(cookieMatch);
           }
           if (matchStr.indexOf(LOCAL_STORAGE_MATCH_MARKER) > -1) {
-            const localStorageMatch = matchStr.replace(LOCAL_STORAGE_MATCH_MARKER, '');
+            const _parseMatchArg2 = parseMatchArg(matchStr),
+              isInvertedMatch = _parseMatchArg2.isInvertedMatch,
+              matchValue = _parseMatchArg2.matchValue;
+            isInvertedMatchLocalStorage = isInvertedMatch;
+            const localStorageMatch = matchValue.replace(LOCAL_STORAGE_MATCH_MARKER, '');
             localStorageMatches.push(localStorageMatch);
           }
         });
@@ -2348,7 +2380,8 @@
             return valueMatch.test(parsedCookies[key]);
           });
         });
-        if (!cookiesMatched) {
+        const shouldRun = cookiesMatched !== isInvertedMatchCookie;
+        if (!shouldRun) {
           return;
         }
       }
@@ -2357,7 +2390,8 @@
           const itemValue = window.localStorage.getItem(str);
           return itemValue || itemValue === '';
         });
-        if (!localStorageMatched) {
+        const shouldRun = localStorageMatched !== isInvertedMatchLocalStorage;
+        if (!shouldRun) {
           return;
         }
       }
@@ -2387,9 +2421,14 @@
        * Element should not be clicked if it is already clicked,
        * or a previous element is not found or clicked yet
        */
-      const clickElementsBySequence = function clickElementsBySequence() {
+      const clickElementsBySequence = async function clickElementsBySequence() {
         for (let i = 0; i < elementsSequence.length; i += 1) {
           const elementObj = elementsSequence[i];
+          // Add a delay between clicks to every element except the first one
+          // https://github.com/AdguardTeam/Scriptlets/issues/284
+          if (i >= 1) {
+            await sleep(STATIC_CLICK_DELAY_MS);
+          }
           // Stop clicking if that pos element is not found yet
           if (!elementObj.element) {
             break;
@@ -2472,7 +2511,7 @@
     // trusted scriptlets support no aliases
     ];
 
-    trustedClickElement$1.injections = [hit, toRegExp, parseCookieString, throttle, logMessage];
+    trustedClickElement$1.injections = [hit, toRegExp, parseCookieString, throttle, logMessage, parseMatchArg];
 
     /* eslint-disable max-len */
     /**
@@ -8426,10 +8465,8 @@
      *
      * @returns {Array<Object>} Array of all scriptlet objects.
      */
-    const getScriptletsListObj = function getScriptletsListObj() {
-      return Object.keys(scriptletList).map(function (key) {
-        return scriptletList[key];
-      });
+    const getScriptletsObjList = function getScriptletsObjList() {
+      return Object.values(scriptletList);
     };
 
     /**
@@ -8441,7 +8478,7 @@
      */
     const getScriptletByName = function getScriptletByName(name, scriptlets) {
       if (!scriptlets) {
-        scriptlets = getScriptletsListObj();
+        scriptlets = getScriptletsObjList();
       }
       return scriptlets.find(function (s) {
         return s.names
@@ -8451,7 +8488,7 @@
         || !endsWith(name, '.js') && s.names.indexOf("".concat(name, ".js")) > -1);
       });
     };
-    const scriptletObjects = getScriptletsListObj();
+    const scriptletObjects = getScriptletsObjList();
 
     /**
      * Checks whether the scriptlet `name` is valid by checking the scriptlet list object.
@@ -8476,7 +8513,7 @@
     const scriptletNameValidationCache = new Map();
 
     /**
-     * Checks if the scriptlet name is valid.
+     * Checks whether the `name` is valid scriptlet name.
      * Uses cache for better performance.
      *
      * @param {string} name Scriptlet name.
@@ -9022,18 +9059,59 @@
     };
 
     /**
-     * Converts scriptlet rule to AdGuard one
+     * Validates ADG scriptlet rule syntax.
      *
-     * @param {string} rule scriptlet rule
-     * @returns {Array} array of AdGuard scriptlet rules, one item for Adg and Ubo or few items for Abp
+     * IMPORTANT! The method is not very fast as it parses the rule and checks its syntax.
+     *
+     * @param {string} adgRuleText Single ADG scriptlet rule.
+     *
+     * @returns {boolean} False if ADG scriptlet rule syntax is not valid
+     * or `adgRuleText` is not an ADG scriptlet rule.
+     */
+    const isValidAdgScriptletRuleSyntax = function isValidAdgScriptletRuleSyntax(adgRuleText) {
+      if (!adgRuleText) {
+        return false;
+      }
+      if (!validator.isAdgScriptletRule(adgRuleText)) {
+        return false;
+      }
+      // isAdgScriptletRule() does not check the rule syntax
+      let parsedRule;
+      try {
+        // parseRule() ensures that the rule syntax is valid
+        // and it will throw an error if it is not
+        parsedRule = parseRule(adgRuleText);
+        return validator.isValidScriptletName(parsedRule.name);
+      } catch (e) {
+        return false;
+      }
+    };
+
+    /**
+     * Converts any scriptlet rule into AdGuard syntax rule.
+     * Comment is returned as is.
+     *
+     * @param {string} rule Scriptlet rule.
+     *
+     * @returns {string[]} Array of AdGuard scriptlet rules: one array item for ADG and UBO or few items for ABP.
+     * For the ADG `rule`, validates its syntax and returns an empty array if it is invalid.
      */
     const convertScriptletToAdg = function convertScriptletToAdg(rule) {
       let result;
+      // TODO: multiple conditions may be refactored
       if (validator.isUboScriptletRule(rule)) {
         result = convertUboScriptletToAdg(rule);
       } else if (validator.isAbpSnippetRule(rule)) {
         result = convertAbpSnippetToAdg(rule);
-      } else if (validator.isAdgScriptletRule(rule) || validator.isComment(rule)) {
+      } else if (validator.isAdgScriptletRule(rule)) {
+        if (isValidAdgScriptletRuleSyntax(rule)) {
+          result = [rule];
+        } else {
+          // eslint-disable-next-line no-console
+          console.log("Invalid AdGuard scriptlet rule: ".concat(rule));
+          result = [];
+        }
+      } else if (validator.isComment(rule)) {
         result = [rule];
       }
       return result;
@@ -9143,20 +9221,32 @@
     };
 
     /**
-     * Checks whether the ADG scriptlet exists or UBO/ABP scriptlet is compatible to ADG
+     * 1. For ADG scriptlet checks whether the scriptlet syntax and name are valid.
+     * 2. For UBO and ABP scriptlet first checks their compatibility with ADG
+     * by converting them into ADG syntax, and after that checks the name.
      *
-     * @param {string} input can be ADG or UBO or ABP scriptlet rule
-     * @returns {boolean} if scriptlet rule is valid
+     * ADG or UBO rules are "single-scriptlet", but ABP rule may contain more than one snippet
+     * so if at least one of them is not valid — whole `ruleText` rule is not valid too.
+     *
+     * @param {string} ruleText Any scriptlet rule — ADG or UBO or ABP.
+     *
+     * @returns {boolean} True if scriptlet name is valid in rule.
      */
-    const isValidScriptletRule = function isValidScriptletRule(input) {
-      if (!input) {
+    const isValidScriptletRule = function isValidScriptletRule(ruleText) {
+      if (!ruleText) {
         return false;
       }
-      // ABP 'input' rule may contain more than one snippet
-      const rulesArray = convertScriptletToAdg(input);
+
+      // `ruleText` with ABP syntax may contain more than one snippet in one rule
+      const rulesArray = convertScriptletToAdg(ruleText);
+
+      // for ADG rule with invalid syntax convertScriptletToAdg() will return empty array
+      if (rulesArray.length === 0) {
+        return false;
+      }
 
       // checking if each of parsed scriptlets is valid
-      // if at least one of them is not valid - whole 'input' rule is not valid too
+      // if at least one of them is not valid - whole `ruleText` is not valid too
       const isValid = rulesArray.every(function (rule) {
         const name = getAdgScriptletName(rule);
         return validator.isValidScriptletName(name);
@@ -16934,7 +17024,7 @@
           setTimeout(function () {
             wait = false;
             if (savedArgs) {
-              wrapper(savedArgs);
+              wrapper(...savedArgs);
               savedArgs = null;
             }
           }, delay);
@@ -19511,12 +19601,13 @@
       function noopFunc() {}
       function parseMatchArg(match) {
         const INVERT_MARKER = "!";
-        const isInvertedMatch = startsWith(match, INVERT_MARKER);
+        const isInvertedMatch = match ? match.startsWith(INVERT_MARKER) : false;
         const matchValue = isInvertedMatch ? match.slice(1) : match;
         const matchRegexp = toRegExp(matchValue);
         return {
           isInvertedMatch: isInvertedMatch,
-          matchRegexp: matchRegexp
+          matchRegexp: matchRegexp,
+          matchValue: matchValue
         };
       }
       function isValidStrPattern(input) {
@@ -19577,9 +19668,6 @@
         }
         const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
-      }
-      function startsWith(str, prefix) {
-        return !!str && str.indexOf(prefix) === 0;
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -19724,12 +19812,13 @@
       }
       function parseMatchArg(match) {
         const INVERT_MARKER = "!";
-        const isInvertedMatch = startsWith(match, INVERT_MARKER);
+        const isInvertedMatch = match ? match.startsWith(INVERT_MARKER) : false;
         const matchValue = isInvertedMatch ? match.slice(1) : match;
         const matchRegexp = toRegExp(matchValue);
         return {
           isInvertedMatch: isInvertedMatch,
-          matchRegexp: matchRegexp
+          matchRegexp: matchRegexp,
+          matchValue: matchValue
         };
       }
       function parseDelayArg(delay) {
@@ -19912,12 +20001,13 @@
       }
       function parseMatchArg(match) {
         const INVERT_MARKER = "!";
-        const isInvertedMatch = startsWith(match, INVERT_MARKER);
+        const isInvertedMatch = match ? match.startsWith(INVERT_MARKER) : false;
         const matchValue = isInvertedMatch ? match.slice(1) : match;
         const matchRegexp = toRegExp(matchValue);
         return {
           isInvertedMatch: isInvertedMatch,
-          matchRegexp: matchRegexp
+          matchRegexp: matchRegexp,
+          matchValue: matchValue
         };
       }
       function parseDelayArg(delay) {
@@ -20165,12 +20255,13 @@
       }
       function parseMatchArg(match) {
         const INVERT_MARKER = "!";
-        const isInvertedMatch = startsWith(match, INVERT_MARKER);
+        const isInvertedMatch = match ? match.startsWith(INVERT_MARKER) : false;
         const matchValue = isInvertedMatch ? match.slice(1) : match;
         const matchRegexp = toRegExp(matchValue);
         return {
           isInvertedMatch: isInvertedMatch,
-          matchRegexp: matchRegexp
+          matchRegexp: matchRegexp,
+          matchValue: matchValue
         };
       }
       function handleOldReplacement(replacement) {
@@ -20785,7 +20876,7 @@
           setTimeout(function () {
             wait = false;
             if (savedArgs) {
-              wrapper(savedArgs);
+              wrapper(...savedArgs);
               savedArgs = null;
             }
           }, delay);
@@ -20995,7 +21086,7 @@
           setTimeout(function () {
             wait = false;
             if (savedArgs) {
-              wrapper(savedArgs);
+              wrapper(...savedArgs);
               savedArgs = null;
             }
           }, delay);
@@ -21248,7 +21339,7 @@
           setTimeout(function () {
             wait = false;
             if (savedArgs) {
-              wrapper(savedArgs);
+              wrapper(...savedArgs);
               savedArgs = null;
             }
           }, delay);
@@ -21367,7 +21458,7 @@
           setTimeout(function () {
             wait = false;
             if (savedArgs) {
-              wrapper(savedArgs);
+              wrapper(...savedArgs);
               savedArgs = null;
             }
           }, delay);
@@ -22385,11 +22476,17 @@
         }
         const OBSERVER_TIMEOUT_MS = 1e4;
         const THROTTLE_DELAY_MS = 20;
+        const STATIC_CLICK_DELAY_MS = 150;
         const COOKIE_MATCH_MARKER = "cookie:";
         const LOCAL_STORAGE_MATCH_MARKER = "localStorage:";
         const SELECTORS_DELIMITER = ",";
         const COOKIE_STRING_DELIMITER = ";";
-        const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=cookie:|localStorage:)/;
+        const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=!?cookie:|!?localStorage:)/;
+        const sleep = function sleep(delayMs) {
+          return new Promise(function (resolve) {
+            return setTimeout(resolve, delayMs);
+          });
+        };
         let parsedDelay;
         if (delay) {
           parsedDelay = parseInt(delay, 10);
@@ -22403,17 +22500,27 @@
         let canClick = !parsedDelay;
         const cookieMatches = [];
         const localStorageMatches = [];
+        let isInvertedMatchCookie = false;
+        let isInvertedMatchLocalStorage = false;
         if (extraMatch) {
           const parsedExtraMatch = extraMatch.split(EXTRA_MATCH_DELIMITER).map(function (matchStr) {
             return matchStr.trim();
           });
           parsedExtraMatch.forEach(function (matchStr) {
             if (matchStr.indexOf(COOKIE_MATCH_MARKER) > -1) {
-              const cookieMatch = matchStr.replace(COOKIE_MATCH_MARKER, "");
+              const _parseMatchArg = parseMatchArg(matchStr),
+                isInvertedMatch = _parseMatchArg.isInvertedMatch,
+                matchValue = _parseMatchArg.matchValue;
+              isInvertedMatchCookie = isInvertedMatch;
+              const cookieMatch = matchValue.replace(COOKIE_MATCH_MARKER, "");
               cookieMatches.push(cookieMatch);
             }
             if (matchStr.indexOf(LOCAL_STORAGE_MATCH_MARKER) > -1) {
-              const localStorageMatch = matchStr.replace(LOCAL_STORAGE_MATCH_MARKER, "");
+              const _parseMatchArg2 = parseMatchArg(matchStr),
+                isInvertedMatch = _parseMatchArg2.isInvertedMatch,
+                matchValue = _parseMatchArg2.matchValue;
+              isInvertedMatchLocalStorage = isInvertedMatch;
+              const localStorageMatch = matchValue.replace(LOCAL_STORAGE_MATCH_MARKER, "");
               localStorageMatches.push(localStorageMatch);
             }
           });
@@ -22439,7 +22546,8 @@
               return valueMatch.test(parsedCookies[key]);
             });
           });
-          if (!cookiesMatched) {
+          const shouldRun = cookiesMatched !== isInvertedMatchCookie;
+          if (!shouldRun) {
             return;
           }
         }
@@ -22448,7 +22556,8 @@
             const itemValue = window.localStorage.getItem(str);
             return itemValue || itemValue === "";
           });
-          if (!localStorageMatched) {
+          const shouldRun = localStorageMatched !== isInvertedMatchLocalStorage;
+          if (!shouldRun) {
             return;
           }
         }
@@ -22462,9 +22571,12 @@
           };
         };
         const elementsSequence = Array(selectorsSequence.length).fill(createElementObj());
-        const clickElementsBySequence = function clickElementsBySequence() {
+        const clickElementsBySequence = async function clickElementsBySequence() {
           for (let i = 0; i < elementsSequence.length; i += 1) {
             const elementObj = elementsSequence[i];
+            if (i >= 1) {
+              await sleep(STATIC_CLICK_DELAY_MS);
+            }
             if (!elementObj.element) {
               break;
             }
@@ -22604,7 +22716,7 @@
           setTimeout(function () {
             wait = false;
             if (savedArgs) {
-              wrapper(savedArgs);
+              wrapper(...savedArgs);
               savedArgs = null;
             }
           }, delay);
@@ -22635,6 +22747,17 @@
           }
         }
         nativeConsole(messageStr);
+      }
+      function parseMatchArg(match) {
+        const INVERT_MARKER = "!";
+        const isInvertedMatch = match ? match.startsWith(INVERT_MARKER) : false;
+        const matchValue = isInvertedMatch ? match.slice(1) : match;
+        const matchRegexp = toRegExp(matchValue);
+        return {
+          isInvertedMatch: isInvertedMatch,
+          matchRegexp: matchRegexp,
+          matchValue: matchValue
+        };
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -24401,23 +24524,23 @@
     };
 
     /**
-     * @typedef {Object} Source - scriptlet properties
-     * @property {string} name Scriptlet name
-     * @property {Array<string>} args Arguments for scriptlet function
-     * @property {'extension'|'corelibs'|'test'} engine -
-     * Defines the final form of scriptlet string presentation
-     * @property {string} [version] extension version
-     * @property {boolean} [verbose] flag to enable printing to console debug information
-     * @property {string} [ruleText] Source rule text is used for debugging purposes
-     * @property {string} [domainName] domain name where scriptlet is applied; for debugging purposes
+     * @typedef {Object} Source Scriptlet properties.
+     * @property {string} name Scriptlet name.
+     * @property {Array<string>} args Arguments for scriptlet function.
+     * @property {'extension'|'corelibs'|'test'} engine Defines the final form of scriptlet string presentation.
+     * @property {string} [version] Extension version.
+     * @property {boolean} [verbose] Flag to enable debug information printing to console.
+     * @property {string} [ruleText] Source rule text, needed for debug purposes.
+     * @property {string} [domainName] Domain name where scriptlet is applied, needed for debug purposes.
      */
 
     /**
-     * Returns scriptlet code by param
+     * Returns scriptlet code by `source`.
      *
-     * @param {Object} source scriptlet properties
-     * @returns {string|null} scriptlet code
-     * @throws on unknown scriptlet name
+     * @param {Source} source Scriptlet properties.
+     *
+     * @returns {string|null} Scriptlet code.
+     * @throws An error on unknown scriptlet name.
      */
     function getScriptletCode(source) {
       if (!validator.isValidScriptletName(source.name)) {
