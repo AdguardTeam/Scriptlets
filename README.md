@@ -536,6 +536,8 @@ Run next command
 yarn browserstack
 ```
 
+Tests run by `jest` should be named `.spec.js`, so they will be not included in the `QUnit` tests.
+
 ### Debugging
 
 Use `debugger;` statement where you need it, run

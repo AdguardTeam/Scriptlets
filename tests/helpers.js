@@ -68,7 +68,8 @@ export const runRedirect = (name, verbose = true) => {
  * @param {string} cName
  */
 export const clearCookie = (cName) => {
-    document.cookie = `${cName}=; max-age=0`;
+    // Without "path=/;" cookie is not to be re-set with no value
+    document.cookie = `${cName}=; path=/; max-age=0`;
 };
 
 export const isSafariBrowser = () => navigator.vendor === 'Apple Computer, Inc.';

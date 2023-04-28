@@ -12,6 +12,7 @@ module.exports = {
     env: {
         browser: true,
         qunit: true,
+        jest: true,
     },
     rules: {
         'max-len': [
@@ -31,7 +32,14 @@ module.exports = {
         'no-await-in-loop': 0,
         'no-restricted-syntax': 0,
         // jsdoc rules
-        'jsdoc/check-tag-names': ['error', { definedTags: ['scriptlet', 'trustedScriptlet', 'redirect'] }],
+        'jsdoc/check-tag-names': ['error', {
+            definedTags: [
+                'scriptlet',
+                'trustedScriptlet',
+                'redirect',
+                'jest-environment',
+            ],
+        }],
         'jsdoc/tag-lines': 'off',
         'jsdoc/require-jsdoc': 0,
         'jsdoc/require-param': 0,

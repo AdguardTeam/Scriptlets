@@ -7,6 +7,7 @@ import {
     isValidCookiePath,
     parseKeywordValue,
     getTrustedCookieOffsetMs,
+    parseCookieString,
     // following helpers should be imported and injected
     // because they are used by helpers above
     getCookiePath,
@@ -112,9 +113,14 @@ export function trustedSetCookieReload(source, name, value, offsetExpiresSec = '
     document.cookie = cookieToSet;
     hit(source);
 
+    // Get cookie value, it's required for checking purpose
+    // in case if $now$ or $currentDate$ value is used
+    // https://github.com/AdguardTeam/Scriptlets/issues/291
+    const cookieValueToCheck = parseCookieString(document.cookie)[name];
+
     // Only reload the page if cookie was set
     // https://github.com/AdguardTeam/Scriptlets/issues/212
-    if (isCookieSetWithValue(document.cookie, name, value)) {
+    if (isCookieSetWithValue(document.cookie, name, cookieValueToCheck)) {
         window.location.reload();
     }
 }
@@ -133,5 +139,6 @@ trustedSetCookieReload.injections = [
     isValidCookiePath,
     getTrustedCookieOffsetMs,
     parseKeywordValue,
+    parseCookieString,
     getCookiePath,
 ];
