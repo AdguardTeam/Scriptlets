@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - issue with reloading website if `$now$`/`$currentDate$` value is used in `trusted-set-cookie-reload` scriptlet [#291](https://github.com/AdguardTeam/Scriptlets/issues/291)
 
-## [v1.9.7] - 2023-03-14
+## <a name="v1.9.7"></a> [v1.9.7] - 2023-03-14
 
 ### Added
 
@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - issue with `MutationObserver.disconnect()` in `trusted-click-element` [#284](https://github.com/AdguardTeam/Scriptlets/issues/284)
 
 
-## [v1.9.1] - 2023-03-07
+## <a name="v1.9.1"></a> [v1.9.1] - 2023-03-07
 
 ### Added
 
@@ -46,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - improve performance of the `isValidScriptletName()` method
 
 
-## [v1.8.2] - 2023-01-19
+## <a name="v1.8.2"></a> [v1.8.2] - 2023-01-19
 
 ### Added
 
@@ -67,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - missing `googletagmanager-gtm` in compatibility table
 
 
-## [v1.7.20] - 2022-12-26
+## <a name="v1.7.20"></a> [v1.7.20] - 2022-12-26
 
 ### Added
 
@@ -79,7 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Redirects types.
 
 
-## [v1.7.19] - 2022-12-22
+## <a name="v1.7.19"></a> [v1.7.19] - 2022-12-22
 
 ### Fixed
 
@@ -87,21 +87,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `google-ima3` conversion
 
 
-## [v1.7.14] - 2022-12-16
+## <a name="v1.7.14"></a> [v1.7.14] - 2022-12-16
 
 ### Added
 
 * `set-constant` ADG→UBO conversion for [`emptyArr` and `emptyObj`](https://github.com/uBlockOrigin/uBlock-issues/issues/2411)
 
 
-## [v1.7.13] - 2022-12-13
+## <a name="v1.7.13"></a> [v1.7.13] - 2022-12-13
 
 ### Fixed
 
 * `isEmptyObject` helper not counting `prototype` as an object property
 
 
-## [v1.7.10] - 2022-12-07
+## <a name="v1.7.10"></a> [v1.7.10] - 2022-12-07
 
 ### Added
 
@@ -115,7 +115,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - request properties array not being served to `getRequestData` and `parseMatchProps` helpers
 
 
-## [v1.7.3] - 2022-11-21
+## <a name="v1.7.3"></a> [v1.7.3] - 2022-11-21
 
 ### Added
 
