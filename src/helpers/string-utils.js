@@ -90,6 +90,8 @@ export const getBeforeRegExp = (str, rx) => {
 /**
  * Checks whether the string starts with the substring
  *
+ * @deprecated use String.prototype.startsWith() instead. AG-18883
+ *
  * @param {string} str full string
  * @param {string} prefix substring
  * @returns {boolean} if string start with the substring
@@ -102,6 +104,8 @@ export const startsWith = (str, prefix) => {
 
 /**
  * Checks whether the string ends with the substring
+ *
+ * @deprecated use String.prototype.endsWith() instead. AG-18883
  *
  * @param {string} str full string
  * @param {string} ending substring

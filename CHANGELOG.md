@@ -6,16 +6,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- improved `prevent-fetch` — if `responseType` is not specified,
+  original response type is returned instead of `default` [#297](https://github.com/AdguardTeam/Scriptlets/issues/291)
+
 ### Fixed
 
-- issue with reloading website if `$now$`/`$currentDate$` value is used in `trusted-set-cookie-reload` scriptlet [#291](https://github.com/AdguardTeam/Scriptlets/issues/291)
+- website reloading if `$now$`/`$currentDate$` value is used
+  in `trusted-set-cookie-reload` scriptlet [#291](https://github.com/AdguardTeam/Scriptlets/issues/291)
 
 ## <a name="v1.9.7"></a> [v1.9.7] - 2023-03-14
 
 ### Added
 
-- ability for `trusted-click-element` scriptlet to click element if `cookie`/`localStorage` item doesn't exist [#298](https://github.com/AdguardTeam/Scriptlets/issues/298)
-- static delay between multiple clicks in `trusted-click-element` [#284](https://github.com/AdguardTeam/Scriptlets/issues/284)
+- ability for `trusted-click-element` scriptlet to click element
+  if `cookie`/`localStorage` item doesn't exist [#298](https://github.com/AdguardTeam/Scriptlets/issues/298)
+- static delay between multiple clicks in `trusted-click-element`
+  [#284](https://github.com/AdguardTeam/Scriptlets/issues/284)
 
 ### Changed
 
@@ -23,7 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- issue with `MutationObserver.disconnect()` in `trusted-click-element` [#284](https://github.com/AdguardTeam/Scriptlets/issues/284)
+- issue with `MutationObserver.disconnect()`
+  in `trusted-click-element` [#284](https://github.com/AdguardTeam/Scriptlets/issues/284)
 
 
 ## <a name="v1.9.1"></a> [v1.9.1] - 2023-03-07
@@ -36,13 +45,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- decreased the minimal value for the `boost` parameter to `0.001` for `adjust-setTimeout` and `adjust-setInterval` [#262](https://github.com/AdguardTeam/Scriptlets/issues/262)
+- decreased the minimal value for the `boost` parameter to `0.001`
+  for `adjust-setTimeout` and `adjust-setInterval` [#262](https://github.com/AdguardTeam/Scriptlets/issues/262)
 
 ### Fixed
 
-- `prevent-element-src-loading` throwing error if `thisArg` is `undefined` [#270](https://github.com/AdguardTeam/Scriptlets/issues/270)
+- `prevent-element-src-loading` throwing error
+  if `thisArg` is `undefined` [#270](https://github.com/AdguardTeam/Scriptlets/issues/270)
 - logging `null` in `json-prune` [#282](https://github.com/AdguardTeam/Scriptlets/issues/282)
-- `xml-prune` does not prune a request if `new Request()` is used and issue with throwing error while logging some requests [#289](https://github.com/AdguardTeam/Scriptlets/issues/289)
+- `xml-prune`: no pruning a request if `new Request()` is used,
+  throwing an error while logging some requests [#289](https://github.com/AdguardTeam/Scriptlets/issues/289)
 - improve performance of the `isValidScriptletName()` method
 
 
@@ -53,17 +65,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - new `trusted-set-constant` scriptlet [#137](https://github.com/AdguardTeam/Scriptlets/issues/137)
 - new `inject-css-in-shadow-dom` scriptlet [#267](https://github.com/AdguardTeam/Scriptlets/issues/267)
 - `throwFunc` and `noopCallbackFunc` prop values for `set-constant` scriptlet
-- `recreateIframeForSlot` method mock to `googletagservices-gpt` redirect [#259](https://github.com/AdguardTeam/Scriptlets/issues/259)
+- `recreateIframeForSlot` method mock
+  to `googletagservices-gpt` redirect [#259](https://github.com/AdguardTeam/Scriptlets/issues/259)
 
 ### Changed
 
-- add decimal delay matching for `prevent-setInterval` and `prevent-setTimeout` [#247](https://github.com/AdguardTeam/Scriptlets/issues/247)
+- add decimal delay matching for `prevent-setInterval` and `prevent-setTimeout`
+  [#247](https://github.com/AdguardTeam/Scriptlets/issues/247)
 - debug logging to include rule text when available
 - `getScriptletFunction` calls to throw error on unknown scriptlet names
 
 ### Fixed
 
-- `prevent-xhr` and `trusted-replace-xhr-response` closure bug on multiple requests [#261](https://github.com/AdguardTeam/Scriptlets/issues/261)
+- `prevent-xhr` and `trusted-replace-xhr-response` closure bug on multiple requests
+  [#261](https://github.com/AdguardTeam/Scriptlets/issues/261)
 - missing `googletagmanager-gtm` in compatibility table
 
 
@@ -83,7 +98,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `prevent-addEventListener` and `log-addEventListener` loosing context when encountering already bound `.addEventListener`
+- `prevent-addEventListener` and `log-addEventListener` loosing context
+  when encountering already bound `.addEventListener`
 - `google-ima3` conversion
 
 
@@ -91,14 +107,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* `set-constant` ADG→UBO conversion for [`emptyArr` and `emptyObj`](https://github.com/uBlockOrigin/uBlock-issues/issues/2411)
+- `set-constant` ADG→UBO conversion
+  for [`emptyArr` and `emptyObj`](https://github.com/uBlockOrigin/uBlock-issues/issues/2411)
 
 
 ## <a name="v1.7.13"></a> [v1.7.13] - 2022-12-13
 
 ### Fixed
 
-* `isEmptyObject` helper not counting `prototype` as an object property
+- `isEmptyObject` helper not counting `prototype` as an object property
 
 
 ## <a name="v1.7.10"></a> [v1.7.10] - 2022-12-07
@@ -110,7 +127,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `set-cookie-reload` infinite page reloading [#265](https://github.com/AdguardTeam/Scriptlets/issues/265)
-- breakage of `prevent-element-src-loading` due to `window` getting into `apply` wrapper [#264](https://github.com/AdguardTeam/Scriptlets/issues/264)
+- breakage of `prevent-element-src-loading` due to `window` getting into `apply` wrapper
+  [#264](https://github.com/AdguardTeam/Scriptlets/issues/264)
 - spread of args bug at `getXhrData` call for `trusted-replace-xhr-response`
 - request properties array not being served to `getRequestData` and `parseMatchProps` helpers
 
