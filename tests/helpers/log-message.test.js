@@ -16,7 +16,6 @@ module(name, { afterEach });
 const RULE_TEXT = 'example.org#%#//scriptlet(\'set-cookie\', \'name\', \'value\')';
 const SCRIPTLET_NAME = 'set-cookie';
 const MESSAGE = 'arbitrary text message';
-const MESSAGE_EXTENSION = '; cannot apply rule: #%#//scriptlet(\'set-cookie\', \'name\', \'value\')';
 
 test('Logs message conditionally', async (assert) => {
     // eslint-disable-next-line no-console
@@ -26,7 +25,7 @@ test('Logs message conditionally', async (assert) => {
         }
         assert.strictEqual(
             input,
-            `${SCRIPTLET_NAME}: ${MESSAGE}${MESSAGE_EXTENSION}`,
+            `${SCRIPTLET_NAME}: ${MESSAGE}`,
             'message logged correctly',
         );
     };
