@@ -12,7 +12,6 @@
 export const logMessage = (source, message, forced = false, convertMessageToString = true) => {
     const {
         name,
-        ruleText,
         verbose,
     } = source;
 
@@ -31,16 +30,5 @@ export const logMessage = (source, message, forced = false, convertMessageToStri
         return;
     }
 
-    let messageStr = `${name}: ${message}`;
-
-    // Extract scriptlet part from rule text
-    if (ruleText) {
-        const RULE_MARKER = '#%#//scriptlet';
-        const markerIdx = ruleText.indexOf(RULE_MARKER);
-        if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += `; cannot apply rule: ${ruleWithoutDomains}`;
-        }
-    }
-    nativeConsole(messageStr);
+    nativeConsole(`${name}: ${message}`);
 };
