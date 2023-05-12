@@ -11,3 +11,4 @@ output.md
 tests/dist
 browserstack.err
 local.log
+.eslintcache
