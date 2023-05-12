@@ -30,7 +30,5 @@ export const logMessage = (source, message, forced = false, convertMessageToStri
         return;
     }
 
-    const messageStr = `${name}: ${message}`;
-
-    nativeConsole(messageStr);
+    nativeConsole(`${name}: ${message}`);
 };
