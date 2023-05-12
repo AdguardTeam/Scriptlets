@@ -6,15 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- improved `prevent-fetch` — if `responseType` is not specified,
-  original response type is returned instead of `default` [#297](https://github.com/AdguardTeam/Scriptlets/issues/291)
-
 ### Fixed
 
 - website reloading if `$now$`/`$currentDate$` value is used
   in `trusted-set-cookie-reload` scriptlet [#291](https://github.com/AdguardTeam/Scriptlets/issues/291)
+
+### Changed
+
+- improved `prevent-fetch` — if `responseType` is not specified,
+  original response type is returned instead of `default` [#297](https://github.com/AdguardTeam/Scriptlets/issues/291)
 
 ## <a name="v1.9.7"></a> [v1.9.7] - 2023-03-14
 
