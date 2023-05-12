@@ -4,15 +4,15 @@ AdGuard's Scriptlets and Redirect resources library which provides extended capa
 
 * [Scriptlets](#scriptlets)
     * [Syntax](#scriptlet-syntax)
-    * [Available scriptlets](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#scriptlets)
-    * [Scriptlets compatibility table](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/compatibility-table.md#scriptlets)
+    * [Available scriptlets](./wiki/about-scriptlets.md#scriptlets)
+    * [Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)
     * [Trusted scriptlets](#trusted-scriptlets)
         * [Restriction](#trusted-scriptlets-restriction)
-        * [Available trusted scriptlets](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-scriptlets)
+        * [Available trusted scriptlets](./wiki/about-trusted-scriptlets.md#trusted-scriptlets)
 * [Redirect resources](#redirect-resources)
     * [Syntax](#redirect-syntax)
-    * [Available redirect resources](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-redirects.md#redirect-resources)
-    * [Redirect resources compatibility table](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/compatibility-table.md#redirects)
+    * [Available redirect resources](./wiki/about-redirects.md#redirect-resources)
+    * [Redirect resources compatibility table](./wiki/compatibility-table.md#redirects)
 * [How to build](#how-to-build)
 * [How to test](#how-to-test)
 * [How to update wiki](#how-to-update-wiki)
@@ -20,15 +20,17 @@ AdGuard's Scriptlets and Redirect resources library which provides extended capa
 * [Projects using Scriptlets](#used-by)
 
 * * *
+
 ## Scriptlets
 
 Scriptlet is a JavaScript function which can be used in a declarative manner in AdGuard filtering rules.
 
-AdGuard supports a lot of different scriptlets. Please note, that in order to achieve cross-blocker compatibility, we also support syntax of uBO and ABP.
+AdGuard supports a lot of different scriptlets.
+Please note, that in order to achieve cross-blocker compatibility, we also support syntax of uBO and ABP.
 
 ### <a id="scriptlet-syntax"></a> Syntax
 
-```
+```text
 rule = [domains]  "#%#//scriptlet(" scriptletName arguments ")"
 ```
 
@@ -40,48 +42,52 @@ rule = [domains]  "#%#//scriptlet(" scriptletName arguments ")"
 > * The meaning of the arguments depends on the scriptlet.
 >
 > * Special characters in scriptlet argument must be escaped properly:
->   * valid:
->     * `'prop["nested"]'`
->     * `"prop['nested']"`
->     * `'prop[\'nested\']'`
->     * `"prop[\"nested\"]"`
->   * not valid:
->     * `'prop['nested']'`
->     * `"prop["nested"]"`
+>     * valid:
+>         * `'prop["nested"]'`
+>         * `"prop['nested']"`
+>         * `'prop[\'nested\']'`
+>         * `"prop[\"nested\"]"`
+>     * not valid:
+>         * `'prop['nested']'`
+>         * `"prop["nested"]"`
 >
 > * You can use either single or double quotes for the scriptlet name and arguments.
 > Single quote is recommended but not for cases when its usage makes readability worse,
 > e.g. `".css('display','block');"` is more preferred then `'.css(\'display\',\'block\');'`.
 
 
-**Example**
+#### Example
 
-```
+```adblock
 example.org#%#//scriptlet('abort-on-property-read', 'alert')
 example.org#%#//scriptlet('remove-class', 'branding', 'div[class^="inner"]')
 ```
 
-This rule applies the `abort-on-property-read` scriptlet on all pages of `example.org` and its subdomains, and passes one argument to it (`alert`).
+This rule applies the `abort-on-property-read` scriptlet on all pages of `example.org` and its subdomains,
+and passes one argument to it (`alert`).
 
-* **[Scriptlets list](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#scriptlets)**
-* **[Scriptlets compatibility table](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/compatibility-table.md#scriptlets)**
+* **[Scriptlets list](./wiki/about-scriptlets.md#scriptlets)**
+* **[Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)**
 
 
 ### <a id="trusted-scriptlets"></a> Trusted scriptlets
 
-Trusted scriptlets are scriptlets with extended functionality. Their names are prefixed with `trusted-`, e.g `trusted-click-element`, to be easily distinguished from common scriptlets.
+Trusted scriptlets are scriptlets with extended functionality.
+Their names are prefixed with `trusted-`, e.g `trusted-click-element`,
+to be easily distinguished from common scriptlets.
 
 #### <a id="trusted-scriptlets-restriction"></a> Restriction
 
 Trusted scriptlets application must be restricted due to dangerous nature of their capabilities.
 Allowed sources of trusted scriptlets are:
+
 * filters created by AdGuard Team,
 * custom filters which were installed as `trusted`,
 * user rules.
 
 > Trusted scriptlets has no compatibility table as they are not compatible with any other blocker.
 
-**[Trusted scriptlets list](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-scriptlets)**
+**[Trusted scriptlets list](./wiki/about-trusted-scriptlets.md#trusted-scriptlets)**
 
 
 ## Redirect resources
@@ -90,52 +96,72 @@ AdGuard is able to redirect web requests to a local "resource".
 
 ### <a id="redirect-syntax"></a> Syntax
 
-AdGuard uses the same filtering rule syntax as [uBlock Origin](https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect). Also, it is compatible with ABP `$rewrite=abp-resource` modifier.
+AdGuard uses the same filtering rule syntax
+as [uBlock Origin](https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect).
+Also, it is compatible with ABP `$rewrite=abp-resource` modifier.
 
-`$redirect` is a modifier for [the basic filtering rules](https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-syntax) so rules with this modifier support all other basic modifiers like `$domain`, `$third-party`, `$script`, etc.
+`$redirect` is a modifier for
+[the basic filtering rules](https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-syntax)
+so rules with this modifier support all other basic modifiers like `$domain`, `$third-party`, `$script`, etc.
 
-The value of the `$redirect` modifier must be the name of the resource, that will be used for redirection. See the list of resources [below](#available-resources).
+The value of the `$redirect` modifier must be the name of the resource that will be used for redirection.
+See the list of [available redirect resources](./wiki/about-redirects.md#redirect-resources).
 
-**Examples**
-* `||example.org/script.js$script,redirect=noopjs` — redirects all requests to `script.js` to the resource named `noopjs`.
-* `||example.org/test.mp4$media,redirect=noopmp4-1s` — requests to `example.org/test.mp4` will be redirected to the resource named `noopmp4-1s`.
+#### Examples
 
-> `$redirect` rules priority is higher than the regular basic blocking rules' priority. This means that if there's a basic blocking rule (even with `$important` modifier), `$redirect` rule will prevail over it. If there's a whitelist (`@@`) rule matching the same URL, it will disable redirecting as well (unless the `$redirect` rule is also marked as `$important`).
+* `||example.org/script.js$script,redirect=noopjs` — redirects all requests to `script.js`
+    to the resource named `noopjs`.
+* `||example.org/test.mp4$media,redirect=noopmp4-1s` — requests to `example.org/test.mp4` will be redirected
+    to the resource named `noopmp4-1s`.
 
-> uBlock Origin specifies additional resource name `none` that can disable other redirect rules. AdGuard does not support it, use `$badfilter` to disable specific rules.
+> `$redirect` rules priority is higher than the regular basic blocking rules' priority.
+> This means that if there's a basic blocking rule (even with `$important` modifier),
+> `$redirect` rule will prevail over it.
+> If there's a whitelist (`@@`) rule matching the same URL,
+> it will disable redirecting as well (unless the `$redirect` rule is also marked as `$important`).
 
-* **[Redirect resources list](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-redirects.md#redirect-resources)**
-* **[Redirect resources compatibility table](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/compatibility-table.md#redirects)**
+> uBlock Origin specifies additional resource name `none` that can disable other redirect rules.
+> AdGuard does not support it, use `$badfilter` to disable specific rules.
+
+* **[Redirect resources list](./wiki/about-redirects.md#redirect-resources)**
+* **[Redirect resources compatibility table](./wiki/compatibility-table.md#redirects)**
 
 * * *
 
 ## <a id="how-to-build"></a> How to build
 
-Install dependencies
-```
+Install dependencies:
+
+```bash
 yarn install
 ```
 
-Build for CoreLibs
-```
+Build for CoreLibs:
+
+```bash
 yarn corelibs
 ```
 
-Build dev (rebuild js files on every change)
-```
+Build dev (rebuild js files on every change):
+
+```bash
 yarn watch
 ```
 
 ### Build for Extension
+
 In scriptlets directory install dependencies, build scriptlets bundle, and create scriptlets link.
-```
+
+```bash
 yarn
 yarn build
 yarn link
 ```
 
-In tsurlfilter directory install and link dependencies, link scriptlets, move into package and build, and create tsurlfilter link.
-```
+In tsurlfilter directory install and link dependencies, link scriptlets,
+move into package and build, and create tsurlfilter link.
+
+```bash
 lerna bootstrap
 
 yarn link "@adguard/scriptlets"
@@ -144,8 +170,10 @@ cd ./packages/tsurlfilter
 yarn build
 yarn link
 ```
+
 In extension directory install dependencies, link packages and build
-```
+
+``` bash
 yarn
 
 yarn link @adguard/scriptlets
@@ -158,7 +186,8 @@ yarn dev
 
 #### Scriptlets library
 
-You are welcome to use scriptlets and redirect resources as a CJS module. They can be imported from `dist/cjs/scriptlets.cjs.js`:
+You are welcome to use scriptlets and redirect resources as a CJS module.
+They can be imported from `dist/cjs/scriptlets.cjs.js`:
 
 ```javascript
 const scriptlets = require('scriptlets');
@@ -166,7 +195,8 @@ const { redirects } = require('scriptlets');
 
 ```
 
-And also there is a module at `dist/scriptlets.js` which has been exported to a global variable `scriptlets` with such methods:
+And also there is a module at `dist/scriptlets.js`
+which has been exported to a global variable `scriptlets` with such methods:
 
 ```javascript
 /**
@@ -179,7 +209,9 @@ And also there is a module at `dist/scriptlets.js` which has been exported to a 
  */
 scriptlets.invoke(source);
 ```
+
 where:
+
 ```javascript
 /**
  * @typedef {Object} Source — Scriptlet properties.
@@ -250,6 +282,7 @@ scriptlets.isAbpSnippetRule(rule);
  */
 scriptlets.convertUboToAdg(rule);
 ```
+
 > Note that parameters in UBO rule should be separated by comma + space. Otherwise, the rule is not valid.
 
 ```javascript
@@ -284,7 +317,7 @@ scriptlets.convertAdgToUbo(rule);
 ```
 
 
-##### <a id="redirects_api-methods"></a> Imported `redirects` has such methods:
+##### <a id="redirects_api-methods"></a> Imported `redirects` methods
 
 ```javascript
 /**
@@ -397,7 +430,8 @@ redirects.getRedirectFilename(name);
 `dist/scriptlets.corelibs.json`
 
 File example
-```
+
+```json
 {
     "version": "1.0.0",
     "scriptlets": [
@@ -413,8 +447,9 @@ File example
 }
 ```
 
-Schema
-```
+Schema:
+
+```json
 {
     "type": "object",
     "properties": {
@@ -443,7 +478,8 @@ Schema
 ```
 
 #### Redirects library
-```
+
+```text
 dist/redirects.js
 dist/redirects.yml
 ```
@@ -479,25 +515,30 @@ const isBlocking = redirect.isBlocking('click2load.html');
  */
 ```
 
+
 ## <a id="how-to-test"></a> How to test
 
-Run node testing
-```
+Run node testing:
+
+```bash
 yarn test
 ```
 
-Run tests gui
-```
+Run tests gui:
+
+```bash
 yarn gui-test
 ```
 
-Watcher is available
-```
+Watcher is available:
+
+```bash
 yarn test-watch
 ```
 
-Limit testing by commenting out corresponding values in `build-tests.js`
-```
+Limit testing by commenting out corresponding values in `build-tests.js`:
+
+```javascript
 const MULTIPLE_TEST_FILES_DIRS = [
 // 'scriptlets',
 // 'redirects',
@@ -508,8 +549,9 @@ const ONE_TEST_FILE_DIRS = [
 ];
 ```
 
-or `index.test.js`
-```
+or `index.test.js`:
+
+```javascript
 // import './scriptlets/index.test';
 import './redirects/index.test';
 // import './lib-tests/index.test';
@@ -519,7 +561,8 @@ import './redirects/index.test';
 > It is also possible to exclude library tests in `tests/lib-tests/index.test.js`
 
 Run specific scriptlet or redirect test by editing `build-tests.js`
-```
+
+```javascript
 .filter((el) => {
     return el !== 'index.test.js'
         // Uncomment next line and use required scriptlet/redirect name
@@ -530,9 +573,10 @@ Run specific scriptlet or redirect test by editing `build-tests.js`
 
 To run browserstack tests create `.env` file or copy and rename `.env-example`.
 
-Fill in <username> and <key> with data from your Browserstack profile.
-Run next command
-```
+Fill in `<username>` and `<key>` with data from your Browserstack profile.
+Run next command:
+
+```bash
 yarn browserstack
 ```
 
@@ -541,18 +585,27 @@ Tests run by `jest` should be named `.spec.js`, so they will be not included in 
 ### Debugging
 
 Use `debugger;` statement where you need it, run
-```
+
+```bash
 yarn test
 ```
+
 and open needed HTML file from `tests/dist` in your browser with devtools
+
 
 ## <a id="how-to-update-wiki"></a> How to update wiki
 
 There are two scripts to update wiki:
-1. `yarn wiki:build-table` — checks compatibility data updates and updates the compatibility table. Should be run manually while the release preparation.
-2. `yarn wiki:build-docs` — updates wiki pages `about-scriptlets.md` and `about-redirects.md`. They are being generated from JSDoc-type comments of corresponding scriptlets and redirects source files due to `@scriptlet`/`@redirect` and `@description` tags. Runs automatically while the release build.
+
+1. `yarn wiki:build-table` — checks compatibility data updates and updates the compatibility table.
+    Should be run manually while the release preparation.
+2. `yarn wiki:build-docs` — updates wiki pages `about-scriptlets.md` and `about-redirects.md`.
+    They are being generated from JSDoc-type comments of corresponding scriptlets and redirects source files
+    due to `@scriptlet`/`@redirect` and `@description` tags. Runs automatically while the release build.
+
 
 ## <a id="browser-compatibility"> Browser Compatibility
+
 | Browser               | Version   |
 |-----------------------|:----------|
 | Chrome                | ✅ 55     |
@@ -562,10 +615,15 @@ There are two scripts to update wiki:
 | Safari                | ✅ 11     |
 | Internet Explorer     | ❌        |
 
+
 ## <a id="used-by"> Projects using Scriptlets
+
 * [CoreLibs](https://github.com/AdguardTeam/CoreLibs) (updates automatically)
 * [TSUrlFilter](https://github.com/AdguardTeam/tsurlfilter)
-* [FiltersCompiler](https://github.com/AdguardTeam/FiltersCompiler) (`tsurlfilter`'s update might be required as well)
-* [AdguardBrowserExtension](https://github.com/AdguardTeam/AdguardBrowserExtension) (`tsurlfilter` also should be updated)
+* [FiltersCompiler](https://github.com/AdguardTeam/FiltersCompiler)
+    (`tsurlfilter`'s update might be required as well)
+* [AdguardBrowserExtension](https://github.com/AdguardTeam/AdguardBrowserExtension)
+    (`tsurlfilter` also should be updated)
 * [AdguardForSafari](https://github.com/AdguardTeam/AdGuardForSafari) (`adguard-resources` should be updated)
-* [AdguardForiOS](https://github.com/AdguardTeam/AdguardForiOS) (`tsurlfilter` should be updated in `advanced-adblocker-web-extension`)
+* [AdguardForiOS](https://github.com/AdguardTeam/AdguardForiOS)
+    (`tsurlfilter` should be updated in `advanced-adblocker-web-extension`)
