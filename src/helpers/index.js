@@ -14,6 +14,7 @@ export * from './open-shadow-dom-utils';
 export * from './prevent-utils';
 export * from './prevent-window-open-utils';
 export * from './regexp-utils';
+export * from './response-utils';
 export * from './request-utils';
 export * from './storage-utils';
 export * from './string-utils';

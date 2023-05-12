@@ -1,6 +1,5 @@
 /* eslint-disable no-underscore-dangle, no-console */
 import { runScriptlet, clearGlobalProps } from '../helpers';
-import { startsWith } from '../../src/helpers/string-utils';
 import { isEmptyObject } from '../../src/helpers/object-utils';
 
 const { test, module } = QUnit;
@@ -71,7 +70,7 @@ if (!isSupported) {
                 return;
             }
             const EXPECTED_LOG_STR_START = `${name}: fetch( url:"${INPUT_JSON_PATH}" method:"${TEST_METHOD}"`;
-            assert.ok(startsWith(input, EXPECTED_LOG_STR_START), 'console.hit input');
+            assert.ok(input.startsWith(EXPECTED_LOG_STR_START), 'console.hit input');
         };
 
         // no args -> just logging, no preventing
@@ -129,6 +128,7 @@ if (!isSupported) {
         assert.ok(isEmptyObject(parsedData1), 'Response is mocked');
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
+        // remove 'hit' property for following checking
         clearGlobalProps('hit');
 
         const response2 = await fetch(inputRequest2);
@@ -275,6 +275,23 @@ if (!isSupported) {
         done();
     });
 
+    test('simple fetch - valid response type', async (assert) => {
+        const OPAQUE_RESPONSE_TYPE = 'opaque';
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const init = {
+            method: 'GET',
+        };
+
+        runScriptlet(name, ['*', '', OPAQUE_RESPONSE_TYPE]);
+        const done = assert.async();
+
+        const response = await fetch(INPUT_JSON_PATH, init);
+
+        assert.strictEqual(response.type, OPAQUE_RESPONSE_TYPE, 'Response type is set');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
     test('simple fetch - invalid response type', async (assert) => {
         const INVALID_RESPONSE_TYPE = 'invalid_type';
         const BASIC_RESPONSE_TYPE = 'basic';
@@ -299,6 +316,74 @@ if (!isSupported) {
 
         assert.strictEqual(response.type, BASIC_RESPONSE_TYPE, 'Response type is not modified');
         assert.strictEqual(window.hit, undefined, 'hit function fired');
+        done();
+    });
+
+    test('simple fetch -- all original response properties are not modified', async (assert) => {
+        const TEST_FILE_NAME = 'test01.json';
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/${TEST_FILE_NAME}`;
+        const inputRequest1 = new Request(INPUT_JSON_PATH);
+        const done = assert.async();
+
+        runScriptlet(name, ['*']);
+
+        const response = await fetch(inputRequest1);
+
+        /**
+         * Previously, only one header was present in the returned response
+         * which was `content-type: text/plain;charset=UTF-8`.
+         * Since we are not modifying the headers, we expect to receive more than one header.
+         * We cannot check the exact headers and their values
+         * because the response may contain different headers
+         * depending on whether the tests are run in Node or in a browser.
+         */
+        let headersCount = 0;
+        // eslint-disable-next-line no-unused-vars
+        for (const key of response.headers.keys()) {
+            headersCount += 1;
+        }
+
+        assert.strictEqual(response.type, 'basic', 'response type is "basic" by default, not modified');
+        assert.true(response.url.includes(TEST_FILE_NAME), 'response url not modified');
+        assert.true(headersCount > 1, 'original headers not modified');
+
+        const responseJsonData = await response.json();
+        assert.ok(isEmptyObject(responseJsonData), 'response data is mocked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('simple fetch -- original response properties are not modified except type', async (assert) => {
+        const TEST_FILE_NAME = 'test01.json';
+        const TEST_RESPONSE_TYPE = 'opaque';
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/${TEST_FILE_NAME}`;
+        const inputRequest1 = new Request(INPUT_JSON_PATH);
+        const done = assert.async();
+
+        runScriptlet(name, ['*', 'emptyArr', TEST_RESPONSE_TYPE]);
+
+        const response = await fetch(inputRequest1);
+
+        let headersCount = 0;
+        // eslint-disable-next-line no-unused-vars
+        for (const key of response.headers.keys()) {
+            headersCount += 1;
+        }
+
+        assert.strictEqual(
+            response.type,
+            TEST_RESPONSE_TYPE,
+            `response type is modified, equals to ${TEST_RESPONSE_TYPE}`,
+        );
+        assert.true(response.url.includes(TEST_FILE_NAME), 'response url not modified');
+        assert.true(headersCount > 1, 'original headers not modified');
+
+        const responseJsonData = await response.json();
+        assert.ok(
+            Array.isArray(responseJsonData) && responseJsonData.length === 0,
+            'response data is an empty array',
+        );
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
 }

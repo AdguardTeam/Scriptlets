@@ -2,9 +2,9 @@ import {
     hit,
     getFetchData,
     objectToString,
-    noopPromiseResolve,
     matchRequestProps,
     logMessage,
+    modifyResponse,
     // following helpers should be imported and injected
     // because they are used by helpers above
     toRegExp,
@@ -24,7 +24,7 @@ import {
 /**
  * @scriptlet prevent-fetch
  * @description
- * Prevents `fetch` calls if **all** given parameters match
+ * Prevents `fetch` calls if **all** given parameters match.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-fetch-ifjs-
@@ -35,14 +35,18 @@ import {
  * ```
  *
  * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
- *   - string or regular expression for matching the URL passed to fetch call; empty string, wildcard `*` or invalid regular expression will match all fetch calls
+ *   - string or regular expression for matching the URL passed to fetch call;
+ *     empty string, wildcard `*` or invalid regular expression will match all fetch calls
  *   - colon-separated pairs `name:value` where
  *     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
- *     - `value` is string or regular expression for matching the value of the option passed to fetch call; invalid regular expression will cause any value matching
- * - `responseBody` — optional, string for defining response body value, defaults to `emptyObj`. Possible values:
+ *     - `value` is string or regular expression for matching the value of the option passed to fetch call;
+ *       invalid regular expression will cause any value matching
+ * - `responseBody` — optional, string for defining response body value,
+ *   defaults to `emptyObj`. Possible values:
  *    - `emptyObj` — empty object
  *    - `emptyArr` — empty array
- * - `responseType` — optional, string for defining response type, defaults to `default`. Possible values:
+ * - `responseType` — optional, string for defining response type,
+ * original response type is used if not specified. Possible values:
  *    - `default`
  *    - `opaque`
  *
@@ -92,7 +96,7 @@ import {
  *     ```
  */
 /* eslint-enable max-len */
-export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', responseType = 'default') {
+export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', responseType) {
     // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -108,16 +112,27 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
     } else if (responseBody === 'emptyArr') {
         strResponseBody = '[]';
     } else {
+        logMessage(source, `Invalid responseBody parameter: '${responseBody}'`);
         return;
     }
 
-    // Skip disallowed response types
-    if (!(responseType === 'default' || responseType === 'opaque')) {
-        logMessage(source, `Invalid parameter: ${responseType}`);
+    const isResponseTypeSpecified = typeof responseType !== 'undefined';
+    const isResponseTypeSupported = (responseType) => {
+        const SUPPORTED_TYPES = [
+            'default',
+            'opaque',
+        ];
+        return SUPPORTED_TYPES.includes(responseType);
+    };
+    // Skip disallowed response types,
+    // specified responseType has limited list of possible values
+    if (isResponseTypeSpecified
+        && !isResponseTypeSupported(responseType)) {
+        logMessage(source, `Invalid responseType parameter: '${responseType}'`);
         return;
     }
 
-    const handlerWrapper = (target, thisArg, args) => {
+    const handlerWrapper = async (target, thisArg, args) => {
         let shouldPrevent = false;
         const fetchData = getFetchData(args);
         if (typeof propsToMatch === 'undefined') {
@@ -130,7 +145,14 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
 
         if (shouldPrevent) {
             hit(source);
-            return noopPromiseResolve(strResponseBody, fetchData.url, responseType);
+            const origResponse = await Reflect.apply(target, thisArg, args);
+            return modifyResponse(
+                origResponse,
+                {
+                    body: strResponseBody,
+                    type: responseType,
+                },
+            );
         }
 
         return Reflect.apply(target, thisArg, args);
@@ -155,9 +177,9 @@ preventFetch.injections = [
     hit,
     getFetchData,
     objectToString,
-    noopPromiseResolve,
     matchRequestProps,
     logMessage,
+    modifyResponse,
     toRegExp,
     isValidStrPattern,
     escapeRegExp,
