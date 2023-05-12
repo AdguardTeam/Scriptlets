@@ -1,9 +1,5 @@
 {
     "default": true,
-    "files": [
-        "README.md",
-        "CHANGELOG.md"
-    ],
     "ul-indent": { "indent": 4 },
     "line-length": {
         "stern": true,
