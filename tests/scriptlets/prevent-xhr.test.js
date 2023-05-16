@@ -57,7 +57,8 @@ if (isSupported) {
             if (input.includes('trace')) {
                 return;
             }
-            const EXPECTED_LOG_STR = `${name}: xhr( method:"${METHOD}" url:"${URL}" )`;
+            // eslint-disable-next-line max-len
+            const EXPECTED_LOG_STR = `${name}: xhr( method:"${METHOD}" url:"${URL}" async:"undefined" user:"undefined" password:"undefined" )`;
             assert.ok(input.startsWith(EXPECTED_LOG_STR), 'console.hit input');
         };
 
@@ -94,6 +95,56 @@ if (isSupported) {
             done();
         };
         xhr.send();
+    });
+
+    test('Empty arg to prevent all, check getResponseHeader() and getAllResponseHeaders() methods', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = [''];
+        const HEADER_NAME_1 = 'Test-Type';
+        const HEADER_VALUE_1 = 'application/json';
+        const HEADER_NAME_2 = 'Test-Length';
+        const HEADER_VALUE_2 = '12345';
+        const ABSENT_HEADER_NAME = 'Test-Absent';
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.setRequestHeader(HEADER_NAME_1, HEADER_VALUE_1);
+        xhr.setRequestHeader(HEADER_NAME_2, HEADER_VALUE_2);
+
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            assert.strictEqual(xhr.response, '', 'Response data mocked');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+
+        assert.strictEqual(
+            xhr.getResponseHeader(HEADER_NAME_1),
+            HEADER_VALUE_1,
+            'getResponseHeader() is mocked, value 1 returned',
+        );
+        assert.strictEqual(
+            xhr.getResponseHeader(HEADER_NAME_2),
+            HEADER_VALUE_2,
+            'getResponseHeader() is mocked',
+        );
+        assert.strictEqual(
+            xhr.getResponseHeader(ABSENT_HEADER_NAME),
+            null,
+            'getResponseHeader() is mocked, null returned for non-existent header',
+        );
+
+        const expectedAllHeaders = [
+            `${HEADER_NAME_1.toLowerCase()}: ${HEADER_VALUE_1}`,
+            `${HEADER_NAME_2.toLowerCase()}: ${HEADER_VALUE_2}`,
+        ].join('\r\n');
+        assert.strictEqual(xhr.getAllResponseHeaders(), expectedAllHeaders, 'getAllResponseHeaders() is mocked');
     });
 
     test('Empty arg, prevent all, randomize response text', async (assert) => {

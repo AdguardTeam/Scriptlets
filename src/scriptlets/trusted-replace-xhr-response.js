@@ -171,13 +171,15 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
             // Manually put required values into target XHR object
             // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
             Object.defineProperties(thisArg, {
-                readyState: { value: readyState },
-                response: { value: modifiedContent },
-                responseText: { value: modifiedContent },
-                responseURL: { value: responseURL },
-                responseXML: { value: responseXML },
-                status: { value: status },
-                statusText: { value: statusText },
+                // original values
+                readyState: { value: readyState, writable: false },
+                responseURL: { value: responseURL, writable: false },
+                responseXML: { value: responseXML, writable: false },
+                status: { value: status, writable: false },
+                statusText: { value: statusText, writable: false },
+                // modified values
+                response: { value: modifiedContent, writable: false },
+                responseText: { value: modifiedContent, writable: false },
             });
 
             // Mock events
