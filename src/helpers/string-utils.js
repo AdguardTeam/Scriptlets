@@ -48,7 +48,14 @@ export const toRegExp = (input = '') => {
     if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
         return new RegExp(input.slice(1, -1));
     }
-    const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const escaped = input
+        // remove quotes' escapes for cases where scriptlet rule argument has own escaped quotes
+        // e.g #%#//scriptlet('prevent-setTimeout', '.css(\'display\',\'block\');')
+        .replace(/\\'/g, '\'')
+        .replace(/\\"/g, '"')
+        // escape special characters for following RegExp construction
+        .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     return new RegExp(escaped);
 };
 
