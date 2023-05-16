@@ -125,7 +125,7 @@ export function removeAttr(source, attrs, selector, applying = 'asap stay') {
         window.addEventListener('load', run, { once: true });
     } else if (flags.hasFlag(flags.STAY)) {
         // Only call rmattr for single 'stay' flag
-        if (!applying.indexOf(' ') !== -1) {
+        if (!applying.includes(' ')) {
             rmattr();
         }
         // 'true' for observing attributes

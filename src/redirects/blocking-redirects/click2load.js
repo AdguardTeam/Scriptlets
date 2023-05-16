@@ -38,7 +38,7 @@ function clickToLoad() {
         let queryStr = rawQueryStr.substring(1);
         // eslint-disable-next-line no-cond-assign
         while (matchedData = pattern.exec(queryStr)) {
-            if (neededParams.indexOf(matchedData[1]) > -1) {
+            if (neededParams.includes(matchedData[1])) {
                 // destructuring will not work because of babel
                 // eslint-disable-next-line prefer-destructuring
                 res[matchedData[1]] = matchedData[2];
@@ -229,8 +229,8 @@ function clickToLoad() {
         const FRAME_MARKER = 'frame';
         const SUBDOCUMENT_MARKER = 'subdocument';
         const ruleModifiers = substringAfter(rule, '$').split(',');
-        return ruleModifiers.indexOf(FRAME_MARKER) > -1
-            || ruleModifiers.indexOf(SUBDOCUMENT_MARKER) > -1;
+        return ruleModifiers.includes(FRAME_MARKER)
+            || ruleModifiers.includes(SUBDOCUMENT_MARKER);
     };
     /**
      * Checks whether script runs inside a frame

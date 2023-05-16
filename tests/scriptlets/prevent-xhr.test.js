@@ -1,6 +1,6 @@
 /* eslint-disable no-underscore-dangle, no-console */
 import { runScriptlet, clearGlobalProps } from '../helpers';
-import { startsWith, logMessage } from '../../src/helpers';
+import { logMessage } from '../../src/helpers';
 
 const { test, module } = QUnit;
 const name = 'prevent-xhr';
@@ -54,11 +54,11 @@ if (isSupported) {
 
         // mock console.log function for log checking
         console.log = function log(input) {
-            if (input.indexOf('trace') > -1) {
+            if (input.includes('trace')) {
                 return;
             }
             const EXPECTED_LOG_STR = `${name}: xhr( method:"${METHOD}" url:"${URL}" )`;
-            assert.ok(startsWith(input, EXPECTED_LOG_STR), 'console.hit input');
+            assert.ok(input.startsWith(EXPECTED_LOG_STR), 'console.hit input');
         };
 
         runScriptlet(name);

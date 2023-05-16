@@ -121,13 +121,13 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
 
         // Filter match pairs by marker
         parsedExtraMatch.forEach((matchStr) => {
-            if (matchStr.indexOf(COOKIE_MATCH_MARKER) > -1) {
+            if (matchStr.includes(COOKIE_MATCH_MARKER)) {
                 const { isInvertedMatch, matchValue } = parseMatchArg(matchStr);
                 isInvertedMatchCookie = isInvertedMatch;
                 const cookieMatch = matchValue.replace(COOKIE_MATCH_MARKER, '');
                 cookieMatches.push(cookieMatch);
             }
-            if (matchStr.indexOf(LOCAL_STORAGE_MATCH_MARKER) > -1) {
+            if (matchStr.includes(LOCAL_STORAGE_MATCH_MARKER)) {
                 const { isInvertedMatch, matchValue } = parseMatchArg(matchStr);
                 isInvertedMatchLocalStorage = isInvertedMatch;
                 const localStorageMatch = matchValue.replace(LOCAL_STORAGE_MATCH_MARKER, '');
@@ -272,7 +272,7 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
 
         // selectorsSequence should be modified after the loop to not break loop indexation
         selectorsSequence = selectorsSequence.map((selector) => {
-            return fulfilledSelectors.indexOf(selector) === -1 ? selector : null;
+            return fulfilledSelectors.includes(selector) ? null : selector;
         });
 
         // Disconnect observer after finding all elements

@@ -3,7 +3,6 @@ import {
     setPropertyAccess,
     getPropertyInChain,
     toRegExp,
-    startsWith,
     createOnErrorHandler,
     hit,
     logMessage,
@@ -114,7 +113,7 @@ export function abortCurrentInlineScript(source, property, search) {
         // https://github.com/AdguardTeam/Scriptlets/issues/130
         if (content.length === 0
             && typeof scriptEl.src !== 'undefined'
-            && startsWith(scriptEl.src, SRC_DATA_MARKER)) {
+            && scriptEl.src?.startsWith(SRC_DATA_MARKER)) {
             const encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
             content = window.atob(encodedContent);
         }
@@ -235,7 +234,6 @@ abortCurrentInlineScript.injections = [
     setPropertyAccess,
     getPropertyInChain,
     toRegExp,
-    startsWith,
     createOnErrorHandler,
     hit,
     logMessage,

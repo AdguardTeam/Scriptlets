@@ -54,7 +54,7 @@ test('Prevent redirect, delay from meta', (assert) => {
     runScriptlet(name);
     const done = assert.async();
     setTimeout(() => {
-        assert.ok(location.href.indexOf('prevent-refresh') !== -1, 'Redirect prevented');
+        assert.ok(location.href.includes('prevent-refresh'), 'Redirect prevented');
         assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
         done();
     }, 1 * 1000);
@@ -68,7 +68,7 @@ test('Prevent redirect, delay from arg (delay 0)', (assert) => {
     runScriptlet(name, ['0']);
     const done = assert.async();
     setTimeout(() => {
-        assert.ok(location.href.indexOf('prevent-refresh') !== -1, 'Redirect prevented');
+        assert.ok(location.href.includes('prevent-refresh'), 'Redirect prevented');
         assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
         removeMeta();
         done();
@@ -83,7 +83,7 @@ test('Prevent redirect, delay from arg (delay 1)', (assert) => {
     runScriptlet(name, ['1']);
     const done = assert.async();
     setTimeout(() => {
-        assert.ok(location.href.indexOf('prevent-refresh') !== -1, 'Redirect prevented');
+        assert.ok(location.href.includes('prevent-refresh'), 'Redirect prevented');
         assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
         removeMeta();
         done();

@@ -198,7 +198,7 @@ test('setAttribute, mismatching element', (assert) => {
         SET_SRC_ATTRIBUTE,
         ONERROR_PROP,
     );
-    assert.ok(window.elem.src.indexOf(TEST_SCRIPT02_FILENAME) !== -1, 'src was NOT mocked');
+    assert.ok(window.elem.src.includes(TEST_SCRIPT02_FILENAME), 'src was NOT mocked');
     assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
 });
 
@@ -214,7 +214,7 @@ test('src prop, mismatching element', (assert) => {
         SET_SRC_PROP,
         ONERROR_PROP,
     );
-    assert.ok(window.elem.src.indexOf(TEST_SCRIPT02_FILENAME) !== -1, 'src was NOT mocked');
+    assert.ok(window.elem.src.includes(TEST_SCRIPT02_FILENAME), 'src was NOT mocked');
     assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
 });
 

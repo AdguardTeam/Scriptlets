@@ -22,14 +22,14 @@ export const parseFlags = (flags) => {
 
     const passedFlags = flags.trim()
         .split(FLAGS_DIVIDER)
-        .filter((f) => VALID_FLAGS.indexOf(f) !== -1);
+        .filter((f) => VALID_FLAGS.includes(f));
 
     return {
         ASAP: ASAP_FLAG,
         COMPLETE: COMPLETE_FLAG,
         STAY: STAY_FLAG,
         hasFlag(flag) {
-            return passedFlags.indexOf(flag) !== -1;
+            return passedFlags.includes(flag);
         },
     };
 };

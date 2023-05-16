@@ -152,7 +152,7 @@ export function removeClass(source, classNames, selector, applying = 'asap stay'
         window.addEventListener('load', run, { once: true });
     } else if (flags.hasFlag(flags.STAY)) {
         // Only call removeClassHandler for single 'stay' flag
-        if (!applying.indexOf(' ') !== -1) {
+        if (!applying.includes(' ')) {
             removeClassHandler();
         }
         observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);

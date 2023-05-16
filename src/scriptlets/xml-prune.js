@@ -81,8 +81,8 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch) {
         if (typeof text === 'string') {
             // Check if "text" starts with "<" and check if it ends with ">"
             // If so, then it might be an XML file and should be pruned or logged
-            const trimedText = text.trim();
-            if (trimedText.startsWith('<') && trimedText.endsWith('>')) {
+            const trimmedText = text.trim();
+            if (trimmedText.startsWith('<') && trimmedText.endsWith('>')) {
                 return true;
             }
         }

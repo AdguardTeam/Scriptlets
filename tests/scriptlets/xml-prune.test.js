@@ -57,12 +57,12 @@ if (!isSupported) {
         console.log = function log(...args) {
             const input = args[0];
             if (typeof input === 'string' && typeof args[1] === 'undefined') {
-                if (input.indexOf('trace') > -1) {
+                if (input.includes('trace')) {
                     return;
                 }
                 const EXPECTED_LOG_STR_START = `xml-prune: fetch URL: ${MPD_OBJECTS_PATH}`;
                 assert.ok(input.startsWith(EXPECTED_LOG_STR_START), 'console.hit input');
-                assert.ok(input.indexOf('pre-roll-1-ad-1') > -1);
+                assert.ok(input.includes('pre-roll-1-ad-1'));
                 done();
             }
             nativeConsole(...args);
@@ -73,7 +73,7 @@ if (!isSupported) {
         const response = await fetch(MPD_OBJECTS_PATH);
         const responseMPD = await response.text();
 
-        assert.ok(responseMPD.indexOf('pre-roll-1-ad-1') > -1);
+        assert.ok(responseMPD.includes('pre-roll-1-ad-1'));
         assert.strictEqual(window.hit, undefined, 'should not hit');
         done();
     });
@@ -91,7 +91,7 @@ if (!isSupported) {
         const response = await fetch(MPD_OBJECTS_PATH);
         const responseMPD = await response.text();
 
-        assert.ok(responseMPD.indexOf('pre-roll-1-ad-1') > -1);
+        assert.ok(responseMPD.includes('pre-roll-1-ad-1'));
         assert.strictEqual(window.hit, undefined, 'should not hit');
         done();
     });
@@ -109,7 +109,7 @@ if (!isSupported) {
         const response = await fetch(MPD_OBJECTS_PATH);
         const responseMPD = await response.text();
 
-        assert.ok(responseMPD.indexOf('pre-roll-1-ad-1') > -1);
+        assert.ok(responseMPD.includes('pre-roll-1-ad-1'));
         assert.strictEqual(window.hit, undefined, 'should not hit');
         done();
     });
@@ -127,7 +127,7 @@ if (!isSupported) {
         const response = await fetch(MPD_OBJECTS_PATH);
         const responseMPD = await response.text();
 
-        assert.ok(responseMPD.indexOf('pre-roll-1-ad-1') > -1);
+        assert.ok(responseMPD.includes('pre-roll-1-ad-1'));
         assert.strictEqual(window.hit, undefined, 'should not hit');
         done();
     });
@@ -142,7 +142,7 @@ if (!isSupported) {
         const response = await fetch(MPD_OBJECTS_PATH);
         const responseMPD = await response.text();
 
-        assert.notOk(responseMPD.indexOf('pre-roll-1-ad-1') > -1);
+        assert.notOk(responseMPD.includes('pre-roll-1-ad-1'));
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -160,7 +160,7 @@ if (!isSupported) {
         const response = await fetch(MPD_OBJECTS_PATH);
         const responseMPD = await response.text();
 
-        assert.notOk(responseMPD.indexOf('pre-roll-1-ad-1') > -1);
+        assert.notOk(responseMPD.includes('pre-roll-1-ad-1'));
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -178,7 +178,7 @@ if (!isSupported) {
         const response = await fetch(MPD_OBJECTS_PATH);
         const responseMPD = await response.text();
 
-        assert.notOk(responseMPD.indexOf('pre-roll-1-ad-1') > -1);
+        assert.notOk(responseMPD.includes('pre-roll-1-ad-1'));
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -197,7 +197,7 @@ if (!isSupported) {
         const response = await fetch(REQUEST_URL);
         const responseMPD = await response.text();
 
-        assert.notOk(responseMPD.indexOf('pre-roll-1-ad-1') > -1);
+        assert.notOk(responseMPD.includes('pre-roll-1-ad-1'));
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
@@ -208,12 +208,12 @@ if (!isSupported) {
         console.log = function log(...args) {
             const input = args[0];
             if (typeof input === 'string' && typeof args[1] === 'undefined') {
-                if (input.indexOf('trace') > -1) {
+                if (input.includes('trace')) {
                     return;
                 }
                 const EXPECTED_LOG_STR_START = `xml-prune: XMLHttpRequest.open() URL: ${MPD_OBJECTS_PATH}`;
                 assert.ok(input.startsWith(EXPECTED_LOG_STR_START), 'console.hit input');
-                assert.ok(input.indexOf('pre-roll-1-ad-1') > -1, 'console.hit input');
+                assert.ok(input.includes('pre-roll-1-ad-1'), 'console.hit input');
                 done();
             }
             nativeConsole(...args);
@@ -224,7 +224,7 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(GET_METHOD, MPD_OBJECTS_PATH);
         xhr.onload = () => {
-            assert.ok(xhr.responseText.indexOf('pre-roll-1-ad-1') > -1);
+            assert.ok(xhr.responseText.includes('pre-roll-1-ad-1'));
             assert.strictEqual(window.hit, undefined, 'should not hit');
             done();
         };
@@ -244,7 +244,7 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(GET_METHOD, MPD_OBJECTS_PATH);
         xhr.onload = () => {
-            assert.ok(xhr.responseText.indexOf('pre-roll-1-ad-1') > -1);
+            assert.ok(xhr.responseText.includes('pre-roll-1-ad-1'));
             assert.strictEqual(window.hit, undefined, 'should not hit');
             done();
         };
@@ -264,7 +264,7 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(GET_METHOD, MPD_OBJECTS_PATH);
         xhr.onload = () => {
-            assert.ok(xhr.responseText.indexOf('pre-roll-1-ad-1') > -1);
+            assert.ok(xhr.responseText.includes('pre-roll-1-ad-1'));
             assert.strictEqual(window.hit, undefined, 'should not hit');
             done();
         };
@@ -284,7 +284,7 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(GET_METHOD, MPD_OBJECTS_PATH);
         xhr.onload = () => {
-            assert.ok(xhr.responseText.indexOf('pre-roll-1-ad-1') > -1);
+            assert.ok(xhr.responseText.includes('pre-roll-1-ad-1'));
             assert.strictEqual(window.hit, undefined, 'should not hit');
             done();
         };
@@ -301,7 +301,7 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(GET_METHOD, MPD_OBJECTS_PATH);
         xhr.onload = () => {
-            assert.notOk(xhr.responseText.indexOf('pre-roll-1-ad-1') > -1);
+            assert.notOk(xhr.responseText.includes('pre-roll-1-ad-1'));
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -321,7 +321,7 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(GET_METHOD, MPD_OBJECTS_PATH);
         xhr.onload = () => {
-            assert.notOk(xhr.responseText.indexOf('pre-roll-1-ad-1') > -1);
+            assert.notOk(xhr.responseText.includes('pre-roll-1-ad-1'));
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -341,7 +341,7 @@ if (!isSupported) {
         const xhr = new XMLHttpRequest();
         xhr.open(GET_METHOD, MPD_OBJECTS_PATH);
         xhr.onload = () => {
-            assert.notOk(xhr.responseText.indexOf('pre-roll-1-ad-1') > -1);
+            assert.notOk(xhr.responseText.includes('pre-roll-1-ad-1'));
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };

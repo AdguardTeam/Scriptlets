@@ -14,8 +14,6 @@ import {
     escapeRegExp,
     noopFunc,
     trueFunc,
-    startsWith,
-    endsWith,
     substringBefore,
     substringAfter,
 } from '../helpers/index';
@@ -106,7 +104,7 @@ export function preventWindowOpen(source, match = '*', delay, replacement) {
     };
 
     const newOpenWrapper = (url, ...args) => {
-        const shouldLog = replacement && replacement.indexOf('log') > -1;
+        const shouldLog = replacement && replacement.includes('log');
         if (shouldLog) {
             const argsStr = args && args.length > 0
                 ? `, ${args.join(', ')}`
@@ -191,8 +189,6 @@ preventWindowOpen.injections = [
     logMessage,
     noopFunc,
     trueFunc,
-    startsWith,
-    endsWith,
     substringBefore,
     substringAfter,
 ];

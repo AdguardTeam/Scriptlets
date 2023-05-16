@@ -62,7 +62,7 @@ class Redirects {
             if (!aliases) {
                 return false;
             }
-            return aliases.indexOf(title) > -1;
+            return aliases.includes(title);
         });
     }
 

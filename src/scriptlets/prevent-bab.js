@@ -63,7 +63,7 @@ export function preventBab(source) {
             let match = 0;
             for (let j = 0; j < tokens.length; j += 1) {
                 const token = tokens[j];
-                const found = token instanceof RegExp ? token.test(str) : str.indexOf(token) > -1;
+                const found = token instanceof RegExp ? token.test(str) : str.includes(token);
                 if (found) {
                     match += 1;
                 }

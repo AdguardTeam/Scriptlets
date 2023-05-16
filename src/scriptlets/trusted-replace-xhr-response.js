@@ -14,7 +14,6 @@ import {
     isValidStrPattern,
     escapeRegExp,
     isEmptyObject,
-    getObjectEntries,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -247,5 +246,4 @@ trustedReplaceXhrResponse.injections = [
     isValidStrPattern,
     escapeRegExp,
     isEmptyObject,
-    getObjectEntries,
 ];

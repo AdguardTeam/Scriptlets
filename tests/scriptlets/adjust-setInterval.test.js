@@ -297,7 +297,7 @@ test('no match -- invalid callback - undefined', (assert) => {
     let loggedMessage;
     // eslint-disable-next-line no-console
     console.log = function log(input) {
-        if (input.indexOf('trace') > -1) {
+        if (input.includes('trace')) {
             return;
         }
         loggedMessage = input;

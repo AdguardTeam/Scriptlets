@@ -126,12 +126,8 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
             const requiredPath = requiredPaths[i];
             const lastNestedPropName = requiredPath.split('.').pop();
 
-            const hasWildcard = requiredPath.indexOf('.*.') > -1
-                || requiredPath.indexOf('*.') > -1
-                || requiredPath.indexOf('.*') > -1
-                || requiredPath.indexOf('.[].') > -1
-                || requiredPath.indexOf('[].') > -1
-                || requiredPath.indexOf('.[]') > -1;
+            const wildcardSymbols = ['.*.', '*.', '.*', '.[].', '[].', '.[]'];
+            const hasWildcard = wildcardSymbols.some((symbol) => requiredPath.includes(symbol));
 
             // if the path has wildcard, getPropertyInChain should 'look through' chain props
             const details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);

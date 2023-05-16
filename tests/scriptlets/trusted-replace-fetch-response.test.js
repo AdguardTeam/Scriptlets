@@ -1,6 +1,5 @@
 /* eslint-disable no-underscore-dangle, no-console */
 import { runScriptlet, clearGlobalProps } from '../helpers';
-import { startsWith } from '../../src/helpers/string-utils';
 
 const { test, module } = QUnit;
 const name = 'trusted-replace-fetch-response';
@@ -47,11 +46,11 @@ if (!isSupported) {
 
         // mock console.log function for log checking
         console.log = function log(input) {
-            if (input.indexOf('trace') > -1) {
+            if (input.includes('trace')) {
                 return;
             }
             const EXPECTED_LOG_STR_START = `${name}: fetch( url:"${INPUT_JSON_PATH}" method:"${TEST_METHOD}"`;
-            assert.ok(startsWith(input, EXPECTED_LOG_STR_START), 'console.hit input');
+            assert.ok(input.startsWith(EXPECTED_LOG_STR_START), 'console.hit input');
         };
 
         // no args -> just logging, no replacements

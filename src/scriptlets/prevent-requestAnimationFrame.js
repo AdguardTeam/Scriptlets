@@ -8,7 +8,6 @@ import {
     // following helpers are needed for helpers above
     escapeRegExp,
     toRegExp,
-    startsWith,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -132,5 +131,4 @@ preventRequestAnimationFrame.injections = [
     // following helpers should be injected as helpers above use them
     escapeRegExp,
     toRegExp,
-    startsWith,
 ];

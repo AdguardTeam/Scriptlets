@@ -75,7 +75,7 @@ export function forceWindowClose(source, path = '') {
     if (shouldClose()) {
         closeImmediately();
 
-        if (navigator.userAgent.indexOf('Chrome') > -1) {
+        if (navigator.userAgent.includes('Chrome')) {
             closeByExtension();
         }
     }

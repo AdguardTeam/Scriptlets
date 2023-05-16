@@ -64,10 +64,10 @@ export function GoogleSyndicationAdsByGoogle(source) {
             areIframesDefined = childNodesQuantity === 2
                 // the first of child nodes should be aswift iframe
                 && adElemChildNodes[0].nodeName.toLowerCase() === 'iframe'
-                && adElemChildNodes[0].id.indexOf(ASWIFT_IFRAME_MARKER) > -1
+                && adElemChildNodes[0].id.includes(ASWIFT_IFRAME_MARKER)
                 // the second of child nodes should be google_ads iframe
                 && adElemChildNodes[1].nodeName.toLowerCase() === 'iframe'
-                && adElemChildNodes[1].id.indexOf(GOOGLE_ADS_IFRAME_MARKER) > -1;
+                && adElemChildNodes[1].id.includes(GOOGLE_ADS_IFRAME_MARKER);
         }
 
         if (!areIframesDefined) {

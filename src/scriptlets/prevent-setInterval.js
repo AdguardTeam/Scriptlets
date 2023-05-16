@@ -5,7 +5,6 @@ import {
     logMessage,
     // following helpers are needed for helpers above
     toRegExp,
-    startsWith,
     nativeIsNaN,
     parseMatchArg,
     parseDelayArg,
@@ -197,7 +196,6 @@ preventSetInterval.injections = [
     logMessage,
     // following helpers should be injected as helpers above use them
     toRegExp,
-    startsWith,
     nativeIsNaN,
     parseMatchArg,
     parseDelayArg,

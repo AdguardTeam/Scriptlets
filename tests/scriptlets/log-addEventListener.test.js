@@ -55,7 +55,7 @@ test('logs events to console', (assert) => {
     };
     console.log = function log(input) {
         // Ignore hit messages with "trace"
-        if (input.indexOf('trace') > -1) {
+        if (input.includes('trace')) {
             return;
         }
         assert.ok(input.includes(eventName), 'console.hit input should be equal');
@@ -81,11 +81,11 @@ test('logs events to console - listener is null', (assert) => {
 
     console.log = function log(input) {
         // Ignore hit messages with "trace"
-        if (input.indexOf('trace') > -1) {
+        if (input.includes('trace')) {
             return;
         }
-        assert.ok(input.indexOf(INVALID_MESSAGE_START) > -1, 'passed invalid args');
-        assert.ok(input.indexOf(INVALID_MESSAGE_PART) > -1, 'passed invalid args');
+        assert.ok(input.includes(INVALID_MESSAGE_START), 'passed invalid args');
+        assert.ok(input.includes(INVALID_MESSAGE_PART), 'passed invalid args');
     };
 
     runScriptlet(name);
@@ -114,11 +114,11 @@ test('logs events to console - listener is not a function', (assert) => {
 
     console.log = function log(input) {
         // Ignore hit messages with "trace"
-        if (input.indexOf('trace') > -1) {
+        if (input.includes('trace')) {
             return;
         }
-        assert.ok(input.indexOf(INVALID_MESSAGE_START) > -1, 'passed invalid args');
-        assert.ok(input.indexOf(INVALID_MESSAGE_PART) > -1, 'passed invalid args');
+        assert.ok(input.includes(INVALID_MESSAGE_START), 'passed invalid args');
+        assert.ok(input.includes(INVALID_MESSAGE_PART), 'passed invalid args');
     };
 
     runScriptlet(name);
@@ -144,11 +144,11 @@ test('logs events to console - event is undefined', (assert) => {
 
     console.log = function log(input) {
         // Ignore hit messages with "trace"
-        if (input.indexOf('trace') > -1) {
+        if (input.includes('trace')) {
             return;
         }
-        assert.ok(input.indexOf(INVALID_MESSAGE_START) > -1, 'passed invalid args');
-        assert.ok(input.indexOf(INVALID_MESSAGE_PART) > -1, 'passed invalid args');
+        assert.ok(input.includes(INVALID_MESSAGE_START), 'passed invalid args');
+        assert.ok(input.includes(INVALID_MESSAGE_PART), 'passed invalid args');
     };
 
     runScriptlet(name);

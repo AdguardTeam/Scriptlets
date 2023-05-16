@@ -28,7 +28,7 @@ import { redirectsMap } from '../../tmp/redirects-map';
  */
 const getRedirectByName = (name) => {
     const redirects = Object.keys(redirectsList).map((key) => redirectsList[key]);
-    return redirects.find((r) => r.names && r.names.indexOf(name) > -1);
+    return redirects.find((r) => r.names && r.names.includes(name));
 };
 
 /**

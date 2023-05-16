@@ -108,7 +108,7 @@ if (!isSupported) {
     test('do not apply style with url function, logged correctly', (assert) => {
         assert.expect(3);
         console.log = function log(input) {
-            if (input.indexOf('trace') > -1) {
+            if (input.includes('trace')) {
                 return;
             }
             assert.strictEqual(
@@ -135,7 +135,7 @@ if (!isSupported) {
     test('do not apply style with image-set function, logged correctly', (assert) => {
         assert.expect(3);
         console.log = function log(input) {
-            if (input.indexOf('trace') > -1) {
+            if (input.includes('trace')) {
                 return;
             }
             assert.strictEqual(
@@ -162,7 +162,7 @@ if (!isSupported) {
     test('do not apply invalid style, logged correctly', (assert) => {
         assert.expect(3);
         console.log = function log(input) {
-            if (typeof input !== 'string' || input.indexOf('trace') > -1) {
+            if (typeof input !== 'string' || input.includes('trace')) {
                 return;
             }
 

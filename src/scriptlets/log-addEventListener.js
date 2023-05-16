@@ -8,7 +8,6 @@ import {
     // following helpers are needed for helpers above
     objectToString,
     isEmptyObject,
-    getObjectEntries,
 } from '../helpers/index';
 
 /**
@@ -84,5 +83,4 @@ logAddEventListener.injections = [
     logMessage,
     objectToString,
     isEmptyObject,
-    getObjectEntries,
 ];

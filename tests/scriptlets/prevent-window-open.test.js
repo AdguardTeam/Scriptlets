@@ -181,7 +181,7 @@ test('new syntax: log checking - only url', (assert) => {
     // mock console.log function for log checking
     // eslint-disable-next-line no-console
     console.log = function log(input) {
-        if (input.indexOf('trace') > -1) {
+        if (input.includes('trace')) {
             return;
         }
         const EXPECTED_LOG_STR = `${name}: ${testUrl}`;
@@ -204,7 +204,7 @@ test('new syntax: log checking - url + args', (assert) => {
     // mock console.log function for log checking
     // eslint-disable-next-line no-console
     console.log = function log(input) {
-        if (input.indexOf('trace') > -1) {
+        if (input.includes('trace')) {
             return;
         }
         const EXPECTED_LOG_STR = `${name}: ${testUrl}, ${testWindowName}, ${testWindowFeatures}`;
