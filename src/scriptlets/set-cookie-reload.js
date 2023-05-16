@@ -36,6 +36,9 @@ import {
  *     - `/` — root path
  *     - `none` — to set no path at all
  *
+ * > Note that the scriptlet encodes cookie names and values,
+ * e.g value `"{ test: 'value'}"` becomes `%7B%20test%3A%20'value'%7D`.
+ *
  * **Examples**
  * ```
  * example.org#%#//scriptlet('set-cookie-reload', 'checking', 'ok')
@@ -63,6 +66,7 @@ export function setCookieReload(source, name, value, path = '/') {
 
     const cookieToSet = concatCookieNameValuePath(name, validValue, path);
     if (!cookieToSet) {
+        logMessage(source, 'Invalid cookie name or value');
         return;
     }
 

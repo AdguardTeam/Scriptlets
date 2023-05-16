@@ -39,6 +39,9 @@ import {
  *   - `/` — root path
  *   - `none` — to set no path at all
  *
+ * > Note that the scriptlet does not encode cookie names and values. As a result, if a cookie's name or value includes `;`,
+ * the scriptlet will not set the cookie since this may cause the cookie to break.
+ *
  * **Examples**
  * 1. Set cookie
  * ```
@@ -85,8 +88,9 @@ export function trustedSetCookie(source, name, value, offsetExpiresSec = '', pat
         return;
     }
 
-    let cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
+    let cookieToSet = concatCookieNameValuePath(name, parsedValue, path, false);
     if (!cookieToSet) {
+        logMessage(source, 'Invalid cookie name or value');
         return;
     }
 

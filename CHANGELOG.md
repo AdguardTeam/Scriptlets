@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `trusted-set-cookie` and `trusted-set-cookie-reaload` scriptlets to not encode cookie name and value [#311](https://github.com/AdguardTeam/Scriptlets/issues/311)
 - improved `prevent-fetch` — if `responseType` is not specified,
   original response type is returned instead of `default` [#297](https://github.com/AdguardTeam/Scriptlets/issues/291)
 

@@ -30,11 +30,18 @@ export const getCookiePath = (rawPath) => {
  * @param {string} rawName name argument of *set-cookie-* scriptlets
  * @param {string} rawValue value argument of *set-cookie-* scriptlets
  * @param {string} rawPath path argument of *set-cookie-* scriptlets
- * @returns {string|null} string OR `null` if path is not supported
+ * @param {boolean} shouldEncode if cookie's name and value should be encoded
+ * @returns {string|null} string OR `null` if name or value is invalid
  */
-export const concatCookieNameValuePath = (rawName, rawValue, rawPath) => {
-    // eslint-disable-next-line max-len
-    return `${encodeURIComponent(rawName)}=${encodeURIComponent(rawValue)}; ${getCookiePath(rawPath)};`;
+export const concatCookieNameValuePath = (rawName, rawValue, rawPath, shouldEncode = true) => {
+    const COOKIE_BREAKER = ';';
+    // semicolon will cause the cookie to break
+    if (!shouldEncode && (rawName.includes(COOKIE_BREAKER) || `${rawValue}`.includes(COOKIE_BREAKER))) {
+        return null;
+    }
+    const name = shouldEncode ? encodeURIComponent(rawName) : rawName;
+    const value = shouldEncode ? encodeURIComponent(rawValue) : rawValue;
+    return `${name}=${value}; ${getCookiePath(rawPath)};`;
 };
 
 /**

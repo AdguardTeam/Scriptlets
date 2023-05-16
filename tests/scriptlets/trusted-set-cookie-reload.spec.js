@@ -72,7 +72,7 @@ describe('Test trusted-set-cookie-reload scriptlet', () => {
         // and jest running test
         const cookieValue = parseCookieString(document.cookie)[cName];
         // Check only day, month and year
-        const currentDate = encodeURIComponent(Date().split(' ', 4).join(' '));
+        const currentDate = Date().split(' ', 4).join(' ');
         const dateDiff = cookieValue.split(' ', 4).join(' ');
 
         expect(dateDiff.startsWith(currentDate)).toBeTruthy();
