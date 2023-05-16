@@ -8,6 +8,7 @@ import {
 
 /**
  * @redirect pardot-1.0
+ *
  * @description
  * Mocks the pd.js file of Salesforce.
  * https://pi.pardot.com/pd.js
@@ -18,6 +19,8 @@ import {
  * ||pi.pardot.com/pd.js$script,redirect=pardot
  * ||pacedg.com.au/pd.js$redirect=pardot
  * ```
+ *
+ * @added v1.6.55.
  */
 
 export function Pardot(source) {

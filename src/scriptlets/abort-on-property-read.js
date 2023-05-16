@@ -12,6 +12,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet abort-on-property-read
+ *
  * @description
  * Aborts a script when it attempts to **read** the specified property.
  *
@@ -36,6 +37,8 @@ import {
  * ! Aborts script when it tries to access `navigator.language`
  * example.org#%#//scriptlet('abort-on-property-read', 'navigator.language')
  * ```
+ *
+ * @added v1.0.4.
  */
 /* eslint-enable max-len */
 export function abortOnPropertyRead(source, property) {

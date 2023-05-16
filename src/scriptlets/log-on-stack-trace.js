@@ -11,6 +11,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet log-on-stack-trace
+ *
  * @description
  * This scriptlet is basically the same as [abort-on-stack-trace](#abort-on-stack-trace), but instead of aborting it logs:
  * - function and source script names pairs that access the given property
@@ -23,6 +24,8 @@ import {
  * ```
  *
  * - `property` — required, path to a property. The property must be attached to window.
+ *
+ * @added v1.5.0.
  */
 /* eslint-enable max-len */
 export function logOnStacktrace(source, property) {

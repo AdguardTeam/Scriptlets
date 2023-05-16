@@ -26,6 +26,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @trustedScriptlet trusted-set-constant
+ *
  * @description
  * Creates a constant property and assigns it a specified value.
  *
@@ -79,6 +80,8 @@ import {
  *
  * ✔ document.first === 1  // if the condition described above is met
  * ```
+ *
+ * @added v1.8.2.
  */
 /* eslint-enable max-len */
 export function trustedSetConstant(source, property, value, stack) {

@@ -2,6 +2,7 @@ import { hit, noopFunc } from '../helpers/index';
 
 /**
  * @redirect ati-smarttag
+ *
  * @description
  * Mocks AT Internat SmartTag.
  * https://developers.atinternet-solutions.com/as2-tagging-en/javascript-en/getting-started-javascript-en/tracker-initialisation-javascript-en/
@@ -10,6 +11,8 @@ import { hit, noopFunc } from '../helpers/index';
  * ```
  * ||bloctel.gouv.fr/assets/scripts/smarttag.js$script,redirect=ati-smarttag
  * ```
+ *
+ * @added v1.5.0.
  */
 export function ATInternetSmartTag(source) {
     const setNoopFuncWrapper = {

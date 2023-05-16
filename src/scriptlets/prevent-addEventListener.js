@@ -9,6 +9,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet prevent-addEventListener
+ *
  * @description
  * Prevents adding event listeners for the specified events and callbacks.
  *
@@ -43,6 +44,8 @@ import {
  *         window.test = 'searchString';
  *     });
  *     ```
+ *
+ * @added v1.0.4.
  */
 /* eslint-enable max-len */
 export function preventAddEventListener(source, typeSearch, listenerSearch) {

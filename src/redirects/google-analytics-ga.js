@@ -7,6 +7,7 @@ import {
 
 /**
  * @redirect google-analytics-ga
+ *
  * @description
  * Mocks old Google Analytics API.
  *
@@ -17,6 +18,8 @@ import {
  * ```
  * ||google-analytics.com/ga.js$script,redirect=google-analytics-ga
  * ```
+ *
+ * @added v1.0.10.
  */
 export function GoogleAnalyticsGa(source) {
     // Gaq constructor

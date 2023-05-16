@@ -3,6 +3,7 @@ import { hit, logMessage } from '../helpers/index';
 
 /**
  * @scriptlet noeval
+ *
  * @description
  * Prevents page to use eval.
  * Notifies about attempts in the console
@@ -17,6 +18,8 @@ import { hit, logMessage } from '../helpers/index';
  * ```
  * example.org#%#//scriptlet('noeval')
  * ```
+ *
+ * @added v1.0.4.
  */
 export function noeval(source) {
     window.eval = function evalWrapper(s) {

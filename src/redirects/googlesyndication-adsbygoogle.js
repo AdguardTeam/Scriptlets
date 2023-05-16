@@ -3,6 +3,7 @@ import { hit } from '../helpers/index';
 /* eslint-disable max-len */
 /**
  * @redirect googlesyndication-adsbygoogle
+ *
  * @description
  * Mocks Google AdSense API.
  *
@@ -13,6 +14,8 @@ import { hit } from '../helpers/index';
  * ```
  * ||pagead2.googlesyndication.com/pagead/js/adsbygoogle.js$script,redirect=googlesyndication-adsbygoogle
  * ```
+ *
+ * @added v1.0.10.
  */
 /* eslint-enable max-len */
 export function GoogleSyndicationAdsByGoogle(source) {

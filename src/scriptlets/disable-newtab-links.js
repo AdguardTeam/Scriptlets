@@ -2,6 +2,7 @@ import { hit } from '../helpers/index';
 
 /**
  * @scriptlet disable-newtab-links
+ *
  * @description
  * Prevents opening new tabs and windows if there is `target` attribute in element.
  *
@@ -12,6 +13,8 @@ import { hit } from '../helpers/index';
  * ```
  * example.org#%#//scriptlet('disable-newtab-links')
  * ```
+ *
+ * @added v1.0.4.
  */
 export function disableNewtabLinks(source) {
     document.addEventListener('click', (ev) => {

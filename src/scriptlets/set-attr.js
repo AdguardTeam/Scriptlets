@@ -10,6 +10,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet set-attr
+ *
  * @description
  * Sets the specified attribute on the specified elements. This scriptlet runs once when the page loads
  * and after that and after that on DOM tree changes.
@@ -75,6 +76,8 @@ import {
  *     <!-- after -->
  *     <a class="class" test-attribute="fAlse">Some text</div>
  *     ```
+ *
+ * @added v1.5.0.
  */
 /* eslint-enable max-len */
 export function setAttr(source, selector, attr, value = '') {

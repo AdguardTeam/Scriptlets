@@ -7,6 +7,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet inject-css-in-shadow-dom
+ *
  * @description
  * Injects CSS rule into selected Shadow DOM subtrees on a page
  *
@@ -29,6 +30,8 @@ import {
  * ```
  * example.org#%#//scriptlet('inject-css-in-shadow-dom', '#content { margin-top: 0 !important; }', '.row > #hidden')
  * ```
+ *
+ * @added v1.8.2.
  */
 /* eslint-enable max-len */
 

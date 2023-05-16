@@ -9,6 +9,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet prevent-refresh
+ *
  * @description
  * Prevents reloading of a document through a meta "refresh" tag.
  *
@@ -32,6 +33,8 @@ import {
  * ```
  *     cryptodirectories.com#%#//scriptlet('prevent-refresh', 3)
  * ```
+ *
+ * @added v1.6.2.
  */
 /* eslint-enable max-len */
 export function preventRefresh(source, delaySec) {

@@ -2,6 +2,7 @@ import { hit, noopFunc } from '../helpers/index';
 
 /**
  * @redirect metrika-yandex-tag
+ *
  * @description
  * Mocks Yandex Metrika API.
  * https://yandex.ru/support/metrica/objects/method-reference.html
@@ -10,6 +11,8 @@ import { hit, noopFunc } from '../helpers/index';
  * ```
  * ||mc.yandex.ru/metrika/tag.js$script,redirect=metrika-yandex-tag
  * ```
+ *
+ * @added v1.0.10.
  */
 export function metrikaYandexTag(source) {
     const asyncCallbackFromOptions = (id, param, options = {}) => {

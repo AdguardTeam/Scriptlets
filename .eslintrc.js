@@ -37,6 +37,7 @@ module.exports = {
                 'scriptlet',
                 'trustedScriptlet',
                 'redirect',
+                'added',
                 'jest-environment',
             ],
         }],

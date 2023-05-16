@@ -23,6 +23,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet prevent-fetch
+ *
  * @description
  * Prevents `fetch` calls if **all** given parameters match.
  *
@@ -94,6 +95,8 @@ import {
  *     ```
  *     example.org#%#//scriptlet('prevent-fetch', '*', '', 'opaque')
  *     ```
+ *
+ * @added v1.3.18.
  */
 /* eslint-enable max-len */
 export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', responseType) {

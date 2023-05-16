@@ -8,6 +8,7 @@ import {
 
 /**
  * @redirect prebid
+ *
  * @description
  * Mocks the prebid.js header bidding suit.
  * https://docs.prebid.org/
@@ -16,6 +17,8 @@ import {
  * ```
  * ||tmgrup.com.tr/bd/hb/prebid.js$script,redirect=prebid
  * ```
+ *
+ * @added v1.6.2.
  */
 
 export function Prebid(source) {

@@ -2,6 +2,7 @@ import { preventBab as preventBabScriptlet } from '../scriptlets/prevent-bab';
 
 /**
  * @redirect prevent-bab
+ *
  * @description
  * Prevents BlockAdblock script from detecting an ad blocker.
  *
@@ -15,6 +16,8 @@ import { preventBab as preventBabScriptlet } from '../scriptlets/prevent-bab';
  * ```
  * /blockadblock.$script,redirect=prevent-bab
  * ```
+ *
+ * @added v1.3.19.
  */
 const preventBab = preventBabScriptlet;
 preventBab.names = [

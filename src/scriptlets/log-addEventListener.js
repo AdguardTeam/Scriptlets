@@ -13,6 +13,7 @@ import {
 
 /**
  * @scriptlet log-addEventListener
+ *
  * @description
  * Logs all addEventListener calls to the console.
  *
@@ -23,6 +24,8 @@ import {
  * ```
  * example.org#%#//scriptlet('log-addEventListener')
  * ```
+ *
+ * @added v1.0.4.
  */
 export function logAddEventListener(source) {
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;

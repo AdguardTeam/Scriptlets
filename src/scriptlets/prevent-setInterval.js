@@ -21,6 +21,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet prevent-setInterval
+ *
  * @description
  * Prevents a `setInterval` call if:
  * 1) the text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
@@ -134,6 +135,8 @@ import {
  *         window.test = "value";
  *     }, 300 + Math.random());
  *     ```
+ *
+ * @added v1.0.4.
  */
 /* eslint-enable max-len */
 export function preventSetInterval(source, matchCallback, matchDelay) {

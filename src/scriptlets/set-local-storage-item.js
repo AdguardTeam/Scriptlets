@@ -9,6 +9,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet set-local-storage-item
+ *
  * @description
  * Adds specified key and its value to localStorage object, or updates the value of the key if it already exists.
  * Scriptlet won't set item if storage is full.
@@ -38,6 +39,8 @@ import {
  *
  * example.org#%#//scriptlet('set-local-storage-item', 'exit-intent-marketing', '1')
  * ```
+ *
+ * @added v1.4.3.
  */
 /* eslint-enable max-len */
 

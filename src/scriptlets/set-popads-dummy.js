@@ -3,6 +3,7 @@ import { hit } from '../helpers/index';
 
 /**
  * @scriptlet set-popads-dummy
+ *
  * @description
  * Sets static properties PopAds and popns.
  *
@@ -13,6 +14,8 @@ import { hit } from '../helpers/index';
  * ```
  * example.org#%#//scriptlet('set-popads-dummy')
  * ```
+ *
+ * @added v1.0.4.
  */
 export function setPopadsDummy(source) {
     delete window.PopAds;

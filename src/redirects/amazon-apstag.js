@@ -2,6 +2,7 @@ import { hit, noopFunc } from '../helpers/index';
 
 /**
  * @redirect amazon-apstag
+ *
  * @description
  * Mocks Amazon's apstag.js
  *
@@ -12,6 +13,8 @@ import { hit, noopFunc } from '../helpers/index';
  * ```
  * ||amazon-adsystem.com/aax2/apstag.js$script,redirect=amazon-apstag
  * ```
+ *
+ * @added v1.2.3.
  */
 export function AmazonApstag(source) {
     const apstagWrapper = {

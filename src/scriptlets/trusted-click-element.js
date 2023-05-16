@@ -10,6 +10,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @trustedScriptlet trusted-click-element
+ *
  * @description
  * Clicks selected elements in a strict sequence, ordered by selectors passed, and waiting for them to render in the DOM first.
  * Deactivates after all elements have been clicked or by 10s timeout.
@@ -72,6 +73,8 @@ import {
  * ```
  * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:cmpconsent, !localStorage:promo')
  * ```
+ *
+ * @added v1.7.3.
  */
 /* eslint-enable max-len */
 export function trustedClickElement(source, selectors, extraMatch = '', delay = NaN) {

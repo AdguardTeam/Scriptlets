@@ -16,6 +16,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @trustedScriptlet trusted-set-cookie-reload
+ *
  * @description
  * Sets a cookie with arbitrary name and value,
  * and with optional ability to offset cookie attribute 'expires' and set path.
@@ -70,6 +71,8 @@ import {
  * ```
  * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'decline', '', 'none')
  * ```
+ *
+ * @added v1.7.10.
  */
 /* eslint-enable max-len */
 

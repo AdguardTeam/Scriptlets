@@ -14,6 +14,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet set-cookie
+ *
  * @description
  * Sets a cookie with the specified name, value, and path.
  *
@@ -46,6 +47,8 @@ import {
  *
  * example.org#%#//scriptlet('set-cookie', 'cookie_consent', 'ok', 'none')
  * ```
+ *
+ * @added v1.2.3.
  */
 /* eslint-enable max-len */
 export function setCookie(source, name, value, path = '/') {

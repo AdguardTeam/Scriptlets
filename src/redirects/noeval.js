@@ -2,6 +2,7 @@ import { noeval } from '../scriptlets/noeval';
 
 /**
  * @redirect noeval
+ *
  * @description
  * Redirects request to the source which sets static properties to PopAds and popns objects.
  *
@@ -18,5 +19,7 @@ import { noeval } from '../scriptlets/noeval';
  * ```
  * ||example.org/index.js$script,redirect=noeval
  * ```
+ *
+ * @added v1.0.4.
  */
 export { noeval };

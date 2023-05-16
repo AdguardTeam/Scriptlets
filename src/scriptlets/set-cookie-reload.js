@@ -13,6 +13,7 @@ import {
 
 /**
  * @scriptlet set-cookie-reload
+ *
  * @description
  * Sets a cookie with the specified name and value, and path,
  * and reloads the current page after the cookie setting.
@@ -47,6 +48,8 @@ import {
  *
  * example.org#%#//scriptlet('set-cookie-reload', 'cookie-set', 'true', 'none')
  * ```
+ *
+ * @added v1.3.14.
  */
 export function setCookieReload(source, name, value, path = '/') {
     if (isCookieSetWithValue(document.cookie, name, value)) {

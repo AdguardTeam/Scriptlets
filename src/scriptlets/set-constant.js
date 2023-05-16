@@ -25,6 +25,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet set-constant
+ *
  * @description
  * Creates a constant property and assigns it one of the values from the predefined list.
  *
@@ -89,6 +90,8 @@ import {
  *
  * ✔ document.third() === true  // if the condition described above is met
  * ```
+ *
+ * @added v1.0.4.
  */
 /* eslint-enable max-len */
 export function setConstant(source, property, value, stack) {

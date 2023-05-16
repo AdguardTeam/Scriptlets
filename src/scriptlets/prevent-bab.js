@@ -3,6 +3,7 @@ import { hit } from '../helpers/index';
 
 /**
  * @scriptlet prevent-bab
+ *
  * @description
  * Prevents BlockAdblock script from detecting an ad blocker.
  *
@@ -16,6 +17,8 @@ import { hit } from '../helpers/index';
  * ```
  * example.org#%#//scriptlet('prevent-bab')
  * ```
+ *
+ * @added v1.0.4.
  */
 export function preventBab(source) {
     const nativeSetTimeout = window.setTimeout;

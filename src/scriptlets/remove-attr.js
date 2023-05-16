@@ -11,6 +11,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet remove-attr
+ *
  * @description
  * Removes the specified attributes from DOM nodes. This scriptlet runs once when the page loads
  * and after that periodically in order to DOM tree changes by default,
@@ -66,6 +67,8 @@ import {
  *     ```
  *     example.org#%#//scriptlet('remove-attr', 'example', 'html', 'asap complete')
  *     ```
+ *
+ * @added v1.0.4.
  */
 /* eslint-enable max-len */
 export function removeAttr(source, attrs, selector, applying = 'asap stay') {

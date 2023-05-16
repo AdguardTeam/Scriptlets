@@ -7,6 +7,7 @@ import {
 
 /**
  * @redirect google-analytics
+ *
  * @description
  * Mocks Google's Analytics and Tag Manager APIs.
  * [Covers obsolete googletagmanager-gtm redirect functionality](https://github.com/AdguardTeam/Scriptlets/issues/127).
@@ -19,6 +20,8 @@ import {
  * ||google-analytics.com/analytics.js$script,redirect=google-analytics
  * ||googletagmanager.com/gtm.js$script,redirect=googletagmanager-gtm
  * ```
+ *
+ * @added v1.0.10.
  */
 export function GoogleAnalytics(source) {
     // eslint-disable-next-line func-names

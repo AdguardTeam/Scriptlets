@@ -7,6 +7,7 @@ import {
 
 /**
  * @redirect google-ima3
+ *
  * @description
  * Mocks the IMA SDK of Google.
  *
@@ -14,6 +15,8 @@ import {
  * ```
  * ||imasdk.googleapis.com/js/sdkloader/ima3.js$script,redirect=google-ima3
  * ```
+ *
+ * @added v1.6.2.
  */
 
 export function GoogleIma3(source) {

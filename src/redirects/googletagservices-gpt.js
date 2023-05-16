@@ -11,6 +11,7 @@ import {
 
 /**
  * @redirect googletagservices-gpt
+ *
  * @description
  * Mocks Google Publisher Tag API.
  *
@@ -21,6 +22,8 @@ import {
  * ```
  * ||googletagservices.com/tag/js/gpt.js$script,redirect=googletagservices-gpt
  * ```
+ *
+ * @added v1.0.10.
  */
 export function GoogleTagServicesGpt(source) {
     const slots = new Map();

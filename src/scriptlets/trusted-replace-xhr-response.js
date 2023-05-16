@@ -20,6 +20,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @trustedScriptlet trusted-replace-xhr-response
+ *
  * @description
  * Replaces response content of `xhr` requests if **all** given parameters match.
  *
@@ -68,6 +69,8 @@ import {
  *     ```
  *     example.org#%#//scriptlet('trusted-replace-xhr-response', '*', '', 'example.com')
  *     ```
+ *
+ * @added v1.7.3.
  */
 /* eslint-enable max-len */
 export function trustedReplaceXhrResponse(source, pattern = '', replacement = '', propsToMatch = '') {

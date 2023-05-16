@@ -4,6 +4,7 @@ import { toRegExp, hit } from '../helpers/index';
 
 /**
  * @scriptlet prevent-eval-if
+ *
  * @description
  * Prevents page to use eval matching payload.
  *
@@ -24,6 +25,8 @@ import { toRegExp, hit } from '../helpers/index';
  * ! Prevents eval if it matches 'test'
  * example.org#%#//scriptlet('prevent-eval-if', 'test')
  * ```
+ *
+ * @added v1.0.4.
  */
 export function preventEvalIf(source, search) {
     const searchRegexp = toRegExp(search);

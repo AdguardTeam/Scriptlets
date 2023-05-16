@@ -7,6 +7,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet xml-prune
+ *
  * @description
  * Removes an element from the specified XML.
  *
@@ -46,6 +47,8 @@ import {
  *     ```
  *     example.org#%#//scriptlet('xml-prune', '', '', '.mpd')
  *     ```
+ *
+ * @added 1.7.3.
  */
 /* eslint-enable max-len */
 

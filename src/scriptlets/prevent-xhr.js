@@ -25,6 +25,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet prevent-xhr
+ *
  * @description
  * Prevents `xhr` calls if **all** given parameters match.
  *
@@ -86,6 +87,8 @@ import {
  *     ```
  *    example.org#%#//scriptlet('prevent-xhr', 'example.org', 'length:100-300')
  *     ```
+ *
+ * @added v1.5.0.
  */
 /* eslint-enable max-len */
 export function preventXHR(source, propsToMatch, customResponseText) {

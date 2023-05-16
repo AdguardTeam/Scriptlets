@@ -7,6 +7,7 @@ import {
 
 /**
  * @scriptlet prevent-adfly
+ *
  * @description
  * Prevents anti-adblock scripts on adfly short links.
  *
@@ -17,6 +18,8 @@ import {
  * ```
  * example.org#%#//scriptlet('prevent-adfly')
  * ```
+ *
+ * @added v1.0.4.
  */
 export function preventAdfly(source) {
     const isDigit = (data) => /^\d$/.test(data);

@@ -4,6 +4,7 @@ import {
 
 /**
  * @scriptlet prevent-popads-net
+ *
  * @description
  * Aborts on property write (PopAds, popns), throws reference error with random id.
  *
@@ -14,6 +15,8 @@ import {
  * ```
  * example.org#%#//scriptlet('prevent-popads-net')
  * ```
+ *
+ * @added v1.0.4.
  */
 export function preventPopadsNet(source) {
     const rid = randomId();
