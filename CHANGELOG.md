@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- ability for `prevent-element-src-loading` scriptlet to prevent inline `onerror` and match `link` tag [#276](https://github.com/AdguardTeam/Scriptlets/issues/276)
+
 ### Changed
 
 - `trusted-set-cookie` and `trusted-set-cookie-reload` scriptlets to not encode cookie name and value

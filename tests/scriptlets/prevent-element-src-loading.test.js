@@ -14,11 +14,13 @@ const afterEach = () => {
     if (window.elem) {
         window.elem.remove();
     }
-    clearGlobalProps('hit', '__debug', 'elem');
+    clearGlobalProps('hit', '__debug', 'elem', 'scriptLoaded', 'scriptBlocked');
 };
 
 const SET_SRC_ATTRIBUTE = 'setSrcAttribute';
 const SET_SRC_PROP = 'srcProp';
+const SET_LINK_HREF_ATTRIBUTE = 'linkHrefAttribute';
+const SET_LINK_HREF_PROP = 'linkHrefProp';
 const ONERROR_PROP = 'onerrorProp';
 const ERROR_LISTENER = 'addErrorListener';
 
@@ -35,6 +37,18 @@ const createTestTag = (assert, nodeName, url, srcMethod, onerrorMethod) => {
         }
         case SET_SRC_ATTRIBUTE: {
             node.setAttribute('src', url);
+            break;
+        }
+        case SET_LINK_HREF_PROP: {
+            node.href = url;
+            node.rel = 'preload';
+            node.as = 'script';
+            break;
+        }
+        case SET_LINK_HREF_ATTRIBUTE: {
+            node.setAttribute('href', url);
+            node.setAttribute('rel', 'preload');
+            node.setAttribute('as', 'script');
             break;
         }
         default:
@@ -65,10 +79,39 @@ const createTestTag = (assert, nodeName, url, srcMethod, onerrorMethod) => {
     return node;
 };
 
+const onErrorTestTag = (assert, url, testPassed, shouldLoad) => {
+    const done = assert.async();
+    // Used in onload event
+    window.scriptLoaded = () => {
+        if (shouldLoad) {
+            testPassed = true;
+            assert.strictEqual(testPassed, true, 'onload event fired');
+            assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        } else {
+            assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+        }
+        done();
+    };
+    // Used in onerror event
+    window.scriptBlocked = () => {
+        if (shouldLoad) {
+            assert.strictEqual(testPassed, true, 'onload event fired');
+            assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        } else {
+            assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+        }
+        done();
+    };
+    const html = `<script src="${url}" onload="scriptLoaded()" onerror="scriptBlocked()"><\\/script>`;
+    const scriptEl = document.createRange().createContextualFragment(html);
+    document.body.appendChild(scriptEl);
+};
+
 const srcMockData = {
     script: 'data:text/javascript;base64,KCk9Pnt9',
     img: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
     iframe: 'data:text/html;base64, PGRpdj48L2Rpdj4=',
+    link: 'data:text/plain;base64,',
 };
 const TEST_FILES_DIR = './test-files/';
 const TEST_SCRIPT01_FILENAME = 'test-script01.js';
@@ -78,6 +121,7 @@ const TEST_IFRAME_FILENAME = 'empty.html';
 const SCRIPT_TARGET_NODE = 'script';
 const IMG_TARGET_NODE = 'img';
 const IFRAME_TARGET_NODE = 'iframe';
+const LINK_TARGET_NODE = 'link';
 
 module(name, { beforeEach, afterEach });
 
@@ -90,7 +134,8 @@ test('setAttribute, matching script element', (assert) => {
         assert,
         SCRIPT_TARGET_NODE,
         SOURCE_PATH,
-        SET_SRC_ATTRIBUTE, ONERROR_PROP,
+        SET_SRC_ATTRIBUTE,
+        ONERROR_PROP,
     );
     assert.strictEqual(elem.src, srcMockData[SCRIPT_TARGET_NODE], 'src was mocked');
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
@@ -130,6 +175,22 @@ test('setAttribute, matching iframe element', (assert) => {
         || window.elem.src === srcMockData[IFRAME_TARGET_NODE].split(' ').join(''),
         'src was mocked',
     );
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
+
+test('setAttribute, matching link element', (assert) => {
+    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_SCRIPT01_FILENAME}`;
+    const scriptletArgs = [LINK_TARGET_NODE, TEST_SCRIPT01_FILENAME];
+    runScriptlet(name, scriptletArgs);
+
+    var elem = createTestTag(
+        assert,
+        LINK_TARGET_NODE,
+        SOURCE_PATH,
+        SET_LINK_HREF_ATTRIBUTE,
+        ONERROR_PROP,
+    );
+    assert.strictEqual(elem.href, srcMockData[LINK_TARGET_NODE], 'src was mocked');
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
@@ -183,6 +244,22 @@ test('src prop, matching iframe element', (assert) => {
         || window.elem.src === srcMockData[IFRAME_TARGET_NODE].split(' ').join(''),
         'src was mocked',
     );
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
+
+test('src prop, matching link element', (assert) => {
+    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_SCRIPT01_FILENAME}`;
+    const scriptletArgs = [LINK_TARGET_NODE, TEST_SCRIPT01_FILENAME];
+    runScriptlet(name, scriptletArgs);
+
+    var elem = createTestTag(
+        assert,
+        LINK_TARGET_NODE,
+        SOURCE_PATH,
+        SET_LINK_HREF_PROP,
+        ONERROR_PROP,
+    );
+    assert.strictEqual(elem.href, srcMockData[LINK_TARGET_NODE], 'href was mocked');
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
@@ -302,12 +379,48 @@ test('setAttribute, matching script element, test addEventListener', (assert) =>
         assert,
         SCRIPT_TARGET_NODE,
         SOURCE_PATH,
-        SET_SRC_ATTRIBUTE, ONERROR_PROP,
+        SET_SRC_ATTRIBUTE,
+        ONERROR_PROP,
     );
     // It's intentionally used without a specific target (like window/document) before addEventListener
     // because in such case, thisArg in the addEventListenerWrapper is undefined
     // https://github.com/AdguardTeam/Scriptlets/issues/270
-    addEventListener('visibilitychange', () => {});
+    addEventListener('visibilitychange', () => { });
     assert.strictEqual(elem.src, srcMockData[SCRIPT_TARGET_NODE], 'src was mocked');
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
+
+test('onerror inline, matching node and source', (assert) => {
+    const SOURCE_PATH = '/adscript1.js';
+    const scriptletArgs = [SCRIPT_TARGET_NODE, SOURCE_PATH];
+    var testPassed = false;
+    var shouldLoad = true;
+    runScriptlet(name, scriptletArgs);
+
+    // onload event should be fired
+    onErrorTestTag(assert, SOURCE_PATH, testPassed, shouldLoad);
+});
+
+test('onerror inline, do not match node', (assert) => {
+    const SOURCE_PATH = '/adscript2.js';
+    const scriptletArgs = [LINK_TARGET_NODE, SOURCE_PATH];
+    var testPassed = false;
+    var shouldLoad = false;
+    runScriptlet(name, scriptletArgs);
+
+    // onerror event should be fired
+    // and window.hit should not be fired
+    onErrorTestTag(assert, SOURCE_PATH, testPassed, shouldLoad);
+});
+
+test('onerror inline, do not match source', (assert) => {
+    const SOURCE_PATH = '/not-existing-script.js';
+    const scriptletArgs = [SCRIPT_TARGET_NODE, 'test.js'];
+    var testPassed = false;
+    var shouldLoad = false;
+    runScriptlet(name, scriptletArgs);
+
+    // onerror event should be fired
+    // and window.hit should not be fired
+    onErrorTestTag(assert, SOURCE_PATH, testPassed, shouldLoad);
 });
