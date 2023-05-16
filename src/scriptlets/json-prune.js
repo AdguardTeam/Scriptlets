@@ -12,8 +12,9 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet json-prune
+ *
  * @description
- * Removes specified properties from the result of calling JSON.parse and returns the caller
+ * Removes specified properties from the result of calling JSON.parse and returns the caller.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#json-prunejs-
@@ -83,6 +84,8 @@ import {
  *     ```
  *     example.org#%#//scriptlet('json-prune', '', '"id":"117458"')
  *     ```
+ *
+ * @added v1.1.0.
  */
 /* eslint-enable max-len */
 export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
@@ -123,12 +126,8 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
             const requiredPath = requiredPaths[i];
             const lastNestedPropName = requiredPath.split('.').pop();
 
-            const hasWildcard = requiredPath.indexOf('.*.') > -1
-                || requiredPath.indexOf('*.') > -1
-                || requiredPath.indexOf('.*') > -1
-                || requiredPath.indexOf('.[].') > -1
-                || requiredPath.indexOf('[].') > -1
-                || requiredPath.indexOf('.[]') > -1;
+            const wildcardSymbols = ['.*.', '*.', '.*', '.[].', '[].', '.[]'];
+            const hasWildcard = wildcardSymbols.some((symbol) => requiredPath.includes(symbol));
 
             // if the path has wildcard, getPropertyInChain should 'look through' chain props
             const details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);

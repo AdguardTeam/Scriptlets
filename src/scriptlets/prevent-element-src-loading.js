@@ -8,6 +8,7 @@ import {
 /* eslint-disable max-len, consistent-return */
 /**
  * @scriptlet prevent-element-src-loading
+ *
  * @description
  * Prevents target element source loading without triggering 'onerror' listeners and not breaking 'onload' ones.
  *
@@ -27,6 +28,8 @@ import {
  * ```
  *     example.org#%#//scriptlet('prevent-element-src-loading', 'script' ,'adsbygoogle')
  * ```
+ *
+ * @added v1.6.2.
  */
 /* eslint-enable max-len */
 export function preventElementSrcLoading(source, tagName, match) {

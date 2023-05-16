@@ -3,8 +3,6 @@ import {
     trueFunc,
 } from './noop-utils';
 import {
-    startsWith,
-    endsWith,
     substringBefore,
     substringAfter,
 } from './string-utils';
@@ -16,11 +14,11 @@ export const handleOldReplacement = (replacement) => {
         result = noopFunc;
     } else if (replacement === 'trueFunc') {
         result = trueFunc;
-    } else if (replacement.indexOf('=') > -1) {
+    } else if (replacement.includes('=')) {
         // We should return noopFunc instead of window.open
         // but with some property if website checks it (examples 5, 6)
         // https://github.com/AdguardTeam/Scriptlets/issues/71
-        const isProp = startsWith(replacement, '{') && endsWith(replacement, '}');
+        const isProp = replacement.startsWith('{') && replacement.endsWith('}');
         if (isProp) {
             const propertyPart = replacement.slice(1, -1);
             const propertyName = substringBefore(propertyPart, '=');

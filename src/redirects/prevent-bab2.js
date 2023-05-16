@@ -3,6 +3,7 @@ import { hit } from '../helpers/index';
 
 /**
  * @redirect prevent-bab2
+ *
  * @description
  * Prevents BlockAdblock script from detecting an ad blocker.
  *
@@ -15,6 +16,8 @@ import { hit } from '../helpers/index';
  * ```
  * /blockadblock.$script,redirect=prevent-bab2
  * ```
+ *
+ * @added v1.5.0.
  */
 export function preventBab2(source) {
     const script = document.currentScript;

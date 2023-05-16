@@ -44,7 +44,7 @@ test('Set cookie string', (assert) => {
 
     assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
     assert.strictEqual(document.cookie.includes(cName), true, 'Cookie name has been set');
-    assert.strictEqual(document.cookie.includes(encodeURIComponent(cValue)), true, 'Cookie value has been set');
+    assert.strictEqual(document.cookie.includes(cValue), true, 'Cookie value has been set');
     clearCookie(cName);
 });
 
@@ -109,7 +109,7 @@ test('Set cookie with invalid expires', (assert) => {
     assert.expect(4);
     // eslint-disable-next-line no-console
     console.log = function log(input) {
-        if (input.indexOf('trace') > -1) {
+        if (input.includes('trace')) {
             return;
         }
         assert.strictEqual(

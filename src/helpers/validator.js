@@ -1,11 +1,7 @@
 import {
-    startsWith,
-    endsWith,
     substringAfter,
     toRegExp,
 } from './string-utils';
-
-import { getObjectFromEntries } from './object-utils';
 
 import { ADG_SCRIPTLET_MASK } from './parse-rule';
 
@@ -22,7 +18,7 @@ const COMMENT_MARKER = '!';
  * @param {string} rule rule text
  * @returns {boolean} if rule text is comment
  */
-const isComment = (rule) => startsWith(rule, COMMENT_MARKER);
+const isComment = (rule) => rule.startsWith(COMMENT_MARKER);
 
 /* ************************************************************************
  *
@@ -56,12 +52,7 @@ const ADG_CSS_MASK_REG = /#@?\$#.+?\s*\{.*\}\s*$/g;
  * @param {string} rule - rule text
  * @returns {boolean} if given rule is adg rule
  */
-const isAdgScriptletRule = (rule) => {
-    return (
-        !isComment(rule)
-        && rule.indexOf(ADG_SCRIPTLET_MASK) > -1
-    );
-};
+const isAdgScriptletRule = (rule) => !isComment(rule) && rule.includes(ADG_SCRIPTLET_MASK);
 
 /**
  * Checks if the `rule` is uBO scriptlet rule
@@ -71,10 +62,10 @@ const isAdgScriptletRule = (rule) => {
  */
 const isUboScriptletRule = (rule) => {
     return (
-        rule.indexOf(UBO_SCRIPTLET_MASK_1) > -1
-        || rule.indexOf(UBO_SCRIPTLET_MASK_2) > -1
-        || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_1) > -1
-        || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_2) > -1
+        rule.includes(UBO_SCRIPTLET_MASK_1)
+        || rule.includes(UBO_SCRIPTLET_MASK_2)
+        || rule.includes(UBO_SCRIPTLET_EXCEPTION_MASK_1)
+        || rule.includes(UBO_SCRIPTLET_EXCEPTION_MASK_2)
     )
         && UBO_SCRIPTLET_MASK_REG.test(rule)
         && !isComment(rule);
@@ -88,8 +79,8 @@ const isUboScriptletRule = (rule) => {
  */
 const isAbpSnippetRule = (rule) => {
     return (
-        rule.indexOf(ABP_SCRIPTLET_MASK) > -1
-        || rule.indexOf(ABP_SCRIPTLET_EXCEPTION_MASK) > -1
+        rule.includes(ABP_SCRIPTLET_MASK)
+        || rule.includes(ABP_SCRIPTLET_EXCEPTION_MASK)
     )
     && rule.search(ADG_CSS_MASK_REG) === -1
     && !isComment(rule);
@@ -120,9 +111,9 @@ const getScriptletByName = (name, scriptlets) => {
         .find((s) => {
             return s.names
                 // full match name checking
-                && (s.names.indexOf(name) > -1
+                && (s.names.includes(name)
                     // or check ubo alias name without '.js' at the end
-                    || (!endsWith(name, '.js') && s.names.indexOf(`${name}.js`) > -1)
+                    || (!name.endsWith('.js') && s.names.includes(`${name}.js`))
                 );
         });
 };
@@ -251,7 +242,7 @@ const validAdgRedirects = redirects.filter((el) => el.adg);
  * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
  * It's used for UBO -> ADG converting
  */
-const uboToAdgCompatibility = getObjectFromEntries(
+const uboToAdgCompatibility = Object.fromEntries(
     validAdgRedirects
         .filter((el) => el.ubo)
         .map((el) => {
@@ -263,7 +254,7 @@ const uboToAdgCompatibility = getObjectFromEntries(
  * Compatibility object where KEYS = ABP redirect names and VALUES = ADG redirect names
  * It's used for ABP -> ADG converting
  */
-const abpToAdgCompatibility = getObjectFromEntries(
+const abpToAdgCompatibility = Object.fromEntries(
     validAdgRedirects
         .filter((el) => el.abp)
         .map((el) => {
@@ -275,7 +266,7 @@ const abpToAdgCompatibility = getObjectFromEntries(
  * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
  * It's used for ADG -> UBO converting
  */
-const adgToUboCompatibility = getObjectFromEntries(
+const adgToUboCompatibility = Object.fromEntries(
     validAdgRedirects
         .filter((el) => el.ubo)
         .map((el) => {
@@ -287,7 +278,7 @@ const adgToUboCompatibility = getObjectFromEntries(
  * Needed for AdGuard redirect names validation where KEYS = **valid** AdGuard redirect names
  * 'adgToUboCompatibility' is still needed for ADG -> UBO converting
  */
-const validAdgCompatibility = getObjectFromEntries(
+const validAdgCompatibility = Object.fromEntries(
     validAdgRedirects
         .map((el) => {
             return [el.adg, 'valid adg redirect'];

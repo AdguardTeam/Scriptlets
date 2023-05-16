@@ -4,17 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+<!-- TODO: add @added tag to the files with specific version -->
+<!--       during new scriptlets or redirects releasing -->
+
 ## [Unreleased]
 
 ### Changed
 
-- improved `prevent-fetch` — if `responseType` is not specified,
+- `trusted-set-cookie` and `trusted-set-cookie-reload` scriptlets to not encode cookie name and value
+  [#311](https://github.com/AdguardTeam/Scriptlets/issues/311)
+- improved `prevent-fetch`: if `responseType` is not specified,
   original response type is returned instead of `default` [#297](https://github.com/AdguardTeam/Scriptlets/issues/291)
 
 ### Fixed
 
 - website reloading if `$now$`/`$currentDate$` value is used
   in `trusted-set-cookie-reload` scriptlet [#291](https://github.com/AdguardTeam/Scriptlets/issues/291)
+- `getResponseHeader()` and `getAllResponseHeaders()` methods mock
+  in `prevent-xhr` scriptlet [#295](https://github.com/AdguardTeam/Scriptlets/issues/295)
 
 ## <a name="v1.9.7"></a> [v1.9.7] - 2023-03-14
 

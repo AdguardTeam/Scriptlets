@@ -15,6 +15,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet adjust-setTimeout
+ *
  * @description
  * Adjusts delay for specified setTimeout() callbacks.
  *
@@ -63,6 +64,8 @@ import {
  *     ```
  *     example.org#%#//scriptlet('adjust-setTimeout', 'test', '*')
  *     ```
+ *
+ * @added v1.0.4.
  */
 /* eslint-enable max-len */
 export function adjustSetTimeout(source, matchCallback, matchDelay, boost) {

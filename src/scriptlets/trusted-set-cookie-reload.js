@@ -16,6 +16,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @trustedScriptlet trusted-set-cookie-reload
+ *
  * @description
  * Sets a cookie with arbitrary name and value,
  * and with optional ability to offset cookie attribute 'expires' and set path.
@@ -42,6 +43,9 @@ import {
  *   - `/` — root path
  *   - `none` — to set no path at all
  *
+ * > Note that the scriptlet does not encode cookie names and values. As a result, if a cookie's name or value includes `;`,
+ * the scriptlet will not set the cookie since this may cause the cookie to break.
+ *
  * **Examples**
  * 1. Set cookie and reload the page after it
  * ```
@@ -67,6 +71,8 @@ import {
  * ```
  * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'decline', '', 'none')
  * ```
+ *
+ * @added v1.7.10.
  */
 /* eslint-enable max-len */
 
@@ -93,8 +99,9 @@ export function trustedSetCookieReload(source, name, value, offsetExpiresSec = '
         return;
     }
 
-    let cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
+    let cookieToSet = concatCookieNameValuePath(name, parsedValue, path, false);
     if (!cookieToSet) {
+        logMessage(source, 'Invalid cookie name or value');
         return;
     }
 

@@ -9,6 +9,7 @@ import {
 
 /**
  * @redirect didomi-loader
+ *
  * @description
  * Mocks Didomi's CMP loader script.
  * https://developers.didomi.io/
@@ -17,6 +18,8 @@ import {
  * ```
  * ||sdk.privacy-center.org/fbf86806f86e/loader.js$script,redirect=didomi-loader
  * ```
+ *
+ * @added v1.6.2.
  */
 export function DidomiLoader(source) {
     function UserConsentStatusForVendorSubscribe() { }

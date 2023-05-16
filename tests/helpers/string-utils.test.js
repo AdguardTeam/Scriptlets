@@ -47,6 +47,31 @@ test('Test toRegExp for invalid inputs', (assert) => {
     });
 });
 
+test('Test toRegExp for escaped inputs', (assert) => {
+    /**
+     * For cases where scriptlet rule argument has escaped quotes
+     * e.g #%#//scriptlet('prevent-setTimeout', '.css(\'display\',\'block\');')
+     *
+     * https://github.com/AdguardTeam/Scriptlets/issues/286
+     */
+
+    // Single quotes, escaped
+    let inputStr = String.raw`.css(\'display\',\'block\');`;
+    let expRegex = /\.css\('display','block'\);/;
+    assert.deepEqual(toRegExp(inputStr), expRegex);
+    // Single quotes, unescaped
+    inputStr = ".css('display','block');";
+    assert.deepEqual(toRegExp(inputStr), expRegex);
+
+    // Double quotes, escaped
+    inputStr = String.raw`.css(\"display\",\"block\");`;
+    expRegex = /\.css\("display","block"\);/;
+    assert.deepEqual(toRegExp(inputStr), expRegex);
+    // Double quotes, unescaped
+    inputStr = '.css("display","block");';
+    assert.deepEqual(toRegExp(inputStr), expRegex);
+});
+
 test('inferValue works as expected with valid args', (assert) => {
     // convert to number
     let rawString = '1234';

@@ -14,6 +14,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet debug-current-inline-script
+ *
  * @description
  * This scriptlet is basically the same as [abort-current-inline-script](#abort-current-inline-script), but instead of aborting it starts the debugger.
  *
@@ -24,6 +25,8 @@ import {
  * ! Aborts script when it tries to access `window.alert`
  * example.org#%#//scriptlet('debug-current-inline-script', 'alert')
  * ```
+ *
+ * @added v1.0.4.
  */
 /* eslint-enable max-len */
 export function debugCurrentInlineScript(source, property, search) {

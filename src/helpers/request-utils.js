@@ -1,5 +1,4 @@
 import { toRegExp, isValidStrPattern } from './string-utils';
-import { getObjectFromEntries } from './object-utils';
 
 /**
  * Returns array of request props that are supported by fetch/xhr scriptlets.
@@ -37,7 +36,7 @@ export const getRequestData = (request) => {
             const value = request[key];
             return [key, value];
         });
-    return getObjectFromEntries(entries);
+    return Object.fromEntries(entries);
 };
 
 /**
@@ -110,7 +109,7 @@ export const parseMatchProps = (propsToMatchStr) => {
         const dividerInd = prop.indexOf(PAIRS_MARKER);
 
         const key = prop.slice(0, dividerInd);
-        const hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+        const hasLegalMatchProp = LEGAL_MATCH_PROPS.includes(key);
 
         if (hasLegalMatchProp) {
             const value = prop.slice(dividerInd + 1);

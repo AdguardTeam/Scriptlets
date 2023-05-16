@@ -8,11 +8,11 @@ import {
     // following helpers are needed for helpers above
     objectToString,
     isEmptyObject,
-    getObjectEntries,
 } from '../helpers/index';
 
 /**
  * @scriptlet log-addEventListener
+ *
  * @description
  * Logs all addEventListener calls to the console.
  *
@@ -23,6 +23,8 @@ import {
  * ```
  * example.org#%#//scriptlet('log-addEventListener')
  * ```
+ *
+ * @added v1.0.4.
  */
 export function logAddEventListener(source) {
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
@@ -81,5 +83,4 @@ logAddEventListener.injections = [
     logMessage,
     objectToString,
     isEmptyObject,
-    getObjectEntries,
 ];

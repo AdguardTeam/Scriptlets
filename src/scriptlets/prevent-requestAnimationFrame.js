@@ -8,12 +8,12 @@ import {
     // following helpers are needed for helpers above
     escapeRegExp,
     toRegExp,
-    startsWith,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
 /**
  * @scriptlet prevent-requestAnimationFrame
+ *
  * @description
  * Prevents a `requestAnimationFrame` call
  * if the text of the callback is matching the specified search string which does not start with `!`;
@@ -77,6 +77,8 @@ import {
  *         }
  *     });
  *     ```
+ *
+ * @added v1.1.15.
  */
 /* eslint-enable max-len */
 
@@ -129,5 +131,4 @@ preventRequestAnimationFrame.injections = [
     // following helpers should be injected as helpers above use them
     escapeRegExp,
     toRegExp,
-    startsWith,
 ];

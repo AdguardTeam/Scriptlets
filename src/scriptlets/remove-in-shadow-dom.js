@@ -11,6 +11,7 @@ import {
 
 /**
  * @scriptlet remove-in-shadow-dom
+ *
  * @description
  * Removes elements inside open shadow DOM elements.
  *
@@ -34,6 +35,8 @@ import {
  * ! removes floating element
  * virustotal.com#%#//scriptlet('remove-in-shadow-dom', 'vt-ui-contact-fab')
  * ```
+ *
+ * @added v1.3.14.
  */
 export function removeInShadowDom(source, selector, baseSelector) {
     // do nothing if browser does not support ShadowRoot

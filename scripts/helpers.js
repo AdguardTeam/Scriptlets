@@ -32,15 +32,15 @@ const getFilesList = (relativeDirPath) => {
 
 /**
  * @typedef {Object} CommentTag
- * @property {string} type tag name
- * @property {string} string text following the tag
+ * @property {string} type Tag name, e.g. `@scriptlet`, `@redirect`, `@added`.
+ * @property {string} string Text following the tag name.
  */
 
 /**
  * Returns parsed tags data which we use to describe the sources:
  * - `@scriptlet`/`trustedScriptlet`/`@redirect` to describe the type and name of source;
  * - `@description` actual description for scriptlet or redirect.
- * required comments from file.
+ * - `@added` means version when scriptlet or redirect was implemented.
  * In one file might be comments describing scriptlet and redirect as well.
  *
  * @param {string} filePath absolute path to file
@@ -95,11 +95,17 @@ Please add one OR edit the list of NON_SCRIPTLETS_FILES / NON_REDIRECTS_FILES.`)
  * @returns {DescribingCommentData}
  */
 const prepareCommentsData = (commentTags, source) => {
-    const [base, sup] = commentTags;
+    const [typeTag, descriptionTag, addedTag] = commentTags;
+    const name = typeTag.string;
+    const versionAdded = addedTag?.string;
+    if (!versionAdded) {
+        throw new Error(`No @added tag for ${name}`);
+    }
     return {
-        type: base.type,
-        name: base.string,
-        description: sup.string,
+        type: typeTag.type,
+        name,
+        description: descriptionTag.string,
+        versionAdded,
         source,
     };
 };

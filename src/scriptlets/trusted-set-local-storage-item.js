@@ -9,6 +9,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @trustedScriptlet trusted-set-local-storage-item
+ *
  * @description
  * Adds item with arbitrary key and value to localStorage object, or updates the value of the key if it already exists.
  * Scriptlet won't set item if storage is full.
@@ -50,6 +51,8 @@ import {
  * ```
  * example.org#%#//scriptlet('trusted-set-local-storage-item', 'ppu_main_none', '')
  * ```
+ *
+ * @added v1.7.3.
  */
 /* eslint-enable max-len */
 

@@ -16,17 +16,16 @@ module(name, { afterEach });
 const RULE_TEXT = 'example.org#%#//scriptlet(\'set-cookie\', \'name\', \'value\')';
 const SCRIPTLET_NAME = 'set-cookie';
 const MESSAGE = 'arbitrary text message';
-const MESSAGE_EXTENSION = '; cannot apply rule: #%#//scriptlet(\'set-cookie\', \'name\', \'value\')';
 
 test('Logs message conditionally', async (assert) => {
     // eslint-disable-next-line no-console
     console.log = function log(input) {
-        if (input.indexOf('trace') > -1) {
+        if (input.includes('trace')) {
             return;
         }
         assert.strictEqual(
             input,
-            `${SCRIPTLET_NAME}: ${MESSAGE}${MESSAGE_EXTENSION}`,
+            `${SCRIPTLET_NAME}: ${MESSAGE}`,
             'message logged correctly',
         );
     };
@@ -64,7 +63,7 @@ test('Logs message conditionally', async (assert) => {
 test('Logs message without ruleText', async (assert) => {
     // eslint-disable-next-line no-console
     console.log = function log(input) {
-        if (input.indexOf('trace') > -1) {
+        if (input.includes('trace')) {
             return;
         }
         assert.strictEqual(

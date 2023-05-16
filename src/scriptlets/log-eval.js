@@ -3,6 +3,7 @@ import { hit, logMessage } from '../helpers/index';
 
 /**
  * @scriptlet log-eval
+ *
  * @description
  * Logs all `eval()` or `new Function()` calls to the console.
  *
@@ -10,6 +11,8 @@ import { hit, logMessage } from '../helpers/index';
  * ```
  * example.org#%#//scriptlet('log-eval')
  * ```
+ *
+ * @added v1.0.4.
  */
 export function logEval(source) {
     // wrap eval function

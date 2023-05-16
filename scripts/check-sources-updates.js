@@ -84,10 +84,7 @@ const getDiff = (oldList, newList) => {
         removed: [],
     };
 
-    diff.removed = oldList.filter((item) => (
-        !newList.includes(item)
-        && item.indexOf(REMOVED_MARKER) === -1
-    ));
+    diff.removed = oldList.filter((item) => !newList.includes(item) && !item.includes(REMOVED_MARKER));
     diff.added = newList.filter((item) => !oldList.includes(item));
 
     return (diff.removed.length || diff.added.length) ? diff : null;

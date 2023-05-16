@@ -273,7 +273,7 @@ test('invalid selector — no match', (assert) => {
 
     // eslint-disable-next-line no-console
     console.log = function log(input) {
-        if (input.indexOf('trace') > -1) {
+        if (input.includes('trace')) {
             return;
         }
         assert.strictEqual(input, `${name}: Invalid selector arg: '${selectors}'`, 'logged error for invalid remove-class selector');

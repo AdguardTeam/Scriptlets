@@ -3,6 +3,7 @@ import { hit } from '../helpers/index';
 
 /**
  * @redirect fingerprintjs2
+ *
  * @description
  * Mocks FingerprintJS v2
  * https://github.com/fingerprintjs
@@ -14,6 +15,8 @@ import { hit } from '../helpers/index';
  * ```
  * ||the-japan-news.com/modules/js/lib/fgp/fingerprint2.js$script,redirect=fingerprintjs2
  * ```
+ *
+ * @added v1.5.0.
  */
 export function Fingerprintjs2(source) {
     let browserId = '';

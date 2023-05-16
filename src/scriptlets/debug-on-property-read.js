@@ -13,6 +13,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet debug-on-property-read
+ *
  * @description
  * This scriptlet is basically the same as [abort-on-property-read](#abort-on-property-read), but instead of aborting it starts the debugger.
  *
@@ -25,6 +26,8 @@ import {
  * ! of `window.open`
  * example.org#%#//scriptlet('debug-on-property-read', 'open')
  * ```
+ *
+ * @added v1.0.4.
  */
 /* eslint-enable max-len */
 export function debugOnPropertyRead(source, property) {

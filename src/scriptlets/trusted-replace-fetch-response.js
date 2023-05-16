@@ -12,8 +12,6 @@ import {
     isEmptyObject,
     getRequestData,
     getRequestProps,
-    getObjectEntries,
-    getObjectFromEntries,
     parseMatchProps,
     validateParsedData,
     getMatchPropsData,
@@ -22,6 +20,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @trustedScriptlet trusted-replace-fetch-response
+ *
  * @description
  * Replaces response text content of `fetch` requests if **all** given parameters match.
  *
@@ -73,6 +72,8 @@ import {
  *     ```
  *     example.org#%#//scriptlet('trusted-replace-fetch-response', '*', '', 'example.com')
  *     ```
+ *
+ * @added v1.7.3.
  */
 /* eslint-enable max-len */
 export function trustedReplaceFetchResponse(source, pattern = '', replacement = '', propsToMatch = '') {
@@ -201,8 +202,6 @@ trustedReplaceFetchResponse.injections = [
     isEmptyObject,
     getRequestData,
     getRequestProps,
-    getObjectEntries,
-    getObjectFromEntries,
     parseMatchProps,
     validateParsedData,
     getMatchPropsData,

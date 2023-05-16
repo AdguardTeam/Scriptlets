@@ -3,8 +3,10 @@
 # add ";base64" into contentType if your source already in base64
 
 - title: 1x1-transparent.gif
+  added: v1.0.4
   description: |-
     **Example**
+
     ```
     ||example.org^$image,redirect=1x1-transparent.gif
     ```
@@ -17,8 +19,10 @@
   content: R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 
 - title: 2x2-transparent.png
+  added: v1.0.4
   description: |-
     **Example**
+
     ```
     ||example.org^$image,redirect=2x2-transparent.png
     ```
@@ -32,8 +36,10 @@
     SUVORK5CYII=
 
 - title: 3x2-transparent.png
+  added: v1.0.4
   description: |-
     **Example**
+
     ```
     ||example.org^$image,redirect=3x2-transparent.png
     ```
@@ -47,8 +53,10 @@
     SUVORK5CYII=
 
 - title: 32x32-transparent.png
+  added: v1.0.4
   description: |-
     **Example**
+
     ```
     ||example.org^$image,redirect=32x32-transparent.png
     ```
@@ -62,8 +70,10 @@
     AO8GECAAAZf3V9cAAAAASUVORK5CYII=
 
 - title: noopframe
+  added: v1.0.4
   description: |-
     **Example**
+
     ```
     ||example.com^$subdocument,redirect=noopframe,domain=example.org
     ```
@@ -80,8 +90,10 @@
     </html>
 
 - title: noopcss
+  added: v1.0.4
   description: |-
     **Example**
+
     ```
     ||example.org/style.css$stylesheet,redirect=noopcss
     ```
@@ -93,6 +105,7 @@
   content: ''
 
 - title: noopjs
+  added: v1.0.4
   description: |-
     **Example**
     ```
@@ -106,6 +119,7 @@
   content: (function() {})()
 
 - title: noopjson
+  added: v1.6.2
   description: |-
     **Example**
     ```
@@ -116,8 +130,10 @@
   content: '{}'
 
 - title: nooptext
+  added: v1.0.4
   description: |-
     **Example**
+
     ```
     ||example.org/advert.js$xmlhttprequest,redirect=nooptext
     ```
@@ -129,6 +145,7 @@
   content: ''
 
 - title: empty
+  added: v1.3.9
   description: |-
     Pretty much the same as `nooptext`. Used for conversion of modifier `empty` so better avoid its using in production filter lists.
 
@@ -143,10 +160,12 @@
   content: ''
 
 - title: noopvmap-1.0
+  added: v1.1.5
   description: |-
     Redirects request to an empty VMAP response.
 
     **Example**
+
     ```
     ||example.org/vmap01.xml$xmlhttprequest,redirect=noopvmap-1.0
     ```
@@ -157,6 +176,7 @@
   content: <vmap:VMAP xmlns:vmap="http://www.iab.net/videosuite/vmap" version="1.0"></vmap:VMAP>
 
 - title: noopvast-2.0
+  added: v1.0.10
   description: |-
     Redirects request to an empty VAST 2.0 response.
 
@@ -169,6 +189,7 @@
   content: <VAST version="2.0"></VAST>
 
 - title: noopvast-3.0
+  added: v1.0.10
   description: |-
     Redirects request to an empty VAST 3.0 response.
 
@@ -181,6 +202,7 @@
   content: <VAST version="3.0"></VAST>
 
 - title: noopvast-4.0
+  added: v1.4.3
   description: |-
     Redirects request to an empty VAST 4.0 response.
 
@@ -193,8 +215,10 @@
   content: <VAST version="4.0"></VAST>
 
 - title: noopmp3-0.1s
+  added: v1.0.4
   description: |-
     **Example**
+
     ```
     ||example.org/advert.mp3$media,redirect=noopmp3-0.1s
     ```
@@ -224,8 +248,10 @@
     VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 
 - title: noopmp4-1s
+  added: v1.0.4
   description: |-
     **Example**
+
     ```
     ||example.org/advert.mp4$media,redirect=noopmp4-1s
     ```

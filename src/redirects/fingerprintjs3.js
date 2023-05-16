@@ -6,6 +6,7 @@ import {
 
 /**
  * @redirect fingerprintjs3
+ *
  * @description
  * Mocks FingerprintJS v3
  * https://github.com/fingerprintjs
@@ -17,6 +18,8 @@ import {
  * ```
  * ||sephora.com/js/ufe/isomorphic/thirdparty/fp.min.js$script,redirect=fingerprintjs3
  * ```
+ *
+ * @added v1.6.2.
  */
 export function Fingerprintjs3(source) {
     const visitorId = (() => {

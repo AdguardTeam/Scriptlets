@@ -11,6 +11,7 @@ import {
 
 /**
  * @scriptlet hide-in-shadow-dom
+ *
  * @description
  * Hides elements inside open shadow DOM elements.
  *
@@ -34,6 +35,8 @@ import {
  * ! hides floating element
  * virustotal.com#%#//scriptlet('hide-in-shadow-dom', 'vt-ui-contact-fab')
  * ```
+ *
+ * @added v1.3.0.
  */
 export function hideInShadowDom(source, selector, baseSelector) {
     // do nothing if browser does not support ShadowRoot

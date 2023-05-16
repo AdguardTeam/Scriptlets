@@ -12,6 +12,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet debug-on-property-write
+ *
  * @description
  * This scriptlet is basically the same as [abort-on-property-write](#abort-on-property-write), but instead of aborting it starts the debugger.
  *
@@ -22,6 +23,8 @@ import {
  * ! Aborts script when it tries to write in property `window.test`
  * example.org#%#//scriptlet('debug-on-property-write', 'test')
  * ```
+ *
+ * @added v1.0.4.
  */
 /* eslint-enable max-len */
 export function debugOnPropertyWrite(source, property) {

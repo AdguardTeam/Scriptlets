@@ -9,6 +9,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet nowebrtc
+ *
  * @description
  * Disables WebRTC by overriding `RTCPeerConnection`. The overridden function will log every attempt to create a new connection.
  *
@@ -19,6 +20,8 @@ import {
  * ```
  * example.org#%#//scriptlet('nowebrtc')
  * ```
+ *
+ * @added v1.0.4.
  */
 /* eslint-enable max-len */
 export function nowebrtc(source) {

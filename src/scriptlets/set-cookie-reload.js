@@ -13,6 +13,7 @@ import {
 
 /**
  * @scriptlet set-cookie-reload
+ *
  * @description
  * Sets a cookie with the specified name and value, and path,
  * and reloads the current page after the cookie setting.
@@ -36,6 +37,9 @@ import {
  *     - `/` — root path
  *     - `none` — to set no path at all
  *
+ * > Note that the scriptlet encodes cookie names and values,
+ * e.g value `"{ test: 'value'}"` becomes `%7B%20test%3A%20'value'%7D`.
+ *
  * **Examples**
  * ```
  * example.org#%#//scriptlet('set-cookie-reload', 'checking', 'ok')
@@ -44,6 +48,8 @@ import {
  *
  * example.org#%#//scriptlet('set-cookie-reload', 'cookie-set', 'true', 'none')
  * ```
+ *
+ * @added v1.3.14.
  */
 export function setCookieReload(source, name, value, path = '/') {
     if (isCookieSetWithValue(document.cookie, name, value)) {
@@ -63,6 +69,7 @@ export function setCookieReload(source, name, value, path = '/') {
 
     const cookieToSet = concatCookieNameValuePath(name, validValue, path);
     if (!cookieToSet) {
+        logMessage(source, 'Invalid cookie name or value');
         return;
     }
 

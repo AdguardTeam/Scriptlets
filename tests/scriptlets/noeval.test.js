@@ -48,7 +48,7 @@ test('AG noeval alias', (assert) => {
     assert.expect(3);
 
     console.log = function log(input) {
-        if (input.indexOf('trace') > -1) {
+        if (input.includes('trace')) {
             return;
         }
         assert.ok(input.includes(`${name}: AdGuard has prevented eval:`), 'console.hit should print info');

@@ -3,6 +3,7 @@ import { hit, noopFunc } from '../helpers/index';
 
 /**
  * @redirect matomo
+ *
  * @description
  * Mocks the piwik.js file of Matomo (formerly Piwik).
  *
@@ -10,6 +11,8 @@ import { hit, noopFunc } from '../helpers/index';
  * ```
  * ||example.org/piwik.js$script,redirect=matomo
  * ```
+ *
+ * @added v1.5.0.
  */
 
 export function Matomo(source) {

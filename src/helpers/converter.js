@@ -128,7 +128,7 @@ const validateRemoveAttrClassArgs = (parsedArgs) => {
     const lastArg = restArgs.pop();
     let applying;
     // check the last parsed arg for matching possible 'applying' vale
-    if (REMOVE_ATTR_CLASS_APPLYING.some((el) => lastArg.indexOf(el) > -1)) {
+    if (REMOVE_ATTR_CLASS_APPLYING.some((el) => lastArg.includes(el))) {
         applying = lastArg;
     } else {
         restArgs.push(lastArg);
@@ -160,19 +160,18 @@ export const convertUboScriptletToAdg = (rule) => {
     const domains = getBeforeRegExp(rule, validator.UBO_SCRIPTLET_MASK_REG);
     const mask = rule.match(validator.UBO_SCRIPTLET_MASK_REG)[0];
     let template;
-    if (mask.indexOf('@') > -1) {
+    if (mask.includes('@')) {
         template = ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
     } else {
         template = ADGUARD_SCRIPTLET_TEMPLATE;
     }
     const argsStr = getStringInBraces(rule);
     let parsedArgs = splitArgs(argsStr);
-    const scriptletName = parsedArgs[0].indexOf(UBO_SCRIPTLET_JS_ENDING) > -1
+    const scriptletName = parsedArgs[0].includes(UBO_SCRIPTLET_JS_ENDING)
         ? `ubo-${parsedArgs[0]}`
         : `ubo-${parsedArgs[0]}${UBO_SCRIPTLET_JS_ENDING}`;
 
-    if (((REMOVE_ATTR_ALIASES.indexOf(scriptletName) > -1)
-        || (REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1))) {
+    if (REMOVE_ATTR_ALIASES.includes(scriptletName) || REMOVE_CLASS_ALIASES.includes(scriptletName)) {
         parsedArgs = validateRemoveAttrClassArgs(parsedArgs);
     }
 
@@ -205,7 +204,7 @@ export const convertUboScriptletToAdg = (rule) => {
  */
 export const convertAbpSnippetToAdg = (rule) => {
     const SEMICOLON_DIVIDER = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
-    const mask = rule.indexOf(validator.ABP_SCRIPTLET_MASK) > -1
+    const mask = rule.includes(validator.ABP_SCRIPTLET_MASK)
         ? validator.ABP_SCRIPTLET_MASK
         : validator.ABP_SCRIPTLET_EXCEPTION_MASK;
     const template = mask === validator.ABP_SCRIPTLET_MASK
@@ -315,7 +314,7 @@ export const convertAdgScriptletToUbo = (rule) => {
                 || parsedParams[0] === ADG_PREVENT_FETCH_EMPTY_STRING)) {
             preparedParams = [UBO_NO_FETCH_IF_WILDCARD];
         } else if ((parsedName === ADG_REMOVE_ATTR_NAME || parsedName === ADG_REMOVE_CLASS_NAME)
-            && parsedParams[1] && parsedParams[1].indexOf(COMMA_SEPARATOR) > -1) {
+            && parsedParams[1] && parsedParams[1].includes(COMMA_SEPARATOR)) {
             preparedParams = [
                 parsedParams[0],
                 replaceAll(parsedParams[1], COMMA_SEPARATOR, ESCAPED_COMMA_SEPARATOR),
@@ -333,7 +332,7 @@ export const convertAdgScriptletToUbo = (rule) => {
                 return { name, aliases };
             })
             .find((el) => (el.name === parsedName
-                || el.aliases.indexOf(parsedName) >= 0));
+                || el.aliases.includes(parsedName)));
 
         const { aliases } = adgScriptletObject;
 
@@ -345,7 +344,7 @@ export const convertAdgScriptletToUbo = (rule) => {
             if (uboAlias) {
                 const mask = rule.match(ADGUARD_SCRIPTLET_MASK_REG)[0];
                 let template;
-                if (mask.indexOf('@') > -1) {
+                if (mask.includes('@')) {
                     template = UBO_SCRIPTLET_EXCEPTION_TEMPLATE;
                 } else {
                     template = UBO_SCRIPTLET_TEMPLATE;
@@ -445,11 +444,11 @@ export const isValidScriptletRule = (ruleText) => {
  */
 const getMarkerData = (modifiers, redirectsData, rule) => {
     let marker;
-    let index = modifiers.findIndex((m) => m.indexOf(redirectsData.redirectRuleMarker) > -1);
+    let index = modifiers.findIndex((m) => m.includes(redirectsData.redirectRuleMarker));
     if (index > -1) {
         marker = redirectsData.redirectRuleMarker;
     } else {
-        index = modifiers.findIndex((m) => m.indexOf(redirectsData.redirectMarker) > -1);
+        index = modifiers.findIndex((m) => m.includes(redirectsData.redirectMarker));
         if (index > -1) {
             marker = redirectsData.redirectMarker;
         } else {
@@ -501,7 +500,7 @@ export const convertAbpRedirectToAdg = (rule) => {
     const abpModifiers = validator.parseModifiers(rule);
     const adgModifiers = abpModifiers
         .map((modifier) => {
-            if (modifier.indexOf(validator.REDIRECT_RULE_TYPES.ABP.redirectMarker) > -1) {
+            if (modifier.includes(validator.REDIRECT_RULE_TYPES.ABP.redirectMarker)) {
                 const abpName = substringAfter(
                     modifier,
                     validator.REDIRECT_RULE_TYPES.ABP.redirectMarker,

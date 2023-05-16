@@ -1,7 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 
 import { runScriptlet, clearGlobalProps } from '../helpers';
-import { endsWith } from '../../src/helpers/string-utils';
 
 const { test, module } = QUnit;
 const name = 'nowebrtc';
@@ -83,12 +82,12 @@ if (!isSupported) {
         // mock console.log function for log checking
         // eslint-disable-next-line no-console
         console.log = function log(input) {
-            if (input.indexOf('trace') > -1) {
+            if (input.includes('trace')) {
                 return;
             }
 
-            const EXPECTED_LOG_STR = `${name}: Document tried to create an RTCPeerConnection: ${TEST_URL_VALUE};`;
-            assert.ok(endsWith(input, EXPECTED_LOG_STR), 'console.hit input');
+            const EXPECTED_LOG_STR = `${name}: Document tried to create an RTCPeerConnection: ${TEST_URL_VALUE}`;
+            assert.ok(input.endsWith(EXPECTED_LOG_STR), 'console.hit input');
         };
 
         runScriptlet(name);

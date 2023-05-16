@@ -1,38 +1,4 @@
 /**
- * Converts object to array of pairs.
- * Object.entries() polyfill because it is not supported by IE
- * https://caniuse.com/?search=Object.entries
- *
- * @param {Object} object arbitrary object
- * @returns {Array} array of pairs
- */
-export const getObjectEntries = (object) => {
-    const keys = Object.keys(object);
-    const entries = [];
-    keys.forEach((key) => entries.push([key, object[key]]));
-    return entries;
-};
-
-/**
- * Converts array of pairs to object.
- * Object.fromEntries() polyfill because it is not supported by IE
- * https://caniuse.com/?search=Object.fromEntries
- *
- * @param {Array} entries - array of pairs
- * @returns {Object} result object
- */
-export const getObjectFromEntries = (entries) => {
-    const output = entries
-        .reduce((acc, el) => {
-            const key = el[0];
-            const value = el[1];
-            acc[key] = value;
-            return acc;
-        }, {});
-    return output;
-};
-
-/**
  * Checks whether the obj is an empty object
  *
  * @param {Object} obj arbitrary object

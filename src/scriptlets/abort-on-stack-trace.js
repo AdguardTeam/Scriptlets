@@ -14,12 +14,12 @@ import {
     toRegExp,
     isEmptyObject,
     getNativeRegexpTest,
-    startsWith,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
 /**
  * @scriptlet abort-on-stack-trace
+ *
  * @description
  * Aborts a script when it attempts to utilize (read or write to) the specified property and it's error stack trace contains given value.
  *
@@ -55,6 +55,8 @@ import {
  * ! Aborts script when it tries to access `window.Ya` and it's an injected script
  * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'injectedScript')
  * ```
+ *
+ * @added v1.5.0.
  */
 /* eslint-enable max-len */
 export function abortOnStackTrace(source, property, stack) {
@@ -152,6 +154,5 @@ abortOnStackTrace.injections = [
     toRegExp,
     isEmptyObject,
     getNativeRegexpTest,
-    startsWith,
     shouldAbortInlineOrInjectedScript,
 ];

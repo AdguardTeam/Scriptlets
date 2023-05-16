@@ -9,7 +9,7 @@ export function createOnErrorHandler(rid) {
     // eslint-disable-next-line consistent-return
     const nativeOnError = window.onerror;
     return function onError(error, ...args) {
-        if (typeof error === 'string' && error.indexOf(rid) !== -1) {
+        if (typeof error === 'string' && error.includes(rid)) {
             return true;
         }
         if (nativeOnError instanceof Function) {

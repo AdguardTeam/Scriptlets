@@ -1,4 +1,4 @@
-import { isEmptyObject, getObjectEntries } from './object-utils';
+import { isEmptyObject } from './object-utils';
 import {
     nativeIsFinite,
     nativeIsNaN,
@@ -48,7 +48,14 @@ export const toRegExp = (input = '') => {
     if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
         return new RegExp(input.slice(1, -1));
     }
-    const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const escaped = input
+        // remove quotes' escapes for cases where scriptlet rule argument has own escaped quotes
+        // e.g #%#//scriptlet('prevent-setTimeout', '.css(\'display\',\'block\');')
+        .replace(/\\'/g, '\'')
+        .replace(/\\"/g, '"')
+        // escape special characters for following RegExp construction
+        .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     return new RegExp(escaped);
 };
 
@@ -85,36 +92,6 @@ export const isValidStrPattern = (input) => {
 export const getBeforeRegExp = (str, rx) => {
     const index = str.search(rx);
     return str.substring(0, index);
-};
-
-/**
- * Checks whether the string starts with the substring
- *
- * @deprecated use String.prototype.startsWith() instead. AG-18883
- *
- * @param {string} str full string
- * @param {string} prefix substring
- * @returns {boolean} if string start with the substring
- */
-export const startsWith = (str, prefix) => {
-    // if str === '', (str && false) will return ''
-    // that's why it has to be !!str
-    return !!str && str.indexOf(prefix) === 0;
-};
-
-/**
- * Checks whether the string ends with the substring
- *
- * @deprecated use String.prototype.endsWith() instead. AG-18883
- *
- * @param {string} str full string
- * @param {string} ending substring
- * @returns {boolean} string ends with the substring
- */
-export const endsWith = (str, ending) => {
-    // if str === '', (str && false) will return ''
-    // that's why it has to be !!str
-    return !!str && str.lastIndexOf(ending) === str.length - ending.length;
 };
 
 export const substringAfter = (str, separator) => {
@@ -203,7 +180,7 @@ export const convertRtcConfigToString = (config) => {
 export const isValidMatchStr = (match) => {
     const INVERT_MARKER = '!';
     let str = match;
-    if (startsWith(match, INVERT_MARKER)) {
+    if (match?.startsWith(INVERT_MARKER)) {
         str = match.slice(1);
     }
     return isValidStrPattern(str);
@@ -219,7 +196,7 @@ export const isValidMatchStr = (match) => {
 export const isValidMatchNumber = (match) => {
     const INVERT_MARKER = '!';
     let str = match;
-    if (startsWith(match, INVERT_MARKER)) {
+    if (match?.startsWith(INVERT_MARKER)) {
         str = match.slice(1);
     }
     const num = parseFloat(str);
@@ -243,7 +220,7 @@ export const isValidMatchNumber = (match) => {
 export const parseMatchArg = (match) => {
     const INVERT_MARKER = '!';
     // In case if "match" is "undefined" return "false"
-    const isInvertedMatch = match ? match.startsWith(INVERT_MARKER) : false;
+    const isInvertedMatch = match ? match?.startsWith(INVERT_MARKER) : false;
     const matchValue = isInvertedMatch ? match.slice(1) : match;
     const matchRegexp = toRegExp(matchValue);
     return { isInvertedMatch, matchRegexp, matchValue };
@@ -264,7 +241,7 @@ export const parseMatchArg = (match) => {
  */
 export const parseDelayArg = (delay) => {
     const INVERT_MARKER = '!';
-    const isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
+    const isInvertedDelayMatch = delay?.startsWith(INVERT_MARKER);
     let delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
     delayValue = parseInt(delayValue, 10);
     const delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
@@ -285,7 +262,7 @@ export const objectToString = (obj) => {
     }
     return isEmptyObject(obj)
         ? '{}'
-        : getObjectEntries(obj)
+        : Object.entries(obj)
             .map((pair) => {
                 const key = pair[0];
                 const value = pair[1];

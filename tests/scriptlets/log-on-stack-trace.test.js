@@ -61,7 +61,7 @@ test('logs specific message', (assert) => {
 
     console.log = function log(input) {
         // Ignore hit messages with "trace"
-        if (input.indexOf('trace') > -1) {
+        if (input.includes('trace')) {
             return;
         }
         assert.strictEqual(input, `%cSet %c${PROPERTY}`, 'Log message is correct');
@@ -81,7 +81,7 @@ test('check if message is not empty', (assert) => {
     console.table = function log(input) {
         const inputString = JSON.stringify(input);
         const checkString = 'log-on-stack-trace';
-        assert.ok(inputString.indexOf(checkString) > -1, 'Log message is not empty');
+        assert.ok(inputString.includes(checkString), 'Log message is not empty');
     };
     setProp(PROPERTY);
 

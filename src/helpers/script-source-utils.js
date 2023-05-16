@@ -1,5 +1,3 @@
-import { startsWith } from './string-utils';
-
 /**
  * Determines if type of script is inline or injected
  * and when it's one of them then return true, otherwise false
@@ -13,8 +11,8 @@ export const shouldAbortInlineOrInjectedScript = (stackMatch, stackTrace) => {
     const INLINE_SCRIPT_STRING = 'inlineScript';
     const INJECTED_SCRIPT_STRING = 'injectedScript';
     const INJECTED_SCRIPT_MARKER = '<anonymous>';
-    const isInlineScript = (stackMatch) => stackMatch.indexOf(INLINE_SCRIPT_STRING) > -1;
-    const isInjectedScript = (stackMatch) => stackMatch.indexOf(INJECTED_SCRIPT_STRING) > -1;
+    const isInlineScript = (stackMatch) => stackMatch.includes(INLINE_SCRIPT_STRING);
+    const isInjectedScript = (stackMatch) => stackMatch.includes(INJECTED_SCRIPT_STRING);
 
     if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
         return false;
@@ -39,15 +37,15 @@ export const shouldAbortInlineOrInjectedScript = (stackMatch, stackTrace) => {
         const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
         if (getStackTraceURL) {
             let stackURL = getStackTraceURL[2];
-            if (startsWith(stackURL, '(')) {
+            if (stackURL?.startsWith('(')) {
                 stackURL = stackURL.slice(1);
             }
-            if (startsWith(stackURL, INJECTED_SCRIPT_MARKER)) {
+            if (stackURL?.startsWith(INJECTED_SCRIPT_MARKER)) {
                 stackURL = INJECTED_SCRIPT_STRING;
                 let stackFunction = getStackTraceURL[1] !== undefined
                     ? getStackTraceURL[1].slice(0, -1)
                     : line.slice(0, getStackTraceURL.index).trim();
-                if (startsWith(stackFunction, 'at')) {
+                if (stackFunction?.startsWith('at')) {
                     stackFunction = stackFunction.slice(2).trim();
                 }
                 stack = `${stackFunction} ${stackURL}`.trim();
@@ -65,7 +63,7 @@ export const shouldAbortInlineOrInjectedScript = (stackMatch, stackTrace) => {
                 return true;
             }
             if (isInjectedScript(stackMatch)
-                && startsWith(stackLines[index], INJECTED_SCRIPT_STRING)) {
+                && stackLines[index].startsWith(INJECTED_SCRIPT_STRING)) {
                 return true;
             }
         }

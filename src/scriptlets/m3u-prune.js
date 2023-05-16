@@ -41,6 +41,8 @@ import {
  *     ```
  *     example.org#%#//scriptlet('m3u-prune', '', '.m3u8')
  *     ```
+ *
+ * @added v1.9.1.
  */
 /* eslint-enable max-len */
 

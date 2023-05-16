@@ -52,7 +52,7 @@ test('no args -- logging', (assert) => {
     let loggedMessage;
     // eslint-disable-next-line no-console
     console.log = function log(input) {
-        if (input.indexOf('trace') > -1) {
+        if (input.includes('trace')) {
             return;
         }
         loggedMessage = input;
@@ -481,4 +481,103 @@ test('match any callback, falsy non-numbers delays dont collide with 0 ', (asser
     const third = () => { window.three = 'NEW THREE'; };
     const timeoutTest3 = setTimeout(third, undefined);
     testTimeouts.push(timeoutTest3);
+});
+
+/**
+ * Following group tests for callback matching with escaped single and double quotes
+ * inside match callback argument
+ * https://github.com/AdguardTeam/Scriptlets/issues/286
+ */
+test('match with escaped single quotes', (assert) => {
+    const markerProp = 'callbackFired';
+    window[markerProp] = false;
+    const done = assert.async();
+
+    // We need to run our assertion after all timeouts
+    nativeSetTimeout(() => {
+        assert.notOk(window.callbackFired, 'callback was blocked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        done();
+    }, 100);
+
+    const CALLBACK_MATCH = String.raw`.css(\'display\',\'block\');`;
+
+    // run scriptlet code
+    const scriptletArgs = [CALLBACK_MATCH, '30'];
+    runScriptlet(name, scriptletArgs);
+
+    // eslint-disable-next-line quotes
+    const callback = () => { window[markerProp] = ".css('display','block');"; };
+    const timeoutTest1 = setTimeout(callback, 30);
+    testTimeouts.push(timeoutTest1);
+});
+
+test('match with unescaped single quotes', (assert) => {
+    const markerProp = 'callbackFired';
+    window[markerProp] = false;
+    const done = assert.async();
+
+    // We need to run our assertion after all timeouts
+    nativeSetTimeout(() => {
+        assert.notOk(window.callbackFired, 'callback was blocked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        done();
+    }, 100);
+
+    const CALLBACK_MATCH = String.raw`.css('display','block');`;
+
+    // run scriptlet code
+    const scriptletArgs = [CALLBACK_MATCH, '30'];
+    runScriptlet(name, scriptletArgs);
+
+    // eslint-disable-next-line quotes
+    const callback = () => { window[markerProp] = ".css('display','block');"; };
+    const timeoutTest1 = setTimeout(callback, 30);
+    testTimeouts.push(timeoutTest1);
+});
+
+test('match with escaped double quotes', (assert) => {
+    const markerProp = 'callbackFired';
+    window[markerProp] = false;
+    const done = assert.async();
+
+    // We need to run our assertion after all timeouts
+    nativeSetTimeout(() => {
+        assert.notOk(window.callbackFired, 'callback was blocked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        done();
+    }, 100);
+
+    const CALLBACK_MATCH = String.raw`.css(\"display\",\"block\");`;
+
+    // run scriptlet code
+    const scriptletArgs = [CALLBACK_MATCH, '30'];
+    runScriptlet(name, scriptletArgs);
+
+    const callback = () => { window[markerProp] = '.css("display","block");'; };
+    const timeoutTest1 = setTimeout(callback, 30);
+    testTimeouts.push(timeoutTest1);
+});
+
+test('match with escaped double quotes', (assert) => {
+    const markerProp = 'callbackFired';
+    window[markerProp] = false;
+    const done = assert.async();
+
+    // We need to run our assertion after all timeouts
+    nativeSetTimeout(() => {
+        assert.notOk(window.callbackFired, 'callback was blocked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        done();
+    }, 100);
+
+    const CALLBACK_MATCH = '.css("display","block");';
+
+    // run scriptlet code
+    const scriptletArgs = [CALLBACK_MATCH, '30'];
+    runScriptlet(name, scriptletArgs);
+
+    const callback = () => { window[markerProp] = '.css("display","block");'; };
+    const timeoutTest1 = setTimeout(callback, 30);
+    testTimeouts.push(timeoutTest1);
 });

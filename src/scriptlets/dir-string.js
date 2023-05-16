@@ -3,6 +3,7 @@ import { hit } from '../helpers/index';
 /* eslint-disable max-len */
 /**
  * @scriptlet dir-string
+ *
  * @description
  * Wraps the `console.dir` API to call the `toString` method of the argument.
  * There are several adblock circumvention systems that detect browser devtools
@@ -24,6 +25,8 @@ import { hit } from '../helpers/index';
  * ! Run 2 times
  * example.org#%#//scriptlet('dir-string', '2')
  * ```
+ *
+ * @added v1.0.4.
  */
 /* eslint-enable max-len */
 export function dirString(source, times) {

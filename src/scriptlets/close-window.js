@@ -6,6 +6,7 @@ import {
 
 /**
  * @scriptlet close-window
+ *
  * @description
  * Closes the browser tab immediately.
  *
@@ -29,6 +30,8 @@ import {
  * ! closes specific example.org tab
  * example.org#%#//scriptlet('close-window', '/example-page.html')
  * ```
+ *
+ * @added v1.5.0.
  */
 export function forceWindowClose(source, path = '') {
     // https://github.com/AdguardTeam/Scriptlets/issues/158#issuecomment-993423036
@@ -72,7 +75,7 @@ export function forceWindowClose(source, path = '') {
     if (shouldClose()) {
         closeImmediately();
 
-        if (navigator.userAgent.indexOf('Chrome') > -1) {
+        if (navigator.userAgent.includes('Chrome')) {
             closeByExtension();
         }
     }

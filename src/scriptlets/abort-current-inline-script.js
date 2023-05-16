@@ -3,7 +3,6 @@ import {
     setPropertyAccess,
     getPropertyInChain,
     toRegExp,
-    startsWith,
     createOnErrorHandler,
     hit,
     logMessage,
@@ -16,6 +15,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet abort-current-inline-script
+ *
  * @description
  * Aborts an inline script when it attempts to **read** or **write to** the specified property
  * AND when the contents of the `<script>` element contains the specified
@@ -74,6 +74,8 @@ import {
  *     ```html
  *     <script>alert("Hi, little world");</script>
  *     ```
+ *
+ * @added v1.0.4.
  */
 /* eslint-enable max-len */
 export function abortCurrentInlineScript(source, property, search) {
@@ -111,7 +113,7 @@ export function abortCurrentInlineScript(source, property, search) {
         // https://github.com/AdguardTeam/Scriptlets/issues/130
         if (content.length === 0
             && typeof scriptEl.src !== 'undefined'
-            && startsWith(scriptEl.src, SRC_DATA_MARKER)) {
+            && scriptEl.src?.startsWith(SRC_DATA_MARKER)) {
             const encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
             content = window.atob(encodedContent);
         }
@@ -232,7 +234,6 @@ abortCurrentInlineScript.injections = [
     setPropertyAccess,
     getPropertyInChain,
     toRegExp,
-    startsWith,
     createOnErrorHandler,
     hit,
     logMessage,

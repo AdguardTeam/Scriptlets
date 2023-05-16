@@ -1,6 +1,5 @@
 /* eslint-disable no-underscore-dangle, no-console */
 import { runScriptlet, clearGlobalProps } from '../helpers';
-import { startsWith } from '../../src/helpers/string-utils';
 
 const { test, module } = QUnit;
 const name = 'trusted-replace-xhr-response';
@@ -39,12 +38,12 @@ if (isSupported) {
 
         // mock console.log function for log checking
         console.log = function log(input) {
-            if (input.indexOf('trace') > -1) {
+            if (input.includes('trace')) {
                 return;
             }
             // eslint-disable-next-line max-len
             const EXPECTED_LOG_STR = `${name}: xhr( method:"${METHOD}" url:"${URL}" async:"${ASYNC}" user:"${USER}" password:"${PASSWORD}" )`;
-            assert.ok(startsWith(input, EXPECTED_LOG_STR), 'console.hit input');
+            assert.ok(input.startsWith(EXPECTED_LOG_STR), 'console.hit input');
         };
         const PATTERN = '';
         const REPLACEMENT = '';

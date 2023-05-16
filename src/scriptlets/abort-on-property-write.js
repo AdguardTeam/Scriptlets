@@ -12,6 +12,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet abort-on-property-write
+ *
  * @description
  * Aborts a script when it attempts to **write** the specified property.
  *
@@ -33,6 +34,8 @@ import {
  * ! Aborts script when it tries to set `window.adblock` value
  * example.org#%#//scriptlet('abort-on-property-write', 'adblock')
  * ```
+ *
+ * @added v1.0.4.
  */
 /* eslint-enable max-len */
 export function abortOnPropertyWrite(source, property) {

@@ -2,6 +2,7 @@ import { hit } from '../helpers/index';
 
 /**
  * @redirect scorecardresearch-beacon
+ *
  * @description
  * Mocks Scorecard Research API.
  *
@@ -12,6 +13,8 @@ import { hit } from '../helpers/index';
  * ```
  * ||sb.scorecardresearch.com/beacon.js$script,redirect=scorecardresearch-beacon
  * ```
+ *
+ * @added v1.0.10.
  */
 export function ScoreCardResearchBeacon(source) {
     window.COMSCORE = {

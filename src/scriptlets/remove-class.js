@@ -11,6 +11,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet remove-class
+ *
  * @description
  * Removes the specified classes from DOM nodes. This scriptlet runs once after the page loads
  * and after that periodically in order to DOM tree changes.
@@ -70,6 +71,8 @@ import {
  *     ```
  *     example.org#%#//scriptlet('remove-class', 'branding', 'div[class^="inner"]', 'asap complete')
  *     ```
+ *
+ * @added v1.1.1.
  */
 /* eslint-enable max-len */
 
@@ -149,7 +152,7 @@ export function removeClass(source, classNames, selector, applying = 'asap stay'
         window.addEventListener('load', run, { once: true });
     } else if (flags.hasFlag(flags.STAY)) {
         // Only call removeClassHandler for single 'stay' flag
-        if (!applying.indexOf(' ') !== -1) {
+        if (!applying.includes(' ')) {
             removeClassHandler();
         }
         observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);

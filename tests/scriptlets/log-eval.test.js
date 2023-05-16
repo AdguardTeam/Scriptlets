@@ -29,7 +29,7 @@ test('logs eval calls', (assert) => {
     const evalStr = `(function () {window.${agLogEval} = 'changed';})()`;
 
     console.log = function log(input) {
-        if (input.indexOf('trace') > -1) {
+        if (input.includes('trace')) {
             return;
         }
         assert.strictEqual(input, `${name}: eval("${evalStr}")`, 'console.hit input should be equal');
@@ -49,7 +49,7 @@ test('logs new Function() calls', (assert) => {
     const args = ['propName', 'propValue', 'window[propName] = propValue'];
 
     console.log = function log(input) {
-        if (input.indexOf('trace') > -1) {
+        if (input.includes('trace')) {
             return;
         }
         assert.strictEqual(input, `${name}: new Function(${args.join(', ')})`, 'console.hit input should be equal');

@@ -5,6 +5,7 @@ import {
 
 /**
  * @scriptlet no-topics
+ *
  * @description
  * Prevents using The Topics API
  * https://developer.chrome.com/docs/privacy-sandbox/topics/
@@ -13,6 +14,8 @@ import {
  * ```
  * example.org#%#//scriptlet('no-topics')
  * ```
+ *
+ * @added v1.6.18.
  */
 export function noTopics(source) {
     const TOPICS_PROPERTY_NAME = 'browsingTopics';

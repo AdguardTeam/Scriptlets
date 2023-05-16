@@ -3,6 +3,7 @@ import { hit } from '../helpers/index';
 
 /**
  * @redirect prebid-ads
+ *
  * @description
  * Sets predefined constants on a page:
  * - `canRunAds`: `true`
@@ -12,6 +13,8 @@ import { hit } from '../helpers/index';
  * ```
  * ||playerdrive.me/assets/js/prebid-ads.js$script,redirect=prebid-ads
  * ```
+ *
+ * @added v1.6.2.
  */
 export function prebidAds(source) {
     window.canRunAds = true;

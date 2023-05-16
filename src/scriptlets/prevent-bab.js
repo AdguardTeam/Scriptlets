@@ -3,6 +3,7 @@ import { hit } from '../helpers/index';
 
 /**
  * @scriptlet prevent-bab
+ *
  * @description
  * Prevents BlockAdblock script from detecting an ad blocker.
  *
@@ -16,6 +17,8 @@ import { hit } from '../helpers/index';
  * ```
  * example.org#%#//scriptlet('prevent-bab')
  * ```
+ *
+ * @added v1.0.4.
  */
 export function preventBab(source) {
     const nativeSetTimeout = window.setTimeout;
@@ -60,7 +63,7 @@ export function preventBab(source) {
             let match = 0;
             for (let j = 0; j < tokens.length; j += 1) {
                 const token = tokens[j];
-                const found = token instanceof RegExp ? token.test(str) : str.indexOf(token) > -1;
+                const found = token instanceof RegExp ? token.test(str) : str.includes(token);
                 if (found) {
                     match += 1;
                 }

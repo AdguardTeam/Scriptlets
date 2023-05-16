@@ -102,18 +102,21 @@ const getMarkdownData = (dataItems) => {
     const output = dataItems.reduce((acc, {
         name,
         type,
+        versionAdded,
         description,
         source,
     }) => {
-        // low case name should be used as anchor
+        // low case name should be used as an anchor in the table of content
         acc.list.push(`* [${name}](#${name.toLowerCase()})${EOL}`);
 
         const typeOfSrc = type.toLowerCase().includes('scriptlet') ? 'Scriptlet' : 'Redirect';
 
-        // low case name should be used as anchor
-        const body = `### <a id="${name.toLowerCase()}"></a> ⚡️ ${name}
+        // 1. Low case name should be used as an anchor
+        // 2. There is no EOL after 'version' string because `description` starts with `\n`
+        const body = `### <a id="${name.toLowerCase()}"></a> ⚡️ ${name}${EOL}
+${versionAdded ? `> Added in ${versionAdded}` : '> Adding version is unknown.'}
 ${description}${EOL}
-[${typeOfSrc} source](${source})
+[${typeOfSrc} source](${source})${EOL}
 * * *${EOL}${EOL}`;
         acc.body.push(body);
 
@@ -135,18 +138,25 @@ const getMarkdownDataForStaticRedirects = () => {
     const staticRedirects = fs.readFileSync(path.resolve(__dirname, staticRedirectsPath), { encoding: 'utf8' });
     const parsedStaticRedirects = yaml.safeLoad(staticRedirects);
 
-    const output = parsedStaticRedirects.reduce((acc, { title, description }) => {
-        if (description) {
-            acc.list.push(`* [${title}](#${title})${EOL}`);
-
-            const body = `### <a id="${title}"></a> ⚡️ ${title}
-${description}
-[Redirect source](${STATIC_REDIRECTS_RELATIVE_SOURCE})
-* * *${EOL}${EOL}`;
-            acc.body.push(body);
-        } else {
-            throw new Error(`No description for ${title}`);
+    const output = parsedStaticRedirects.reduce((acc, { title, description, added }) => {
+        if (!title) {
+            throw new Error('No title for static redirect');
         }
+        if (!description) {
+            throw new Error(`No description for static redirect '${title}'`);
+        }
+        if (!added) {
+            throw new Error(`No added version for static redirect '${title}'`);
+        }
+
+        acc.list.push(`* [${title}](#${title})${EOL}`);
+
+        const body = `### <a id="${title}"></a> ⚡️ ${title}${EOL}
+${added ? `> Added in ${added}.` : '> Adding version is unknown.'}${EOL}
+${description}${EOL}
+[Redirect source](${STATIC_REDIRECTS_RELATIVE_SOURCE})${EOL}
+* * *${EOL}${EOL}`;
+        acc.body.push(body);
 
         return acc;
     }, { list: [], body: [] });
@@ -170,18 +180,25 @@ const getMarkdownDataForBlockingRedirects = () => {
     const blockingRedirects = fs.readFileSync(blockingRedirectsPath, { encoding: 'utf8' });
     const parsedBlockingRedirects = yaml.safeLoad(blockingRedirects);
 
-    const output = parsedBlockingRedirects.reduce((acc, { title, description }) => {
-        if (description) {
-            acc.list.push(`* [${title}](#${title})${EOL}`);
-
-            const body = `### <a id="${title}"></a> ⚡️ ${title}
-${description}
-[Redirect source](${BLOCKING_REDIRECTS_RELATIVE_SOURCE}/${title})
-* * *${EOL}${EOL}`;
-            acc.body.push(body);
-        } else {
-            throw new Error(`No description for ${title}`);
+    const output = parsedBlockingRedirects.reduce((acc, { title, description, added }) => {
+        if (!title) {
+            throw new Error('No title for blocking redirect');
         }
+        if (!description) {
+            throw new Error(`No description for blocking redirect '${title}'`);
+        }
+        if (!added) {
+            throw new Error(`No added version for blocking redirect '${title}'`);
+        }
+
+        acc.list.push(`* [${title}](#${title})${EOL}`);
+
+        const body = `### <a id="${title}"></a> ⚡️ ${title}${EOL}
+${added ? `> Added in ${added}.` : '> Adding version is unknown.'}${EOL}
+${description}${EOL}
+[Redirect source](${BLOCKING_REDIRECTS_RELATIVE_SOURCE}/${title})${EOL}
+* * *${EOL}${EOL}`;
+        acc.body.push(body);
 
         return acc;
     }, { list: [], body: [] });
@@ -206,8 +223,8 @@ const buildWikiAboutPages = () => {
         const staticRedirectsMarkdownData = getMarkdownDataForStaticRedirects();
         const blockingRedirectsMarkdownData = getMarkdownDataForBlockingRedirects();
 
-        const scriptletsPageContent = `## <a id="scriptlets"></a> Available Scriptlets
-${scriptletsMarkdownData.list}* * *
+        const scriptletsPageContent = `## <a id="scriptlets"></a> Available Scriptlets${EOL}
+${scriptletsMarkdownData.list}* * *${EOL}
 ${scriptletsMarkdownData.body}`;
         fs.writeFileSync(
             path.resolve(__dirname, aboutScriptletsPath),

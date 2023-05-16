@@ -3,6 +3,7 @@ import {
     objectToString,
     generateRandomResponse,
     matchRequestProps,
+    getXhrData,
     logMessage,
     // following helpers should be imported and injected
     // because they are used by helpers above
@@ -10,7 +11,6 @@ import {
     isValidStrPattern,
     escapeRegExp,
     isEmptyObject,
-    getObjectEntries,
     getNumberFromString,
     nativeIsFinite,
     nativeIsNaN,
@@ -25,6 +25,7 @@ import {
 /* eslint-disable max-len */
 /**
  * @scriptlet prevent-xhr
+ *
  * @description
  * Prevents `xhr` calls if **all** given parameters match.
  *
@@ -86,6 +87,8 @@ import {
  *     ```
  *    example.org#%#//scriptlet('prevent-xhr', 'example.org', 'length:100-300')
  *     ```
+ *
+ * @added v1.5.0.
  */
 /* eslint-enable max-len */
 export function preventXHR(source, propsToMatch, customResponseText) {
@@ -95,16 +98,18 @@ export function preventXHR(source, propsToMatch, customResponseText) {
         return;
     }
 
-    let response = '';
-    let responseText = '';
-    let responseUrl;
+    const nativeOpen = window.XMLHttpRequest.prototype.open;
+    const nativeSend = window.XMLHttpRequest.prototype.send;
+
+    let xhrData;
+    let modifiedResponse = '';
+    let modifiedResponseText = '';
+
     const openWrapper = (target, thisArg, args) => {
-        // Get method and url from .open()
-        const xhrData = {
-            method: args[0],
-            url: args[1],
-        };
-        responseUrl = xhrData.url;
+        // Get original request properties
+        // eslint-disable-next-line prefer-spread
+        xhrData = getXhrData.apply(null, args);
+
         if (typeof propsToMatch === 'undefined') {
             // Log if no propsToMatch given
             logMessage(source, `xhr( ${objectToString(xhrData)} )`, true);
@@ -113,6 +118,22 @@ export function preventXHR(source, propsToMatch, customResponseText) {
             thisArg.shouldBePrevented = true;
         }
 
+        // Trap setRequestHeader of target xhr object to mimic request headers later;
+        // needed for getResponseHeader() and getAllResponseHeaders() methods
+        if (thisArg.shouldBePrevented) {
+            thisArg.collectedHeaders = [];
+            const setRequestHeaderWrapper = (target, thisArg, args) => {
+                // Collect headers
+                thisArg.collectedHeaders.push(args);
+                return Reflect.apply(target, thisArg, args);
+            };
+            const setRequestHeaderHandler = {
+                apply: setRequestHeaderWrapper,
+            };
+            // setRequestHeader() can only be called on xhr.open(),
+            // so we can safely proxy it here
+            thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
+        }
         return Reflect.apply(target, thisArg, args);
     };
 
@@ -122,57 +143,164 @@ export function preventXHR(source, propsToMatch, customResponseText) {
         }
 
         if (thisArg.responseType === 'blob') {
-            response = new Blob();
+            modifiedResponse = new Blob();
         }
-
         if (thisArg.responseType === 'arraybuffer') {
-            response = new ArrayBuffer();
+            modifiedResponse = new ArrayBuffer();
         }
 
         if (customResponseText) {
             const randomText = generateRandomResponse(customResponseText);
             if (randomText) {
-                responseText = randomText;
+                modifiedResponseText = randomText;
             } else {
-                logMessage(source, `Invalid range: ${customResponseText}`);
+                logMessage(source, `Invalid randomize parameter: '${customResponseText}'`);
             }
         }
-        // Mock response object
-        Object.defineProperties(thisArg, {
-            readyState: { value: 4, writable: false },
-            response: { value: response, writable: false },
-            responseText: { value: responseText, writable: false },
-            responseURL: { value: responseUrl, writable: false },
-            responseXML: { value: '', writable: false },
-            status: { value: 200, writable: false },
-            statusText: { value: 'OK', writable: false },
+
+        /**
+         * Create separate XHR request with original request's input
+         * to be able to collect response data without triggering
+         * listeners on original XHR object
+         */
+        const forgedRequest = new XMLHttpRequest();
+        forgedRequest.addEventListener('readystatechange', () => {
+            if (forgedRequest.readyState !== 4) {
+                return;
+            }
+
+            const {
+                readyState,
+                responseURL,
+                responseXML,
+                status,
+                statusText,
+            } = forgedRequest;
+
+            // Mock response object
+            Object.defineProperties(thisArg, {
+                // original values
+                readyState: { value: readyState, writable: false },
+                status: { value: status, writable: false },
+                statusText: { value: statusText, writable: false },
+                responseURL: { value: responseURL, writable: false },
+                responseXML: { value: responseXML, writable: false },
+                // modified values
+                response: { value: modifiedResponse, writable: false },
+                responseText: { value: modifiedResponseText, writable: false },
+            });
+
+            // Mock events
+            setTimeout(() => {
+                const stateEvent = new Event('readystatechange');
+                thisArg.dispatchEvent(stateEvent);
+
+                const loadEvent = new Event('load');
+                thisArg.dispatchEvent(loadEvent);
+
+                const loadEndEvent = new Event('loadend');
+                thisArg.dispatchEvent(loadEndEvent);
+            }, 1);
+
+            hit(source);
         });
-        // Mock events
-        setTimeout(() => {
-            const stateEvent = new Event('readystatechange');
-            thisArg.dispatchEvent(stateEvent);
 
-            const loadEvent = new Event('load');
-            thisArg.dispatchEvent(loadEvent);
+        nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
 
-            const loadEndEvent = new Event('loadend');
-            thisArg.dispatchEvent(loadEndEvent);
-        }, 1);
+        // Mimic request headers before sending
+        // setRequestHeader can only be called on open request objects
+        thisArg.collectedHeaders.forEach((header) => {
+            const name = header[0];
+            const value = header[1];
+            forgedRequest.setRequestHeader(name, value);
+        });
 
-        hit(source);
+        try {
+            nativeSend.call(forgedRequest, args);
+        } catch {
+            return Reflect.apply(target, thisArg, args);
+        }
+
         return undefined;
+    };
+
+    /**
+     * Mock XMLHttpRequest.prototype.getHeaderHandler() to avoid adblocker detection.
+     *
+     * @param {Function} target XMLHttpRequest.prototype.getHeaderHandler().
+     * @param {XMLHttpRequest} thisArg The request.
+     * @param {string[]} args Header name is passed as first argument.
+     *
+     * @returns {string|null} Header value or null if header is not set.
+     */
+    const getHeaderWrapper = (target, thisArg, args) => {
+        if (!thisArg.collectedHeaders.length) {
+            return null;
+        }
+        // The search for the header name is case-insensitive
+        // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/getResponseHeader
+        const searchHeaderName = args[0].toLowerCase();
+        const matchedHeader = thisArg.collectedHeaders.find((header) => {
+            const headerName = header[0].toLowerCase();
+            return headerName === searchHeaderName;
+        });
+        return matchedHeader
+            ? matchedHeader[1]
+            : null;
+    };
+
+    /**
+     * Mock XMLHttpRequest.prototype.getAllResponseHeaders() to avoid adblocker detection.
+     *
+     * @param {Function} target XMLHttpRequest.prototype.getAllResponseHeaders().
+     * @param {XMLHttpRequest} thisArg The request.
+     *
+     * @returns {string} All headers as a string. For no headers an empty string is returned.
+     */
+    const getAllHeadersWrapper = (target, thisArg) => {
+        if (!thisArg.collectedHeaders.length) {
+            return '';
+        }
+        const allHeadersStr = thisArg.collectedHeaders
+            .map((header) => {
+                /**
+                 * TODO: array destructuring may be used here
+                 * after the typescript implementation and bundling refactoring
+                 * as now there is an error: slicedToArray is not defined
+                 */
+                const headerName = header[0];
+                const headerValue = header[1];
+                // In modern browsers, the header names are returned in all lower case, as per the latest spec.
+                // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/getAllResponseHeaders
+                return `${headerName.toLowerCase()}: ${headerValue}`;
+            })
+            .join('\r\n');
+        return allHeadersStr;
     };
 
     const openHandler = {
         apply: openWrapper,
     };
-
     const sendHandler = {
         apply: sendWrapper,
+    };
+    const getHeaderHandler = {
+        apply: getHeaderWrapper,
+    };
+    const getAllHeadersHandler = {
+        apply: getAllHeadersWrapper,
     };
 
     XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
     XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
+    XMLHttpRequest.prototype.getResponseHeader = new Proxy(
+        XMLHttpRequest.prototype.getResponseHeader,
+        getHeaderHandler,
+    );
+    XMLHttpRequest.prototype.getAllResponseHeaders = new Proxy(
+        XMLHttpRequest.prototype.getAllResponseHeaders,
+        getAllHeadersHandler,
+    );
 }
 
 preventXHR.names = [
@@ -185,15 +313,15 @@ preventXHR.names = [
 
 preventXHR.injections = [
     hit,
-    logMessage,
     objectToString,
-    matchRequestProps,
     generateRandomResponse,
+    matchRequestProps,
+    getXhrData,
+    logMessage,
     toRegExp,
     isValidStrPattern,
     escapeRegExp,
     isEmptyObject,
-    getObjectEntries,
     getNumberFromString,
     nativeIsFinite,
     nativeIsNaN,
