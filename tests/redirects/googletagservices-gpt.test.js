@@ -115,7 +115,39 @@ test('Test recreateIframeForSlot', (assert) => {
     // https://github.com/AdguardTeam/Scriptlets/issues/259
     assert.ok(iframe.getAttribute('data-load-complete'), 'attr was mocked');
     assert.ok(iframe.getAttribute('data-google-container-id'), 'attr was mocked');
-    assert.ok(iframe.getAttribute('sandbox'), 'attr was mocked');
+    assert.strictEqual(iframe.getAttribute('sandbox'), '', 'attr was mocked');
 
+    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
+});
+
+test('Test updateTargetingFromMap', (assert) => {
+    runRedirect(name);
+
+    assert.ok(window.googletag, 'window.googletag have been created');
+    assert.strictEqual(typeof window.googletag.defineSlot(), 'object', 'Slot has been mocked');
+
+    const slot = window.googletag.defineSlot('/1234567/sports', [160, 600], 'div');
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/293
+    slot.updateTargetingFromMap({
+        color: 'red',
+        interests: ['sports', 'music', 'movies'],
+    });
+
+    assert.strictEqual(
+        slot.getTargeting('color')[0],
+        'red',
+        '.getTargeting() has been mocked - color[0] = red.',
+    );
+    assert.strictEqual(
+        slot.getTargeting('interests')[0],
+        'sports',
+        '.getTargeting() has been mocked - interests[0] = sports.',
+    );
+    assert.strictEqual(
+        slot.getTargeting('interests')[1],
+        'music',
+        '.getTargeting() has been mocked - interests[1] = music.',
+    );
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 });
