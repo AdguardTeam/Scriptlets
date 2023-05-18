@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- issue with `updateTargetingFromMap()` method
+  in `googletagservices-gpt` redirect [#293](https://github.com/AdguardTeam/Scriptlets/issues/293)
 - website reloading if `$now$`/`$currentDate$` value is used
   in `trusted-set-cookie-reload` scriptlet [#291](https://github.com/AdguardTeam/Scriptlets/issues/291)
 - `getResponseHeader()` and `getAllResponseHeaders()` methods mock
