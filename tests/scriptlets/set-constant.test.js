@@ -24,6 +24,17 @@ const runScriptletFromTag = (...args) => {
     document.body.append(script);
 };
 
+const runUboAliasFromTag = (...args) => {
+    const params = {
+        name: 'ubo-set-constant',
+        args,
+        verbose: true,
+    };
+    const script = document.createElement('script');
+    script.textContent = window.scriptlets.invoke(params);
+    document.body.append(script);
+};
+
 const addSetPropTag = (property, value) => {
     const script = document.createElement('script');
     script.textContent = `window['${property}'] = ${value};`;
@@ -405,5 +416,71 @@ if (!isSupported) {
         const result = window.a.b.c.testFunc();
         assert.strictEqual(result, undefined, 'Value was set');
         clearGlobalProps('a');
+    });
+
+    test('value wrappers returning correct values', (assert) => {
+        // Test asFunc
+        window.funcProp = null;
+        runScriptletFromTag('window.funcProp', 'yes', '', 'asFunction');
+
+        let func = window.funcProp;
+        assert.strictEqual(typeof func, 'function', 'Function was set');
+
+        let value = func();
+        assert.strictEqual(value, 'yes', 'function returns correct value');
+
+        // Test asCallback
+        window.callbackProp = null;
+        runScriptletFromTag('window.callbackProp', 'emptyArr', '', 'asCallback');
+
+        func = window.callbackProp;
+        assert.strictEqual(typeof func, 'function', 'Function was set');
+
+        const callback = func();
+        assert.strictEqual(typeof callback, 'function', 'Function returns callback');
+
+        value = callback();
+        assert.ok(Array.isArray(value), 'callback returns array');
+        assert.strictEqual(value.length, 0, 'callback returns empty array');
+
+        // Test asResolved
+        window.resolvedPromise = null;
+        runScriptletFromTag('window.resolvedPromise', 'noopFunc', '', 'asResolved');
+
+        window.resolvedPromise.then((func) => {
+            assert.strictEqual(typeof func, 'function', 'Promise resolved with correct value');
+            assert.strictEqual(func(), undefined, 'function', 'Promise resolved with correct value');
+        });
+
+        // Test asRejected
+        window.rejectedPromise = null;
+        runScriptletFromTag('window.rejectedPromise', 42, '', 'asRejected');
+
+        window.rejectedPromise
+            .catch((reason) => {
+                assert.strictEqual(reason, 42, 'Promise rejected with correct value');
+            });
+
+        clearGlobalProps('funcProp', 'callbackProp', 'resolvedPromise', 'rejectedPromise');
+    });
+
+    test('value wrapper argument correctly reorganized for ubo-set-constant', (assert) => {
+        // 'asFunction' will be moved from third argument (stack) to fourth argument (valueWrapper)
+        runUboAliasFromTag('window.funcProp', 'yes', 'asFunction');
+
+        let func = window.funcProp;
+        assert.strictEqual(typeof func, 'function', 'Function was set');
+        assert.strictEqual(func(), 'yes', 'get correct value after arguments swap');
+
+        clearGlobalProps('funcProp');
+
+        // '3' will be discarded
+        runUboAliasFromTag('window.funcProp', 'yes', '3');
+
+        func = window.funcProp;
+        assert.strictEqual(typeof func, 'function', 'Function was set');
+        assert.strictEqual(func(), 'yes', 'get correct value after skipping defer arg');
+
+        clearGlobalProps('funcProp');
     });
 }

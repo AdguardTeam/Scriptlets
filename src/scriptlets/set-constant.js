@@ -1,6 +1,7 @@
 import {
     hit,
     logMessage,
+    getNumberFromString,
     noopArray,
     noopObject,
     noopCallbackFunc,
@@ -11,15 +12,15 @@ import {
     noopPromiseReject,
     noopPromiseResolve,
     getPropertyInChain,
-    setPropertyAccess,
-    toRegExp,
     matchStackTrace,
     nativeIsNaN,
     isEmptyObject,
-    getNativeRegexpTest,
     // following helpers should be imported and injected
     // because they are used by helpers above
     shouldAbortInlineOrInjectedScript,
+    getNativeRegexpTest,
+    setPropertyAccess,
+    toRegExp,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -65,8 +66,13 @@ import {
  *         - `-1` — number value `-1`
  *         - `yes`
  *         - `no`
- * - `stack` — optional, string or regular expression that must match the current function call stack trace;
+ * - `stack` — string or regular expression that must match the current function call stack trace, defaults to matching every call;
  * if regular expression is invalid it will be skipped
+ * - `valueWrapper` – optional, string to modify a value to be set. Possible wrappers:
+ *     - `asFunction` – function returning value
+ *     - `asCallback` – function returning callback, that would return value
+ *     - `asResolved` – Promise that would resolve with value
+ *     - `asRejected` – Promise that would reject with value
  *
  * **Examples**
  * ```
@@ -91,10 +97,57 @@ import {
  * ✔ document.third() === true  // if the condition described above is met
  * ```
  *
+ * ```
+ * ! Any call to `document.fourth()` will return `yes`
+ * example.org#%#//scriptlet('set-constant', 'document.fourth', 'yes', '', 'asFunction')
+ *
+ * ✔ document.fourth() === 'yes'
+ * ```
+ *
+ * ```
+ * ! Any call to `document.fifth()` will return `yes`
+ * example.org#%#//scriptlet('set-constant', 'document.fifth', '42', '', 'asRejected')
+ *
+ * ✔ document.fifth.catch((reason) => reason === 42) // promise rejects with specified number
+ * ```
+ *
  * @added v1.0.4.
  */
 /* eslint-enable max-len */
-export function setConstant(source, property, value, stack) {
+export function setConstant(source, property, value, stack = '', valueWrapper = '') {
+    const uboAliases = [
+        'set-constant.js',
+        'ubo-set-constant.js',
+        'set.js',
+        'ubo-set.js',
+        'ubo-set-constant',
+        'ubo-set',
+    ];
+
+    /**
+     * UBO set-constant analog has it's own args sequence:
+     * (property, value, defer | wrapper)
+     * 'defer' – a stringified number, which defines execution time, or
+     * 'wrapper' - string which defines value wrapper name
+     *
+     * joysound.com##+js(set, document.body.oncopy, null, 3)
+     * kompetent.de##+js(set, Object.keys, 42, asFunction)
+     */
+    if (uboAliases.includes(source.name)) {
+        /**
+         * Check that third argument was intended as 'valueWrapper' argument,
+         * by excluding 'defer' single digits case, and move it to 'valueWrapper'
+         */
+        if (stack.length !== 1 && !getNumberFromString(stack)) {
+            valueWrapper = stack;
+        }
+        /**
+         * ubo doesn't support 'stack', while adg doesn't support 'defer'
+         * that goes in the same spot, so we discard it
+         */
+        stack = undefined;
+    }
+
     if (!property
         || !matchStackTrace(stack, new Error().stack)) {
         return;
@@ -148,6 +201,32 @@ export function setConstant(source, property, value, stack) {
         constantValue = 'no';
     } else {
         return;
+    }
+
+    const valueWrapperNames = [
+        'asFunction',
+        'asCallback',
+        'asResolved',
+        'asRejected',
+    ];
+
+    if (valueWrapperNames.includes(valueWrapper)) {
+        const valueWrappersMap = {
+            asFunction(v) {
+                return () => v;
+            },
+            asCallback(v) {
+                return () => (() => v);
+            },
+            asResolved(v) {
+                return Promise.resolve(v);
+            },
+            asRejected(v) {
+                return Promise.reject(v);
+            },
+        };
+
+        constantValue = valueWrappersMap[valueWrapper](constantValue);
     }
 
     let canceled = false;
@@ -313,6 +392,7 @@ setConstant.names = [
 setConstant.injections = [
     hit,
     logMessage,
+    getNumberFromString,
     noopArray,
     noopObject,
     noopFunc,
@@ -323,13 +403,13 @@ setConstant.injections = [
     noopPromiseReject,
     noopPromiseResolve,
     getPropertyInChain,
-    setPropertyAccess,
-    toRegExp,
     matchStackTrace,
     nativeIsNaN,
     isEmptyObject,
-    getNativeRegexpTest,
     // following helpers should be imported and injected
     // because they are used by helpers above
     shouldAbortInlineOrInjectedScript,
+    getNativeRegexpTest,
+    setPropertyAccess,
+    toRegExp,
 ];
