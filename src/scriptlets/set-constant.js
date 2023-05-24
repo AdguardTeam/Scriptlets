@@ -67,13 +67,12 @@ import {
  *         - `yes`
  *         - `no`
  * - `stack` — string or regular expression that must match the current function call stack trace, defaults to matching every call;
+ * if regular expression is invalid it will be skipped
  * - `valueWrapper` – optional, string to modify a value to be set. Possible wrappers:
  *     - `asFunction` – function returning value
  *     - `asCallback` – function returning callback, that would return value
  *     - `asResolved` – Promise that would resolve with value
  *     - `asRejected` – Promise that would reject with value
- *
- * if regular expression is invalid it will be skipped
  *
  * **Examples**
  * ```
