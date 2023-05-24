@@ -36,50 +36,54 @@ import {
  *
  * > Use [set-constant](./about-scriptlets.md#set-constant) to set predefined values and functions.
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('trusted-set-constant', property, value[, stack])
  * ```
  *
  * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`.
- * - `value` — required, an arbitrary value to be set; value type is being inferred from the argument, e.g '500' will be set as number;
- * to set string type value wrap argument into another pair of quotes: `'"500"'`;
+ * - `value` — required, an arbitrary value to be set; value type is being inferred from the argument,
+ *   e.g '500' will be set as number; to set string type value wrap argument into another pair of quotes: `'"500"'`;
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
- * if regular expression is invalid it will be skipped
+ *   if regular expression is invalid it will be skipped
  *
- * **Examples**
+ * ### Examples
+ *
  * 1. Set property values of different types
- * ```
- * ! Set string value wrapping argument into another pair of quotes
- * example.org#%#//scriptlet('trusted-set-constant', 'click_r', '"null"')
  *
- * ✔ window.click_r === 'null'
- * ✔ typeof window.click_r === 'string'
+ *     ```adblock
+ *     ! Set string value wrapping argument into another pair of quotes
+ *     example.org#%#//scriptlet('trusted-set-constant', 'click_r', '"null"')
  *
- * ! Set inferred null value
- * example.org#%#//scriptlet('trusted-set-constant', 'click_r', 'null')
+ *     ✔ window.click_r === 'null'
+ *     ✔ typeof window.click_r === 'string'
  *
- * ✔ window.click_r === null
- * ✔ typeof window.click_r === 'object'
+ *     ! Set inferred null value
+ *     example.org#%#//scriptlet('trusted-set-constant', 'click_r', 'null')
  *
- * ! Set number type value
- * example.org#%#//scriptlet('trusted-set-constant', 'click_r', '48')
+ *     ✔ window.click_r === null
+ *     ✔ typeof window.click_r === 'object'
  *
- * ✔ window.click_r === 48
- * ✔ typeof window.click_r === 'number'
+ *     ! Set number type value
+ *     example.org#%#//scriptlet('trusted-set-constant', 'click_r', '48')
  *
- * ! Set array or object as property value, argument should be a JSON string
- * example.org#%#//scriptlet('trusted-set-constant', 'click_r', '[1,"string"]')
- * example.org#%#//scriptlet('trusted-set-constant', 'click_r', '{"aaa":123,"bbb":{"ccc":"string"}}')
- * ```
+ *     ✔ window.click_r === 48
+ *     ✔ typeof window.click_r === 'number'
  *
- * 2. Use script stack matching to set value
- * ```
- * ! `document.first` will return `1` if the method is related to `checking.js`
- * example.org#%#//scriptlet('trusted-set-constant', 'document.first', '1', 'checking.js')
+ *     ! Set array or object as property value, argument should be a JSON string
+ *     example.org#%#//scriptlet('trusted-set-constant', 'click_r', '[1,"string"]')
+ *     example.org#%#//scriptlet('trusted-set-constant', 'click_r', '{"aaa":123,"bbb":{"ccc":"string"}}')
+ *     ```
  *
- * ✔ document.first === 1  // if the condition described above is met
- * ```
+ * 1. Use script stack matching to set value
+ *
+ *     ```adblock
+ *     ! `document.first` will return `1` if the method is related to `checking.js`
+ *     example.org#%#//scriptlet('trusted-set-constant', 'document.first', '1', 'checking.js')
+ *
+ *     ✔ document.first === 1  // if the condition described above is met
+ *     ```
  *
  * @added v1.8.2.
  */

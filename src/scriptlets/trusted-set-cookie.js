@@ -20,55 +20,63 @@ import {
  * Sets a cookie with arbitrary name and value,
  * and with optional ability to offset cookie attribute 'expires' and set path.
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[, path]])
  * ```
  *
  * - `name` — required, cookie name to be set
  * - `value` — required, cookie value. Possible values:
- *   - arbitrary value
- *   - empty string for no value
- *   - `$now$` keyword for setting current time in ms, e.g 1667915146503
- *   - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
- * - `offsetExpiresSec` — optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
- * Possible values:
- *   - positive integer in seconds
- *   - `1year` keyword for setting expiration date to one year
- *   - `1day` keyword for setting expiration date to one day
+ *     - arbitrary value
+ *     - empty string for no value
+ *     - `$now$` keyword for setting current time in ms, e.g 1667915146503
+ *     - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+ * - `offsetExpiresSec` — optional, offset from current time in seconds, after which cookie should expire;
+ * defaults to no offset. Possible values:
+ *     - positive integer in seconds
+ *     - `1year` keyword for setting expiration date to one year
+ *     - `1day` keyword for setting expiration date to one day
  * - `path` — optional, argument for setting cookie path, defaults to `/`; possible values:
- *   - `/` — root path
- *   - `none` — to set no path at all
+ *     - `/` — root path
+ *     - `none` — to set no path at all
  *
- * > Note that the scriptlet does not encode cookie names and values. As a result, if a cookie's name or value includes `;`,
- * the scriptlet will not set the cookie since this may cause the cookie to break.
+ * > Note that the scriptlet does not encode cookie names and values.
+ * > As a result, if a cookie's name or value includes `;`,
+ * > the scriptlet will not set the cookie since this may cause the cookie to break.
  *
- * **Examples**
+ * ### Examples
+ *
  * 1. Set cookie
- * ```
- * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept')
- * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '1-accept_1')
- * ```
  *
- * 2. Set cookie with `new Date().getTime()` value
- * ```
- * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '$now$')
- * ```
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept')
+ *     example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '1-accept_1')
+ *     ```
  *
- * 3. Set cookie which will expire in 3 days
- * ```
- * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept', '259200')
- * ```
+ * 1. Set cookie with `new Date().getTime()` value
  *
- * 4. Set cookie which will expire in one year
- * ```
- * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept', '1year')
- * ```
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '$now$')
+ *     ```
  *
- * 5. Set cookie with no path
- * ```
- * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'none')
- * ```
+ * 1. Set cookie which will expire in 3 days
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept', '259200')
+ *     ```
+ *
+ * 1. Set cookie which will expire in one year
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept', '1year')
+ *     ```
+ *
+ * 1. Set cookie with no path
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'none')
+ *     ```
  *
  * @added v1.7.3.
  */
