@@ -8,5 +8,6 @@
     "no-inline-html": { "allowed_elements": ["a"]},
     "no-duplicate-header": { "siblings_only": true },
     "no-blanks-blockquote": false,
+    "no-bare-urls": false,
     "ul-style": { "style": "dash" }
 }
