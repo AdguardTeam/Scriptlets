@@ -32,8 +32,16 @@ Build:
             ls -alt
 
             yarn install
+
+            # build docs
+            yarn wiki:build-docs
+            node ./scripts/build-compatibility-table.js
+            # lint code and docs
+            yarn lint
+
             yarn test
             yarn build
+
             rm -rf node_modules
   artifacts:
     - name: scriptlets.corelibs.json
