@@ -5,7 +5,7 @@ plan:
   key: SCRIPTLETSBUILD
   name: scriptlets - build
 variables:
-  dockerContainer: adguard/puppeteer-runner:8.0--1
+  dockerContainer: adguard/puppeteer-runner:18.2--1
 
 stages:
   - Build:

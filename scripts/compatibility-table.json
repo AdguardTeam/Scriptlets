@@ -251,6 +251,15 @@
         },
         {
             "ubo": "window.name-defuser.js"
+        },
+        {
+            "ubo": "spoof-css.js"
+        },
+        {
+            "ubo": "replace-node-text.js (rnt.js, sed.js)"
+        },
+        {
+            "ubo": "trusted-set-constant.js (trusted-set.js)"
         }
     ],
     "redirects": [

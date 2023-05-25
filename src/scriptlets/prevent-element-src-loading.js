@@ -21,6 +21,7 @@ import {
  *     - `script`
  *     - `img`
  *     - `iframe`
+ *     - `link`
  * - `match` — required, string or regular expression for matching the element's URL;
  *
  * **Examples**
@@ -45,6 +46,8 @@ export function preventElementSrcLoading(source, tagName, match) {
         img: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
         // Empty h1 tag
         iframe: 'data:text/html;base64, PGRpdj48L2Rpdj4=',
+        // Empty data
+        link: 'data:text/plain;base64,',
     };
 
     let instance;
@@ -54,6 +57,8 @@ export function preventElementSrcLoading(source, tagName, match) {
         instance = HTMLImageElement;
     } else if (tagName === 'iframe') {
         instance = HTMLIFrameElement;
+    } else if (tagName === 'link') {
+        instance = HTMLLinkElement;
     } else {
         return;
     }
@@ -74,7 +79,7 @@ export function preventElementSrcLoading(source, tagName, match) {
         });
     }
 
-    const SOURCE_PROPERTY_NAME = 'src';
+    const SOURCE_PROPERTY_NAME = tagName === 'link' ? 'href' : 'src';
     const ONERROR_PROPERTY_NAME = 'onerror';
     const searchRegexp = toRegExp(match);
 
@@ -194,6 +199,27 @@ export function preventElementSrcLoading(source, tagName, match) {
     };
     // eslint-disable-next-line max-len
     EventTarget.prototype.addEventListener = new Proxy(EventTarget.prototype.addEventListener, addEventListenerHandler);
+
+    const preventInlineOnerror = (tagName, src) => {
+        window.addEventListener('error', (event) => {
+            if (
+                !event.target
+                || !event.target.nodeName
+                || event.target.nodeName.toLowerCase() !== tagName
+                || !event.target.src
+                || !src.test(event.target.src)
+            ) {
+                return;
+            }
+            hit(source);
+            if (typeof event.target.onload === 'function') {
+                event.target.onerror = event.target.onload;
+                return;
+            }
+            event.target.onerror = noopFunc;
+        }, true);
+    };
+    preventInlineOnerror(tagName, searchRegexp);
 }
 
 preventElementSrcLoading.names = [

@@ -84,7 +84,7 @@ export function GoogleTagServicesGpt(source) {
             // https://github.com/AdguardTeam/Scriptlets/issues/259
             f.setAttribute('data-load-complete', true);
             f.setAttribute('data-google-container-id', true);
-            f.setAttribute('sandbox', true);
+            f.setAttribute('sandbox', '');
             node.appendChild(f);
         }
     };
@@ -143,7 +143,7 @@ export function GoogleTagServicesGpt(source) {
             return [v];
         }
         try {
-            return [Array.prototype.flat.call(v)[0]];
+            return Array.prototype.flat.call(v);
         } catch {
             // do nothing
         }
@@ -152,9 +152,10 @@ export function GoogleTagServicesGpt(source) {
 
     const updateTargeting = (targeting, map) => {
         if (typeof map === 'object') {
-            const entries = Object.entries(map || {});
-            for (const [k, v] of entries) {
-                targeting.set(k, getTargetingValue(v));
+            for (const key in map) {
+                if (Object.prototype.hasOwnProperty.call(map, key)) {
+                    targeting.set(key, getTargetingValue(map[key]));
+                }
             }
         }
     };

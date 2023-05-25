@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- ability for `prevent-element-src-loading` scriptlet to prevent inline `onerror` and match `link` tag [#276](https://github.com/AdguardTeam/Scriptlets/issues/276)
+- new special value modifiers for `set-constant` [#316](https://github.com/AdguardTeam/Scriptlets/issues/316)
+
 ### Changed
 
 - `trusted-set-cookie` and `trusted-set-cookie-reload` scriptlets to not encode cookie name and value
@@ -18,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- issue with `updateTargetingFromMap()` method
+  in `googletagservices-gpt` redirect [#293](https://github.com/AdguardTeam/Scriptlets/issues/293)
 - website reloading if `$now$`/`$currentDate$` value is used
   in `trusted-set-cookie-reload` scriptlet [#291](https://github.com/AdguardTeam/Scriptlets/issues/291)
 - `getResponseHeader()` and `getAllResponseHeaders()` methods mock
