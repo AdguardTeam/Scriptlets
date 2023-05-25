@@ -9,7 +9,7 @@
         "browserstack": "babel-node scripts/build-tests.js && node browserstack.js",
         "gui-test": "babel-node scripts/build-tests.js && open http://localhost:8585 && node ./tests/server.js",
         "jest": "jest trusted-set-cookie-reload.spec.js",
-        "lint": "eslint --cache . && markdownlint .",
+        "lint": "eslint --cache . && yarn lint:md",
         "lint:md": "markdownlint .",
         "lint-staged": "lint-staged",
         "prepare": "husky install",

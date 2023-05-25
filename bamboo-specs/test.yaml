@@ -33,14 +33,18 @@ Build:
 
             yarn install
 
+            # run tests
+            yarn test
+
+            # build dist
+            yarn build
+
             # build docs
             yarn wiki:build-docs
             node ./scripts/build-compatibility-table.js
+
             # lint code and docs
             yarn lint
-
-            yarn test
-            yarn build
 
             rm -rf node_modules
   artifacts:
