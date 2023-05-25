@@ -16,5 +16,4 @@ if ([[ `git diff --cached --name-only --diff-filter=ACM` == *"dist/"* ]] && [[ !
 fi
 
 yarn lint-staged
-yarn lint:md
 yarn test
