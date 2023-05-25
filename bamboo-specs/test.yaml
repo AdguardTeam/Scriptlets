@@ -33,17 +33,18 @@ Build:
 
             yarn install
 
-            # run tests
-            yarn test
+            # check compatibility table updates and build it
+            yarn wiki:build-table
+            # build other wiki docs
+            yarn wiki:build-docs
 
-            # build dist
+            # lint docs
+            yarn lint:md
+
+            yarn test
             yarn build
 
-            # build docs
-            yarn wiki:build-docs
-            node ./scripts/build-compatibility-table.js
-
-            # lint code and docs
+            # lint code. it should be run after yarn build
             yarn lint
 
             rm -rf node_modules
