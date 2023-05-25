@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- ability for `prevent-element-src-loading` scriptlet to prevent inline `onerror` and match `link` tag [#276](https://github.com/AdguardTeam/Scriptlets/issues/276)
+- ability for `prevent-element-src-loading` scriptlet to prevent inline `onerror`
+  and match `link` tag [#276](https://github.com/AdguardTeam/Scriptlets/issues/276)
 - new special value modifiers for `set-constant` [#316](https://github.com/AdguardTeam/Scriptlets/issues/316)
 
 ### Changed
