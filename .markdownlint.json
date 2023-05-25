@@ -7,5 +7,6 @@
     "no-multiple-blanks": { "maximum": 2 },
     "no-inline-html": { "allowed_elements": ["a"]},
     "no-duplicate-header": { "siblings_only": true },
-    "no-blanks-blockquote": false
+    "no-blanks-blockquote": false,
+    "ul-style": { "style": "dash" }
 }

@@ -2,22 +2,22 @@
 
 AdGuard's Scriptlets and Redirect resources library which provides extended capabilities for content blocking.
 
-* [Scriptlets](#scriptlets)
-    * [Syntax](#scriptlet-syntax)
-    * [Available scriptlets](./wiki/about-scriptlets.md#scriptlets)
-    * [Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)
-    * [Trusted scriptlets](#trusted-scriptlets)
-        * [Restriction](#trusted-scriptlets-restriction)
-        * [Available trusted scriptlets](./wiki/about-trusted-scriptlets.md#trusted-scriptlets)
-* [Redirect resources](#redirect-resources)
-    * [Syntax](#redirect-syntax)
-    * [Available redirect resources](./wiki/about-redirects.md#redirect-resources)
-    * [Redirect resources compatibility table](./wiki/compatibility-table.md#redirects)
-* [How to build](#how-to-build)
-* [How to test](#how-to-test)
-* [How to update wiki](#how-to-update-wiki)
-* [Browser compatibility](#browser-compatibility)
-* [Projects using Scriptlets](#used-by)
+- [Scriptlets](#scriptlets)
+    - [Syntax](#scriptlet-syntax)
+    - [Available scriptlets](./wiki/about-scriptlets.md#scriptlets)
+    - [Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)
+    - [Trusted scriptlets](#trusted-scriptlets)
+        - [Restriction](#trusted-scriptlets-restriction)
+        - [Available trusted scriptlets](./wiki/about-trusted-scriptlets.md#trusted-scriptlets)
+- [Redirect resources](#redirect-resources)
+    - [Syntax](#redirect-syntax)
+    - [Available redirect resources](./wiki/about-redirects.md#redirect-resources)
+    - [Redirect resources compatibility table](./wiki/compatibility-table.md#redirects)
+- [How to build](#how-to-build)
+- [How to test](#how-to-test)
+- [How to update wiki](#how-to-update-wiki)
+- [Browser compatibility](#browser-compatibility)
+- [Projects using Scriptlets](#used-by)
 
 * * *
 
@@ -34,24 +34,24 @@ Please note, that in order to achieve cross-blocker compatibility, we also suppo
 rule = [domains]  "#%#//scriptlet(" scriptletName arguments ")"
 ```
 
-* `scriptletName` (mandatory) is a name of the scriptlet from AdGuard's scriptlets library
-* `arguments` (optional) a list of `String` arguments (no other types of arguments are supported)
+- `scriptletName` (mandatory) is a name of the scriptlet from AdGuard's scriptlets library
+- `arguments` (optional) a list of `String` arguments (no other types of arguments are supported)
 
 > **Remarks**
 >
-> * The meaning of the arguments depends on the scriptlet.
+> - The meaning of the arguments depends on the scriptlet.
 >
-> * Special characters in scriptlet argument must be escaped properly:
->     * valid:
->         * `'prop["nested"]'`
->         * `"prop['nested']"`
->         * `'prop[\'nested\']'`
->         * `"prop[\"nested\"]"`
->     * not valid:
->         * `'prop['nested']'`
->         * `"prop["nested"]"`
+> - Special characters in scriptlet argument must be escaped properly:
+>     - valid:
+>         - `'prop["nested"]'`
+>         - `"prop['nested']"`
+>         - `'prop[\'nested\']'`
+>         - `"prop[\"nested\"]"`
+>     - not valid:
+>         - `'prop['nested']'`
+>         - `"prop["nested"]"`
 >
-> * You can use either single or double quotes for the scriptlet name and arguments.
+> - You can use either single or double quotes for the scriptlet name and arguments.
 > Single quote is recommended but not for cases when its usage makes readability worse,
 > e.g. `".css('display','block');"` is more preferred then `'.css(\'display\',\'block\');'`.
 
@@ -66,8 +66,8 @@ example.org#%#//scriptlet('remove-class', 'branding', 'div[class^="inner"]')
 This rule applies the `abort-on-property-read` scriptlet on all pages of `example.org` and its subdomains,
 and passes one argument to it (`alert`).
 
-* **[Scriptlets list](./wiki/about-scriptlets.md#scriptlets)**
-* **[Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)**
+- **[Scriptlets list](./wiki/about-scriptlets.md#scriptlets)**
+- **[Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)**
 
 
 ### <a id="trusted-scriptlets"></a> Trusted scriptlets
@@ -81,9 +81,9 @@ to be easily distinguished from common scriptlets.
 Trusted scriptlets application must be restricted due to dangerous nature of their capabilities.
 Allowed sources of trusted scriptlets are:
 
-* filters created by AdGuard Team,
-* custom filters which were installed as `trusted`,
-* user rules.
+- filters created by AdGuard Team,
+- custom filters which were installed as `trusted`,
+- user rules.
 
 > Trusted scriptlets has no compatibility table as they are not compatible with any other blocker.
 
@@ -107,12 +107,12 @@ so rules with this modifier support all other basic modifiers like `$domain`, `$
 The value of the `$redirect` modifier must be the name of the resource that will be used for redirection.
 See the list of [available redirect resources](./wiki/about-redirects.md#redirect-resources).
 
-#### Examples
+### Examples
 
-* `||example.org/script.js$script,redirect=noopjs` — redirects all requests to `script.js`
-    to the resource named `noopjs`.
-* `||example.org/test.mp4$media,redirect=noopmp4-1s` — requests to `example.org/test.mp4` will be redirected
-    to the resource named `noopmp4-1s`.
+- `||example.org/script.js$script,redirect=noopjs` — redirects all requests to `script.js`
+  to the resource named `noopjs`.
+- `||example.org/test.mp4$media,redirect=noopmp4-1s` — requests to `example.org/test.mp4` will be redirected
+  to the resource named `noopmp4-1s`.
 
 > `$redirect` rules priority is higher than the regular basic blocking rules' priority.
 > This means that if there's a basic blocking rule (even with `$important` modifier),
@@ -123,8 +123,8 @@ See the list of [available redirect resources](./wiki/about-redirects.md#redirec
 > uBlock Origin specifies additional resource name `none` that can disable other redirect rules.
 > AdGuard does not support it, use `$badfilter` to disable specific rules.
 
-* **[Redirect resources list](./wiki/about-redirects.md#redirect-resources)**
-* **[Redirect resources compatibility table](./wiki/compatibility-table.md#redirects)**
+- **[Redirect resources list](./wiki/about-redirects.md#redirect-resources)**
+- **[Redirect resources compatibility table](./wiki/compatibility-table.md#redirects)**
 
 * * *
 
@@ -618,12 +618,12 @@ There are two scripts to update wiki:
 
 ## <a id="used-by"> Projects using Scriptlets
 
-* [CoreLibs](https://github.com/AdguardTeam/CoreLibs) (updates automatically)
-* [TSUrlFilter](https://github.com/AdguardTeam/tsurlfilter)
-* [FiltersCompiler](https://github.com/AdguardTeam/FiltersCompiler)
-    (`tsurlfilter`'s update might be required as well)
-* [AdguardBrowserExtension](https://github.com/AdguardTeam/AdguardBrowserExtension)
-    (`tsurlfilter` also should be updated)
-* [AdguardForSafari](https://github.com/AdguardTeam/AdGuardForSafari) (`adguard-resources` should be updated)
-* [AdguardForiOS](https://github.com/AdguardTeam/AdguardForiOS)
-    (`tsurlfilter` should be updated in `advanced-adblocker-web-extension`)
+- [CoreLibs](https://github.com/AdguardTeam/CoreLibs) (updates automatically)
+- [TSUrlFilter](https://github.com/AdguardTeam/tsurlfilter)
+- [FiltersCompiler](https://github.com/AdguardTeam/FiltersCompiler)
+  (`tsurlfilter`'s update might be required as well)
+- [AdguardBrowserExtension](https://github.com/AdguardTeam/AdguardBrowserExtension)
+  (`tsurlfilter` also should be updated)
+- [AdguardForSafari](https://github.com/AdguardTeam/AdGuardForSafari) (`adguard-resources` should be updated)
+- [AdguardForiOS](https://github.com/AdguardTeam/AdguardForiOS)
+  (`tsurlfilter` should be updated in `advanced-adblocker-web-extension`)
