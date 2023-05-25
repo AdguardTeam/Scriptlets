@@ -26,7 +26,7 @@ import {
  * narrows down the part of the page DOM where shadow-dom host supposed to be,
  * defaults to document.documentElement
  *
- * > `baseSelector` should match element of the page DOM, but not of shadow DOM
+ * > `baseSelector` should match element of the page DOM, but not of shadow DOM.
  *
  * ### Examples
  *

@@ -19,7 +19,7 @@ import {
  *
  * > **This scriptlet is not allowed to be used in production filter lists!**
  *
- * ### Syntax
+ * ### Examples
  *
  * ```adblock
  * ! Aborts script when it tries to write in property `window.test`

@@ -21,7 +21,7 @@ import {
  *
  * > **It is not supposed to be used in production filter lists!**
  *
- * ### Syntax
+ * ### Examples
  *
  * ```adblock
  * ! Aborts script when it tries to access `window.alert`

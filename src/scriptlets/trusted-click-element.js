@@ -29,8 +29,8 @@ import {
  * if specified cookie/localStorage item does not exist.
  * Multiple conditions are allowed inside one `extraMatch` but they should be delimited by comma
  * and each of them should match the syntax. Possible `name`s:
- *     - `cookie` - test string or regex against cookies on a page
- *     - `localStorage` - check if localStorage item is present
+ *     - `cookie` — test string or regex against cookies on a page
+ *     - `localStorage` — check if localStorage item is present
  * - `delay` — optional, time in ms to delay scriptlet execution, defaults to instant execution.
  *
  * ### Examples

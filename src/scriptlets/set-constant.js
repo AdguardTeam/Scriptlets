@@ -67,7 +67,7 @@ import {
  *         - `yes`
  *         - `no`
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
- * if regular expression is invalid it will be skipped
+ *   if regular expression is invalid it will be skipped
  *
  * ### Examples
  *

@@ -32,7 +32,7 @@ import {
  * - `obligatoryProps` — optional, string of space-separated properties
  *   which must be all present for the pruning to occur
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
- * if regular expression is invalid it will be skipped
+ *   if regular expression is invalid it will be skipped
  *
  * > Note please that you can use wildcard `*` for chain property name,
  * > e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.

@@ -20,7 +20,7 @@ import {
  *
  * > **It is not supposed to be used in production filter lists!**
  *
- * ### Syntax
+ * ### Examples
  *
  * ```adblock
  * ! Debug script if it tries to access `window.alert`

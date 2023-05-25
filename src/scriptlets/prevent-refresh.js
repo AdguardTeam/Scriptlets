@@ -23,7 +23,7 @@ import {
  * ```
  *
  * - `delay` — optional, number of seconds for delay that indicates when scriptlet should run.
- * If not set, source tag value will be applied.
+ *   If not set, source tag value will be applied.
  *
  * ### Examples
  *

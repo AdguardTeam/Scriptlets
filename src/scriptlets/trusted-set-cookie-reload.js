@@ -36,7 +36,7 @@ import {
  *     - `$now$` keyword for setting current time in ms, e.g 1667915146503
  *     - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
  * - `offsetExpiresSec` — optional, offset from current time in seconds, after which cookie should expire;
- * defaults to no offset. Possible values:
+ *   defaults to no offset. Possible values:
  *     - positive integer in seconds
  *     - `1year` keyword for setting expiration date to one year
  *     - `1day` keyword for setting expiration date to one day

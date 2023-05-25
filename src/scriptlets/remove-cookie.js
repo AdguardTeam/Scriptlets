@@ -18,7 +18,7 @@ import { hit, toRegExp } from '../helpers/index';
  * ```
  *
  * - `match` — optional, string or regex matching the cookie name.
- * If not specified all accessible cookies will be removed.
+ *   If not specified all accessible cookies will be removed.
  *
  * ### Examples
  *
