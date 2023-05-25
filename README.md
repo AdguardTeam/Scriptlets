@@ -107,7 +107,7 @@ so rules with this modifier support all other basic modifiers like `$domain`, `$
 The value of the `$redirect` modifier must be the name of the resource that will be used for redirection.
 See the list of [available redirect resources](./wiki/about-redirects.md#redirect-resources).
 
-#### Examples
+### Examples
 
 * `||example.org/script.js$script,redirect=noopjs` — redirects all requests to `script.js`
     to the resource named `noopjs`.
