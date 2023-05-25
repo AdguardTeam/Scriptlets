@@ -184,7 +184,10 @@ async function getCurrentUBOScriptlets() {
                     .slice(ALIASES_MARKER.length)
                     // prepare the string for JSON.parse
                     .replace(/'/g, '"')
-                    .replace(/,?$/, '');
+                    .replace(/,?$/, '')
+                    // remove comments
+                    // e.g. "[ 'rnt.js', 'sed.js' /* to be removed */ ]"
+                    .replace(/\/\*[\s|\w]+?\*\//, '');
                 aliases = JSON.parse(aliasesStr);
                 // 'name' string goes first and 'aliases' string goes after it
                 // so if aliases are parsed, no need to continue lines iterating
