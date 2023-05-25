@@ -12,10 +12,11 @@ import {
  * Mocks old Google Analytics API.
  *
  * Related UBO redirect resource:
- * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_ga.js
+ * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/google-analytics_ga.js
  *
- * **Example**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * ||google-analytics.com/ga.js$script,redirect=google-analytics-ga
  * ```
  *

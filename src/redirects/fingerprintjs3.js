@@ -14,9 +14,10 @@ import {
  * Related UBO redirect resource:
  * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/fingerprint3.js
  *
- * **Example**
- * ```
- * ||sephora.com/js/ufe/isomorphic/thirdparty/fp.min.js$script,redirect=fingerprintjs3
+ * ### Examples
+ *
+ * ```adblock
+ * ||example.com/js/ufe/isomorphic/thirdparty/fp.min.js$script,redirect=fingerprintjs3
  * ```
  *
  * @added v1.6.2.

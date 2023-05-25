@@ -10,15 +10,17 @@ import {
  *
  * @description
  * Mocks Google's Analytics and Tag Manager APIs.
- * [Covers obsolete googletagmanager-gtm redirect functionality](https://github.com/AdguardTeam/Scriptlets/issues/127).
+ * Covers functionality of
+ * the [obsolete googletagmanager-gtm redirect](https://github.com/AdguardTeam/Scriptlets/issues/127).
  *
  * Related UBO redirect resource:
- * https://github.com/gorhill/uBlock/blob/8cd2a1d263a96421487b39040c1d23eb01169484/src/web_accessible_resources/google-analytics_analytics.js
+ * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/google-analytics_analytics.js
  *
- * **Example**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * ||google-analytics.com/analytics.js$script,redirect=google-analytics
- * ||googletagmanager.com/gtm.js$script,redirect=googletagmanager-gtm
+ * ||googletagmanager.com/gtm.js$script,redirect=google-analytics
  * ```
  *
  * @added v1.0.10.

@@ -7,10 +7,11 @@ import { hit, noopFunc } from '../helpers/index';
  * Mocks Amazon's apstag.js
  *
  * Related UBO redirect resource:
- * https://github.com/gorhill/uBlock/blob/f842ab6d3c1cf0394f95d27092bf59627262da40/src/web_accessible_resources/amazon_apstag.js
+ * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/amazon_apstag.js
  *
- * **Example**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * ||amazon-adsystem.com/aax2/apstag.js$script,redirect=amazon-apstag
  * ```
  *

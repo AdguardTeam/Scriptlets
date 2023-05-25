@@ -14,8 +14,9 @@ import {
  * https://pi.pardot.com/pd.js
  * https://developer.salesforce.com/docs/marketing/pardot/overview
  *
- * **Example**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * ||pi.pardot.com/pd.js$script,redirect=pardot
  * ||pacedg.com.au/pd.js$redirect=pardot
  * ```

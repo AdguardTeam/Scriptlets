@@ -7,8 +7,9 @@ import { hit, noopFunc } from '../helpers/index';
  * @description
  * Mocks the piwik.js file of Matomo (formerly Piwik).
  *
- * **Example**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * ||example.org/piwik.js$script,redirect=matomo
  * ```
  *

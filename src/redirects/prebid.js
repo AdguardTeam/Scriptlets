@@ -13,9 +13,10 @@ import {
  * Mocks the prebid.js header bidding suit.
  * https://docs.prebid.org/
  *
- * **Example**
- * ```
- * ||tmgrup.com.tr/bd/hb/prebid.js$script,redirect=prebid
+ * ### Examples
+ *
+ * ```adblock
+ * ||example.org/bd/hb/prebid.js$script,redirect=prebid
  * ```
  *
  * @added v1.6.2.

@@ -12,8 +12,9 @@ import { hit } from '../helpers/index';
  *
  * See [redirect description](../wiki/about-redirects.md#prevent-bab2).
  *
- * **Syntax**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * /blockadblock.$script,redirect=prevent-bab2
  * ```
  *
