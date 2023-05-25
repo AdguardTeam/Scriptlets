@@ -19,8 +19,9 @@ import {
  * and reloads the current page after the cookie setting.
  * If reloading option is not needed, use [set-cookie](#set-cookie) scriptlet.
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('set-cookie-reload', name, value[, path])
  * ```
  *
@@ -38,10 +39,11 @@ import {
  *     - `none` — to set no path at all
  *
  * > Note that the scriptlet encodes cookie names and values,
- * e.g value `"{ test: 'value'}"` becomes `%7B%20test%3A%20'value'%7D`.
+ * > e.g value `"{ test: 'value'}"` becomes `%7B%20test%3A%20'value'%7D`.
  *
- * **Examples**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * example.org#%#//scriptlet('set-cookie-reload', 'checking', 'ok')
  *
  * example.org#%#//scriptlet('set-cookie-reload', 'gdpr-settings-cookie', '1')

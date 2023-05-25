@@ -14,12 +14,14 @@ import {
  * @scriptlet debug-on-property-write
  *
  * @description
- * This scriptlet is basically the same as [abort-on-property-write](#abort-on-property-write), but instead of aborting it starts the debugger.
+ * This scriptlet is basically the same as [abort-on-property-write](#abort-on-property-write),
+ * but instead of aborting it starts the debugger.
  *
- * **It is not supposed to be used in production filter lists!**
+ * > **This scriptlet is not allowed to be used in production filter lists!**
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```adblock
  * ! Aborts script when it tries to write in property `window.test`
  * example.org#%#//scriptlet('debug-on-property-write', 'test')
  * ```

@@ -15,8 +15,9 @@ import {
  * @description
  * Removes elements inside open shadow DOM elements.
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('remove-in-shadow-dom', selector[, baseSelector])
  * ```
  *
@@ -27,8 +28,9 @@ import {
  *
  * > `baseSelector` should match element of the page DOM, but not of shadow DOM
  *
- * **Examples**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * ! removes menu bar
  * virustotal.com#%#//scriptlet('remove-in-shadow-dom', 'iron-pages', 'vt-virustotal-app')
  *

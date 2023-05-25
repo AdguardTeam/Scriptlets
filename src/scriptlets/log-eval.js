@@ -7,8 +7,9 @@ import { hit, logMessage } from '../helpers/index';
  * @description
  * Logs all `eval()` or `new Function()` calls to the console.
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```adblock
  * example.org#%#//scriptlet('log-eval')
  * ```
  *

@@ -39,8 +39,9 @@ import {
  * Related ABP snippet:
  * https://github.com/adblockplus/adblockpluscore/blob/adblockpluschrome-3.9.4/lib/content/snippets.js#L1361
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('set-constant', property, value[, stack])
  * ```
  *
@@ -68,15 +69,16 @@ import {
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
  * if regular expression is invalid it will be skipped
  *
- * **Examples**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * ! Any access to `window.first` will return `false`
  * example.org#%#//scriptlet('set-constant', 'first', 'false')
  *
  * ✔ window.first === false
  * ```
  *
- * ```
+ * ```adblock
  * ! Any call to `window.second()` will return `true`
  * example.org#%#//scriptlet('set-constant', 'second', 'trueFunc')
  *
@@ -84,7 +86,7 @@ import {
  * ✔ window.second.toString() === "function trueFunc() {return true;}"
  * ```
  *
- * ```
+ * ```adblock
  * ! Any call to `document.third()` will return `true` if the method is related to `checking.js`
  * example.org#%#//scriptlet('set-constant', 'document.third', 'trueFunc', 'checking.js')
  *

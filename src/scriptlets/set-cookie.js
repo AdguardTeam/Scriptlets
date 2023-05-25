@@ -18,8 +18,9 @@ import {
  * @description
  * Sets a cookie with the specified name, value, and path.
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('set-cookie', name, value[, path])
  * ```
  *
@@ -37,10 +38,11 @@ import {
  *     - `none` — to set no path at all
  *
  * > Note that the scriptlet encodes cookie names and values,
- * e.g value `"{ test: 'value'}"` becomes `%7B%20test%3A%20'value'%7D`.
+ * > e.g value `"{ test: 'value'}"` becomes `%7B%20test%3A%20'value'%7D`.
  *
- * **Examples**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * example.org#%#//scriptlet('set-cookie', 'CookieConsent', '1')
  *
  * example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', 'true')

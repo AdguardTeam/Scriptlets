@@ -22,25 +22,30 @@ import {
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-requestanimationframe-ifjs-
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('prevent-requestAnimationFrame'[, search])
  * ```
  *
- * - `search` — optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
- * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
- * If do not start with `!`, the stringified callback will be matched.
+ * - `search` — optional, string or regular expression;
+ *   invalid regular expression will be skipped and all callbacks will be matched.
+ *   If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
+ *   If do not start with `!`, the stringified callback will be matched.
  *
- * Call with no argument will log all requestAnimationFrame calls while debugging.
- * So do not use the scriptlet without any parameter in production filter lists.
+ * > Call with no argument will log all requestAnimationFrame calls while debugging.
+ * > So do not use the scriptlet without any parameter in production filter lists.
  *
- * **Examples**
- * 1. Prevents `requestAnimationFrame` calls if the callback matches `/\.test/`.
- *     ```bash
+ * ### Examples
+ *
+ * 1. Prevents `requestAnimationFrame` calls if the callback matches `/\.test/`
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-requestAnimationFrame', '/\.test/')
  *     ```
  *
  *     For instance, the following call will be prevented:
+ *
  *     ```javascript
  *     var times = 0;
  *     requestAnimationFrame(function change() {
@@ -51,8 +56,10 @@ import {
  *         }
  *     });
  *     ```
- * 2. Prevents `requestAnimationFrame` calls if **does not match** 'check'.
- *     ```bash
+ *
+ * 1. Prevents `requestAnimationFrame` calls if **does not match** 'check'
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-requestAnimationFrame', '!check')
  *     ```
  *

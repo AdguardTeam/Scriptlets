@@ -5,26 +5,32 @@ import { hit, toRegExp } from '../helpers/index';
  * @scriptlet remove-cookie
  *
  * @description
- * Removes current page cookies by passed string matching with name. For current domain and subdomains. Runs on load and before unload.
+ * Removes current page cookies by passed string matching with name. For current domain and subdomains.
+ * Runs on load and before unload.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#cookie-removerjs-
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('remove-cookie'[, match])
  * ```
  *
- * - `match` — optional, string or regex matching the cookie name. If not specified all accessible cookies will be removed.
+ * - `match` — optional, string or regex matching the cookie name.
+ * If not specified all accessible cookies will be removed.
  *
- * **Examples**
- * 1. Removes all cookies:
- *     ```
+ * ### Examples
+ *
+ * 1. Removes all cookies
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('remove-cookie')
  *     ```
  *
- * 2. Removes cookies which name contains `example` string:
- *     ```
+ * 1. Removes cookies which name contains `example` string
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('remove-cookie', 'example')
  *     ```
  *

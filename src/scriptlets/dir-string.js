@@ -12,16 +12,20 @@ import { hit } from '../helpers/index';
  * it will automatically disable the adblock circumvention script.
  *
  * Related ABP source:
+ * <!-- markdownlint-disable-next-line line-length -->
  * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L766
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('dir-string'[, times])
  * ```
+ *
  * - `times` — optional, the number of times to call the `toString` method of the argument to `console.dir`
  *
- * **Example**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * ! Run 2 times
  * example.org#%#//scriptlet('dir-string', '2')
  * ```

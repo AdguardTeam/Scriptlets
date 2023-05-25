@@ -19,22 +19,26 @@ import {
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-classjs-
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('remove-class', classes[, selector, applying])
  * ```
  *
  * - `classes` — required, class or list of classes separated by '|'
  * - `selector` — optional, CSS selector, specifies DOM nodes from which the classes will be removed.
- * If there is no `selector`, each class of `classes` independently will be removed from all nodes which has one
- * - `applying` — optional, one or more space-separated flags that describe the way scriptlet apply, defaults to 'asap stay'; possible flags:
+ *   If there is no `selector`, each class of `classes` independently will be removed from all nodes which has one
+ * - `applying` — optional, one or more space-separated flags that describe the way scriptlet apply,
+ *   defaults to 'asap stay'; possible flags:
  *     - `asap` — runs as fast as possible **once**
  *     - `complete` — runs **once** after the whole page has been loaded
  *     - `stay` — as fast as possible **and** stays on the page observing possible DOM changes
  *
- * **Examples**
- * 1.  Removes by classes
- *     ```
+ * ### Examples
+ *
+ * 1. Removes by classes
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('remove-class', 'example|test')
  *     ```
  *
@@ -50,8 +54,9 @@ import {
  *     <div id="third" class="testing better">Some text</div>
  *     ```
  *
- * 2. Removes with specified selector
- *     ```
+ * 1. Removes with specified selector
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('remove-class', 'branding', 'div[class^="inner"]')
  *     ```
  *
@@ -67,8 +72,9 @@ import {
  *     </div>
  *     ```
  *
- *  3. Using flags
- *     ```
+ * 1. Using flags
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('remove-class', 'branding', 'div[class^="inner"]', 'asap complete')
  *     ```
  *

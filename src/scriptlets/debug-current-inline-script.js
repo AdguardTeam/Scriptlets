@@ -16,12 +16,14 @@ import {
  * @scriptlet debug-current-inline-script
  *
  * @description
- * This scriptlet is basically the same as [abort-current-inline-script](#abort-current-inline-script), but instead of aborting it starts the debugger.
+ * This scriptlet is basically the same as [abort-current-inline-script](#abort-current-inline-script),
+ * but instead of aborting it starts the debugger.
  *
- * **It is not supposed to be used in production filter lists!**
+ * > **It is not supposed to be used in production filter lists!**
  *
- * **Syntax**
- *```
+ * ### Syntax
+ *
+ * ```adblock
  * ! Aborts script when it tries to access `window.alert`
  * example.org#%#//scriptlet('debug-current-inline-script', 'alert')
  * ```

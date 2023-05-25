@@ -22,22 +22,26 @@ import {
  * Related ABP source:
  * https://github.com/adblockplus/adblockpluscore/blob/master/lib/content/snippets.js#L1285
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, stack]]])
  * ```
  *
  * - `propsToRemove` — optional, string of space-separated properties to remove
- * - `obligatoryProps` — optional, string of space-separated properties which must be all present for the pruning to occur
+ * - `obligatoryProps` — optional, string of space-separated properties
+ *   which must be all present for the pruning to occur
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
  * if regular expression is invalid it will be skipped
  *
- * > Note please that you can use wildcard `*` for chain property name.
- * e.g. 'ad.*.src' instead of 'ad.0.src ad.1.src ad.2.src ...'
+ * > Note please that you can use wildcard `*` for chain property name,
+ * > e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
  *
- * **Examples**
+ * ### Examples
+ *
  * 1. Removes property `example` from the results of JSON.parse call
- *     ```
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('json-prune', 'example')
  *     ```
  *
@@ -47,8 +51,9 @@ import {
  *     JSON.parse('{"one":1,"example":true}')
  *     ```
  *
- * 2. If there are no specified properties in the result of JSON.parse call, pruning will NOT occur
- *     ```
+ * 1. If there are no specified properties in the result of JSON.parse call, pruning will NOT occur
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('json-prune', 'one', 'obligatoryProp')
  *     ```
  *
@@ -58,30 +63,33 @@ import {
  *     JSON.parse('{"one":1,"two":2}')
  *     ```
  *
- * 3. A property in a list of properties can be a chain of properties
+ * 1. A property in a list of properties can be a chain of properties
  *
- *     ```
- *     example.org#%#//scriptlet('json-prune', 'a.b', 'adpath.url.first')
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', 'a.b', 'ads.url.first')
  *     ```
  *
- * 4. Removes property `content.ad` from the results of JSON.parse call if its error stack trace contains `test.js`
- *     ```
+ * 1. Removes property `content.ad` from the results of JSON.parse call if its error stack trace contains `test.js`
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('json-prune', 'content.ad', '', 'test.js')
  *     ```
  *
- * 5. A property in a list of properties can be a chain of properties with wildcard in it
+ * 1. A property in a list of properties can be a chain of properties with wildcard in it
  *
- *     ```
- *     example.org#%#//scriptlet('json-prune', 'content.*.media.src', 'content.*.media.preroll')
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', 'content.*.media.src', 'content.*.media.ad')
  *     ```
  *
- * 6. Call with no arguments will log the current hostname and json payload at the console
- *     ```
+ * 1. Call with no arguments will log the current hostname and json payload at the console
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('json-prune')
  *     ```
  *
- * 7. Call with only second argument will log the current hostname and matched json payload at the console
- *     ```
+ * 1. Call with only second argument will log the current hostname and matched json payload at the console
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('json-prune', '', '"id":"117458"')
  *     ```
  *

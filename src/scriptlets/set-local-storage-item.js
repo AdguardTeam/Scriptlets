@@ -14,8 +14,9 @@ import {
  * Adds specified key and its value to localStorage object, or updates the value of the key if it already exists.
  * Scriptlet won't set item if storage is full.
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.com#%#//scriptlet('set-local-storage-item', 'key', 'value')
  * ```
  *
@@ -33,8 +34,9 @@ import {
  *         - `yes`
  *         - `no`
  *
- * **Examples**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * example.org#%#//scriptlet('set-local-storage-item', 'player.live.current.mute', 'false')
  *
  * example.org#%#//scriptlet('set-local-storage-item', 'exit-intent-marketing', '1')

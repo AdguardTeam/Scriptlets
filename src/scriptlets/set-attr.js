@@ -15,8 +15,9 @@ import {
  * Sets the specified attribute on the specified elements. This scriptlet runs once when the page loads
  * and after that and after that on DOM tree changes.
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('set-attr', selector, attr[, value])
  * ```
  *
@@ -27,9 +28,11 @@ import {
  *     - positive decimal integer `<= 32767`
  *     - `true` / `false` in any case variation
  *
- * **Examples**
- * 1.  Set attribute by selector
- *     ```
+ * ### Examples
+ *
+ * 1. Set attribute by selector
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', '0')
  *     ```
  *
@@ -40,8 +43,10 @@ import {
  *     <!-- after -->
  *     <a class="class" test-attribute="0">Some text</div>
  *     ```
- * 2.  Set attribute without value
- *     ```
+ *
+ * 1. Set attribute without value
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute')
  *     ```
  *
@@ -52,8 +57,10 @@ import {
  *     <!-- after -->
  *     <a class="class" test-attribute>Some text</div>
  *     ```
- * 3.  Set attribute value to `TRUE`
- *     ```
+ *
+ * 1. Set attribute value to `TRUE`
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', 'TRUE')
  *     ```
  *
@@ -64,8 +71,10 @@ import {
  *     <!-- after -->
  *     <a class="class" test-attribute="TRUE">Some text</div>
  *     ```
- * 4.  Set attribute value to `fAlse`
- *     ```
+ *
+ * 1. Set attribute value to `fAlse`
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', 'fAlse')
  *     ```
  *

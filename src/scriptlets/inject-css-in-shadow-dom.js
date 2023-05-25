@@ -11,25 +11,30 @@ import {
  * @description
  * Injects CSS rule into selected Shadow DOM subtrees on a page
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('inject-css-in-shadow-dom', cssRule[, hostSelector])
  * ```
  *
  * - `cssRule` — required, string representing a single css rule
- * - `hostSelector` — optional, string, selector to match shadow host elements. CSS rule will be only applied to shadow roots inside these elements.
- * Defaults to injecting css rule into all available roots.
+ * - `hostSelector` — optional, string, selector to match shadow host elements.
+ *   CSS rule will be only applied to shadow roots inside these elements.
+ *   Defaults to injecting css rule into all available roots.
  *
- * **Examples**
+ * ### Examples
+ *
  * 1. Apply style to all shadow dom subtrees
- * ```
- * example.org#%#//scriptlet('inject-css-in-shadow-dom', '#advertisement { display: none !important; }')
- * ```
  *
- * 2. Apply style to a specific shadow dom subtree
- * ```
- * example.org#%#//scriptlet('inject-css-in-shadow-dom', '#content { margin-top: 0 !important; }', '.row > #hidden')
- * ```
+ *     ```adblock
+ *     example.org#%#//scriptlet('inject-css-in-shadow-dom', '#advertisement { display: none !important; }')
+ *     ```
+ *
+ * 1. Apply style to a specific shadow dom subtree
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('inject-css-in-shadow-dom', '#content { margin-top: 0 !important; }', '#banner')
+ *     ```
  *
  * @added v1.8.2.
  */

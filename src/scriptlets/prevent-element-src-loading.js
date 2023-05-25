@@ -12,22 +12,26 @@ import {
  * @description
  * Prevents target element source loading without triggering 'onerror' listeners and not breaking 'onload' ones.
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('prevent-element-src-loading', tagName, match)
  * ```
  *
- * - `tagName` — required, case-insensitive target element tagName which `src` property resource loading will be silently prevented; possible values:
+ * - `tagName` — required, case-insensitive target element tagName
+ *   which `src` property resource loading will be silently prevented; possible values:
  *     - `script`
  *     - `img`
  *     - `iframe`
  * - `match` — required, string or regular expression for matching the element's URL;
  *
- * **Examples**
- * 1. Prevent script source loading:
- * ```
+ * ### Examples
+ *
+ * 1. Prevent script source loading
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-element-src-loading', 'script' ,'adsbygoogle')
- * ```
+ *     ```
  *
  * @added v1.6.2.
  */

@@ -11,40 +11,48 @@ import {
  * @description
  * Removes an element from the specified XML.
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('xml-prune'[, propsToMatch[, optionalProp[, urlToMatch]]])
  * ```
  *
  * - `propsToMatch` — optional, selector of elements which will be removed from XML
  * - `optionalProp` — optional, selector of elements that must occur in XML document
  * - `urlToMatch` — optional, string or regular expression for matching the request's URL
- * > Usage with no arguments will log response payload and URL to browser console;
- * which is useful for debugging but prohibited for production filter lists.
  *
- * **Examples**
+ * > Usage with no arguments will log response payload and URL to browser console;
+ * > which is useful for debugging but prohibited for production filter lists.
+ *
+ * ### Examples
+ *
  * 1. Remove `Period` tag whose `id` contains `-ad-` from all requests
- *     ```
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]')
  *     ```
  *
- * 2. Remove `Period` tag whose `id` contains `-ad-`, only if XML contains `SegmentTemplate`
- *     ```
+ * 1. Remove `Period` tag whose `id` contains `-ad-`, only if XML contains `SegmentTemplate`
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', 'SegmentTemplate')
  *     ```
  *
- * 3. Remove `Period` tag whose `id` contains `-ad-`, only if request's URL contains `.mpd`
- *     ```
+ * 1. Remove `Period` tag whose `id` contains `-ad-`, only if request's URL contains `.mpd`
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', '', '.mpd')
  *     ```
  *
- * 4. Call with no arguments will log response payload and URL at the console
- *     ```
+ * 1. Call with no arguments will log response payload and URL at the console
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('xml-prune')
  *     ```
  *
- * 5. Call with only `urlToMatch` argument will log response payload and URL only for the matched URL
- *     ```
+ * 1. Call with only `urlToMatch` argument will log response payload and URL only for the matched URL
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('xml-prune', '', '', '.mpd')
  *     ```
  *
