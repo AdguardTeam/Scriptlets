@@ -99,14 +99,14 @@ import {
  * ✔ document.third() === true  // if the condition described above is met
  * ```
  *
- * ```
+ * ```adblock
  * ! Any call to `document.fourth()` will return `yes`
  * example.org#%#//scriptlet('set-constant', 'document.fourth', 'yes', '', 'asFunction')
  *
  * ✔ document.fourth() === 'yes'
  * ```
  *
- * ```
+ * ```adblock
  * ! Any call to `document.fifth()` will return `yes`
  * example.org#%#//scriptlet('set-constant', 'document.fifth', '42', '', 'asRejected')
  *
