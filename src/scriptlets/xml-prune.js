@@ -2,6 +2,18 @@ import {
     hit,
     logMessage,
     toRegExp,
+    getXhrData,
+    objectToString,
+    matchRequestProps,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    getMatchPropsData,
+    getRequestProps,
+    validateParsedData,
+    parseMatchProps,
+    isValidStrPattern,
+    escapeRegExp,
+    isEmptyObject,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -52,7 +64,7 @@ import {
  */
 /* eslint-enable max-len */
 
-export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch) {
+export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = '') {
     // do nothing if browser does not support Reflect, fetch or Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -64,13 +76,7 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch) {
         return;
     }
 
-    let shouldPruneResponse = true;
-
-    if (!propsToRemove) {
-        // If "propsToRemove" is not defined, then response shouldn't be pruned
-        // but it should be logged in browser console
-        shouldPruneResponse = false;
-    }
+    let shouldPruneResponse = false;
 
     const urlMatchRegexp = toRegExp(urlToMatch);
 
@@ -93,6 +99,14 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch) {
         const xmlParser = new DOMParser();
         const xmlDocument = xmlParser.parseFromString(text, 'text/xml');
         return xmlDocument;
+    };
+
+    const isPruningNeeded = (response, propsToRemove) => {
+        if (!isXML(response)) {
+            return false;
+        }
+        const docXML = createXMLDocument(response);
+        return !!docXML.querySelector(propsToRemove);
     };
 
     const pruneXML = (text) => {
@@ -122,86 +136,175 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch) {
         return text;
     };
 
-    const xhrWrapper = (target, thisArg, args) => {
-        const xhrURL = args[1];
-        if (typeof xhrURL !== 'string' || xhrURL.length === 0) {
-            return Reflect.apply(target, thisArg, args);
+    const nativeOpen = window.XMLHttpRequest.prototype.open;
+    const nativeSend = window.XMLHttpRequest.prototype.send;
+
+    let xhrData;
+
+    const openWrapper = (target, thisArg, args) => {
+        // eslint-disable-next-line prefer-spread
+        xhrData = getXhrData.apply(null, args);
+
+        if (matchRequestProps(source, urlToMatch, xhrData)) {
+            thisArg.shouldBePruned = true;
         }
-        if (urlMatchRegexp.test(xhrURL)) {
-            thisArg.addEventListener('readystatechange', function pruneResponse() {
-                if (thisArg.readyState === 4) {
-                    const { response } = thisArg;
-                    thisArg.removeEventListener('readystatechange', pruneResponse);
-                    if (!shouldPruneResponse) {
-                        if (isXML(response)) {
-                            const message = `XMLHttpRequest.open() URL: ${xhrURL}\nresponse: ${response}`;
-                            logMessage(source, message);
-                            logMessage(source, createXMLDocument(response), true, false);
-                        }
-                    } else {
-                        const prunedResponseContent = pruneXML(response);
-                        if (shouldPruneResponse) {
-                            Object.defineProperty(thisArg, 'response', {
-                                value: prunedResponseContent,
-                            });
-                            Object.defineProperty(thisArg, 'responseText', {
-                                value: prunedResponseContent,
-                            });
-                            hit(source);
-                        }
-                        // In case if response shouldn't be pruned
-                        // pruneXML sets shouldPruneResponse to false
-                        // so it's necessary to set it to true again
-                        // otherwise response will be only logged
-                        shouldPruneResponse = true;
-                    }
-                }
-            });
+
+        // Trap setRequestHeader of target xhr object to mimic request headers later
+        if (thisArg.shouldBePruned) {
+            thisArg.collectedHeaders = [];
+            const setRequestHeaderWrapper = (target, thisArg, args) => {
+                // Collect headers
+                thisArg.collectedHeaders.push(args);
+                return Reflect.apply(target, thisArg, args);
+            };
+
+            const setRequestHeaderHandler = {
+                apply: setRequestHeaderWrapper,
+            };
+
+            // setRequestHeader can only be called on open xhr object,
+            // so we can safely proxy it here
+            thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
         }
+
         return Reflect.apply(target, thisArg, args);
     };
 
-    const xhrHandler = {
-        apply: xhrWrapper,
+    const sendWrapper = (target, thisArg, args) => {
+        const allowedResponseTypeValues = ['', 'text'];
+        // Do nothing if request do not match
+        // or response type is not a string
+        if (!thisArg.shouldBePruned || !allowedResponseTypeValues.includes(thisArg.responseType)) {
+            return Reflect.apply(target, thisArg, args);
+        }
+
+        /**
+         * Create separate XHR request with original request's input
+         * to be able to collect response data without triggering
+         * listeners on original XHR object
+         */
+        const forgedRequest = new XMLHttpRequest();
+        forgedRequest.addEventListener('readystatechange', () => {
+            if (forgedRequest.readyState !== 4) {
+                return;
+            }
+
+            const {
+                readyState,
+                response,
+                responseText,
+                responseURL,
+                responseXML,
+                status,
+                statusText,
+            } = forgedRequest;
+
+            // Extract content from response
+            const content = responseText || response;
+            if (typeof content !== 'string') {
+                return;
+            }
+
+            if (!propsToRemove) {
+                if (isXML(response)) {
+                    const message = `XMLHttpRequest.open() URL: ${responseURL}\nresponse: ${response}`;
+                    logMessage(source, message);
+                    logMessage(source, createXMLDocument(response), true, false);
+                }
+            } else {
+                shouldPruneResponse = isPruningNeeded(response, propsToRemove);
+            }
+            const responseContent = shouldPruneResponse ? pruneXML(response) : response;
+            // Manually put required values into target XHR object
+            // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
+            Object.defineProperties(thisArg, {
+                // original values
+                readyState: { value: readyState, writable: false },
+                responseURL: { value: responseURL, writable: false },
+                responseXML: { value: responseXML, writable: false },
+                status: { value: status, writable: false },
+                statusText: { value: statusText, writable: false },
+                // modified values
+                response: { value: responseContent, writable: false },
+                responseText: { value: responseContent, writable: false },
+            });
+
+            // Mock events
+            setTimeout(() => {
+                const stateEvent = new Event('readystatechange');
+                thisArg.dispatchEvent(stateEvent);
+
+                const loadEvent = new Event('load');
+                thisArg.dispatchEvent(loadEvent);
+
+                const loadEndEvent = new Event('loadend');
+                thisArg.dispatchEvent(loadEndEvent);
+            }, 1);
+            hit(source);
+        });
+
+        nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
+
+        // Mimic request headers before sending
+        // setRequestHeader can only be called on open request objects
+        thisArg.collectedHeaders.forEach((header) => {
+            const name = header[0];
+            const value = header[1];
+
+            forgedRequest.setRequestHeader(name, value);
+        });
+        thisArg.collectedHeaders = [];
+
+        try {
+            nativeSend.call(forgedRequest, args);
+        } catch {
+            return Reflect.apply(target, thisArg, args);
+        }
+        return undefined;
     };
-    // eslint-disable-next-line max-len
-    window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler);
+
+    const openHandler = {
+        apply: openWrapper,
+    };
+
+    const sendHandler = {
+        apply: sendWrapper,
+    };
+
+    XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
+    XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
 
     const nativeFetch = window.fetch;
 
-    const fetchWrapper = (target, thisArg, args) => {
+    const fetchWrapper = async (target, thisArg, args) => {
         const fetchURL = args[0] instanceof Request ? args[0].url : args[0];
         if (typeof fetchURL !== 'string' || fetchURL.length === 0) {
             return Reflect.apply(target, thisArg, args);
         }
         if (urlMatchRegexp.test(fetchURL)) {
-            return nativeFetch.apply(this, args).then((response) => {
-                return response.text().then((text) => {
-                    if (!shouldPruneResponse) {
-                        if (isXML(text)) {
-                            const message = `fetch URL: ${fetchURL}\nresponse text: ${text}`;
-                            logMessage(source, message);
-                            logMessage(source, createXMLDocument(text), true, false);
-                        }
-                        return Reflect.apply(target, thisArg, args);
-                    }
-                    const prunedText = pruneXML(text);
-                    if (shouldPruneResponse) {
-                        hit(source);
-                        return new Response(prunedText, {
-                            status: response.status,
-                            statusText: response.statusText,
-                            headers: response.headers,
-                        });
-                    }
-                    // If response shouldn't be pruned
-                    // pruneXML sets shouldPruneResponse to false
-                    // so it's necessary to set it to true again
-                    // otherwise response will be only logged
-                    shouldPruneResponse = true;
-                    return Reflect.apply(target, thisArg, args);
+            const response = await nativeFetch(...args);
+            // It's required to fix issue with - Request with body": Failed to execute 'fetch' on 'Window':
+            // Cannot construct a Request with a Request object that has already been used.
+            // For example, it occurs on youtube when scriptlet is used without arguments
+            const clonedResponse = response.clone();
+            const responseText = await response.text();
+            shouldPruneResponse = isPruningNeeded(responseText, propsToRemove);
+            if (!shouldPruneResponse) {
+                const message = `fetch URL: ${fetchURL}\nresponse text: ${responseText}`;
+                logMessage(source, message);
+                logMessage(source, createXMLDocument(responseText), true, false);
+                return clonedResponse;
+            }
+            const prunedText = pruneXML(responseText);
+            if (shouldPruneResponse) {
+                hit(source);
+                return new Response(prunedText, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: response.headers,
                 });
-            });
+            }
+            return clonedResponse;
         }
         return Reflect.apply(target, thisArg, args);
     };
@@ -225,4 +328,14 @@ xmlPrune.injections = [
     hit,
     logMessage,
     toRegExp,
+    getXhrData,
+    objectToString,
+    matchRequestProps,
+    getMatchPropsData,
+    getRequestProps,
+    validateParsedData,
+    parseMatchProps,
+    isValidStrPattern,
+    escapeRegExp,
+    isEmptyObject,
 ];

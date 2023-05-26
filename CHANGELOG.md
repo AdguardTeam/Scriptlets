@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- issue with pruning when `addEventListener` was used before calling `send()` method
+  in `m3u-prune` and `xml-prune` scriptlets [#315](https://github.com/AdguardTeam/Scriptlets/issues/315)
 - issue with `updateTargetingFromMap()` method
   in `googletagservices-gpt` redirect [#293](https://github.com/AdguardTeam/Scriptlets/issues/293)
 - website reloading if `$now$`/`$currentDate$` value is used

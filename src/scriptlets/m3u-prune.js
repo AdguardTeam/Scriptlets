@@ -2,11 +2,24 @@ import {
     hit,
     toRegExp,
     logMessage,
+    getXhrData,
+    objectToString,
+    matchRequestProps,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    getMatchPropsData,
+    getRequestProps,
+    validateParsedData,
+    parseMatchProps,
+    isValidStrPattern,
+    escapeRegExp,
+    isEmptyObject,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
 /**
  * @scriptlet m3u-prune
+ *
  * @description
  * Removes content from the specified M3U file.
  *
@@ -46,7 +59,7 @@ import {
  */
 /* eslint-enable max-len */
 
-export function m3uPrune(source, propsToRemove, urlToMatch) {
+export function m3uPrune(source, propsToRemove, urlToMatch = '') {
     // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -308,46 +321,142 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
             .join('\n');
     };
 
-    const xhrWrapper = (target, thisArg, args) => {
-        const xhrURL = args[1];
-        if (typeof xhrURL !== 'string' || xhrURL.length === 0) {
-            return Reflect.apply(target, thisArg, args);
+    const nativeOpen = window.XMLHttpRequest.prototype.open;
+    const nativeSend = window.XMLHttpRequest.prototype.send;
+
+    let xhrData;
+
+    const openWrapper = (target, thisArg, args) => {
+        // eslint-disable-next-line prefer-spread
+        xhrData = getXhrData.apply(null, args);
+
+        if (matchRequestProps(source, urlToMatch, xhrData)) {
+            thisArg.shouldBePruned = true;
         }
-        if (urlMatchRegexp.test(xhrURL)) {
-            thisArg.addEventListener('readystatechange', function pruneResponse() {
-                if (thisArg.readyState === 4) {
-                    const { response } = thisArg;
-                    thisArg.removeEventListener('readystatechange', pruneResponse);
-                    // If "propsToRemove" is not defined, then response should be logged only
-                    if (!propsToRemove) {
-                        if (isM3U(response)) {
-                            const message = `XMLHttpRequest.open() URL: ${xhrURL}\nresponse: ${response}`;
-                            logMessage(source, message);
-                        }
-                    } else {
-                        shouldPruneResponse = isPruningNeeded(response, removeM3ULineRegexp);
-                    }
-                    if (shouldPruneResponse) {
-                        const prunedResponseContent = pruneM3U(response);
-                        Object.defineProperty(thisArg, 'response', {
-                            value: prunedResponseContent,
-                        });
-                        Object.defineProperty(thisArg, 'responseText', {
-                            value: prunedResponseContent,
-                        });
-                        hit(source);
-                    }
-                }
-            });
+
+        // Trap setRequestHeader of target xhr object to mimic request headers later
+        if (thisArg.shouldBePruned) {
+            thisArg.collectedHeaders = [];
+            const setRequestHeaderWrapper = (target, thisArg, args) => {
+                // Collect headers
+                thisArg.collectedHeaders.push(args);
+                return Reflect.apply(target, thisArg, args);
+            };
+
+            const setRequestHeaderHandler = {
+                apply: setRequestHeaderWrapper,
+            };
+
+            // setRequestHeader can only be called on open xhr object,
+            // so we can safely proxy it here
+            thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
         }
+
         return Reflect.apply(target, thisArg, args);
     };
 
-    const xhrHandler = {
-        apply: xhrWrapper,
+    const sendWrapper = (target, thisArg, args) => {
+        const allowedResponseTypeValues = ['', 'text'];
+        // Do nothing if request do not match
+        // or response type is not a string
+        if (!thisArg.shouldBePruned || !allowedResponseTypeValues.includes(thisArg.responseType)) {
+            return Reflect.apply(target, thisArg, args);
+        }
+
+        /**
+         * Create separate XHR request with original request's input
+         * to be able to collect response data without triggering
+         * listeners on original XHR object
+         */
+        const forgedRequest = new XMLHttpRequest();
+        forgedRequest.addEventListener('readystatechange', () => {
+            if (forgedRequest.readyState !== 4) {
+                return;
+            }
+
+            const {
+                readyState,
+                response,
+                responseText,
+                responseURL,
+                responseXML,
+                status,
+                statusText,
+            } = forgedRequest;
+
+            // Extract content from response
+            const content = responseText || response;
+            if (typeof content !== 'string') {
+                return;
+            }
+
+            if (!propsToRemove) {
+                if (isM3U(response)) {
+                    const message = `XMLHttpRequest.open() URL: ${responseURL}\nresponse: ${response}`;
+                    logMessage(source, message);
+                }
+            } else {
+                shouldPruneResponse = isPruningNeeded(response, removeM3ULineRegexp);
+            }
+            const responseContent = shouldPruneResponse ? pruneM3U(response) : response;
+            // Manually put required values into target XHR object
+            // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
+            Object.defineProperties(thisArg, {
+                // original values
+                readyState: { value: readyState, writable: false },
+                responseURL: { value: responseURL, writable: false },
+                responseXML: { value: responseXML, writable: false },
+                status: { value: status, writable: false },
+                statusText: { value: statusText, writable: false },
+                // modified values
+                response: { value: responseContent, writable: false },
+                responseText: { value: responseContent, writable: false },
+            });
+
+            // Mock events
+            setTimeout(() => {
+                const stateEvent = new Event('readystatechange');
+                thisArg.dispatchEvent(stateEvent);
+
+                const loadEvent = new Event('load');
+                thisArg.dispatchEvent(loadEvent);
+
+                const loadEndEvent = new Event('loadend');
+                thisArg.dispatchEvent(loadEndEvent);
+            }, 1);
+            hit(source);
+        });
+
+        nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
+
+        // Mimic request headers before sending
+        // setRequestHeader can only be called on open request objects
+        thisArg.collectedHeaders.forEach((header) => {
+            const name = header[0];
+            const value = header[1];
+
+            forgedRequest.setRequestHeader(name, value);
+        });
+        thisArg.collectedHeaders = [];
+
+        try {
+            nativeSend.call(forgedRequest, args);
+        } catch {
+            return Reflect.apply(target, thisArg, args);
+        }
+        return undefined;
     };
-    // eslint-disable-next-line max-len
-    window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler);
+
+    const openHandler = {
+        apply: openWrapper,
+    };
+
+    const sendHandler = {
+        apply: sendWrapper,
+    };
+
+    XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
+    XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
 
     const nativeFetch = window.fetch;
 
@@ -358,12 +467,16 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
         }
         if (urlMatchRegexp.test(fetchURL)) {
             const response = await nativeFetch(...args);
+            // It's required to fix issue with - Request with body": Failed to execute 'fetch' on 'Window':
+            // Cannot construct a Request with a Request object that has already been used.
+            // For example, it occurs on youtube when scriptlet is used without arguments
+            const clonedResponse = response.clone();
             const responseText = await response.text();
             // If "propsToRemove" is not defined, then response should be logged only
             if (!propsToRemove && isM3U(responseText)) {
                 const message = `fetch URL: ${fetchURL}\nresponse text: ${responseText}`;
                 logMessage(source, message);
-                return Reflect.apply(target, thisArg, args);
+                return clonedResponse;
             }
             if (isPruningNeeded(responseText, removeM3ULineRegexp)) {
                 const prunedText = pruneM3U(responseText);
@@ -374,7 +487,7 @@ export function m3uPrune(source, propsToRemove, urlToMatch) {
                     headers: response.headers,
                 });
             }
-            return Reflect.apply(target, thisArg, args);
+            return clonedResponse;
         }
         return Reflect.apply(target, thisArg, args);
     };
@@ -397,4 +510,14 @@ m3uPrune.injections = [
     hit,
     toRegExp,
     logMessage,
+    getXhrData,
+    objectToString,
+    matchRequestProps,
+    getMatchPropsData,
+    getRequestProps,
+    validateParsedData,
+    parseMatchProps,
+    isValidStrPattern,
+    escapeRegExp,
+    isEmptyObject,
 ];
