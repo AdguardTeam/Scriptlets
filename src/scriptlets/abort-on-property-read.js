@@ -20,8 +20,7 @@ import {
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-property-readjs-
  *
  * Related ABP source:
- * <!-- markdownlint-disable-next-line line-length -->
- * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L864
+ * https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/abort-on-property-read.js
  *
  * ### Syntax
  *

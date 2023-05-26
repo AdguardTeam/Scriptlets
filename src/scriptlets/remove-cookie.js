@@ -11,6 +11,9 @@ import { hit, toRegExp } from '../helpers/index';
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#cookie-removerjs-
  *
+ * Related ABP source:
+ * https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/cookie-remover.js
+ *
  * ### Syntax
  *
  * ```text

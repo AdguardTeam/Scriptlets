@@ -20,7 +20,7 @@ import {
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#json-prunejs-
  *
  * Related ABP source:
- * https://github.com/adblockplus/adblockpluscore/blob/master/lib/content/snippets.js#L1285
+ * https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/json-prune.js
  *
  * ### Syntax
  *
