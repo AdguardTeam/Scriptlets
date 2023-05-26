@@ -8,24 +8,37 @@ import copy from 'rollup-plugin-copy';
 import json from '@rollup/plugin-json';
 import generateHtml from 'rollup-plugin-generate-html';
 import { rollupStandard } from './rollup-runners';
+import { generateHtmlTestFilename } from './helpers';
 
-const TESTS_DIST = path.resolve(__dirname, '../tests/dist');
+const TESTS_DIR = '../tests';
+const TESTS_DIST = path.resolve(__dirname, TESTS_DIR, 'dist');
 const TEST_FILE_NAME_MARKER = '.test.js';
+
+// TODO: use jest for api methods tests. AG-22558
+const SINGLE_TEST_FILE_DIRS = [
+    'api',
+];
+const MULTIPLE_TEST_FILES_DIRS = [
+    'scriptlets',
+    'redirects',
+    'helpers',
+];
 
 /**
  * Prepares rollup config for test file
  *
  * @param {string} fileName test file name
- * @param {string} dirPath resolved directory path
  * @param {string} subDir subdirectory with test files
  * @returns {Object} rollup config
  */
-const getTestConfig = (fileName, dirPath, subDir) => {
+const getTestConfig = (fileName, subDir) => {
     if (!fs.existsSync(TESTS_DIST)) {
         fs.mkdirSync(TESTS_DIST);
     } else {
         fs.emptyDirSync(TESTS_DIST);
     }
+
+    const dirPath = path.resolve(__dirname, TESTS_DIR, subDir);
 
     // cut off '.test.js' test file name ending
     const finalFileName = fileName.slice(0, -TEST_FILE_NAME_MARKER.length);
@@ -56,7 +69,7 @@ const getTestConfig = (fileName, dirPath, subDir) => {
             generateHtml({
                 // add subDir to final file name to avoid files rewriting
                 // because there are some equal file names in different directories
-                filename: `${TESTS_DIST}/${subDir}-${finalFileName}.html`,
+                filename: `${TESTS_DIST}/${generateHtmlTestFilename(subDir, finalFileName)}`,
                 template: 'tests/template.html',
                 selector: 'body',
                 inline: true,
@@ -78,55 +91,78 @@ const getTestConfig = (fileName, dirPath, subDir) => {
     });
 };
 
-const getTestConfigs = () => {
-    const TESTS_DIR = '../tests';
-    const MULTIPLE_TEST_FILES_DIRS = [
-        'scriptlets',
-        'redirects',
-        'helpers',
-    ];
-    const ONE_TEST_FILE_DIRS = [
-        'lib-tests',
-    ];
-
-    const multipleFilesConfigs = MULTIPLE_TEST_FILES_DIRS
-        .map((subDir) => {
-            const dirPath = path.resolve(__dirname, TESTS_DIR, subDir);
-            const filesList = fs.readdirSync(dirPath, { encoding: 'utf8' })
-                .filter((el) => {
-                    // skip index files for scriptlets and redirects
-                    return el !== 'index.test.js'
-                        // for testing specific scriptlet or redirect you should filter by its name
-                        //  or just uncomment next line and fix test name
-                        // && el === 'gemius.test.js'
-                        // please note that oneFileConfigs will still be run
-                        && el.includes(TEST_FILE_NAME_MARKER);
-                });
-            return filesList.map((filename) => getTestConfig(filename, dirPath, subDir));
-        })
-        .flat(1);
-
-    const oneFileConfigs = ONE_TEST_FILE_DIRS
-        .map((subDir) => {
-            const dirPath = path.resolve(__dirname, TESTS_DIR, subDir);
-            const filesList = fs.readdirSync(dirPath, { encoding: 'utf8' })
-                .filter((el) => el.includes(TEST_FILE_NAME_MARKER));
-            return filesList.map((filename) => getTestConfig(filename, dirPath, subDir));
-        })
-        .flat(1);
-
-    const configs = [
-        ...oneFileConfigs,
-        ...multipleFilesConfigs,
-    ];
-
-    return configs;
+/**
+ * Returns list of file names in <repo root>/tests/`subDir` which has `.test.js` ending.
+ *
+ * @param {string} subDir Subdirectory with test files.
+ *
+ * @returns {string[]} List of test files.
+ */
+const getTestFilesFromDir = (subDir) => {
+    const dirPath = path.resolve(__dirname, TESTS_DIR, subDir);
+    return fs.readdirSync(dirPath, { encoding: 'utf8' })
+        .filter((el) => el.includes(TEST_FILE_NAME_MARKER));
 };
 
-const buildTests = async () => {
-    const testConfigs = getTestConfigs();
+/**
+ * Returns list of file names in <repo root>/tests/`subDir` which has `.test.js` ending
+ * except `index.test.js`.
+ *
+ * @param {string} subDir Subdirectory with test files.
+ *
+ * @returns {string[]} List of test files.
+ */
+const getMultipleTestFilesFromDir = (subDir) => {
+    return getTestFilesFromDir(subDir)
+        .filter((el) => el !== 'index.test.js');
+};
 
+/**
+ * Returns list of rollup configs for tests.
+ *
+ * @param {Object} limitData Optional data object for limited tests running. If not provided, all tests will be run.
+ * @param {string} limitData.type Type of tests to run: scriptlets | redirects | helpers | api.
+ * @param {string} limitData.name Optional name scriptlets or redirects test to run.
+ *
+ * @returns {Object[]} Array of rollup configs for tests.
+ */
+const getTestConfigs = (limitData) => {
+    // run limited list of tests if limitData is provided
+    if (limitData && limitData.type) {
+        const { type } = limitData;
+        // TODO: this checking may be ditched
+        // when api methods tests are run by jest. AG-22558
+        let filesList = MULTIPLE_TEST_FILES_DIRS.includes(type)
+            ? getMultipleTestFilesFromDir(type)
+            : getTestFilesFromDir(type);
+
+        const { name } = limitData;
+        if (name) {
+            filesList = filesList.filter((el) => el === `${name}${TEST_FILE_NAME_MARKER}`);
+        }
+
+        return filesList.map((filename) => getTestConfig(filename, type));
+    }
+
+    // otherwise run all tests
+    const allConfigs = [];
+
+    MULTIPLE_TEST_FILES_DIRS.forEach((subDir) => {
+        getMultipleTestFilesFromDir(subDir).forEach((filename) => {
+            allConfigs.push(getTestConfig(filename, subDir));
+        });
+    });
+
+    SINGLE_TEST_FILE_DIRS.forEach((subDir) => {
+        getTestFilesFromDir(subDir).forEach((filename) => {
+            allConfigs.push(getTestConfig(filename, subDir));
+        });
+    });
+
+    return allConfigs;
+};
+
+export const buildTests = async (limitData) => {
+    const testConfigs = getTestConfigs(limitData);
     await rollupStandard(testConfigs);
 };
-
-buildTests();

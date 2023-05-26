@@ -127,10 +127,25 @@ const getDataFromFiles = (filesList, relativeDirPath) => {
     });
 };
 
+const runTasks = async (tasks) => {
+    for (const task of tasks) {
+        await task();
+    }
+};
+
+const generateHtmlTestFilename = (type, name) => {
+    if (!type || !name) {
+        throw new Error('type and name are required');
+    }
+    return `${type}-${name}.html`;
+};
+
 module.exports = {
     writeFile,
     getFilesList,
     getDataFromFiles,
+    runTasks,
+    generateHtmlTestFilename,
     SCRIPTLET_TYPE,
     TRUSTED_SCRIPTLET_TYPE,
     REDIRECT_TYPE,

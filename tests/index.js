@@ -13,7 +13,6 @@ const TESTS_RUN_TIMEOUT = 30000;
 const TESTS_DIST = './dist';
 const TEST_FILE_NAME_MARKER = '.html';
 
-const testServer = server.init();
 /**
  * Returns false if test failed and true if test passed
  *
@@ -38,7 +37,9 @@ const runQunit = async (indexFile) => {
     return true;
 };
 
-(async () => {
+const runQunitTests = async () => {
+    const testServer = server.init();
+
     await start(testServer, port);
 
     const dirPath = path.resolve(__dirname, TESTS_DIST);
@@ -71,4 +72,8 @@ const runQunit = async (indexFile) => {
     }
 
     await stop(testServer);
-})();
+};
+
+module.exports = {
+    runQunitTests,
+};

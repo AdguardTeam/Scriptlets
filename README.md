@@ -482,14 +482,33 @@ const isBlocking = redirect.isBlocking('click2load.html');
 ## <a id="how-to-test"></a> How to test
 
 Run node testing
-```
-yarn test
-```
 
-Run tests gui
-```
-yarn gui-test
-```
+- for all tests:
+
+    ```
+    yarn test
+    ```
+
+- for limited testing:
+
+    ```
+    yarn test api
+    yarn test helpers
+    yarn test scriptlets
+    yarn test redirects
+    ```
+
+    - for scriptlets and redirects test run can be more specific:
+
+        ```
+        // node test run
+        yarn test scriptlets --name set-cookie
+        yarn test redirects --name ati-smarttag
+
+        // gui test run
+        yarn test scriptlets --name set-cookie --gui
+        yarn test redirects --name ati-smarttag --gui
+        ```
 
 Watcher is available
 ```
