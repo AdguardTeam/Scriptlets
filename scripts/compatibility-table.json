@@ -256,7 +256,10 @@
             "ubo": "spoof-css.js"
         },
         {
-            "ubo": "replace-node-text.js (rnt.js, sed.js)"
+            "ubo": "remove-node-text.js (rmnt.js)"
+        },
+        {
+            "ubo": "replace-node-text.js (rpnt.js, sed.js)"
         },
         {
             "ubo": "trusted-set-constant.js (trusted-set.js)"
