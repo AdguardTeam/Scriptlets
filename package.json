@@ -4,9 +4,10 @@
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "scripts": {
         "build": "babel-node scripts/build.js",
-        "test": "yarn jest && babel-node scripts/test.js",
+        "test": "yarn test:jest && yarn test:qunit",
         "browserstack": "yarn test --build && node browserstack.js",
-        "jest": "jest trusted-set-cookie-reload.spec.js",
+        "test:qunit": "babel-node scripts/test.js",
+        "test:jest": "jest",
         "lint": "eslint .",
         "lint-staged": "lint-staged",
         "prepare": "husky install",

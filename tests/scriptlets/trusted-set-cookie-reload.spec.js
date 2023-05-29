@@ -1,6 +1,3 @@
-/**
- * @jest-environment jsdom
- */
 /* eslint-disable no-underscore-dangle */
 
 import { trustedSetCookieReload } from '../../src/scriptlets/trusted-set-cookie-reload';

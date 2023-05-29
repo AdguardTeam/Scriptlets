@@ -14,10 +14,6 @@ const TESTS_DIR = '../tests';
 const TESTS_DIST = path.resolve(__dirname, TESTS_DIR, 'dist');
 const TEST_FILE_NAME_MARKER = '.test.js';
 
-// TODO: use jest for api methods tests. AG-22558
-const SINGLE_TEST_FILE_DIRS = [
-    'api',
-];
 const MULTIPLE_TEST_FILES_DIRS = [
     'scriptlets',
     'redirects',
@@ -130,11 +126,7 @@ const getTestConfigs = (limitData) => {
     // run limited list of tests if limitData is provided
     if (limitData && limitData.type) {
         const { type } = limitData;
-        // TODO: this checking may be ditched
-        // when api methods tests are run by jest. AG-22558
-        let filesList = MULTIPLE_TEST_FILES_DIRS.includes(type)
-            ? getMultipleTestFilesFromDir(type)
-            : getTestFilesFromDir(type);
+        let filesList = getMultipleTestFilesFromDir(type);
 
         const { name } = limitData;
         if (name) {
@@ -146,15 +138,8 @@ const getTestConfigs = (limitData) => {
 
     // otherwise run all tests
     const allConfigs = [];
-
     MULTIPLE_TEST_FILES_DIRS.forEach((subDir) => {
         getMultipleTestFilesFromDir(subDir).forEach((filename) => {
-            allConfigs.push(getTestConfig(filename, subDir));
-        });
-    });
-
-    SINGLE_TEST_FILE_DIRS.forEach((subDir) => {
-        getTestFilesFromDir(subDir).forEach((filename) => {
             allConfigs.push(getTestConfig(filename, subDir));
         });
     });

@@ -481,71 +481,43 @@ const isBlocking = redirect.isBlocking('click2load.html');
 
 ## <a id="how-to-test"></a> How to test
 
-Run node testing
+Some tests are run in QUnit, some in Jest.
 
-- for all tests:
+Run all tests:
 
-    ```
-    yarn test
-    ```
+```bash
+yarn test
+```
 
-- for limited testing:
+1. QUnit is used for testing of scriptlets, redirects, and helpers:
 
-    ```
-    yarn test api
-    yarn test helpers
-    yarn test scriptlets
-    yarn test redirects
+    ```text
+    yarn test:qunit [scriptlets | redirects | helpers]
     ```
 
-    - for scriptlets and redirects test run can be more specific:
+    For scriptlets and redirects test run can be more specific:
 
-        ```
-        // node test run
-        yarn test scriptlets --name set-cookie
-        yarn test redirects --name ati-smarttag
+    ```bash
+    // node test run
+    yarn test scriptlets --name set-cookie
+    yarn test redirects --name ati-smarttag
 
-        // gui test run
-        yarn test scriptlets --name set-cookie --gui
-        yarn test redirects --name ati-smarttag --gui
-        ```
+    // gui test run
+    yarn test scriptlets --name set-cookie --gui
+    yarn test redirects --name ati-smarttag --gui
+    ```
 
-Watcher is available
-```
-yarn test-watch
-```
+1. Run all jest tests:
 
-Limit testing by commenting out corresponding values in `build-tests.js`
-```
-const MULTIPLE_TEST_FILES_DIRS = [
-// 'scriptlets',
-// 'redirects',
-];
-const ONE_TEST_FILE_DIRS = [
-'lib-tests',
-// 'helpers',
-];
-```
+    ```bash
+    yarn jest
+    ```
 
-or `index.test.js`
-```
-// import './scriptlets/index.test';
-import './redirects/index.test';
-// import './lib-tests/index.test';
-// import './helpers/index.test';
-```
+    or limit the testing — `testRegex` may be specified in `jest.config.js` or specify [test name](https://jestjs.io/docs/cli#--testnamepatternregex) in command line, e.g.:
 
-> It is also possible to exclude library tests in `tests/lib-tests/index.test.js`
-
-Run specific scriptlet or redirect test by editing `build-tests.js`
-```
-.filter((el) => {
-    return el !== 'index.test.js'
-        // Uncomment next line and use required scriptlet/redirect name
-        // && el === 'gemius.test.js'
-        && el.includes(TEST_FILE_NAME_MARKER);
-});
-```
+    ```bash
+    yarn jest -t isValidScriptletRule
+    ```
 
 To run browserstack tests create `.env` file or copy and rename `.env-example`.
 

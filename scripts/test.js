@@ -126,14 +126,6 @@ program
     });
 
 program
-    .description('Test only api methods')
-    .command('api')
-    .action(async () => {
-        await buildTests({ type: 'api' });
-        await runQunitTests();
-    });
-
-program
     .description('Test only helpers')
     .command('helpers')
     .action(async () => {

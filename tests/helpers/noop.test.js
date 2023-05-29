@@ -1,3 +1,8 @@
+/**
+ * @file Tests for noop helper functions should be run by QUint,
+ * not by Jest because jsdom does not support Request which is needed for noopPromiseResolve()
+ */
+
 import {
     noopPromiseResolve,
     noopCallbackFunc,
@@ -6,7 +11,7 @@ import {
 } from '../../src/helpers';
 
 const { test, module } = QUnit;
-const name = 'scriptlets-redirects helpers';
+const name = 'scriptlets-redirects noop helpers';
 
 module(name);
 
