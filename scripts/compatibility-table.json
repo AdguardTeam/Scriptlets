@@ -262,6 +262,9 @@
         },
         {
             "ubo": "trusted-set-constant.js (trusted-set.js)"
+        },
+        {
+            "ubo": "evaldata-prune.js"
         }
     ],
     "redirects": [
