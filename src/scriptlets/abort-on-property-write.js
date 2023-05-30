@@ -20,17 +20,20 @@ import {
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-property-writejs-
  *
  * Related ABP source:
- * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L896
+ * https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/abort-on-property-write.js
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('abort-on-property-write', property)
  * ```
  *
- * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`
+ * - `property` — required, path to a property (joined with `.` if needed).
+ *   The property must be attached to `window`
  *
- * **Examples**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * ! Aborts script when it tries to set `window.adblock` value
  * example.org#%#//scriptlet('abort-on-property-write', 'adblock')
  * ```

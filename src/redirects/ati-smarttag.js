@@ -7,9 +7,10 @@ import { hit, noopFunc } from '../helpers/index';
  * Mocks AT Internat SmartTag.
  * https://developers.atinternet-solutions.com/as2-tagging-en/javascript-en/getting-started-javascript-en/tracker-initialisation-javascript-en/
  *
- * **Example**
- * ```
- * ||bloctel.gouv.fr/assets/scripts/smarttag.js$script,redirect=ati-smarttag
+ * ### Examples
+ *
+ * ```adblock
+ * ||example.com/assets/scripts/smarttag.js$script,redirect=ati-smarttag
  * ```
  *
  * @added v1.5.0.

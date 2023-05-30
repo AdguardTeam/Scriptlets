@@ -107,13 +107,13 @@ const getMarkdownData = (dataItems) => {
         source,
     }) => {
         // low case name should be used as an anchor in the table of content
-        acc.list.push(`* [${name}](#${name.toLowerCase()})${EOL}`);
+        acc.list.push(`- [${name}](#${name.toLowerCase()})${EOL}`);
 
         const typeOfSrc = type.toLowerCase().includes('scriptlet') ? 'Scriptlet' : 'Redirect';
 
         // 1. Low case name should be used as an anchor
         // 2. There is no EOL after 'version' string because `description` starts with `\n`
-        const body = `### <a id="${name.toLowerCase()}"></a> ⚡️ ${name}${EOL}
+        const body = `## <a id="${name.toLowerCase()}"></a> ⚡️ ${name}${EOL}
 ${versionAdded ? `> Added in ${versionAdded}` : '> Adding version is unknown.'}
 ${description}${EOL}
 [${typeOfSrc} source](${source})${EOL}
@@ -149,9 +149,9 @@ const getMarkdownDataForStaticRedirects = () => {
             throw new Error(`No added version for static redirect '${title}'`);
         }
 
-        acc.list.push(`* [${title}](#${title})${EOL}`);
+        acc.list.push(`- [${title}](#${title})${EOL}`);
 
-        const body = `### <a id="${title}"></a> ⚡️ ${title}${EOL}
+        const body = `## <a id="${title}"></a> ⚡️ ${title}${EOL}
 ${added ? `> Added in ${added}.` : '> Adding version is unknown.'}${EOL}
 ${description}${EOL}
 [Redirect source](${STATIC_REDIRECTS_RELATIVE_SOURCE})${EOL}
@@ -191,9 +191,9 @@ const getMarkdownDataForBlockingRedirects = () => {
             throw new Error(`No added version for blocking redirect '${title}'`);
         }
 
-        acc.list.push(`* [${title}](#${title})${EOL}`);
+        acc.list.push(`- [${title}](#${title})${EOL}`);
 
-        const body = `### <a id="${title}"></a> ⚡️ ${title}${EOL}
+        const body = `## <a id="${title}"></a> ⚡️ ${title}${EOL}
 ${added ? `> Added in ${added}.` : '> Adding version is unknown.'}${EOL}
 ${description}${EOL}
 [Redirect source](${BLOCKING_REDIRECTS_RELATIVE_SOURCE}/${title})${EOL}
@@ -223,8 +223,8 @@ const buildWikiAboutPages = () => {
         const staticRedirectsMarkdownData = getMarkdownDataForStaticRedirects();
         const blockingRedirectsMarkdownData = getMarkdownDataForBlockingRedirects();
 
-        const scriptletsPageContent = `## <a id="scriptlets"></a> Available Scriptlets${EOL}
-${scriptletsMarkdownData.list}* * *${EOL}
+        const scriptletsPageContent = `# <a id="scriptlets"></a> Available Scriptlets${EOL}
+${scriptletsMarkdownData.list}${EOL}* * *${EOL}
 ${scriptletsMarkdownData.body}`;
         fs.writeFileSync(
             path.resolve(__dirname, aboutScriptletsPath),
@@ -232,8 +232,8 @@ ${scriptletsMarkdownData.body}`;
         );
 
         // eslint-disable-next-line max-len
-        const trustedScriptletsPageContent = `## <a id="trusted-scriptlets"></a> Available Trusted Scriptlets
-${trustedScriptletsMarkdownData.list}* * *
+        const trustedScriptletsPageContent = `# <a id="trusted-scriptlets"></a> Available Trusted Scriptlets${EOL}
+${trustedScriptletsMarkdownData.list}${EOL}* * *${EOL}
 ${trustedScriptletsMarkdownData.body}`;
         fs.writeFileSync(
             path.resolve(__dirname, aboutTrustedScriptletsPath),
@@ -241,8 +241,8 @@ ${trustedScriptletsMarkdownData.body}`;
         );
 
         /* eslint-disable max-len */
-        const redirectsPageContent = `## <a id="redirect-resources"></a> Available Redirect resources
-${staticRedirectsMarkdownData.list}${redirectsMarkdownData.list}${blockingRedirectsMarkdownData.list}* * *
+        const redirectsPageContent = `# <a id="redirect-resources"></a> Available Redirect resources${EOL}
+${staticRedirectsMarkdownData.list}${redirectsMarkdownData.list}${blockingRedirectsMarkdownData.list}${EOL}* * *${EOL}
 ${staticRedirectsMarkdownData.body}${redirectsMarkdownData.body}${blockingRedirectsMarkdownData.body}`;
         /* eslint-enable max-len */
         fs.writeFileSync(

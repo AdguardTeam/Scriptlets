@@ -40,8 +40,9 @@ import {
  * Related ABP snippet:
  * https://github.com/adblockplus/adblockpluscore/blob/adblockpluschrome-3.9.4/lib/content/snippets.js#L1361
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('set-constant', property, value[, stack])
  * ```
  *
@@ -66,23 +67,24 @@ import {
  *         - `-1` — number value `-1`
  *         - `yes`
  *         - `no`
- * - `stack` — string or regular expression that must match the current function call stack trace, defaults to matching every call;
- * if regular expression is invalid it will be skipped
+ * - `stack` — string or regular expression that must match the current function call stack trace,
+ *   defaults to matching every call; if regular expression is invalid, it will be skipped
  * - `valueWrapper` – optional, string to modify a value to be set. Possible wrappers:
  *     - `asFunction` – function returning value
  *     - `asCallback` – function returning callback, that would return value
  *     - `asResolved` – Promise that would resolve with value
  *     - `asRejected` – Promise that would reject with value
  *
- * **Examples**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * ! Any access to `window.first` will return `false`
  * example.org#%#//scriptlet('set-constant', 'first', 'false')
  *
  * ✔ window.first === false
  * ```
  *
- * ```
+ * ```adblock
  * ! Any call to `window.second()` will return `true`
  * example.org#%#//scriptlet('set-constant', 'second', 'trueFunc')
  *
@@ -90,21 +92,21 @@ import {
  * ✔ window.second.toString() === "function trueFunc() {return true;}"
  * ```
  *
- * ```
+ * ```adblock
  * ! Any call to `document.third()` will return `true` if the method is related to `checking.js`
  * example.org#%#//scriptlet('set-constant', 'document.third', 'trueFunc', 'checking.js')
  *
  * ✔ document.third() === true  // if the condition described above is met
  * ```
  *
- * ```
+ * ```adblock
  * ! Any call to `document.fourth()` will return `yes`
  * example.org#%#//scriptlet('set-constant', 'document.fourth', 'yes', '', 'asFunction')
  *
  * ✔ document.fourth() === 'yes'
  * ```
  *
- * ```
+ * ```adblock
  * ! Any call to `document.fifth()` will return `yes`
  * example.org#%#//scriptlet('set-constant', 'document.fifth', '42', '', 'asRejected')
  *

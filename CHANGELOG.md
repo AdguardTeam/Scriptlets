@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- ability for `prevent-element-src-loading` scriptlet to prevent inline `onerror` and match `link` tag [#276](https://github.com/AdguardTeam/Scriptlets/issues/276)
+- ability for `prevent-element-src-loading` scriptlet to prevent inline `onerror`
+  and match `link` tag [#276](https://github.com/AdguardTeam/Scriptlets/issues/276)
 - new special value modifiers for `set-constant` [#316](https://github.com/AdguardTeam/Scriptlets/issues/316)
 
 ### Changed
@@ -166,15 +167,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Scriptlets:
-  - `prevent-element-src-loading` [#228](https://github.com/AdguardTeam/Scriptlets/issues/228)
-  - `prevent-fetch` [#216](https://github.com/AdguardTeam/Scriptlets/issues/216)
-  - `abort-on-stack-trace` [#201](https://github.com/AdguardTeam/Scriptlets/issues/201)
-  - `abort-current-inline-script` [#251](https://github.com/AdguardTeam/Scriptlets/issues/251)
-  - `set-cookie` & `set-cookie-reload`
+    - `prevent-element-src-loading` [#228](https://github.com/AdguardTeam/Scriptlets/issues/228)
+    - `prevent-fetch` [#216](https://github.com/AdguardTeam/Scriptlets/issues/216)
+    - `abort-on-stack-trace` [#201](https://github.com/AdguardTeam/Scriptlets/issues/201)
+    - `abort-current-inline-script` [#251](https://github.com/AdguardTeam/Scriptlets/issues/251)
+    - `set-cookie` & `set-cookie-reload`
 - Redirects:
-  - `google-ima3` [#255](https://github.com/AdguardTeam/Scriptlets/issues/255)
-  - `metrika-yandex-tag` [#254](https://github.com/AdguardTeam/Scriptlets/issues/254)
-  - `googlesyndication-adsbygoogle` [#252](https://github.com/AdguardTeam/Scriptlets/issues/252)
+    - `google-ima3` [#255](https://github.com/AdguardTeam/Scriptlets/issues/255)
+    - `metrika-yandex-tag` [#254](https://github.com/AdguardTeam/Scriptlets/issues/254)
+    - `googlesyndication-adsbygoogle` [#252](https://github.com/AdguardTeam/Scriptlets/issues/252)
 
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.7...HEAD

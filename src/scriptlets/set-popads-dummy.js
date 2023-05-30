@@ -10,8 +10,9 @@ import { hit } from '../helpers/index';
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#popads-dummyjs-
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```adblock
  * example.org#%#//scriptlet('set-popads-dummy')
  * ```
  *

@@ -11,9 +11,10 @@ import { hit } from '../helpers/index';
  * Related UBO redirect resource:
  * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/fingerprint2.js
  *
- * **Example**
- * ```
- * ||the-japan-news.com/modules/js/lib/fgp/fingerprint2.js$script,redirect=fingerprintjs2
+ * ### Examples
+ *
+ * ```adblock
+ * ||example.com/modules/js/lib/fgp/fingerprint2.js$script,redirect=fingerprintjs2
  * ```
  *
  * @added v1.5.0.

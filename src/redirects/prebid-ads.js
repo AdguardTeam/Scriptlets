@@ -6,12 +6,14 @@ import { hit } from '../helpers/index';
  *
  * @description
  * Sets predefined constants on a page:
+ *
  * - `canRunAds`: `true`
  * - `isAdBlockActive`: `false`
  *
- * **Example**
- * ```
- * ||playerdrive.me/assets/js/prebid-ads.js$script,redirect=prebid-ads
+ * ### Examples
+ *
+ * ```adblock
+ * ||example.org/assets/js/prebid-ads.js$script,redirect=prebid-ads
  * ```
  *
  * @added v1.6.2.

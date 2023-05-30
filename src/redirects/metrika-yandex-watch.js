@@ -7,8 +7,9 @@ import { hit, noopFunc, noopArray } from '../helpers/index';
  * Mocks the old Yandex Metrika API.
  * https://yandex.ru/support/metrica/objects/_method-reference.html
  *
- * **Example**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * ||mc.yandex.ru/metrika/watch.js$script,redirect=metrika-yandex-watch
  * ```
  *

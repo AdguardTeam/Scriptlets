@@ -32,8 +32,21 @@ Build:
             ls -alt
 
             yarn install
+
+            # check compatibility table updates and build it
+            yarn wiki:build-table
+            # build other wiki docs
+            yarn wiki:build-docs
+
+            # lint docs
+            yarn lint:md
+
             yarn test
             yarn build
+
+            # lint code. it should be run after yarn build
+            yarn lint
+
             rm -rf node_modules
   artifacts:
     - name: scriptlets.corelibs.json

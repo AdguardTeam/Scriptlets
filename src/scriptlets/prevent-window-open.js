@@ -23,59 +23,73 @@ import {
  * @scriptlet prevent-window-open
  *
  * @description
- * Prevents `window.open` calls when URL either matches or not matches the specified string/regexp. Using it without parameters prevents all `window.open` calls.
+ * Prevents `window.open` calls when URL either matches or not matches the specified string/regexp.
+ * Using it without parameters prevents all `window.open` calls.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#windowopen-defuserjs-
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('prevent-window-open'[, match[, delay[, replacement]]])
  * ```
  *
- * - `match` — optional, string or regular expression. If not set or regular expression is invalid, all window.open calls will be matched.
- * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
- * If do not start with `!`, the stringified callback will be matched.
+ * - `match` — optional, string or regular expression.
+ *   If not set or regular expression is invalid, all window.open calls will be matched.
+ *   If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
+ *   If do not start with `!`, the stringified callback will be matched.
  * - `delay` — optional, number of seconds. If not set, scriptlet will return `null`,
- * otherwise valid sham window object as injected `iframe` will be returned
- * for accessing its methods (blur(), focus() etc.) and will be removed after the delay.
+ *   otherwise valid sham window object as injected `iframe` will be returned
+ *   for accessing its methods (blur(), focus() etc.) and will be removed after the delay.
  * - `replacement` — optional, string; one of the predefined constants:
  *     - `obj` — for returning an object instead of default iframe;
  *        for cases when the page requires a valid `window` instance to be returned
- *     - `log` — for logging window.open calls; permitted for production filter lists.
+ *     - `log` — for logging window.open calls; not allowed for prod versions of filter lists.
  *
- * **Examples**
- * 1. Prevent all `window.open` calls:
- *     ```
+ * ### Examples
+ *
+ * 1. Prevent all `window.open` calls
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-window-open')
  *     ```
  *
- * 2. Prevent `window.open` for all URLs containing `example`:
- *     ```
+ * 1. Prevent `window.open` for all URLs containing `example`
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-window-open', 'example')
  *     ```
  *
- * 3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
- *     ```
+ * 1. Prevent `window.open` for all URLs matching RegExp `/example\./`
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-window-open', '/example\./')
  *     ```
  *
- * 4. Prevent `window.open` for all URLs **NOT** containing `example`:
- *     ```
+ * 1. Prevent `window.open` for all URLs **NOT** containing `example`
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-window-open', '!example')
  *     ```
  *
- * Old syntax of prevent-window-open parameters:
- * - `match` — optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
- * - `search` — optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
- * - `replacement` — optional, string to return prop value or property instead of window.open; defaults to return noopFunc.
- * **Examples**
- *     ```
- *     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
- *     example.org#%#//scriptlet('prevent-window-open', '0', 'example')
- *     example.org#%#//scriptlet('prevent-window-open', '', '', 'trueFunc')
- *     example.org#%#//scriptlet('prevent-window-open', '1', '', '{propName=noopFunc}')
- *     ```
+ * ### Old syntax of prevent-window-open parameters
+ *
+ * - `match` — optional, defaults to "matching", any positive number or nothing for "matching",
+ *   0 or empty string for "not matching"
+ * - `search` — optional, string or regexp for matching the URL passed to `window.open` call;
+ *   defaults to search all `window.open` call
+ * - `replacement` — optional, string to return prop value or property instead of window.open;
+ *   defaults to return noopFunc.
+ *
+ * ### Examples of old syntax
+ *
+ * ```adblock
+ * example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
+ * example.org#%#//scriptlet('prevent-window-open', '0', 'example')
+ * example.org#%#//scriptlet('prevent-window-open', '', '', 'trueFunc')
+ * example.org#%#//scriptlet('prevent-window-open', '1', '', '{propName=noopFunc}')
+ * ```
  *
  * > For better compatibility with uBO, old syntax is not recommended to use.
  *

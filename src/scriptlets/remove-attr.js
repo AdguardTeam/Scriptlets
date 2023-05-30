@@ -20,21 +20,25 @@ import {
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('remove-attr', attrs[, selector, applying])
  * ```
  *
  * - `attrs` — required, attribute or list of attributes joined by '|'
  * - `selector` — optional, CSS selector, specifies DOM nodes from which the attributes will be removed
- * - `applying` — optional, one or more space-separated flags that describe the way scriptlet apply, defaults to 'asap stay'; possible flags:
+ * - `applying` — optional, one or more space-separated flags that describe the way scriptlet apply,
+ *   defaults to 'asap stay'; possible flags:
  *     - `asap` — runs as fast as possible **once**
  *     - `complete` — runs **once** after the whole page has been loaded
  *     - `stay` — as fast as possible **and** stays on the page observing possible DOM changes
  *
- * **Examples**
- * 1.  Removes by attribute
- *     ```
+ * ### Examples
+ *
+ * 1. Removes by attribute
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('remove-attr', 'example|test')
  *     ```
  *
@@ -46,8 +50,9 @@ import {
  *     <div>Some text</div>
  *     ```
  *
- * 2. Removes with specified selector
- *     ```
+ * 1. Removes with specified selector
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('remove-attr', 'example', 'div[class="inner"]')
  *     ```
  *
@@ -63,8 +68,9 @@ import {
  *     </div>
  *     ```
  *
- *  3. Using flags
- *     ```
+ * 1. Using flags
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('remove-attr', 'example', 'html', 'asap complete')
  *     ```
  *

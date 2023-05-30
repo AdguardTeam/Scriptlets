@@ -23,49 +23,63 @@ import {
  * @description
  * Replaces response content of `xhr` requests if **all** given parameters match.
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[, propsToMatch]])
  * ```
  *
- * - `pattern` — optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
- * possible values:
- *   - `*` to match all text content
- *   - non-empty string
- *   - regular expression
- * - `replacement` — optional, should be set if `pattern` is set. String to replace matched content with. Empty string to remove content.
+ * - `pattern` — optional, argument for matching contents of responseText that should be replaced.
+ *   If set, `replacement` is required. Possible values:
+ *     - `*` to match all text content
+ *     - non-empty string
+ *     - regular expression
+ * - `replacement` — optional, should be set if `pattern` is set. String to replace matched content with.
+ *   Empty string to remove content.
  * - `propsToMatch` — optional, string of space-separated properties to match for extra condition; possible props:
- *   - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call;
- *   - colon-separated pairs `name:value` where
- *     - `name` — string or regular expression for matching XMLHttpRequest property name
- *     - `value` — string or regular expression for matching the value of the option passed to `XMLHttpRequest.open()` call
+ *     - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call;
+ *     - colon-separated pairs `name:value` where
+ *         - `name` — string or regular expression for matching XMLHttpRequest property name
+ *         - `value` — string or regular expression for matching the value of the option
+ *           passed to `XMLHttpRequest.open()` call
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
- * which is useful for debugging but not permitted for production filter lists.
+ * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
  *
- * **Examples**
+ * ### Examples
+ *
  * 1. Log all XMLHttpRequests
- *     ```
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('trusted-replace-xhr-response')
  *     ```
  *
- * 2. Replace text content of XMLHttpRequests with specific url
- *     ```
+ * 1. Replace text content of XMLHttpRequests with specific url
+ *
+ *     <!-- markdownlint-disable line-length -->
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('trusted-replace-xhr-response', 'adb_detect:true', 'adb_detect:false', 'example.org')
  *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', 'example.org')
  *     ```
  *
- * 3. Remove all text content of XMLHttpRequests with specific request method
- *     ```
+ *     <!-- markdownlint-enable line-length -->
+ *
+ * 1. Remove all text content of XMLHttpRequests with specific request method
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('trusted-replace-xhr-response', '*', '', 'method:GET')
  *     ```
  *
- * 4. Replace text content of XMLHttpRequests matching by URL regex and request methods
+ * 1. Replace text content of XMLHttpRequests matching by URL regex and request methods
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', '/\.m3u8/ method:/GET|HEAD/') <!-- markdownlint-disable-line line-length -->
  *     ```
- *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', '/\.m3u8/ method:/GET|HEAD/')
- *     ```
- * 5. Remove all text content of  all XMLHttpRequests for example.com
- *     ```
+ *
+ * 1. Remove all text content of  all XMLHttpRequests for example.com
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('trusted-replace-xhr-response', '*', '', 'example.com')
  *     ```
  *

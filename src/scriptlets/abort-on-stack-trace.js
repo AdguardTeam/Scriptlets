@@ -21,13 +21,15 @@ import {
  * @scriptlet abort-on-stack-trace
  *
  * @description
- * Aborts a script when it attempts to utilize (read or write to) the specified property and it's error stack trace contains given value.
+ * Aborts a script when it attempts to utilize (read or write to) the specified property
+ * and it's error stack trace contains given value.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock-for-firefox-legacy/commit/7099186ae54e70b588d5e99554a05d783cabc8ff
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.com#%#//scriptlet('abort-on-stack-trace', property, stack)
  * ```
  *
@@ -37,24 +39,38 @@ import {
  *         - `inlineScript`
  *         - `injectedScript`
  *
- * **Examples**
- * ```
- * ! Aborts script when it tries to access `window.Ya` and it's error stack trace contains `test.js`
- * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'test.js')
+ * ### Examples
  *
- * ! Aborts script when it tries to access `window.Ya.videoAd` and it's error stack trace contains `test.js`
- * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya.videoAd', 'test.js')
+ * 1. Aborts script when it tries to access `window.Ya` and it's error stack trace contains `test.js`
  *
- * ! Aborts script when stack trace matches with any of these parameters
- * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexFuncName')
- * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexScriptName')
+ *     ```adblock
+ *     example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'test.js')
+ *     ```
  *
- * ! Aborts script when it tries to access `window.Ya` and it's an inline script
- * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'inlineScript')
+ * 1. Aborts script when it tries to access `window.Ya.videoAd` and it's error stack trace contains `test.js`
  *
- * ! Aborts script when it tries to access `window.Ya` and it's an injected script
- * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'injectedScript')
- * ```
+ *     ```adblock
+ *     example.org#%#//scriptlet('abort-on-stack-trace', 'Ya.videoAd', 'test.js')
+ *     ```
+ *
+ * 1. Aborts script when stack trace matches with any of these parameters
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexFuncName')
+ *     example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexScriptName')
+ *     ```
+ *
+ * 1. Aborts script when it tries to access `window.Ya` and it's an inline script
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'inlineScript')
+ *     ```
+ *
+ * 1. Aborts script when it tries to access `window.Ya` and it's an injected script
+ *
+ *      ```adblock
+ *      example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'injectedScript')
+ *      ```
  *
  * @added v1.5.0.
  */

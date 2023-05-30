@@ -11,9 +11,9 @@
     Related UBO redirect resource:
     https://github.com/gorhill/uBlock/blob/1.31.0/src/web_accessible_resources/click2load.html
 
-    **Example**
+    ### Example
 
-    ```
+    ```adblock
     ||youtube.com/embed/$frame,third-party,redirect=click2load.html
     ```
   aliases:

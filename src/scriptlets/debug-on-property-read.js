@@ -15,15 +15,18 @@ import {
  * @scriptlet debug-on-property-read
  *
  * @description
- * This scriptlet is basically the same as [abort-on-property-read](#abort-on-property-read), but instead of aborting it starts the debugger.
+ * This scriptlet is basically the same as [abort-on-property-read](#abort-on-property-read),
+ * but instead of aborting it starts the debugger.
  *
- * **It is not supposed to be used in production filter lists!**
+ * > It is not allowed for prod versions of filter lists.
  *
- * **Syntax**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * ! Debug script if it tries to access `window.alert`
  * example.org#%#//scriptlet('debug-on-property-read', 'alert')
- * ! of `window.open`
+ *
+ * ! or `window.open`
  * example.org#%#//scriptlet('debug-on-property-read', 'open')
  * ```
  *

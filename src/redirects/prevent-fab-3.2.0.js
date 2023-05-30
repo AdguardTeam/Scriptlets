@@ -6,8 +6,9 @@ import { preventFab } from '../scriptlets/prevent-fab-3.2.0';
  * @description
  * Redirects fuckadblock script to the source js file.
  *
- * **Example**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * \*\/fuckadblock-$script,redirect=prevent-fab-3.2.0
  * ```
  *

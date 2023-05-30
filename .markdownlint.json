@@ -1,0 +1,13 @@
+{
+    "ul-indent": { "indent": 4 },
+    "line-length": {
+        "stern": true,
+        "line_length": 120
+    },
+    "no-multiple-blanks": { "maximum": 2 },
+    "no-inline-html": { "allowed_elements": ["a"]},
+    "no-duplicate-header": { "siblings_only": true },
+    "no-blanks-blockquote": false,
+    "no-bare-urls": false,
+    "ul-style": { "style": "dash" }
+}

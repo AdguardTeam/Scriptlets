@@ -24,52 +24,71 @@ import {
  * @description
  * Replaces response text content of `fetch` requests if **all** given parameters match.
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('trusted-replace-fetch-response'[, pattern, replacement[, propsToMatch]])
  * ```
  *
- * - `pattern` — optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
- * possible values:
- *   - `*` to match all text content
- *   - non-empty string
- *   - regular expression
- * - `replacement` — optional, should be set if `pattern` is set. String to replace the response text content matched by `pattern`.
- * Empty string to remove content. Defaults to empty string.
+ * - `pattern` — optional, argument for matching contents of responseText that should be replaced.
+ * If set, `replacement` is required. Possible values:
+ *     - `*` to match all text content
+ *     - non-empty string
+ *     - regular expression
+ * - `replacement` — optional, should be set if `pattern` is set. String to replace the response text content
+ *   matched by `pattern`. Empty string to remove content. Defaults to empty string.
  * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
- *   - string or regular expression for matching the URL passed to fetch call; empty string, wildcard `*` or invalid regular expression will match all fetch calls
- *   - colon-separated pairs `name:value` where
- *     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
- *     - `value` is string or regular expression for matching the value of the option passed to fetch call; invalid regular expression will cause any value matching
+ *     - string or regular expression for matching the URL passed to fetch call;
+ *       empty string, wildcard `*` or invalid regular expression will match all fetch calls
+ *     - colon-separated pairs `name:value` where
+ *         <!-- markdownlint-disable-next-line line-length -->
+ *         - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
+ *         - `value` is string or regular expression for matching the value of the option passed to fetch call;
+ *           invalid regular expression will cause any value matching
  *
  * > Usage with no arguments will log fetch calls to browser console;
- * which is useful for debugging but only allowed for production filter lists.
+ * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
  *
  * > Scriptlet does nothing if response body can't be converted to text.
  *
- * **Examples**
+ * ### Examples
+ *
  * 1. Log all fetch calls
- *     ```
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('trusted-replace-fetch-response')
  *     ```
  *
- * 2. Replace response text content of fetch requests with specific url
- *     ```
+ * 1. Replace response text content of fetch requests with specific url
+ *
+ *     <!-- markdownlint-disable line-length -->
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('trusted-replace-fetch-response', 'adb_detect:true', 'adb_detect:false', 'example.org')
  *     example.org#%#//scriptlet('trusted-replace-fetch-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', 'example.org')
  *     ```
  *
- * 3. Remove all text content of fetch responses with specific request method
- *     ```
+ *     <!-- markdownlint-enable line-length -->
+ *
+ * 1. Remove all text content of fetch responses with specific request method
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('trusted-replace-fetch-response', '*', '', 'method:GET')
  *     ```
  *
- * 4. Replace response text content of fetch requests matching by URL regex and request methods
- *     ```
+ * 1. Replace response text content of fetch requests matching by URL regex and request methods
+ *
+ *     <!-- markdownlint-disable line-length -->
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('trusted-replace-fetch-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', '/\.m3u8/ method:/GET|HEAD/')
  *     ```
- * 5. Remove text content of all fetch responses for example.com
- *     ```
+ *
+ *     <!-- markdownlint-enable line-length -->
+ *
+ * 1. Remove text content of all fetch responses for example.com
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('trusted-replace-fetch-response', '*', '', 'example.com')
  *     ```
  *

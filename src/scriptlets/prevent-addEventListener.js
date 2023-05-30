@@ -16,24 +16,28 @@ import {
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-defuserjs-
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('prevent-addEventListener'[, typeSearch[, listenerSearch]])
  * ```
  *
  * - `typeSearch` — optional, string or regular expression matching the type (event name);
- * defaults to match all types; invalid regular expression will cause exit and rule will not work
+ *   defaults to match all types; invalid regular expression will cause exit and rule will not work
  * - `listenerSearch` — optional, string or regular expression matching the listener function body;
- * defaults to match all listeners; invalid regular expression will cause exit and rule will not work
+ *   defaults to match all listeners; invalid regular expression will cause exit and rule will not work
  *
- * **Examples**
- * 1. Prevent all `click` listeners:
- *     ```
+ * ### Examples
+ *
+ * 1. Prevent all `click` listeners
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-addEventListener', 'click')
  *     ```
  *
-2. Prevent 'click' listeners with the callback body containing `searchString`.
- *     ```
+ * 1. Prevent 'click' listeners with the callback body containing `searchString`
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-addEventListener', 'click', 'searchString')
  *     ```
  *

@@ -15,8 +15,9 @@ import { noeval } from '../scriptlets/noeval';
  * Related UBO redirect resource:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-silentjs-
  *
- * **Example**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * ||example.org/index.js$script,redirect=noeval
  * ```
  *

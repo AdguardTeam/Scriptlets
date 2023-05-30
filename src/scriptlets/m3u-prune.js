@@ -23,35 +23,42 @@ import {
  * @description
  * Removes content from the specified M3U file.
  *
+ * ### Syntax
  *
- * **Syntax**
- * ```
+ * ```text
  * example.org#%#//scriptlet('m3u-prune'[, propsToRemove[, urlToMatch]])
  * ```
  *
- * - `propsToRemove` — optional, string or regular expression to match the URL line (segment) which will be removed alongside with its tags
+ * - `propsToRemove` — optional, string or regular expression
+ *   to match the URL line (segment) which will be removed alongside with its tags
  * - `urlToMatch` — optional, string or regular expression for matching the request's URL
+ *
  * > Usage with no arguments will log response payload and URL to browser console;
- * which is useful for debugging but prohibited for production filter lists.
+ * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
  *
- * **Examples**
- * 1. Removes a tag which contains `tvessaiprod.nbcuni.com/video/`, from all requests
- *     ```
- *     example.org#%#//scriptlet('m3u-prune', 'tvessaiprod.nbcuni.com/video/')
- *     ```
+ * ### Examples
  *
- * 2. Removes a line which contains `tvessaiprod.nbcuni.com/video/`, only if request's URL contains `.m3u8`
- *     ```
- *     example.org#%#//scriptlet('m3u-prune', 'tvessaiprod.nbcuni.com/video/', '.m3u8')
+ * 1. Removes a tag which contains `example.com/video/`, from all requests
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('m3u-prune', 'example.com/video/')
  *     ```
  *
- * 3. Call with no arguments will log response payload and URL at the console
+ * 1. Removes a line which contains `example.com/video/`, only if request's URL contains `.m3u8`
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('m3u-prune', 'example.com/video/', '.m3u8')
  *     ```
+ *
+ * 1. Call with no arguments will log response payload and URL at the console
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('m3u-prune')
  *     ```
  *
- * 4. Call with only `urlToMatch` argument will log response payload and URL only for the matched URL
- *     ```
+ * 1. Call with only `urlToMatch` argument will log response payload and URL only for the matched URL
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('m3u-prune', '', '.m3u8')
  *     ```
  *

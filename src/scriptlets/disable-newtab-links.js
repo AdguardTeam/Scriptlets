@@ -9,8 +9,9 @@ import { hit } from '../helpers/index';
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#disable-newtab-linksjs-
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```adblock
  * example.org#%#//scriptlet('disable-newtab-links')
  * ```
  *

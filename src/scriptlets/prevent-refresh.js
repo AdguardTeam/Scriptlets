@@ -16,23 +16,28 @@ import {
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#refresh-defuserjs-
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('prevent-refresh'[, delay])
  * ```
  *
- * - `delay` — optional, number of seconds for delay that indicates when scriptlet should run. If not set, source tag value will be applied.
+ * - `delay` — optional, number of seconds for delay that indicates when scriptlet should run.
+ *   If not set, source tag value will be applied.
  *
- * **Examples**
- * 1. Prevent reloading of a document through a meta "refresh" tag.
- * ```
- *     enrt.eu#%#//scriptlet('prevent-refresh')
- * ```
+ * ### Examples
  *
- * 2. Prevent reloading of a document with delay.
- * ```
- *     cryptodirectories.com#%#//scriptlet('prevent-refresh', 3)
- * ```
+ * 1. Prevent reloading of a document through a meta "refresh" tag
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('prevent-refresh')
+ *     ```
+ *
+ * 1. Prevent reloading of a document with delay
+ *
+ *     ```adblock
+ *     example.com#%#//scriptlet('prevent-refresh', 3)
+ *     ```
  *
  * @added v1.6.2.
  */

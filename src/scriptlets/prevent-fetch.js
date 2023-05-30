@@ -28,60 +28,69 @@ import {
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-fetch-ifjs-
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, responseType]]])
  * ```
  *
  * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
- *   - string or regular expression for matching the URL passed to fetch call;
- *     empty string, wildcard `*` or invalid regular expression will match all fetch calls
- *   - colon-separated pairs `name:value` where
- *     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
- *     - `value` is string or regular expression for matching the value of the option passed to fetch call;
- *       invalid regular expression will cause any value matching
+ *     - string or regular expression for matching the URL passed to fetch call;
+ *       empty string, wildcard `*` or invalid regular expression will match all fetch calls
+ *     - colon-separated pairs `name:value` where
+ *         <!-- markdownlint-disable-next-line line-length -->
+ *         - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
+ *         - `value` is string or regular expression for matching the value of the option passed to fetch call;
+ *           invalid regular expression will cause any value matching
  * - `responseBody` — optional, string for defining response body value,
  *   defaults to `emptyObj`. Possible values:
- *    - `emptyObj` — empty object
- *    - `emptyArr` — empty array
+ *     - `emptyObj` — empty object
+ *     - `emptyArr` — empty array
  * - `responseType` — optional, string for defining response type,
- * original response type is used if not specified. Possible values:
- *    - `default`
- *    - `opaque`
+ *   original response type is used if not specified. Possible values:
+ *     - `default`
+ *     - `opaque`
  *
  * > Usage with no arguments will log fetch calls to browser console;
- * which is useful for debugging but not permitted for production filter lists.
+ * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
  *
- * **Examples**
+ * ### Examples
+ *
  * 1. Log all fetch calls
- *     ```
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-fetch')
  *     ```
  *
- * 2. Prevent all fetch calls
- *     ```
+ * 1. Prevent all fetch calls
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-fetch', '*')
- *     OR
+ *     ! or
  *     example.org#%#//scriptlet('prevent-fetch', '')
  *     ```
  *
- * 3. Prevent fetch call for specific url
- *     ```
+ * 1. Prevent fetch call for specific url
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-fetch', '/url\\.part/')
  *     ```
  *
- * 4. Prevent fetch call for specific request method
- *     ```
+ * 1. Prevent fetch call for specific request method
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-fetch', 'method:HEAD')
  *     ```
  *
- * 5. Prevent fetch call for specific url and request method
- *     ```
+ * 1. Prevent fetch call for specific url and request method
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/')
  *     ```
  *
- * 6. Prevent fetch call and specify response body value
- *     ```
+ * 1. Prevent fetch call and specify response body value
+ *
+ *     ```adblock
  *     ! Specify response body for fetch call to a specific url
  *     example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/', 'emptyArr')
  *
@@ -89,8 +98,9 @@ import {
  *     example.org#%#//scriptlet('prevent-fetch', '', 'emptyArr')
  *     ```
  *
- * 7. Prevent all fetch calls and specify response type value
- *     ```
+ * 1. Prevent all fetch calls and specify response type value
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-fetch', '*', '', 'opaque')
  *     ```
  *

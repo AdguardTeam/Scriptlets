@@ -10,8 +10,9 @@ import { hit, noopFunc, noopThis } from '../helpers/index';
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#fuckadblockjs-320-
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```adblock
  * example.org#%#//scriptlet('prevent-fab-3.2.0')
  * ```
  *

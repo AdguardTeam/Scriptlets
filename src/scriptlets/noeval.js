@@ -14,8 +14,9 @@ import { hit, logMessage } from '../helpers/index';
  * It also can be used as `$redirect` rules sometimes.
  * See [redirect description](../wiki/about-redirects.md#noeval).
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```adblock
  * example.org#%#//scriptlet('noeval')
  * ```
  *

@@ -14,8 +14,9 @@ import {
  * Mocks Didomi's CMP loader script.
  * https://developers.didomi.io/
  *
- * **Example**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * ||sdk.privacy-center.org/fbf86806f86e/loader.js$script,redirect=didomi-loader
  * ```
  *

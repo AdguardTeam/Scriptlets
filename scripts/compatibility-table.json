@@ -41,8 +41,7 @@
             "adg": "debug-on-property-write"
         },
         {
-            "adg": "dir-string",
-            "abp": "dir-string"
+            "adg": "dir-string"
         },
         {
             "adg": "disable-newtab-links",

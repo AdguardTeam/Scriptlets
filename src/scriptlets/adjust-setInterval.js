@@ -22,46 +22,59 @@ import {
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-setinterval-boosterjs-
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('adjust-setInterval'[, matchCallback [, matchDelay[, boost]]])
  * ```
  *
  * - `matchCallback` — optional, string or regular expression for stringified callback matching;
- * defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
+ *   defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
  * - `matchDelay` — optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
- * - `boost` — optional, default to 0.05, float, capped at 1000 times for up and 50 for down (0.001...50), setInterval delay multiplier
+ * - `boost` — optional, default to 0.05, float,
+ *   capped at 1000 times for up and 50 for down (0.001...50), setInterval delay multiplier
  *
- * **Examples**
- * 1. Adjust all setInterval() x20 times where delay equal 1000ms:
- *     ```
+ * ### Examples
+ *
+ * 1. Adjust all setInterval() x20 times where delay equal 1000ms
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('adjust-setInterval')
  *     ```
  *
- * 2. Adjust all setInterval() x20 times where callback matched with `example` and delay equal 1000ms
- *     ```
+ * 1. Adjust all setInterval() x20 times where callback matched with `example` and delay equal 1000ms
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('adjust-setInterval', 'example')
  *     ```
  *
- * 3. Adjust all setInterval() x20 times where callback matched with `example` and delay equal 400ms
- *     ```
+ * 1. Adjust all setInterval() x20 times where callback matched with `example` and delay equal 400ms
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('adjust-setInterval', 'example', '400')
  *     ```
  *
- * 4. Slow down setInterval() x2 times where callback matched with `example` and delay equal 1000ms
- *     ```
+ * 1. Slow down setInterval() x2 times where callback matched with `example` and delay equal 1000ms
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('adjust-setInterval', 'example', '', '2')
  *     ```
- * 5. Adjust all setInterval() x50 times where delay equal 2000ms
- *     ```
+ *
+ * 1. Adjust all setInterval() x50 times where delay equal 2000ms
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('adjust-setInterval', '', '2000', '0.02')
  *     ```
- * 6. Adjust all setInterval() x1000 times where delay equal 2000ms
- *     ```
+ *
+ * 1. Adjust all setInterval() x1000 times where delay equal 2000ms
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('adjust-setInterval', '', '2000', '0.001')
  *     ```
- * 7. Adjust all setInterval() x50 times where delay is randomized
- *     ```
+ *
+ * 1. Adjust all setInterval() x50 times where delay is randomized
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('adjust-setInterval', '', '*', '0.02')
  *     ```
  *

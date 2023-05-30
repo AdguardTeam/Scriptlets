@@ -16,24 +16,6 @@ const afterEach = () => {
 
 module(name, { beforeEach, afterEach });
 
-test('Checking if alias name works', (assert) => {
-    const adgParams = {
-        name,
-        engine: 'test',
-        verbose: true,
-    };
-    const abpParams = {
-        name: 'abp-dir-string',
-        engine: 'test',
-        verbose: true,
-    };
-
-    const codeByAdgParams = window.scriptlets.invoke(adgParams);
-    const codeByAbpParams = window.scriptlets.invoke(abpParams);
-
-    assert.strictEqual(codeByAdgParams, codeByAbpParams, 'abp name - ok');
-});
-
 test('Adg rule times = 2', (assert) => {
     const scriptletArgs = [2];
     runScriptlet(name, scriptletArgs);

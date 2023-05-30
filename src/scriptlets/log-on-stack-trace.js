@@ -13,13 +13,16 @@ import {
  * @scriptlet log-on-stack-trace
  *
  * @description
- * This scriptlet is basically the same as [abort-on-stack-trace](#abort-on-stack-trace), but instead of aborting it logs:
+ * This scriptlet is basically the same as [abort-on-stack-trace](#abort-on-stack-trace),
+ * but instead of aborting it logs:
+ *
  * - function and source script names pairs that access the given property
  * - was that get or set attempt
  * - script being injected or inline
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.com#%#//scriptlet('log-on-stack-trace', 'property')
  * ```
  *

@@ -32,59 +32,71 @@ import {
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-xhr-ifjs-
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
  * ```
  *
  * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
- *   - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call; empty string or wildcard `*` for all `XMLHttpRequest.open()` calls match
- *   - colon-separated pairs `name:value` where
- *     - `name` is XMLHttpRequest object property name
- *     - `value` is string or regular expression for matching the value of the option passed to `XMLHttpRequest.open()` call
- * - `randomize` — defaults to `false` for empty responseText, optional argument to randomize responseText of matched XMLHttpRequest's response; possible values:
- *   - `true` to randomize responseText, random alphanumeric string of 10 symbols
- *   - colon-separated pair `name:value` string value to customize responseText data where
- *       - `name` — only `length` supported for now
- *       - `value` — range on numbers, for example `100-300`, limited to 500000 characters
+ *     - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call;
+ *       empty string or wildcard `*` for all `XMLHttpRequest.open()` calls match
+ *         - colon-separated pairs `name:value` where
+ *             - `name` is XMLHttpRequest object property name
+ *             - `value` is string or regular expression for matching the value of the option
+ *     passed to `XMLHttpRequest.open()` call
+ * - `randomize` — defaults to `false` for empty responseText,
+ *   optional argument to randomize responseText of matched XMLHttpRequest's response; possible values:
+ *     - `true` to randomize responseText, random alphanumeric string of 10 symbols
+ *     - colon-separated pair `name:value` string value to customize responseText data where
+ *         - `name` — only `length` supported for now
+ *         - `value` — range on numbers, for example `100-300`, limited to 500000 characters
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
- * which is useful for debugging but not allowed for production filter lists.
+ * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
  *
- * **Examples**
+ * ### Examples
+ *
  * 1. Log all XMLHttpRequests
- *     ```
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-xhr')
  *     ```
  *
- * 2. Prevent all XMLHttpRequests
- *     ```
+ * 1. Prevent all XMLHttpRequests
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-xhr', '*')
  *     example.org#%#//scriptlet('prevent-xhr', '')
  *     ```
  *
- * 3. Prevent XMLHttpRequests for specific url
- *     ```
+ * 1. Prevent XMLHttpRequests for specific url
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-xhr', 'example.org')
  *     ```
  *
- * 4. Prevent XMLHttpRequests for specific request method
- *     ```
+ * 1. Prevent XMLHttpRequests for specific request method
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-xhr', 'method:HEAD')
  *     ```
  *
- * 5. Prevent XMLHttpRequests for specific url and specified request methods
- *     ```
+ * 1. Prevent XMLHttpRequests for specific url and specified request methods
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-xhr', 'example.org method:/HEAD|GET/')
  *     ```
  *
- * 6. Prevent XMLHttpRequests for specific url and randomize it's response text
- *     ```
+ * 1. Prevent XMLHttpRequests for specific url and randomize it's response text
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-xhr', 'example.org', 'true')
  *     ```
  *
- * 7. Prevent XMLHttpRequests for specific url and randomize it's response text with range
- *     ```
+ * 1. Prevent XMLHttpRequests for specific url and randomize it's response text with range
+ *
+ *     ```adblock
  *    example.org#%#//scriptlet('prevent-xhr', 'example.org', 'length:100-300')
  *     ```
  *

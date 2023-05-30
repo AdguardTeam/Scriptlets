@@ -23,52 +23,61 @@ import {
  *
  * @description
  * Prevents a `setInterval` call if:
- * 1) the text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
- * otherwise mismatched calls should be defused;
- * 2) the delay is matching the specified `matchDelay`; otherwise mismatched calls should be defused.
+ *
+ * 1. The text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
+ *    otherwise mismatched calls should be defused.
+ * 1. The delay is matching the specified `matchDelay`; otherwise mismatched calls should be defused.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-setinterval-ifjs-
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('prevent-setInterval'[, matchCallback[, matchDelay]])
  * ```
  *
- * Call with no arguments will log calls to setInterval while debugging (`log-setInterval` superseding),
- * so production filter lists' rules definitely require at least one of the parameters:
- * - `matchCallback` — optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
- * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
- * If do not start with `!`, the stringified callback will be matched.
- * If not set, prevents all `setInterval` calls due to specified `matchDelay`.
+ * > Call with no arguments will log all setInterval calls (`log-setInterval` superseding),
+ * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
+ *
+ * - `matchCallback` — optional, string or regular expression;
+ *   invalid regular expression will be skipped and all callbacks will be matched.
+ *   If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
+ *   If do not start with `!`, the stringified callback will be matched.
+ *   If not set, prevents all `setInterval` calls due to specified `matchDelay`.
  * - `matchDelay` — optional, must be an integer.
- * If starts with `!`, scriptlet will not match the delay but all other will be defused.
- * If do not start with `!`, the delay passed to the `setInterval` call will be matched.
- * Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
+ *   If starts with `!`, scriptlet will not match the delay but all other will be defused.
+ *   If do not start with `!`, the delay passed to the `setInterval` call will be matched.
+ *   Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
  *
  * > If `prevent-setInterval` log looks like `setInterval(undefined, 1000)`,
- * it means that no callback was passed to setInterval() and that's not scriptlet issue
- * and obviously it can not be matched by `matchCallback`.
+ * > it means that no callback was passed to setInterval() and that's not scriptlet issue
+ * > and obviously it can not be matched by `matchCallback`.
  *
- *  **Examples**
- * 1. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the delay.
- *     ```bash
+ * ### Examples
+ *
+ * 1. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the delay
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-setInterval', '/\.test/')
  *     ```
  *
  *     For instance, the following call will be prevented:
+ *
  *     ```javascript
  *     setInterval(function () {
  *         window.test = "value";
  *     }, 100);
  *     ```
  *
- * 2. Prevents `setInterval` calls if the callback does not contain `value`.
- *     ```
+ * 1. Prevents `setInterval` calls if the callback does not contain `value`
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-setInterval', '!value')
  *     ```
  *
  *     For instance, only the first of the following calls will be prevented:
+ *
  *     ```javascript
  *     setInterval(function () {
  *         window.test = "test -- prevented";
@@ -81,12 +90,14 @@ import {
  *     }, 500);
  *     ```
  *
- * 3. Prevents `setInterval` calls if the callback contains `value` and the delay is not set to `300`.
- *     ```
+ * 1. Prevents `setInterval` calls if the callback contains `value` and the delay is not set to `300`
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-setInterval', 'value', '!300')
  *     ```
  *
  *     For instance, only the first of the following calls will not be prevented:
+ *
  *     ```javascript
  *     setInterval(function () {
  *         window.test = "value 1 -- executed";
@@ -99,12 +110,14 @@ import {
  *     }, 500);
  *     ```
  *
- * 4. Prevents `setInterval` calls if the callback does not contain `value` and the delay is not set to `300`.
- *     ```
+ * 1. Prevents `setInterval` calls if the callback does not contain `value` and the delay is not set to `300`
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-setInterval', '!value', '!300')
  *     ```
  *
  *     For instance, only the second of the following calls will be prevented:
+ *
  *     ```javascript
  *     setInterval(function () {
  *         window.test = "test -- executed";
@@ -120,12 +133,14 @@ import {
  *     }, 500);
  *     ```
  *
- * 5. Prevents `setInterval` calls if the callback contains `value` and delay is a decimal.
- *     ```
+ * 1. Prevents `setInterval` calls if the callback contains `value` and delay is a decimal number
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('prevent-setInterval', 'value', '300')
  *     ```
  *
  *     For instance, the following calls will be prevented:
+ *
  *     ```javascript
  *     setInterval(function () {
  *         window.test = "value";

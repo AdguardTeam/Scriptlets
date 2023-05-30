@@ -10,20 +10,22 @@ import {
  * @description
  * Closes the browser tab immediately.
  *
- * > `window.close()` usage is restricted in Chrome. In this case
- * tab will only be closed when using AdGuard browser extension.
+ * > `window.close()` usage is restricted in the Chrome browser.
+ * > In this case tab will only be closed when using AdGuard Browser extension.
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('close-window'[, path])
  * ```
  *
  * - `path` — optional, string or regular expression
- * matching the current location's path: `window.location.pathname` + `window.location.search`.
- * Defaults to execute on every page.
+ *   matching the current location's path: `window.location.pathname` + `window.location.search`.
+ *   Defaults to execute on every page.
  *
- * **Examples**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * ! closes any example.org tab
  * example.org#%#//scriptlet('close-window')
  *

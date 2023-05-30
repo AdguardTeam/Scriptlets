@@ -7,8 +7,9 @@ import { hit, noopFunc } from '../helpers/index';
  * @description
  * Mocks wcslog.js of Naver Analytics.
  *
- * **Example**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * ||wcs.naver.net/wcslog.js$script,redirect=naver-wcslog
  * ```
  *

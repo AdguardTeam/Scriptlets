@@ -12,67 +12,86 @@ import {
  * @trustedScriptlet trusted-click-element
  *
  * @description
- * Clicks selected elements in a strict sequence, ordered by selectors passed, and waiting for them to render in the DOM first.
+ * Clicks selected elements in a strict sequence, ordered by selectors passed,
+ * and waiting for them to render in the DOM first.
  * Deactivates after all elements have been clicked or by 10s timeout.
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, delay]])
  * ```
  *
  * - `selectors` — required, string with query selectors delimited by comma
- * - `extraMatch` — optional, extra condition to check on a page; allows to match `cookie` and `localStorage`; can be set as `name:key[=value]` where `value` is optional.
- * If `cookie`/`localStorage` starts with `!` then the element will only be clicked if specified cookie/localStorage item does not exist.
- * Multiple conditions are allowed inside one `extraMatch` but they should be delimited by comma and each of them should match the syntax. Possible `name`s:
- *    - `cookie` - test string or regex against cookies on a page
- *    - `localStorage` - check if localStorage item is present
+ * - `extraMatch` — optional, extra condition to check on a page; allows to match `cookie` and `localStorage`;
+ * can be set as `name:key[=value]` where `value` is optional.
+ * If `cookie`/`localStorage` starts with `!` then the element will only be clicked
+ * if specified cookie/localStorage item does not exist.
+ * Multiple conditions are allowed inside one `extraMatch` but they should be delimited by comma
+ * and each of them should match the syntax. Possible `name`s:
+ *     - `cookie` — test string or regex against cookies on a page
+ *     - `localStorage` — check if localStorage item is present
  * - `delay` — optional, time in ms to delay scriptlet execution, defaults to instant execution.
  *
- * **Examples**
+ * ### Examples
+ *
  * 1. Click single element by selector
- * ```
- * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]')
- * ```
  *
- * 2. Delay click execution by 500ms
- * ```
- * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '', '500')
- * ```
+ *     ```adblock
+ *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]')
+ *     ```
  *
- * 3. Click multiple elements by selector with a delay
- * ```
- * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name="check"], input[type="submit"][value="akkoord"]', '', '500')
- * ```
+ * 1. Delay click execution by 500ms
  *
- * 4. Match cookies by keys using regex and string
- * ```
- * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'cookie:userConsentCommunity, cookie:/cmpconsent|cmp/')
- * ```
+ *     ```adblock
+ *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '', '500')
+ *     ```
  *
- * 5. Match by cookie key=value pairs using regex and string
- * ```
- * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'cookie:userConsentCommunity=true, cookie:/cmpconsent|cmp/=/[a-z]{1,5}/')
- * ```
+ * 1. Click multiple elements by selector with a delay
  *
- * 6. Match by localStorage item 'promo' key
- * ```
- * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'localStorage:promo')
- * ```
+ *     <!-- markdownlint-disable line-length -->
  *
- * 7. Click multiple elements with delay and matching by both cookie string and localStorage item
- * ```
- * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], input[type="submit"][value="akkoord"]', 'cookie:cmpconsent, localStorage:promo', '250')
- * ```
+ *     ```adblock
+ *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name="check"], input[type="submit"][value="akkoord"]', '', '500')
+ *     ```
  *
- * 8. Click element only if cookie with name `cmpconsent` does not exist
- * ```
- * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:cmpconsent')
- * ```
+ * 1. Match cookies by keys using regex and string
  *
- * 9. Click element only if specified cookie string and localStorage item does not exist
- * ```
- * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:cmpconsent, !localStorage:promo')
- * ```
+ *     ```adblock
+ *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'cookie:userConsentCommunity, cookie:/cmpconsent|cmp/')
+ *     ```
+ *
+ * 1. Match by cookie key=value pairs using regex and string
+ *
+ *     ```adblock
+ *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'cookie:userConsentCommunity=true, cookie:/cmpconsent|cmp/=/[a-z]{1,5}/')
+ *     ```
+ *
+ * 1. Match by localStorage item 'promo' key
+ *
+ *     ```adblock
+ *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'localStorage:promo')
+ *     ```
+ *
+ * 1. Click multiple elements with delay and matching by both cookie string and localStorage item
+ *
+ *     ```adblock
+ *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], input[type="submit"][value="akkoord"]', 'cookie:cmpconsent, localStorage:promo', '250')
+ *     ```
+ *
+ *     <!-- markdownlint-enable line-length -->
+ *
+ * 1. Click element only if cookie with name `cmpconsent` does not exist
+ *
+ *     ```adblock
+ *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:cmpconsent')
+ *     ```
+ *
+ * 1. Click element only if specified cookie string and localStorage item does not exist
+ *
+ *     ```adblock
+ *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:consent, !localStorage:promo')
+ *     ```
  *
  * @added v1.7.3.
  */

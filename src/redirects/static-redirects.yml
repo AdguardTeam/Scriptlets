@@ -5,9 +5,9 @@
 - title: 1x1-transparent.gif
   added: v1.0.4
   description: |-
-    **Example**
+    ### Examples
 
-    ```
+    ```adblock
     ||example.org^$image,redirect=1x1-transparent.gif
     ```
   aliases:
@@ -21,9 +21,9 @@
 - title: 2x2-transparent.png
   added: v1.0.4
   description: |-
-    **Example**
+    ### Examples
 
-    ```
+    ```adblock
     ||example.org^$image,redirect=2x2-transparent.png
     ```
   aliases:
@@ -38,9 +38,9 @@
 - title: 3x2-transparent.png
   added: v1.0.4
   description: |-
-    **Example**
+    ### Examples
 
-    ```
+    ```adblock
     ||example.org^$image,redirect=3x2-transparent.png
     ```
   aliases:
@@ -55,9 +55,9 @@
 - title: 32x32-transparent.png
   added: v1.0.4
   description: |-
-    **Example**
+    ### Examples
 
-    ```
+    ```adblock
     ||example.org^$image,redirect=32x32-transparent.png
     ```
   aliases:
@@ -72,9 +72,9 @@
 - title: noopframe
   added: v1.0.4
   description: |-
-    **Example**
+    ### Examples
 
-    ```
+    ```adblock
     ||example.com^$subdocument,redirect=noopframe,domain=example.org
     ```
   aliases:
@@ -92,9 +92,9 @@
 - title: noopcss
   added: v1.0.4
   description: |-
-    **Example**
+    ### Examples
 
-    ```
+    ```adblock
     ||example.org/style.css$stylesheet,redirect=noopcss
     ```
   aliases:
@@ -107,8 +107,9 @@
 - title: noopjs
   added: v1.0.4
   description: |-
-    **Example**
-    ```
+    ### Examples
+
+    ```adblock
     ||example.org/advert.js$script,redirect=noopjs
     ```
   aliases:
@@ -121,8 +122,9 @@
 - title: noopjson
   added: v1.6.2
   description: |-
-    **Example**
-    ```
+    ### Examples
+
+    ```adblock
     ||example.org/geo/location$xmlhttprequest,redirect=noopjson
     ```
   file: noopjson.json
@@ -132,9 +134,9 @@
 - title: nooptext
   added: v1.0.4
   description: |-
-    **Example**
+    ### Examples
 
-    ```
+    ```adblock
     ||example.org/advert.js$xmlhttprequest,redirect=nooptext
     ```
   aliases:
@@ -147,10 +149,12 @@
 - title: empty
   added: v1.3.9
   description: |-
-    Pretty much the same as `nooptext`. Used for conversion of modifier `empty` so better avoid its using in production filter lists.
+    Pretty much the same as `nooptext`. Used for conversion of modifier `empty`
+    so better avoid its using in prod versions of filter lists.
 
-    **Example**
-    ```
+    ### Examples
+
+    ```adblock
     ||example.org/log$redirect=empty
     ```
   aliases:
@@ -164,9 +168,9 @@
   description: |-
     Redirects request to an empty VMAP response.
 
-    **Example**
+    ### Examples
 
-    ```
+    ```adblock
     ||example.org/vmap01.xml$xmlhttprequest,redirect=noopvmap-1.0
     ```
   aliases:
@@ -180,8 +184,9 @@
   description: |-
     Redirects request to an empty VAST 2.0 response.
 
-    **Example**
-    ```
+    ### Examples
+
+    ```adblock
     ||example.org/vast02.xml^$xmlhttprequest,redirect=noopvast-2.0
     ```
   file: noopvast02.xml
@@ -193,8 +198,9 @@
   description: |-
     Redirects request to an empty VAST 3.0 response.
 
-    **Example**
-    ```
+    ### Examples
+
+    ```adblock
     ||example.org/vast03.xml^$xmlhttprequest,redirect=noopvast-3.0
     ```
   file: noopvast03.xml
@@ -206,8 +212,9 @@
   description: |-
     Redirects request to an empty VAST 4.0 response.
 
-    **Example**
-    ```
+    ### Examples
+
+    ```adblock
     ||example.org/vast04.xml^$xmlhttprequest,redirect=noopvast-4.0
     ```
   file: noopvast04.xml
@@ -217,9 +224,9 @@
 - title: noopmp3-0.1s
   added: v1.0.4
   description: |-
-    **Example**
+    ### Examples
 
-    ```
+    ```adblock
     ||example.org/advert.mp3$media,redirect=noopmp3-0.1s
     ```
   aliases:
@@ -250,9 +257,9 @@
 - title: noopmp4-1s
   added: v1.0.4
   description: |-
-    **Example**
+    ### Examples
 
-    ```
+    ```adblock
     ||example.org/advert.mp4$media,redirect=noopmp4-1s
     ```
   aliases:

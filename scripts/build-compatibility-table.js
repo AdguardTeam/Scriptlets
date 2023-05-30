@@ -84,7 +84,7 @@ const getTableHeader = () => {
  */
 const buildTable = (title, data = [], id = '') => {
     // title
-    let res = `# <a id="${id}"></a> ${title}${EOL}${EOL}`;
+    let res = `## <a id="${id}"></a> ${title}${EOL}${EOL}`;
     // header
     res += getTableHeader();
     // rows
@@ -122,7 +122,11 @@ const buildCompatibilityTable = () => {
         'redirects',
     );
 
-    saveTables(scriptletsTable, redirectsTable);
+    let header = `# Scriplets and Redirects compatibility tables${EOL}${EOL}`;
+    header += `- [Scriptlets](#scriptlets)${EOL}`;
+    header += `- [Redirects](#redirects)${EOL}`;
+
+    saveTables(header, scriptletsTable, redirectsTable);
 };
 
 buildCompatibilityTable();

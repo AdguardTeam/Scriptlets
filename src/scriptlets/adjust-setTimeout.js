@@ -22,46 +22,59 @@ import {
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-settimeout-boosterjs-
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('adjust-setTimeout'[, matchCallback [, matchDelay[, boost]]])
  * ```
  *
  * - `matchCallback` — optional, string or regular expression for stringified callback matching;
- * defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
+ *   defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
  * - `matchDelay` — optional, defaults to 1000, matching setTimeout delay; decimal integer OR '*' for any delay
- * - `boost` — optional, default to 0.05, float, capped at 1000 times for up and 50 for down (0.001...50), setTimeout delay multiplier
+ * - `boost` — optional, default to 0.05, float,
+ *   capped at 1000 times for up and 50 for down (0.001...50), setTimeout delay multiplier
  *
- * **Examples**
- * 1. Adjust all setTimeout() x20 times where timeout equal 1000ms:
- *     ```
+ * ### Examples
+ *
+ * 1. Adjust all setTimeout() x20 times where timeout equal 1000ms
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('adjust-setTimeout')
  *     ```
  *
- * 2. Adjust all setTimeout() x20 times where callback matched with `example` and timeout equal 1000ms
- *     ```
+ * 1. Adjust all setTimeout() x20 times where callback matched with `example` and timeout equal 1000ms
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('adjust-setTimeout', 'example')
  *     ```
  *
- * 3. Adjust all setTimeout() x20 times where callback matched with `example` and timeout equal 400ms
- *     ```
+ * 1. Adjust all setTimeout() x20 times where callback matched with `example` and timeout equal 400ms
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('adjust-setTimeout', 'example', '400')
  *     ```
  *
- * 4. Slow down setTimeout() x2 times where callback matched with `example` and timeout equal 1000ms
- *     ```
+ * 1. Slow down setTimeout() x2 times where callback matched with `example` and timeout equal 1000ms
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('adjust-setTimeout', 'example', '', '2')
  *     ```
- * 5. Adjust all setTimeout() x50 times where timeout equal 2000ms
- *     ```
+ *
+ * 1. Adjust all setTimeout() x50 times where timeout equal 2000ms
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('adjust-setTimeout', '', '2000', '0.02')
  *     ```
- * 6. Adjust all setTimeout() x1000 times where timeout equal 2000ms
- *     ```
+ *
+ * 1. Adjust all setTimeout() x1000 times where timeout equal 2000ms
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('adjust-setTimeout', '', '2000', '0.001')
  *     ```
- * 7. Adjust all setTimeout() x20 times where callback matched with `test` and timeout is randomized
- *     ```
+ *
+ * 1. Adjust all setTimeout() x20 times where callback matched with `test` and timeout is randomized
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('adjust-setTimeout', 'test', '*')
  *     ```
  *

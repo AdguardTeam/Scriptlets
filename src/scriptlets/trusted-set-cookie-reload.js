@@ -23,54 +23,62 @@ import {
  * Also reloads the current page after the cookie setting.
  * If reloading option is not needed, use the [`trusted-set-cookie` scriptlet](#trusted-set-cookie).
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('trusted-set-cookie-reload', name, value[, offsetExpiresSec[, path]])
  * ```
  *
  * - `name` — required, cookie name to be set
  * - `value` — required, cookie value. Possible values:
- *   - arbitrary value
- *   - empty string for no value
- *   - `$now$` keyword for setting current time in ms, e.g 1667915146503
- *   - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
- * - `offsetExpiresSec` — optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
- * Possible values:
- *   - positive integer in seconds
- *   - `1year` keyword for setting expiration date to one year
- *   - `1day` keyword for setting expiration date to one day
+ *     - arbitrary value
+ *     - empty string for no value
+ *     - `$now$` keyword for setting current time in ms, e.g 1667915146503
+ *     - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+ * - `offsetExpiresSec` — optional, offset from current time in seconds, after which cookie should expire;
+ *   defaults to no offset. Possible values:
+ *     - positive integer in seconds
+ *     - `1year` keyword for setting expiration date to one year
+ *     - `1day` keyword for setting expiration date to one day
  * - `path` — optional, argument for setting cookie path, defaults to `/`; possible values:
- *   - `/` — root path
- *   - `none` — to set no path at all
+ *     - `/` — root path
+ *     - `none` — to set no path at all
  *
- * > Note that the scriptlet does not encode cookie names and values. As a result, if a cookie's name or value includes `;`,
- * the scriptlet will not set the cookie since this may cause the cookie to break.
+ * > Note that the scriptlet does not encode cookie names and values.
+ * > As a result, if a cookie's name or value includes `;`,
+ * > the scriptlet will not set the cookie since this may cause the cookie to break.
  *
- * **Examples**
+ * ### Examples
+ *
  * 1. Set cookie and reload the page after it
- * ```
- * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept')
- * ```
  *
- * 2. Set cookie with `new Date().getTime()` value and reload the page after it
- * ```
- * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', '$now$')
- * ```
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept')
+ *     ```
  *
- * 3. Set cookie which will expire in 3 days and reload the page after it
- * ```
- * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept', '259200')
- * ```
+ * 1. Set cookie with `new Date().getTime()` value and reload the page after it
  *
- * 4. Set cookie which will expire in one year and reload the page after it
- * ```
- * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept', '1year')
- * ```
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', '$now$')
+ *     ```
  *
- * 5. Set cookie with no 'expire' and no path, reload the page after it
- * ```
- * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'decline', '', 'none')
- * ```
+ * 1. Set cookie which will expire in 3 days and reload the page after it
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept', '259200')
+ *     ```
+ *
+ * 1. Set cookie which will expire in one year and reload the page after it
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept', '1year')
+ *     ```
+ *
+ * 1. Set cookie with no 'expire' and no path, reload the page after it
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'decline', '', 'none')
+ *     ```
  *
  * @added v1.7.10.
  */

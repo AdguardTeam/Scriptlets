@@ -25,52 +25,60 @@ import {
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-current-inline-scriptjs-
  *
  * Related ABP source:
- * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L928
+ * https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/abort-current-inline-script.js
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```text
  * example.org#%#//scriptlet('abort-current-inline-script', property[, search])
  * ```
  *
  * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`
  * - `search` — optional, string or regular expression that must match the inline script content.
- * Defaults to abort all scripts which are trying to access the specified property.
- * Invalid regular expression will cause exit and rule will not work.
+ *   Defaults to abort all scripts which are trying to access the specified property.
+ *   Invalid regular expression will cause exit and rule will not work.
  *
- * > Note please that for inline script with addEventListener in it
- * `property` should be set as `EventTarget.prototype.addEventListener`,
- * not just `addEventListener`.
+ * > Note please that to abort the inline script with addEventListener in it,
+ * > `property` should be set as `EventTarget.prototype.addEventListener`, not just `addEventListener`.
  *
- * **Examples**
+ * ### Examples
+ *
  * 1. Aborts all inline scripts trying to access `window.alert`
- *     ```
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('abort-current-inline-script', 'alert')
  *     ```
  *
- * 2. Aborts inline scripts which are trying to access `window.alert` and contain `Hello, world`.
- *     ```
+ * 1. Aborts inline scripts which are trying to access `window.alert` and contain `Hello, world`
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('abort-current-inline-script', 'alert', 'Hello, world')
  *     ```
  *
- *     For instance, the following script will be aborted
+ *     For instance, the following script will be aborted:
+ *
  *     ```html
  *     <script>alert("Hello, world");</script>
  *     ```
  *
- * 3. Aborts inline scripts which are trying to access `window.alert` and match this regexp: `/Hello.+world/`.
- *     ```
+ * 1. Aborts inline scripts which are trying to access `window.alert` and match regexp `/Hello.+world/`
+ *
+ *     ```adblock
  *     example.org#%#//scriptlet('abort-current-inline-script', 'alert', '/Hello.+world/')
  *     ```
  *
  *     For instance, the following scripts will be aborted:
+ *
  *     ```html
  *     <script>alert("Hello, big world");</script>
  *     ```
+ *
  *     ```html
  *     <script>alert("Hello, little world");</script>
  *     ```
  *
- *     This script will not be aborted:
+ *     And this script will not be aborted:
+ *
  *     ```html
  *     <script>alert("Hi, little world");</script>
  *     ```

@@ -7,11 +7,12 @@ import {
  * @scriptlet no-topics
  *
  * @description
- * Prevents using The Topics API
+ * Prevents using the Topics API.
  * https://developer.chrome.com/docs/privacy-sandbox/topics/
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```adblock
  * example.org#%#//scriptlet('no-topics')
  * ```
  *

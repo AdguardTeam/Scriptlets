@@ -8,9 +8,10 @@ import { hit, noopFunc } from '../helpers/index';
  * Mocks Gemius Analytics.
  * https://flowplayer.com/developers/plugins/gemius
  *
- * **Example**
- * ```
- * ||gapt.hit.gemius.pl/gplayer.js$script,redirect=gemius
+ * ### Examples
+ *
+ * ```adblock
+ * ||example.org/gplayer.js$script,redirect=gemius
  * ```
  *
  * @added v1.5.0.

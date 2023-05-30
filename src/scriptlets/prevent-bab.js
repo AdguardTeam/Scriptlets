@@ -13,8 +13,9 @@ import { hit } from '../helpers/index';
  * It also can be used as `$redirect` sometimes.
  * See [redirect description](../wiki/about-redirects.md#prevent-bab).
  *
- * **Syntax**
- * ```
+ * ### Syntax
+ *
+ * ```adblock
  * example.org#%#//scriptlet('prevent-bab')
  * ```
  *

@@ -11,8 +11,9 @@ import {
  * @description
  * Mocks the IMA SDK of Google.
  *
- * **Example**
- * ```
+ * ### Examples
+ *
+ * ```adblock
  * ||imasdk.googleapis.com/js/sdkloader/ima3.js$script,redirect=google-ima3
  * ```
  *
