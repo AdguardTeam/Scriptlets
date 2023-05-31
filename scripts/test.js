@@ -5,6 +5,7 @@ import { buildScriptlets, buildScriptletsList } from './build-scriptlets';
 import { buildScriptletsFunc } from './build-funcs';
 import { buildRedirectsMap } from './build-redirects-map';
 import {
+    buildClick2Load,
     buildRedirectsFiles,
     buildRedirectsList,
     prebuildRedirects,
@@ -42,6 +43,7 @@ const runGuiTest = async (type, name) => {
 const allBuildTestTasks = [
     buildScriptletsAndRedirectsLists,
     buildScriptletsFunc,
+    buildClick2Load,
     buildRedirectsMap,
     prebuildRedirects,
     buildRedirectsFiles,
@@ -78,11 +80,19 @@ const runSpecificTests = async (type, options) => {
     await runTasks(buildTasksMap[type]);
 
     const limitData = { type };
-    const { name, gui } = options;
+    const { name, gui, build } = options;
     if (name) {
         limitData.name = name;
     }
     await buildTests(limitData);
+
+    // do not run tests for --build
+    if (build) {
+        if (gui) {
+            throw new Error('Cannot use --build with --gui');
+        }
+        return;
+    }
 
     // gui testing is available only for specific scriptlet or redirect
     if (gui && name) {
@@ -94,17 +104,14 @@ const runSpecificTests = async (type, options) => {
 
 program
     .description('By default run all tests')
-    .action(async () => {
+    .option('--build', 'only build')
+    .action(async (options) => {
         await runTasks(allBuildTestTasks);
         await buildTests();
-        await runQunitTests();
-    });
-
-program
-    .description('Just build tests files, no run')
-    .option('--build', 'only build')
-    .action(async () => {
-        await buildTests();
+        // if build option is set, then do not run tests
+        if (!options.build) {
+            await runQunitTests();
+        }
     });
 
 program
@@ -112,6 +119,7 @@ program
     .command('scriptlets')
     .option('--name <name>', 'for specific scriptlet testing')
     .option('--gui', 'for gui testing, requires --name')
+    .option('--build', 'build sources; requires --name; cannot be used with --gui')
     .action(async (options) => {
         await runSpecificTests(SCRIPTLETS_TYPE, options);
     });
@@ -121,6 +129,7 @@ program
     .command('redirects')
     .option('--name <name>', 'for specific redirect testing')
     .option('--gui', 'for gui testing, requires --name')
+    .option('--build', 'build sources; requires --name; cannot be used with --gui')
     .action(async (options) => {
         await runSpecificTests(REDIRECTS_TYPE, options);
     });

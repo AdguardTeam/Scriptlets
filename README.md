@@ -544,6 +544,14 @@ yarn test
     yarn test:qunit redirects --name ati-smarttag --gui
     ```
 
+    For debugging purposes after some test is running in gui mode,
+    you may change your scriptlet/redirect code, and without stopping the server
+    run in new terminal:
+
+    ```bash
+    yarn test:qunit scriptlets --name set-cookie --build
+    ```
+
 1. Run all jest tests:
 
     ```bash
