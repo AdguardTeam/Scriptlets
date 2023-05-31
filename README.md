@@ -536,25 +536,25 @@ yarn test
 
     ```bash
     // node test run
-    yarn test scriptlets --name set-cookie
-    yarn test redirects --name ati-smarttag
+    yarn test:qunit scriptlets --name set-cookie
+    yarn test:qunit redirects --name ati-smarttag
 
     // gui test run
-    yarn test scriptlets --name set-cookie --gui
-    yarn test redirects --name ati-smarttag --gui
+    yarn test:qunit scriptlets --name set-cookie --gui
+    yarn test:qunit redirects --name ati-smarttag --gui
     ```
 
 1. Run all jest tests:
 
     ```bash
-    yarn jest
+    yarn test:jest
     ```
 
     or limit the testing — `testRegex` may be specified in `jest.config.js`
     or specify [test name](https://jestjs.io/docs/cli#--testnamepatternregex) in command line, e.g.:
 
     ```bash
-    yarn jest -t isValidScriptletRule
+    yarn test:jest -t isValidScriptletRule
     ```
 
 To run browserstack tests create `.env` file or copy and rename `.env-example`.

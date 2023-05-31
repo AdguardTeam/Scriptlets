@@ -26,16 +26,16 @@ test('Set cookie string', (assert) => {
     let cValue = 'OK';
     runScriptlet(name, [cName, cValue]);
     assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
-    assert.strictEqual(document.cookie.includes(cName), true, 'Cookie name has been set');
-    assert.strictEqual(document.cookie.includes(cValue), true, 'Cookie value has been set');
+    assert.strictEqual(document.cookie.includes(cName), true, "Cookie with name '__test-cookie_OK' has been set");
+    assert.strictEqual(document.cookie.includes(cValue), true, 'Cookie value has been set to OK');
     clearCookie(cName);
 
     cName = '__test-cookie_0';
     cValue = 0;
     runScriptlet(name, [cName, cValue]);
     assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
-    assert.strictEqual(document.cookie.includes(cName), true, 'Cookie name has been set');
-    assert.strictEqual(document.cookie.includes(cValue), true, 'Cookie value has been set');
+    assert.strictEqual(document.cookie.includes(cName), true, "Cookie with name '__test-cookie_0' has been set");
+    assert.strictEqual(document.cookie.includes(cValue), true, 'Cookie value has been set to 0');
     clearCookie(cName);
 
     cName = 'trackingSettings';
@@ -43,8 +43,17 @@ test('Set cookie string', (assert) => {
     runScriptlet(name, [cName, cValue]);
 
     assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
-    assert.strictEqual(document.cookie.includes(cName), true, 'Cookie name has been set');
-    assert.strictEqual(document.cookie.includes(cValue), true, 'Cookie value has been set');
+    assert.strictEqual(document.cookie.includes(cName), true, "Cookie with name 'trackingSettings' has been set");
+    assert.strictEqual(document.cookie.includes(cValue), true, 'Cookie value set to encoded object-like string');
+    clearCookie(cName);
+
+    cName = 'CookieConsentV2';
+    cValue = 'YES%2CTOI%2CANA%2CKOH';
+    runScriptlet(name, [cName, cValue]);
+
+    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+    assert.strictEqual(document.cookie.includes(cName), true, "Cookie with name 'CookieConsentV2' has been set");
+    assert.strictEqual(document.cookie.includes(cValue), true, 'Cookie value has been set to encoded string');
     clearCookie(cName);
 });
 
