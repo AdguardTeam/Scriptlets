@@ -23,6 +23,9 @@ import {
  * @description
  * Removes an element from the specified XML.
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#xml-prunejs-
+ *
  * ### Syntax
  *
  * ```text
