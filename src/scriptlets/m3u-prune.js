@@ -23,6 +23,9 @@ import {
  * @description
  * Removes content from the specified M3U file.
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#m3u-prunejs-
+ *
  * ### Syntax
  *
  * ```text
