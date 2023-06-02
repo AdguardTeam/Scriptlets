@@ -621,8 +621,6 @@ example.org#%#//scriptlet('log', 'arg1', 'arg2')
 
 Removes content from the specified M3U file.
 
-Related UBO scriptlet:
-https://github.com/gorhill/uBlock/wiki/Resources-Library#m3u-prunejs-
 
 **Syntax**
 ```
@@ -1868,9 +1866,6 @@ example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '
 ### <a id="xml-prune"></a> ⚡️ xml-prune
 
 Removes an element from the specified XML.
-
-Related UBO scriptlet:
-https://github.com/gorhill/uBlock/wiki/Resources-Library#xml-prunejs-
 
 **Syntax**
 ```
