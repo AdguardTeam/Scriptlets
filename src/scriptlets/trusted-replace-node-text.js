@@ -71,7 +71,7 @@ import {
  *     <span>some text</span>
  *     ```
  *
- * @added unreleased.
+ * @added v1.9.37.
  */
 /* eslint-enable max-len */
 export function trustedReplaceNodeText(source, nodeName, textMatch, pattern, replacement, ...extraArgs) {

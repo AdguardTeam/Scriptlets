@@ -92,7 +92,7 @@ import {
  *     example.org#%#//scriptlet('evaldata-prune', '', '"id":"117458"')
  *     ```
  *
- * @added unreleased.
+ * @added v1.9.37.
  */
 /* eslint-enable max-len */
 export function evalDataPrune(source, propsToRemove, requiredInitialProps, stack) {

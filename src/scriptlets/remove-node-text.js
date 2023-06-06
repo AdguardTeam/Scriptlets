@@ -68,7 +68,7 @@ import {
  *     <span>some text</span>
  *     ```
  *
- * @added unreleased.
+ * @added v1.9.37.
  */
 /* eslint-enable max-len */
 export function removeNodeText(source, nodeName, textMatch) {

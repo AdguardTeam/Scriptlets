@@ -48,6 +48,10 @@
             "ubo": "disable-newtab-links.js"
         },
         {
+            "adg": "evaldata-prune",
+            "ubo": "evaldata-prune.js"
+        },
+        {
             "adg": "json-prune",
             "ubo": "json-prune.js",
             "abp": "json-prune"
@@ -263,9 +267,6 @@
         },
         {
             "ubo": "trusted-set-constant.js (trusted-set.js)"
-        },
-        {
-            "ubo": "evaldata-prune.js"
         }
     ],
     "redirects": [
