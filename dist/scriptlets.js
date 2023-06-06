@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.9.7
+ * Version 1.9.37
  */
 
 (function () {
@@ -75,41 +75,6 @@
     function wrapInNonameFunc(code) {
       return "function(source, args){\n".concat(code, "\n}");
     }
-
-    /**
-     * Converts object to array of pairs.
-     * Object.entries() polyfill because it is not supported by IE
-     * https://caniuse.com/?search=Object.entries
-     *
-     * @param {Object} object arbitrary object
-     * @returns {Array} array of pairs
-     */
-    const getObjectEntries = function getObjectEntries(object) {
-      const keys = Object.keys(object);
-      const entries = [];
-      keys.forEach(function (key) {
-        return entries.push([key, object[key]]);
-      });
-      return entries;
-    };
-
-    /**
-     * Converts array of pairs to object.
-     * Object.fromEntries() polyfill because it is not supported by IE
-     * https://caniuse.com/?search=Object.fromEntries
-     *
-     * @param {Array} entries - array of pairs
-     * @returns {Object} result object
-     */
-    const getObjectFromEntries = function getObjectFromEntries(entries) {
-      const output = entries.reduce(function (acc, el) {
-        const key = el[0];
-        const value = el[1];
-        acc[key] = value;
-        return acc;
-      }, {});
-      return output;
-    };
 
     /**
      * Checks whether the obj is an empty object
@@ -252,7 +217,12 @@
       if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
         return new RegExp(input.slice(1, -1));
       }
-      const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const escaped = input
+      // remove quotes' escapes for cases where scriptlet rule argument has own escaped quotes
+      // e.g #%#//scriptlet('prevent-setTimeout', '.css(\'display\',\'block\');')
+      .replace(/\\'/g, '\'').replace(/\\"/g, '"')
+      // escape special characters for following RegExp construction
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       return new RegExp(escaped);
     };
 
@@ -288,32 +258,6 @@
     const getBeforeRegExp = function getBeforeRegExp(str, rx) {
       const index = str.search(rx);
       return str.substring(0, index);
-    };
-
-    /**
-     * Checks whether the string starts with the substring
-     *
-     * @param {string} str full string
-     * @param {string} prefix substring
-     * @returns {boolean} if string start with the substring
-     */
-    const startsWith$1 = function startsWith(str, prefix) {
-      // if str === '', (str && false) will return ''
-      // that's why it has to be !!str
-      return !!str && str.indexOf(prefix) === 0;
-    };
-
-    /**
-     * Checks whether the string ends with the substring
-     *
-     * @param {string} str full string
-     * @param {string} ending substring
-     * @returns {boolean} string ends with the substring
-     */
-    const endsWith = function endsWith(str, ending) {
-      // if str === '', (str && false) will return ''
-      // that's why it has to be !!str
-      return !!str && str.lastIndexOf(ending) === str.length - ending.length;
     };
     const substringAfter$1 = function substringAfter(str, separator) {
       if (!str) {
@@ -395,7 +339,7 @@
     const isValidMatchStr = function isValidMatchStr(match) {
       const INVERT_MARKER = '!';
       let str = match;
-      if (startsWith$1(match, INVERT_MARKER)) {
+      if (match !== null && match !== void 0 && match.startsWith(INVERT_MARKER)) {
         str = match.slice(1);
       }
       return isValidStrPattern(str);
@@ -411,7 +355,7 @@
     const isValidMatchNumber = function isValidMatchNumber(match) {
       const INVERT_MARKER = '!';
       let str = match;
-      if (startsWith$1(match, INVERT_MARKER)) {
+      if (match !== null && match !== void 0 && match.startsWith(INVERT_MARKER)) {
         str = match.slice(1);
       }
       const num = parseFloat(str);
@@ -435,7 +379,7 @@
     const parseMatchArg = function parseMatchArg(match) {
       const INVERT_MARKER = '!';
       // In case if "match" is "undefined" return "false"
-      const isInvertedMatch = match ? match.startsWith(INVERT_MARKER) : false;
+      const isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
       const matchValue = isInvertedMatch ? match.slice(1) : match;
       const matchRegexp = toRegExp(matchValue);
       return {
@@ -460,7 +404,7 @@
      */
     const parseDelayArg = function parseDelayArg(delay) {
       const INVERT_MARKER = '!';
-      const isInvertedDelayMatch = startsWith$1(delay, INVERT_MARKER);
+      const isInvertedDelayMatch = delay === null || delay === void 0 ? void 0 : delay.startsWith(INVERT_MARKER);
       let delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
       delayValue = parseInt(delayValue, 10);
       const delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
@@ -482,7 +426,7 @@
       if (!obj || typeof obj !== 'object') {
         return String(obj);
       }
-      return isEmptyObject(obj) ? '{}' : getObjectEntries(obj).map(function (pair) {
+      return isEmptyObject(obj) ? '{}' : Object.entries(obj).map(function (pair) {
         const key = pair[0];
         const value = pair[1];
         let recordValueStr = value;
@@ -926,6 +870,20 @@
     };
 
     /**
+     * Converts NodeList to array
+     *
+     * @param {NodeList} nodeList arbitrary NodeList
+     * @returns {Node[Array]} array of nodes
+     */
+    const nodeListToArray = function nodeListToArray(nodeList) {
+      const nodes = [];
+      for (let i = 0; i < nodeList.length; i += 1) {
+        nodes.push(nodeList[i]);
+      }
+      return nodes;
+    };
+
+    /**
      * Checks whether the input path is supported
      *
      * @param {string} rawPath input path
@@ -957,11 +915,19 @@
      * @param {string} rawName name argument of *set-cookie-* scriptlets
      * @param {string} rawValue value argument of *set-cookie-* scriptlets
      * @param {string} rawPath path argument of *set-cookie-* scriptlets
-     * @returns {string|null} string OR `null` if path is not supported
+     * @param {boolean} shouldEncode if cookie's name and value should be encoded
+     * @returns {string|null} string OR `null` if name or value is invalid
      */
     const concatCookieNameValuePath = function concatCookieNameValuePath(rawName, rawValue, rawPath) {
-      // eslint-disable-next-line max-len
-      return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
+      let shouldEncode = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+      const COOKIE_BREAKER = ';';
+      // semicolon will cause the cookie to break
+      if (!shouldEncode && (rawName.includes(COOKIE_BREAKER) || "".concat(rawValue).includes(COOKIE_BREAKER))) {
+        return null;
+      }
+      const name = shouldEncode ? encodeURIComponent(rawName) : rawName;
+      const value = shouldEncode ? encodeURIComponent(rawValue) : rawValue;
+      return "".concat(name, "=").concat(value, "; ").concat(getCookiePath(rawPath), ";");
     };
 
     /**
@@ -1232,10 +1198,10 @@
       const INJECTED_SCRIPT_STRING = 'injectedScript';
       const INJECTED_SCRIPT_MARKER = '<anonymous>';
       const isInlineScript = function isInlineScript(stackMatch) {
-        return stackMatch.indexOf(INLINE_SCRIPT_STRING) > -1;
+        return stackMatch.includes(INLINE_SCRIPT_STRING);
       };
       const isInjectedScript = function isInjectedScript(stackMatch) {
-        return stackMatch.indexOf(INJECTED_SCRIPT_STRING) > -1;
+        return stackMatch.includes(INJECTED_SCRIPT_STRING);
       };
       if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
         return false;
@@ -1260,14 +1226,16 @@
         // so, first group "(.*?@)" is required for Firefox, second group contains URL
         const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
         if (getStackTraceURL) {
+          var _stackURL, _stackURL2;
           let stackURL = getStackTraceURL[2];
-          if (startsWith$1(stackURL, '(')) {
+          if ((_stackURL = stackURL) !== null && _stackURL !== void 0 && _stackURL.startsWith('(')) {
             stackURL = stackURL.slice(1);
           }
-          if (startsWith$1(stackURL, INJECTED_SCRIPT_MARKER)) {
+          if ((_stackURL2 = stackURL) !== null && _stackURL2 !== void 0 && _stackURL2.startsWith(INJECTED_SCRIPT_MARKER)) {
+            var _stackFunction;
             stackURL = INJECTED_SCRIPT_STRING;
             let stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
-            if (startsWith$1(stackFunction, 'at')) {
+            if ((_stackFunction = stackFunction) !== null && _stackFunction !== void 0 && _stackFunction.startsWith('at')) {
               stackFunction = stackFunction.slice(2).trim();
             }
             stack = "".concat(stackFunction, " ").concat(stackURL).trim();
@@ -1284,7 +1252,7 @@
           if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
             return true;
           }
-          if (isInjectedScript(stackMatch) && startsWith$1(stackLines[index], INJECTED_SCRIPT_STRING)) {
+          if (isInjectedScript(stackMatch) && stackLines[index].startsWith(INJECTED_SCRIPT_STRING)) {
             return true;
           }
         }
@@ -1444,11 +1412,11 @@
         result = noopFunc;
       } else if (replacement === 'trueFunc') {
         result = trueFunc;
-      } else if (replacement.indexOf('=') > -1) {
+      } else if (replacement.includes('=')) {
         // We should return noopFunc instead of window.open
         // but with some property if website checks it (examples 5, 6)
         // https://github.com/AdguardTeam/Scriptlets/issues/71
-        const isProp = startsWith$1(replacement, '{') && endsWith(replacement, '}');
+        const isProp = replacement.startsWith('{') && replacement.endsWith('}');
         if (isProp) {
           const propertyPart = replacement.slice(1, -1);
           const propertyName = substringBefore(propertyPart, '=');
@@ -1503,8 +1471,288 @@
       return preventGetter;
     };
 
+    /* eslint-disable no-console, no-underscore-dangle */
+
+    /**
+     * Hit used only for debug purposes now
+     *
+     * @param {Object} source scriptlet properties
+     * use LOG_MARKER = 'log: ' at the start of a message
+     * for logging scriptlets
+     */
+    const hit = function hit(source) {
+      if (source.verbose !== true) {
+        return;
+      }
+      try {
+        const log = console.log.bind(console);
+        const trace = console.trace.bind(console);
+        let prefix = source.ruleText || '';
+        if (source.domainName) {
+          const AG_SCRIPTLET_MARKER = '#%#//';
+          const UBO_SCRIPTLET_MARKER = '##+js';
+          let ruleStartIndex;
+          if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
+            ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+          } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
+            ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+          }
+          // delete all domains from ruleText and leave just rule part
+          const rulePart = source.ruleText.slice(ruleStartIndex);
+          // prepare applied scriptlet rule for specific domain
+          prefix = "".concat(source.domainName).concat(rulePart);
+        }
+        log("".concat(prefix, " trace start"));
+        if (trace) {
+          trace();
+        }
+        log("".concat(prefix, " trace end"));
+      } catch (e) {
+        // try catch for Edge 15
+        // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
+        // console.log throws an error
+      }
+
+      // This is necessary for unit-tests only!
+      if (typeof window.__debug === 'function') {
+        window.__debug(source);
+      }
+    };
+
+    /**
+     * @typedef ChainInfo
+     * @property {Object} base current chain base
+     * @property {string} prop current chain prop
+     * @property {string} [chain] string representation
+     */
+
+    /**
+     * Check if the property exists in the base object (recursively).
+     * Similar to getPropertyInChain but upgraded for json-prune:
+     * handle wildcard properties and does not define nonexistent base property as 'undefined'
+     *
+     * @param {Object} base object that owns chain
+     * @param {string} chain chain of owner properties
+     * @param {boolean} [lookThrough=false]
+     * should the method look through it's props in order to wildcard
+     * @param {Array} [output=[]] result acc
+     * @returns {ChainInfo[]} array of objects
+     */
+    function getWildcardPropertyInChain(base, chain) {
+      let lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      let output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+      const pos = chain.indexOf('.');
+      if (pos === -1) {
+        // for paths like 'a.b.*' every final nested prop should be processed
+        if (chain === '*' || chain === '[]') {
+          // eslint-disable-next-line no-restricted-syntax
+          for (const key in base) {
+            // to process each key in base except inherited ones
+            if (Object.prototype.hasOwnProperty.call(base, key)) {
+              output.push({
+                base,
+                prop: key
+              });
+            }
+          }
+        } else {
+          output.push({
+            base,
+            prop: chain
+          });
+        }
+        return output;
+      }
+      const prop = chain.slice(0, pos);
+      const shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === '*' && base instanceof Object;
+      if (shouldLookThrough) {
+        const nextProp = chain.slice(pos + 1);
+        const baseKeys = Object.keys(base);
+
+        // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src ad.1.src'),
+        // each one of base keys should be considered as a potential chain prop in final path
+        baseKeys.forEach(function (key) {
+          const item = base[key];
+          getWildcardPropertyInChain(item, nextProp, lookThrough, output);
+        });
+      }
+      const nextBase = base[prop];
+      chain = chain.slice(pos + 1);
+      if (nextBase !== undefined) {
+        getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
+      }
+      return output;
+    }
+
+    /**
+     * Conditionally logs message to console.
+     * Convention is to log messages by source.verbose if such log
+     * is not a part of scriptlet's functionality, eg on invalid input,
+     * and use 'forced' argument otherwise.
+     *
+     * @param {Object} source required, scriptlet properties
+     * @param {any} message required, message to log
+     * @param {boolean} [forced=false] to log message unconditionally
+     * @param {boolean} [convertMessageToString=true] to convert message to string
+     */
+    const logMessage = function logMessage(source, message) {
+      let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+      const name = source.name,
+        verbose = source.verbose;
+      if (!forced && !verbose) {
+        return;
+      }
+
+      // eslint-disable-next-line no-console
+      const nativeConsole = console.log;
+      if (!convertMessageToString) {
+        // Template literals convert object to string,
+        // so 'message' should not be passed to template literals
+        // as it will not be logged correctly
+        nativeConsole("".concat(name, ":"), message);
+        return;
+      }
+      nativeConsole("".concat(name, ": ").concat(message));
+    };
+
+    /**
+     * Checks if prunning is required
+     *
+     * @param {Object} source required, scriptlet properties
+     * @param {Object} root object which should be pruned or logged
+     * @param {Array} prunePaths array with string of space-separated properties to remove
+     * @param {Array} requiredPaths array with string of space-separated properties
+     * which must be all present for the pruning to occur
+     * @returns {boolean|undefined} true if prunning is required
+     */
+    function isPruningNeeded(source, root, prunePaths, requiredPaths) {
+      if (!root) {
+        return false;
+      }
+      let shouldProcess;
+
+      // Only log hostname and matched JSON payload if only second argument is present
+      if (prunePaths.length === 0 && requiredPaths.length > 0) {
+        const rootString = JSON.stringify(root);
+        const matchRegex = toRegExp(requiredPaths.join(''));
+        const shouldLog = matchRegex.test(rootString);
+        if (shouldLog) {
+          logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
+          if (root && typeof root === 'object') {
+            logMessage(source, root, true, false);
+          }
+          shouldProcess = false;
+          return shouldProcess;
+        }
+      }
+      const wildcardSymbols = ['.*.', '*.', '.*', '.[].', '[].', '.[]'];
+      for (let i = 0; i < requiredPaths.length; i += 1) {
+        const requiredPath = requiredPaths[i];
+        const lastNestedPropName = requiredPath.split('.').pop();
+        const hasWildcard = wildcardSymbols.some(function (symbol) {
+          return requiredPath.includes(symbol);
+        });
+
+        // if the path has wildcard, getPropertyInChain should 'look through' chain props
+        const details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
+
+        // start value of 'shouldProcess' due to checking below
+        shouldProcess = !hasWildcard;
+        for (let i = 0; i < details.length; i += 1) {
+          if (hasWildcard) {
+            // if there is a wildcard,
+            // at least one (||) of props chain should be present in object
+            shouldProcess = !(details[i].base[lastNestedPropName] === undefined) || shouldProcess;
+          } else {
+            // otherwise each one (&&) of them should be there
+            shouldProcess = !(details[i].base[lastNestedPropName] === undefined) && shouldProcess;
+          }
+        }
+      }
+      return shouldProcess;
+    }
+
+    /**
+     * Prunes properties of 'root' object
+     *
+     * @param {Object} source required, scriptlet properties
+     * @param {Object} root object which should be pruned or logged
+     * @param {Array} prunePaths array with string of space-separated properties to remove
+     * @param {Array} requiredPaths array with string of space-separated properties
+     * which must be all present for the pruning to occur
+     * @returns {Object} pruned root
+     */
+    const jsonPruner = function jsonPruner(source, root, prunePaths, requiredPaths) {
+      if (prunePaths.length === 0 && requiredPaths.length === 0) {
+        logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
+        if (root && typeof root === 'object') {
+          logMessage(source, root, true, false);
+        }
+        return root;
+      }
+      try {
+        if (isPruningNeeded(source, root, prunePaths, requiredPaths) === false) {
+          return root;
+        }
+
+        // if pruning is needed, we check every input pathToRemove
+        // and delete it if root has it
+        prunePaths.forEach(function (path) {
+          const ownerObjArr = getWildcardPropertyInChain(root, path, true);
+          ownerObjArr.forEach(function (ownerObj) {
+            if (ownerObj !== undefined && ownerObj.base) {
+              delete ownerObj.base[ownerObj.prop];
+              hit(source);
+            }
+          });
+        });
+      } catch (e) {
+        logMessage(source, e);
+      }
+      return root;
+    };
+
     const getNativeRegexpTest = function getNativeRegexpTest() {
       return Object.getOwnPropertyDescriptor(RegExp.prototype, 'test').value;
+    };
+
+    /**
+     * Modifies original response with the given replacement data.
+     *
+     * @param {Response} origResponse Original response.
+     * @param {Object} replacement Replacement data for response with possible keys:
+     * - `body`: optional, string, default to '{}';
+     * - `type`: optional, string, original response type is used if not specified.
+     *
+     * @returns {Response} Modified response.
+     */
+    const modifyResponse = function modifyResponse(origResponse) {
+      var _origResponse$headers;
+      let replacement = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
+        body: '{}'
+      };
+      const headers = {};
+      origResponse === null || origResponse === void 0 ? void 0 : (_origResponse$headers = origResponse.headers) === null || _origResponse$headers === void 0 ? void 0 : _origResponse$headers.forEach(function (value, key) {
+        headers[key] = value;
+      });
+      const modifiedResponse = new Response(replacement.body, {
+        status: origResponse.status,
+        statusText: origResponse.statusText,
+        headers
+      });
+
+      // Mock response url and type to avoid adblocker detection
+      // https://github.com/AdguardTeam/Scriptlets/issues/216
+      Object.defineProperties(modifiedResponse, {
+        url: {
+          value: origResponse.url
+        },
+        type: {
+          value: replacement.type || origResponse.type
+        }
+      });
+      return modifiedResponse;
     };
 
     /**
@@ -1530,7 +1778,7 @@
         const value = request[key];
         return [key, value];
       });
-      return getObjectFromEntries(entries);
+      return Object.fromEntries(entries);
     };
 
     /**
@@ -1598,7 +1846,7 @@
       props.forEach(function (prop) {
         const dividerInd = prop.indexOf(PAIRS_MARKER);
         const key = prop.slice(0, dividerInd);
-        const hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+        const hasLegalMatchProp = LEGAL_MATCH_PROPS.includes(key);
         if (hasLegalMatchProp) {
           const value = prop.slice(dividerInd + 1);
           propsObj[key] = value;
@@ -1636,50 +1884,6 @@
         matchData[key] = toRegExp(data[key]);
       });
       return matchData;
-    };
-
-    /**
-     * Conditionally logs message to console.
-     * Convention is to log messages by source.verbose if such log
-     * is not a part of scriptlet's functionality, eg on invalid input,
-     * and use 'forced' argument otherwise.
-     *
-     * @param {Object} source required, scriptlet properties
-     * @param {any} message required, message to log
-     * @param {boolean} [forced=false] to log message unconditionally
-     * @param {boolean} [convertMessageToString=true] to convert message to string
-     */
-    const logMessage = function logMessage(source, message) {
-      let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-      let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-      const name = source.name,
-        ruleText = source.ruleText,
-        verbose = source.verbose;
-      if (!forced && !verbose) {
-        return;
-      }
-
-      // eslint-disable-next-line no-console
-      const nativeConsole = console.log;
-      if (!convertMessageToString) {
-        // Template literals convert object to string,
-        // so 'message' should not be passed to template literals
-        // as it will not be logged correctly
-        nativeConsole("".concat(name, ":"), message);
-        return;
-      }
-      let messageStr = "".concat(name, ": ").concat(message);
-
-      // Extract scriptlet part from rule text
-      if (ruleText) {
-        const RULE_MARKER = '#%#//scriptlet';
-        const markerIdx = ruleText.indexOf(RULE_MARKER);
-        if (markerIdx > -1) {
-          const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-          messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-        }
-      }
-      nativeConsole(messageStr);
     };
 
     /**
@@ -1754,7 +1958,7 @@
       // eslint-disable-next-line consistent-return
       const nativeOnError = window.onerror;
       return function onError(error) {
-        if (typeof error === 'string' && error.indexOf(rid) !== -1) {
+        if (typeof error === 'string' && error.includes(rid)) {
           return true;
         }
         if (nativeOnError instanceof Function) {
@@ -1880,119 +2084,6 @@
         chain
       };
     }
-
-    /**
-     * @typedef ChainInfo
-     * @property {Object} base current chain base
-     * @property {string} prop current chain prop
-     * @property {string} [chain] string representation
-     */
-
-    /**
-     * Check if the property exists in the base object (recursively).
-     * Similar to getPropertyInChain but upgraded for json-prune:
-     * handle wildcard properties and does not define nonexistent base property as 'undefined'
-     *
-     * @param {Object} base object that owns chain
-     * @param {string} chain chain of owner properties
-     * @param {boolean} [lookThrough=false]
-     * should the method look through it's props in order to wildcard
-     * @param {Array} [output=[]] result acc
-     * @returns {ChainInfo[]} array of objects
-     */
-    function getWildcardPropertyInChain(base, chain) {
-      let lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-      let output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
-      const pos = chain.indexOf('.');
-      if (pos === -1) {
-        // for paths like 'a.b.*' every final nested prop should be processed
-        if (chain === '*' || chain === '[]') {
-          // eslint-disable-next-line no-restricted-syntax
-          for (const key in base) {
-            // to process each key in base except inherited ones
-            if (Object.prototype.hasOwnProperty.call(base, key)) {
-              output.push({
-                base,
-                prop: key
-              });
-            }
-          }
-        } else {
-          output.push({
-            base,
-            prop: chain
-          });
-        }
-        return output;
-      }
-      const prop = chain.slice(0, pos);
-      const shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === '*' && base instanceof Object;
-      if (shouldLookThrough) {
-        const nextProp = chain.slice(pos + 1);
-        const baseKeys = Object.keys(base);
-
-        // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src ad.1.src'),
-        // each one of base keys should be considered as a potential chain prop in final path
-        baseKeys.forEach(function (key) {
-          const item = base[key];
-          getWildcardPropertyInChain(item, nextProp, lookThrough, output);
-        });
-      }
-      const nextBase = base[prop];
-      chain = chain.slice(pos + 1);
-      if (nextBase !== undefined) {
-        getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
-      }
-      return output;
-    }
-
-    /* eslint-disable no-console, no-underscore-dangle */
-
-    /**
-     * Hit used only for debug purposes now
-     *
-     * @param {Object} source scriptlet properties
-     * use LOG_MARKER = 'log: ' at the start of a message
-     * for logging scriptlets
-     */
-    const hit = function hit(source) {
-      if (source.verbose !== true) {
-        return;
-      }
-      try {
-        const log = console.log.bind(console);
-        const trace = console.trace.bind(console);
-        let prefix = source.ruleText || '';
-        if (source.domainName) {
-          const AG_SCRIPTLET_MARKER = '#%#//';
-          const UBO_SCRIPTLET_MARKER = '##+js';
-          let ruleStartIndex;
-          if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
-            ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-          } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
-            ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-          }
-          // delete all domains from ruleText and leave just rule part
-          const rulePart = source.ruleText.slice(ruleStartIndex);
-          // prepare applied scriptlet rule for specific domain
-          prefix = "".concat(source.domainName).concat(rulePart);
-        }
-        log("".concat(prefix, " trace start"));
-        if (trace) {
-          trace();
-        }
-        log("".concat(prefix, " trace end"));
-      } catch (e) {
-        // try catch for Edge 15
-        // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/
-        // console.log throws an error
-      }
-
-      // This is necessary for unit-tests only!
-      if (typeof window.__debug === 'function') {
-        window.__debug(source);
-      }
-    };
 
     /**
      * Checks if given propsToMatch string matches with given request data
@@ -2134,6 +2225,46 @@
     };
 
     /**
+     * Returns the list of added nodes from the list of mutations
+     *
+     * @param {MutationRecord[]} mutations list of mutations
+     * @returns {Node[]} list of added nodes
+     */
+    const getAddedNodes = function getAddedNodes(mutations) {
+      const nodes = [];
+      for (let i = 0; i < mutations.length; i += 1) {
+        const addedNodes = mutations[i].addedNodes;
+        for (let j = 0; j < addedNodes.length; j += 1) {
+          nodes.push(addedNodes[j]);
+        }
+      }
+      return nodes;
+    };
+
+    /**
+     * Creates and runs a MutationObserver on the document element with optional
+     * throttling and disconnect timeout.
+     *
+     * @param {Function} callback MutationObserver callback
+     * @param {Object} options MutationObserver options
+     * @param {number|null} timeout Disconnect timeout in ms
+     */
+    const observeDocumentWithTimeout = function observeDocumentWithTimeout(callback, options) {
+      let timeout = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 10000;
+      const observer = new MutationObserver(function (mutations, observer) {
+        observer.disconnect();
+        callback(mutations);
+        observer.observe(document.documentElement, options);
+      });
+      observer.observe(document.documentElement, options);
+      if (typeof timeout === 'number') {
+        setTimeout(function () {
+          return observer.disconnect();
+        }, timeout);
+      }
+    };
+
+    /**
      * @typedef {Object} FlagsData object that holds info about valid flags
      * and provides method for easy access
      * @property {string} ASAP asap flag string
@@ -2155,14 +2286,14 @@
       const STAY_FLAG = 'stay';
       const VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
       const passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
-        return VALID_FLAGS.indexOf(f) !== -1;
+        return VALID_FLAGS.includes(f);
       });
       return {
         ASAP: ASAP_FLAG,
         COMPLETE: COMPLETE_FLAG,
         STAY: STAY_FLAG,
         hasFlag(flag) {
-          return passedFlags.indexOf(flag) !== -1;
+          return passedFlags.includes(flag);
         }
       };
     };
@@ -2223,71 +2354,171 @@
       context.Element.prototype.attachShadow = new Proxy(context.Element.prototype.attachShadow, attachShadowHandler);
     };
 
+    /**
+     * Grabs existing nodes and passes them to a given handler.
+     *
+     * @param {string} selector CSS selector to find nodes by
+     * @param {Function} handler handler to pass nodes to
+     */
+    const handleExistingNodes = function handleExistingNodes(selector, handler) {
+      const nodeList = document.querySelectorAll(selector);
+      const nodes = nodeListToArray(nodeList);
+      handler(nodes);
+    };
+
+    /**
+     * Extracts added nodes from mutations and passes them to a given handler.
+     *
+     * @param {MutationRecord[]} mutations mutations to find eligible nodes in
+     * @param {Function} handler handler to pass eligible nodes to
+     */
+    const handleMutations = function handleMutations(mutations, handler) {
+      const addedNodes = getAddedNodes(mutations);
+      handler(addedNodes);
+    };
+
+    /**
+     * Checks if given node's text content should be replaced
+     *
+     * @param {Node} node  node to check
+     * @param {RegExp|string} nodeNameMatch regexp or string to match node name
+     * @param {RegExp|string} textContentMatch regexp or string to match node's text content
+     * @returns {boolean} true if node's text content should be replaced
+     */
+    const isTargetNode = function isTargetNode(node, nodeNameMatch, textContentMatch) {
+      const nodeName = node.nodeName,
+        textContent = node.textContent;
+      const nodeNameLowerCase = nodeName.toLowerCase();
+      return textContent !== '' && (nodeNameMatch instanceof RegExp ? nodeNameMatch.test(nodeNameLowerCase) : nodeNameMatch === nodeNameLowerCase) && (textContentMatch instanceof RegExp ? textContentMatch.test(textContent) : textContent.includes(textContentMatch));
+    };
+
+    /**
+     * Replaces given node's text content with a given replacement.
+     *
+     * @param {string} source source of the scriptlet
+     * @param {Node} node node to replace text content in
+     * @param {RegExp|string} pattern pattern to match text content
+     * @param {string} replacement replacement for matched text content
+     */
+    const replaceNodeText = function replaceNodeText(source, node, pattern, replacement) {
+      node.textContent = node.textContent.replace(pattern, replacement);
+      hit(source);
+    };
+
+    /**
+     * Modifies arguments for trusted-replace-node-text and remove-node-text scriptlets
+     *
+     * @param {string} nodeName string or stringified regexp to match node name
+     * @param {string} textMatch string or stringified regexp to match node's text content
+     * @param {string} pattern string or stringified regexp to match replace pattern
+     * @returns {Object} derivative params
+     */
+    const parseNodeTextParams = function parseNodeTextParams(nodeName, textMatch) {
+      let pattern = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+      const REGEXP_START_MARKER = '/';
+      const isStringNameMatch = !(nodeName.startsWith(REGEXP_START_MARKER) && nodeName.endsWith(REGEXP_START_MARKER));
+      const selector = isStringNameMatch ? nodeName : '*';
+      const nodeNameMatch = isStringNameMatch ? nodeName : toRegExp(nodeName);
+      const textContentMatch = !textMatch.startsWith(REGEXP_START_MARKER) ? textMatch : toRegExp(textMatch);
+      let patternMatch;
+      if (pattern) {
+        patternMatch = !pattern.startsWith(REGEXP_START_MARKER) ? pattern : toRegExp(pattern);
+      }
+      return {
+        selector,
+        nodeNameMatch,
+        textContentMatch,
+        patternMatch
+      };
+    };
+
     /* eslint-disable max-len */
     /**
      * @trustedScriptlet trusted-click-element
+     *
      * @description
-     * Clicks selected elements in a strict sequence, ordered by selectors passed, and waiting for them to render in the DOM first.
+     * Clicks selected elements in a strict sequence, ordered by selectors passed,
+     * and waiting for them to render in the DOM first.
      * Deactivates after all elements have been clicked or by 10s timeout.
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, delay]])
      * ```
      *
      * - `selectors` — required, string with query selectors delimited by comma
-     * - `extraMatch` — optional, extra condition to check on a page; allows to match `cookie` and `localStorage`; can be set as `name:key[=value]` where `value` is optional.
-     * If `cookie`/`localStorage` starts with `!` then the element will only be clicked if specified cookie/localStorage item does not exist.
-     * Multiple conditions are allowed inside one `extraMatch` but they should be delimited by comma and each of them should match the syntax. Possible `name`s:
-     *    - `cookie` - test string or regex against cookies on a page
-     *    - `localStorage` - check if localStorage item is present
+     * - `extraMatch` — optional, extra condition to check on a page; allows to match `cookie` and `localStorage`;
+     * can be set as `name:key[=value]` where `value` is optional.
+     * If `cookie`/`localStorage` starts with `!` then the element will only be clicked
+     * if specified cookie/localStorage item does not exist.
+     * Multiple conditions are allowed inside one `extraMatch` but they should be delimited by comma
+     * and each of them should match the syntax. Possible `name`s:
+     *     - `cookie` — test string or regex against cookies on a page
+     *     - `localStorage` — check if localStorage item is present
      * - `delay` — optional, time in ms to delay scriptlet execution, defaults to instant execution.
      *
-     * **Examples**
+     * ### Examples
+     *
      * 1. Click single element by selector
-     * ```
-     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]')
-     * ```
      *
-     * 2. Delay click execution by 500ms
-     * ```
-     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '', '500')
-     * ```
+     *     ```adblock
+     *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]')
+     *     ```
      *
-     * 3. Click multiple elements by selector with a delay
-     * ```
-     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name="check"], input[type="submit"][value="akkoord"]', '', '500')
-     * ```
+     * 1. Delay click execution by 500ms
      *
-     * 4. Match cookies by keys using regex and string
-     * ```
-     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'cookie:userConsentCommunity, cookie:/cmpconsent|cmp/')
-     * ```
+     *     ```adblock
+     *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '', '500')
+     *     ```
      *
-     * 5. Match by cookie key=value pairs using regex and string
-     * ```
-     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'cookie:userConsentCommunity=true, cookie:/cmpconsent|cmp/=/[a-z]{1,5}/')
-     * ```
+     * 1. Click multiple elements by selector with a delay
      *
-     * 6. Match by localStorage item 'promo' key
-     * ```
-     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'localStorage:promo')
-     * ```
+     *     <!-- markdownlint-disable line-length -->
      *
-     * 7. Click multiple elements with delay and matching by both cookie string and localStorage item
-     * ```
-     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], input[type="submit"][value="akkoord"]', 'cookie:cmpconsent, localStorage:promo', '250')
-     * ```
+     *     ```adblock
+     *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name="check"], input[type="submit"][value="akkoord"]', '', '500')
+     *     ```
      *
-     * 8. Click element only if cookie with name `cmpconsent` does not exist
-     * ```
-     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:cmpconsent')
-     * ```
+     * 1. Match cookies by keys using regex and string
      *
-     * 9. Click element only if specified cookie string and localStorage item does not exist
-     * ```
-     * example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:cmpconsent, !localStorage:promo')
-     * ```
+     *     ```adblock
+     *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'cookie:userConsentCommunity, cookie:/cmpconsent|cmp/')
+     *     ```
+     *
+     * 1. Match by cookie key=value pairs using regex and string
+     *
+     *     ```adblock
+     *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'cookie:userConsentCommunity=true, cookie:/cmpconsent|cmp/=/[a-z]{1,5}/')
+     *     ```
+     *
+     * 1. Match by localStorage item 'promo' key
+     *
+     *     ```adblock
+     *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'localStorage:promo')
+     *     ```
+     *
+     * 1. Click multiple elements with delay and matching by both cookie string and localStorage item
+     *
+     *     ```adblock
+     *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], input[type="submit"][value="akkoord"]', 'cookie:cmpconsent, localStorage:promo', '250')
+     *     ```
+     *
+     *     <!-- markdownlint-enable line-length -->
+     *
+     * 1. Click element only if cookie with name `cmpconsent` does not exist
+     *
+     *     ```adblock
+     *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:cmpconsent')
+     *     ```
+     *
+     * 1. Click element only if specified cookie string and localStorage item does not exist
+     *
+     *     ```adblock
+     *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:consent, !localStorage:promo')
+     *     ```
+     *
+     * @added v1.7.3.
      */
     /* eslint-enable max-len */
     function trustedClickElement$1(source, selectors) {
@@ -2334,7 +2565,7 @@
 
         // Filter match pairs by marker
         parsedExtraMatch.forEach(function (matchStr) {
-          if (matchStr.indexOf(COOKIE_MATCH_MARKER) > -1) {
+          if (matchStr.includes(COOKIE_MATCH_MARKER)) {
             const _parseMatchArg = parseMatchArg(matchStr),
               isInvertedMatch = _parseMatchArg.isInvertedMatch,
               matchValue = _parseMatchArg.matchValue;
@@ -2342,7 +2573,7 @@
             const cookieMatch = matchValue.replace(COOKIE_MATCH_MARKER, '');
             cookieMatches.push(cookieMatch);
           }
-          if (matchStr.indexOf(LOCAL_STORAGE_MATCH_MARKER) > -1) {
+          if (matchStr.includes(LOCAL_STORAGE_MATCH_MARKER)) {
             const _parseMatchArg2 = parseMatchArg(matchStr),
               isInvertedMatch = _parseMatchArg2.isInvertedMatch,
               matchValue = _parseMatchArg2.matchValue;
@@ -2477,7 +2708,7 @@
 
         // selectorsSequence should be modified after the loop to not break loop indexation
         selectorsSequence = selectorsSequence.map(function (selector) {
-          return fulfilledSelectors.indexOf(selector) === -1 ? selector : null;
+          return fulfilledSelectors.includes(selector) ? null : selector;
         });
 
         // Disconnect observer after finding all elements
@@ -2514,6 +2745,7 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet abort-on-property-read
+     *
      * @description
      * Aborts a script when it attempts to **read** the specified property.
      *
@@ -2521,23 +2753,27 @@
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-property-readjs-
      *
      * Related ABP source:
-     * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L864
+     * https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/abort-on-property-read.js
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('abort-on-property-read', property)
      * ```
      *
      * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`
      *
-     * **Examples**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ! Aborts script when it tries to access `window.alert`
      * example.org#%#//scriptlet('abort-on-property-read', 'alert')
      *
      * ! Aborts script when it tries to access `navigator.language`
      * example.org#%#//scriptlet('abort-on-property-read', 'navigator.language')
      * ```
+     *
+     * @added v1.0.4.
      */
     /* eslint-enable max-len */
     function abortOnPropertyRead$1(source, property) {
@@ -2585,6 +2821,7 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet abort-on-property-write
+     *
      * @description
      * Aborts a script when it attempts to **write** the specified property.
      *
@@ -2592,20 +2829,25 @@
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-property-writejs-
      *
      * Related ABP source:
-     * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L896
+     * https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/abort-on-property-write.js
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('abort-on-property-write', property)
      * ```
      *
-     * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`
+     * - `property` — required, path to a property (joined with `.` if needed).
+     *   The property must be attached to `window`
      *
-     * **Examples**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ! Aborts script when it tries to set `window.adblock` value
      * example.org#%#//scriptlet('abort-on-property-write', 'adblock')
      * ```
+     *
+     * @added v1.0.4.
      */
     /* eslint-enable max-len */
     function abortOnPropertyWrite$1(source, property) {
@@ -2652,54 +2894,64 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet prevent-setTimeout
+     *
      * @description
      * Prevents a `setTimeout` call if:
-     * 1) the text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
-     * otherwise mismatched calls should be defused;
-     * 2) the delay is matching the specified `matchDelay`; otherwise mismatched calls should be defused.
+     *
+     * 1. The text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
+     *    otherwise mismatched calls should be defused.
+     * 1. The delay is matching the specified `matchDelay`; otherwise mismatched calls should be defused.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-settimeout-ifjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('prevent-setTimeout'[, matchCallback[, matchDelay]])
      * ```
      *
-     * Call with no arguments will log calls to setTimeout while debugging (`log-setTimeout` superseding),
-     * so production filter lists' rules definitely require at least one of the parameters:
-     * - `matchCallback` — optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
-     * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
-     * If do not start with `!`, the stringified callback will be matched.
-     * If not set, prevents all `setTimeout` calls due to specified `matchDelay`.
+     * > Call with no arguments will log all setTimeout calls (`log-setTimeout` superseding),
+     * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
+     *
+     * - `matchCallback` — optional, string or regular expression;
+     *   invalid regular expression will be skipped and all callbacks will be matched.
+     *   If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
+     *   If do not start with `!`, the stringified callback will be matched.
+     *   If not set, prevents all `setTimeout` calls due to specified `matchDelay`.
      * - `matchDelay` — optional, must be an integer.
-     * If starts with `!`, scriptlet will not match the delay but all other will be defused.
-     * If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
-     * Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
+     *   If starts with `!`, scriptlet will not match the delay but all other will be defused.
+     *   If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
+     *   Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
      *
      * > If `prevent-setTimeout` log looks like `setTimeout(undefined, 1000)`,
-     * it means that no callback was passed to setTimeout() and that's not scriptlet issue
-     * and obviously it can not be matched by `matchCallback`.
+     * > it means that no callback was passed to setTimeout() and that's not scriptlet issue
+     * > and obviously it can not be matched by `matchCallback`.
      *
-     * **Examples**
-     * 1. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay.
-     *     ```bash
+     * ### Examples
+     *
+     * 1. Prevents `setTimeout` calls if the callback matches `/\.test/` regardless of the delay
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-setTimeout', '/\.test/')
      *     ```
      *
      *     For instance, the following call will be prevented:
+     *
      *     ```javascript
      *     setTimeout(function () {
      *         window.test = "value";
      *     }, 100);
      *     ```
      *
-     * 2. Prevents `setTimeout` calls if the callback does not contain `value`.
-     *     ```
+     * 1. Prevents `setTimeout` calls if the callback does not contain `value`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-setTimeout', '!value')
      *     ```
      *
      *     For instance, only the first of the following calls will be prevented:
+     *
      *     ```javascript
      *     setTimeout(function () {
      *         window.test = "test -- prevented";
@@ -2712,12 +2964,14 @@
      *     }, 500);
      *     ```
      *
-     * 3. Prevents `setTimeout` calls if the callback contains `value` and the delay is not set to `300`.
-     *     ```
+     * 1. Prevents `setTimeout` calls if the callback contains `value` and the delay is not set to `300`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-setTimeout', 'value', '!300')
      *     ```
      *
      *     For instance, only the first of the following calls will not be prevented:
+     *
      *     ```javascript
      *     setTimeout(function () {
      *         window.test = "value 1 -- executed";
@@ -2730,12 +2984,14 @@
      *     }, 500);
      *     ```
      *
-     * 4. Prevents `setTimeout` calls if the callback does not contain `value` and the delay is not set to `300`.
-     *     ```
+     * 1. Prevents `setTimeout` calls if the callback does not contain `value` and the delay is not set to `300`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-setTimeout', '!value', '!300')
      *     ```
      *
      *     For instance, only the second of the following calls will be prevented:
+     *
      *     ```javascript
      *     setTimeout(function () {
      *         window.test = "test -- executed";
@@ -2751,12 +3007,14 @@
      *     }, 500);
      *     ```
      *
-     * 5. Prevents `setTimeout` calls if the callback contains `value` and delay is a decimal.
-     *     ```
+     * 1. Prevents `setTimeout` calls if the callback contains `value` and delay is a decimal
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-setTimeout', 'value', '300')
      *     ```
      *
      *     For instance, the following calls will be prevented:
+     *
      *     ```javascript
      *     setTimeout(function () {
      *         window.test = "value";
@@ -2765,6 +3023,8 @@
      *         window.test = "value";
      *     }, 300 + Math.random());
      *     ```
+     *
+     * @added v1.0.4.
      */
     /* eslint-enable max-len */
     function preventSetTimeout$1(source, matchCallback, matchDelay) {
@@ -2810,59 +3070,69 @@
     'setTimeout-defuser.js', 'ubo-setTimeout-defuser.js', 'ubo-setTimeout-defuser', 'std.js', 'ubo-std.js', 'ubo-std'];
     preventSetTimeout$1.injections = [hit, noopFunc, isPreventionNeeded, logMessage,
     // following helpers should be injected as helpers above use them
-    parseMatchArg, parseDelayArg, toRegExp, startsWith$1, nativeIsNaN, isValidCallback, isValidMatchStr, escapeRegExp, isValidStrPattern, nativeIsFinite, isValidMatchNumber, parseRawDelay];
+    parseMatchArg, parseDelayArg, toRegExp, nativeIsNaN, isValidCallback, isValidMatchStr, escapeRegExp, isValidStrPattern, nativeIsFinite, isValidMatchNumber, parseRawDelay];
 
     /* eslint-disable max-len */
     /**
      * @scriptlet prevent-setInterval
+     *
      * @description
      * Prevents a `setInterval` call if:
-     * 1) the text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
-     * otherwise mismatched calls should be defused;
-     * 2) the delay is matching the specified `matchDelay`; otherwise mismatched calls should be defused.
+     *
+     * 1. The text of the callback is matching the specified `matchCallback` string/regexp which does not start with `!`;
+     *    otherwise mismatched calls should be defused.
+     * 1. The delay is matching the specified `matchDelay`; otherwise mismatched calls should be defused.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-setinterval-ifjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('prevent-setInterval'[, matchCallback[, matchDelay]])
      * ```
      *
-     * Call with no arguments will log calls to setInterval while debugging (`log-setInterval` superseding),
-     * so production filter lists' rules definitely require at least one of the parameters:
-     * - `matchCallback` — optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
-     * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
-     * If do not start with `!`, the stringified callback will be matched.
-     * If not set, prevents all `setInterval` calls due to specified `matchDelay`.
+     * > Call with no arguments will log all setInterval calls (`log-setInterval` superseding),
+     * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
+     *
+     * - `matchCallback` — optional, string or regular expression;
+     *   invalid regular expression will be skipped and all callbacks will be matched.
+     *   If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
+     *   If do not start with `!`, the stringified callback will be matched.
+     *   If not set, prevents all `setInterval` calls due to specified `matchDelay`.
      * - `matchDelay` — optional, must be an integer.
-     * If starts with `!`, scriptlet will not match the delay but all other will be defused.
-     * If do not start with `!`, the delay passed to the `setInterval` call will be matched.
-     * Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
+     *   If starts with `!`, scriptlet will not match the delay but all other will be defused.
+     *   If do not start with `!`, the delay passed to the `setInterval` call will be matched.
+     *   Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
      *
      * > If `prevent-setInterval` log looks like `setInterval(undefined, 1000)`,
-     * it means that no callback was passed to setInterval() and that's not scriptlet issue
-     * and obviously it can not be matched by `matchCallback`.
+     * > it means that no callback was passed to setInterval() and that's not scriptlet issue
+     * > and obviously it can not be matched by `matchCallback`.
      *
-     *  **Examples**
-     * 1. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the delay.
-     *     ```bash
+     * ### Examples
+     *
+     * 1. Prevents `setInterval` calls if the callback matches `/\.test/` regardless of the delay
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-setInterval', '/\.test/')
      *     ```
      *
      *     For instance, the following call will be prevented:
+     *
      *     ```javascript
      *     setInterval(function () {
      *         window.test = "value";
      *     }, 100);
      *     ```
      *
-     * 2. Prevents `setInterval` calls if the callback does not contain `value`.
-     *     ```
+     * 1. Prevents `setInterval` calls if the callback does not contain `value`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-setInterval', '!value')
      *     ```
      *
      *     For instance, only the first of the following calls will be prevented:
+     *
      *     ```javascript
      *     setInterval(function () {
      *         window.test = "test -- prevented";
@@ -2875,12 +3145,14 @@
      *     }, 500);
      *     ```
      *
-     * 3. Prevents `setInterval` calls if the callback contains `value` and the delay is not set to `300`.
-     *     ```
+     * 1. Prevents `setInterval` calls if the callback contains `value` and the delay is not set to `300`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-setInterval', 'value', '!300')
      *     ```
      *
      *     For instance, only the first of the following calls will not be prevented:
+     *
      *     ```javascript
      *     setInterval(function () {
      *         window.test = "value 1 -- executed";
@@ -2893,12 +3165,14 @@
      *     }, 500);
      *     ```
      *
-     * 4. Prevents `setInterval` calls if the callback does not contain `value` and the delay is not set to `300`.
-     *     ```
+     * 1. Prevents `setInterval` calls if the callback does not contain `value` and the delay is not set to `300`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-setInterval', '!value', '!300')
      *     ```
      *
      *     For instance, only the second of the following calls will be prevented:
+     *
      *     ```javascript
      *     setInterval(function () {
      *         window.test = "test -- executed";
@@ -2914,12 +3188,14 @@
      *     }, 500);
      *     ```
      *
-     * 5. Prevents `setInterval` calls if the callback contains `value` and delay is a decimal.
-     *     ```
+     * 1. Prevents `setInterval` calls if the callback contains `value` and delay is a decimal number
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-setInterval', 'value', '300')
      *     ```
      *
      *     For instance, the following calls will be prevented:
+     *
      *     ```javascript
      *     setInterval(function () {
      *         window.test = "value";
@@ -2928,6 +3204,8 @@
      *         window.test = "value";
      *     }, 300 + Math.random());
      *     ```
+     *
+     * @added v1.0.4.
      */
     /* eslint-enable max-len */
     function preventSetInterval$1(source, matchCallback, matchDelay) {
@@ -2973,67 +3251,84 @@
     'ubo-sid.js', 'ubo-no-setInterval-if', 'ubo-setInterval-defuser', 'ubo-nosiif', 'ubo-sid'];
     preventSetInterval$1.injections = [hit, noopFunc, isPreventionNeeded, logMessage,
     // following helpers should be injected as helpers above use them
-    toRegExp, startsWith$1, nativeIsNaN, parseMatchArg, parseDelayArg, isValidCallback, isValidMatchStr, isValidStrPattern, escapeRegExp, nativeIsFinite, isValidMatchNumber, parseRawDelay];
+    toRegExp, nativeIsNaN, parseMatchArg, parseDelayArg, isValidCallback, isValidMatchStr, isValidStrPattern, escapeRegExp, nativeIsFinite, isValidMatchNumber, parseRawDelay];
 
     /* eslint-disable max-len */
     /**
      * @scriptlet prevent-window-open
+     *
      * @description
-     * Prevents `window.open` calls when URL either matches or not matches the specified string/regexp. Using it without parameters prevents all `window.open` calls.
+     * Prevents `window.open` calls when URL either matches or not matches the specified string/regexp.
+     * Using it without parameters prevents all `window.open` calls.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#windowopen-defuserjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('prevent-window-open'[, match[, delay[, replacement]]])
      * ```
      *
-     * - `match` — optional, string or regular expression. If not set or regular expression is invalid, all window.open calls will be matched.
-     * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
-     * If do not start with `!`, the stringified callback will be matched.
+     * - `match` — optional, string or regular expression.
+     *   If not set or regular expression is invalid, all window.open calls will be matched.
+     *   If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
+     *   If do not start with `!`, the stringified callback will be matched.
      * - `delay` — optional, number of seconds. If not set, scriptlet will return `null`,
-     * otherwise valid sham window object as injected `iframe` will be returned
-     * for accessing its methods (blur(), focus() etc.) and will be removed after the delay.
+     *   otherwise valid sham window object as injected `iframe` will be returned
+     *   for accessing its methods (blur(), focus() etc.) and will be removed after the delay.
      * - `replacement` — optional, string; one of the predefined constants:
      *     - `obj` — for returning an object instead of default iframe;
      *        for cases when the page requires a valid `window` instance to be returned
-     *     - `log` — for logging window.open calls; permitted for production filter lists.
+     *     - `log` — for logging window.open calls; not allowed for prod versions of filter lists.
      *
-     * **Examples**
-     * 1. Prevent all `window.open` calls:
-     *     ```
+     * ### Examples
+     *
+     * 1. Prevent all `window.open` calls
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-window-open')
      *     ```
      *
-     * 2. Prevent `window.open` for all URLs containing `example`:
-     *     ```
+     * 1. Prevent `window.open` for all URLs containing `example`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-window-open', 'example')
      *     ```
      *
-     * 3. Prevent `window.open` for all URLs matching RegExp `/example\./`:
-     *     ```
+     * 1. Prevent `window.open` for all URLs matching RegExp `/example\./`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-window-open', '/example\./')
      *     ```
      *
-     * 4. Prevent `window.open` for all URLs **NOT** containing `example`:
-     *     ```
+     * 1. Prevent `window.open` for all URLs **NOT** containing `example`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-window-open', '!example')
      *     ```
      *
-     * Old syntax of prevent-window-open parameters:
-     * - `match` — optional, defaults to "matching", any positive number or nothing for "matching", 0 or empty string for "not matching"
-     * - `search` — optional, string or regexp for matching the URL passed to `window.open` call; defaults to search all `window.open` call
-     * - `replacement` — optional, string to return prop value or property instead of window.open; defaults to return noopFunc.
-     * **Examples**
-     *     ```
-     *     example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
-     *     example.org#%#//scriptlet('prevent-window-open', '0', 'example')
-     *     example.org#%#//scriptlet('prevent-window-open', '', '', 'trueFunc')
-     *     example.org#%#//scriptlet('prevent-window-open', '1', '', '{propName=noopFunc}')
-     *     ```
+     * ### Old syntax of prevent-window-open parameters
+     *
+     * - `match` — optional, defaults to "matching", any positive number or nothing for "matching",
+     *   0 or empty string for "not matching"
+     * - `search` — optional, string or regexp for matching the URL passed to `window.open` call;
+     *   defaults to search all `window.open` call
+     * - `replacement` — optional, string to return prop value or property instead of window.open;
+     *   defaults to return noopFunc.
+     *
+     * ### Examples of old syntax
+     *
+     * ```adblock
+     * example.org#%#//scriptlet('prevent-window-open', '1', '/example\./')
+     * example.org#%#//scriptlet('prevent-window-open', '0', 'example')
+     * example.org#%#//scriptlet('prevent-window-open', '', '', 'trueFunc')
+     * example.org#%#//scriptlet('prevent-window-open', '1', '', '{propName=noopFunc}')
+     * ```
      *
      * > For better compatibility with uBO, old syntax is not recommended to use.
+     *
+     * @added v1.0.4.
      */
     /* eslint-enable max-len */
     function preventWindowOpen$1(source) {
@@ -3062,7 +3357,7 @@
         return handleOldReplacement(replacement);
       };
       const newOpenWrapper = function newOpenWrapper(url) {
-        const shouldLog = replacement && replacement.indexOf('log') > -1;
+        const shouldLog = replacement && replacement.includes('log');
         for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
           args[_key2 - 1] = arguments[_key2];
         }
@@ -3129,11 +3424,12 @@
     preventWindowOpen$1.names = ['prevent-window-open',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'window.open-defuser.js', 'ubo-window.open-defuser.js', 'ubo-window.open-defuser', 'nowoif.js', 'ubo-nowoif.js', 'ubo-nowoif'];
-    preventWindowOpen$1.injections = [hit, isValidStrPattern, escapeRegExp, isValidMatchStr, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, logMessage, noopFunc, trueFunc, startsWith$1, endsWith, substringBefore, substringAfter$1];
+    preventWindowOpen$1.injections = [hit, isValidStrPattern, escapeRegExp, isValidMatchStr, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, logMessage, noopFunc, trueFunc, substringBefore, substringAfter$1];
 
     /* eslint-disable max-len */
     /**
      * @scriptlet abort-current-inline-script
+     *
      * @description
      * Aborts an inline script when it attempts to **read** or **write to** the specified property
      * AND when the contents of the `<script>` element contains the specified
@@ -3143,55 +3439,65 @@
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-current-inline-scriptjs-
      *
      * Related ABP source:
-     * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L928
+     * https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/abort-current-inline-script.js
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('abort-current-inline-script', property[, search])
      * ```
      *
      * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`
      * - `search` — optional, string or regular expression that must match the inline script content.
-     * Defaults to abort all scripts which are trying to access the specified property.
-     * Invalid regular expression will cause exit and rule will not work.
+     *   Defaults to abort all scripts which are trying to access the specified property.
+     *   Invalid regular expression will cause exit and rule will not work.
      *
-     * > Note please that for inline script with addEventListener in it
-     * `property` should be set as `EventTarget.prototype.addEventListener`,
-     * not just `addEventListener`.
+     * > Note please that to abort the inline script with addEventListener in it,
+     * > `property` should be set as `EventTarget.prototype.addEventListener`, not just `addEventListener`.
      *
-     * **Examples**
+     * ### Examples
+     *
      * 1. Aborts all inline scripts trying to access `window.alert`
-     *     ```
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('abort-current-inline-script', 'alert')
      *     ```
      *
-     * 2. Aborts inline scripts which are trying to access `window.alert` and contain `Hello, world`.
-     *     ```
+     * 1. Aborts inline scripts which are trying to access `window.alert` and contain `Hello, world`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('abort-current-inline-script', 'alert', 'Hello, world')
      *     ```
      *
-     *     For instance, the following script will be aborted
+     *     For instance, the following script will be aborted:
+     *
      *     ```html
      *     <script>alert("Hello, world");</script>
      *     ```
      *
-     * 3. Aborts inline scripts which are trying to access `window.alert` and match this regexp: `/Hello.+world/`.
-     *     ```
+     * 1. Aborts inline scripts which are trying to access `window.alert` and match regexp `/Hello.+world/`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('abort-current-inline-script', 'alert', '/Hello.+world/')
      *     ```
      *
      *     For instance, the following scripts will be aborted:
+     *
      *     ```html
      *     <script>alert("Hello, big world");</script>
      *     ```
+     *
      *     ```html
      *     <script>alert("Hello, little world");</script>
      *     ```
      *
-     *     This script will not be aborted:
+     *     And this script will not be aborted:
+     *
      *     ```html
      *     <script>alert("Hi, little world");</script>
      *     ```
+     *
+     * @added v1.0.4.
      */
     /* eslint-enable max-len */
     function abortCurrentInlineScript$1(source, property, search) {
@@ -3207,6 +3513,7 @@
       };
       const ourScript = getCurrentScript();
       const abort = function abort() {
+        var _scriptEl$src;
         const scriptEl = getCurrentScript();
         if (!scriptEl) {
           return;
@@ -3223,7 +3530,7 @@
         } catch (e) {} // eslint-disable-line no-empty
 
         // https://github.com/AdguardTeam/Scriptlets/issues/130
-        if (content.length === 0 && typeof scriptEl.src !== 'undefined' && startsWith$1(scriptEl.src, SRC_DATA_MARKER)) {
+        if (content.length === 0 && typeof scriptEl.src !== 'undefined' && (_scriptEl$src = scriptEl.src) !== null && _scriptEl$src !== void 0 && _scriptEl$src.startsWith(SRC_DATA_MARKER)) {
           const encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
           content = window.atob(encodedContent);
         }
@@ -3314,11 +3621,12 @@
     'ubo-abort-current-script', 'ubo-acs',
     // obsolete but supported aliases
     'abort-current-inline-script.js', 'ubo-abort-current-inline-script.js', 'acis.js', 'ubo-acis.js', 'ubo-abort-current-inline-script', 'ubo-acis', 'abp-abort-current-inline-script'];
-    abortCurrentInlineScript$1.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, startsWith$1, createOnErrorHandler, hit, logMessage, isEmptyObject, getDescriptorAddon];
+    abortCurrentInlineScript$1.injections = [randomId, setPropertyAccess, getPropertyInChain, toRegExp, createOnErrorHandler, hit, logMessage, isEmptyObject, getDescriptorAddon];
 
     /* eslint-disable max-len */
     /**
      * @scriptlet set-constant
+     *
      * @description
      * Creates a constant property and assigns it one of the values from the predefined list.
      *
@@ -3332,8 +3640,9 @@
      * Related ABP snippet:
      * https://github.com/adblockplus/adblockpluscore/blob/adblockpluschrome-3.9.4/lib/content/snippets.js#L1361
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('set-constant', property, value[, stack])
      * ```
      *
@@ -3358,18 +3667,24 @@
      *         - `-1` — number value `-1`
      *         - `yes`
      *         - `no`
-     * - `stack` — optional, string or regular expression that must match the current function call stack trace;
-     * if regular expression is invalid it will be skipped
+     * - `stack` — string or regular expression that must match the current function call stack trace,
+     *   defaults to matching every call; if regular expression is invalid, it will be skipped
+     * - `valueWrapper` – optional, string to modify a value to be set. Possible wrappers:
+     *     - `asFunction` – function returning value
+     *     - `asCallback` – function returning callback, that would return value
+     *     - `asResolved` – Promise that would resolve with value
+     *     - `asRejected` – Promise that would reject with value
      *
-     * **Examples**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ! Any access to `window.first` will return `false`
      * example.org#%#//scriptlet('set-constant', 'first', 'false')
      *
      * ✔ window.first === false
      * ```
      *
-     * ```
+     * ```adblock
      * ! Any call to `window.second()` will return `true`
      * example.org#%#//scriptlet('set-constant', 'second', 'trueFunc')
      *
@@ -3377,15 +3692,58 @@
      * ✔ window.second.toString() === "function trueFunc() {return true;}"
      * ```
      *
-     * ```
+     * ```adblock
      * ! Any call to `document.third()` will return `true` if the method is related to `checking.js`
      * example.org#%#//scriptlet('set-constant', 'document.third', 'trueFunc', 'checking.js')
      *
      * ✔ document.third() === true  // if the condition described above is met
      * ```
+     *
+     * ```adblock
+     * ! Any call to `document.fourth()` will return `yes`
+     * example.org#%#//scriptlet('set-constant', 'document.fourth', 'yes', '', 'asFunction')
+     *
+     * ✔ document.fourth() === 'yes'
+     * ```
+     *
+     * ```adblock
+     * ! Any call to `document.fifth()` will return `yes`
+     * example.org#%#//scriptlet('set-constant', 'document.fifth', '42', '', 'asRejected')
+     *
+     * ✔ document.fifth.catch((reason) => reason === 42) // promise rejects with specified number
+     * ```
+     *
+     * @added v1.0.4.
      */
     /* eslint-enable max-len */
-    function setConstant$1(source, property, value, stack) {
+    function setConstant$1(source, property, value) {
+      let stack = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+      let valueWrapper = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '';
+      const uboAliases = ['set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js', 'ubo-set-constant', 'ubo-set'];
+
+      /**
+       * UBO set-constant analog has it's own args sequence:
+       * (property, value, defer | wrapper)
+       * 'defer' – a stringified number, which defines execution time, or
+       * 'wrapper' - string which defines value wrapper name
+       *
+       * joysound.com##+js(set, document.body.oncopy, null, 3)
+       * kompetent.de##+js(set, Object.keys, 42, asFunction)
+       */
+      if (uboAliases.includes(source.name)) {
+        /**
+         * Check that third argument was intended as 'valueWrapper' argument,
+         * by excluding 'defer' single digits case, and move it to 'valueWrapper'
+         */
+        if (stack.length !== 1 && !getNumberFromString(stack)) {
+          valueWrapper = stack;
+        }
+        /**
+         * ubo doesn't support 'stack', while adg doesn't support 'defer'
+         * that goes in the same spot, so we discard it
+         */
+        stack = undefined;
+      }
       if (!property || !matchStackTrace(stack, new Error().stack)) {
         return;
       }
@@ -3436,6 +3794,30 @@
         constantValue = 'no';
       } else {
         return;
+      }
+      const valueWrapperNames = ['asFunction', 'asCallback', 'asResolved', 'asRejected'];
+      if (valueWrapperNames.includes(valueWrapper)) {
+        const valueWrappersMap = {
+          asFunction(v) {
+            return function () {
+              return v;
+            };
+          },
+          asCallback(v) {
+            return function () {
+              return function () {
+                return v;
+              };
+            };
+          },
+          asResolved(v) {
+            return Promise.resolve(v);
+          },
+          asRejected(v) {
+            return Promise.reject(v);
+          }
+        };
+        constantValue = valueWrappersMap[valueWrapper](constantValue);
       }
       let canceled = false;
       const mustCancel = function mustCancel(value) {
@@ -3583,35 +3965,45 @@
     setConstant$1.names = ['set-constant',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js', 'ubo-set-constant', 'ubo-set', 'abp-override-property-read'];
-    setConstant$1.injections = [hit, logMessage, noopArray, noopObject, noopFunc, noopCallbackFunc, trueFunc, falseFunc, throwFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, setPropertyAccess, toRegExp, matchStackTrace, nativeIsNaN, isEmptyObject, getNativeRegexpTest,
+    setConstant$1.injections = [hit, logMessage, getNumberFromString, noopArray, noopObject, noopFunc, noopCallbackFunc, trueFunc, falseFunc, throwFunc, noopPromiseReject, noopPromiseResolve, getPropertyInChain, matchStackTrace, nativeIsNaN, isEmptyObject,
     // following helpers should be imported and injected
     // because they are used by helpers above
-    shouldAbortInlineOrInjectedScript];
+    shouldAbortInlineOrInjectedScript, getNativeRegexpTest, setPropertyAccess, toRegExp];
 
     /* eslint-disable max-len */
     /**
      * @scriptlet remove-cookie
+     *
      * @description
-     * Removes current page cookies by passed string matching with name. For current domain and subdomains. Runs on load and before unload.
+     * Removes current page cookies by passed string matching with name. For current domain and subdomains.
+     * Runs on load and before unload.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#cookie-removerjs-
      *
-     * **Syntax**
-     * ```
+     * Related ABP source:
+     * https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/cookie-remover.js
+     *
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('remove-cookie'[, match])
      * ```
      *
-     * - `match` — optional, string or regex matching the cookie name. If not specified all accessible cookies will be removed.
+     * - `match` — optional, string or regex matching the cookie name.
+     *   If not specified all accessible cookies will be removed.
      *
-     * **Examples**
-     * 1. Removes all cookies:
-     *     ```
+     * ### Examples
+     *
+     * 1. Removes all cookies
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('remove-cookie')
      *     ```
      *
-     * 2. Removes cookies which name contains `example` string:
-     *     ```
+     * 1. Removes cookies which name contains `example` string
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('remove-cookie', 'example')
      *     ```
      *
@@ -3620,6 +4012,8 @@
      *     ```javascript
      *     document.cookie = '__example=randomValue';
      *     ```
+     *
+     * @added v1.0.4.
      */
     /* eslint-enable max-len */
     function removeCookie$1(source, match) {
@@ -3668,30 +4062,35 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet prevent-addEventListener
+     *
      * @description
      * Prevents adding event listeners for the specified events and callbacks.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-defuserjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('prevent-addEventListener'[, typeSearch[, listenerSearch]])
      * ```
      *
      * - `typeSearch` — optional, string or regular expression matching the type (event name);
-     * defaults to match all types; invalid regular expression will cause exit and rule will not work
+     *   defaults to match all types; invalid regular expression will cause exit and rule will not work
      * - `listenerSearch` — optional, string or regular expression matching the listener function body;
-     * defaults to match all listeners; invalid regular expression will cause exit and rule will not work
+     *   defaults to match all listeners; invalid regular expression will cause exit and rule will not work
      *
-     * **Examples**
-     * 1. Prevent all `click` listeners:
-     *     ```
+     * ### Examples
+     *
+     * 1. Prevent all `click` listeners
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-addEventListener', 'click')
      *     ```
      *
-    2. Prevent 'click' listeners with the callback body containing `searchString`.
-     *     ```
+     * 1. Prevent 'click' listeners with the callback body containing `searchString`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-addEventListener', 'click', 'searchString')
      *     ```
      *
@@ -3702,6 +4101,8 @@
      *         window.test = 'searchString';
      *     });
      *     ```
+     *
+     * @added v1.0.4.
      */
     /* eslint-enable max-len */
     function preventAddEventListener$1(source, typeSearch, listenerSearch) {
@@ -3752,6 +4153,7 @@
 
     /**
      * @scriptlet prevent-bab
+     *
      * @description
      * Prevents BlockAdblock script from detecting an ad blocker.
      *
@@ -3761,10 +4163,13 @@
      * It also can be used as `$redirect` sometimes.
      * See [redirect description](../wiki/about-redirects.md#prevent-bab).
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```adblock
      * example.org#%#//scriptlet('prevent-bab')
      * ```
+     *
+     * @added v1.0.4.
      */
     function preventBab$2(source) {
       const nativeSetTimeout = window.setTimeout;
@@ -3789,7 +4194,7 @@
           let match = 0;
           for (let j = 0; j < tokens.length; j += 1) {
             const token = tokens[j];
-            const found = token instanceof RegExp ? token.test(str) : str.indexOf(token) > -1;
+            const found = token instanceof RegExp ? token.test(str) : str.includes(token);
             if (found) {
               match += 1;
             }
@@ -3828,16 +4233,21 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet nowebrtc
+     *
      * @description
-     * Disables WebRTC by overriding `RTCPeerConnection`. The overridden function will log every attempt to create a new connection.
+     * Disables WebRTC by overriding `RTCPeerConnection`.
+     * The overridden function will log every attempt to create a new connection.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```adblock
      * example.org#%#//scriptlet('nowebrtc')
      * ```
+     *
+     * @added v1.0.4.
      */
     /* eslint-enable max-len */
     function nowebrtc$1(source) {
@@ -3880,16 +4290,20 @@
 
     /**
      * @scriptlet log-addEventListener
+     *
      * @description
      * Logs all addEventListener calls to the console.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-loggerjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```adblock
      * example.org#%#//scriptlet('log-addEventListener')
      * ```
+     *
+     * @added v1.0.4.
      */
     function logAddEventListener$1(source) {
       const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
@@ -3932,19 +4346,23 @@
     logAddEventListener$1.names = ['log-addEventListener',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'addEventListener-logger.js', 'ubo-addEventListener-logger.js', 'aell.js', 'ubo-aell.js', 'ubo-addEventListener-logger', 'ubo-aell'];
-    logAddEventListener$1.injections = [hit, validateType, validateListener, listenerToString, convertTypeToString, logMessage, objectToString, isEmptyObject, getObjectEntries];
+    logAddEventListener$1.injections = [hit, validateType, validateListener, listenerToString, convertTypeToString, logMessage, objectToString, isEmptyObject];
 
     /* eslint-disable no-eval */
 
     /**
      * @scriptlet log-eval
+     *
      * @description
      * Logs all `eval()` or `new Function()` calls to the console.
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```adblock
      * example.org#%#//scriptlet('log-eval')
      * ```
+     *
+     * @added v1.0.4.
      */
     function logEval$1(source) {
       // wrap eval function
@@ -3975,14 +4393,18 @@
 
     /**
      * @scriptlet log
+     *
      * @description
      * A simple scriptlet which only purpose is to print arguments to console.
      * This scriptlet can be helpful for debugging and troubleshooting other scriptlets.
      *
-     * **Example**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * example.org#%#//scriptlet('log', 'arg1', 'arg2')
      * ```
+     *
+     * @added v1.0.4.
      */
     function log$1() {
       for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
@@ -3997,6 +4419,7 @@
 
     /**
      * @scriptlet noeval
+     *
      * @description
      * Prevents page to use eval.
      * Notifies about attempts in the console
@@ -4007,10 +4430,13 @@
      * It also can be used as `$redirect` rules sometimes.
      * See [redirect description](../wiki/about-redirects.md#noeval).
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```adblock
      * example.org#%#//scriptlet('noeval')
      * ```
+     *
+     * @added v1.0.4.
      */
     function noeval$1(source) {
       window.eval = function evalWrapper(s) {
@@ -4027,26 +4453,31 @@
 
     /**
      * @scriptlet prevent-eval-if
+     *
      * @description
      * Prevents page to use eval matching payload.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('prevent-eval-if'[, search])
      * ```
      *
      * - `search` — optional, string or regular expression matching the stringified eval payload;
-     * defaults to match all stringified eval payloads;
-     * invalid regular expression will cause exit and rule will not work
+     *   defaults to match all stringified eval payloads;
+     *   invalid regular expression will cause exit and rule will not work
      *
-     * **Examples**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ! Prevents eval if it matches 'test'
      * example.org#%#//scriptlet('prevent-eval-if', 'test')
      * ```
+     *
+     * @added v1.0.4.
      */
     function preventEvalIf$1(source, search) {
       const searchRegexp = toRegExp(search);
@@ -4068,16 +4499,20 @@
 
     /**
      * @scriptlet prevent-fab-3.2.0
+     *
      * @description
      * Prevents execution of the FAB script v3.2.0.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#fuckadblockjs-320-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```adblock
      * example.org#%#//scriptlet('prevent-fab-3.2.0')
      * ```
+     *
+     * @added v1.0.4.
      */
     function preventFab$1(source) {
       hit(source);
@@ -4159,16 +4594,20 @@
 
     /**
      * @scriptlet set-popads-dummy
+     *
      * @description
      * Sets static properties PopAds and popns.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#popads-dummyjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```adblock
      * example.org#%#//scriptlet('set-popads-dummy')
      * ```
+     *
+     * @added v1.0.4.
      */
     function setPopadsDummy$1(source) {
       delete window.PopAds;
@@ -4195,16 +4634,20 @@
 
     /**
      * @scriptlet prevent-popads-net
+     *
      * @description
      * Aborts on property write (PopAds, popns), throws reference error with random id.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#popadsnetjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```adblock
      * example.org#%#//scriptlet('prevent-popads-net')
      * ```
+     *
+     * @added v1.0.4.
      */
     function preventPopadsNet$1(source) {
       const rid = randomId();
@@ -4233,16 +4676,20 @@
 
     /**
      * @scriptlet prevent-adfly
+     *
      * @description
      * Prevents anti-adblock scripts on adfly short links.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#adfly-defuserjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```adblock
      * example.org#%#//scriptlet('prevent-adfly')
      * ```
+     *
+     * @added v1.0.4.
      */
     function preventAdfly$1(source) {
       const isDigit = function isDigit(data) {
@@ -4317,18 +4764,24 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet debug-on-property-read
+     *
      * @description
-     * This scriptlet is basically the same as [abort-on-property-read](#abort-on-property-read), but instead of aborting it starts the debugger.
+     * This scriptlet is basically the same as [abort-on-property-read](#abort-on-property-read),
+     * but instead of aborting it starts the debugger.
      *
-     * **It is not supposed to be used in production filter lists!**
+     * > It is not allowed for prod versions of filter lists.
      *
-     * **Syntax**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ! Debug script if it tries to access `window.alert`
      * example.org#%#//scriptlet('debug-on-property-read', 'alert')
-     * ! of `window.open`
+     *
+     * ! or `window.open`
      * example.org#%#//scriptlet('debug-on-property-read', 'open')
      * ```
+     *
+     * @added v1.0.4.
      */
     /* eslint-enable max-len */
     function debugOnPropertyRead$1(source, property) {
@@ -4375,16 +4828,21 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet debug-on-property-write
+     *
      * @description
-     * This scriptlet is basically the same as [abort-on-property-write](#abort-on-property-write), but instead of aborting it starts the debugger.
+     * This scriptlet is basically the same as [abort-on-property-write](#abort-on-property-write),
+     * but instead of aborting it starts the debugger.
      *
-     * **It is not supposed to be used in production filter lists!**
+     * > It is not allowed for prod versions of filter lists.
      *
-     * **Syntax**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ! Aborts script when it tries to write in property `window.test`
      * example.org#%#//scriptlet('debug-on-property-write', 'test')
      * ```
+     *
+     * @added v1.0.4.
      */
     /* eslint-enable max-len */
     function debugOnPropertyWrite$1(source, property) {
@@ -4430,16 +4888,21 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet debug-current-inline-script
+     *
      * @description
-     * This scriptlet is basically the same as [abort-current-inline-script](#abort-current-inline-script), but instead of aborting it starts the debugger.
+     * This scriptlet is basically the same as [abort-current-inline-script](#abort-current-inline-script),
+     * but instead of aborting it starts the debugger.
      *
-     * **It is not supposed to be used in production filter lists!**
+     * > It is not allowed for prod versions of filter lists.
      *
-     * **Syntax**
-     *```
+     * ### Examples
+     *
+     * ```adblock
      * ! Aborts script when it tries to access `window.alert`
      * example.org#%#//scriptlet('debug-current-inline-script', 'alert')
      * ```
+     *
+     * @added v1.0.4.
      */
     /* eslint-enable max-len */
     function debugCurrentInlineScript$1(source, property, search) {
@@ -4530,6 +4993,7 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet remove-attr
+     *
      * @description
      * Removes the specified attributes from DOM nodes. This scriptlet runs once when the page loads
      * and after that periodically in order to DOM tree changes by default,
@@ -4538,21 +5002,25 @@
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('remove-attr', attrs[, selector, applying])
      * ```
      *
      * - `attrs` — required, attribute or list of attributes joined by '|'
      * - `selector` — optional, CSS selector, specifies DOM nodes from which the attributes will be removed
-     * - `applying` — optional, one or more space-separated flags that describe the way scriptlet apply, defaults to 'asap stay'; possible flags:
+     * - `applying` — optional, one or more space-separated flags that describe the way scriptlet apply,
+     *   defaults to 'asap stay'; possible flags:
      *     - `asap` — runs as fast as possible **once**
      *     - `complete` — runs **once** after the whole page has been loaded
      *     - `stay` — as fast as possible **and** stays on the page observing possible DOM changes
      *
-     * **Examples**
-     * 1.  Removes by attribute
-     *     ```
+     * ### Examples
+     *
+     * 1. Removes by attribute
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('remove-attr', 'example|test')
      *     ```
      *
@@ -4564,8 +5032,9 @@
      *     <div>Some text</div>
      *     ```
      *
-     * 2. Removes with specified selector
-     *     ```
+     * 1. Removes with specified selector
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('remove-attr', 'example', 'div[class="inner"]')
      *     ```
      *
@@ -4581,10 +5050,13 @@
      *     </div>
      *     ```
      *
-     *  3. Using flags
-     *     ```
+     * 1. Using flags
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('remove-attr', 'example', 'html', 'asap complete')
      *     ```
+     *
+     * @added v1.0.4.
      */
     /* eslint-enable max-len */
     function removeAttr$1(source, attrs, selector) {
@@ -4641,7 +5113,7 @@
         });
       } else if (flags.hasFlag(flags.STAY)) {
         // Only call rmattr for single 'stay' flag
-        if (!applying.indexOf(' ') !== -1) {
+        if (!applying.includes(' ')) {
           rmattr();
         }
         // 'true' for observing attributes
@@ -4659,12 +5131,14 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet set-attr
+     *
      * @description
      * Sets the specified attribute on the specified elements. This scriptlet runs once when the page loads
      * and after that and after that on DOM tree changes.
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('set-attr', selector, attr[, value])
      * ```
      *
@@ -4675,9 +5149,11 @@
      *     - positive decimal integer `<= 32767`
      *     - `true` / `false` in any case variation
      *
-     * **Examples**
-     * 1.  Set attribute by selector
-     *     ```
+     * ### Examples
+     *
+     * 1. Set attribute by selector
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', '0')
      *     ```
      *
@@ -4688,8 +5164,10 @@
      *     <!-- after -->
      *     <a class="class" test-attribute="0">Some text</div>
      *     ```
-     * 2.  Set attribute without value
-     *     ```
+     *
+     * 1. Set attribute without value
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute')
      *     ```
      *
@@ -4700,8 +5178,10 @@
      *     <!-- after -->
      *     <a class="class" test-attribute>Some text</div>
      *     ```
-     * 3.  Set attribute value to `TRUE`
-     *     ```
+     *
+     * 1. Set attribute value to `TRUE`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', 'TRUE')
      *     ```
      *
@@ -4712,8 +5192,10 @@
      *     <!-- after -->
      *     <a class="class" test-attribute="TRUE">Some text</div>
      *     ```
-     * 4.  Set attribute value to `fAlse`
-     *     ```
+     *
+     * 1. Set attribute value to `fAlse`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', 'fAlse')
      *     ```
      *
@@ -4724,6 +5206,8 @@
      *     <!-- after -->
      *     <a class="class" test-attribute="fAlse">Some text</div>
      *     ```
+     *
+     * @added v1.5.0.
      */
     /* eslint-enable max-len */
     function setAttr$1(source, selector, attr) {
@@ -4760,6 +5244,7 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet remove-class
+     *
      * @description
      * Removes the specified classes from DOM nodes. This scriptlet runs once after the page loads
      * and after that periodically in order to DOM tree changes.
@@ -4767,22 +5252,26 @@
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-classjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('remove-class', classes[, selector, applying])
      * ```
      *
      * - `classes` — required, class or list of classes separated by '|'
      * - `selector` — optional, CSS selector, specifies DOM nodes from which the classes will be removed.
-     * If there is no `selector`, each class of `classes` independently will be removed from all nodes which has one
-     * - `applying` — optional, one or more space-separated flags that describe the way scriptlet apply, defaults to 'asap stay'; possible flags:
+     *   If there is no `selector`, each class of `classes` independently will be removed from all nodes which has one
+     * - `applying` — optional, one or more space-separated flags that describe the way scriptlet apply,
+     *   defaults to 'asap stay'; possible flags:
      *     - `asap` — runs as fast as possible **once**
      *     - `complete` — runs **once** after the whole page has been loaded
      *     - `stay` — as fast as possible **and** stays on the page observing possible DOM changes
      *
-     * **Examples**
-     * 1.  Removes by classes
-     *     ```
+     * ### Examples
+     *
+     * 1. Removes by classes
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('remove-class', 'example|test')
      *     ```
      *
@@ -4798,8 +5287,9 @@
      *     <div id="third" class="testing better">Some text</div>
      *     ```
      *
-     * 2. Removes with specified selector
-     *     ```
+     * 1. Removes with specified selector
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('remove-class', 'branding', 'div[class^="inner"]')
      *     ```
      *
@@ -4815,10 +5305,13 @@
      *     </div>
      *     ```
      *
-     *  3. Using flags
-     *     ```
+     * 1. Using flags
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('remove-class', 'branding', 'div[class^="inner"]', 'asap complete')
      *     ```
+     *
+     * @added v1.1.1.
      */
     /* eslint-enable max-len */
 
@@ -4897,7 +5390,7 @@
         });
       } else if (flags.hasFlag(flags.STAY)) {
         // Only call removeClassHandler for single 'stay' flag
-        if (!applying.indexOf(' ') !== -1) {
+        if (!applying.includes(' ')) {
           removeClassHandler();
         }
         observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
@@ -4913,16 +5406,20 @@
 
     /**
      * @scriptlet disable-newtab-links
+     *
      * @description
      * Prevents opening new tabs and windows if there is `target` attribute in element.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#disable-newtab-linksjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```adblock
      * example.org#%#//scriptlet('disable-newtab-links')
      * ```
+     *
+     * @added v1.0.4.
      */
     function disableNewtabLinks$1(source) {
       document.addEventListener('click', function (ev) {
@@ -4946,54 +5443,70 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet adjust-setInterval
+     *
      * @description
      * Adjusts delay for specified setInterval() callbacks.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-setinterval-boosterjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('adjust-setInterval'[, matchCallback [, matchDelay[, boost]]])
      * ```
      *
      * - `matchCallback` — optional, string or regular expression for stringified callback matching;
-     * defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
+     *   defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
      * - `matchDelay` — optional, defaults to 1000, matching setInterval delay; decimal integer OR '*' for any delay
-     * - `boost` — optional, default to 0.05, float, capped at 1000 times for up and 50 for down (0.001...50), setInterval delay multiplier
+     * - `boost` — optional, default to 0.05, float,
+     *   capped at 1000 times for up and 50 for down (0.001...50), setInterval delay multiplier
      *
-     * **Examples**
-     * 1. Adjust all setInterval() x20 times where delay equal 1000ms:
-     *     ```
+     * ### Examples
+     *
+     * 1. Adjust all setInterval() x20 times where delay equal 1000ms
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('adjust-setInterval')
      *     ```
      *
-     * 2. Adjust all setInterval() x20 times where callback matched with `example` and delay equal 1000ms
-     *     ```
+     * 1. Adjust all setInterval() x20 times where callback matched with `example` and delay equal 1000ms
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('adjust-setInterval', 'example')
      *     ```
      *
-     * 3. Adjust all setInterval() x20 times where callback matched with `example` and delay equal 400ms
-     *     ```
+     * 1. Adjust all setInterval() x20 times where callback matched with `example` and delay equal 400ms
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('adjust-setInterval', 'example', '400')
      *     ```
      *
-     * 4. Slow down setInterval() x2 times where callback matched with `example` and delay equal 1000ms
-     *     ```
+     * 1. Slow down setInterval() x2 times where callback matched with `example` and delay equal 1000ms
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('adjust-setInterval', 'example', '', '2')
      *     ```
-     * 5. Adjust all setInterval() x50 times where delay equal 2000ms
-     *     ```
+     *
+     * 1. Adjust all setInterval() x50 times where delay equal 2000ms
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('adjust-setInterval', '', '2000', '0.02')
      *     ```
-     * 6. Adjust all setInterval() x1000 times where delay equal 2000ms
-     *     ```
+     *
+     * 1. Adjust all setInterval() x1000 times where delay equal 2000ms
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('adjust-setInterval', '', '2000', '0.001')
      *     ```
-     * 7. Adjust all setInterval() x50 times where delay is randomized
-     *     ```
+     *
+     * 1. Adjust all setInterval() x50 times where delay is randomized
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('adjust-setInterval', '', '*', '0.02')
      *     ```
+     *
+     * @added v1.0.4.
      */
     /* eslint-enable max-len */
     function adjustSetInterval$1(source, matchCallback, matchDelay, boost) {
@@ -5026,54 +5539,70 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet adjust-setTimeout
+     *
      * @description
      * Adjusts delay for specified setTimeout() callbacks.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#nano-settimeout-boosterjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('adjust-setTimeout'[, matchCallback [, matchDelay[, boost]]])
      * ```
      *
      * - `matchCallback` — optional, string or regular expression for stringified callback matching;
-     * defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
+     *   defaults to match all callbacks; invalid regular expression will cause exit and rule will not work
      * - `matchDelay` — optional, defaults to 1000, matching setTimeout delay; decimal integer OR '*' for any delay
-     * - `boost` — optional, default to 0.05, float, capped at 1000 times for up and 50 for down (0.001...50), setTimeout delay multiplier
+     * - `boost` — optional, default to 0.05, float,
+     *   capped at 1000 times for up and 50 for down (0.001...50), setTimeout delay multiplier
      *
-     * **Examples**
-     * 1. Adjust all setTimeout() x20 times where timeout equal 1000ms:
-     *     ```
+     * ### Examples
+     *
+     * 1. Adjust all setTimeout() x20 times where timeout equal 1000ms
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('adjust-setTimeout')
      *     ```
      *
-     * 2. Adjust all setTimeout() x20 times where callback matched with `example` and timeout equal 1000ms
-     *     ```
+     * 1. Adjust all setTimeout() x20 times where callback matched with `example` and timeout equal 1000ms
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('adjust-setTimeout', 'example')
      *     ```
      *
-     * 3. Adjust all setTimeout() x20 times where callback matched with `example` and timeout equal 400ms
-     *     ```
+     * 1. Adjust all setTimeout() x20 times where callback matched with `example` and timeout equal 400ms
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('adjust-setTimeout', 'example', '400')
      *     ```
      *
-     * 4. Slow down setTimeout() x2 times where callback matched with `example` and timeout equal 1000ms
-     *     ```
+     * 1. Slow down setTimeout() x2 times where callback matched with `example` and timeout equal 1000ms
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('adjust-setTimeout', 'example', '', '2')
      *     ```
-     * 5. Adjust all setTimeout() x50 times where timeout equal 2000ms
-     *     ```
+     *
+     * 1. Adjust all setTimeout() x50 times where timeout equal 2000ms
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('adjust-setTimeout', '', '2000', '0.02')
      *     ```
-     * 6. Adjust all setTimeout() x1000 times where timeout equal 2000ms
-     *     ```
+     *
+     * 1. Adjust all setTimeout() x1000 times where timeout equal 2000ms
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('adjust-setTimeout', '', '2000', '0.001')
      *     ```
-     * 7. Adjust all setTimeout() x20 times where callback matched with `test` and timeout is randomized
-     *     ```
+     *
+     * 1. Adjust all setTimeout() x20 times where callback matched with `test` and timeout is randomized
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('adjust-setTimeout', 'test', '*')
      *     ```
+     *
+     * @added v1.0.4.
      */
     /* eslint-enable max-len */
     function adjustSetTimeout$1(source, matchCallback, matchDelay, boost) {
@@ -5106,6 +5635,7 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet dir-string
+     *
      * @description
      * Wraps the `console.dir` API to call the `toString` method of the argument.
      * There are several adblock circumvention systems that detect browser devtools
@@ -5113,20 +5643,22 @@
      * that devtools are open (using this scriptlet),
      * it will automatically disable the adblock circumvention script.
      *
-     * Related ABP source:
-     * https://github.com/adblockplus/adblockpluscore/blob/6b2a309054cc23432102b85d13f12559639ef495/lib/content/snippets.js#L766
+     * ### Syntax
      *
-     * **Syntax**
-     * ```
+     * ```text
      * example.org#%#//scriptlet('dir-string'[, times])
      * ```
+     *
      * - `times` — optional, the number of times to call the `toString` method of the argument to `console.dir`
      *
-     * **Example**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ! Run 2 times
      * example.org#%#//scriptlet('dir-string', '2')
      * ```
+     *
+     * @added v1.0.4.
      */
     /* eslint-enable max-len */
     function dirString$1(source, times) {
@@ -5141,37 +5673,42 @@
       // eslint-disable-next-line no-console
       console.dir = dirWrapper;
     }
-    dirString$1.names = ['dir-string', 'abp-dir-string'];
+    dirString$1.names = ['dir-string'];
     dirString$1.injections = [hit];
 
     /* eslint-disable max-len */
     /**
      * @scriptlet json-prune
+     *
      * @description
-     * Removes specified properties from the result of calling JSON.parse and returns the caller
+     * Removes specified properties from the result of calling JSON.parse and returns the caller.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#json-prunejs-
      *
      * Related ABP source:
-     * https://github.com/adblockplus/adblockpluscore/blob/master/lib/content/snippets.js#L1285
+     * https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/json-prune.js
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, stack]]])
      * ```
      *
      * - `propsToRemove` — optional, string of space-separated properties to remove
-     * - `obligatoryProps` — optional, string of space-separated properties which must be all present for the pruning to occur
+     * - `obligatoryProps` — optional, string of space-separated properties
+     *   which must be all present for the pruning to occur
      * - `stack` — optional, string or regular expression that must match the current function call stack trace;
-     * if regular expression is invalid it will be skipped
+     *   if regular expression is invalid it will be skipped
      *
-     * > Note please that you can use wildcard `*` for chain property name.
-     * e.g. 'ad.*.src' instead of 'ad.0.src ad.1.src ad.2.src ...'
+     * > Note please that you can use wildcard `*` for chain property name,
+     * > e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
      *
-     * **Examples**
+     * ### Examples
+     *
      * 1. Removes property `example` from the results of JSON.parse call
-     *     ```
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('json-prune', 'example')
      *     ```
      *
@@ -5181,8 +5718,9 @@
      *     JSON.parse('{"one":1,"example":true}')
      *     ```
      *
-     * 2. If there are no specified properties in the result of JSON.parse call, pruning will NOT occur
-     *     ```
+     * 1. If there are no specified properties in the result of JSON.parse call, pruning will NOT occur
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('json-prune', 'one', 'obligatoryProp')
      *     ```
      *
@@ -5192,32 +5730,37 @@
      *     JSON.parse('{"one":1,"two":2}')
      *     ```
      *
-     * 3. A property in a list of properties can be a chain of properties
+     * 1. A property in a list of properties can be a chain of properties
      *
-     *     ```
-     *     example.org#%#//scriptlet('json-prune', 'a.b', 'adpath.url.first')
+     *     ```adblock
+     *     example.org#%#//scriptlet('json-prune', 'a.b', 'ads.url.first')
      *     ```
      *
-     * 4. Removes property `content.ad` from the results of JSON.parse call if its error stack trace contains `test.js`
-     *     ```
+     * 1. Removes property `content.ad` from the results of JSON.parse call if its error stack trace contains `test.js`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('json-prune', 'content.ad', '', 'test.js')
      *     ```
      *
-     * 5. A property in a list of properties can be a chain of properties with wildcard in it
+     * 1. A property in a list of properties can be a chain of properties with wildcard in it
      *
-     *     ```
-     *     example.org#%#//scriptlet('json-prune', 'content.*.media.src', 'content.*.media.preroll')
+     *     ```adblock
+     *     example.org#%#//scriptlet('json-prune', 'content.*.media.src', 'content.*.media.ad')
      *     ```
      *
-     * 6. Call with no arguments will log the current hostname and json payload at the console
-     *     ```
+     * 1. Call with no arguments will log the current hostname and json payload at the console
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('json-prune')
      *     ```
      *
-     * 7. Call with only second argument will log the current hostname and matched json payload at the console
-     *     ```
+     * 1. Call with only second argument will log the current hostname and matched json payload at the console
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('json-prune', '', '"id":"117458"')
      *     ```
+     *
+     * @added v1.1.0.
      */
     /* eslint-enable max-len */
     function jsonPrune$1(source, propsToRemove, requiredInitialProps, stack) {
@@ -5226,85 +5769,6 @@
       }
       const prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
       const requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
-      function isPruningNeeded(root) {
-        if (!root) {
-          return false;
-        }
-        let shouldProcess;
-
-        // Only log hostname and matched JSON payload if only second argument is present
-        if (prunePaths.length === 0 && requiredPaths.length > 0) {
-          const rootString = JSON.stringify(root);
-          const matchRegex = toRegExp(requiredPaths.join(''));
-          const shouldLog = matchRegex.test(rootString);
-          if (shouldLog) {
-            logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
-            if (root && typeof root === 'object') {
-              logMessage(source, root, true, false);
-            }
-            shouldProcess = false;
-            return shouldProcess;
-          }
-        }
-        for (let i = 0; i < requiredPaths.length; i += 1) {
-          const requiredPath = requiredPaths[i];
-          const lastNestedPropName = requiredPath.split('.').pop();
-          const hasWildcard = requiredPath.indexOf('.*.') > -1 || requiredPath.indexOf('*.') > -1 || requiredPath.indexOf('.*') > -1 || requiredPath.indexOf('.[].') > -1 || requiredPath.indexOf('[].') > -1 || requiredPath.indexOf('.[]') > -1;
-
-          // if the path has wildcard, getPropertyInChain should 'look through' chain props
-          const details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
-
-          // start value of 'shouldProcess' due to checking below
-          shouldProcess = !hasWildcard;
-          for (let i = 0; i < details.length; i += 1) {
-            if (hasWildcard) {
-              // if there is a wildcard,
-              // at least one (||) of props chain should be present in object
-              shouldProcess = !(details[i].base[lastNestedPropName] === undefined) || shouldProcess;
-            } else {
-              // otherwise each one (&&) of them should be there
-              shouldProcess = !(details[i].base[lastNestedPropName] === undefined) && shouldProcess;
-            }
-          }
-        }
-        return shouldProcess;
-      }
-
-      /**
-       * Prunes properties of 'root' object
-       *
-       * @param {Object} root
-       * @returns {Object} pruned root
-       */
-      const jsonPruner = function jsonPruner(root) {
-        if (prunePaths.length === 0 && requiredPaths.length === 0) {
-          logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
-          if (root && typeof root === 'object') {
-            logMessage(source, root, true, false);
-          }
-          return root;
-        }
-        try {
-          if (isPruningNeeded(root) === false) {
-            return root;
-          }
-
-          // if pruning is needed, we check every input pathToRemove
-          // and delete it if root has it
-          prunePaths.forEach(function (path) {
-            const ownerObjArr = getWildcardPropertyInChain(root, path, true);
-            ownerObjArr.forEach(function (ownerObj) {
-              if (ownerObj !== undefined && ownerObj.base) {
-                delete ownerObj.base[ownerObj.prop];
-                hit(source);
-              }
-            });
-          });
-        } catch (e) {
-          logMessage(source, e);
-        }
-        return root;
-      };
       const nativeJSONParse = JSON.parse;
       const jsonParseWrapper = function jsonParseWrapper() {
         for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
@@ -5313,7 +5777,7 @@
         // dealing with stringified json in args, which should be parsed.
         // so we call nativeJSONParse as JSON.parse which is bound to JSON object
         const root = nativeJSONParse.apply(JSON, args);
-        return jsonPruner(root);
+        return jsonPruner(source, root, prunePaths, requiredPaths);
       };
 
       // JSON.parse mocking
@@ -5324,7 +5788,7 @@
       const responseJsonWrapper = function responseJsonWrapper() {
         const promise = nativeResponseJson.apply(this);
         return promise.then(function (obj) {
-          return jsonPruner(obj);
+          return jsonPruner(source, obj, prunePaths, requiredPaths);
         });
       };
 
@@ -5338,13 +5802,14 @@
     jsonPrune$1.names = ['json-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune.js', 'ubo-json-prune.js', 'ubo-json-prune', 'abp-json-prune'];
-    jsonPrune$1.injections = [hit, matchStackTrace, getWildcardPropertyInChain, logMessage,
+    jsonPrune$1.injections = [hit, matchStackTrace, getWildcardPropertyInChain, logMessage, isPruningNeeded, jsonPruner,
     // following helpers are needed for helpers above
     toRegExp, getNativeRegexpTest, shouldAbortInlineOrInjectedScript];
 
     /* eslint-disable max-len */
     /**
      * @scriptlet prevent-requestAnimationFrame
+     *
      * @description
      * Prevents a `requestAnimationFrame` call
      * if the text of the callback is matching the specified search string which does not start with `!`;
@@ -5353,25 +5818,30 @@
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-requestanimationframe-ifjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('prevent-requestAnimationFrame'[, search])
      * ```
      *
-     * - `search` — optional, string or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
-     * If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
-     * If do not start with `!`, the stringified callback will be matched.
+     * - `search` — optional, string or regular expression;
+     *   invalid regular expression will be skipped and all callbacks will be matched.
+     *   If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
+     *   If do not start with `!`, the stringified callback will be matched.
      *
-     * Call with no argument will log all requestAnimationFrame calls while debugging.
-     * So do not use the scriptlet without any parameter in production filter lists.
+     * > Call with no argument will log all requestAnimationFrame calls,
+     * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
      *
-     * **Examples**
-     * 1. Prevents `requestAnimationFrame` calls if the callback matches `/\.test/`.
-     *     ```bash
+     * ### Examples
+     *
+     * 1. Prevents `requestAnimationFrame` calls if the callback matches `/\.test/`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-requestAnimationFrame', '/\.test/')
      *     ```
      *
      *     For instance, the following call will be prevented:
+     *
      *     ```javascript
      *     var times = 0;
      *     requestAnimationFrame(function change() {
@@ -5382,8 +5852,10 @@
      *         }
      *     });
      *     ```
-     * 2. Prevents `requestAnimationFrame` calls if **does not match** 'check'.
-     *     ```bash
+     *
+     * 1. Prevents `requestAnimationFrame` calls if **does not match** 'check'
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-requestAnimationFrame', '!check')
      *     ```
      *
@@ -5408,6 +5880,8 @@
      *         }
      *     });
      *     ```
+     *
+     * @added v1.1.15.
      */
     /* eslint-enable max-len */
 
@@ -5443,16 +5917,18 @@
     'no-requestAnimationFrame-if.js', 'ubo-no-requestAnimationFrame-if.js', 'norafif.js', 'ubo-norafif.js', 'ubo-no-requestAnimationFrame-if', 'ubo-norafif'];
     preventRequestAnimationFrame$1.injections = [hit, noopFunc, parseMatchArg, isValidStrPattern, isValidCallback, logMessage,
     // following helpers should be injected as helpers above use them
-    escapeRegExp, toRegExp, startsWith$1];
+    escapeRegExp, toRegExp];
 
     /* eslint-disable max-len */
     /**
      * @scriptlet set-cookie
+     *
      * @description
      * Sets a cookie with the specified name, value, and path.
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('set-cookie', name, value[, path])
      * ```
      *
@@ -5469,14 +5945,20 @@
      *     - `/` — root path
      *     - `none` — to set no path at all
      *
-     * **Examples**
-     * ```
+     * > Note that the scriptlet encodes cookie names and values,
+     * > e.g value `"{ test: 'value'}"` becomes `%7B%20test%3A%20'value'%7D`.
+     *
+     * ### Examples
+     *
+     * ```adblock
      * example.org#%#//scriptlet('set-cookie', 'CookieConsent', '1')
      *
      * example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', 'true')
      *
      * example.org#%#//scriptlet('set-cookie', 'cookie_consent', 'ok', 'none')
      * ```
+     *
+     * @added v1.2.3.
      */
     /* eslint-enable max-len */
     function setCookie$1(source, name, value) {
@@ -5492,6 +5974,7 @@
       }
       const cookieToSet = concatCookieNameValuePath(name, validValue, path);
       if (!cookieToSet) {
+        logMessage(source, 'Invalid cookie name or value');
         return;
       }
       hit(source);
@@ -5502,13 +5985,15 @@
 
     /**
      * @scriptlet set-cookie-reload
+     *
      * @description
      * Sets a cookie with the specified name and value, and path,
      * and reloads the current page after the cookie setting.
      * If reloading option is not needed, use [set-cookie](#set-cookie) scriptlet.
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('set-cookie-reload', name, value[, path])
      * ```
      *
@@ -5525,14 +6010,20 @@
      *     - `/` — root path
      *     - `none` — to set no path at all
      *
-     * **Examples**
-     * ```
+     * > Note that the scriptlet encodes cookie names and values,
+     * > e.g value `"{ test: 'value'}"` becomes `%7B%20test%3A%20'value'%7D`.
+     *
+     * ### Examples
+     *
+     * ```adblock
      * example.org#%#//scriptlet('set-cookie-reload', 'checking', 'ok')
      *
      * example.org#%#//scriptlet('set-cookie-reload', 'gdpr-settings-cookie', '1')
      *
      * example.org#%#//scriptlet('set-cookie-reload', 'cookie-set', 'true', 'none')
      * ```
+     *
+     * @added v1.3.14.
      */
     function setCookieReload$1(source, name, value) {
       let path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '/';
@@ -5550,6 +6041,7 @@
       }
       const cookieToSet = concatCookieNameValuePath(name, validValue, path);
       if (!cookieToSet) {
+        logMessage(source, 'Invalid cookie name or value');
         return;
       }
       document.cookie = cookieToSet;
@@ -5566,29 +6058,34 @@
 
     /**
      * @scriptlet hide-in-shadow-dom
+     *
      * @description
      * Hides elements inside open shadow DOM elements.
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('hide-in-shadow-dom', selector[, baseSelector])
      * ```
      *
      * - `selector` — required, CSS selector of element in shadow-dom to hide
      * - `baseSelector` — optional, selector of specific page DOM element,
-     * narrows down the part of the page DOM where shadow-dom host supposed to be,
-     * defaults to document.documentElement
+     *   narrows down the part of the page DOM where shadow-dom host supposed to be,
+     *   defaults to document.documentElement
      *
-     * > `baseSelector` should match element of the page DOM, but not of shadow DOM
+     * > `baseSelector` should match element of the page DOM, but not of shadow DOM.
      *
-     * **Examples**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ! hides menu bar
-     * virustotal.com#%#//scriptlet('hide-in-shadow-dom', 'iron-pages', 'vt-virustotal-app')
+     * example.com#%#//scriptlet('hide-in-shadow-dom', '.storyAd', '#app')
      *
      * ! hides floating element
-     * virustotal.com#%#//scriptlet('hide-in-shadow-dom', 'vt-ui-contact-fab')
+     * example.com#%#//scriptlet('hide-in-shadow-dom', '.contact-fab')
      * ```
+     *
+     * @added v1.3.0.
      */
     function hideInShadowDom$1(source, selector, baseSelector) {
       // do nothing if browser does not support ShadowRoot
@@ -5638,11 +6135,13 @@
 
     /**
      * @scriptlet remove-in-shadow-dom
+     *
      * @description
      * Removes elements inside open shadow DOM elements.
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('remove-in-shadow-dom', selector[, baseSelector])
      * ```
      *
@@ -5651,16 +6150,19 @@
      * narrows down the part of the page DOM where shadow-dom host supposed to be,
      * defaults to document.documentElement
      *
-     * > `baseSelector` should match element of the page DOM, but not of shadow DOM
+     * > `baseSelector` should match element of the page DOM, but not of shadow DOM.
      *
-     * **Examples**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ! removes menu bar
      * virustotal.com#%#//scriptlet('remove-in-shadow-dom', 'iron-pages', 'vt-virustotal-app')
      *
      * ! removes floating element
      * virustotal.com#%#//scriptlet('remove-in-shadow-dom', 'vt-ui-contact-fab')
      * ```
+     *
+     * @added v1.3.14.
      */
     function removeInShadowDom$1(source, selector, baseSelector) {
       // do nothing if browser does not support ShadowRoot
@@ -5710,62 +6212,76 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet prevent-fetch
+     *
      * @description
-     * Prevents `fetch` calls if **all** given parameters match
+     * Prevents `fetch` calls if **all** given parameters match.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-fetch-ifjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, responseType]]])
      * ```
      *
      * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
-     *   - string or regular expression for matching the URL passed to fetch call; empty string, wildcard `*` or invalid regular expression will match all fetch calls
-     *   - colon-separated pairs `name:value` where
-     *     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
-     *     - `value` is string or regular expression for matching the value of the option passed to fetch call; invalid regular expression will cause any value matching
-     * - `responseBody` — optional, string for defining response body value, defaults to `emptyObj`. Possible values:
-     *    - `emptyObj` — empty object
-     *    - `emptyArr` — empty array
-     * - `responseType` — optional, string for defining response type, defaults to `default`. Possible values:
-     *    - `default`
-     *    - `opaque`
+     *     - string or regular expression for matching the URL passed to fetch call;
+     *       empty string, wildcard `*` or invalid regular expression will match all fetch calls
+     *     - colon-separated pairs `name:value` where
+     *         <!-- markdownlint-disable-next-line line-length -->
+     *         - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
+     *         - `value` is string or regular expression for matching the value of the option passed to fetch call;
+     *           invalid regular expression will cause any value matching
+     * - `responseBody` — optional, string for defining response body value,
+     *   defaults to `emptyObj`. Possible values:
+     *     - `emptyObj` — empty object
+     *     - `emptyArr` — empty array
+     * - `responseType` — optional, string for defining response type,
+     *   original response type is used if not specified. Possible values:
+     *     - `default`
+     *     - `opaque`
      *
      * > Usage with no arguments will log fetch calls to browser console;
-     * which is useful for debugging but not permitted for production filter lists.
+     * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
      *
-     * **Examples**
+     * ### Examples
+     *
      * 1. Log all fetch calls
-     *     ```
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-fetch')
      *     ```
      *
-     * 2. Prevent all fetch calls
-     *     ```
+     * 1. Prevent all fetch calls
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-fetch', '*')
-     *     OR
+     *     ! or
      *     example.org#%#//scriptlet('prevent-fetch', '')
      *     ```
      *
-     * 3. Prevent fetch call for specific url
-     *     ```
+     * 1. Prevent fetch call for specific url
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-fetch', '/url\\.part/')
      *     ```
      *
-     * 4. Prevent fetch call for specific request method
-     *     ```
+     * 1. Prevent fetch call for specific request method
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-fetch', 'method:HEAD')
      *     ```
      *
-     * 5. Prevent fetch call for specific url and request method
-     *     ```
+     * 1. Prevent fetch call for specific url and request method
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/')
      *     ```
      *
-     * 6. Prevent fetch call and specify response body value
-     *     ```
+     * 1. Prevent fetch call and specify response body value
+     *
+     *     ```adblock
      *     ! Specify response body for fetch call to a specific url
      *     example.org#%#//scriptlet('prevent-fetch', '/specified_url_part/ method:/HEAD|GET/', 'emptyArr')
      *
@@ -5773,15 +6289,18 @@
      *     example.org#%#//scriptlet('prevent-fetch', '', 'emptyArr')
      *     ```
      *
-     * 7. Prevent all fetch calls and specify response type value
-     *     ```
+     * 1. Prevent all fetch calls and specify response type value
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-fetch', '*', '', 'opaque')
      *     ```
+     *
+     * @added v1.3.18.
      */
     /* eslint-enable max-len */
     function preventFetch$1(source, propsToMatch) {
       let responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'emptyObj';
-      let responseType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'default';
+      let responseType = arguments.length > 3 ? arguments[3] : undefined;
       // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -5794,15 +6313,21 @@
       } else if (responseBody === 'emptyArr') {
         strResponseBody = '[]';
       } else {
+        logMessage(source, "Invalid responseBody parameter: '".concat(responseBody, "'"));
         return;
       }
-
-      // Skip disallowed response types
-      if (!(responseType === 'default' || responseType === 'opaque')) {
-        logMessage(source, "Invalid parameter: ".concat(responseType));
+      const isResponseTypeSpecified = typeof responseType !== 'undefined';
+      const isResponseTypeSupported = function isResponseTypeSupported(responseType) {
+        const SUPPORTED_TYPES = ['default', 'opaque'];
+        return SUPPORTED_TYPES.includes(responseType);
+      };
+      // Skip disallowed response types,
+      // specified responseType has limited list of possible values
+      if (isResponseTypeSpecified && !isResponseTypeSupported(responseType)) {
+        logMessage(source, "Invalid responseType parameter: '".concat(responseType, "'"));
         return;
       }
-      const handlerWrapper = function handlerWrapper(target, thisArg, args) {
+      const handlerWrapper = async function handlerWrapper(target, thisArg, args) {
         let shouldPrevent = false;
         const fetchData = getFetchData(args);
         if (typeof propsToMatch === 'undefined') {
@@ -5813,7 +6338,11 @@
         shouldPrevent = matchRequestProps(source, propsToMatch, fetchData);
         if (shouldPrevent) {
           hit(source);
-          return noopPromiseResolve(strResponseBody, fetchData.url, responseType);
+          const origResponse = await Reflect.apply(target, thisArg, args);
+          return modifyResponse(origResponse, {
+            body: strResponseBody,
+            type: responseType
+          });
         }
         return Reflect.apply(target, thisArg, args);
       };
@@ -5826,17 +6355,19 @@
     preventFetch$1.names = ['prevent-fetch',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'no-fetch-if.js', 'ubo-no-fetch-if.js', 'ubo-no-fetch-if'];
-    preventFetch$1.injections = [hit, getFetchData, objectToString, noopPromiseResolve, matchRequestProps, logMessage, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getRequestProps, getObjectEntries, getObjectFromEntries, parseMatchProps, validateParsedData, getMatchPropsData];
+    preventFetch$1.injections = [hit, getFetchData, objectToString, matchRequestProps, logMessage, modifyResponse, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getRequestProps, parseMatchProps, validateParsedData, getMatchPropsData];
 
     /* eslint-disable max-len */
     /**
      * @scriptlet set-local-storage-item
+     *
      * @description
      * Adds specified key and its value to localStorage object, or updates the value of the key if it already exists.
      * Scriptlet won't set item if storage is full.
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.com#%#//scriptlet('set-local-storage-item', 'key', 'value')
      * ```
      *
@@ -5854,12 +6385,15 @@
      *         - `yes`
      *         - `no`
      *
-     * **Examples**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * example.org#%#//scriptlet('set-local-storage-item', 'player.live.current.mute', 'false')
      *
      * example.org#%#//scriptlet('set-local-storage-item', 'exit-intent-marketing', '1')
      * ```
+     *
+     * @added v1.4.3.
      */
     /* eslint-enable max-len */
 
@@ -5886,12 +6420,14 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet set-session-storage-item
+     *
      * @description
      * Adds specified key and its value to sessionStorage object, or updates the value of the key if it already exists.
      * Scriptlet won't set item if storage is full.
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.com#%#//scriptlet('set-session-storage-item', 'key', 'value')
      * ```
      *
@@ -5909,12 +6445,15 @@
      *         - `yes`
      *         - `no`
      *
-     * **Examples**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * example.org#%#//scriptlet('set-session-storage-item', 'player.live.current.mute', 'false')
      *
      * example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '1')
      * ```
+     *
+     * @added v1.4.3.
      */
     /* eslint-enable max-len */
 
@@ -5941,14 +6480,17 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet abort-on-stack-trace
+     *
      * @description
-     * Aborts a script when it attempts to utilize (read or write to) the specified property and it's error stack trace contains given value.
+     * Aborts a script when it attempts to utilize (read or write to) the specified property
+     * and it's error stack trace contains given value.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock-for-firefox-legacy/commit/7099186ae54e70b588d5e99554a05d783cabc8ff
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.com#%#//scriptlet('abort-on-stack-trace', property, stack)
      * ```
      *
@@ -5958,24 +6500,40 @@
      *         - `inlineScript`
      *         - `injectedScript`
      *
-     * **Examples**
-     * ```
-     * ! Aborts script when it tries to access `window.Ya` and it's error stack trace contains `test.js`
-     * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'test.js')
+     * ### Examples
      *
-     * ! Aborts script when it tries to access `window.Ya.videoAd` and it's error stack trace contains `test.js`
-     * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya.videoAd', 'test.js')
+     * 1. Aborts script when it tries to access `window.Ya` and it's error stack trace contains `test.js`
      *
-     * ! Aborts script when stack trace matches with any of these parameters
-     * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexFuncName')
-     * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexScriptName')
+     *     ```adblock
+     *     example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'test.js')
+     *     ```
      *
-     * ! Aborts script when it tries to access `window.Ya` and it's an inline script
-     * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'inlineScript')
+     * 1. Aborts script when it tries to access `window.Ya.videoAd` and it's error stack trace contains `test.js`
      *
-     * ! Aborts script when it tries to access `window.Ya` and it's an injected script
-     * example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'injectedScript')
-     * ```
+     *     ```adblock
+     *     example.org#%#//scriptlet('abort-on-stack-trace', 'Ya.videoAd', 'test.js')
+     *     ```
+     *
+     * 1. Aborts script when stack trace matches with any of these parameters
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexFuncName')
+     *     example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'yandexScriptName')
+     *     ```
+     *
+     * 1. Aborts script when it tries to access `window.Ya` and it's an inline script
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'inlineScript')
+     *     ```
+     *
+     * 1. Aborts script when it tries to access `window.Ya` and it's an injected script
+     *
+     *      ```adblock
+     *      example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'injectedScript')
+     *      ```
+     *
+     * @added v1.5.0.
      */
     /* eslint-enable max-len */
     function abortOnStackTrace$1(source, property, stack) {
@@ -6044,23 +6602,29 @@
     abortOnStackTrace$1.names = ['abort-on-stack-trace',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-stack-trace.js', 'ubo-abort-on-stack-trace.js', 'aost.js', 'ubo-aost.js', 'ubo-abort-on-stack-trace', 'ubo-aost', 'abp-abort-on-stack-trace'];
-    abortOnStackTrace$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isValidStrPattern, escapeRegExp, matchStackTrace, getDescriptorAddon, logMessage, toRegExp, isEmptyObject, getNativeRegexpTest, startsWith$1, shouldAbortInlineOrInjectedScript];
+    abortOnStackTrace$1.injections = [randomId, setPropertyAccess, getPropertyInChain, createOnErrorHandler, hit, isValidStrPattern, escapeRegExp, matchStackTrace, getDescriptorAddon, logMessage, toRegExp, isEmptyObject, getNativeRegexpTest, shouldAbortInlineOrInjectedScript];
 
     /* eslint-disable max-len */
     /**
      * @scriptlet log-on-stack-trace
+     *
      * @description
-     * This scriptlet is basically the same as [abort-on-stack-trace](#abort-on-stack-trace), but instead of aborting it logs:
+     * This scriptlet is basically the same as [abort-on-stack-trace](#abort-on-stack-trace),
+     * but instead of aborting it logs:
+     *
      * - function and source script names pairs that access the given property
      * - was that get or set attempt
      * - script being injected or inline
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.com#%#//scriptlet('log-on-stack-trace', 'property')
      * ```
      *
      * - `property` — required, path to a property. The property must be attached to window.
+     *
+     * @added v1.5.0.
      */
     /* eslint-enable max-len */
     function logOnStacktrace$1(source, property) {
@@ -6150,67 +6714,82 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet prevent-xhr
+     *
      * @description
      * Prevents `xhr` calls if **all** given parameters match.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-xhr-ifjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
      * ```
      *
      * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
-     *   - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call; empty string or wildcard `*` for all `XMLHttpRequest.open()` calls match
-     *   - colon-separated pairs `name:value` where
-     *     - `name` is XMLHttpRequest object property name
-     *     - `value` is string or regular expression for matching the value of the option passed to `XMLHttpRequest.open()` call
-     * - `randomize` — defaults to `false` for empty responseText, optional argument to randomize responseText of matched XMLHttpRequest's response; possible values:
-     *   - `true` to randomize responseText, random alphanumeric string of 10 symbols
-     *   - colon-separated pair `name:value` string value to customize responseText data where
-     *       - `name` — only `length` supported for now
-     *       - `value` — range on numbers, for example `100-300`, limited to 500000 characters
+     *     - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call;
+     *       empty string or wildcard `*` for all `XMLHttpRequest.open()` calls match
+     *         - colon-separated pairs `name:value` where
+     *             - `name` is XMLHttpRequest object property name
+     *             - `value` is string or regular expression for matching the value of the option
+     *     passed to `XMLHttpRequest.open()` call
+     * - `randomize` — defaults to `false` for empty responseText,
+     *   optional argument to randomize responseText of matched XMLHttpRequest's response; possible values:
+     *     - `true` to randomize responseText, random alphanumeric string of 10 symbols
+     *     - colon-separated pair `name:value` string value to customize responseText data where
+     *         - `name` — only `length` supported for now
+     *         - `value` — range on numbers, for example `100-300`, limited to 500000 characters
      *
      * > Usage with no arguments will log XMLHttpRequest objects to browser console;
-     * which is useful for debugging but not allowed for production filter lists.
+     * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
      *
-     * **Examples**
+     * ### Examples
+     *
      * 1. Log all XMLHttpRequests
-     *     ```
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-xhr')
      *     ```
      *
-     * 2. Prevent all XMLHttpRequests
-     *     ```
+     * 1. Prevent all XMLHttpRequests
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-xhr', '*')
      *     example.org#%#//scriptlet('prevent-xhr', '')
      *     ```
      *
-     * 3. Prevent XMLHttpRequests for specific url
-     *     ```
+     * 1. Prevent XMLHttpRequests for specific url
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-xhr', 'example.org')
      *     ```
      *
-     * 4. Prevent XMLHttpRequests for specific request method
-     *     ```
+     * 1. Prevent XMLHttpRequests for specific request method
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-xhr', 'method:HEAD')
      *     ```
      *
-     * 5. Prevent XMLHttpRequests for specific url and specified request methods
-     *     ```
+     * 1. Prevent XMLHttpRequests for specific url and specified request methods
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-xhr', 'example.org method:/HEAD|GET/')
      *     ```
      *
-     * 6. Prevent XMLHttpRequests for specific url and randomize it's response text
-     *     ```
+     * 1. Prevent XMLHttpRequests for specific url and randomize it's response text
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-xhr', 'example.org', 'true')
      *     ```
      *
-     * 7. Prevent XMLHttpRequests for specific url and randomize it's response text with range
-     *     ```
+     * 1. Prevent XMLHttpRequests for specific url and randomize it's response text with range
+     *
+     *     ```adblock
      *    example.org#%#//scriptlet('prevent-xhr', 'example.org', 'length:100-300')
      *     ```
+     *
+     * @added v1.5.0.
      */
     /* eslint-enable max-len */
     function preventXHR$1(source, propsToMatch, customResponseText) {
@@ -6219,22 +6798,38 @@
       if (typeof Proxy === 'undefined') {
         return;
       }
-      let response = '';
-      let responseText = '';
-      let responseUrl;
+      const nativeOpen = window.XMLHttpRequest.prototype.open;
+      const nativeSend = window.XMLHttpRequest.prototype.send;
+      let xhrData;
+      let modifiedResponse = '';
+      let modifiedResponseText = '';
       const openWrapper = function openWrapper(target, thisArg, args) {
-        // Get method and url from .open()
-        const xhrData = {
-          method: args[0],
-          url: args[1]
-        };
-        responseUrl = xhrData.url;
+        // Get original request properties
+        // eslint-disable-next-line prefer-spread
+        xhrData = getXhrData.apply(null, args);
         if (typeof propsToMatch === 'undefined') {
           // Log if no propsToMatch given
           logMessage(source, "xhr( ".concat(objectToString(xhrData), " )"), true);
           hit(source);
         } else if (matchRequestProps(source, propsToMatch, xhrData)) {
           thisArg.shouldBePrevented = true;
+        }
+
+        // Trap setRequestHeader of target xhr object to mimic request headers later;
+        // needed for getResponseHeader() and getAllResponseHeaders() methods
+        if (thisArg.shouldBePrevented) {
+          thisArg.collectedHeaders = [];
+          const setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+            // Collect headers
+            thisArg.collectedHeaders.push(args);
+            return Reflect.apply(target, thisArg, args);
+          };
+          const setRequestHeaderHandler = {
+            apply: setRequestHeaderWrapper
+          };
+          // setRequestHeader() can only be called on xhr.open(),
+          // so we can safely proxy it here
+          thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
         }
         return Reflect.apply(target, thisArg, args);
       };
@@ -6243,61 +6838,146 @@
           return Reflect.apply(target, thisArg, args);
         }
         if (thisArg.responseType === 'blob') {
-          response = new Blob();
+          modifiedResponse = new Blob();
         }
         if (thisArg.responseType === 'arraybuffer') {
-          response = new ArrayBuffer();
+          modifiedResponse = new ArrayBuffer();
         }
         if (customResponseText) {
           const randomText = generateRandomResponse(customResponseText);
           if (randomText) {
-            responseText = randomText;
+            modifiedResponseText = randomText;
           } else {
-            logMessage(source, "Invalid range: ".concat(customResponseText));
+            logMessage(source, "Invalid randomize parameter: '".concat(customResponseText, "'"));
           }
         }
-        // Mock response object
-        Object.defineProperties(thisArg, {
-          readyState: {
-            value: 4,
-            writable: false
-          },
-          response: {
-            value: response,
-            writable: false
-          },
-          responseText: {
-            value: responseText,
-            writable: false
-          },
-          responseURL: {
-            value: responseUrl,
-            writable: false
-          },
-          responseXML: {
-            value: '',
-            writable: false
-          },
-          status: {
-            value: 200,
-            writable: false
-          },
-          statusText: {
-            value: 'OK',
-            writable: false
+
+        /**
+         * Create separate XHR request with original request's input
+         * to be able to collect response data without triggering
+         * listeners on original XHR object
+         */
+        const forgedRequest = new XMLHttpRequest();
+        forgedRequest.addEventListener('readystatechange', function () {
+          if (forgedRequest.readyState !== 4) {
+            return;
           }
+          const readyState = forgedRequest.readyState,
+            responseURL = forgedRequest.responseURL,
+            responseXML = forgedRequest.responseXML,
+            status = forgedRequest.status,
+            statusText = forgedRequest.statusText;
+
+          // Mock response object
+          Object.defineProperties(thisArg, {
+            // original values
+            readyState: {
+              value: readyState,
+              writable: false
+            },
+            status: {
+              value: status,
+              writable: false
+            },
+            statusText: {
+              value: statusText,
+              writable: false
+            },
+            responseURL: {
+              value: responseURL,
+              writable: false
+            },
+            responseXML: {
+              value: responseXML,
+              writable: false
+            },
+            // modified values
+            response: {
+              value: modifiedResponse,
+              writable: false
+            },
+            responseText: {
+              value: modifiedResponseText,
+              writable: false
+            }
+          });
+
+          // Mock events
+          setTimeout(function () {
+            const stateEvent = new Event('readystatechange');
+            thisArg.dispatchEvent(stateEvent);
+            const loadEvent = new Event('load');
+            thisArg.dispatchEvent(loadEvent);
+            const loadEndEvent = new Event('loadend');
+            thisArg.dispatchEvent(loadEndEvent);
+          }, 1);
+          hit(source);
         });
-        // Mock events
-        setTimeout(function () {
-          const stateEvent = new Event('readystatechange');
-          thisArg.dispatchEvent(stateEvent);
-          const loadEvent = new Event('load');
-          thisArg.dispatchEvent(loadEvent);
-          const loadEndEvent = new Event('loadend');
-          thisArg.dispatchEvent(loadEndEvent);
-        }, 1);
-        hit(source);
+        nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
+
+        // Mimic request headers before sending
+        // setRequestHeader can only be called on open request objects
+        thisArg.collectedHeaders.forEach(function (header) {
+          const name = header[0];
+          const value = header[1];
+          forgedRequest.setRequestHeader(name, value);
+        });
+        try {
+          nativeSend.call(forgedRequest, args);
+        } catch (_unused) {
+          return Reflect.apply(target, thisArg, args);
+        }
         return undefined;
+      };
+
+      /**
+       * Mock XMLHttpRequest.prototype.getHeaderHandler() to avoid adblocker detection.
+       *
+       * @param {Function} target XMLHttpRequest.prototype.getHeaderHandler().
+       * @param {XMLHttpRequest} thisArg The request.
+       * @param {string[]} args Header name is passed as first argument.
+       *
+       * @returns {string|null} Header value or null if header is not set.
+       */
+      const getHeaderWrapper = function getHeaderWrapper(target, thisArg, args) {
+        if (!thisArg.collectedHeaders.length) {
+          return null;
+        }
+        // The search for the header name is case-insensitive
+        // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/getResponseHeader
+        const searchHeaderName = args[0].toLowerCase();
+        const matchedHeader = thisArg.collectedHeaders.find(function (header) {
+          const headerName = header[0].toLowerCase();
+          return headerName === searchHeaderName;
+        });
+        return matchedHeader ? matchedHeader[1] : null;
+      };
+
+      /**
+       * Mock XMLHttpRequest.prototype.getAllResponseHeaders() to avoid adblocker detection.
+       *
+       * @param {Function} target XMLHttpRequest.prototype.getAllResponseHeaders().
+       * @param {XMLHttpRequest} thisArg The request.
+       *
+       * @returns {string} All headers as a string. For no headers an empty string is returned.
+       */
+      const getAllHeadersWrapper = function getAllHeadersWrapper(target, thisArg) {
+        if (!thisArg.collectedHeaders.length) {
+          return '';
+        }
+        const allHeadersStr = thisArg.collectedHeaders.map(function (header) {
+          /**
+           * TODO: array destructuring may be used here
+           * after the typescript implementation and bundling refactoring
+           * as now there is an error: slicedToArray is not defined
+           */
+          const headerName = header[0];
+          const headerValue = header[1];
+          // In modern browsers, the header names are returned in all lower case, as per the latest spec.
+          // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/getAllResponseHeaders
+          return "".concat(headerName.toLowerCase(), ": ").concat(headerValue);
+        }).join('\r\n');
+        return allHeadersStr;
       };
       const openHandler = {
         apply: openWrapper
@@ -6305,39 +6985,52 @@
       const sendHandler = {
         apply: sendWrapper
       };
+      const getHeaderHandler = {
+        apply: getHeaderWrapper
+      };
+      const getAllHeadersHandler = {
+        apply: getAllHeadersWrapper
+      };
       XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
       XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
+      XMLHttpRequest.prototype.getResponseHeader = new Proxy(XMLHttpRequest.prototype.getResponseHeader, getHeaderHandler);
+      XMLHttpRequest.prototype.getAllResponseHeaders = new Proxy(XMLHttpRequest.prototype.getAllResponseHeaders, getAllHeadersHandler);
     }
     preventXHR$1.names = ['prevent-xhr',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'no-xhr-if.js', 'ubo-no-xhr-if.js', 'ubo-no-xhr-if'];
-    preventXHR$1.injections = [hit, logMessage, objectToString, matchRequestProps, generateRandomResponse, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getObjectEntries, getNumberFromString, nativeIsFinite, nativeIsNaN, parseMatchProps, validateParsedData, getMatchPropsData, getRequestProps, getRandomIntInclusive, getRandomStrByLength];
+    preventXHR$1.injections = [hit, objectToString, generateRandomResponse, matchRequestProps, getXhrData, logMessage, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getNumberFromString, nativeIsFinite, nativeIsNaN, parseMatchProps, validateParsedData, getMatchPropsData, getRequestProps, getRandomIntInclusive, getRandomStrByLength];
 
     /**
      * @scriptlet close-window
+     *
      * @description
      * Closes the browser tab immediately.
      *
-     * > `window.close()` usage is restricted in Chrome. In this case
-     * tab will only be closed when using AdGuard browser extension.
+     * > `window.close()` usage is restricted in the Chrome browser.
+     * > In this case tab will only be closed when using AdGuard Browser extension.
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('close-window'[, path])
      * ```
      *
      * - `path` — optional, string or regular expression
-     * matching the current location's path: `window.location.pathname` + `window.location.search`.
-     * Defaults to execute on every page.
+     *   matching the current location's path: `window.location.pathname` + `window.location.search`.
+     *   Defaults to execute on every page.
      *
-     * **Examples**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ! closes any example.org tab
      * example.org#%#//scriptlet('close-window')
      *
      * ! closes specific example.org tab
      * example.org#%#//scriptlet('close-window', '/example-page.html')
      * ```
+     *
+     * @added v1.5.0.
      */
     function forceWindowClose$1(source) {
       let path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
@@ -6380,7 +7073,7 @@
       };
       if (shouldClose()) {
         closeImmediately();
-        if (navigator.userAgent.indexOf('Chrome') > -1) {
+        if (navigator.userAgent.includes('Chrome')) {
           closeByExtension();
         }
       }
@@ -6391,29 +7084,37 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet prevent-refresh
+     *
      * @description
      * Prevents reloading of a document through a meta "refresh" tag.
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#refresh-defuserjs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('prevent-refresh'[, delay])
      * ```
      *
-     * - `delay` — optional, number of seconds for delay that indicates when scriptlet should run. If not set, source tag value will be applied.
+     * - `delay` — optional, number of seconds for delay that indicates when scriptlet should run.
+     *   If not set, source tag value will be applied.
      *
-     * **Examples**
-     * 1. Prevent reloading of a document through a meta "refresh" tag.
-     * ```
-     *     enrt.eu#%#//scriptlet('prevent-refresh')
-     * ```
+     * ### Examples
      *
-     * 2. Prevent reloading of a document with delay.
-     * ```
-     *     cryptodirectories.com#%#//scriptlet('prevent-refresh', 3)
-     * ```
+     * 1. Prevent reloading of a document through a meta "refresh" tag
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('prevent-refresh')
+     *     ```
+     *
+     * 1. Prevent reloading of a document with delay
+     *
+     *     ```adblock
+     *     example.com#%#//scriptlet('prevent-refresh', 3)
+     *     ```
+     *
+     * @added v1.6.2.
      */
     /* eslint-enable max-len */
     function preventRefresh$1(source, delaySec) {
@@ -6502,25 +7203,33 @@
     /* eslint-disable max-len, consistent-return */
     /**
      * @scriptlet prevent-element-src-loading
+     *
      * @description
      * Prevents target element source loading without triggering 'onerror' listeners and not breaking 'onload' ones.
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('prevent-element-src-loading', tagName, match)
      * ```
      *
-     * - `tagName` — required, case-insensitive target element tagName which `src` property resource loading will be silently prevented; possible values:
+     * - `tagName` — required, case-insensitive target element tagName
+     *   which `src` property resource loading will be silently prevented; possible values:
      *     - `script`
      *     - `img`
      *     - `iframe`
+     *     - `link`
      * - `match` — required, string or regular expression for matching the element's URL;
      *
-     * **Examples**
-     * 1. Prevent script source loading:
-     * ```
+     * ### Examples
+     *
+     * 1. Prevent script source loading
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('prevent-element-src-loading', 'script' ,'adsbygoogle')
-     * ```
+     *     ```
+     *
+     * @added v1.6.2.
      */
     /* eslint-enable max-len */
     function preventElementSrcLoading$1(source, tagName, match) {
@@ -6534,7 +7243,9 @@
         // Empty 1x1 image
         img: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
         // Empty h1 tag
-        iframe: 'data:text/html;base64, PGRpdj48L2Rpdj4='
+        iframe: 'data:text/html;base64, PGRpdj48L2Rpdj4=',
+        // Empty data
+        link: 'data:text/plain;base64,'
       };
       let instance;
       if (tagName === 'script') {
@@ -6543,6 +7254,8 @@
         instance = HTMLImageElement;
       } else if (tagName === 'iframe') {
         instance = HTMLIFrameElement;
+      } else if (tagName === 'link') {
+        instance = HTMLLinkElement;
       } else {
         return;
       }
@@ -6564,7 +7277,7 @@
           }
         });
       }
-      const SOURCE_PROPERTY_NAME = 'src';
+      const SOURCE_PROPERTY_NAME = tagName === 'link' ? 'href' : 'src';
       const ONERROR_PROPERTY_NAME = 'onerror';
       const searchRegexp = toRegExp(match);
 
@@ -6665,20 +7378,38 @@
       };
       // eslint-disable-next-line max-len
       EventTarget.prototype.addEventListener = new Proxy(EventTarget.prototype.addEventListener, addEventListenerHandler);
+      const preventInlineOnerror = function preventInlineOnerror(tagName, src) {
+        window.addEventListener('error', function (event) {
+          if (!event.target || !event.target.nodeName || event.target.nodeName.toLowerCase() !== tagName || !event.target.src || !src.test(event.target.src)) {
+            return;
+          }
+          hit(source);
+          if (typeof event.target.onload === 'function') {
+            event.target.onerror = event.target.onload;
+            return;
+          }
+          event.target.onerror = noopFunc;
+        }, true);
+      };
+      preventInlineOnerror(tagName, searchRegexp);
     }
     preventElementSrcLoading$1.names = ['prevent-element-src-loading'];
     preventElementSrcLoading$1.injections = [hit, toRegExp, safeGetDescriptor, noopFunc];
 
     /**
      * @scriptlet no-topics
+     *
      * @description
-     * Prevents using The Topics API
+     * Prevents using the Topics API.
      * https://developer.chrome.com/docs/privacy-sandbox/topics/
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```adblock
      * example.org#%#//scriptlet('no-topics')
      * ```
+     *
+     * @added v1.6.18.
      */
     function noTopics$1(source) {
       const TOPICS_PROPERTY_NAME = 'browsingTopics';
@@ -6702,54 +7433,71 @@
     /* eslint-disable max-len */
     /**
      * @trustedScriptlet trusted-replace-xhr-response
+     *
      * @description
      * Replaces response content of `xhr` requests if **all** given parameters match.
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[, propsToMatch]])
      * ```
      *
-     * - `pattern` — optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
-     * possible values:
-     *   - `*` to match all text content
-     *   - non-empty string
-     *   - regular expression
-     * - `replacement` — optional, should be set if `pattern` is set. String to replace matched content with. Empty string to remove content.
+     * - `pattern` — optional, argument for matching contents of responseText that should be replaced.
+     *   If set, `replacement` is required. Possible values:
+     *     - `*` to match all text content
+     *     - non-empty string
+     *     - regular expression
+     * - `replacement` — optional, should be set if `pattern` is set. String to replace matched content with.
+     *   Empty string to remove content.
      * - `propsToMatch` — optional, string of space-separated properties to match for extra condition; possible props:
-     *   - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call;
-     *   - colon-separated pairs `name:value` where
-     *     - `name` — string or regular expression for matching XMLHttpRequest property name
-     *     - `value` — string or regular expression for matching the value of the option passed to `XMLHttpRequest.open()` call
+     *     - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call;
+     *     - colon-separated pairs `name:value` where
+     *         - `name` — string or regular expression for matching XMLHttpRequest property name
+     *         - `value` — string or regular expression for matching the value of the option
+     *           passed to `XMLHttpRequest.open()` call
      *
      * > Usage with no arguments will log XMLHttpRequest objects to browser console;
-     * which is useful for debugging but not permitted for production filter lists.
+     * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
      *
-     * **Examples**
+     * ### Examples
+     *
      * 1. Log all XMLHttpRequests
-     *     ```
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('trusted-replace-xhr-response')
      *     ```
      *
-     * 2. Replace text content of XMLHttpRequests with specific url
-     *     ```
+     * 1. Replace text content of XMLHttpRequests with specific url
+     *
+     *     <!-- markdownlint-disable line-length -->
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('trusted-replace-xhr-response', 'adb_detect:true', 'adb_detect:false', 'example.org')
      *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', 'example.org')
      *     ```
      *
-     * 3. Remove all text content of XMLHttpRequests with specific request method
-     *     ```
+     *     <!-- markdownlint-enable line-length -->
+     *
+     * 1. Remove all text content of XMLHttpRequests with specific request method
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('trusted-replace-xhr-response', '*', '', 'method:GET')
      *     ```
      *
-     * 4. Replace text content of XMLHttpRequests matching by URL regex and request methods
+     * 1. Replace text content of XMLHttpRequests matching by URL regex and request methods
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', '/\.m3u8/ method:/GET|HEAD/') <!-- markdownlint-disable-line line-length -->
      *     ```
-     *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', '/\.m3u8/ method:/GET|HEAD/')
-     *     ```
-     * 5. Remove all text content of  all XMLHttpRequests for example.com
-     *     ```
+     *
+     * 1. Remove all text content of  all XMLHttpRequests for example.com
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('trusted-replace-xhr-response', '*', '', 'example.com')
      *     ```
+     *
+     * @added v1.7.3.
      */
     /* eslint-enable max-len */
     function trustedReplaceXhrResponse$1(source) {
@@ -6838,26 +7586,35 @@
           // Manually put required values into target XHR object
           // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
           Object.defineProperties(thisArg, {
+            // original values
             readyState: {
-              value: readyState
-            },
-            response: {
-              value: modifiedContent
-            },
-            responseText: {
-              value: modifiedContent
+              value: readyState,
+              writable: false
             },
             responseURL: {
-              value: responseURL
+              value: responseURL,
+              writable: false
             },
             responseXML: {
-              value: responseXML
+              value: responseXML,
+              writable: false
             },
             status: {
-              value: status
+              value: status,
+              writable: false
             },
             statusText: {
-              value: statusText
+              value: statusText,
+              writable: false
+            },
+            // modified values
+            response: {
+              value: modifiedContent,
+              writable: false
+            },
+            responseText: {
+              value: modifiedContent,
+              writable: false
             }
           });
 
@@ -6902,57 +7659,70 @@
     // trusted scriptlets support no aliases
     ];
 
-    trustedReplaceXhrResponse$1.injections = [hit, logMessage, toRegExp, objectToString, matchRequestProps, getXhrData, getMatchPropsData, getRequestProps, validateParsedData, parseMatchProps, isValidStrPattern, escapeRegExp, isEmptyObject, getObjectEntries];
+    trustedReplaceXhrResponse$1.injections = [hit, logMessage, toRegExp, objectToString, matchRequestProps, getXhrData, getMatchPropsData, getRequestProps, validateParsedData, parseMatchProps, isValidStrPattern, escapeRegExp, isEmptyObject];
 
     /* eslint-disable max-len */
     /**
      * @scriptlet xml-prune
+     *
      * @description
      * Removes an element from the specified XML.
      *
-     * **Syntax**
-     * ```
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#xml-prunejs-
+     *
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('xml-prune'[, propsToMatch[, optionalProp[, urlToMatch]]])
      * ```
      *
      * - `propsToMatch` — optional, selector of elements which will be removed from XML
      * - `optionalProp` — optional, selector of elements that must occur in XML document
      * - `urlToMatch` — optional, string or regular expression for matching the request's URL
-     * > Usage with no arguments will log response payload and URL to browser console;
-     * which is useful for debugging but prohibited for production filter lists.
      *
-     * **Examples**
+     * > Usage with no arguments will log response payload and URL to browser console;
+     * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
+     *
+     * ### Examples
+     *
      * 1. Remove `Period` tag whose `id` contains `-ad-` from all requests
-     *     ```
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]')
      *     ```
      *
-     * 2. Remove `Period` tag whose `id` contains `-ad-`, only if XML contains `SegmentTemplate`
-     *     ```
+     * 1. Remove `Period` tag whose `id` contains `-ad-`, only if XML contains `SegmentTemplate`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', 'SegmentTemplate')
      *     ```
      *
-     * 3. Remove `Period` tag whose `id` contains `-ad-`, only if request's URL contains `.mpd`
-     *     ```
+     * 1. Remove `Period` tag whose `id` contains `-ad-`, only if request's URL contains `.mpd`
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', '', '.mpd')
      *     ```
      *
-     * 4. Call with no arguments will log response payload and URL at the console
-     *     ```
+     * 1. Call with no arguments will log response payload and URL at the console
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('xml-prune')
      *     ```
      *
-     * 5. Call with only `urlToMatch` argument will log response payload and URL only for the matched URL
-     *     ```
+     * 1. Call with only `urlToMatch` argument will log response payload and URL only for the matched URL
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('xml-prune', '', '', '.mpd')
      *     ```
+     *
+     * @added 1.7.3.
      */
     /* eslint-enable max-len */
 
     function xmlPrune$1(source, propsToRemove) {
-      var _this = this;
       let optionalProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
-      let urlToMatch = arguments.length > 3 ? arguments[3] : undefined;
+      let urlToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
       // do nothing if browser does not support Reflect, fetch or Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -6960,12 +7730,7 @@
       if (typeof Reflect === 'undefined' || typeof fetch === 'undefined' || typeof Proxy === 'undefined' || typeof Response === 'undefined') {
         return;
       }
-      let shouldPruneResponse = true;
-      if (!propsToRemove) {
-        // If "propsToRemove" is not defined, then response shouldn't be pruned
-        // but it should be logged in browser console
-        shouldPruneResponse = false;
-      }
+      let shouldPruneResponse = false;
       const urlMatchRegexp = toRegExp(urlToMatch);
       const isXML = function isXML(text) {
         // It's necessary to check the type of 'text'
@@ -6974,8 +7739,8 @@
         if (typeof text === 'string') {
           // Check if "text" starts with "<" and check if it ends with ">"
           // If so, then it might be an XML file and should be pruned or logged
-          const trimedText = text.trim();
-          if (trimedText.startsWith('<') && trimedText.endsWith('>')) {
+          const trimmedText = text.trim();
+          if (trimmedText.startsWith('<') && trimmedText.endsWith('>')) {
             return true;
           }
         }
@@ -6985,6 +7750,13 @@
         const xmlParser = new DOMParser();
         const xmlDocument = xmlParser.parseFromString(text, 'text/xml');
         return xmlDocument;
+      };
+      const isPruningNeeded = function isPruningNeeded(response, propsToRemove) {
+        if (!isXML(response)) {
+          return false;
+        }
+        const docXML = createXMLDocument(response);
+        return !!docXML.querySelector(propsToRemove);
       };
       const pruneXML = function pruneXML(text) {
         if (!isXML(text)) {
@@ -7012,83 +7784,176 @@
         text = serializer.serializeToString(xmlDoc);
         return text;
       };
-      const xhrWrapper = function xhrWrapper(target, thisArg, args) {
-        const xhrURL = args[1];
-        if (typeof xhrURL !== 'string' || xhrURL.length === 0) {
-          return Reflect.apply(target, thisArg, args);
+      const nativeOpen = window.XMLHttpRequest.prototype.open;
+      const nativeSend = window.XMLHttpRequest.prototype.send;
+      let xhrData;
+      const openWrapper = function openWrapper(target, thisArg, args) {
+        // eslint-disable-next-line prefer-spread
+        xhrData = getXhrData.apply(null, args);
+        if (matchRequestProps(source, urlToMatch, xhrData)) {
+          thisArg.shouldBePruned = true;
         }
-        if (urlMatchRegexp.test(xhrURL)) {
-          thisArg.addEventListener('readystatechange', function pruneResponse() {
-            if (thisArg.readyState === 4) {
-              const response = thisArg.response;
-              thisArg.removeEventListener('readystatechange', pruneResponse);
-              if (!shouldPruneResponse) {
-                if (isXML(response)) {
-                  const message = "XMLHttpRequest.open() URL: ".concat(xhrURL, "\nresponse: ").concat(response);
-                  logMessage(source, message);
-                  logMessage(source, createXMLDocument(response), true, false);
-                }
-              } else {
-                const prunedResponseContent = pruneXML(response);
-                if (shouldPruneResponse) {
-                  Object.defineProperty(thisArg, 'response', {
-                    value: prunedResponseContent
-                  });
-                  Object.defineProperty(thisArg, 'responseText', {
-                    value: prunedResponseContent
-                  });
-                  hit(source);
-                }
-                // In case if response shouldn't be pruned
-                // pruneXML sets shouldPruneResponse to false
-                // so it's necessary to set it to true again
-                // otherwise response will be only logged
-                shouldPruneResponse = true;
-              }
-            }
-          });
+
+        // Trap setRequestHeader of target xhr object to mimic request headers later
+        if (thisArg.shouldBePruned) {
+          thisArg.collectedHeaders = [];
+          const setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+            // Collect headers
+            thisArg.collectedHeaders.push(args);
+            return Reflect.apply(target, thisArg, args);
+          };
+          const setRequestHeaderHandler = {
+            apply: setRequestHeaderWrapper
+          };
+
+          // setRequestHeader can only be called on open xhr object,
+          // so we can safely proxy it here
+          thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
         }
         return Reflect.apply(target, thisArg, args);
       };
-      const xhrHandler = {
-        apply: xhrWrapper
+      const sendWrapper = function sendWrapper(target, thisArg, args) {
+        const allowedResponseTypeValues = ['', 'text'];
+        // Do nothing if request do not match
+        // or response type is not a string
+        if (!thisArg.shouldBePruned || !allowedResponseTypeValues.includes(thisArg.responseType)) {
+          return Reflect.apply(target, thisArg, args);
+        }
+
+        /**
+         * Create separate XHR request with original request's input
+         * to be able to collect response data without triggering
+         * listeners on original XHR object
+         */
+        const forgedRequest = new XMLHttpRequest();
+        forgedRequest.addEventListener('readystatechange', function () {
+          if (forgedRequest.readyState !== 4) {
+            return;
+          }
+          const readyState = forgedRequest.readyState,
+            response = forgedRequest.response,
+            responseText = forgedRequest.responseText,
+            responseURL = forgedRequest.responseURL,
+            responseXML = forgedRequest.responseXML,
+            status = forgedRequest.status,
+            statusText = forgedRequest.statusText;
+
+          // Extract content from response
+          const content = responseText || response;
+          if (typeof content !== 'string') {
+            return;
+          }
+          if (!propsToRemove) {
+            if (isXML(response)) {
+              const message = "XMLHttpRequest.open() URL: ".concat(responseURL, "\nresponse: ").concat(response);
+              logMessage(source, message);
+              logMessage(source, createXMLDocument(response), true, false);
+            }
+          } else {
+            shouldPruneResponse = isPruningNeeded(response, propsToRemove);
+          }
+          const responseContent = shouldPruneResponse ? pruneXML(response) : response;
+          // Manually put required values into target XHR object
+          // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
+          Object.defineProperties(thisArg, {
+            // original values
+            readyState: {
+              value: readyState,
+              writable: false
+            },
+            responseURL: {
+              value: responseURL,
+              writable: false
+            },
+            responseXML: {
+              value: responseXML,
+              writable: false
+            },
+            status: {
+              value: status,
+              writable: false
+            },
+            statusText: {
+              value: statusText,
+              writable: false
+            },
+            // modified values
+            response: {
+              value: responseContent,
+              writable: false
+            },
+            responseText: {
+              value: responseContent,
+              writable: false
+            }
+          });
+
+          // Mock events
+          setTimeout(function () {
+            const stateEvent = new Event('readystatechange');
+            thisArg.dispatchEvent(stateEvent);
+            const loadEvent = new Event('load');
+            thisArg.dispatchEvent(loadEvent);
+            const loadEndEvent = new Event('loadend');
+            thisArg.dispatchEvent(loadEndEvent);
+          }, 1);
+          hit(source);
+        });
+        nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
+
+        // Mimic request headers before sending
+        // setRequestHeader can only be called on open request objects
+        thisArg.collectedHeaders.forEach(function (header) {
+          const name = header[0];
+          const value = header[1];
+          forgedRequest.setRequestHeader(name, value);
+        });
+        thisArg.collectedHeaders = [];
+        try {
+          nativeSend.call(forgedRequest, args);
+        } catch (_unused) {
+          return Reflect.apply(target, thisArg, args);
+        }
+        return undefined;
       };
-      // eslint-disable-next-line max-len
-      window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler);
+      const openHandler = {
+        apply: openWrapper
+      };
+      const sendHandler = {
+        apply: sendWrapper
+      };
+      XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
+      XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
       const nativeFetch = window.fetch;
-      const fetchWrapper = function fetchWrapper(target, thisArg, args) {
+      const fetchWrapper = async function fetchWrapper(target, thisArg, args) {
         const fetchURL = args[0] instanceof Request ? args[0].url : args[0];
         if (typeof fetchURL !== 'string' || fetchURL.length === 0) {
           return Reflect.apply(target, thisArg, args);
         }
         if (urlMatchRegexp.test(fetchURL)) {
-          return nativeFetch.apply(_this, args).then(function (response) {
-            return response.text().then(function (text) {
-              if (!shouldPruneResponse) {
-                if (isXML(text)) {
-                  const message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(text);
-                  logMessage(source, message);
-                  logMessage(source, createXMLDocument(text), true, false);
-                }
-                return Reflect.apply(target, thisArg, args);
-              }
-              const prunedText = pruneXML(text);
-              if (shouldPruneResponse) {
-                hit(source);
-                return new Response(prunedText, {
-                  status: response.status,
-                  statusText: response.statusText,
-                  headers: response.headers
-                });
-              }
-              // If response shouldn't be pruned
-              // pruneXML sets shouldPruneResponse to false
-              // so it's necessary to set it to true again
-              // otherwise response will be only logged
-              shouldPruneResponse = true;
-              return Reflect.apply(target, thisArg, args);
+          const response = await nativeFetch(...args);
+          // It's required to fix issue with - Request with body": Failed to execute 'fetch' on 'Window':
+          // Cannot construct a Request with a Request object that has already been used.
+          // For example, it occurs on youtube when scriptlet is used without arguments
+          const clonedResponse = response.clone();
+          const responseText = await response.text();
+          shouldPruneResponse = isPruningNeeded(responseText, propsToRemove);
+          if (!shouldPruneResponse) {
+            const message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(responseText);
+            logMessage(source, message);
+            logMessage(source, createXMLDocument(responseText), true, false);
+            return clonedResponse;
+          }
+          const prunedText = pruneXML(responseText);
+          if (shouldPruneResponse) {
+            hit(source);
+            return new Response(prunedText, {
+              status: response.status,
+              statusText: response.statusText,
+              headers: response.headers
             });
-          });
+          }
+          return clonedResponse;
         }
         return Reflect.apply(target, thisArg, args);
       };
@@ -7100,49 +7965,63 @@
     xmlPrune$1.names = ['xml-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'xml-prune.js', 'ubo-xml-prune.js', 'ubo-xml-prune'];
-    xmlPrune$1.injections = [hit, logMessage, toRegExp];
+    xmlPrune$1.injections = [hit, logMessage, toRegExp, getXhrData, objectToString, matchRequestProps, getMatchPropsData, getRequestProps, validateParsedData, parseMatchProps, isValidStrPattern, escapeRegExp, isEmptyObject];
 
     /* eslint-disable max-len */
     /**
      * @scriptlet m3u-prune
+     *
      * @description
      * Removes content from the specified M3U file.
      *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#m3u-prunejs-
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('m3u-prune'[, propsToRemove[, urlToMatch]])
      * ```
      *
-     * - `propsToRemove` — optional, string or regular expression to match the URL line (segment) which will be removed alongside with its tags
+     * - `propsToRemove` — optional, string or regular expression
+     *   to match the URL line (segment) which will be removed alongside with its tags
      * - `urlToMatch` — optional, string or regular expression for matching the request's URL
+     *
      * > Usage with no arguments will log response payload and URL to browser console;
-     * which is useful for debugging but prohibited for production filter lists.
+     * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
      *
-     * **Examples**
-     * 1. Removes a tag which contains `tvessaiprod.nbcuni.com/video/`, from all requests
-     *     ```
-     *     example.org#%#//scriptlet('m3u-prune', 'tvessaiprod.nbcuni.com/video/')
-     *     ```
+     * ### Examples
      *
-     * 2. Removes a line which contains `tvessaiprod.nbcuni.com/video/`, only if request's URL contains `.m3u8`
-     *     ```
-     *     example.org#%#//scriptlet('m3u-prune', 'tvessaiprod.nbcuni.com/video/', '.m3u8')
+     * 1. Removes a tag which contains `example.com/video/`, from all requests
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('m3u-prune', 'example.com/video/')
      *     ```
      *
-     * 3. Call with no arguments will log response payload and URL at the console
+     * 1. Removes a line which contains `example.com/video/`, only if request's URL contains `.m3u8`
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('m3u-prune', 'example.com/video/', '.m3u8')
      *     ```
+     *
+     * 1. Call with no arguments will log response payload and URL at the console
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('m3u-prune')
      *     ```
      *
-     * 4. Call with only `urlToMatch` argument will log response payload and URL only for the matched URL
-     *     ```
+     * 1. Call with only `urlToMatch` argument will log response payload and URL only for the matched URL
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('m3u-prune', '', '.m3u8')
      *     ```
+     *
+     * @added v1.9.1.
      */
     /* eslint-enable max-len */
 
-    function m3uPrune$1(source, propsToRemove, urlToMatch) {
+    function m3uPrune$1(source, propsToRemove) {
+      let urlToMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
       // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -7381,45 +8260,145 @@
           return !!l;
         }).join('\n');
       };
-      const xhrWrapper = function xhrWrapper(target, thisArg, args) {
-        const xhrURL = args[1];
-        if (typeof xhrURL !== 'string' || xhrURL.length === 0) {
-          return Reflect.apply(target, thisArg, args);
+      const nativeOpen = window.XMLHttpRequest.prototype.open;
+      const nativeSend = window.XMLHttpRequest.prototype.send;
+      let xhrData;
+      const openWrapper = function openWrapper(target, thisArg, args) {
+        // eslint-disable-next-line prefer-spread
+        xhrData = getXhrData.apply(null, args);
+        if (matchRequestProps(source, urlToMatch, xhrData)) {
+          thisArg.shouldBePruned = true;
         }
-        if (urlMatchRegexp.test(xhrURL)) {
-          thisArg.addEventListener('readystatechange', function pruneResponse() {
-            if (thisArg.readyState === 4) {
-              const response = thisArg.response;
-              thisArg.removeEventListener('readystatechange', pruneResponse);
-              // If "propsToRemove" is not defined, then response should be logged only
-              if (!propsToRemove) {
-                if (isM3U(response)) {
-                  const message = "XMLHttpRequest.open() URL: ".concat(xhrURL, "\nresponse: ").concat(response);
-                  logMessage(source, message);
-                }
-              } else {
-                shouldPruneResponse = isPruningNeeded(response, removeM3ULineRegexp);
-              }
-              if (shouldPruneResponse) {
-                const prunedResponseContent = pruneM3U(response);
-                Object.defineProperty(thisArg, 'response', {
-                  value: prunedResponseContent
-                });
-                Object.defineProperty(thisArg, 'responseText', {
-                  value: prunedResponseContent
-                });
-                hit(source);
-              }
-            }
-          });
+
+        // Trap setRequestHeader of target xhr object to mimic request headers later
+        if (thisArg.shouldBePruned) {
+          thisArg.collectedHeaders = [];
+          const setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+            // Collect headers
+            thisArg.collectedHeaders.push(args);
+            return Reflect.apply(target, thisArg, args);
+          };
+          const setRequestHeaderHandler = {
+            apply: setRequestHeaderWrapper
+          };
+
+          // setRequestHeader can only be called on open xhr object,
+          // so we can safely proxy it here
+          thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
         }
         return Reflect.apply(target, thisArg, args);
       };
-      const xhrHandler = {
-        apply: xhrWrapper
+      const sendWrapper = function sendWrapper(target, thisArg, args) {
+        const allowedResponseTypeValues = ['', 'text'];
+        // Do nothing if request do not match
+        // or response type is not a string
+        if (!thisArg.shouldBePruned || !allowedResponseTypeValues.includes(thisArg.responseType)) {
+          return Reflect.apply(target, thisArg, args);
+        }
+
+        /**
+         * Create separate XHR request with original request's input
+         * to be able to collect response data without triggering
+         * listeners on original XHR object
+         */
+        const forgedRequest = new XMLHttpRequest();
+        forgedRequest.addEventListener('readystatechange', function () {
+          if (forgedRequest.readyState !== 4) {
+            return;
+          }
+          const readyState = forgedRequest.readyState,
+            response = forgedRequest.response,
+            responseText = forgedRequest.responseText,
+            responseURL = forgedRequest.responseURL,
+            responseXML = forgedRequest.responseXML,
+            status = forgedRequest.status,
+            statusText = forgedRequest.statusText;
+
+          // Extract content from response
+          const content = responseText || response;
+          if (typeof content !== 'string') {
+            return;
+          }
+          if (!propsToRemove) {
+            if (isM3U(response)) {
+              const message = "XMLHttpRequest.open() URL: ".concat(responseURL, "\nresponse: ").concat(response);
+              logMessage(source, message);
+            }
+          } else {
+            shouldPruneResponse = isPruningNeeded(response, removeM3ULineRegexp);
+          }
+          const responseContent = shouldPruneResponse ? pruneM3U(response) : response;
+          // Manually put required values into target XHR object
+          // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
+          Object.defineProperties(thisArg, {
+            // original values
+            readyState: {
+              value: readyState,
+              writable: false
+            },
+            responseURL: {
+              value: responseURL,
+              writable: false
+            },
+            responseXML: {
+              value: responseXML,
+              writable: false
+            },
+            status: {
+              value: status,
+              writable: false
+            },
+            statusText: {
+              value: statusText,
+              writable: false
+            },
+            // modified values
+            response: {
+              value: responseContent,
+              writable: false
+            },
+            responseText: {
+              value: responseContent,
+              writable: false
+            }
+          });
+
+          // Mock events
+          setTimeout(function () {
+            const stateEvent = new Event('readystatechange');
+            thisArg.dispatchEvent(stateEvent);
+            const loadEvent = new Event('load');
+            thisArg.dispatchEvent(loadEvent);
+            const loadEndEvent = new Event('loadend');
+            thisArg.dispatchEvent(loadEndEvent);
+          }, 1);
+          hit(source);
+        });
+        nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
+
+        // Mimic request headers before sending
+        // setRequestHeader can only be called on open request objects
+        thisArg.collectedHeaders.forEach(function (header) {
+          const name = header[0];
+          const value = header[1];
+          forgedRequest.setRequestHeader(name, value);
+        });
+        thisArg.collectedHeaders = [];
+        try {
+          nativeSend.call(forgedRequest, args);
+        } catch (_unused) {
+          return Reflect.apply(target, thisArg, args);
+        }
+        return undefined;
       };
-      // eslint-disable-next-line max-len
-      window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler);
+      const openHandler = {
+        apply: openWrapper
+      };
+      const sendHandler = {
+        apply: sendWrapper
+      };
+      XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
+      XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
       const nativeFetch = window.fetch;
       const fetchWrapper = async function fetchWrapper(target, thisArg, args) {
         const fetchURL = args[0] instanceof Request ? args[0].url : args[0];
@@ -7428,12 +8407,16 @@
         }
         if (urlMatchRegexp.test(fetchURL)) {
           const response = await nativeFetch(...args);
+          // It's required to fix issue with - Request with body": Failed to execute 'fetch' on 'Window':
+          // Cannot construct a Request with a Request object that has already been used.
+          // For example, it occurs on youtube when scriptlet is used without arguments
+          const clonedResponse = response.clone();
           const responseText = await response.text();
           // If "propsToRemove" is not defined, then response should be logged only
           if (!propsToRemove && isM3U(responseText)) {
             const message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(responseText);
             logMessage(source, message);
-            return Reflect.apply(target, thisArg, args);
+            return clonedResponse;
           }
           if (isPruningNeeded(responseText, removeM3ULineRegexp)) {
             const prunedText = pruneM3U(responseText);
@@ -7444,7 +8427,7 @@
               headers: response.headers
             });
           }
-          return Reflect.apply(target, thisArg, args);
+          return clonedResponse;
         }
         return Reflect.apply(target, thisArg, args);
       };
@@ -7456,61 +8439,75 @@
     m3uPrune$1.names = ['m3u-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'm3u-prune.js', 'ubo-m3u-prune.js', 'ubo-m3u-prune'];
-    m3uPrune$1.injections = [hit, toRegExp, logMessage];
+    m3uPrune$1.injections = [hit, toRegExp, logMessage, getXhrData, objectToString, matchRequestProps, getMatchPropsData, getRequestProps, validateParsedData, parseMatchProps, isValidStrPattern, escapeRegExp, isEmptyObject];
 
     /* eslint-disable max-len */
     /**
      * @trustedScriptlet trusted-set-cookie
+     *
      * @description
      * Sets a cookie with arbitrary name and value,
      * and with optional ability to offset cookie attribute 'expires' and set path.
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[, path]])
      * ```
      *
      * - `name` — required, cookie name to be set
      * - `value` — required, cookie value. Possible values:
-     *   - arbitrary value
-     *   - empty string for no value
-     *   - `$now$` keyword for setting current time in ms, e.g 1667915146503
-     *   - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
-     * - `offsetExpiresSec` — optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
-     * Possible values:
-     *   - positive integer in seconds
-     *   - `1year` keyword for setting expiration date to one year
-     *   - `1day` keyword for setting expiration date to one day
+     *     - arbitrary value
+     *     - empty string for no value
+     *     - `$now$` keyword for setting current time in ms, e.g 1667915146503
+     *     - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+     * - `offsetExpiresSec` — optional, offset from current time in seconds, after which cookie should expire;
+     *   defaults to no offset. Possible values:
+     *     - positive integer in seconds
+     *     - `1year` keyword for setting expiration date to one year
+     *     - `1day` keyword for setting expiration date to one day
      * - `path` — optional, argument for setting cookie path, defaults to `/`; possible values:
-     *   - `/` — root path
-     *   - `none` — to set no path at all
+     *     - `/` — root path
+     *     - `none` — to set no path at all
      *
-     * **Examples**
+     * > Note that the scriptlet does not encode cookie names and values.
+     * > As a result, if a cookie's name or value includes `;`,
+     * > the scriptlet will not set the cookie since this may cause the cookie to break.
+     *
+     * ### Examples
+     *
      * 1. Set cookie
-     * ```
-     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept')
-     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '1-accept_1')
-     * ```
      *
-     * 2. Set cookie with `new Date().getTime()` value
-     * ```
-     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '$now$')
-     * ```
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept')
+     *     example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '1-accept_1')
+     *     ```
      *
-     * 3. Set cookie which will expire in 3 days
-     * ```
-     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept', '259200')
-     * ```
+     * 1. Set cookie with `new Date().getTime()` value
      *
-     * 4. Set cookie which will expire in one year
-     * ```
-     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept', '1year')
-     * ```
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '$now$')
+     *     ```
      *
-     * 5. Set cookie with no path
-     * ```
-     * example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'none')
-     * ```
+     * 1. Set cookie which will expire in 3 days
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept', '259200')
+     *     ```
+     *
+     * 1. Set cookie which will expire in one year
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'accept', '1year')
+     *     ```
+     *
+     * 1. Set cookie with no path
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'none')
+     *     ```
+     *
+     * @added v1.7.3.
      */
     /* eslint-enable max-len */
 
@@ -7530,8 +8527,9 @@
         logMessage(source, "Invalid cookie path: '".concat(path, "'"));
         return;
       }
-      let cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
+      let cookieToSet = concatCookieNameValuePath(name, parsedValue, path, false);
       if (!cookieToSet) {
+        logMessage(source, 'Invalid cookie name or value');
         return;
       }
       if (offsetExpiresSec) {
@@ -7555,57 +8553,71 @@
     /* eslint-disable max-len */
     /**
      * @trustedScriptlet trusted-set-cookie-reload
+     *
      * @description
      * Sets a cookie with arbitrary name and value,
      * and with optional ability to offset cookie attribute 'expires' and set path.
      * Also reloads the current page after the cookie setting.
      * If reloading option is not needed, use the [`trusted-set-cookie` scriptlet](#trusted-set-cookie).
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('trusted-set-cookie-reload', name, value[, offsetExpiresSec[, path]])
      * ```
      *
      * - `name` — required, cookie name to be set
      * - `value` — required, cookie value. Possible values:
-     *   - arbitrary value
-     *   - empty string for no value
-     *   - `$now$` keyword for setting current time in ms, e.g 1667915146503
-     *   - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
-     * - `offsetExpiresSec` — optional, offset from current time in seconds, after which cookie should expire; defaults to no offset
-     * Possible values:
-     *   - positive integer in seconds
-     *   - `1year` keyword for setting expiration date to one year
-     *   - `1day` keyword for setting expiration date to one day
+     *     - arbitrary value
+     *     - empty string for no value
+     *     - `$now$` keyword for setting current time in ms, e.g 1667915146503
+     *     - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+     * - `offsetExpiresSec` — optional, offset from current time in seconds, after which cookie should expire;
+     *   defaults to no offset. Possible values:
+     *     - positive integer in seconds
+     *     - `1year` keyword for setting expiration date to one year
+     *     - `1day` keyword for setting expiration date to one day
      * - `path` — optional, argument for setting cookie path, defaults to `/`; possible values:
-     *   - `/` — root path
-     *   - `none` — to set no path at all
+     *     - `/` — root path
+     *     - `none` — to set no path at all
      *
-     * **Examples**
+     * > Note that the scriptlet does not encode cookie names and values.
+     * > As a result, if a cookie's name or value includes `;`,
+     * > the scriptlet will not set the cookie since this may cause the cookie to break.
+     *
+     * ### Examples
+     *
      * 1. Set cookie and reload the page after it
-     * ```
-     * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept')
-     * ```
      *
-     * 2. Set cookie with `new Date().getTime()` value and reload the page after it
-     * ```
-     * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', '$now$')
-     * ```
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept')
+     *     ```
      *
-     * 3. Set cookie which will expire in 3 days and reload the page after it
-     * ```
-     * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept', '259200')
-     * ```
+     * 1. Set cookie with `new Date().getTime()` value and reload the page after it
      *
-     * 4. Set cookie which will expire in one year and reload the page after it
-     * ```
-     * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept', '1year')
-     * ```
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', '$now$')
+     *     ```
      *
-     * 5. Set cookie with no 'expire' and no path, reload the page after it
-     * ```
-     * example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'decline', '', 'none')
-     * ```
+     * 1. Set cookie which will expire in 3 days and reload the page after it
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept', '259200')
+     *     ```
+     *
+     * 1. Set cookie which will expire in one year and reload the page after it
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'accept', '1year')
+     *     ```
+     *
+     * 1. Set cookie with no 'expire' and no path, reload the page after it
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'decline', '', 'none')
+     *     ```
+     *
+     * @added v1.7.10.
      */
     /* eslint-enable max-len */
 
@@ -7631,8 +8643,9 @@
         logMessage(source, "Invalid cookie path: '".concat(path, "'"));
         return;
       }
-      let cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
+      let cookieToSet = concatCookieNameValuePath(name, parsedValue, path, false);
       if (!cookieToSet) {
+        logMessage(source, 'Invalid cookie name or value');
         return;
       }
       if (offsetExpiresSec) {
@@ -7647,9 +8660,14 @@
       document.cookie = cookieToSet;
       hit(source);
 
+      // Get cookie value, it's required for checking purpose
+      // in case if $now$ or $currentDate$ value is used
+      // https://github.com/AdguardTeam/Scriptlets/issues/291
+      const cookieValueToCheck = parseCookieString(document.cookie)[name];
+
       // Only reload the page if cookie was set
       // https://github.com/AdguardTeam/Scriptlets/issues/212
-      if (isCookieSetWithValue(document.cookie, name, value)) {
+      if (isCookieSetWithValue(document.cookie, name, cookieValueToCheck)) {
         window.location.reload();
       }
     }
@@ -7657,62 +8675,84 @@
     // trusted scriptlets support no aliases
     ];
 
-    trustedSetCookieReload$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, concatCookieNameValuePath, isValidCookiePath, getTrustedCookieOffsetMs, parseKeywordValue, getCookiePath];
+    trustedSetCookieReload$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, concatCookieNameValuePath, isValidCookiePath, getTrustedCookieOffsetMs, parseKeywordValue, parseCookieString, getCookiePath];
 
     /* eslint-disable max-len */
     /**
      * @trustedScriptlet trusted-replace-fetch-response
+     *
      * @description
      * Replaces response text content of `fetch` requests if **all** given parameters match.
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('trusted-replace-fetch-response'[, pattern, replacement[, propsToMatch]])
      * ```
      *
-     * - `pattern` — optional, argument for matching contents of responseText that should be replaced. If set, `replacement` is required;
-     * possible values:
-     *   - `*` to match all text content
-     *   - non-empty string
-     *   - regular expression
-     * - `replacement` — optional, should be set if `pattern` is set. String to replace the response text content matched by `pattern`.
-     * Empty string to remove content. Defaults to empty string.
+     * - `pattern` — optional, argument for matching contents of responseText that should be replaced.
+     * If set, `replacement` is required. Possible values:
+     *     - `*` to match all text content
+     *     - non-empty string
+     *     - regular expression
+     * - `replacement` — optional, should be set if `pattern` is set. String to replace the response text content
+     *   matched by `pattern`. Empty string to remove content. Defaults to empty string.
      * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
-     *   - string or regular expression for matching the URL passed to fetch call; empty string, wildcard `*` or invalid regular expression will match all fetch calls
-     *   - colon-separated pairs `name:value` where
-     *     - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
-     *     - `value` is string or regular expression for matching the value of the option passed to fetch call; invalid regular expression will cause any value matching
+     *     - string or regular expression for matching the URL passed to fetch call;
+     *       empty string, wildcard `*` or invalid regular expression will match all fetch calls
+     *     - colon-separated pairs `name:value` where
+     *         <!-- markdownlint-disable-next-line line-length -->
+     *         - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
+     *         - `value` is string or regular expression for matching the value of the option passed to fetch call;
+     *           invalid regular expression will cause any value matching
      *
      * > Usage with no arguments will log fetch calls to browser console;
-     * which is useful for debugging but only allowed for production filter lists.
+     * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
      *
      * > Scriptlet does nothing if response body can't be converted to text.
      *
-     * **Examples**
+     * ### Examples
+     *
      * 1. Log all fetch calls
-     *     ```
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('trusted-replace-fetch-response')
      *     ```
      *
-     * 2. Replace response text content of fetch requests with specific url
-     *     ```
+     * 1. Replace response text content of fetch requests with specific url
+     *
+     *     <!-- markdownlint-disable line-length -->
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('trusted-replace-fetch-response', 'adb_detect:true', 'adb_detect:false', 'example.org')
      *     example.org#%#//scriptlet('trusted-replace-fetch-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', 'example.org')
      *     ```
      *
-     * 3. Remove all text content of fetch responses with specific request method
-     *     ```
+     *     <!-- markdownlint-enable line-length -->
+     *
+     * 1. Remove all text content of fetch responses with specific request method
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('trusted-replace-fetch-response', '*', '', 'method:GET')
      *     ```
      *
-     * 4. Replace response text content of fetch requests matching by URL regex and request methods
-     *     ```
+     * 1. Replace response text content of fetch requests matching by URL regex and request methods
+     *
+     *     <!-- markdownlint-disable line-length -->
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('trusted-replace-fetch-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', '/\.m3u8/ method:/GET|HEAD/')
      *     ```
-     * 5. Remove text content of all fetch responses for example.com
-     *     ```
+     *
+     *     <!-- markdownlint-enable line-length -->
+     *
+     * 1. Remove text content of all fetch responses for example.com
+     *
+     *     ```adblock
      *     example.org#%#//scriptlet('trusted-replace-fetch-response', '*', '', 'example.com')
      *     ```
+     *
+     * @added v1.7.3.
      */
     /* eslint-enable max-len */
     function trustedReplaceFetchResponse$1(source) {
@@ -7817,53 +8857,66 @@
       fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
     }
 
-    trustedReplaceFetchResponse$1.names = ['trusted-replace-fetch-response'];
-    trustedReplaceFetchResponse$1.injections = [hit, logMessage, getFetchData, objectToString, matchRequestProps, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getRequestProps, getObjectEntries, getObjectFromEntries, parseMatchProps, validateParsedData, getMatchPropsData];
+    trustedReplaceFetchResponse$1.names = ['trusted-replace-fetch-response'
+    // trusted scriptlets support no aliases
+    ];
+
+    trustedReplaceFetchResponse$1.injections = [hit, logMessage, getFetchData, objectToString, matchRequestProps, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getRequestProps, parseMatchProps, validateParsedData, getMatchPropsData];
 
     /* eslint-disable max-len */
     /**
      * @trustedScriptlet trusted-set-local-storage-item
+     *
      * @description
      * Adds item with arbitrary key and value to localStorage object, or updates the value of the key if it already exists.
      * Scriptlet won't set item if storage is full.
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```adblock
      * example.com#%#//scriptlet('trusted-set-local-storage-item', 'key', 'value')
      * ```
      *
      * - `key` — required, key name to be set.
      * - `value` — required, key value; possible values:
-     *   - arbitrary value
-     *   - `$now$` keyword for setting current time in ms, corresponds to `Date.now()` and `(new Date).getTime()` calls
-     *   - `$currentDate$` keyword for setting string representation of the current date and time, corresponds to `Date()` and `(new Date).toString()` calls
+     *     - arbitrary value
+     *     - `$now$` keyword for setting current time in ms, corresponds to `Date.now()` and `(new Date).getTime()` calls
+     *     - `$currentDate$` keyword for setting string representation of the current date and time,
+     *       corresponds to `Date()` and `(new Date).toString()` calls
      *
-     * **Examples**
+     * ### Examples
+     *
      * 1. Set local storage item
-     * ```
-     * example.org#%#//scriptlet('trusted-set-local-storage-item', 'player.live.current.mute', 'false')
      *
-     * example.org#%#//scriptlet('trusted-set-local-storage-item', 'COOKIE_CONSENTS', '{"preferences":3,"marketing":false}')
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-set-local-storage-item', 'player.live.current.mute', 'false')
      *
-     * example.org#%#//scriptlet('trusted-set-local-storage-item', 'providers', '[16364,88364]')
+     *     example.org#%#//scriptlet('trusted-set-local-storage-item', 'COOKIE_CONSENTS', '{"preferences":3,"flag":false}')
      *
-     * example.org#%#//scriptlet('trusted-set-local-storage-item', 'providers', '{"providers":[16364,88364],"consent":"all"}')
-     * ```
+     *     example.org#%#//scriptlet('trusted-set-local-storage-item', 'providers', '[16364,88364]')
      *
-     * 2. Set item with current time since unix epoch in ms
-     * ```
-     * example.org#%#//scriptlet('trusted-set-local-storage-item', 'player.live.current.play', '$now$')
-     * ```
+     *     example.org#%#//scriptlet('trusted-set-local-storage-item', 'providers', '{"providers":[123,456],"consent":"all"}')
+     *     ```
      *
-     * 3. Set item with current date, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
-     * ```
-     * example.org#%#//scriptlet('trusted-set-local-storage-item', 'player.live.current.play', '$currentDate$')
-     * ```
+     * 1. Set item with current time since unix epoch in ms
      *
-     * 4. Set item without value
-     * ```
-     * example.org#%#//scriptlet('trusted-set-local-storage-item', 'ppu_main_none', '')
-     * ```
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-set-local-storage-item', 'player.live.current.play', '$now$')
+     *     ```
+     *
+     * 1. Set item with current date, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-set-local-storage-item', 'player.live.current.play', '$currentDate$')
+     *     ```
+     *
+     * 1. Set item without value
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-set-local-storage-item', 'ppu_main_none', '')
+     *     ```
+     *
+     * @added v1.7.3.
      */
     /* eslint-enable max-len */
 
@@ -7891,6 +8944,7 @@
     /* eslint-disable max-len */
     /**
      * @trustedScriptlet trusted-set-constant
+     *
      * @description
      * Creates a constant property and assigns it a specified value.
      *
@@ -7900,50 +8954,56 @@
      *
      * > Use [set-constant](./about-scriptlets.md#set-constant) to set predefined values and functions.
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('trusted-set-constant', property, value[, stack])
      * ```
      *
      * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`.
-     * - `value` — required, an arbitrary value to be set; value type is being inferred from the argument, e.g '500' will be set as number;
-     * to set string type value wrap argument into another pair of quotes: `'"500"'`;
+     * - `value` — required, an arbitrary value to be set; value type is being inferred from the argument,
+     *   e.g '500' will be set as number; to set string type value wrap argument into another pair of quotes: `'"500"'`;
      * - `stack` — optional, string or regular expression that must match the current function call stack trace;
-     * if regular expression is invalid it will be skipped
+     *   if regular expression is invalid it will be skipped
      *
-     * **Examples**
+     * ### Examples
+     *
      * 1. Set property values of different types
-     * ```
-     * ! Set string value wrapping argument into another pair of quotes
-     * example.org#%#//scriptlet('trusted-set-constant', 'click_r', '"null"')
      *
-     * ✔ window.click_r === 'null'
-     * ✔ typeof window.click_r === 'string'
+     *     ```adblock
+     *     ! Set string value wrapping argument into another pair of quotes
+     *     example.org#%#//scriptlet('trusted-set-constant', 'click_r', '"null"')
      *
-     * ! Set inferred null value
-     * example.org#%#//scriptlet('trusted-set-constant', 'click_r', 'null')
+     *     ✔ window.click_r === 'null'
+     *     ✔ typeof window.click_r === 'string'
      *
-     * ✔ window.click_r === null
-     * ✔ typeof window.click_r === 'object'
+     *     ! Set inferred null value
+     *     example.org#%#//scriptlet('trusted-set-constant', 'click_r', 'null')
      *
-     * ! Set number type value
-     * example.org#%#//scriptlet('trusted-set-constant', 'click_r', '48')
+     *     ✔ window.click_r === null
+     *     ✔ typeof window.click_r === 'object'
      *
-     * ✔ window.click_r === 48
-     * ✔ typeof window.click_r === 'number'
+     *     ! Set number type value
+     *     example.org#%#//scriptlet('trusted-set-constant', 'click_r', '48')
      *
-     * ! Set array or object as property value, argument should be a JSON string
-     * example.org#%#//scriptlet('trusted-set-constant', 'click_r', '[1,"string"]')
-     * example.org#%#//scriptlet('trusted-set-constant', 'click_r', '{"aaa":123,"bbb":{"ccc":"string"}}')
-     * ```
+     *     ✔ window.click_r === 48
+     *     ✔ typeof window.click_r === 'number'
      *
-     * 2. Use script stack matching to set value
-     * ```
-     * ! `document.first` will return `1` if the method is related to `checking.js`
-     * example.org#%#//scriptlet('trusted-set-constant', 'document.first', '1', 'checking.js')
+     *     ! Set array or object as property value, argument should be a JSON string
+     *     example.org#%#//scriptlet('trusted-set-constant', 'click_r', '[1,"string"]')
+     *     example.org#%#//scriptlet('trusted-set-constant', 'click_r', '{"aaa":123,"bbb":{"ccc":"string"}}')
+     *     ```
      *
-     * ✔ document.first === 1  // if the condition described above is met
-     * ```
+     * 1. Use script stack matching to set value
+     *
+     *     ```adblock
+     *     ! `document.first` will return `1` if the method is related to `checking.js`
+     *     example.org#%#//scriptlet('trusted-set-constant', 'document.first', '1', 'checking.js')
+     *
+     *     ✔ document.first === 1  // if the condition described above is met
+     *     ```
+     *
+     * @added v1.8.2.
      */
     /* eslint-enable max-len */
     function trustedSetConstant$1(source, property, value, stack) {
@@ -8112,28 +9172,36 @@
     /* eslint-disable max-len */
     /**
      * @scriptlet inject-css-in-shadow-dom
+     *
      * @description
      * Injects CSS rule into selected Shadow DOM subtrees on a page
      *
-     * **Syntax**
-     * ```
+     * ### Syntax
+     *
+     * ```text
      * example.org#%#//scriptlet('inject-css-in-shadow-dom', cssRule[, hostSelector])
      * ```
      *
      * - `cssRule` — required, string representing a single css rule
-     * - `hostSelector` — optional, string, selector to match shadow host elements. CSS rule will be only applied to shadow roots inside these elements.
-     * Defaults to injecting css rule into all available roots.
+     * - `hostSelector` — optional, string, selector to match shadow host elements.
+     *   CSS rule will be only applied to shadow roots inside these elements.
+     *   Defaults to injecting css rule into all available roots.
      *
-     * **Examples**
+     * ### Examples
+     *
      * 1. Apply style to all shadow dom subtrees
-     * ```
-     * example.org#%#//scriptlet('inject-css-in-shadow-dom', '#advertisement { display: none !important; }')
-     * ```
      *
-     * 2. Apply style to a specific shadow dom subtree
-     * ```
-     * example.org#%#//scriptlet('inject-css-in-shadow-dom', '#content { margin-top: 0 !important; }', '.row > #hidden')
-     * ```
+     *     ```adblock
+     *     example.org#%#//scriptlet('inject-css-in-shadow-dom', '#advertisement { display: none !important; }')
+     *     ```
+     *
+     * 1. Apply style to a specific shadow dom subtree
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('inject-css-in-shadow-dom', '#content { margin-top: 0 !important; }', '#banner')
+     *     ```
+     *
+     * @added v1.8.2.
      */
     /* eslint-enable max-len */
 
@@ -8174,6 +9242,352 @@
     }
     injectCssInShadowDom$1.names = ['inject-css-in-shadow-dom'];
     injectCssInShadowDom$1.injections = [hit, logMessage, hijackAttachShadow];
+
+    /* eslint-disable max-len */
+    /**
+     * @scriptlet remove-node-text
+     *
+     * @description
+     * Removes text from DOM nodes.
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/commit/2bb446797a12086f2eebc0c8635b671b8b90c477
+     *
+     * ### Syntax
+     *
+     * ```adblock
+     * example.org#%#//scriptlet('remove-node-text', nodeName, condition)
+     * ```
+     *
+     * - `nodeName` — required, string or RegExp, specifies DOM node name from which the text will be removed.
+     * Must target lowercased node names, e.g `div` instead of `DIV`.
+     * - `textMatch` — required, string or RegExp to match against node's text content.
+     * If matched, the whole text will be removed. Case sensitive.
+     *
+     * ### Examples
+     *
+     * 1. Remove node's text content:
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('remove-node-text', 'div', 'some text')
+     *     ```
+     *
+     *     ```html
+     *     <!-- before -->
+     *     <div>some text</div>
+     *     <span>some text</span>
+     *
+     *     <!-- after -->
+     *     <div></div   >
+     *     <span>some text</span>
+     *     ```
+     *
+     * 2. Remove node's text content, matching both node name and condition by RegExp:
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('remove-node-text', '/[a-z]*[0-9]/', '/text/')
+     *     ```
+     *
+     *     ```html
+     *     <!-- before -->
+     *     <qrce3>some text</qrce3>
+     *     <span>some text</span>
+     *
+     *     <!-- after -->
+     *     <qrce3></qrce3>
+     *     <span>some text</span>
+     *     ```
+     *
+     * @added v1.9.37.
+     */
+    /* eslint-enable max-len */
+    function removeNodeText$1(source, nodeName, textMatch) {
+      const _parseNodeTextParams = parseNodeTextParams(nodeName, textMatch),
+        selector = _parseNodeTextParams.selector,
+        nodeNameMatch = _parseNodeTextParams.nodeNameMatch,
+        textContentMatch = _parseNodeTextParams.textContentMatch;
+
+      /**
+       * Handles nodes by removing text content of matched nodes
+       *
+       * Note: instead of drilling down all the arguments for both replace-node-text
+       * and trusted-replace-node-text scriptlets, only the handler is being passed
+       *
+       * @param {Node[]} nodes nodes to handle
+       * @returns {void}
+       */
+      const handleNodes = function handleNodes(nodes) {
+        return nodes.forEach(function (node) {
+          const shouldReplace = isTargetNode(node, nodeNameMatch, textContentMatch);
+          if (shouldReplace) {
+            const ALL_TEXT_PATTERN = /^[\s\S]*$/;
+            const REPLACEMENT = '';
+            replaceNodeText(source, node, ALL_TEXT_PATTERN, REPLACEMENT);
+          }
+        });
+      };
+
+      // Apply dedicated handler to already rendered nodes...
+      if (document.documentElement) {
+        handleExistingNodes(selector, handleNodes);
+      }
+
+      // and newly added nodes
+      observeDocumentWithTimeout(function (mutations) {
+        return handleMutations(mutations, handleNodes);
+      }, {
+        childList: true,
+        subtree: true
+      });
+    }
+    removeNodeText$1.names = ['remove-node-text',
+    // aliases are needed for matching the related scriptlet converted into our syntax
+    'remove-node-text.js', 'ubo-remove-node-text.js', 'rmnt.js', 'ubo-rmnt.js', 'ubo-remove-node-text', 'ubo-rmnt'];
+    removeNodeText$1.injections = [observeDocumentWithTimeout, handleExistingNodes, handleMutations, replaceNodeText, isTargetNode, parseNodeTextParams,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    hit, nodeListToArray, getAddedNodes, toRegExp];
+
+    /* eslint-disable max-len */
+    /**
+     * @trustedScriptlet trusted-replace-node-text
+     *
+     * @description
+     * Replaces text in text content of matched DOM nodes.
+     *
+     * ### Syntax
+     *
+     * ```adblock
+     * example.org#%#//scriptlet('trusted-replace-node-text', nodeName, textMatch, pattern, replacement)
+     * ```
+     *
+     * - `nodeName` — required, string or RegExp, specifies DOM node name from which the text will be removed.
+     * Must target lowercased node names, e.g `div` instead of `DIV`.
+     * - `textMatch` — required, string or RegExp to match against node's text content.
+     * If matched, the whole text will be removed. Case sensitive.
+     * - `pattern` — required, string or regexp for matching contents of `node.textContent` that should be replaced.
+     * - `replacement` — required, string to replace text content matched by `pattern`.
+     *
+     * ### Examples
+     *
+     * 1. Replace node's text content:
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-replace-node-text', 'div', 'some', 'text', 'other text')
+     *     ```
+     *
+     *     ```html
+     *     <!-- before -->
+     *     <div>some text</div>
+     *     <div>text</div>
+     *     <span>some text</span>
+     *
+     *     <!-- after -->
+     *     <div>some other text</div>
+     *     <div>text</div>
+     *     <span>some text</span>
+     *     ```
+     *
+     * 2. Replace node's text content, matching both node name, text and pattern by RegExp:
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-replace-node-text', '/[a-z]*[0-9]/', '/s\dme/', '/t\dxt/', 'other text')
+     *     ```
+     *
+     *     ```html
+     *     <!-- before -->
+     *     <qrce3>s0me t3xt</qrce3> // this node is going to be matched by both node name and text
+     *     <qrce3>text</qrce3> // this node won't be matched by text content nor text content
+     *     <span>some text</span>
+     *
+     *     <!-- after -->
+     *     <qrce3>s0me other text</qrce3> // text content has changed
+     *     <qrce3>text</qrce3>
+     *     <span>some text</span>
+     *     ```
+     *
+     * @added v1.9.37.
+     */
+    /* eslint-enable max-len */
+    function trustedReplaceNodeText$1(source, nodeName, textMatch, pattern, replacement) {
+      const uboAliases = ['replace-node-text.js', 'rpnt.js', 'sed.js'];
+
+      /**
+       * UBO replaceNodeText scriptlet has different signature:
+       * function replaceNodeText(nodeName, pattern, replacement, ...extraArgs) {...}
+       *
+       * with extra params being passed as ['paramname', paramvalue]
+       */
+      if (uboAliases.includes(source.name)) {
+        replacement = pattern;
+        pattern = textMatch;
+        // eslint-disable-next-line prefer-destructuring, prefer-rest-params
+        for (var _len = arguments.length, extraArgs = new Array(_len > 5 ? _len - 5 : 0), _key = 5; _key < _len; _key++) {
+          extraArgs[_key - 5] = arguments[_key];
+        }
+        for (let i = 0; i < extraArgs.length; i += 1) {
+          const arg = extraArgs[i];
+          if (arg === 'condition') {
+            textMatch = extraArgs[i + 1];
+            break;
+          }
+        }
+      }
+      const _parseNodeTextParams = parseNodeTextParams(nodeName, textMatch, pattern),
+        selector = _parseNodeTextParams.selector,
+        nodeNameMatch = _parseNodeTextParams.nodeNameMatch,
+        textContentMatch = _parseNodeTextParams.textContentMatch,
+        patternMatch = _parseNodeTextParams.patternMatch;
+
+      /**
+       * Handles nodes by removing text content of matched nodes
+       *
+       * Note: instead of drilling down all the arguments for both replace-node-text
+       * and trusted-replace-node-text scriptlets, only the handler is being passed
+       *
+       * @param {Node[]} nodes nodes to handle
+       * @returns {void}
+       */
+      const handleNodes = function handleNodes(nodes) {
+        return nodes.forEach(function (node) {
+          const shouldReplace = isTargetNode(node, nodeNameMatch, textContentMatch);
+          if (shouldReplace) {
+            replaceNodeText(source, node, patternMatch, replacement);
+          }
+        });
+      };
+
+      // Apply dedicated handler to already rendered nodes...
+      if (document.documentElement) {
+        handleExistingNodes(selector, handleNodes);
+      }
+
+      // and newly added nodes
+      observeDocumentWithTimeout(function (mutations) {
+        return handleMutations(mutations, handleNodes);
+      }, {
+        childList: true,
+        subtree: true
+      });
+    }
+    trustedReplaceNodeText$1.names = ['trusted-replace-node-text'
+    // trusted scriptlets support no aliases
+    ];
+
+    trustedReplaceNodeText$1.injections = [observeDocumentWithTimeout, handleExistingNodes, handleMutations, replaceNodeText, isTargetNode, parseNodeTextParams,
+    // following helpers should be imported and injected
+    // because they are used by helpers above
+    hit, nodeListToArray, getAddedNodes, toRegExp];
+
+    /* eslint-disable max-len */
+    /**
+     * @scriptlet evaldata-prune
+     *
+     * @description
+     * Removes specified properties from the result of calling eval (if payloads contains `Object`) and returns to the caller.
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/commit/c8de9041917b61035171e454df886706f27fc4f3
+     *
+     * ### Syntax
+     *
+     * ```text
+     * example.org#%#//scriptlet('evaldata-prune'[, propsToRemove [, obligatoryProps [, stack]]])
+     * ```
+     *
+     * - `propsToRemove` — optional, string of space-separated properties to remove
+     * - `obligatoryProps` — optional, string of space-separated properties
+     *   which must be all present for the pruning to occur
+     * - `stack` — optional, string or regular expression that must match the current function call stack trace;
+     *   if regular expression is invalid it will be skipped
+     *
+     * > Note please that you can use wildcard `*` for chain property name,
+     * > e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
+     *
+     * ### Examples
+     *
+     * 1. Removes property `example` from the payload of the eval call
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('evaldata-prune', 'example')
+     *     ```
+     *
+     *     For instance, the following call will return `{ one: 1}`
+     *
+     *     ```html
+     *     eval({ one: 1, example: true })
+     *     ```
+     *
+     * 2. If there are no specified properties in the payload of eval call, pruning will NOT occur
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('evaldata-prune', 'one', 'obligatoryProp')
+     *     ```
+     *
+     *     For instance, the following call will return `{ one: 1, two: 2}`
+     *
+     *     ```html
+     *     JSON.parse('{"one":1,"two":2}')
+     *     ```
+     *
+     * 3. A property in a list of properties can be a chain of properties
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('evaldata-prune', 'a.b', 'ads.url.first')
+     *     ```
+     *
+     * 4. Removes property `content.ad` from the payload of eval call if its error stack trace contains `test.js`
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('evaldata-prune', 'content.ad', '', 'test.js')
+     *     ```
+     *
+     * 5. A property in a list of properties can be a chain of properties with wildcard in it
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('evaldata-prune', 'content.*.media.src', 'content.*.media.ad')
+     *     ```
+     *
+     * 6. Call with no arguments will log the current hostname and object payload at the console
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('evaldata-prune')
+     *     ```
+     *
+     * 7. Call with only second argument will log the current hostname and matched object payload at the console
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('evaldata-prune', '', '"id":"117458"')
+     *     ```
+     *
+     * @added v1.9.37.
+     */
+    /* eslint-enable max-len */
+    function evalDataPrune$1(source, propsToRemove, requiredInitialProps, stack) {
+      if (!!stack && !matchStackTrace(stack, new Error().stack)) {
+        return;
+      }
+      const prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
+      const requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
+      const evalWrapper = function evalWrapper(target, thisArg, args) {
+        let data = Reflect.apply(target, thisArg, args);
+        if (typeof data === 'object') {
+          data = jsonPruner(source, data, prunePaths, requiredPaths);
+        }
+        return data;
+      };
+      const evalHandler = {
+        apply: evalWrapper
+      };
+      // eslint-disable-next-line no-eval
+      window.eval = new Proxy(window.eval, evalHandler);
+    }
+    evalDataPrune$1.names = ['evaldata-prune',
+    // aliases are needed for matching the related scriptlet converted into our syntax
+    'evaldata-prune.js', 'ubo-evaldata-prune.js', 'ubo-evaldata-prune'];
+    evalDataPrune$1.injections = [hit, matchStackTrace, getWildcardPropertyInChain, logMessage, toRegExp, isPruningNeeded, jsonPruner,
+    // following helpers are needed for helpers above
+    getNativeRegexpTest, shouldAbortInlineOrInjectedScript];
 
     /**
      * This file must export all scriptlets which should be accessible
@@ -8236,7 +9650,10 @@
         trustedReplaceFetchResponse: trustedReplaceFetchResponse$1,
         trustedSetLocalStorageItem: trustedSetLocalStorageItem$1,
         trustedSetConstant: trustedSetConstant$1,
-        injectCssInShadowDom: injectCssInShadowDom$1
+        injectCssInShadowDom: injectCssInShadowDom$1,
+        removeNodeText: removeNodeText$1,
+        trustedReplaceNodeText: trustedReplaceNodeText$1,
+        evalDataPrune: evalDataPrune$1
     });
 
     /**
@@ -8398,7 +9815,7 @@
      * @returns {boolean} if rule text is comment
      */
     const isComment = function isComment(rule) {
-      return startsWith$1(rule, COMMENT_MARKER);
+      return rule.startsWith(COMMENT_MARKER);
     };
 
     /* ************************************************************************
@@ -8434,7 +9851,7 @@
      * @returns {boolean} if given rule is adg rule
      */
     const isAdgScriptletRule = function isAdgScriptletRule(rule) {
-      return !isComment(rule) && rule.indexOf(ADG_SCRIPTLET_MASK) > -1;
+      return !isComment(rule) && rule.includes(ADG_SCRIPTLET_MASK);
     };
 
     /**
@@ -8444,7 +9861,7 @@
      * @returns {boolean} if given rule is ubo rule
      */
     const isUboScriptletRule = function isUboScriptletRule(rule) {
-      return (rule.indexOf(UBO_SCRIPTLET_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_MASK_2) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_1) > -1 || rule.indexOf(UBO_SCRIPTLET_EXCEPTION_MASK_2) > -1) && UBO_SCRIPTLET_MASK_REG.test(rule) && !isComment(rule);
+      return (rule.includes(UBO_SCRIPTLET_MASK_1) || rule.includes(UBO_SCRIPTLET_MASK_2) || rule.includes(UBO_SCRIPTLET_EXCEPTION_MASK_1) || rule.includes(UBO_SCRIPTLET_EXCEPTION_MASK_2)) && UBO_SCRIPTLET_MASK_REG.test(rule) && !isComment(rule);
     };
 
     /**
@@ -8454,7 +9871,7 @@
      * @returns {boolean} if given rule is abp rule
      */
     const isAbpSnippetRule = function isAbpSnippetRule(rule) {
-      return (rule.indexOf(ABP_SCRIPTLET_MASK) > -1 || rule.indexOf(ABP_SCRIPTLET_EXCEPTION_MASK) > -1) && rule.search(ADG_CSS_MASK_REG) === -1 && !isComment(rule);
+      return (rule.includes(ABP_SCRIPTLET_MASK) || rule.includes(ABP_SCRIPTLET_EXCEPTION_MASK)) && rule.search(ADG_CSS_MASK_REG) === -1 && !isComment(rule);
     };
 
     /**
@@ -8481,9 +9898,9 @@
       return scriptlets.find(function (s) {
         return s.names
         // full match name checking
-        && (s.names.indexOf(name) > -1
+        && (s.names.includes(name)
         // or check ubo alias name without '.js' at the end
-        || !endsWith(name, '.js') && s.names.indexOf("".concat(name, ".js")) > -1);
+        || !name.endsWith('.js') && s.names.includes("".concat(name, ".js")));
       });
     };
     const scriptletObjects = getScriptletsObjList();
@@ -8591,7 +10008,7 @@
      * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
      * It's used for UBO -> ADG converting
      */
-    const uboToAdgCompatibility = getObjectFromEntries(validAdgRedirects.filter(function (el) {
+    const uboToAdgCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
       return el.ubo;
     }).map(function (el) {
       return [el.ubo, el.adg];
@@ -8601,7 +10018,7 @@
      * Compatibility object where KEYS = ABP redirect names and VALUES = ADG redirect names
      * It's used for ABP -> ADG converting
      */
-    const abpToAdgCompatibility = getObjectFromEntries(validAdgRedirects.filter(function (el) {
+    const abpToAdgCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
       return el.abp;
     }).map(function (el) {
       return [el.abp, el.adg];
@@ -8611,7 +10028,7 @@
      * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
      * It's used for ADG -> UBO converting
      */
-    const adgToUboCompatibility = getObjectFromEntries(validAdgRedirects.filter(function (el) {
+    const adgToUboCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
       return el.ubo;
     }).map(function (el) {
       return [el.adg, el.ubo];
@@ -8621,7 +10038,7 @@
      * Needed for AdGuard redirect names validation where KEYS = **valid** AdGuard redirect names
      * 'adgToUboCompatibility' is still needed for ADG -> UBO converting
      */
-    const validAdgCompatibility = getObjectFromEntries(validAdgRedirects.map(function (el) {
+    const validAdgCompatibility = Object.fromEntries(validAdgRedirects.map(function (el) {
       return [el.adg, 'valid adg redirect'];
     }));
     const REDIRECT_RULE_TYPES = {
@@ -8969,7 +10386,7 @@
       let applying;
       // check the last parsed arg for matching possible 'applying' vale
       if (REMOVE_ATTR_CLASS_APPLYING.some(function (el) {
-        return lastArg.indexOf(el) > -1;
+        return lastArg.includes(el);
       })) {
         applying = lastArg;
       } else {
@@ -8996,15 +10413,15 @@
       const domains = getBeforeRegExp(rule, validator.UBO_SCRIPTLET_MASK_REG);
       const mask = rule.match(validator.UBO_SCRIPTLET_MASK_REG)[0];
       let template;
-      if (mask.indexOf('@') > -1) {
+      if (mask.includes('@')) {
         template = ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
       } else {
         template = ADGUARD_SCRIPTLET_TEMPLATE;
       }
       const argsStr = getStringInBraces(rule);
       let parsedArgs = splitArgs(argsStr);
-      const scriptletName = parsedArgs[0].indexOf(UBO_SCRIPTLET_JS_ENDING) > -1 ? "ubo-".concat(parsedArgs[0]) : "ubo-".concat(parsedArgs[0]).concat(UBO_SCRIPTLET_JS_ENDING);
-      if (REMOVE_ATTR_ALIASES.indexOf(scriptletName) > -1 || REMOVE_CLASS_ALIASES.indexOf(scriptletName) > -1) {
+      const scriptletName = parsedArgs[0].includes(UBO_SCRIPTLET_JS_ENDING) ? "ubo-".concat(parsedArgs[0]) : "ubo-".concat(parsedArgs[0]).concat(UBO_SCRIPTLET_JS_ENDING);
+      if (REMOVE_ATTR_ALIASES.includes(scriptletName) || REMOVE_CLASS_ALIASES.includes(scriptletName)) {
         parsedArgs = validateRemoveAttrClassArgs(parsedArgs);
       }
       const args = parsedArgs.map(function (arg, index) {
@@ -9035,7 +10452,7 @@
      */
     const convertAbpSnippetToAdg = function convertAbpSnippetToAdg(rule) {
       const SEMICOLON_DIVIDER = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
-      const mask = rule.indexOf(validator.ABP_SCRIPTLET_MASK) > -1 ? validator.ABP_SCRIPTLET_MASK : validator.ABP_SCRIPTLET_EXCEPTION_MASK;
+      const mask = rule.includes(validator.ABP_SCRIPTLET_MASK) ? validator.ABP_SCRIPTLET_MASK : validator.ABP_SCRIPTLET_EXCEPTION_MASK;
       const template = mask === validator.ABP_SCRIPTLET_MASK ? ADGUARD_SCRIPTLET_TEMPLATE : ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
       const domains = substringBefore(rule, mask);
       const args = substringAfter$1(rule, mask);
@@ -9142,7 +10559,7 @@
         // https://github.com/AdguardTeam/Scriptlets/issues/109
         && (parsedParams[0] === ADG_PREVENT_FETCH_WILDCARD || parsedParams[0] === ADG_PREVENT_FETCH_EMPTY_STRING)) {
           preparedParams = [UBO_NO_FETCH_IF_WILDCARD];
-        } else if ((parsedName === ADG_REMOVE_ATTR_NAME || parsedName === ADG_REMOVE_CLASS_NAME) && parsedParams[1] && parsedParams[1].indexOf(COMMA_SEPARATOR) > -1) {
+        } else if ((parsedName === ADG_REMOVE_ATTR_NAME || parsedName === ADG_REMOVE_CLASS_NAME) && parsedParams[1] && parsedParams[1].includes(COMMA_SEPARATOR)) {
           preparedParams = [parsedParams[0], replaceAll(parsedParams[1], COMMA_SEPARATOR, ESCAPED_COMMA_SEPARATOR)];
         } else {
           preparedParams = parsedParams;
@@ -9160,7 +10577,7 @@
             aliases
           };
         }).find(function (el) {
-          return el.name === parsedName || el.aliases.indexOf(parsedName) >= 0;
+          return el.name === parsedName || el.aliases.includes(parsedName);
         });
         const aliases = adgScriptletObject.aliases;
         if (aliases.length > 0) {
@@ -9172,7 +10589,7 @@
           if (uboAlias) {
             const mask = rule.match(ADGUARD_SCRIPTLET_MASK_REG)[0];
             let template;
-            if (mask.indexOf('@') > -1) {
+            if (mask.includes('@')) {
               template = UBO_SCRIPTLET_EXCEPTION_TEMPLATE;
             } else {
               template = UBO_SCRIPTLET_TEMPLATE;
@@ -9263,13 +10680,13 @@
     const getMarkerData = function getMarkerData(modifiers, redirectsData, rule) {
       let marker;
       let index = modifiers.findIndex(function (m) {
-        return m.indexOf(redirectsData.redirectRuleMarker) > -1;
+        return m.includes(redirectsData.redirectRuleMarker);
       });
       if (index > -1) {
         marker = redirectsData.redirectRuleMarker;
       } else {
         index = modifiers.findIndex(function (m) {
-          return m.indexOf(redirectsData.redirectMarker) > -1;
+          return m.includes(redirectsData.redirectMarker);
         });
         if (index > -1) {
           marker = redirectsData.redirectMarker;
@@ -9318,7 +10735,7 @@
       const firstPartOfRule = substringBefore(rule, '$');
       const abpModifiers = validator.parseModifiers(rule);
       const adgModifiers = abpModifiers.map(function (modifier) {
-        if (modifier.indexOf(validator.REDIRECT_RULE_TYPES.ABP.redirectMarker) > -1) {
+        if (modifier.includes(validator.REDIRECT_RULE_TYPES.ABP.redirectMarker)) {
           const abpName = substringAfter$1(modifier, validator.REDIRECT_RULE_TYPES.ABP.redirectMarker);
           const adgName = validator.REDIRECT_RULE_TYPES.ABP.compatibility[abpName];
           return "".concat(validator.REDIRECT_RULE_TYPES.ADG.redirectMarker).concat(adgName);
@@ -9393,18 +10810,23 @@
 
     /**
      * @redirect google-analytics
+     *
      * @description
      * Mocks Google's Analytics and Tag Manager APIs.
-     * [Covers obsolete googletagmanager-gtm redirect functionality](https://github.com/AdguardTeam/Scriptlets/issues/127).
+     * Covers functionality of
+     * the [obsolete googletagmanager-gtm redirect](https://github.com/AdguardTeam/Scriptlets/issues/127).
      *
      * Related UBO redirect resource:
-     * https://github.com/gorhill/uBlock/blob/8cd2a1d263a96421487b39040c1d23eb01169484/src/web_accessible_resources/google-analytics_analytics.js
+     * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/google-analytics_analytics.js
      *
-     * **Example**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ||google-analytics.com/analytics.js$script,redirect=google-analytics
-     * ||googletagmanager.com/gtm.js$script,redirect=googletagmanager-gtm
+     * ||googletagmanager.com/gtm.js$script,redirect=google-analytics
      * ```
+     *
+     * @added v1.0.10.
      */
     function GoogleAnalytics(source) {
       // eslint-disable-next-line func-names
@@ -9512,16 +10934,20 @@
 
     /**
      * @redirect google-analytics-ga
+     *
      * @description
      * Mocks old Google Analytics API.
      *
      * Related UBO redirect resource:
-     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/google-analytics_ga.js
+     * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/google-analytics_ga.js
      *
-     * **Example**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ||google-analytics.com/ga.js$script,redirect=google-analytics-ga
      * ```
+     *
+     * @added v1.0.10.
      */
     function GoogleAnalyticsGa(source) {
       // Gaq constructor
@@ -9613,16 +11039,20 @@
     /* eslint-disable max-len */
     /**
      * @redirect googlesyndication-adsbygoogle
+     *
      * @description
      * Mocks Google AdSense API.
      *
      * Related UBO redirect resource:
-     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googlesyndication_adsbygoogle.js
+     * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/googlesyndication_adsbygoogle.js
      *
-     * **Example**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ||pagead2.googlesyndication.com/pagead/js/adsbygoogle.js$script,redirect=googlesyndication-adsbygoogle
      * ```
+     *
+     * @added v1.0.10.
      */
     /* eslint-enable max-len */
     function GoogleSyndicationAdsByGoogle(source) {
@@ -9670,9 +11100,9 @@
           // it should be only 2 child iframes if scriptlet was executed
           areIframesDefined = childNodesQuantity === 2
           // the first of child nodes should be aswift iframe
-          && adElemChildNodes[0].nodeName.toLowerCase() === 'iframe' && adElemChildNodes[0].id.indexOf(ASWIFT_IFRAME_MARKER) > -1
+          && adElemChildNodes[0].nodeName.toLowerCase() === 'iframe' && adElemChildNodes[0].id.includes(ASWIFT_IFRAME_MARKER)
           // the second of child nodes should be google_ads iframe
-          && adElemChildNodes[1].nodeName.toLowerCase() === 'iframe' && adElemChildNodes[1].id.indexOf(GOOGLE_ADS_IFRAME_MARKER) > -1;
+          && adElemChildNodes[1].nodeName.toLowerCase() === 'iframe' && adElemChildNodes[1].id.includes(GOOGLE_ADS_IFRAME_MARKER);
         }
         if (!areIframesDefined) {
           // here we do the job if scriptlet has not been executed earlier
@@ -9699,48 +11129,24 @@
     GoogleSyndicationAdsByGoogle.names = ['googlesyndication-adsbygoogle', 'ubo-googlesyndication_adsbygoogle.js', 'googlesyndication_adsbygoogle.js'];
     GoogleSyndicationAdsByGoogle.injections = [hit];
 
-    function _iterableToArrayLimit(arr, i) {
-      if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return;
-      var _arr = [];
-      var _n = true;
-      var _d = false;
-      var _e = undefined;
-      try {
-        for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
-          _arr.push(_s.value);
-          if (i && _arr.length === i) break;
-        }
-      } catch (err) {
-        _d = true;
-        _e = err;
-      } finally {
-        try {
-          if (!_n && _i["return"] != null) _i["return"]();
-        } finally {
-          if (_d) throw _e;
-        }
-      }
-      return _arr;
-    }
-    var iterableToArrayLimit = _iterableToArrayLimit;
-
-    function _slicedToArray(arr, i) {
-      return arrayWithHoles(arr) || iterableToArrayLimit(arr, i) || unsupportedIterableToArray(arr, i) || nonIterableRest();
-    }
-    var slicedToArray = _slicedToArray;
+    /* eslint-disable func-names */
 
     /**
      * @redirect googletagservices-gpt
+     *
      * @description
      * Mocks Google Publisher Tag API.
      *
      * Related UBO redirect resource:
-     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/googletagservices_gpt.js
+     * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/googletagservices_gpt.js
      *
-     * **Example**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ||googletagservices.com/tag/js/gpt.js$script,redirect=googletagservices-gpt
      * ```
+     *
+     * @added v1.0.10.
      */
     function GoogleTagServicesGpt(source) {
       const slots = new Map();
@@ -9800,7 +11206,7 @@
           // https://github.com/AdguardTeam/Scriptlets/issues/259
           f.setAttribute('data-load-complete', true);
           f.setAttribute('data-google-container-id', true);
-          f.setAttribute('sandbox', true);
+          f.setAttribute('sandbox', '');
           node.appendChild(f);
         }
       };
@@ -9853,7 +11259,7 @@
           return [v];
         }
         try {
-          return [Array.prototype.flat.call(v)[0]];
+          return Array.prototype.flat.call(v);
         } catch (_unused) {
           // do nothing
         }
@@ -9861,12 +11267,10 @@
       };
       const updateTargeting = function updateTargeting(targeting, map) {
         if (typeof map === 'object') {
-          const entries = Object.entries(map || {});
-          for (var _i = 0, _entries = entries; _i < _entries.length; _i++) {
-            const _entries$_i = slicedToArray(_entries[_i], 2),
-              k = _entries$_i[0],
-              v = _entries$_i[1];
-            targeting.set(k, getTargetingValue(v));
+          for (const key in map) {
+            if (Object.prototype.hasOwnProperty.call(map, key)) {
+              targeting.set(key, getTargetingValue(map[key]));
+            }
           }
         }
       };
@@ -10128,16 +11532,20 @@
 
     /**
      * @redirect scorecardresearch-beacon
+     *
      * @description
      * Mocks Scorecard Research API.
      *
      * Related UBO redirect resource:
-     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/scorecardresearch_beacon.js
+     * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/scorecardresearch_beacon.js
      *
-     * **Example**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ||sb.scorecardresearch.com/beacon.js$script,redirect=scorecardresearch-beacon
      * ```
+     *
+     * @added v1.0.10.
      */
     function ScoreCardResearchBeacon(source) {
       window.COMSCORE = {
@@ -10154,14 +11562,18 @@
 
     /**
      * @redirect metrika-yandex-tag
+     *
      * @description
      * Mocks Yandex Metrika API.
      * https://yandex.ru/support/metrica/objects/method-reference.html
      *
-     * **Example**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ||mc.yandex.ru/metrika/tag.js$script,redirect=metrika-yandex-tag
      * ```
+     *
+     * @added v1.0.10.
      */
     function metrikaYandexTag(source) {
       const asyncCallbackFromOptions = function asyncCallbackFromOptions(id, param) {
@@ -10290,14 +11702,18 @@
 
     /**
      * @redirect metrika-yandex-watch
+     *
      * @description
      * Mocks the old Yandex Metrika API.
      * https://yandex.ru/support/metrica/objects/_method-reference.html
      *
-     * **Example**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ||mc.yandex.ru/metrika/watch.js$script,redirect=metrika-yandex-watch
      * ```
+     *
+     * @added v1.0.10.
      */
     function metrikaYandexWatch(source) {
       const cbName = 'yandex_metrika_callbacks';
@@ -10369,16 +11785,20 @@
 
     /**
      * @redirect pardot-1.0
+     *
      * @description
      * Mocks the pd.js file of Salesforce.
      * https://pi.pardot.com/pd.js
      * https://developer.salesforce.com/docs/marketing/pardot/overview
      *
-     * **Example**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ||pi.pardot.com/pd.js$script,redirect=pardot
      * ||pacedg.com.au/pd.js$redirect=pardot
      * ```
+     *
+     * @added v1.6.55.
      */
 
     function Pardot(source) {
@@ -10411,6 +11831,7 @@
 
     /**
      * @redirect prevent-bab
+     *
      * @description
      * Prevents BlockAdblock script from detecting an ad blocker.
      *
@@ -10418,12 +11839,15 @@
      * See [scriptlet description](../wiki/about-scriptlets.md#prevent-bab).
      *
      * Related UBO redirect resource:
-     * https://github.com/gorhill/uBlock/blob/a94df7f3b27080ae2dcb3b914ace39c0c294d2f6/src/web_accessible_resources/nobab.js
+     * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/nobab.js
      *
-     * **Example**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * /blockadblock.$script,redirect=prevent-bab
      * ```
+     *
+     * @added v1.3.19.
      */
     const preventBab$1 = preventBab$2;
     preventBab$1.names = ['prevent-bab',
@@ -10432,16 +11856,20 @@
 
     /**
      * @redirect amazon-apstag
+     *
      * @description
      * Mocks Amazon's apstag.js
      *
      * Related UBO redirect resource:
-     * https://github.com/gorhill/uBlock/blob/f842ab6d3c1cf0394f95d27092bf59627262da40/src/web_accessible_resources/amazon_apstag.js
+     * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/amazon_apstag.js
      *
-     * **Example**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ||amazon-adsystem.com/aax2/apstag.js$script,redirect=amazon-apstag
      * ```
+     *
+     * @added v1.2.3.
      */
     function AmazonApstag(source) {
       const apstagWrapper = {
@@ -10464,13 +11892,17 @@
 
     /**
      * @redirect matomo
+     *
      * @description
      * Mocks the piwik.js file of Matomo (formerly Piwik).
      *
-     * **Example**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ||example.org/piwik.js$script,redirect=matomo
      * ```
+     *
+     * @added v1.5.0.
      */
 
     function Matomo(source) {
@@ -10495,6 +11927,7 @@
 
     /**
      * @redirect fingerprintjs2
+     *
      * @description
      * Mocks FingerprintJS v2
      * https://github.com/fingerprintjs
@@ -10502,10 +11935,13 @@
      * Related UBO redirect resource:
      * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/fingerprint2.js
      *
-     * **Example**
+     * ### Examples
+     *
+     * ```adblock
+     * ||example.com/modules/js/lib/fgp/fingerprint2.js$script,redirect=fingerprintjs2
      * ```
-     * ||the-japan-news.com/modules/js/lib/fgp/fingerprint2.js$script,redirect=fingerprintjs2
-     * ```
+     *
+     * @added v1.5.0.
      */
     function Fingerprintjs2(source) {
       let browserId = '';
@@ -10541,6 +11977,7 @@
 
     /**
      * @redirect fingerprintjs3
+     *
      * @description
      * Mocks FingerprintJS v3
      * https://github.com/fingerprintjs
@@ -10548,10 +11985,13 @@
      * Related UBO redirect resource:
      * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/fingerprint3.js
      *
-     * **Example**
+     * ### Examples
+     *
+     * ```adblock
+     * ||example.com/js/ufe/isomorphic/thirdparty/fp.min.js$script,redirect=fingerprintjs3
      * ```
-     * ||sephora.com/js/ufe/isomorphic/thirdparty/fp.min.js$script,redirect=fingerprintjs3
-     * ```
+     *
+     * @added v1.6.2.
      */
     function Fingerprintjs3(source) {
       const visitorId = function () {
@@ -10588,14 +12028,18 @@
 
     /**
      * @redirect gemius
+     *
      * @description
      * Mocks Gemius Analytics.
      * https://flowplayer.com/developers/plugins/gemius
      *
-     * **Example**
+     * ### Examples
+     *
+     * ```adblock
+     * ||example.org/gplayer.js$script,redirect=gemius
      * ```
-     * ||gapt.hit.gemius.pl/gplayer.js$script,redirect=gemius
-     * ```
+     *
+     * @added v1.5.0.
      */
     function Gemius(source) {
       const GemiusPlayer = function GemiusPlayer() {};
@@ -10614,14 +12058,18 @@
 
     /**
      * @redirect ati-smarttag
+     *
      * @description
      * Mocks AT Internat SmartTag.
      * https://developers.atinternet-solutions.com/as2-tagging-en/javascript-en/getting-started-javascript-en/tracker-initialisation-javascript-en/
      *
-     * **Example**
+     * ### Examples
+     *
+     * ```adblock
+     * ||example.com/assets/scripts/smarttag.js$script,redirect=ati-smarttag
      * ```
-     * ||bloctel.gouv.fr/assets/scripts/smarttag.js$script,redirect=ati-smarttag
-     * ```
+     *
+     * @added v1.5.0.
      */
     function ATInternetSmartTag(source) {
       const setNoopFuncWrapper = {
@@ -10706,6 +12154,7 @@
 
     /**
      * @redirect prevent-bab2
+     *
      * @description
      * Prevents BlockAdblock script from detecting an ad blocker.
      *
@@ -10714,10 +12163,13 @@
      *
      * See [redirect description](../wiki/about-redirects.md#prevent-bab2).
      *
-     * **Syntax**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * /blockadblock.$script,redirect=prevent-bab2
      * ```
+     *
+     * @added v1.5.0.
      */
     function preventBab2(source) {
       const script = document.currentScript;
@@ -10746,13 +12198,17 @@
 
     /**
      * @redirect google-ima3
+     *
      * @description
      * Mocks the IMA SDK of Google.
      *
-     * **Example**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ||imasdk.googleapis.com/js/sdkloader/ima3.js$script,redirect=google-ima3
      * ```
+     *
+     * @added v1.6.2.
      */
 
     function GoogleIma3(source) {
@@ -11319,14 +12775,18 @@
 
     /**
      * @redirect didomi-loader
+     *
      * @description
      * Mocks Didomi's CMP loader script.
      * https://developers.didomi.io/
      *
-     * **Example**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ||sdk.privacy-center.org/fbf86806f86e/loader.js$script,redirect=didomi-loader
      * ```
+     *
+     * @added v1.6.2.
      */
     function DidomiLoader(source) {
       function UserConsentStatusForVendorSubscribe() {}
@@ -11452,14 +12912,18 @@
 
     /**
      * @redirect prebid
+     *
      * @description
      * Mocks the prebid.js header bidding suit.
      * https://docs.prebid.org/
      *
-     * **Example**
+     * ### Examples
+     *
+     * ```adblock
+     * ||example.org/bd/hb/prebid.js$script,redirect=prebid
      * ```
-     * ||tmgrup.com.tr/bd/hb/prebid.js$script,redirect=prebid
-     * ```
+     *
+     * @added v1.6.2.
      */
 
     function Prebid(source) {
@@ -11514,15 +12978,20 @@
 
     /**
      * @redirect prebid-ads
+     *
      * @description
      * Sets predefined constants on a page:
+     *
      * - `canRunAds`: `true`
      * - `isAdBlockActive`: `false`
      *
-     * **Example**
+     * ### Examples
+     *
+     * ```adblock
+     * ||example.org/assets/js/prebid-ads.js$script,redirect=prebid-ads
      * ```
-     * ||playerdrive.me/assets/js/prebid-ads.js$script,redirect=prebid-ads
-     * ```
+     *
+     * @added v1.6.2.
      */
     function prebidAds(source) {
       window.canRunAds = true;
@@ -11536,13 +13005,17 @@
 
     /**
      * @redirect naver-wcslog
+     *
      * @description
      * Mocks wcslog.js of Naver Analytics.
      *
-     * **Example**
-     * ```
+     * ### Examples
+     *
+     * ```adblock
      * ||wcs.naver.net/wcslog.js$script,redirect=naver-wcslog
      * ```
+     *
+     * @added v1.6.2.
      */
 
     function NaverWcslog(source) {
@@ -14796,7 +16269,7 @@
           if (!aliases) {
             return false;
           }
-          return aliases.indexOf(title) > -1;
+          return aliases.includes(title);
         });
       }
 
@@ -14940,7 +16413,7 @@
         return redirectsList[key];
       });
       return redirects.find(function (r) {
-        return r.names && r.names.indexOf(name) > -1;
+        return r.names && r.names.includes(name);
       });
     };
 
@@ -15001,6 +16474,7 @@
         };
         const ourScript = getCurrentScript();
         const abort = function abort() {
+          var _scriptEl$src;
           const scriptEl = getCurrentScript();
           if (!scriptEl) {
             return;
@@ -15010,7 +16484,7 @@
             const textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").get;
             content = textContentGetter.call(scriptEl);
           } catch (e) {}
-          if (content.length === 0 && typeof scriptEl.src !== "undefined" && startsWith(scriptEl.src, SRC_DATA_MARKER)) {
+          if (content.length === 0 && typeof scriptEl.src !== "undefined" && (_scriptEl$src = scriptEl.src) !== null && _scriptEl$src !== void 0 && _scriptEl$src.startsWith(SRC_DATA_MARKER)) {
             const encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
             content = window.atob(encodedContent);
           }
@@ -15152,16 +16626,13 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
-      }
-      function startsWith(str, prefix) {
-        return !!str && str.indexOf(prefix) === 0;
       }
       function createOnErrorHandler(rid) {
         const nativeOnError = window.onerror;
         return function onError(error) {
-          if (typeof error === "string" && error.indexOf(rid) !== -1) {
+          if (typeof error === "string" && error.includes(rid)) {
             return true;
           }
           if (nativeOnError instanceof Function) {
@@ -15185,9 +16656,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -15207,7 +16678,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -15217,16 +16687,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
@@ -15354,7 +16815,7 @@
       function createOnErrorHandler(rid) {
         const nativeOnError = window.onerror;
         return function onError(error) {
-          if (typeof error === "string" && error.indexOf(rid) !== -1) {
+          if (typeof error === "string" && error.includes(rid)) {
             return true;
           }
           if (nativeOnError instanceof Function) {
@@ -15378,9 +16839,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -15501,7 +16962,7 @@
       function createOnErrorHandler(rid) {
         const nativeOnError = window.onerror;
         return function onError(error) {
-          if (typeof error === "string" && error.indexOf(rid) !== -1) {
+          if (typeof error === "string" && error.includes(rid)) {
             return true;
           }
           if (nativeOnError instanceof Function) {
@@ -15525,9 +16986,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -15672,7 +17133,7 @@
       function createOnErrorHandler(rid) {
         const nativeOnError = window.onerror;
         return function onError(error) {
-          if (typeof error === "string" && error.indexOf(rid) !== -1) {
+          if (typeof error === "string" && error.includes(rid)) {
             return true;
           }
           if (nativeOnError instanceof Function) {
@@ -15696,9 +17157,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -15769,7 +17230,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -15779,16 +17239,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function toRegExp() {
         let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -15800,7 +17251,7 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function isEmptyObject(obj) {
@@ -15809,18 +17260,15 @@
       function getNativeRegexpTest() {
         return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
       }
-      function startsWith(str, prefix) {
-        return !!str && str.indexOf(prefix) === 0;
-      }
       function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
         const INLINE_SCRIPT_STRING = "inlineScript";
         const INJECTED_SCRIPT_STRING = "injectedScript";
         const INJECTED_SCRIPT_MARKER = "<anonymous>";
         const isInlineScript = function isInlineScript(stackMatch) {
-          return stackMatch.indexOf(INLINE_SCRIPT_STRING) > -1;
+          return stackMatch.includes(INLINE_SCRIPT_STRING);
         };
         const isInjectedScript = function isInjectedScript(stackMatch) {
-          return stackMatch.indexOf(INJECTED_SCRIPT_STRING) > -1;
+          return stackMatch.includes(INJECTED_SCRIPT_STRING);
         };
         if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
           return false;
@@ -15837,14 +17285,16 @@
           let stack;
           const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
           if (getStackTraceURL) {
+            var _stackURL, _stackURL2;
             let stackURL = getStackTraceURL[2];
-            if (startsWith(stackURL, "(")) {
+            if ((_stackURL = stackURL) !== null && _stackURL !== void 0 && _stackURL.startsWith("(")) {
               stackURL = stackURL.slice(1);
             }
-            if (startsWith(stackURL, INJECTED_SCRIPT_MARKER)) {
+            if ((_stackURL2 = stackURL) !== null && _stackURL2 !== void 0 && _stackURL2.startsWith(INJECTED_SCRIPT_MARKER)) {
+              var _stackFunction;
               stackURL = INJECTED_SCRIPT_STRING;
               let stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
-              if (startsWith(stackFunction, "at")) {
+              if ((_stackFunction = stackFunction) !== null && _stackFunction !== void 0 && _stackFunction.startsWith("at")) {
                 stackFunction = stackFunction.slice(2).trim();
               }
               stack = "".concat(stackFunction, " ").concat(stackURL).trim();
@@ -15861,7 +17311,7 @@
             if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
               return true;
             }
-            if (isInjectedScript(stackMatch) && startsWith(stackLines[index], INJECTED_SCRIPT_STRING)) {
+            if (isInjectedScript(stackMatch) && stackLines[index].startsWith(INJECTED_SCRIPT_STRING)) {
               return true;
             }
           }
@@ -15906,9 +17356,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -15937,7 +17387,7 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function getBoostMultiplier(boost) {
@@ -15961,7 +17411,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -15971,16 +17420,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function nativeIsNaN(num) {
         const native = Number.isNaN || window.isNaN;
@@ -16037,9 +17477,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -16068,7 +17508,7 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function getBoostMultiplier(boost) {
@@ -16092,7 +17532,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -16102,16 +17541,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function nativeIsNaN(num) {
         const native = Number.isNaN || window.isNaN;
@@ -16272,13 +17702,13 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function createOnErrorHandler(rid) {
         const nativeOnError = window.onerror;
         return function onError(error) {
-          if (typeof error === "string" && error.indexOf(rid) !== -1) {
+          if (typeof error === "string" && error.includes(rid)) {
             return true;
           }
           if (nativeOnError instanceof Function) {
@@ -16302,9 +17732,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -16324,7 +17754,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -16334,16 +17763,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
@@ -16451,7 +17871,7 @@
       function createOnErrorHandler(rid) {
         const nativeOnError = window.onerror;
         return function onError(error) {
-          if (typeof error === "string" && error.indexOf(rid) !== -1) {
+          if (typeof error === "string" && error.includes(rid)) {
             return true;
           }
           if (nativeOnError instanceof Function) {
@@ -16475,9 +17895,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -16599,7 +18019,7 @@
       function createOnErrorHandler(rid) {
         const nativeOnError = window.onerror;
         return function onError(error) {
-          if (typeof error === "string" && error.indexOf(rid) !== -1) {
+          if (typeof error === "string" && error.includes(rid)) {
             return true;
           }
           if (nativeOnError instanceof Function) {
@@ -16623,9 +18043,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -16675,9 +18095,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -16727,9 +18147,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -16748,6 +18168,266 @@
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         disableNewtabLinks.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+    function evalDataPrune(source, args) {
+      function evalDataPrune(source, propsToRemove, requiredInitialProps, stack) {
+        if (!!stack && !matchStackTrace(stack, new Error().stack)) {
+          return;
+        }
+        const prunePaths = propsToRemove !== undefined && propsToRemove !== "" ? propsToRemove.split(/ +/) : [];
+        const requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== "" ? requiredInitialProps.split(/ +/) : [];
+        const evalWrapper = function evalWrapper(target, thisArg, args) {
+          let data = Reflect.apply(target, thisArg, args);
+          if (typeof data === "object") {
+            data = jsonPruner(source, data, prunePaths, requiredPaths);
+          }
+          return data;
+        };
+        const evalHandler = {
+          apply: evalWrapper
+        };
+        window.eval = new Proxy(window.eval, evalHandler);
+      }
+      function hit(source) {
+        if (source.verbose !== true) {
+          return;
+        }
+        try {
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
+          if (source.domainName) {
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+            const rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+          log("".concat(prefix, " trace start"));
+          if (trace) {
+            trace();
+          }
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+      function matchStackTrace(stackMatch, stackTrace) {
+        if (!stackMatch || stackMatch === "") {
+          return true;
+        }
+        if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
+          return true;
+        }
+        const stackRegexp = toRegExp(stackMatch);
+        const refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
+          return line.trim();
+        }).join("\n");
+        return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
+      }
+      function getWildcardPropertyInChain(base, chain) {
+        let lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+        const pos = chain.indexOf(".");
+        if (pos === -1) {
+          if (chain === "*" || chain === "[]") {
+            for (const key in base) {
+              if (Object.prototype.hasOwnProperty.call(base, key)) {
+                output.push({
+                  base: base,
+                  prop: key
+                });
+              }
+            }
+          } else {
+            output.push({
+              base: base,
+              prop: chain
+            });
+          }
+          return output;
+        }
+        const prop = chain.slice(0, pos);
+        const shouldLookThrough = prop === "[]" && Array.isArray(base) || prop === "*" && base instanceof Object;
+        if (shouldLookThrough) {
+          const nextProp = chain.slice(pos + 1);
+          const baseKeys = Object.keys(base);
+          baseKeys.forEach(function (key) {
+            const item = base[key];
+            getWildcardPropertyInChain(item, nextProp, lookThrough, output);
+          });
+        }
+        const nextBase = base[prop];
+        chain = chain.slice(pos + 1);
+        if (nextBase !== undefined) {
+          getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
+        }
+        return output;
+      }
+      function logMessage(source, message) {
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        const name = source.name,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
+          return;
+        }
+        nativeConsole("".concat(name, ": ").concat(message));
+      }
+      function toRegExp() {
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+      function isPruningNeeded(source, root, prunePaths, requiredPaths) {
+        if (!root) {
+          return false;
+        }
+        let shouldProcess;
+        if (prunePaths.length === 0 && requiredPaths.length > 0) {
+          const rootString = JSON.stringify(root);
+          const matchRegex = toRegExp(requiredPaths.join(""));
+          const shouldLog = matchRegex.test(rootString);
+          if (shouldLog) {
+            logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
+            if (root && typeof root === "object") {
+              logMessage(source, root, true, false);
+            }
+            shouldProcess = false;
+            return shouldProcess;
+          }
+        }
+        const wildcardSymbols = [".*.", "*.", ".*", ".[].", "[].", ".[]"];
+        for (let i = 0; i < requiredPaths.length; i += 1) {
+          const requiredPath = requiredPaths[i];
+          const lastNestedPropName = requiredPath.split(".").pop();
+          const hasWildcard = wildcardSymbols.some(function (symbol) {
+            return requiredPath.includes(symbol);
+          });
+          const details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
+          shouldProcess = !hasWildcard;
+          for (let i = 0; i < details.length; i += 1) {
+            if (hasWildcard) {
+              shouldProcess = !(details[i].base[lastNestedPropName] === undefined) || shouldProcess;
+            } else {
+              shouldProcess = !(details[i].base[lastNestedPropName] === undefined) && shouldProcess;
+            }
+          }
+        }
+        return shouldProcess;
+      }
+      function jsonPruner(source, root, prunePaths, requiredPaths) {
+        if (prunePaths.length === 0 && requiredPaths.length === 0) {
+          logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
+          if (root && typeof root === "object") {
+            logMessage(source, root, true, false);
+          }
+          return root;
+        }
+        try {
+          if (isPruningNeeded(source, root, prunePaths, requiredPaths) === false) {
+            return root;
+          }
+          prunePaths.forEach(function (path) {
+            const ownerObjArr = getWildcardPropertyInChain(root, path, true);
+            ownerObjArr.forEach(function (ownerObj) {
+              if (ownerObj !== undefined && ownerObj.base) {
+                delete ownerObj.base[ownerObj.prop];
+                hit(source);
+              }
+            });
+          });
+        } catch (e) {
+          logMessage(source, e);
+        }
+        return root;
+      }
+      function getNativeRegexpTest() {
+        return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
+      }
+      function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
+        const INLINE_SCRIPT_STRING = "inlineScript";
+        const INJECTED_SCRIPT_STRING = "injectedScript";
+        const INJECTED_SCRIPT_MARKER = "<anonymous>";
+        const isInlineScript = function isInlineScript(stackMatch) {
+          return stackMatch.includes(INLINE_SCRIPT_STRING);
+        };
+        const isInjectedScript = function isInjectedScript(stackMatch) {
+          return stackMatch.includes(INJECTED_SCRIPT_STRING);
+        };
+        if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
+          return false;
+        }
+        let documentURL = window.location.href;
+        const pos = documentURL.indexOf("#");
+        if (pos !== -1) {
+          documentURL = documentURL.slice(0, pos);
+        }
+        const stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
+          return line.trim();
+        });
+        const stackLines = stackSteps.map(function (line) {
+          let stack;
+          const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
+          if (getStackTraceURL) {
+            var _stackURL, _stackURL2;
+            let stackURL = getStackTraceURL[2];
+            if ((_stackURL = stackURL) !== null && _stackURL !== void 0 && _stackURL.startsWith("(")) {
+              stackURL = stackURL.slice(1);
+            }
+            if ((_stackURL2 = stackURL) !== null && _stackURL2 !== void 0 && _stackURL2.startsWith(INJECTED_SCRIPT_MARKER)) {
+              var _stackFunction;
+              stackURL = INJECTED_SCRIPT_STRING;
+              let stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
+              if ((_stackFunction = stackFunction) !== null && _stackFunction !== void 0 && _stackFunction.startsWith("at")) {
+                stackFunction = stackFunction.slice(2).trim();
+              }
+              stack = "".concat(stackFunction, " ").concat(stackURL).trim();
+            } else {
+              stack = stackURL;
+            }
+          } else {
+            stack = line;
+          }
+          return stack;
+        });
+        if (stackLines) {
+          for (let index = 0; index < stackLines.length; index += 1) {
+            if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
+              return true;
+            }
+            if (isInjectedScript(stackMatch) && stackLines[index].startsWith(INJECTED_SCRIPT_STRING)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      try {
+        evalDataPrune.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
@@ -16791,7 +18471,7 @@
         };
         if (shouldClose()) {
           closeImmediately();
-          if (navigator.userAgent.indexOf("Chrome") > -1) {
+          if (navigator.userAgent.includes("Chrome")) {
             closeByExtension();
           }
         }
@@ -16808,9 +18488,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -16836,14 +18516,13 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -16853,16 +18532,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -16912,9 +18582,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -17077,9 +18747,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -17099,7 +18769,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -17109,16 +18778,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function hijackAttachShadow(context, hostSelector, callback) {
         const handlerWrapper = function handlerWrapper(target, thisArg, args) {
@@ -17147,73 +18807,13 @@
         }
         const prunePaths = propsToRemove !== undefined && propsToRemove !== "" ? propsToRemove.split(/ +/) : [];
         const requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== "" ? requiredInitialProps.split(/ +/) : [];
-        function isPruningNeeded(root) {
-          if (!root) {
-            return false;
-          }
-          let shouldProcess;
-          if (prunePaths.length === 0 && requiredPaths.length > 0) {
-            const rootString = JSON.stringify(root);
-            const matchRegex = toRegExp(requiredPaths.join(""));
-            const shouldLog = matchRegex.test(rootString);
-            if (shouldLog) {
-              logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
-              if (root && typeof root === "object") {
-                logMessage(source, root, true, false);
-              }
-              shouldProcess = false;
-              return shouldProcess;
-            }
-          }
-          for (let i = 0; i < requiredPaths.length; i += 1) {
-            const requiredPath = requiredPaths[i];
-            const lastNestedPropName = requiredPath.split(".").pop();
-            const hasWildcard = requiredPath.indexOf(".*.") > -1 || requiredPath.indexOf("*.") > -1 || requiredPath.indexOf(".*") > -1 || requiredPath.indexOf(".[].") > -1 || requiredPath.indexOf("[].") > -1 || requiredPath.indexOf(".[]") > -1;
-            const details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
-            shouldProcess = !hasWildcard;
-            for (let i = 0; i < details.length; i += 1) {
-              if (hasWildcard) {
-                shouldProcess = !(details[i].base[lastNestedPropName] === undefined) || shouldProcess;
-              } else {
-                shouldProcess = !(details[i].base[lastNestedPropName] === undefined) && shouldProcess;
-              }
-            }
-          }
-          return shouldProcess;
-        }
-        const jsonPruner = function jsonPruner(root) {
-          if (prunePaths.length === 0 && requiredPaths.length === 0) {
-            logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
-            if (root && typeof root === "object") {
-              logMessage(source, root, true, false);
-            }
-            return root;
-          }
-          try {
-            if (isPruningNeeded(root) === false) {
-              return root;
-            }
-            prunePaths.forEach(function (path) {
-              const ownerObjArr = getWildcardPropertyInChain(root, path, true);
-              ownerObjArr.forEach(function (ownerObj) {
-                if (ownerObj !== undefined && ownerObj.base) {
-                  delete ownerObj.base[ownerObj.prop];
-                  hit(source);
-                }
-              });
-            });
-          } catch (e) {
-            logMessage(source, e);
-          }
-          return root;
-        };
         const nativeJSONParse = JSON.parse;
         const jsonParseWrapper = function jsonParseWrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
           const root = nativeJSONParse.apply(JSON, args);
-          return jsonPruner(root);
+          return jsonPruner(source, root, prunePaths, requiredPaths);
         };
         jsonParseWrapper.toString = nativeJSONParse.toString.bind(nativeJSONParse);
         JSON.parse = jsonParseWrapper;
@@ -17221,7 +18821,7 @@
         const responseJsonWrapper = function responseJsonWrapper() {
           const promise = nativeResponseJson.apply(this);
           return promise.then(function (obj) {
-            return jsonPruner(obj);
+            return jsonPruner(source, obj, prunePaths, requiredPaths);
           });
         };
         if (typeof Response === "undefined") {
@@ -17241,9 +18841,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -17315,7 +18915,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -17325,16 +18924,70 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+        nativeConsole("".concat(name, ": ").concat(message));
+      }
+      function isPruningNeeded(source, root, prunePaths, requiredPaths) {
+        if (!root) {
+          return false;
+        }
+        let shouldProcess;
+        if (prunePaths.length === 0 && requiredPaths.length > 0) {
+          const rootString = JSON.stringify(root);
+          const matchRegex = toRegExp(requiredPaths.join(""));
+          const shouldLog = matchRegex.test(rootString);
+          if (shouldLog) {
+            logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
+            if (root && typeof root === "object") {
+              logMessage(source, root, true, false);
+            }
+            shouldProcess = false;
+            return shouldProcess;
           }
         }
-        nativeConsole(messageStr);
+        const wildcardSymbols = [".*.", "*.", ".*", ".[].", "[].", ".[]"];
+        for (let i = 0; i < requiredPaths.length; i += 1) {
+          const requiredPath = requiredPaths[i];
+          const lastNestedPropName = requiredPath.split(".").pop();
+          const hasWildcard = wildcardSymbols.some(function (symbol) {
+            return requiredPath.includes(symbol);
+          });
+          const details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
+          shouldProcess = !hasWildcard;
+          for (let i = 0; i < details.length; i += 1) {
+            if (hasWildcard) {
+              shouldProcess = !(details[i].base[lastNestedPropName] === undefined) || shouldProcess;
+            } else {
+              shouldProcess = !(details[i].base[lastNestedPropName] === undefined) && shouldProcess;
+            }
+          }
+        }
+        return shouldProcess;
+      }
+      function jsonPruner(source, root, prunePaths, requiredPaths) {
+        if (prunePaths.length === 0 && requiredPaths.length === 0) {
+          logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
+          if (root && typeof root === "object") {
+            logMessage(source, root, true, false);
+          }
+          return root;
+        }
+        try {
+          if (isPruningNeeded(source, root, prunePaths, requiredPaths) === false) {
+            return root;
+          }
+          prunePaths.forEach(function (path) {
+            const ownerObjArr = getWildcardPropertyInChain(root, path, true);
+            ownerObjArr.forEach(function (ownerObj) {
+              if (ownerObj !== undefined && ownerObj.base) {
+                delete ownerObj.base[ownerObj.prop];
+                hit(source);
+              }
+            });
+          });
+        } catch (e) {
+          logMessage(source, e);
+        }
+        return root;
       }
       function toRegExp() {
         let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -17346,7 +18999,7 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function getNativeRegexpTest() {
@@ -17357,10 +19010,10 @@
         const INJECTED_SCRIPT_STRING = "injectedScript";
         const INJECTED_SCRIPT_MARKER = "<anonymous>";
         const isInlineScript = function isInlineScript(stackMatch) {
-          return stackMatch.indexOf(INLINE_SCRIPT_STRING) > -1;
+          return stackMatch.includes(INLINE_SCRIPT_STRING);
         };
         const isInjectedScript = function isInjectedScript(stackMatch) {
-          return stackMatch.indexOf(INJECTED_SCRIPT_STRING) > -1;
+          return stackMatch.includes(INJECTED_SCRIPT_STRING);
         };
         if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
           return false;
@@ -17377,14 +19030,16 @@
           let stack;
           const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
           if (getStackTraceURL) {
+            var _stackURL, _stackURL2;
             let stackURL = getStackTraceURL[2];
-            if (startsWith(stackURL, "(")) {
+            if ((_stackURL = stackURL) !== null && _stackURL !== void 0 && _stackURL.startsWith("(")) {
               stackURL = stackURL.slice(1);
             }
-            if (startsWith(stackURL, INJECTED_SCRIPT_MARKER)) {
+            if ((_stackURL2 = stackURL) !== null && _stackURL2 !== void 0 && _stackURL2.startsWith(INJECTED_SCRIPT_MARKER)) {
+              var _stackFunction;
               stackURL = INJECTED_SCRIPT_STRING;
               let stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
-              if (startsWith(stackFunction, "at")) {
+              if ((_stackFunction = stackFunction) !== null && _stackFunction !== void 0 && _stackFunction.startsWith("at")) {
                 stackFunction = stackFunction.slice(2).trim();
               }
               stack = "".concat(stackFunction, " ").concat(stackURL).trim();
@@ -17401,7 +19056,7 @@
             if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
               return true;
             }
-            if (isInjectedScript(stackMatch) && startsWith(stackLines[index], INJECTED_SCRIPT_STRING)) {
+            if (isInjectedScript(stackMatch) && stackLines[index].startsWith(INJECTED_SCRIPT_STRING)) {
               return true;
             }
           }
@@ -17473,9 +19128,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -17519,7 +19174,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -17529,22 +19183,13 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function objectToString(obj) {
         if (!obj || typeof obj !== "object") {
           return String(obj);
         }
-        return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
+        return isEmptyObject(obj) ? "{}" : Object.entries(obj).map(function (pair) {
           const key = pair[0];
           const value = pair[1];
           let recordValueStr = value;
@@ -17556,14 +19201,6 @@
       }
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
-      }
-      function getObjectEntries(object) {
-        const keys = Object.keys(object);
-        const entries = [];
-        keys.forEach(function (key) {
-          return entries.push([key, object[key]]);
-        });
-        return entries;
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -17606,9 +19243,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -17628,7 +19265,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -17638,16 +19274,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -17790,9 +19417,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -17812,7 +19439,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -17822,16 +19448,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
@@ -17844,7 +19461,8 @@
       }
     }
     function m3uPrune(source, args) {
-      function m3uPrune(source, propsToRemove, urlToMatch) {
+      function m3uPrune(source, propsToRemove) {
+        let urlToMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
         if (typeof Reflect === "undefined" || typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
           return;
         }
@@ -18004,43 +19622,119 @@
             return !!l;
           }).join("\n");
         };
-        const xhrWrapper = function xhrWrapper(target, thisArg, args) {
-          const xhrURL = args[1];
-          if (typeof xhrURL !== "string" || xhrURL.length === 0) {
-            return Reflect.apply(target, thisArg, args);
+        const nativeOpen = window.XMLHttpRequest.prototype.open;
+        const nativeSend = window.XMLHttpRequest.prototype.send;
+        let xhrData;
+        const openWrapper = function openWrapper(target, thisArg, args) {
+          xhrData = getXhrData.apply(null, args);
+          if (matchRequestProps(source, urlToMatch, xhrData)) {
+            thisArg.shouldBePruned = true;
           }
-          if (urlMatchRegexp.test(xhrURL)) {
-            thisArg.addEventListener("readystatechange", function pruneResponse() {
-              if (thisArg.readyState === 4) {
-                const response = thisArg.response;
-                thisArg.removeEventListener("readystatechange", pruneResponse);
-                if (!propsToRemove) {
-                  if (isM3U(response)) {
-                    const message = "XMLHttpRequest.open() URL: ".concat(xhrURL, "\nresponse: ").concat(response);
-                    logMessage(source, message);
-                  }
-                } else {
-                  shouldPruneResponse = isPruningNeeded(response, removeM3ULineRegexp);
-                }
-                if (shouldPruneResponse) {
-                  const prunedResponseContent = pruneM3U(response);
-                  Object.defineProperty(thisArg, "response", {
-                    value: prunedResponseContent
-                  });
-                  Object.defineProperty(thisArg, "responseText", {
-                    value: prunedResponseContent
-                  });
-                  hit(source);
-                }
-              }
-            });
+          if (thisArg.shouldBePruned) {
+            thisArg.collectedHeaders = [];
+            const setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+              thisArg.collectedHeaders.push(args);
+              return Reflect.apply(target, thisArg, args);
+            };
+            const setRequestHeaderHandler = {
+              apply: setRequestHeaderWrapper
+            };
+            thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
           }
           return Reflect.apply(target, thisArg, args);
         };
-        const xhrHandler = {
-          apply: xhrWrapper
+        const sendWrapper = function sendWrapper(target, thisArg, args) {
+          const allowedResponseTypeValues = ["", "text"];
+          if (!thisArg.shouldBePruned || !allowedResponseTypeValues.includes(thisArg.responseType)) {
+            return Reflect.apply(target, thisArg, args);
+          }
+          const forgedRequest = new XMLHttpRequest();
+          forgedRequest.addEventListener("readystatechange", function () {
+            if (forgedRequest.readyState !== 4) {
+              return;
+            }
+            const readyState = forgedRequest.readyState,
+              response = forgedRequest.response,
+              responseText = forgedRequest.responseText,
+              responseURL = forgedRequest.responseURL,
+              responseXML = forgedRequest.responseXML,
+              status = forgedRequest.status,
+              statusText = forgedRequest.statusText;
+            const content = responseText || response;
+            if (typeof content !== "string") {
+              return;
+            }
+            if (!propsToRemove) {
+              if (isM3U(response)) {
+                const message = "XMLHttpRequest.open() URL: ".concat(responseURL, "\nresponse: ").concat(response);
+                logMessage(source, message);
+              }
+            } else {
+              shouldPruneResponse = isPruningNeeded(response, removeM3ULineRegexp);
+            }
+            const responseContent = shouldPruneResponse ? pruneM3U(response) : response;
+            Object.defineProperties(thisArg, {
+              readyState: {
+                value: readyState,
+                writable: false
+              },
+              responseURL: {
+                value: responseURL,
+                writable: false
+              },
+              responseXML: {
+                value: responseXML,
+                writable: false
+              },
+              status: {
+                value: status,
+                writable: false
+              },
+              statusText: {
+                value: statusText,
+                writable: false
+              },
+              response: {
+                value: responseContent,
+                writable: false
+              },
+              responseText: {
+                value: responseContent,
+                writable: false
+              }
+            });
+            setTimeout(function () {
+              const stateEvent = new Event("readystatechange");
+              thisArg.dispatchEvent(stateEvent);
+              const loadEvent = new Event("load");
+              thisArg.dispatchEvent(loadEvent);
+              const loadEndEvent = new Event("loadend");
+              thisArg.dispatchEvent(loadEndEvent);
+            }, 1);
+            hit(source);
+          });
+          nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
+          thisArg.collectedHeaders.forEach(function (header) {
+            const name = header[0];
+            const value = header[1];
+            forgedRequest.setRequestHeader(name, value);
+          });
+          thisArg.collectedHeaders = [];
+          try {
+            nativeSend.call(forgedRequest, args);
+          } catch (_unused) {
+            return Reflect.apply(target, thisArg, args);
+          }
+          return undefined;
         };
-        window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler);
+        const openHandler = {
+          apply: openWrapper
+        };
+        const sendHandler = {
+          apply: sendWrapper
+        };
+        XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
+        XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
         const nativeFetch = window.fetch;
         const fetchWrapper = async function fetchWrapper(target, thisArg, args) {
           const fetchURL = args[0] instanceof Request ? args[0].url : args[0];
@@ -18049,11 +19743,12 @@
           }
           if (urlMatchRegexp.test(fetchURL)) {
             const response = await nativeFetch(...args);
+            const clonedResponse = response.clone();
             const responseText = await response.text();
             if (!propsToRemove && isM3U(responseText)) {
               const message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(responseText);
               logMessage(source, message);
-              return Reflect.apply(target, thisArg, args);
+              return clonedResponse;
             }
             if (isPruningNeeded(responseText, removeM3ULineRegexp)) {
               const prunedText = pruneM3U(responseText);
@@ -18064,7 +19759,7 @@
                 headers: response.headers
               });
             }
-            return Reflect.apply(target, thisArg, args);
+            return clonedResponse;
           }
           return Reflect.apply(target, thisArg, args);
         };
@@ -18085,9 +19780,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -18113,14 +19808,13 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function logMessage(source, message) {
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -18130,16 +19824,86 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
+        nativeConsole("".concat(name, ": ").concat(message));
+      }
+      function getXhrData(method, url, async, user, password) {
+        return {
+          method: method,
+          url: url,
+          async: async,
+          user: user,
+          password: password
+        };
+      }
+      function matchRequestProps(source, propsToMatch, requestData) {
+        if (propsToMatch === "" || propsToMatch === "*") {
+          return true;
         }
-        nativeConsole(messageStr);
+        let isMatched;
+        const parsedData = parseMatchProps(propsToMatch);
+        if (!validateParsedData(parsedData)) {
+          logMessage(source, "Invalid parameter: ".concat(propsToMatch));
+          isMatched = false;
+        } else {
+          const matchData = getMatchPropsData(parsedData);
+          isMatched = Object.keys(matchData).every(function (matchKey) {
+            const matchValue = matchData[matchKey];
+            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
+          });
+        }
+        return isMatched;
+      }
+      function getMatchPropsData(data) {
+        const matchData = {};
+        Object.keys(data).forEach(function (key) {
+          matchData[key] = toRegExp(data[key]);
+        });
+        return matchData;
+      }
+      function getRequestProps() {
+        return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
+      }
+      function validateParsedData(data) {
+        return Object.values(data).every(function (value) {
+          return isValidStrPattern(value);
+        });
+      }
+      function parseMatchProps(propsToMatchStr) {
+        const PROPS_DIVIDER = " ";
+        const PAIRS_MARKER = ":";
+        const LEGAL_MATCH_PROPS = getRequestProps();
+        const propsObj = {};
+        const props = propsToMatchStr.split(PROPS_DIVIDER);
+        props.forEach(function (prop) {
+          const dividerInd = prop.indexOf(PAIRS_MARKER);
+          const key = prop.slice(0, dividerInd);
+          const hasLegalMatchProp = LEGAL_MATCH_PROPS.includes(key);
+          if (hasLegalMatchProp) {
+            const value = prop.slice(dividerInd + 1);
+            propsObj[key] = value;
+          } else {
+            propsObj.url = prop;
+          }
+        });
+        return propsObj;
+      }
+      function isValidStrPattern(input) {
+        const FORWARD_SLASH = "/";
+        let str = escapeRegExp(input);
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          str = input.slice(1, -1);
+        }
+        let isValid;
+        try {
+          isValid = new RegExp(str);
+          isValid = true;
+        } catch (e) {
+          isValid = false;
+        }
+        return isValid;
+      }
+      function escapeRegExp(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -18174,9 +19938,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -18239,9 +20003,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -18261,7 +20025,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -18271,16 +20034,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -18334,9 +20088,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -18357,7 +20111,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -18367,16 +20120,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function convertRtcConfigToString(config) {
         const UNDEF_STR = "undefined";
@@ -18446,9 +20190,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -18474,7 +20218,7 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function validateType(type) {
@@ -18576,9 +20320,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -18598,7 +20342,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -18608,16 +20351,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -18650,7 +20384,7 @@
             let match = 0;
             for (let j = 0; j < tokens.length; j += 1) {
               const token = tokens[j];
-              const found = token instanceof RegExp ? token.test(str) : str.indexOf(token) > -1;
+              const found = token instanceof RegExp ? token.test(str) : str.includes(token);
               if (found) {
                 match += 1;
               }
@@ -18690,9 +20424,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -18723,7 +20457,8 @@
         const srcMockData = {
           script: "data:text/javascript;base64,KCk9Pnt9",
           img: "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==",
-          iframe: "data:text/html;base64, PGRpdj48L2Rpdj4="
+          iframe: "data:text/html;base64, PGRpdj48L2Rpdj4=",
+          link: "data:text/plain;base64,"
         };
         let instance;
         if (tagName === "script") {
@@ -18732,6 +20467,8 @@
           instance = HTMLImageElement;
         } else if (tagName === "iframe") {
           instance = HTMLIFrameElement;
+        } else if (tagName === "link") {
+          instance = HTMLLinkElement;
         } else {
           return;
         }
@@ -18744,7 +20481,7 @@
             }
           });
         }
-        const SOURCE_PROPERTY_NAME = "src";
+        const SOURCE_PROPERTY_NAME = tagName === "link" ? "href" : "src";
         const ONERROR_PROPERTY_NAME = "onerror";
         const searchRegexp = toRegExp(match);
         const setMatchedAttribute = function setMatchedAttribute(elem) {
@@ -18832,6 +20569,20 @@
           apply: addEventListenerWrapper
         };
         EventTarget.prototype.addEventListener = new Proxy(EventTarget.prototype.addEventListener, addEventListenerHandler);
+        const preventInlineOnerror = function preventInlineOnerror(tagName, src) {
+          window.addEventListener("error", function (event) {
+            if (!event.target || !event.target.nodeName || event.target.nodeName.toLowerCase() !== tagName || !event.target.src || !src.test(event.target.src)) {
+              return;
+            }
+            hit(source);
+            if (typeof event.target.onload === "function") {
+              event.target.onerror = event.target.onload;
+              return;
+            }
+            event.target.onerror = noopFunc;
+          }, true);
+        };
+        preventInlineOnerror(tagName, searchRegexp);
       }
       function hit(source) {
         if (source.verbose !== true) {
@@ -18845,9 +20596,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -18873,7 +20624,7 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function safeGetDescriptor(obj, prop) {
@@ -18913,7 +20664,7 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function hit(source) {
@@ -18928,9 +20679,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -19032,9 +20783,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -19064,7 +20815,7 @@
     function preventFetch(source, args) {
       function preventFetch(source, propsToMatch) {
         let responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "emptyObj";
-        let responseType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "default";
+        let responseType = arguments.length > 3 ? arguments[3] : undefined;
         if (typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
           return;
         }
@@ -19074,13 +20825,19 @@
         } else if (responseBody === "emptyArr") {
           strResponseBody = "[]";
         } else {
+          logMessage(source, "Invalid responseBody parameter: '".concat(responseBody, "'"));
           return;
         }
-        if (!(responseType === "default" || responseType === "opaque")) {
-          logMessage(source, "Invalid parameter: ".concat(responseType));
+        const isResponseTypeSpecified = typeof responseType !== "undefined";
+        const isResponseTypeSupported = function isResponseTypeSupported(responseType) {
+          const SUPPORTED_TYPES = ["default", "opaque"];
+          return SUPPORTED_TYPES.includes(responseType);
+        };
+        if (isResponseTypeSpecified && !isResponseTypeSupported(responseType)) {
+          logMessage(source, "Invalid responseType parameter: '".concat(responseType, "'"));
           return;
         }
-        const handlerWrapper = function handlerWrapper(target, thisArg, args) {
+        const handlerWrapper = async function handlerWrapper(target, thisArg, args) {
           let shouldPrevent = false;
           const fetchData = getFetchData(args);
           if (typeof propsToMatch === "undefined") {
@@ -19091,7 +20848,11 @@
           shouldPrevent = matchRequestProps(source, propsToMatch, fetchData);
           if (shouldPrevent) {
             hit(source);
-            return noopPromiseResolve(strResponseBody, fetchData.url, responseType);
+            const origResponse = await Reflect.apply(target, thisArg, args);
+            return modifyResponse(origResponse, {
+              body: strResponseBody,
+              type: responseType
+            });
           }
           return Reflect.apply(target, thisArg, args);
         };
@@ -19112,9 +20873,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -19154,7 +20915,7 @@
         if (!obj || typeof obj !== "object") {
           return String(obj);
         }
-        return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
+        return isEmptyObject(obj) ? "{}" : Object.entries(obj).map(function (pair) {
           const key = pair[0];
           const value = pair[1];
           let recordValueStr = value;
@@ -19163,27 +20924,6 @@
           }
           return "".concat(key, ':"').concat(recordValueStr, '"');
         }).join(" ");
-      }
-      function noopPromiseResolve() {
-        let responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
-        let responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
-        let responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
-        if (typeof Response === "undefined") {
-          return;
-        }
-        const response = new Response(responseBody, {
-          status: 200,
-          statusText: "OK"
-        });
-        Object.defineProperties(response, {
-          url: {
-            value: responseUrl
-          },
-          type: {
-            value: responseType
-          }
-        });
-        return Promise.resolve(response);
       }
       function matchRequestProps(source, propsToMatch, requestData) {
         if (propsToMatch === "" || propsToMatch === "*") {
@@ -19207,7 +20947,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -19217,16 +20956,31 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
+        nativeConsole("".concat(name, ": ").concat(message));
+      }
+      function modifyResponse(origResponse) {
+        var _origResponse$headers;
+        let replacement = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
+          body: "{}"
+        };
+        const headers = {};
+        origResponse === null || origResponse === void 0 ? void 0 : (_origResponse$headers = origResponse.headers) === null || _origResponse$headers === void 0 ? void 0 : _origResponse$headers.forEach(function (value, key) {
+          headers[key] = value;
+        });
+        const modifiedResponse = new Response(replacement.body, {
+          status: origResponse.status,
+          statusText: origResponse.statusText,
+          headers: headers
+        });
+        Object.defineProperties(modifiedResponse, {
+          url: {
+            value: origResponse.url
+          },
+          type: {
+            value: replacement.type || origResponse.type
           }
-        }
-        nativeConsole(messageStr);
+        });
+        return modifiedResponse;
       }
       function toRegExp() {
         let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -19238,7 +20992,7 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function isValidStrPattern(input) {
@@ -19268,27 +21022,10 @@
           const value = request[key];
           return [key, value];
         });
-        return getObjectFromEntries(entries);
+        return Object.fromEntries(entries);
       }
       function getRequestProps() {
         return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
-      }
-      function getObjectEntries(object) {
-        const keys = Object.keys(object);
-        const entries = [];
-        keys.forEach(function (key) {
-          return entries.push([key, object[key]]);
-        });
-        return entries;
-      }
-      function getObjectFromEntries(entries) {
-        const output = entries.reduce(function (acc, el) {
-          const key = el[0];
-          const value = el[1];
-          acc[key] = value;
-          return acc;
-        }, {});
-        return output;
       }
       function parseMatchProps(propsToMatchStr) {
         const PROPS_DIVIDER = " ";
@@ -19299,7 +21036,7 @@
         props.forEach(function (prop) {
           const dividerInd = prop.indexOf(PAIRS_MARKER);
           const key = prop.slice(0, dividerInd);
-          const hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+          const hasLegalMatchProp = LEGAL_MATCH_PROPS.includes(key);
           if (hasLegalMatchProp) {
             const value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
@@ -19350,7 +21087,7 @@
       function createOnErrorHandler(rid) {
         const nativeOnError = window.onerror;
         return function onError(error) {
-          if (typeof error === "string" && error.indexOf(rid) !== -1) {
+          if (typeof error === "string" && error.includes(rid)) {
             return true;
           }
           if (nativeOnError instanceof Function) {
@@ -19377,9 +21114,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -19481,9 +21218,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -19508,7 +21245,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -19518,16 +21254,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function nativeIsNaN(num) {
         const native = Number.isNaN || window.isNaN;
@@ -19578,9 +21305,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -19599,7 +21326,7 @@
       function noopFunc() {}
       function parseMatchArg(match) {
         const INVERT_MARKER = "!";
-        const isInvertedMatch = match ? match.startsWith(INVERT_MARKER) : false;
+        const isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
         const matchValue = isInvertedMatch ? match.slice(1) : match;
         const matchRegexp = toRegExp(matchValue);
         return {
@@ -19630,7 +21357,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -19640,16 +21366,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function escapeRegExp(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -19664,7 +21381,7 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -19715,9 +21432,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -19767,7 +21484,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -19777,16 +21493,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function toRegExp() {
         let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -19798,11 +21505,8 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
-      }
-      function startsWith(str, prefix) {
-        return !!str && str.indexOf(prefix) === 0;
       }
       function nativeIsNaN(num) {
         const native = Number.isNaN || window.isNaN;
@@ -19810,7 +21514,7 @@
       }
       function parseMatchArg(match) {
         const INVERT_MARKER = "!";
-        const isInvertedMatch = match ? match.startsWith(INVERT_MARKER) : false;
+        const isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
         const matchValue = isInvertedMatch ? match.slice(1) : match;
         const matchRegexp = toRegExp(matchValue);
         return {
@@ -19821,7 +21525,7 @@
       }
       function parseDelayArg(delay) {
         const INVERT_MARKER = "!";
-        const isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
+        const isInvertedDelayMatch = delay === null || delay === void 0 ? void 0 : delay.startsWith(INVERT_MARKER);
         let delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
         delayValue = parseInt(delayValue, 10);
         const delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
@@ -19836,7 +21540,7 @@
       function isValidMatchStr(match) {
         const INVERT_MARKER = "!";
         let str = match;
-        if (startsWith(match, INVERT_MARKER)) {
+        if (match !== null && match !== void 0 && match.startsWith(INVERT_MARKER)) {
           str = match.slice(1);
         }
         return isValidStrPattern(str);
@@ -19866,7 +21570,7 @@
       function isValidMatchNumber(match) {
         const INVERT_MARKER = "!";
         let str = match;
-        if (startsWith(match, INVERT_MARKER)) {
+        if (match !== null && match !== void 0 && match.startsWith(INVERT_MARKER)) {
           str = match.slice(1);
         }
         const num = parseFloat(str);
@@ -19924,9 +21628,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -19976,7 +21680,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -19986,20 +21689,11 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function parseMatchArg(match) {
         const INVERT_MARKER = "!";
-        const isInvertedMatch = match ? match.startsWith(INVERT_MARKER) : false;
+        const isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
         const matchValue = isInvertedMatch ? match.slice(1) : match;
         const matchRegexp = toRegExp(matchValue);
         return {
@@ -20010,7 +21704,7 @@
       }
       function parseDelayArg(delay) {
         const INVERT_MARKER = "!";
-        const isInvertedDelayMatch = startsWith(delay, INVERT_MARKER);
+        const isInvertedDelayMatch = delay === null || delay === void 0 ? void 0 : delay.startsWith(INVERT_MARKER);
         let delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
         delayValue = parseInt(delayValue, 10);
         const delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
@@ -20029,11 +21723,8 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
-      }
-      function startsWith(str, prefix) {
-        return !!str && str.indexOf(prefix) === 0;
       }
       function nativeIsNaN(num) {
         const native = Number.isNaN || window.isNaN;
@@ -20045,7 +21736,7 @@
       function isValidMatchStr(match) {
         const INVERT_MARKER = "!";
         let str = match;
-        if (startsWith(match, INVERT_MARKER)) {
+        if (match !== null && match !== void 0 && match.startsWith(INVERT_MARKER)) {
           str = match.slice(1);
         }
         return isValidStrPattern(str);
@@ -20075,7 +21766,7 @@
       function isValidMatchNumber(match) {
         const INVERT_MARKER = "!";
         let str = match;
-        if (startsWith(match, INVERT_MARKER)) {
+        if (match !== null && match !== void 0 && match.startsWith(INVERT_MARKER)) {
           str = match.slice(1);
         }
         const num = parseFloat(str);
@@ -20116,7 +21807,7 @@
           return handleOldReplacement(replacement);
         };
         const newOpenWrapper = function newOpenWrapper(url) {
-          const shouldLog = replacement && replacement.indexOf("log") > -1;
+          const shouldLog = replacement && replacement.includes("log");
           for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
             args[_key2 - 1] = arguments[_key2];
           }
@@ -20190,9 +21881,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -20229,7 +21920,7 @@
       function isValidMatchStr(match) {
         const INVERT_MARKER = "!";
         let str = match;
-        if (startsWith(match, INVERT_MARKER)) {
+        if (match !== null && match !== void 0 && match.startsWith(INVERT_MARKER)) {
           str = match.slice(1);
         }
         return isValidStrPattern(str);
@@ -20244,7 +21935,7 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function nativeIsNaN(num) {
@@ -20253,7 +21944,7 @@
       }
       function parseMatchArg(match) {
         const INVERT_MARKER = "!";
-        const isInvertedMatch = match ? match.startsWith(INVERT_MARKER) : false;
+        const isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
         const matchValue = isInvertedMatch ? match.slice(1) : match;
         const matchRegexp = toRegExp(matchValue);
         return {
@@ -20268,8 +21959,8 @@
           result = noopFunc;
         } else if (replacement === "trueFunc") {
           result = trueFunc;
-        } else if (replacement.indexOf("=") > -1) {
-          const isProp = startsWith(replacement, "{") && endsWith(replacement, "}");
+        } else if (replacement.includes("=")) {
+          const isProp = replacement.startsWith("{") && replacement.endsWith("}");
           if (isProp) {
             const propertyPart = replacement.slice(1, -1);
             const propertyName = substringBefore(propertyPart, "=");
@@ -20330,7 +22021,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -20340,26 +22030,11 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function noopFunc() {}
       function trueFunc() {
         return true;
-      }
-      function startsWith(str, prefix) {
-        return !!str && str.indexOf(prefix) === 0;
-      }
-      function endsWith(str, ending) {
-        return !!str && str.lastIndexOf(ending) === str.length - ending.length;
       }
       function substringBefore(str, separator) {
         if (!str || !separator) {
@@ -20387,20 +22062,29 @@
         if (typeof Proxy === "undefined") {
           return;
         }
-        let response = "";
-        let responseText = "";
-        let responseUrl;
+        const nativeOpen = window.XMLHttpRequest.prototype.open;
+        const nativeSend = window.XMLHttpRequest.prototype.send;
+        let xhrData;
+        let modifiedResponse = "";
+        let modifiedResponseText = "";
         const openWrapper = function openWrapper(target, thisArg, args) {
-          const xhrData = {
-            method: args[0],
-            url: args[1]
-          };
-          responseUrl = xhrData.url;
+          xhrData = getXhrData.apply(null, args);
           if (typeof propsToMatch === "undefined") {
             logMessage(source, "xhr( ".concat(objectToString(xhrData), " )"), true);
             hit(source);
           } else if (matchRequestProps(source, propsToMatch, xhrData)) {
             thisArg.shouldBePrevented = true;
+          }
+          if (thisArg.shouldBePrevented) {
+            thisArg.collectedHeaders = [];
+            const setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+              thisArg.collectedHeaders.push(args);
+              return Reflect.apply(target, thisArg, args);
+            };
+            const setRequestHeaderHandler = {
+              apply: setRequestHeaderWrapper
+            };
+            thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
           }
           return Reflect.apply(target, thisArg, args);
         };
@@ -20409,59 +22093,103 @@
             return Reflect.apply(target, thisArg, args);
           }
           if (thisArg.responseType === "blob") {
-            response = new Blob();
+            modifiedResponse = new Blob();
           }
           if (thisArg.responseType === "arraybuffer") {
-            response = new ArrayBuffer();
+            modifiedResponse = new ArrayBuffer();
           }
           if (customResponseText) {
             const randomText = generateRandomResponse(customResponseText);
             if (randomText) {
-              responseText = randomText;
+              modifiedResponseText = randomText;
             } else {
-              logMessage(source, "Invalid range: ".concat(customResponseText));
+              logMessage(source, "Invalid randomize parameter: '".concat(customResponseText, "'"));
             }
           }
-          Object.defineProperties(thisArg, {
-            readyState: {
-              value: 4,
-              writable: false
-            },
-            response: {
-              value: response,
-              writable: false
-            },
-            responseText: {
-              value: responseText,
-              writable: false
-            },
-            responseURL: {
-              value: responseUrl,
-              writable: false
-            },
-            responseXML: {
-              value: "",
-              writable: false
-            },
-            status: {
-              value: 200,
-              writable: false
-            },
-            statusText: {
-              value: "OK",
-              writable: false
+          const forgedRequest = new XMLHttpRequest();
+          forgedRequest.addEventListener("readystatechange", function () {
+            if (forgedRequest.readyState !== 4) {
+              return;
             }
+            const readyState = forgedRequest.readyState,
+              responseURL = forgedRequest.responseURL,
+              responseXML = forgedRequest.responseXML,
+              status = forgedRequest.status,
+              statusText = forgedRequest.statusText;
+            Object.defineProperties(thisArg, {
+              readyState: {
+                value: readyState,
+                writable: false
+              },
+              status: {
+                value: status,
+                writable: false
+              },
+              statusText: {
+                value: statusText,
+                writable: false
+              },
+              responseURL: {
+                value: responseURL,
+                writable: false
+              },
+              responseXML: {
+                value: responseXML,
+                writable: false
+              },
+              response: {
+                value: modifiedResponse,
+                writable: false
+              },
+              responseText: {
+                value: modifiedResponseText,
+                writable: false
+              }
+            });
+            setTimeout(function () {
+              const stateEvent = new Event("readystatechange");
+              thisArg.dispatchEvent(stateEvent);
+              const loadEvent = new Event("load");
+              thisArg.dispatchEvent(loadEvent);
+              const loadEndEvent = new Event("loadend");
+              thisArg.dispatchEvent(loadEndEvent);
+            }, 1);
+            hit(source);
           });
-          setTimeout(function () {
-            const stateEvent = new Event("readystatechange");
-            thisArg.dispatchEvent(stateEvent);
-            const loadEvent = new Event("load");
-            thisArg.dispatchEvent(loadEvent);
-            const loadEndEvent = new Event("loadend");
-            thisArg.dispatchEvent(loadEndEvent);
-          }, 1);
-          hit(source);
+          nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
+          thisArg.collectedHeaders.forEach(function (header) {
+            const name = header[0];
+            const value = header[1];
+            forgedRequest.setRequestHeader(name, value);
+          });
+          try {
+            nativeSend.call(forgedRequest, args);
+          } catch (_unused) {
+            return Reflect.apply(target, thisArg, args);
+          }
           return undefined;
+        };
+        const getHeaderWrapper = function getHeaderWrapper(target, thisArg, args) {
+          if (!thisArg.collectedHeaders.length) {
+            return null;
+          }
+          const searchHeaderName = args[0].toLowerCase();
+          const matchedHeader = thisArg.collectedHeaders.find(function (header) {
+            const headerName = header[0].toLowerCase();
+            return headerName === searchHeaderName;
+          });
+          return matchedHeader ? matchedHeader[1] : null;
+        };
+        const getAllHeadersWrapper = function getAllHeadersWrapper(target, thisArg) {
+          if (!thisArg.collectedHeaders.length) {
+            return "";
+          }
+          const allHeadersStr = thisArg.collectedHeaders.map(function (header) {
+            const headerName = header[0];
+            const headerValue = header[1];
+            return "".concat(headerName.toLowerCase(), ": ").concat(headerValue);
+          }).join("\r\n");
+          return allHeadersStr;
         };
         const openHandler = {
           apply: openWrapper
@@ -20469,8 +22197,16 @@
         const sendHandler = {
           apply: sendWrapper
         };
+        const getHeaderHandler = {
+          apply: getHeaderWrapper
+        };
+        const getAllHeadersHandler = {
+          apply: getAllHeadersWrapper
+        };
         XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
         XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
+        XMLHttpRequest.prototype.getResponseHeader = new Proxy(XMLHttpRequest.prototype.getResponseHeader, getHeaderHandler);
+        XMLHttpRequest.prototype.getAllResponseHeaders = new Proxy(XMLHttpRequest.prototype.getAllResponseHeaders, getAllHeadersHandler);
       }
       function hit(source) {
         if (source.verbose !== true) {
@@ -20484,9 +22220,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -20502,36 +22238,11 @@
           window.__debug(source);
         }
       }
-      function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
-          ruleText = source.ruleText,
-          verbose = source.verbose;
-        if (!forced && !verbose) {
-          return;
-        }
-        const nativeConsole = console.log;
-        if (!convertMessageToString) {
-          nativeConsole("".concat(name, ":"), message);
-          return;
-        }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
-      }
       function objectToString(obj) {
         if (!obj || typeof obj !== "object") {
           return String(obj);
         }
-        return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
+        return isEmptyObject(obj) ? "{}" : Object.entries(obj).map(function (pair) {
           const key = pair[0];
           const value = pair[1];
           let recordValueStr = value;
@@ -20540,24 +22251,6 @@
           }
           return "".concat(key, ':"').concat(recordValueStr, '"');
         }).join(" ");
-      }
-      function matchRequestProps(source, propsToMatch, requestData) {
-        if (propsToMatch === "" || propsToMatch === "*") {
-          return true;
-        }
-        let isMatched;
-        const parsedData = parseMatchProps(propsToMatch);
-        if (!validateParsedData(parsedData)) {
-          logMessage(source, "Invalid parameter: ".concat(propsToMatch));
-          isMatched = false;
-        } else {
-          const matchData = getMatchPropsData(parsedData);
-          isMatched = Object.keys(matchData).every(function (matchKey) {
-            const matchValue = matchData[matchKey];
-            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
-          });
-        }
-        return isMatched;
       }
       function generateRandomResponse(customResponseText) {
         let customResponse = customResponseText;
@@ -20588,6 +22281,48 @@
         customResponse = getRandomStrByLength(length);
         return customResponse;
       }
+      function matchRequestProps(source, propsToMatch, requestData) {
+        if (propsToMatch === "" || propsToMatch === "*") {
+          return true;
+        }
+        let isMatched;
+        const parsedData = parseMatchProps(propsToMatch);
+        if (!validateParsedData(parsedData)) {
+          logMessage(source, "Invalid parameter: ".concat(propsToMatch));
+          isMatched = false;
+        } else {
+          const matchData = getMatchPropsData(parsedData);
+          isMatched = Object.keys(matchData).every(function (matchKey) {
+            const matchValue = matchData[matchKey];
+            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
+          });
+        }
+        return isMatched;
+      }
+      function getXhrData(method, url, async, user, password) {
+        return {
+          method: method,
+          url: url,
+          async: async,
+          user: user,
+          password: password
+        };
+      }
+      function logMessage(source, message) {
+        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        const name = source.name,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
+        }
+        const nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
+          return;
+        }
+        nativeConsole("".concat(name, ": ").concat(message));
+      }
       function toRegExp() {
         let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
         const DEFAULT_VALUE = ".?";
@@ -20598,7 +22333,7 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function isValidStrPattern(input) {
@@ -20622,14 +22357,6 @@
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
-      function getObjectEntries(object) {
-        const keys = Object.keys(object);
-        const entries = [];
-        keys.forEach(function (key) {
-          return entries.push([key, object[key]]);
-        });
-        return entries;
-      }
       function getNumberFromString(rawString) {
         const parsedDelay = parseInt(rawString, 10);
         const validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
@@ -20652,7 +22379,7 @@
         props.forEach(function (prop) {
           const dividerInd = prop.indexOf(PAIRS_MARKER);
           const key = prop.slice(0, dividerInd);
-          const hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+          const hasLegalMatchProp = LEGAL_MATCH_PROPS.includes(key);
           if (hasLegalMatchProp) {
             const value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
@@ -20748,7 +22475,7 @@
             once: true
           });
         } else if (flags.hasFlag(flags.STAY)) {
-          if (!applying.indexOf(" ") !== -1) {
+          if (!applying.includes(" ")) {
             rmattr();
           }
           observeDOMChanges(rmattr, true);
@@ -20766,9 +22493,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -20822,14 +22549,14 @@
         const STAY_FLAG = "stay";
         const VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
         const passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
-          return VALID_FLAGS.indexOf(f) !== -1;
+          return VALID_FLAGS.includes(f);
         });
         return {
           ASAP: ASAP_FLAG,
           COMPLETE: COMPLETE_FLAG,
           STAY: STAY_FLAG,
           hasFlag(flag) {
-            return passedFlags.indexOf(flag) !== -1;
+            return passedFlags.includes(flag);
           }
         };
       }
@@ -20837,7 +22564,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -20847,16 +22573,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function throttle(cb, delay) {
         let wait = false;
@@ -20958,7 +22675,7 @@
             once: true
           });
         } else if (flags.hasFlag(flags.STAY)) {
-          if (!applying.indexOf(" ") !== -1) {
+          if (!applying.includes(" ")) {
             removeClassHandler();
           }
           observeDOMChanges(removeClassHandler, true, CLASS_ATTR_NAME);
@@ -20976,9 +22693,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -20998,7 +22715,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -21008,16 +22724,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function observeDOMChanges(callback) {
         let observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
@@ -21057,14 +22764,14 @@
         const STAY_FLAG = "stay";
         const VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
         const passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
-          return VALID_FLAGS.indexOf(f) !== -1;
+          return VALID_FLAGS.includes(f);
         });
         return {
           ASAP: ASAP_FLAG,
           COMPLETE: COMPLETE_FLAG,
           STAY: STAY_FLAG,
           hasFlag(flag) {
-            return passedFlags.indexOf(flag) !== -1;
+            return passedFlags.includes(flag);
           }
         };
       }
@@ -21147,7 +22854,7 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function hit(source) {
@@ -21162,9 +22869,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -21227,9 +22934,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -21351,6 +23058,150 @@
         console.log(e);
       }
     }
+    function removeNodeText(source, args) {
+      function removeNodeText(source, nodeName, textMatch) {
+        const _parseNodeTextParams = parseNodeTextParams(nodeName, textMatch),
+          selector = _parseNodeTextParams.selector,
+          nodeNameMatch = _parseNodeTextParams.nodeNameMatch,
+          textContentMatch = _parseNodeTextParams.textContentMatch;
+        const handleNodes = function handleNodes(nodes) {
+          return nodes.forEach(function (node) {
+            const shouldReplace = isTargetNode(node, nodeNameMatch, textContentMatch);
+            if (shouldReplace) {
+              const ALL_TEXT_PATTERN = /^[\s\S]*$/;
+              const REPLACEMENT = "";
+              replaceNodeText(source, node, ALL_TEXT_PATTERN, REPLACEMENT);
+            }
+          });
+        };
+        if (document.documentElement) {
+          handleExistingNodes(selector, handleNodes);
+        }
+        observeDocumentWithTimeout(function (mutations) {
+          return handleMutations(mutations, handleNodes);
+        }, {
+          childList: true,
+          subtree: true
+        });
+      }
+      function observeDocumentWithTimeout(callback, options) {
+        let timeout = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1e4;
+        const observer = new MutationObserver(function (mutations, observer) {
+          observer.disconnect();
+          callback(mutations);
+          observer.observe(document.documentElement, options);
+        });
+        observer.observe(document.documentElement, options);
+        if (typeof timeout === "number") {
+          setTimeout(function () {
+            return observer.disconnect();
+          }, timeout);
+        }
+      }
+      function handleExistingNodes(selector, handler) {
+        const nodeList = document.querySelectorAll(selector);
+        const nodes = nodeListToArray(nodeList);
+        handler(nodes);
+      }
+      function handleMutations(mutations, handler) {
+        const addedNodes = getAddedNodes(mutations);
+        handler(addedNodes);
+      }
+      function replaceNodeText(source, node, pattern, replacement) {
+        node.textContent = node.textContent.replace(pattern, replacement);
+        hit(source);
+      }
+      function isTargetNode(node, nodeNameMatch, textContentMatch) {
+        const nodeName = node.nodeName,
+          textContent = node.textContent;
+        const nodeNameLowerCase = nodeName.toLowerCase();
+        return textContent !== "" && (nodeNameMatch instanceof RegExp ? nodeNameMatch.test(nodeNameLowerCase) : nodeNameMatch === nodeNameLowerCase) && (textContentMatch instanceof RegExp ? textContentMatch.test(textContent) : textContent.includes(textContentMatch));
+      }
+      function parseNodeTextParams(nodeName, textMatch) {
+        let pattern = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+        const REGEXP_START_MARKER = "/";
+        const isStringNameMatch = !(nodeName.startsWith(REGEXP_START_MARKER) && nodeName.endsWith(REGEXP_START_MARKER));
+        const selector = isStringNameMatch ? nodeName : "*";
+        const nodeNameMatch = isStringNameMatch ? nodeName : toRegExp(nodeName);
+        const textContentMatch = !textMatch.startsWith(REGEXP_START_MARKER) ? textMatch : toRegExp(textMatch);
+        let patternMatch;
+        if (pattern) {
+          patternMatch = !pattern.startsWith(REGEXP_START_MARKER) ? pattern : toRegExp(pattern);
+        }
+        return {
+          selector: selector,
+          nodeNameMatch: nodeNameMatch,
+          textContentMatch: textContentMatch,
+          patternMatch: patternMatch
+        };
+      }
+      function hit(source) {
+        if (source.verbose !== true) {
+          return;
+        }
+        try {
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
+          if (source.domainName) {
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+            const rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+          log("".concat(prefix, " trace start"));
+          if (trace) {
+            trace();
+          }
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+      function nodeListToArray(nodeList) {
+        const nodes = [];
+        for (let i = 0; i < nodeList.length; i += 1) {
+          nodes.push(nodeList[i]);
+        }
+        return nodes;
+      }
+      function getAddedNodes(mutations) {
+        const nodes = [];
+        for (let i = 0; i < mutations.length; i += 1) {
+          const addedNodes = mutations[i].addedNodes;
+          for (let j = 0; j < addedNodes.length; j += 1) {
+            nodes.push(addedNodes[j]);
+          }
+        }
+        return nodes;
+      }
+      function toRegExp() {
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      try {
+        removeNodeText.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
     function setAttr(source, args) {
       function setAttr(source, selector, attr) {
         let value = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
@@ -21387,9 +23238,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -21471,7 +23322,16 @@
       }
     }
     function setConstant(source, args) {
-      function setConstant(source, property, value, stack) {
+      function setConstant(source, property, value) {
+        let stack = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+        let valueWrapper = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "";
+        const uboAliases = ["set-constant.js", "ubo-set-constant.js", "set.js", "ubo-set.js", "ubo-set-constant", "ubo-set"];
+        if (uboAliases.includes(source.name)) {
+          if (stack.length !== 1 && !getNumberFromString(stack)) {
+            valueWrapper = stack;
+          }
+          stack = undefined;
+        }
         if (!property || !matchStackTrace(stack, new Error().stack)) {
           return;
         }
@@ -21522,6 +23382,30 @@
           constantValue = "no";
         } else {
           return;
+        }
+        const valueWrapperNames = ["asFunction", "asCallback", "asResolved", "asRejected"];
+        if (valueWrapperNames.includes(valueWrapper)) {
+          const valueWrappersMap = {
+            asFunction(v) {
+              return function () {
+                return v;
+              };
+            },
+            asCallback(v) {
+              return function () {
+                return function () {
+                  return v;
+                };
+              };
+            },
+            asResolved(v) {
+              return Promise.resolve(v);
+            },
+            asRejected(v) {
+              return Promise.reject(v);
+            }
+          };
+          constantValue = valueWrappersMap[valueWrapper](constantValue);
         }
         let canceled = false;
         const mustCancel = function mustCancel(value) {
@@ -21637,9 +23521,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -21659,7 +23543,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -21669,16 +23552,12 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
+      }
+      function getNumberFromString(rawString) {
+        const parsedDelay = parseInt(rawString, 10);
+        const validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
+        return validDelay;
       }
       function noopArray() {
         return [];
@@ -21767,19 +23646,6 @@
           chain: chain
         };
       }
-      function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
-        if (input === "") {
-          return new RegExp(DEFAULT_VALUE);
-        }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
-        }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        return new RegExp(escaped);
-      }
       function matchStackTrace(stackMatch, stackTrace) {
         if (!stackMatch || stackMatch === "") {
           return true;
@@ -21800,18 +23666,15 @@
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
-      function getNativeRegexpTest() {
-        return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
-      }
       function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
         const INLINE_SCRIPT_STRING = "inlineScript";
         const INJECTED_SCRIPT_STRING = "injectedScript";
         const INJECTED_SCRIPT_MARKER = "<anonymous>";
         const isInlineScript = function isInlineScript(stackMatch) {
-          return stackMatch.indexOf(INLINE_SCRIPT_STRING) > -1;
+          return stackMatch.includes(INLINE_SCRIPT_STRING);
         };
         const isInjectedScript = function isInjectedScript(stackMatch) {
-          return stackMatch.indexOf(INJECTED_SCRIPT_STRING) > -1;
+          return stackMatch.includes(INJECTED_SCRIPT_STRING);
         };
         if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
           return false;
@@ -21828,14 +23691,16 @@
           let stack;
           const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
           if (getStackTraceURL) {
+            var _stackURL, _stackURL2;
             let stackURL = getStackTraceURL[2];
-            if (startsWith(stackURL, "(")) {
+            if ((_stackURL = stackURL) !== null && _stackURL !== void 0 && _stackURL.startsWith("(")) {
               stackURL = stackURL.slice(1);
             }
-            if (startsWith(stackURL, INJECTED_SCRIPT_MARKER)) {
+            if ((_stackURL2 = stackURL) !== null && _stackURL2 !== void 0 && _stackURL2.startsWith(INJECTED_SCRIPT_MARKER)) {
+              var _stackFunction;
               stackURL = INJECTED_SCRIPT_STRING;
               let stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
-              if (startsWith(stackFunction, "at")) {
+              if ((_stackFunction = stackFunction) !== null && _stackFunction !== void 0 && _stackFunction.startsWith("at")) {
                 stackFunction = stackFunction.slice(2).trim();
               }
               stack = "".concat(stackFunction, " ").concat(stackURL).trim();
@@ -21852,12 +23717,28 @@
             if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
               return true;
             }
-            if (isInjectedScript(stackMatch) && startsWith(stackLines[index], INJECTED_SCRIPT_STRING)) {
+            if (isInjectedScript(stackMatch) && stackLines[index].startsWith(INJECTED_SCRIPT_STRING)) {
               return true;
             }
           }
         }
         return false;
+      }
+      function getNativeRegexpTest() {
+        return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
+      }
+      function toRegExp() {
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -21880,6 +23761,7 @@
         }
         const cookieToSet = concatCookieNameValuePath(name, validValue, path);
         if (!cookieToSet) {
+          logMessage(source, "Invalid cookie name or value");
           return;
         }
         hit(source);
@@ -21897,9 +23779,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -21919,7 +23801,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -21929,16 +23810,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function nativeIsNaN(num) {
         const native = Number.isNaN || window.isNaN;
@@ -21983,7 +23855,14 @@
         return validValue;
       }
       function concatCookieNameValuePath(rawName, rawValue, rawPath) {
-        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
+        let shouldEncode = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        const COOKIE_BREAKER = ";";
+        if (!shouldEncode && (rawName.includes(COOKIE_BREAKER) || "".concat(rawValue).includes(COOKIE_BREAKER))) {
+          return null;
+        }
+        const name = shouldEncode ? encodeURIComponent(rawName) : rawName;
+        const value = shouldEncode ? encodeURIComponent(rawValue) : rawValue;
+        return "".concat(name, "=").concat(value, "; ").concat(getCookiePath(rawPath), ";");
       }
       function isValidCookiePath(rawPath) {
         return rawPath === "/" || rawPath === "none";
@@ -22018,6 +23897,7 @@
         }
         const cookieToSet = concatCookieNameValuePath(name, validValue, path);
         if (!cookieToSet) {
+          logMessage(source, "Invalid cookie name or value");
           return;
         }
         document.cookie = cookieToSet;
@@ -22038,9 +23918,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -22060,7 +23940,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -22070,16 +23949,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function nativeIsNaN(num) {
         const native = Number.isNaN || window.isNaN;
@@ -22135,7 +24005,14 @@
         return validValue;
       }
       function concatCookieNameValuePath(rawName, rawValue, rawPath) {
-        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
+        let shouldEncode = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        const COOKIE_BREAKER = ";";
+        if (!shouldEncode && (rawName.includes(COOKIE_BREAKER) || "".concat(rawValue).includes(COOKIE_BREAKER))) {
+          return null;
+        }
+        const name = shouldEncode ? encodeURIComponent(rawName) : rawName;
+        const value = shouldEncode ? encodeURIComponent(rawValue) : rawValue;
+        return "".concat(name, "=").concat(value, "; ").concat(getCookiePath(rawPath), ";");
       }
       function isValidCookiePath(rawPath) {
         return rawPath === "/" || rawPath === "none";
@@ -22183,9 +24060,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -22205,7 +24082,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -22215,16 +24091,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function nativeIsNaN(num) {
         const native = Number.isNaN || window.isNaN;
@@ -22312,9 +24179,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -22367,9 +24234,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -22389,7 +24256,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -22399,16 +24265,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function nativeIsNaN(num) {
         const native = Number.isNaN || window.isNaN;
@@ -22505,7 +24362,7 @@
             return matchStr.trim();
           });
           parsedExtraMatch.forEach(function (matchStr) {
-            if (matchStr.indexOf(COOKIE_MATCH_MARKER) > -1) {
+            if (matchStr.includes(COOKIE_MATCH_MARKER)) {
               const _parseMatchArg = parseMatchArg(matchStr),
                 isInvertedMatch = _parseMatchArg.isInvertedMatch,
                 matchValue = _parseMatchArg.matchValue;
@@ -22513,7 +24370,7 @@
               const cookieMatch = matchValue.replace(COOKIE_MATCH_MARKER, "");
               cookieMatches.push(cookieMatch);
             }
-            if (matchStr.indexOf(LOCAL_STORAGE_MATCH_MARKER) > -1) {
+            if (matchStr.includes(LOCAL_STORAGE_MATCH_MARKER)) {
               const _parseMatchArg2 = parseMatchArg(matchStr),
                 isInvertedMatch = _parseMatchArg2.isInvertedMatch,
                 matchValue = _parseMatchArg2.matchValue;
@@ -22611,7 +24468,7 @@
             fulfilledSelectors.push(selector);
           });
           selectorsSequence = selectorsSequence.map(function (selector) {
-            return fulfilledSelectors.indexOf(selector) === -1 ? selector : null;
+            return fulfilledSelectors.includes(selector) ? null : selector;
           });
           const allSelectorsFulfilled = selectorsSequence.every(function (selector) {
             return selector === null;
@@ -22648,9 +24505,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -22676,7 +24533,7 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function parseCookieString(cookieString) {
@@ -22725,7 +24582,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -22735,20 +24591,11 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function parseMatchArg(match) {
         const INVERT_MARKER = "!";
-        const isInvertedMatch = match ? match.startsWith(INVERT_MARKER) : false;
+        const isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
         const matchValue = isInvertedMatch ? match.slice(1) : match;
         const matchRegexp = toRegExp(matchValue);
         return {
@@ -22858,9 +24705,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -22880,7 +24727,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -22890,16 +24736,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function getFetchData(args) {
         const fetchPropsObj = {};
@@ -22925,7 +24762,7 @@
         if (!obj || typeof obj !== "object") {
           return String(obj);
         }
-        return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
+        return isEmptyObject(obj) ? "{}" : Object.entries(obj).map(function (pair) {
           const key = pair[0];
           const value = pair[1];
           let recordValueStr = value;
@@ -22963,7 +24800,7 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function isValidStrPattern(input) {
@@ -22993,27 +24830,10 @@
           const value = request[key];
           return [key, value];
         });
-        return getObjectFromEntries(entries);
+        return Object.fromEntries(entries);
       }
       function getRequestProps() {
         return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
-      }
-      function getObjectEntries(object) {
-        const keys = Object.keys(object);
-        const entries = [];
-        keys.forEach(function (key) {
-          return entries.push([key, object[key]]);
-        });
-        return entries;
-      }
-      function getObjectFromEntries(entries) {
-        const output = entries.reduce(function (acc, el) {
-          const key = el[0];
-          const value = el[1];
-          acc[key] = value;
-          return acc;
-        }, {});
-        return output;
       }
       function parseMatchProps(propsToMatchStr) {
         const PROPS_DIVIDER = " ";
@@ -23024,7 +24844,7 @@
         props.forEach(function (prop) {
           const dividerInd = prop.indexOf(PAIRS_MARKER);
           const key = prop.slice(0, dividerInd);
-          const hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+          const hasLegalMatchProp = LEGAL_MATCH_PROPS.includes(key);
           if (hasLegalMatchProp) {
             const value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
@@ -23049,6 +24869,164 @@
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         trustedReplaceFetchResponse.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+    function trustedReplaceNodeText(source, args) {
+      function trustedReplaceNodeText(source, nodeName, textMatch, pattern, replacement) {
+        const uboAliases = ["replace-node-text.js", "rpnt.js", "sed.js"];
+        if (uboAliases.includes(source.name)) {
+          replacement = pattern;
+          pattern = textMatch;
+          for (var _len = arguments.length, extraArgs = new Array(_len > 5 ? _len - 5 : 0), _key = 5; _key < _len; _key++) {
+            extraArgs[_key - 5] = arguments[_key];
+          }
+          for (let i = 0; i < extraArgs.length; i += 1) {
+            const arg = extraArgs[i];
+            if (arg === "condition") {
+              textMatch = extraArgs[i + 1];
+              break;
+            }
+          }
+        }
+        const _parseNodeTextParams = parseNodeTextParams(nodeName, textMatch, pattern),
+          selector = _parseNodeTextParams.selector,
+          nodeNameMatch = _parseNodeTextParams.nodeNameMatch,
+          textContentMatch = _parseNodeTextParams.textContentMatch,
+          patternMatch = _parseNodeTextParams.patternMatch;
+        const handleNodes = function handleNodes(nodes) {
+          return nodes.forEach(function (node) {
+            const shouldReplace = isTargetNode(node, nodeNameMatch, textContentMatch);
+            if (shouldReplace) {
+              replaceNodeText(source, node, patternMatch, replacement);
+            }
+          });
+        };
+        if (document.documentElement) {
+          handleExistingNodes(selector, handleNodes);
+        }
+        observeDocumentWithTimeout(function (mutations) {
+          return handleMutations(mutations, handleNodes);
+        }, {
+          childList: true,
+          subtree: true
+        });
+      }
+      function observeDocumentWithTimeout(callback, options) {
+        let timeout = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1e4;
+        const observer = new MutationObserver(function (mutations, observer) {
+          observer.disconnect();
+          callback(mutations);
+          observer.observe(document.documentElement, options);
+        });
+        observer.observe(document.documentElement, options);
+        if (typeof timeout === "number") {
+          setTimeout(function () {
+            return observer.disconnect();
+          }, timeout);
+        }
+      }
+      function handleExistingNodes(selector, handler) {
+        const nodeList = document.querySelectorAll(selector);
+        const nodes = nodeListToArray(nodeList);
+        handler(nodes);
+      }
+      function handleMutations(mutations, handler) {
+        const addedNodes = getAddedNodes(mutations);
+        handler(addedNodes);
+      }
+      function replaceNodeText(source, node, pattern, replacement) {
+        node.textContent = node.textContent.replace(pattern, replacement);
+        hit(source);
+      }
+      function isTargetNode(node, nodeNameMatch, textContentMatch) {
+        const nodeName = node.nodeName,
+          textContent = node.textContent;
+        const nodeNameLowerCase = nodeName.toLowerCase();
+        return textContent !== "" && (nodeNameMatch instanceof RegExp ? nodeNameMatch.test(nodeNameLowerCase) : nodeNameMatch === nodeNameLowerCase) && (textContentMatch instanceof RegExp ? textContentMatch.test(textContent) : textContent.includes(textContentMatch));
+      }
+      function parseNodeTextParams(nodeName, textMatch) {
+        let pattern = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+        const REGEXP_START_MARKER = "/";
+        const isStringNameMatch = !(nodeName.startsWith(REGEXP_START_MARKER) && nodeName.endsWith(REGEXP_START_MARKER));
+        const selector = isStringNameMatch ? nodeName : "*";
+        const nodeNameMatch = isStringNameMatch ? nodeName : toRegExp(nodeName);
+        const textContentMatch = !textMatch.startsWith(REGEXP_START_MARKER) ? textMatch : toRegExp(textMatch);
+        let patternMatch;
+        if (pattern) {
+          patternMatch = !pattern.startsWith(REGEXP_START_MARKER) ? pattern : toRegExp(pattern);
+        }
+        return {
+          selector: selector,
+          nodeNameMatch: nodeNameMatch,
+          textContentMatch: textContentMatch,
+          patternMatch: patternMatch
+        };
+      }
+      function hit(source) {
+        if (source.verbose !== true) {
+          return;
+        }
+        try {
+          const log = console.log.bind(console);
+          const trace = console.trace.bind(console);
+          let prefix = source.ruleText || "";
+          if (source.domainName) {
+            const AG_SCRIPTLET_MARKER = "#%#//";
+            const UBO_SCRIPTLET_MARKER = "##+js";
+            let ruleStartIndex;
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+            const rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+          log("".concat(prefix, " trace start"));
+          if (trace) {
+            trace();
+          }
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+      function nodeListToArray(nodeList) {
+        const nodes = [];
+        for (let i = 0; i < nodeList.length; i += 1) {
+          nodes.push(nodeList[i]);
+        }
+        return nodes;
+      }
+      function getAddedNodes(mutations) {
+        const nodes = [];
+        for (let i = 0; i < mutations.length; i += 1) {
+          const addedNodes = mutations[i].addedNodes;
+          for (let j = 0; j < addedNodes.length; j += 1) {
+            nodes.push(addedNodes[j]);
+          }
+        }
+        return nodes;
+      }
+      function toRegExp() {
+        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        const DEFAULT_VALUE = ".?";
+        const FORWARD_SLASH = "/";
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          return new RegExp(input.slice(1, -1));
+        }
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      try {
+        trustedReplaceNodeText.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
@@ -23118,25 +25096,32 @@
             const modifiedContent = content.replace(patternRegexp, replacement);
             Object.defineProperties(thisArg, {
               readyState: {
-                value: readyState
-              },
-              response: {
-                value: modifiedContent
-              },
-              responseText: {
-                value: modifiedContent
+                value: readyState,
+                writable: false
               },
               responseURL: {
-                value: responseURL
+                value: responseURL,
+                writable: false
               },
               responseXML: {
-                value: responseXML
+                value: responseXML,
+                writable: false
               },
               status: {
-                value: status
+                value: status,
+                writable: false
               },
               statusText: {
-                value: statusText
+                value: statusText,
+                writable: false
+              },
+              response: {
+                value: modifiedContent,
+                writable: false
+              },
+              responseText: {
+                value: modifiedContent,
+                writable: false
               }
             });
             setTimeout(function () {
@@ -23184,9 +25169,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -23206,7 +25191,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -23216,16 +25200,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function toRegExp() {
         let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -23237,14 +25212,14 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function objectToString(obj) {
         if (!obj || typeof obj !== "object") {
           return String(obj);
         }
-        return isEmptyObject(obj) ? "{}" : getObjectEntries(obj).map(function (pair) {
+        return isEmptyObject(obj) ? "{}" : Object.entries(obj).map(function (pair) {
           const key = pair[0];
           const value = pair[1];
           let recordValueStr = value;
@@ -23305,7 +25280,7 @@
         props.forEach(function (prop) {
           const dividerInd = prop.indexOf(PAIRS_MARKER);
           const key = prop.slice(0, dividerInd);
-          const hasLegalMatchProp = LEGAL_MATCH_PROPS.indexOf(key) !== -1;
+          const hasLegalMatchProp = LEGAL_MATCH_PROPS.includes(key);
           if (hasLegalMatchProp) {
             const value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
@@ -23335,14 +25310,6 @@
       }
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
-      }
-      function getObjectEntries(object) {
-        const keys = Object.keys(object);
-        const entries = [];
-        keys.forEach(function (key) {
-          return entries.push([key, object[key]]);
-        });
-        return entries;
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -23477,9 +25444,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -23534,7 +25501,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -23544,16 +25510,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function getPropertyInChain(base, chain) {
         const pos = chain.indexOf(".");
@@ -23609,7 +25566,7 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function matchStackTrace(stackMatch, stackTrace) {
@@ -23640,10 +25597,10 @@
         const INJECTED_SCRIPT_STRING = "injectedScript";
         const INJECTED_SCRIPT_MARKER = "<anonymous>";
         const isInlineScript = function isInlineScript(stackMatch) {
-          return stackMatch.indexOf(INLINE_SCRIPT_STRING) > -1;
+          return stackMatch.includes(INLINE_SCRIPT_STRING);
         };
         const isInjectedScript = function isInjectedScript(stackMatch) {
-          return stackMatch.indexOf(INJECTED_SCRIPT_STRING) > -1;
+          return stackMatch.includes(INJECTED_SCRIPT_STRING);
         };
         if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
           return false;
@@ -23660,14 +25617,16 @@
           let stack;
           const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
           if (getStackTraceURL) {
+            var _stackURL, _stackURL2;
             let stackURL = getStackTraceURL[2];
-            if (startsWith(stackURL, "(")) {
+            if ((_stackURL = stackURL) !== null && _stackURL !== void 0 && _stackURL.startsWith("(")) {
               stackURL = stackURL.slice(1);
             }
-            if (startsWith(stackURL, INJECTED_SCRIPT_MARKER)) {
+            if ((_stackURL2 = stackURL) !== null && _stackURL2 !== void 0 && _stackURL2.startsWith(INJECTED_SCRIPT_MARKER)) {
+              var _stackFunction;
               stackURL = INJECTED_SCRIPT_STRING;
               let stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
-              if (startsWith(stackFunction, "at")) {
+              if ((_stackFunction = stackFunction) !== null && _stackFunction !== void 0 && _stackFunction.startsWith("at")) {
                 stackFunction = stackFunction.slice(2).trim();
               }
               stack = "".concat(stackFunction, " ").concat(stackURL).trim();
@@ -23684,7 +25643,7 @@
             if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
               return true;
             }
-            if (isInjectedScript(stackMatch) && startsWith(stackLines[index], INJECTED_SCRIPT_STRING)) {
+            if (isInjectedScript(stackMatch) && stackLines[index].startsWith(INJECTED_SCRIPT_STRING)) {
               return true;
             }
           }
@@ -23715,8 +25674,9 @@
           logMessage(source, "Invalid cookie path: '".concat(path, "'"));
           return;
         }
-        let cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
+        let cookieToSet = concatCookieNameValuePath(name, parsedValue, path, false);
         if (!cookieToSet) {
+          logMessage(source, "Invalid cookie name or value");
           return;
         }
         if (offsetExpiresSec) {
@@ -23743,9 +25703,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -23765,7 +25725,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -23775,19 +25734,17 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function concatCookieNameValuePath(rawName, rawValue, rawPath) {
-        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
+        let shouldEncode = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        const COOKIE_BREAKER = ";";
+        if (!shouldEncode && (rawName.includes(COOKIE_BREAKER) || "".concat(rawValue).includes(COOKIE_BREAKER))) {
+          return null;
+        }
+        const name = shouldEncode ? encodeURIComponent(rawName) : rawName;
+        const value = shouldEncode ? encodeURIComponent(rawValue) : rawValue;
+        return "".concat(name, "=").concat(value, "; ").concat(getCookiePath(rawPath), ";");
       }
       function isValidCookiePath(rawPath) {
         return rawPath === "/" || rawPath === "none";
@@ -23855,8 +25812,9 @@
           logMessage(source, "Invalid cookie path: '".concat(path, "'"));
           return;
         }
-        let cookieToSet = concatCookieNameValuePath(name, parsedValue, path);
+        let cookieToSet = concatCookieNameValuePath(name, parsedValue, path, false);
         if (!cookieToSet) {
+          logMessage(source, "Invalid cookie name or value");
           return;
         }
         if (offsetExpiresSec) {
@@ -23870,7 +25828,8 @@
         }
         document.cookie = cookieToSet;
         hit(source);
-        if (isCookieSetWithValue(document.cookie, name, value)) {
+        const cookieValueToCheck = parseCookieString(document.cookie)[name];
+        if (isCookieSetWithValue(document.cookie, name, cookieValueToCheck)) {
           window.location.reload();
         }
       }
@@ -23886,9 +25845,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -23908,7 +25867,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -23918,16 +25876,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function isCookieSetWithValue(cookieString, name, value) {
         return cookieString.split(";").some(function (cookieStr) {
@@ -23941,7 +25890,14 @@
         });
       }
       function concatCookieNameValuePath(rawName, rawValue, rawPath) {
-        return "".concat(encodeURIComponent(rawName), "=").concat(encodeURIComponent(rawValue), "; ").concat(getCookiePath(rawPath), ";");
+        let shouldEncode = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        const COOKIE_BREAKER = ";";
+        if (!shouldEncode && (rawName.includes(COOKIE_BREAKER) || "".concat(rawValue).includes(COOKIE_BREAKER))) {
+          return null;
+        }
+        const name = shouldEncode ? encodeURIComponent(rawName) : rawName;
+        const value = shouldEncode ? encodeURIComponent(rawValue) : rawValue;
+        return "".concat(name, "=").concat(value, "; ").concat(getCookiePath(rawPath), ";");
       }
       function isValidCookiePath(rawPath) {
         return rawPath === "/" || rawPath === "none";
@@ -23975,6 +25931,25 @@
           parsedValue = Date();
         }
         return parsedValue;
+      }
+      function parseCookieString(cookieString) {
+        const COOKIE_DELIMITER = "=";
+        const COOKIE_PAIRS_DELIMITER = ";";
+        const cookieChunks = cookieString.split(COOKIE_PAIRS_DELIMITER);
+        const cookieData = {};
+        cookieChunks.forEach(function (singleCookie) {
+          let cookieKey;
+          let cookieValue;
+          const delimiterIndex = singleCookie.indexOf(COOKIE_DELIMITER);
+          if (delimiterIndex === -1) {
+            cookieKey = singleCookie.trim();
+          } else {
+            cookieKey = singleCookie.slice(0, delimiterIndex).trim();
+            cookieValue = singleCookie.slice(delimiterIndex + 1);
+          }
+          cookieData[cookieKey] = cookieValue || null;
+        });
+        return cookieData;
       }
       function getCookiePath(rawPath) {
         if (rawPath === "/") {
@@ -24017,9 +25992,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -24039,7 +26014,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -24049,16 +26023,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function setStorageItem(source, storage, key, value) {
         try {
@@ -24088,21 +26053,17 @@
     }
     function xmlPrune(source, args) {
       function xmlPrune(source, propsToRemove) {
-        var _this = this;
         let optionalProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
-        let urlToMatch = arguments.length > 3 ? arguments[3] : undefined;
+        let urlToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
         if (typeof Reflect === "undefined" || typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
           return;
         }
-        let shouldPruneResponse = true;
-        if (!propsToRemove) {
-          shouldPruneResponse = false;
-        }
+        let shouldPruneResponse = false;
         const urlMatchRegexp = toRegExp(urlToMatch);
         const isXML = function isXML(text) {
           if (typeof text === "string") {
-            const trimedText = text.trim();
-            if (trimedText.startsWith("<") && trimedText.endsWith(">")) {
+            const trimmedText = text.trim();
+            if (trimmedText.startsWith("<") && trimmedText.endsWith(">")) {
               return true;
             }
           }
@@ -24112,6 +26073,13 @@
           const xmlParser = new DOMParser();
           const xmlDocument = xmlParser.parseFromString(text, "text/xml");
           return xmlDocument;
+        };
+        const isPruningNeeded = function isPruningNeeded(response, propsToRemove) {
+          if (!isXML(response)) {
+            return false;
+          }
+          const docXML = createXMLDocument(response);
+          return !!docXML.querySelector(propsToRemove);
         };
         const pruneXML = function pruneXML(text) {
           if (!isXML(text)) {
@@ -24139,74 +26107,147 @@
           text = serializer.serializeToString(xmlDoc);
           return text;
         };
-        const xhrWrapper = function xhrWrapper(target, thisArg, args) {
-          const xhrURL = args[1];
-          if (typeof xhrURL !== "string" || xhrURL.length === 0) {
-            return Reflect.apply(target, thisArg, args);
+        const nativeOpen = window.XMLHttpRequest.prototype.open;
+        const nativeSend = window.XMLHttpRequest.prototype.send;
+        let xhrData;
+        const openWrapper = function openWrapper(target, thisArg, args) {
+          xhrData = getXhrData.apply(null, args);
+          if (matchRequestProps(source, urlToMatch, xhrData)) {
+            thisArg.shouldBePruned = true;
           }
-          if (urlMatchRegexp.test(xhrURL)) {
-            thisArg.addEventListener("readystatechange", function pruneResponse() {
-              if (thisArg.readyState === 4) {
-                const response = thisArg.response;
-                thisArg.removeEventListener("readystatechange", pruneResponse);
-                if (!shouldPruneResponse) {
-                  if (isXML(response)) {
-                    const message = "XMLHttpRequest.open() URL: ".concat(xhrURL, "\nresponse: ").concat(response);
-                    logMessage(source, message);
-                    logMessage(source, createXMLDocument(response), true, false);
-                  }
-                } else {
-                  const prunedResponseContent = pruneXML(response);
-                  if (shouldPruneResponse) {
-                    Object.defineProperty(thisArg, "response", {
-                      value: prunedResponseContent
-                    });
-                    Object.defineProperty(thisArg, "responseText", {
-                      value: prunedResponseContent
-                    });
-                    hit(source);
-                  }
-                  shouldPruneResponse = true;
-                }
-              }
-            });
+          if (thisArg.shouldBePruned) {
+            thisArg.collectedHeaders = [];
+            const setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+              thisArg.collectedHeaders.push(args);
+              return Reflect.apply(target, thisArg, args);
+            };
+            const setRequestHeaderHandler = {
+              apply: setRequestHeaderWrapper
+            };
+            thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
           }
           return Reflect.apply(target, thisArg, args);
         };
-        const xhrHandler = {
-          apply: xhrWrapper
+        const sendWrapper = function sendWrapper(target, thisArg, args) {
+          const allowedResponseTypeValues = ["", "text"];
+          if (!thisArg.shouldBePruned || !allowedResponseTypeValues.includes(thisArg.responseType)) {
+            return Reflect.apply(target, thisArg, args);
+          }
+          const forgedRequest = new XMLHttpRequest();
+          forgedRequest.addEventListener("readystatechange", function () {
+            if (forgedRequest.readyState !== 4) {
+              return;
+            }
+            const readyState = forgedRequest.readyState,
+              response = forgedRequest.response,
+              responseText = forgedRequest.responseText,
+              responseURL = forgedRequest.responseURL,
+              responseXML = forgedRequest.responseXML,
+              status = forgedRequest.status,
+              statusText = forgedRequest.statusText;
+            const content = responseText || response;
+            if (typeof content !== "string") {
+              return;
+            }
+            if (!propsToRemove) {
+              if (isXML(response)) {
+                const message = "XMLHttpRequest.open() URL: ".concat(responseURL, "\nresponse: ").concat(response);
+                logMessage(source, message);
+                logMessage(source, createXMLDocument(response), true, false);
+              }
+            } else {
+              shouldPruneResponse = isPruningNeeded(response, propsToRemove);
+            }
+            const responseContent = shouldPruneResponse ? pruneXML(response) : response;
+            Object.defineProperties(thisArg, {
+              readyState: {
+                value: readyState,
+                writable: false
+              },
+              responseURL: {
+                value: responseURL,
+                writable: false
+              },
+              responseXML: {
+                value: responseXML,
+                writable: false
+              },
+              status: {
+                value: status,
+                writable: false
+              },
+              statusText: {
+                value: statusText,
+                writable: false
+              },
+              response: {
+                value: responseContent,
+                writable: false
+              },
+              responseText: {
+                value: responseContent,
+                writable: false
+              }
+            });
+            setTimeout(function () {
+              const stateEvent = new Event("readystatechange");
+              thisArg.dispatchEvent(stateEvent);
+              const loadEvent = new Event("load");
+              thisArg.dispatchEvent(loadEvent);
+              const loadEndEvent = new Event("loadend");
+              thisArg.dispatchEvent(loadEndEvent);
+            }, 1);
+            hit(source);
+          });
+          nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
+          thisArg.collectedHeaders.forEach(function (header) {
+            const name = header[0];
+            const value = header[1];
+            forgedRequest.setRequestHeader(name, value);
+          });
+          thisArg.collectedHeaders = [];
+          try {
+            nativeSend.call(forgedRequest, args);
+          } catch (_unused) {
+            return Reflect.apply(target, thisArg, args);
+          }
+          return undefined;
         };
-        window.XMLHttpRequest.prototype.open = new Proxy(window.XMLHttpRequest.prototype.open, xhrHandler);
+        const openHandler = {
+          apply: openWrapper
+        };
+        const sendHandler = {
+          apply: sendWrapper
+        };
+        XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
+        XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
         const nativeFetch = window.fetch;
-        const fetchWrapper = function fetchWrapper(target, thisArg, args) {
+        const fetchWrapper = async function fetchWrapper(target, thisArg, args) {
           const fetchURL = args[0] instanceof Request ? args[0].url : args[0];
           if (typeof fetchURL !== "string" || fetchURL.length === 0) {
             return Reflect.apply(target, thisArg, args);
           }
           if (urlMatchRegexp.test(fetchURL)) {
-            return nativeFetch.apply(_this, args).then(function (response) {
-              return response.text().then(function (text) {
-                if (!shouldPruneResponse) {
-                  if (isXML(text)) {
-                    const message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(text);
-                    logMessage(source, message);
-                    logMessage(source, createXMLDocument(text), true, false);
-                  }
-                  return Reflect.apply(target, thisArg, args);
-                }
-                const prunedText = pruneXML(text);
-                if (shouldPruneResponse) {
-                  hit(source);
-                  return new Response(prunedText, {
-                    status: response.status,
-                    statusText: response.statusText,
-                    headers: response.headers
-                  });
-                }
-                shouldPruneResponse = true;
-                return Reflect.apply(target, thisArg, args);
+            const response = await nativeFetch(...args);
+            const clonedResponse = response.clone();
+            const responseText = await response.text();
+            shouldPruneResponse = isPruningNeeded(responseText, propsToRemove);
+            if (!shouldPruneResponse) {
+              const message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(responseText);
+              logMessage(source, message);
+              logMessage(source, createXMLDocument(responseText), true, false);
+              return clonedResponse;
+            }
+            const prunedText = pruneXML(responseText);
+            if (shouldPruneResponse) {
+              hit(source);
+              return new Response(prunedText, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers
               });
-            });
+            }
+            return clonedResponse;
           }
           return Reflect.apply(target, thisArg, args);
         };
@@ -24227,9 +26268,9 @@
             const AG_SCRIPTLET_MARKER = "#%#//";
             const UBO_SCRIPTLET_MARKER = "##+js";
             let ruleStartIndex;
-            if (source.ruleText.indexOf(AG_SCRIPTLET_MARKER) > -1) {
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.indexOf(UBO_SCRIPTLET_MARKER) > -1) {
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
             const rulePart = source.ruleText.slice(ruleStartIndex);
@@ -24249,7 +26290,6 @@
         let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         const name = source.name,
-          ruleText = source.ruleText,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
@@ -24259,16 +26299,7 @@
           nativeConsole("".concat(name, ":"), message);
           return;
         }
-        let messageStr = "".concat(name, ": ").concat(message);
-        if (ruleText) {
-          const RULE_MARKER = "#%#//scriptlet";
-          const markerIdx = ruleText.indexOf(RULE_MARKER);
-          if (markerIdx > -1) {
-            const ruleWithoutDomains = ruleText.slice(markerIdx, ruleText.length);
-            messageStr += "; cannot apply rule: ".concat(ruleWithoutDomains);
-          }
-        }
-        nativeConsole(messageStr);
+        nativeConsole("".concat(name, ": ").concat(message));
       }
       function toRegExp() {
         let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -24280,8 +26311,87 @@
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           return new RegExp(input.slice(1, -1));
         }
-        const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
+      }
+      function getXhrData(method, url, async, user, password) {
+        return {
+          method: method,
+          url: url,
+          async: async,
+          user: user,
+          password: password
+        };
+      }
+      function matchRequestProps(source, propsToMatch, requestData) {
+        if (propsToMatch === "" || propsToMatch === "*") {
+          return true;
+        }
+        let isMatched;
+        const parsedData = parseMatchProps(propsToMatch);
+        if (!validateParsedData(parsedData)) {
+          logMessage(source, "Invalid parameter: ".concat(propsToMatch));
+          isMatched = false;
+        } else {
+          const matchData = getMatchPropsData(parsedData);
+          isMatched = Object.keys(matchData).every(function (matchKey) {
+            const matchValue = matchData[matchKey];
+            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
+          });
+        }
+        return isMatched;
+      }
+      function getMatchPropsData(data) {
+        const matchData = {};
+        Object.keys(data).forEach(function (key) {
+          matchData[key] = toRegExp(data[key]);
+        });
+        return matchData;
+      }
+      function getRequestProps() {
+        return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
+      }
+      function validateParsedData(data) {
+        return Object.values(data).every(function (value) {
+          return isValidStrPattern(value);
+        });
+      }
+      function parseMatchProps(propsToMatchStr) {
+        const PROPS_DIVIDER = " ";
+        const PAIRS_MARKER = ":";
+        const LEGAL_MATCH_PROPS = getRequestProps();
+        const propsObj = {};
+        const props = propsToMatchStr.split(PROPS_DIVIDER);
+        props.forEach(function (prop) {
+          const dividerInd = prop.indexOf(PAIRS_MARKER);
+          const key = prop.slice(0, dividerInd);
+          const hasLegalMatchProp = LEGAL_MATCH_PROPS.includes(key);
+          if (hasLegalMatchProp) {
+            const value = prop.slice(dividerInd + 1);
+            propsObj[key] = value;
+          } else {
+            propsObj.url = prop;
+          }
+        });
+        return propsObj;
+      }
+      function isValidStrPattern(input) {
+        const FORWARD_SLASH = "/";
+        let str = escapeRegExp(input);
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          str = input.slice(1, -1);
+        }
+        let isValid;
+        try {
+          isValid = new RegExp(str);
+          isValid = true;
+        } catch (e) {
+          isValid = false;
+        }
+        return isValid;
+      }
+      function escapeRegExp(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       const updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -24347,11 +26457,14 @@
       "debug-on-property-read": debugOnPropertyRead,
       "debug-on-property-write": debugOnPropertyWrite,
       "dir-string": dirString,
-      "abp-dir-string": dirString,
       "disable-newtab-links": disableNewtabLinks,
       "disable-newtab-links.js": disableNewtabLinks,
       "ubo-disable-newtab-links.js": disableNewtabLinks,
       "ubo-disable-newtab-links": disableNewtabLinks,
+      "evaldata-prune": evalDataPrune,
+      "evaldata-prune.js": evalDataPrune,
+      "ubo-evaldata-prune.js": evalDataPrune,
+      "ubo-evaldata-prune": evalDataPrune,
       "close-window": forceWindowClose,
       "window-close-if.js": forceWindowClose,
       "ubo-window-close-if.js": forceWindowClose,
@@ -24488,6 +26601,13 @@
       "ubo-cookie-remover.js": removeCookie,
       "ubo-cookie-remover": removeCookie,
       "remove-in-shadow-dom": removeInShadowDom,
+      "remove-node-text": removeNodeText,
+      "remove-node-text.js": removeNodeText,
+      "ubo-remove-node-text.js": removeNodeText,
+      "rmnt.js": removeNodeText,
+      "ubo-rmnt.js": removeNodeText,
+      "ubo-remove-node-text": removeNodeText,
+      "ubo-rmnt": removeNodeText,
       "set-attr": setAttr,
       "set-constant": setConstant,
       "set-constant.js": setConstant,
@@ -24507,6 +26627,7 @@
       "set-session-storage-item": setSessionStorageItem,
       "trusted-click-element": trustedClickElement,
       "trusted-replace-fetch-response": trustedReplaceFetchResponse,
+      "trusted-replace-node-text": trustedReplaceNodeText,
       "trusted-replace-xhr-response": trustedReplaceXhrResponse,
       "trusted-set-constant": trustedSetConstant,
       "trusted-set-cookie": trustedSetCookie,

@@ -1,4 +1,10 @@
-# <a id="scriptlets"></a> Scriptlets compatibility table
+# Scriplets and Redirects compatibility tables
+
+- [Scriptlets](#scriptlets)
+- [Redirects](#redirects)
+
+
+## <a id="scriptlets"></a> Scriptlets compatibility table
 
 | AdGuard | uBO | Adblock Plus |
 |---|---|---|
@@ -12,8 +18,9 @@
 | [debug-current-inline-script](../wiki/about-scriptlets.md#debug-current-inline-script) |  |  |
 | [debug-on-property-read](../wiki/about-scriptlets.md#debug-on-property-read) |  |  |
 | [debug-on-property-write](../wiki/about-scriptlets.md#debug-on-property-write) |  |  |
-| [dir-string](../wiki/about-scriptlets.md#dir-string) |  | dir-string |
+| [dir-string](../wiki/about-scriptlets.md#dir-string) |  |  |
 | [disable-newtab-links](../wiki/about-scriptlets.md#disable-newtab-links) | disable-newtab-links.js |  |
+| [evaldata-prune](../wiki/about-scriptlets.md#evaldata-prune) | evaldata-prune.js |  |
 | [json-prune](../wiki/about-scriptlets.md#json-prune) | json-prune.js | json-prune |
 | [log](../wiki/about-scriptlets.md#log) |  | log |
 | [log-addEventListener](../wiki/about-scriptlets.md#log-addEventListener) | addEventListener-logger.js (aell.js) (removed) |  |
@@ -39,6 +46,7 @@
 | [remove-attr](../wiki/about-scriptlets.md#remove-attr) | remove-attr.js (ra.js) |  |
 | [remove-class](../wiki/about-scriptlets.md#remove-class) | remove-class.js (rc.js) |  |
 | [remove-cookie](../wiki/about-scriptlets.md#remove-cookie) | cookie-remover.js |  |
+| [remove-node-text](../wiki/about-scriptlets.md#remove-node-text) | remove-node-text.js (rmnt.js) |  |
 | [set-attr](../wiki/about-scriptlets.md#set-attr) |  |  |
 | [set-constant](../wiki/about-scriptlets.md#set-constant) | set-constant.js (set.js) | override-property-read |
 | [set-popads-dummy](../wiki/about-scriptlets.md#set-popads-dummy) |  |  |
@@ -75,9 +83,12 @@
 |  |  | abort-on-iframe-property-write |
 |  | no-floc.js (removed) |  |
 |  | window.name-defuser.js |  |
+|  | spoof-css.js |  |
+|  | replace-node-text.js (rpnt.js, sed.js) |  |
+|  | trusted-set-constant.js (trusted-set.js) |  |
 
 
-# <a id="redirects"></a> Redirects compatibility table
+## <a id="redirects"></a> Redirects compatibility table
 
 | AdGuard | uBO | Adblock Plus |
 |---|---|---|
