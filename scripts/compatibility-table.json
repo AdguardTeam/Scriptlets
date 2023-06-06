@@ -141,6 +141,10 @@
             "ubo": "cookie-remover.js"
         },
         {
+            "adg": "remove-node-text",
+            "ubo": "remove-node-text.js (rmnt.js)"
+        },
+        {
             "adg": "set-attr"
         },
         {
@@ -253,9 +257,6 @@
         },
         {
             "ubo": "spoof-css.js"
-        },
-        {
-            "ubo": "remove-node-text.js (rmnt.js)"
         },
         {
             "ubo": "replace-node-text.js (rpnt.js, sed.js)"

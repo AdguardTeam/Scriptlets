@@ -116,7 +116,11 @@ removeNodeText.names = [
     'remove-node-text',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-node-text.js',
+    'ubo-remove-node-text.js',
     'rmnt.js',
+    'ubo-rmnt.js',
+    'ubo-remove-node-text',
+    'ubo-rmnt',
 ];
 
 removeNodeText.injections = [

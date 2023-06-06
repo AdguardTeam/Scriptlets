@@ -34,7 +34,7 @@ test('Checking if alias name works', (assert) => {
         verbose: true,
     };
     const uboParams = {
-        name: 'remove-node-text.js',
+        name: 'ubo-remove-node-text.js',
         engine: 'test',
         verbose: true,
     };
