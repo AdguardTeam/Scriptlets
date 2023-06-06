@@ -13,6 +13,7 @@ export * from './script-source-utils';
 export * from './open-shadow-dom-utils';
 export * from './prevent-utils';
 export * from './prevent-window-open-utils';
+export * from './prune-utils';
 export * from './regexp-utils';
 export * from './response-utils';
 export * from './request-utils';

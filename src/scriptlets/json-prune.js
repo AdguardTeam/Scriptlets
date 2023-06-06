@@ -3,6 +3,8 @@ import {
     matchStackTrace,
     getWildcardPropertyInChain,
     logMessage,
+    isPruningNeeded,
+    jsonPruner,
     // following helpers are needed for helpers above
     toRegExp,
     getNativeRegexpTest,
@@ -108,102 +110,12 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
         ? requiredInitialProps.split(/ +/)
         : [];
 
-    function isPruningNeeded(root) {
-        if (!root) {
-            return false;
-        }
-
-        let shouldProcess;
-
-        // Only log hostname and matched JSON payload if only second argument is present
-        if (prunePaths.length === 0 && requiredPaths.length > 0) {
-            const rootString = JSON.stringify(root);
-            const matchRegex = toRegExp(requiredPaths.join(''));
-            const shouldLog = matchRegex.test(rootString);
-            if (shouldLog) {
-                logMessage(source, `${window.location.hostname}\n${JSON.stringify(root, null, 2)}`, true);
-                if (root && typeof root === 'object') {
-                    logMessage(source, root, true, false);
-                }
-                shouldProcess = false;
-                return shouldProcess;
-            }
-        }
-
-        for (let i = 0; i < requiredPaths.length; i += 1) {
-            const requiredPath = requiredPaths[i];
-            const lastNestedPropName = requiredPath.split('.').pop();
-
-            const wildcardSymbols = ['.*.', '*.', '.*', '.[].', '[].', '.[]'];
-            const hasWildcard = wildcardSymbols.some((symbol) => requiredPath.includes(symbol));
-
-            // if the path has wildcard, getPropertyInChain should 'look through' chain props
-            const details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
-
-            // start value of 'shouldProcess' due to checking below
-            shouldProcess = !hasWildcard;
-
-            for (let i = 0; i < details.length; i += 1) {
-                if (hasWildcard) {
-                    // if there is a wildcard,
-                    // at least one (||) of props chain should be present in object
-                    shouldProcess = !(details[i].base[lastNestedPropName] === undefined)
-                        || shouldProcess;
-                } else {
-                    // otherwise each one (&&) of them should be there
-                    shouldProcess = !(details[i].base[lastNestedPropName] === undefined)
-                        && shouldProcess;
-                }
-            }
-        }
-
-        return shouldProcess;
-    }
-
-    /**
-     * Prunes properties of 'root' object
-     *
-     * @param {Object} root
-     * @returns {Object} pruned root
-     */
-    const jsonPruner = (root) => {
-        if (prunePaths.length === 0 && requiredPaths.length === 0) {
-            logMessage(source, `${window.location.hostname}\n${JSON.stringify(root, null, 2)}`, true);
-            if (root && typeof root === 'object') {
-                logMessage(source, root, true, false);
-            }
-            return root;
-        }
-
-        try {
-            if (isPruningNeeded(root) === false) {
-                return root;
-            }
-
-            // if pruning is needed, we check every input pathToRemove
-            // and delete it if root has it
-            prunePaths.forEach((path) => {
-                const ownerObjArr = getWildcardPropertyInChain(root, path, true);
-                ownerObjArr.forEach((ownerObj) => {
-                    if (ownerObj !== undefined && ownerObj.base) {
-                        delete ownerObj.base[ownerObj.prop];
-                        hit(source);
-                    }
-                });
-            });
-        } catch (e) {
-            logMessage(source, e);
-        }
-
-        return root;
-    };
-
     const nativeJSONParse = JSON.parse;
     const jsonParseWrapper = (...args) => {
         // dealing with stringified json in args, which should be parsed.
         // so we call nativeJSONParse as JSON.parse which is bound to JSON object
         const root = nativeJSONParse.apply(JSON, args);
-        return jsonPruner(root);
+        return jsonPruner(source, root, prunePaths, requiredPaths);
     };
 
     // JSON.parse mocking
@@ -215,7 +127,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
     const responseJsonWrapper = function () {
         const promise = nativeResponseJson.apply(this);
         return promise.then((obj) => {
-            return jsonPruner(obj);
+            return jsonPruner(source, obj, prunePaths, requiredPaths);
         });
     };
 
@@ -242,6 +154,8 @@ jsonPrune.injections = [
     matchStackTrace,
     getWildcardPropertyInChain,
     logMessage,
+    isPruningNeeded,
+    jsonPruner,
     // following helpers are needed for helpers above
     toRegExp,
     getNativeRegexpTest,

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- new `evaldata-prune` scriptlet [#322](https://github.com/AdguardTeam/Scriptlets/issues/322)
 - new `trusted-replace-node-text` scriptlet [#319](https://github.com/AdguardTeam/Scriptlets/issues/319)
 - new `remove-node-text` scriptlet [#318](https://github.com/AdguardTeam/Scriptlets/issues/318)
 - ability for `prevent-element-src-loading` scriptlet to
