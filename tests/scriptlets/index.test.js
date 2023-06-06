@@ -52,3 +52,5 @@ import './trusted-replace-fetch-response.test';
 import './trusted-set-local-storage-item.test';
 import './trusted-set-constant.test';
 import './inject-css-in-shadow-dom.test';
+import './remove-node-text.test';
+import './trusted-replace-node-text.test';

@@ -31,3 +31,17 @@ export const flatten = (input) => {
  * @returns {boolean} if item is truthy or not
  */
 export const isExisting = (item) => !!item;
+
+/**
+ * Converts NodeList to array
+ *
+ * @param {NodeList} nodeList arbitrary NodeList
+ * @returns {Node[Array]} array of nodes
+ */
+export const nodeListToArray = (nodeList) => {
+    const nodes = [];
+    for (let i = 0; i < nodeList.length; i += 1) {
+        nodes.push(nodeList[i]);
+    }
+    return nodes;
+};

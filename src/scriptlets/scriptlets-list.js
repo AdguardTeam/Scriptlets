@@ -57,3 +57,5 @@ export * from './trusted-replace-fetch-response';
 export * from './trusted-set-local-storage-item';
 export * from './trusted-set-constant';
 export * from './inject-css-in-shadow-dom';
+export * from './remove-node-text';
+export * from './trusted-replace-node-text';

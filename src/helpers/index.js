@@ -33,3 +33,4 @@ export * from './parse-keyword-value';
 export * from './random-id';
 export * from './throttle';
 export * from './shadow-dom-utils';
+export * from './node-text-utils';

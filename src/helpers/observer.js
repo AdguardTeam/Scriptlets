@@ -50,3 +50,41 @@ export const observeDOMChanges = (callback, observeAttrs = false, attrsToObserve
 
     connect();
 };
+
+/**
+ * Returns the list of added nodes from the list of mutations
+ *
+ * @param {MutationRecord[]} mutations list of mutations
+ * @returns {Node[]} list of added nodes
+ */
+export const getAddedNodes = (mutations) => {
+    const nodes = [];
+    for (let i = 0; i < mutations.length; i += 1) {
+        const { addedNodes } = mutations[i];
+        for (let j = 0; j < addedNodes.length; j += 1) {
+            nodes.push(addedNodes[j]);
+        }
+    }
+    return nodes;
+};
+
+/**
+ * Creates and runs a MutationObserver on the document element with optional
+ * throttling and disconnect timeout.
+ *
+ * @param {Function} callback MutationObserver callback
+ * @param {Object} options MutationObserver options
+ * @param {number|null} timeout Disconnect timeout in ms
+ */
+export const observeDocumentWithTimeout = (callback, options, timeout = 10000) => {
+    const observer = new MutationObserver((mutations, observer) => {
+        observer.disconnect();
+        callback(mutations);
+        observer.observe(document.documentElement, options);
+    });
+    observer.observe(document.documentElement, options);
+
+    if (typeof timeout === 'number') {
+        setTimeout(() => observer.disconnect(), timeout);
+    }
+};
