@@ -15,18 +15,15 @@ import {
 
 /* eslint-disable max-len */
 /**
- * @scriptlet trusted-replace-node-text
+ * @trustedScriptlet trusted-replace-node-text
  *
  * @description
  * Replaces text in text content of matched DOM nodes.
  *
- * Related UBO scriptlet:
- * https://github.com/gorhill/uBlock/commit/41876336db48
- *
  * ### Syntax
  *
  * ```adblock
- * example.org#%#//scriptlet('trusted-replace-node-text', nodeName, condition)
+ * example.org#%#//scriptlet('trusted-replace-node-text', nodeName, textMatch, pattern, replacement)
  * ```
  *
  * - `nodeName` — required, string or RegExp, specifies DOM node name from which the text will be removed.
@@ -144,10 +141,7 @@ export function trustedReplaceNodeText(source, nodeName, textMatch, pattern, rep
 
 trustedReplaceNodeText.names = [
     'trusted-replace-node-text',
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    'replace-node-text.js',
-    'rpnt.js',
-    'sed.js',
+    // trusted scriptlets support no aliases
 ];
 
 trustedReplaceNodeText.injections = [

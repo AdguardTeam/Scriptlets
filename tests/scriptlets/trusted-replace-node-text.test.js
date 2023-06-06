@@ -27,24 +27,6 @@ const addNode = (nodeName, textContent) => {
     return node;
 };
 
-test('Checking if alias name works', (assert) => {
-    const adgParams = {
-        name,
-        engine: 'test',
-        verbose: true,
-    };
-    const uboParams = {
-        name: 'replace-node-text.js',
-        engine: 'test',
-        verbose: true,
-    };
-
-    const codeByAdgParams = window.scriptlets.invoke(adgParams);
-    const codeByUboParams = window.scriptlets.invoke(uboParams);
-
-    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
-});
-
 test('simple case', (assert) => {
     const done = assert.async();
 

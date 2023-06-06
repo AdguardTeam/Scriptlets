@@ -206,7 +206,7 @@ export function trustedReplaceFetchResponse(source, pattern = '', replacement = 
 
 trustedReplaceFetchResponse.names = [
     'trusted-replace-fetch-response',
-
+    // trusted scriptlets support no aliases
 ];
 
 trustedReplaceFetchResponse.injections = [
