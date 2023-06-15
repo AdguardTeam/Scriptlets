@@ -267,6 +267,9 @@
         },
         {
             "ubo": "trusted-set-constant.js (trusted-set.js)"
+        },
+        {
+            "ubo": "set-cookie.js"
         }
     ],
     "redirects": [

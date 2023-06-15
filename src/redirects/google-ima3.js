@@ -11,6 +11,9 @@ import {
  * @description
  * Mocks the IMA SDK of Google.
  *
+ * Related Mozilla shim:
+ * https://searchfox.org/mozilla-central/source/browser/extensions/webcompat/shims/google-ima.js
+ *
  * ### Examples
  *
  * ```adblock
