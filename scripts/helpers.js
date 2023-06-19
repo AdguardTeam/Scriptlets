@@ -31,7 +31,7 @@ const getFilesList = (relativeDirPath) => {
 };
 
 /**
- * @typedef {Object} CommentTag
+ * @typedef {object} CommentTag
  * @property {string} type Tag name, e.g. `@scriptlet`, `@redirect`, `@added`.
  * @property {string} string Text following the tag name.
  */
@@ -77,7 +77,7 @@ Please add one OR edit the list of NON_SCRIPTLETS_FILES / NON_REDIRECTS_FILES.`)
 };
 
 /**
- * @typedef {Object} DescribingCommentData
+ * @typedef {object} DescribingCommentData
  *
  * Collected data from jsdoc-type comment for every scriptlet or redirect.
  * @property {string} type parsed instance tag:

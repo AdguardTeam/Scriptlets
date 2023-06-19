@@ -9,7 +9,7 @@ import {
     // because they are used by helpers above
     getMatchPropsData,
     getRequestProps,
-    validateParsedData,
+    isValidParsedData,
     parseMatchProps,
     isValidStrPattern,
     escapeRegExp,
@@ -131,7 +131,7 @@ export function m3uPrune(source, propsToRemove, urlToMatch = '') {
      *
      * @param {Array} lines
      * @param {number} i
-     * @returns {Object} { array, index }
+     * @returns {object} { array, index }
      */
     const pruneExtinfFromVmapBlock = (lines, i) => {
         let array = lines.slice();
@@ -525,7 +525,7 @@ m3uPrune.injections = [
     matchRequestProps,
     getMatchPropsData,
     getRequestProps,
-    validateParsedData,
+    isValidParsedData,
     parseMatchProps,
     isValidStrPattern,
     escapeRegExp,

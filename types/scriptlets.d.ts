@@ -37,7 +37,7 @@ declare module '@adguard/scriptlets' {
         /**
          * Domain name, used to improve logging
          */
-        domainName?: string
+        domainName?: string;
     }
 
     /**
@@ -106,7 +106,7 @@ declare module '@adguard/scriptlets' {
      * @returns Array of AdGuard scriptlet rules: one array item for ADG and UBO or few items for ABP.
      * For the ADG `rule`, validates its syntax and returns an empty array if it is invalid.
      */
-    function convertScriptletToAdg(ruleText: string): string[];
+    function convertScriptletToAdg(rule: string): string[];
 
     /**
      * 1. For ADG scriptlet checks whether the scriptlet syntax and name are valid.
@@ -129,7 +129,7 @@ declare module '@adguard/scriptlets' {
      * @param {string} name Scriptlet name.
      * @returns {boolean} True if scriptlet name is valid.
      */
-    function isValidScriptletName(rule: string): boolean;
+    function isValidScriptletName(name: string): boolean;
 
     /**
      * Returns scriptlet function by `name`.
@@ -138,7 +138,7 @@ declare module '@adguard/scriptlets' {
      *
      * @returns {Function} Scriptlet function.
      */
-    function getScriptletFunction(name: string): () => void
+    function getScriptletFunction(name: string): () => void;
 
     /**
      * Redirects module
@@ -151,6 +151,7 @@ declare module '@adguard/scriptlets' {
 
         /**
          * Returns filename with extension for requested alias
+         *
          * @param alias alias for redirect filename
          */
         getRedirectFilename(alias: string): string;
@@ -164,26 +165,30 @@ declare module '@adguard/scriptlets' {
 
         /**
          * Checks if the `rule` is **valid** AdGuard redirect resource rule
+         *
          * @param rule
          */
         isValidAdgRedirectRule(rule: string): boolean;
 
         /**
          * Checks if the Ubo redirect `rule` has AdGuard analog. Needed for Ubo->Adg conversion
+         *
          * @param rule
          */
         isUboRedirectCompatibleWithAdg(rule: string): boolean;
 
         /**
          * Checks if the Abp redirect `rule` has AdGuard analog. Needed for Abp->Adg conversion
+         *
          * @param rule
          */
         isAbpRedirectCompatibleWithAdg(rule: string): boolean;
 
         /**
          * Converts redirect rule to AdGuard one
+         *
          * @param rule
          */
         convertRedirectToAdg(rule: string): string;
-    }
+    };
 }

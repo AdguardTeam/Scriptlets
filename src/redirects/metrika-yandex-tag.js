@@ -73,7 +73,7 @@ export function metrikaYandexTag(source) {
      *
      * @param {string} id
      * @param {string} target
-     * @param {Object} params
+     * @param {object} params
      * @param {Function} callback
      * @param {any} ctx
      */

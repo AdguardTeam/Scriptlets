@@ -35,7 +35,7 @@ const areArraysOfStringsEqual = (arr1, arr2) => {
 /**
  * Returns parsed compatibility table
  *
- * @returns {Object}
+ * @returns {object}
  */
 const getCompatibilityTable = () => {
     const rawData = fs.readFileSync(COMPATIBILITY_TABLE_DATA_PATH);
@@ -66,7 +66,7 @@ const getRedirectsFromTable = (platform) => {
 };
 
 /**
- * @typedef {Object} Diff
+ * @typedef {object} Diff
  * @property {string[]} added added content
  * @property {string[]} removed removed content
  */
@@ -145,6 +145,8 @@ const ALIASES_MARKER = 'aliases: ';
 
 /**
  * Make request to UBO repo(master), parses and returns the list of UBO scriptlets
+ *
+ * @returns {string[]} ubo scriptlets' names
  */
 async function getCurrentUBOScriptlets() {
     console.log('Downloading UBO file...');
@@ -211,6 +213,8 @@ async function getCurrentUBOScriptlets() {
 
 /**
  * Check updates for UBO Scriptlets
+ *
+ * @returns {Diff|null} diff
  */
 async function checkForUBOScriptletsUpdates() {
     const oldList = getScriptletsFromTable('ubo');
@@ -236,6 +240,8 @@ const UBO_REDIRECTS_DIRECTORY_FILE = 'https://raw.githubusercontent.com/gorhill/
 
 /**
  * Make request to UBO repo(master), parses and returns the list of UBO redirects
+ *
+ * @returns {string[]} ubo redirects' names
  */
 async function getCurrentUBORedirects() {
     console.log('Downloading UBO page...');
@@ -263,6 +269,8 @@ async function getCurrentUBORedirects() {
 
 /**
  * Checks updates for UBO redirects
+ *
+ * @returns {Diff|null} diff
  */
 async function checkForUBORedirectsUpdates() {
     const oldList = getRedirectsFromTable('ubo');
@@ -289,6 +297,8 @@ const ABP_SNIPPETS_FILE = 'https://raw.githubusercontent.com/adblockplus/adblock
 
 /**
  * Checks for snippets updates
+ *
+ * @returns {string[]} abp snippets' names
  */
 async function getCurrentABPSnippets() { // eslint-disable-line no-unused-vars
     console.log('Downloading ABP file...');
@@ -310,6 +320,8 @@ async function getCurrentABPSnippets() { // eslint-disable-line no-unused-vars
 
 /**
  * Checks for ABP Snippets updates
+ *
+ * @returns {Diff|null} diff
  */
 async function checkForABPScriptletsUpdates() {
     const oldList = getScriptletsFromTable('abp');
@@ -341,6 +353,8 @@ const ABP_REDIRECTS_FILE_SKIP_START = 'exports.resources = ';
 
 /**
  * Gets ABP redirects
+ *
+ * @returns {string[]} abp redirects' names
  */
 async function getCurrentABPRedirects() {
     console.log('Downloading ABP file...');
@@ -355,6 +369,8 @@ async function getCurrentABPRedirects() {
 
 /**
  * Checks for ABP redirects updates
+ *
+ * @returns {Diff|null} diff
  */
 async function checkForABPRedirectsUpdates() {
     const oldList = getRedirectsFromTable('abp');

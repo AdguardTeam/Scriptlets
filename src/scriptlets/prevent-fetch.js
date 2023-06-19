@@ -14,7 +14,7 @@ import {
     getRequestData,
     getRequestProps,
     parseMatchProps,
-    validateParsedData,
+    isValidParsedData,
     getMatchPropsData,
 } from '../helpers/index';
 
@@ -198,6 +198,6 @@ preventFetch.injections = [
     getRequestData,
     getRequestProps,
     parseMatchProps,
-    validateParsedData,
+    isValidParsedData,
     getMatchPropsData,
 ];

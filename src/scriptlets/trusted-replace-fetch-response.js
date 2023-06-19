@@ -13,7 +13,7 @@ import {
     getRequestData,
     getRequestProps,
     parseMatchProps,
-    validateParsedData,
+    isValidParsedData,
     getMatchPropsData,
 } from '../helpers/index';
 
@@ -222,6 +222,6 @@ trustedReplaceFetchResponse.injections = [
     getRequestData,
     getRequestProps,
     parseMatchProps,
-    validateParsedData,
+    isValidParsedData,
     getMatchPropsData,
 ];

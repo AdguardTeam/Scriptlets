@@ -24,10 +24,17 @@ module.exports = (api) => {
                     ],
                 },
             ],
+            [
+                '@babel/preset-typescript',
+                {
+                    optimizeConstEnums: true,
+                },
+            ],
         ],
         plugins: [
             '@babel/plugin-transform-runtime',
             '@babel/plugin-transform-arrow-functions',
+            '@babel/plugin-transform-function-name',
         ],
     };
 

@@ -80,8 +80,7 @@ export function abortOnPropertyRead(source, property) {
 
     setChainPropAccess(window, property);
 
-    window.onerror = createOnErrorHandler(rid)
-        .bind();
+    window.onerror = createOnErrorHandler(rid).bind();
 }
 
 abortOnPropertyRead.names = [

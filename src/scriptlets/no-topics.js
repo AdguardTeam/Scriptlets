@@ -1,7 +1,7 @@
 import {
     hit,
     noopPromiseResolve,
-} from '../helpers';
+} from '../helpers/index';
 
 /**
  * @scriptlet no-topics

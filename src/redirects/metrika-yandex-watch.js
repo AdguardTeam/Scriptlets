@@ -21,7 +21,7 @@ export function metrikaYandexWatch(source) {
     /**
      * Gets callback and its context from options and call it in async way
      *
-     * @param {Object} options Yandex Metrika API options
+     * @param {object} options Yandex Metrika API options
      */
     const asyncCallbackFromOptions = (options = {}) => {
         let { callback } = options;

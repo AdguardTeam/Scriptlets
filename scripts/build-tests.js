@@ -25,7 +25,7 @@ const MULTIPLE_TEST_FILES_DIRS = [
  *
  * @param {string} fileName test file name
  * @param {string} subDir subdirectory with test files
- * @returns {Object} rollup config
+ * @returns {object} rollup config
  */
 const getTestConfig = (fileName, subDir) => {
     if (!fs.existsSync(TESTS_DIST)) {
@@ -48,7 +48,7 @@ const getTestConfig = (fileName, subDir) => {
             format: 'iife',
         },
         plugins: [
-            resolve(),
+            resolve({ extensions: ['.js', '.ts'] }),
             commonjs({
                 include: 'node_modules/**',
             }),
@@ -60,6 +60,7 @@ const getTestConfig = (fileName, subDir) => {
                 namedExports: true,
             }),
             babel({
+                extensions: ['.js', '.ts'],
                 babelHelpers: 'runtime',
             }),
             generateHtml({
@@ -116,11 +117,11 @@ const getMultipleTestFilesFromDir = (subDir) => {
 /**
  * Returns list of rollup configs for tests.
  *
- * @param {Object} limitData Optional data object for limited tests running. If not provided, all tests will be run.
+ * @param {object} limitData Optional data object for limited tests running. If not provided, all tests will be run.
  * @param {string} limitData.type Type of tests to run: scriptlets | redirects | helpers | api.
  * @param {string} limitData.name Optional name scriptlets or redirects test to run.
  *
- * @returns {Object[]} Array of rollup configs for tests.
+ * @returns {object[]} Array of rollup configs for tests.
  */
 const getTestConfigs = (limitData) => {
     // run limited list of tests if limitData is provided

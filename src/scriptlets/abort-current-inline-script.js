@@ -213,8 +213,7 @@ export function abortCurrentInlineScript(source, property, search) {
 
     setChainPropAccess(window, property);
 
-    window.onerror = createOnErrorHandler(rid)
-        .bind();
+    window.onerror = createOnErrorHandler(rid).bind();
 }
 
 abortCurrentInlineScript.names = [

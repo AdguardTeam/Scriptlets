@@ -10,7 +10,7 @@ import jsYaml from 'js-yaml';
  *      content: R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
  * }
  *
- * @typedef {Object} Redirect
+ * @typedef {object} Redirect
  * @property {string} title resource name
  * @property {string} comment resource description
  * @property {string} content encoded resource content

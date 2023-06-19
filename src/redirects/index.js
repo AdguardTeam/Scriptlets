@@ -32,7 +32,7 @@ const getRedirectByName = (name) => {
 };
 
 /**
- * @typedef {Object} Source - redirect properties
+ * @typedef {object} Source - redirect properties
  * @property {string} name redirect name
  * @property {Array<string>} args Arguments for redirect function
  * @property {'extension'|'test'} [engine] -

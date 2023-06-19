@@ -5,17 +5,17 @@ import fs from 'fs-extra';
 import path from 'path';
 import { EOL } from 'os';
 
-import resolve from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
-import babel from '@rollup/plugin-babel';
-import cleanup from 'rollup-plugin-cleanup';
-import generateHtml from 'rollup-plugin-generate-html';
 import { minify } from 'terser';
 import * as redirectsList from '../src/redirects/redirects-list';
 import { version } from '../package.json';
 import { rollupStandard } from './rollup-runners';
 import { writeFile, getDataFromFiles } from './helpers';
 import { redirectsFilenames, REDIRECTS_SRC_RELATIVE_DIR_PATH } from './constants';
+import {
+    redirectsListConfig,
+    click2LoadConfig,
+    redirectsPrebuildConfig,
+} from '../rollup.config';
 
 const FILE_NAME = 'redirects.yml';
 const CORELIBS_FILE_NAME = 'redirects.json';
@@ -26,7 +26,6 @@ const REDIRECT_FILES_PATH = path.resolve(PATH_TO_DIST, 'redirect-files');
 const CORELIBS_RESULT_PATH = path.resolve(PATH_TO_DIST, CORELIBS_FILE_NAME);
 
 // TODO: check if constants may be used
-const DIST_REDIRECT_FILES = 'dist/redirect-files';
 const STATIC_REDIRECTS_PATH = './src/redirects/static-redirects.yml';
 const BLOCKING_REDIRECTS_PATH = './src/redirects/blocking-redirects.yml';
 const banner = `#
@@ -265,25 +264,7 @@ const buildRedirectsYamlFile = async (mergedRedirects) => {
 };
 
 export const prebuildRedirects = async () => {
-    await rollupStandard({
-        input: {
-            redirects: 'src/redirects/index.js',
-        },
-        output: {
-            dir: 'tmp',
-            entryFileNames: '[name].js',
-            format: 'es',
-        },
-        plugins: [
-            resolve(),
-            commonjs({
-                include: 'node_modules/**',
-            }),
-            babel({
-                babelHelpers: 'runtime',
-            }),
-        ],
-    });
+    await rollupStandard(redirectsPrebuildConfig);
 };
 
 /**
@@ -293,42 +274,9 @@ export const prebuildRedirects = async () => {
  * The extra script file will be removed from dist/redirect-files later while build-redirects.js run
  */
 export const buildClick2Load = async () => {
-    const buildClick2LoadScript = rollupStandard({
-        input: {
-            click2load: 'src/redirects/blocking-redirects/click2load.js',
-        },
-        output: {
-            dir: 'tmp',
-            entryFileNames: '[name].js',
-            name: 'click2load',
-            format: 'iife',
-        },
-        plugins: [
-            resolve(),
-            babel({ babelHelpers: 'runtime' }),
-            cleanup(),
-        ],
-    });
+    const buildClick2LoadScript = rollupStandard(click2LoadConfig.script);
 
-    const buildClick2LoadHtml = rollupStandard({
-        input: 'src/redirects/blocking-redirects/click2load.js',
-        output: {
-            dir: DIST_REDIRECT_FILES,
-            name: 'click2load',
-            format: 'iife',
-        },
-        plugins: [
-            resolve(),
-            babel({ babelHelpers: 'runtime' }),
-            cleanup(),
-            generateHtml({
-                filename: `${DIST_REDIRECT_FILES}/click2load.html`,
-                template: 'src/redirects/blocking-redirects/click2load.html',
-                selector: 'body',
-                inline: true,
-            }),
-        ],
-    });
+    const buildClick2LoadHtml = rollupStandard(click2LoadConfig.html);
 
     await Promise.all([buildClick2LoadScript, buildClick2LoadHtml]);
 };
@@ -391,23 +339,5 @@ export const buildRedirectsForCorelibs = async () => {
 };
 
 export const buildRedirectsList = async () => {
-    await rollupStandard({
-        input: {
-            'redirects-list': 'src/redirects/redirects-list.js',
-        },
-        output: {
-            dir: 'tmp',
-            entryFileNames: '[name].js',
-            format: 'es',
-        },
-        plugins: [
-            resolve(),
-            commonjs({
-                include: 'node_modules/**',
-            }),
-            babel({
-                babelHelpers: 'runtime',
-            }),
-        ],
-    });
+    await rollupStandard(redirectsListConfig);
 };

@@ -14,7 +14,7 @@ import {
 import { getScriptletFunction } from '../../tmp/scriptlets-func';
 
 /**
- * @typedef {Object} Source Scriptlet properties.
+ * @typedef {object} Source Scriptlet properties.
  * @property {string} name Scriptlet name.
  * @property {Array<string>} args Arguments for scriptlet function.
  * @property {'extension'|'corelibs'|'test'} engine Defines the final form of scriptlet string presentation.
@@ -54,7 +54,7 @@ function getScriptletCode(source) {
 /**
  * Scriptlets variable
  *
- * @returns {Object} object with methods:
+ * @returns {object} object with methods:
  * `invoke` method receives one argument with `Source` type
  * `validate` method receives one argument with `String` type
  */

@@ -9,7 +9,7 @@ import {
     // because they are used by helpers above
     getMatchPropsData,
     getRequestProps,
-    validateParsedData,
+    isValidParsedData,
     parseMatchProps,
     isValidStrPattern,
     escapeRegExp,
@@ -257,7 +257,7 @@ trustedReplaceXhrResponse.injections = [
     getXhrData,
     getMatchPropsData,
     getRequestProps,
-    validateParsedData,
+    isValidParsedData,
     parseMatchProps,
     isValidStrPattern,
     escapeRegExp,

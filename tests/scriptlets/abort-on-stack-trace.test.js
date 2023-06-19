@@ -6,7 +6,7 @@ const name = 'abort-on-stack-trace';
 const PROPERTY = 'Ya';
 const CHAIN_PROPERTY = 'Ya.videoAds';
 
-const changingProps = [PROPERTY, 'hit', '__debug'];
+const changingProps = [PROPERTY, 'hit', '__debug', 'onerror', 'testPassed'];
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -363,7 +363,7 @@ test('abort Math.max in injected script, but not abort inline script', (assert) 
         scriptElement.type = 'text/javascript';
         // set window.testPassed to true if script is aborted
         // eslint-disable-next-line max-len
-        scriptElement.innerText = 'try { debugger; Math.max(10, 20); } catch(error) { window.testPassed = true; console.log("Script aborted:", error); }';
+        scriptElement.innerText = 'try { Math.max(10, 20); } catch(error) { window.testPassed = true; console.log("Script aborted:", error); }';
         document.body.appendChild(scriptElement);
         scriptElement.parentNode.removeChild(scriptElement);
     }
@@ -373,11 +373,15 @@ test('abort Math.max in injected script, but not abort inline script', (assert) 
 
 test('abort RegExp, matches stack', (assert) => {
     const property = 'RegExp';
-    const stackMatch = 'abort-on-stack';
+    const stackMatch = 'triggerFunc';
     const scriptletArgs = [property, stackMatch];
     runScriptlet(name, scriptletArgs);
+    function triggerFunc() {
+        const triggerProp = new RegExp('test');
+        return triggerProp;
+    }
     assert.throws(
-        () => new RegExp('test'),
+        triggerFunc,
         /ReferenceError/,
         'Reference error thrown when trying to access property RegExp',
     );

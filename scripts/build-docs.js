@@ -8,6 +8,7 @@ const {
     SCRIPTLET_TYPE,
     TRUSTED_SCRIPTLET_TYPE,
     REDIRECT_TYPE,
+    DescribingCommentData,
 } = require('./helpers');
 
 const {
@@ -48,7 +49,7 @@ const aboutTrustedScriptletsPath = path.resolve(
 /**
  * Collects required comments from files
  *
- * @returns {Object} describing object for scriptlets and redirects
+ * @returns {object} describing object for scriptlets and redirects
  */
 const manageDataFromFiles = () => {
     const dataFromScriptletsFiles = getDataFromFiles(
@@ -83,11 +84,7 @@ const manageDataFromFiles = () => {
 };
 
 /**
- * @typedef { import('./helpers').DescribingCommentData } DescribingCommentData
- */
-
-/**
- * @typedef {Object} MarkdownData
+ * @typedef {object} MarkdownData
  * @property {string} list table of content
  * @property {string} body main content which
  */

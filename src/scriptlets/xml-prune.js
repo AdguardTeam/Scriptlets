@@ -9,7 +9,7 @@ import {
     // because they are used by helpers above
     getMatchPropsData,
     getRequestProps,
-    validateParsedData,
+    isValidParsedData,
     parseMatchProps,
     isValidStrPattern,
     escapeRegExp,
@@ -344,7 +344,7 @@ xmlPrune.injections = [
     matchRequestProps,
     getMatchPropsData,
     getRequestProps,
-    validateParsedData,
+    isValidParsedData,
     parseMatchProps,
     isValidStrPattern,
     escapeRegExp,

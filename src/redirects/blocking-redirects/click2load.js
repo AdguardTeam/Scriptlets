@@ -29,7 +29,7 @@ function clickToLoad() {
      * because frame will be shown anyway if click2load redirect rule used
      *
      * @param {string} rawQueryStr
-     * @returns {Object} key is parameter name and value is parameter value
+     * @returns {object} key is parameter name and value is parameter value
      */
     const parseSearchParam = (rawQueryStr) => {
         const res = {};
@@ -125,7 +125,7 @@ function clickToLoad() {
      * Returns translations data for navigator.language
      * or 'en' if navigator.language is not supported
      *
-     * @returns {Object} data for one locale with 'title' and 'button' keys
+     * @returns {object} data for one locale with 'title' and 'button' keys
      */
     const getTranslations = () => {
         const baseLocaleData = translationsData.en;

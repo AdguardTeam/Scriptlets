@@ -68,8 +68,7 @@ export function debugOnPropertyRead(source, property) {
 
     setChainPropAccess(window, property);
 
-    window.onerror = createOnErrorHandler(rid)
-        .bind();
+    window.onerror = createOnErrorHandler(rid).bind();
 }
 
 debugOnPropertyRead.names = [

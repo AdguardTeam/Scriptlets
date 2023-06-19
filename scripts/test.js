@@ -72,7 +72,7 @@ const buildTasksMap = {
  * Runs specific scriptlets or redirects tests.
  *
  * @param {string} type 'scriptlets' | 'redirects'.
- * @param {Object} [options] commander options object where:
+ * @param {object} [options] commander options object where:
  * - `name` — string[], list of scriptlets or redirects names;
  * - `gui` — boolean, flag for run the test in gui mode, requires `options.name` to be set.
  */

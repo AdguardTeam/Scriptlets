@@ -119,8 +119,7 @@ export function debugCurrentInlineScript(source, property, search) {
 
     setChainPropAccess(window, property);
 
-    window.onerror = createOnErrorHandler(rid)
-        .bind();
+    window.onerror = createOnErrorHandler(rid).bind();
 }
 
 debugCurrentInlineScript.names = [

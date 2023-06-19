@@ -20,14 +20,14 @@ const WIKI_COMPATIBILITY_TABLE_PATH = path.resolve(
 );
 
 /**
- * @typedef {Object} CompatibilityItem
+ * @typedef {object} CompatibilityItem
  * @property {string} adg AdGuard name
  * @property {string} abp Adblock Plus name
  * @property {string} ubo uBlock name
  */
 
 /**
- * @typedef {Object} CompatibilityData
+ * @typedef {object} CompatibilityData
  * @property {CompatibilityItem[]} scriptlets list of scriptlets compatibility items
  * @property {CompatibilityItem[]} redirects list of redirects compatibility items
  */

@@ -249,10 +249,10 @@ export function setConstant(source, property, value, stack = '', valueWrapper = 
      * IMPORTANT! this duplicates corresponding func in trusted-set-constant scriptlet as
      * reorganizing this to common helpers will most definitely complicate debugging
      *
-     * @param {Object} base arbitrary reachable object
+     * @param {object} base arbitrary reachable object
      * @param {string} prop property name
      * @param {boolean} configurable if set property should be configurable
-     * @param {Object} handler custom property descriptor object
+     * @param {object} handler custom property descriptor object
      * @returns {boolean} true if prop was trapped successfully
      */
     const trapProp = (base, prop, configurable, handler) => {
@@ -299,7 +299,7 @@ export function setConstant(source, property, value, stack = '', valueWrapper = 
      * IMPORTANT! this duplicates corresponding func in trusted-set-constant scriptlet as
      * reorganizing this to common helpers will most definitely complicate debugging
      *
-     * @param {Object} owner object that owns chain
+     * @param {object} owner object that owns chain
      * @param {string} property chain of owner properties
      */
     const setChainPropAccess = (owner, property) => {
