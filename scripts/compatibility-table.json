@@ -270,6 +270,12 @@
         },
         {
             "ubo": "set-cookie.js"
+        },
+        {
+            "ubo": "no-window-open-if.js (nowoif.js)"
+        },
+        {
+            "ubo": "trusted-set-cookie.js"
         }
     ],
     "redirects": [

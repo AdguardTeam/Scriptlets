@@ -87,6 +87,8 @@
 |  | replace-node-text.js (rpnt.js, sed.js) |  |
 |  | trusted-set-constant.js (trusted-set.js) |  |
 |  | set-cookie.js |  |
+|  | no-window-open-if.js (nowoif.js) |  |
+|  | trusted-set-cookie.js |  |
 
 
 ## <a id="redirects"></a> Redirects compatibility table
