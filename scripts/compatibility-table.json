@@ -157,7 +157,14 @@
             "abp": "override-property-read"
         },
         {
+            "adg": "set-local-storage-item",
+            "ubo": "set-local-storage-item.js"
+        },
+        {
             "adg": "set-popads-dummy"
+        },
+        {
+            "adg": "set-session-storage-item"
         },
         {
             "adg": "xml-prune",
@@ -276,6 +283,9 @@
         },
         {
             "ubo": "trusted-set-cookie.js"
+        },
+        {
+            "ubo": "trusted-set-local-storage-item.js"
         }
     ],
     "redirects": [
