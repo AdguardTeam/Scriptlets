@@ -141,7 +141,8 @@ const COMMENT_MARKER = '//';
 const FUNCTION_MARKER = 'function ';
 const NAME_MARKER_START = "name: '";
 const NAME_MARKER_END = "',";
-const ALIASES_MARKER = 'aliases: ';
+const ALIASES_MARKER_START = 'aliases: [';
+const ALIASES_MARKER_END = '],';
 
 /**
  * Make request to UBO repo(master), parses and returns the list of UBO scriptlets
@@ -164,14 +165,17 @@ async function getCurrentUBOScriptlets() {
 
     chunks.forEach((chunk) => {
         let name;
-        let aliases;
+        const aliases = [];
 
         const functionDefinitionIndex = chunk.indexOf(FUNCTION_MARKER) || chunk.length;
         const scriptletObjectText = chunk.slice(0, functionDefinitionIndex).trim();
 
+        let areAliasesStarted = false;
+
         const textLines = scriptletObjectText.split(EOL);
         for (let i = 0; i < textLines.length; i += 1) {
             const line = textLines[i].trim();
+
             if (line.startsWith(COMMENT_MARKER)) {
                 continue;
             }
@@ -181,19 +185,24 @@ async function getCurrentUBOScriptlets() {
                 continue;
             }
             // parse the aliases
-            if (line.startsWith(ALIASES_MARKER)) {
-                const aliasesStr = line
-                    .slice(ALIASES_MARKER.length)
-                    // prepare the string for JSON.parse
-                    .replace(/'/g, '"')
-                    .replace(/,?$/, '')
-                    // remove comments
-                    // e.g. "[ 'rnt.js', 'sed.js' /* to be removed */ ]"
-                    .replace(/\/\*[\s|\w]+?\*\//, '');
-                aliases = JSON.parse(aliasesStr);
-                // 'name' string goes first and 'aliases' string goes after it
-                // so if aliases are parsed, no need to continue lines iterating
-                break;
+            if (line.startsWith(ALIASES_MARKER_START)) {
+                // now aliases array is set as multiline list
+                // so the flag is needed for correct parsing of following lines
+                areAliasesStarted = true;
+                continue;
+            }
+            if (areAliasesStarted) {
+                if (line === ALIASES_MARKER_END) {
+                    areAliasesStarted = false;
+                    // 'name' string goes first and 'aliases' string goes after it
+                    // so if aliases are parsed, no need to continue lines iterating
+                    break;
+                }
+                const alias = line
+                    .replace(/,?$/g, '')
+                    .replace(/'/g, '');
+                aliases.push(alias);
+                continue;
             }
         }
 
@@ -202,7 +211,7 @@ async function getCurrentUBOScriptlets() {
         }
 
         let namesStr = name;
-        if (aliases) {
+        if (aliases.length > 0) {
             namesStr += ` (${aliases.join(', ')})`;
         }
         names.push(namesStr);

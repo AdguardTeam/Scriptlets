@@ -86,7 +86,7 @@
         },
         {
             "adg": "prevent-addEventListener",
-            "ubo": "addEventListener-defuser.js (aeld.js)"
+            "ubo": "addEventListener-defuser.js (aeld.js, prevent-addEventListener.js)"
         },
         {
             "adg": "prevent-adfly",
@@ -97,18 +97,18 @@
         },
         {
             "adg": "prevent-eval-if",
-            "ubo": "noeval-if.js"
+            "ubo": "noeval-if.js (prevent-eval-if.js)"
         },
         {
             "adg": "prevent-fab-3.2.0"
         },
         {
             "adg": "prevent-fetch",
-            "ubo": "no-fetch-if.js"
+            "ubo": "no-fetch-if.js (prevent-fetch.js)"
         },
         {
             "adg": "prevent-xhr",
-            "ubo": "no-xhr-if.js"
+            "ubo": "no-xhr-if.js (prevent-xhr.js)"
         },
         {
             "adg": "prevent-popads-net"
@@ -119,15 +119,15 @@
         },
         {
             "adg": "prevent-requestAnimationFrame",
-            "ubo": "no-requestAnimationFrame-if.js (norafif.js)"
+            "ubo": "no-requestAnimationFrame-if.js (norafif.js, prevent-requestAnimationFrame.js)"
         },
         {
             "adg": "prevent-setInterval",
-            "ubo": "no-setInterval-if.js (nosiif.js)"
+            "ubo": "no-setInterval-if.js (nosiif.js, prevent-setInterval.js)"
         },
         {
             "adg": "prevent-setTimeout",
-            "ubo": "no-setTimeout-if.js (nostif.js, setTimeout-defuser.js)"
+            "ubo": "no-setTimeout-if.js (nostif.js, prevent-setTimeout.js, setTimeout-defuser.js)"
         },
         {
             "adg": "prevent-window-open"
@@ -270,7 +270,7 @@
             "ubo": "spoof-css.js"
         },
         {
-            "ubo": "replace-node-text.js (rpnt.js, sed.js)"
+            "ubo": "replace-node-text.js (rpnt.js)"
         },
         {
             "ubo": "trusted-set-constant.js (trusted-set.js)"

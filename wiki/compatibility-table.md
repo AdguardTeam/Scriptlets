@@ -30,18 +30,18 @@
 | [noeval](../wiki/about-scriptlets.md#noeval) |  |  |
 | [nowebrtc](../wiki/about-scriptlets.md#nowebrtc) | nowebrtc.js |  |
 | [no-topics](../wiki/about-scriptlets.md#no-topics) |  |  |
-| [prevent-addEventListener](../wiki/about-scriptlets.md#prevent-addEventListener) | addEventListener-defuser.js (aeld.js) |  |
+| [prevent-addEventListener](../wiki/about-scriptlets.md#prevent-addEventListener) | addEventListener-defuser.js (aeld.js, prevent-addEventListener.js) |  |
 | [prevent-adfly](../wiki/about-scriptlets.md#prevent-adfly) | adfly-defuser.js |  |
 | [prevent-bab](../wiki/about-scriptlets.md#prevent-bab) |  |  |
-| [prevent-eval-if](../wiki/about-scriptlets.md#prevent-eval-if) | noeval-if.js |  |
+| [prevent-eval-if](../wiki/about-scriptlets.md#prevent-eval-if) | noeval-if.js (prevent-eval-if.js) |  |
 | [prevent-fab-3.2.0](../wiki/about-scriptlets.md#prevent-fab-3.2.0) |  |  |
-| [prevent-fetch](../wiki/about-scriptlets.md#prevent-fetch) | no-fetch-if.js |  |
-| [prevent-xhr](../wiki/about-scriptlets.md#prevent-xhr) | no-xhr-if.js |  |
+| [prevent-fetch](../wiki/about-scriptlets.md#prevent-fetch) | no-fetch-if.js (prevent-fetch.js) |  |
+| [prevent-xhr](../wiki/about-scriptlets.md#prevent-xhr) | no-xhr-if.js (prevent-xhr.js) |  |
 | [prevent-popads-net](../wiki/about-scriptlets.md#prevent-popads-net) |  |  |
 | [prevent-refresh](../wiki/about-scriptlets.md#prevent-refresh) | refresh-defuser.js |  |
-| [prevent-requestAnimationFrame](../wiki/about-scriptlets.md#prevent-requestAnimationFrame) | no-requestAnimationFrame-if.js (norafif.js) |  |
-| [prevent-setInterval](../wiki/about-scriptlets.md#prevent-setInterval) | no-setInterval-if.js (nosiif.js) |  |
-| [prevent-setTimeout](../wiki/about-scriptlets.md#prevent-setTimeout) | no-setTimeout-if.js (nostif.js, setTimeout-defuser.js) |  |
+| [prevent-requestAnimationFrame](../wiki/about-scriptlets.md#prevent-requestAnimationFrame) | no-requestAnimationFrame-if.js (norafif.js, prevent-requestAnimationFrame.js) |  |
+| [prevent-setInterval](../wiki/about-scriptlets.md#prevent-setInterval) | no-setInterval-if.js (nosiif.js, prevent-setInterval.js) |  |
+| [prevent-setTimeout](../wiki/about-scriptlets.md#prevent-setTimeout) | no-setTimeout-if.js (nostif.js, prevent-setTimeout.js, setTimeout-defuser.js) |  |
 | [prevent-window-open](../wiki/about-scriptlets.md#prevent-window-open) |  |  |
 | [remove-attr](../wiki/about-scriptlets.md#remove-attr) | remove-attr.js (ra.js) |  |
 | [remove-class](../wiki/about-scriptlets.md#remove-class) | remove-class.js (rc.js) |  |
@@ -86,7 +86,7 @@
 |  | no-floc.js (removed) |  |
 |  | window.name-defuser.js |  |
 |  | spoof-css.js |  |
-|  | replace-node-text.js (rpnt.js, sed.js) |  |
+|  | replace-node-text.js (rpnt.js) |  |
 |  | trusted-set-constant.js (trusted-set.js) |  |
 |  | set-cookie.js |  |
 |  | no-window-open-if.js (nowoif.js) |  |
