@@ -4,6 +4,7 @@ import {
     objectToString,
     matchRequestProps,
     logMessage,
+    noopPromiseResolve,
     modifyResponse,
     // following helpers should be imported and injected
     // because they are used by helpers above
@@ -156,14 +157,25 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
 
         if (shouldPrevent) {
             hit(source);
-            const origResponse = await Reflect.apply(target, thisArg, args);
-            return modifyResponse(
-                origResponse,
-                {
-                    body: strResponseBody,
-                    type: responseType,
-                },
-            );
+            try {
+                const origResponse = await Reflect.apply(target, thisArg, args);
+                // In the case of apps, the blocked request has status 500
+                // and no error is thrown, so it's necessary to check response.ok
+                // https://github.com/AdguardTeam/Scriptlets/issues/334
+                if (!origResponse.ok) {
+                    return noopPromiseResolve(strResponseBody, fetchData.url, responseType);
+                }
+                return modifyResponse(
+                    origResponse,
+                    {
+                        body: strResponseBody,
+                        type: responseType,
+                    },
+                );
+            } catch (ex) {
+                // https://github.com/AdguardTeam/Scriptlets/issues/334
+                return noopPromiseResolve(strResponseBody, fetchData.url, responseType);
+            }
         }
 
         return Reflect.apply(target, thisArg, args);
@@ -190,6 +202,7 @@ preventFetch.injections = [
     objectToString,
     matchRequestProps,
     logMessage,
+    noopPromiseResolve,
     modifyResponse,
     toRegExp,
     isValidStrPattern,

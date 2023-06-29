@@ -508,6 +508,32 @@ if (isSupported) {
         xhr.send();
     });
 
+    test('Args matched, prevent blocked request', async (assert) => {
+        // blocked_request.json doesn't exist,
+        // it's required for test for blocked requests
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/blocked_request.json`;
+        const MATCH_DATA = [`blocked_request method:${METHOD}`];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const reqListener = (e) => {
+            assert.strictEqual(e.target.status, 200, 'Status mocked');
+            assert.ok(e.target.responseURL.includes('/blocked_request.json'), 'Origianl URL mocked');
+            assert.strictEqual(e.target.readyState, 4, 'Response done');
+            assert.strictEqual(e.target.response, '', 'Response data mocked');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.addEventListener('load', reqListener);
+        xhr.send();
+    });
+
     test('Args, match, listeners after .send work', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;

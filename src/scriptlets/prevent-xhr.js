@@ -185,7 +185,6 @@ export function preventXHR(source, propsToMatch, customResponseText) {
                 readyState,
                 responseURL,
                 responseXML,
-                status,
                 statusText,
             } = forgedRequest;
 
@@ -193,11 +192,12 @@ export function preventXHR(source, propsToMatch, customResponseText) {
             Object.defineProperties(thisArg, {
                 // original values
                 readyState: { value: readyState, writable: false },
-                status: { value: status, writable: false },
                 statusText: { value: statusText, writable: false },
-                responseURL: { value: responseURL, writable: false },
+                // If the request is blocked, responseURL is an empty string
+                responseURL: { value: responseURL || xhrData.url, writable: false },
                 responseXML: { value: responseXML, writable: false },
                 // modified values
+                status: { value: 200, writable: false },
                 response: { value: modifiedResponse, writable: false },
                 responseText: { value: modifiedResponseText, writable: false },
             });

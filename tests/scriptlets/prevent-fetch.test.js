@@ -139,6 +139,28 @@ if (!isSupported) {
         done();
     });
 
+    test('prevent not existing fetch call', async (assert) => {
+        // blocked_request.json doesn't exist,
+        // it's required for test for blocked requests
+        const BLOCKED_REQUEST = `${FETCH_OBJECTS_PATH}/blocked_request.json`;
+        const inputRequest = new Request(BLOCKED_REQUEST);
+
+        runScriptlet(name, ['blocked_request']);
+        const done = assert.async(1);
+
+        const response = await fetch(inputRequest);
+        const parsedData = await response.json();
+
+        if (!response.ok) {
+            assert.strictEqual(response.ok, true, 'Request blocked');
+            done();
+        }
+        assert.ok(response.url.includes('/blocked_request.json'), 'Response URL is mocked');
+        assert.ok(isEmptyObject(parsedData), 'Response is mocked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
     test('simple fetch - match single pair prop', async (assert) => {
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
         const options = {
