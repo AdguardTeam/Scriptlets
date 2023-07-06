@@ -35,13 +35,13 @@ export function logAddEventListener(source) {
             const message = `addEventListener("${type}", ${listenerToString(listener)})`;
             logMessage(source, message, true);
             hit(source);
+        } else {
+            // logging while debugging
+            const message = `Invalid event type or listener passed to addEventListener:
+        type: ${convertTypeToString(type)}
+        listener: ${convertTypeToString(listener)}`;
+            logMessage(source, message, true);
         }
-
-        // logging while debugging
-        const message = `Invalid event type or listener passed to addEventListener:
-type: ${convertTypeToString(type)}
-listener: ${convertTypeToString(listener)}`;
-        logMessage(source, message, true);
 
         // Avoid illegal invocations due to lost context
         // https://github.com/AdguardTeam/Scriptlets/issues/271

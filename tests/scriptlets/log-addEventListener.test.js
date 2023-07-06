@@ -60,6 +60,7 @@ test('logs events to console', (assert) => {
         }
         assert.ok(input.includes(eventName), 'console.hit input should be equal');
         assert.ok(input.includes(callback.toString()), 'console.hit input should be equal');
+        assert.notOk(input.includes(INVALID_MESSAGE_START), 'Invalid message should not be displayed');
     };
 
     runScriptlet(name);
