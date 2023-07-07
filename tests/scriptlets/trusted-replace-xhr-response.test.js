@@ -113,6 +113,34 @@ if (isSupported) {
         xhr.send();
     });
 
+    test('Matched, regex pattern with flag', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test03.json`;
+
+        const PATTERN = /inner/g;
+        const REPLACEMENT = 'qwerty';
+        const MATCH_DATA = [`${PATTERN}`, REPLACEMENT, `${URL} method:${METHOD}`];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            assert.ok(xhr.response.includes(REPLACEMENT) && !PATTERN.test(xhr.response), 'Response has been modified');
+            assert.ok(
+                xhr.responseText.includes(REPLACEMENT) && !PATTERN.test(xhr.responseText),
+                'Response text has been modified',
+            );
+
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
     test('Matched, replaces multiline content', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/empty.html`;

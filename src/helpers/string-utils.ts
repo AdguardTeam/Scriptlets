@@ -46,12 +46,12 @@ export const replaceAll = (
 export const escapeRegExp = (str: string): string => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
- * Converts string to the regexp
+ * Converts string to the regexp,
+ * if string contains valid regexp flags it will be converted to regexp with flags
  * TODO think about nested dependencies, but be careful with dependency loops
  *
  * @param input literal string or regexp pattern; defaults to '' (empty string)
  * @returns regular expression; defaults to /.?/
- * @throws Throw an error for invalid regex pattern
  */
 export const toRegExp = (input: RawStrPattern = ''): RegExp => {
     const DEFAULT_VALUE = '.?';
@@ -59,8 +59,56 @@ export const toRegExp = (input: RawStrPattern = ''): RegExp => {
     if (input === '') {
         return new RegExp(DEFAULT_VALUE);
     }
-    if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-        return new RegExp(input.slice(1, -1));
+
+    const delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+    const flagsPart = input.substring(delimiterIndex + 1);
+    const regExpPart = input.substring(0, delimiterIndex + 1);
+
+    /**
+     * Checks whether the string is a valid regexp flag
+     *
+     * @param flag string
+     * @returns True if regexp flag is valid, otherwise false.
+     */
+    const isValidRegExpFlag = (flag: string): boolean => {
+        if (!flag) {
+            return false;
+        }
+        try {
+            // eslint-disable-next-line no-new
+            new RegExp('', flag);
+            return true;
+        } catch (ex) {
+            return false;
+        }
+    };
+
+    /**
+     * Checks whether the text string contains valid regexp flags,
+     * and returns `flagsStr` if valid, otherwise empty string.
+     *
+     * @param regExpStr string
+     * @param flagsStr string
+     * @returns `flagsStr` if it is valid, otherwise empty string.
+     */
+    const getRegExpFlags = (regExpStr: string, flagsStr: string): string => {
+        if (
+            regExpStr.startsWith(FORWARD_SLASH)
+            && regExpStr.endsWith(FORWARD_SLASH)
+            // Not a correct regex if ends with '\\/'
+            && !regExpStr.endsWith('\\/')
+            && isValidRegExpFlag(flagsStr)
+        ) {
+            return flagsStr;
+        }
+        return '';
+    };
+
+    const flags = getRegExpFlags(regExpPart, flagsPart);
+
+    if ((input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH)) || flags) {
+        const regExpInput = flags ? regExpPart : input;
+        return new RegExp(regExpInput.slice(1, -1), flags);
     }
 
     const escaped = input

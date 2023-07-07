@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- ability to use flags in regular expression scriptlet parameters
+  [#303](https://github.com/AdguardTeam/Scriptlets/issues/303)
+
 ### Fixed
 
 - issue with printing unnecessary logs to the console in `log-addEventListener` scriptlet

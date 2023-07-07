@@ -112,6 +112,30 @@ if (!isSupported) {
         done();
     });
 
+    test('Match all requests, replace by regex with flag', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
+        const TEST_METHOD = 'GET';
+        const init = {
+            method: TEST_METHOD,
+        };
+
+        const done = assert.async();
+
+        const PATTERN = '/inner/g';
+        const REPLACEMENT = 'qwerty';
+        runScriptlet(name, [PATTERN, REPLACEMENT]);
+
+        const response = await fetch(INPUT_JSON_PATH, init);
+        const actualJson = await response.json();
+
+        const textContent = JSON.stringify(actualJson);
+
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        assert.notOk(textContent.includes(PATTERN), 'Pattern is removed');
+        assert.ok(textContent.includes(REPLACEMENT), 'New content is set');
+        done();
+    });
+
     test('Match all requests, replace multiline content', async (assert) => {
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/empty.html`;
         const TEST_METHOD = 'GET';

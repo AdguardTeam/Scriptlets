@@ -1,6 +1,6 @@
 import { toRegExp, inferValue } from '../../src/helpers';
 
-describe('Test inferValue', () => {
+describe('Test string utils', () => {
     describe('Test toRegExp for valid inputs', () => {
         const DEFAULT_VALUE = '.?';
         const defaultRegexp = new RegExp(DEFAULT_VALUE);
@@ -13,6 +13,72 @@ describe('Test inferValue', () => {
             {
                 actual: '/[a-z]{1,9}/',
                 expected: /[a-z]{1,9}/,
+            },
+            {
+                actual: '',
+                expected: defaultRegexp,
+            },
+            {
+                actual: undefined,
+                expected: defaultRegexp,
+            },
+        ];
+        test.each(testCases)('"$actual"', ({ actual, expected }) => {
+            expect(toRegExp(actual)).toStrictEqual(expected);
+        });
+    });
+
+    describe('Test toRegExp with flag', () => {
+        const DEFAULT_VALUE = '.?';
+        const defaultRegexp = new RegExp(DEFAULT_VALUE);
+
+        const testCases = [
+            {
+                actual: '/qwerty/g',
+                expected: /qwerty/g,
+            },
+            {
+                actual: '/[a-z]{1,9}/gm',
+                expected: /[a-z]{1,9}/gm,
+            },
+            {
+                actual: '',
+                expected: defaultRegexp,
+            },
+            {
+                actual: undefined,
+                expected: defaultRegexp,
+            },
+        ];
+        test.each(testCases)('"$actual"', ({ actual, expected }) => {
+            expect(toRegExp(actual)).toStrictEqual(expected);
+        });
+    });
+
+    describe('Test toRegExp with not a valid flag', () => {
+        const DEFAULT_VALUE = '.?';
+        const defaultRegexp = new RegExp(DEFAULT_VALUE);
+
+        const testCases = [
+            {
+                actual: 'g',
+                expected: /g/,
+            },
+            {
+                actual: 'qwerty/g',
+                expected: /qwerty\/g/,
+            },
+            {
+                actual: '/asdf/gmtest',
+                expected: /\/asdf\/gmtest/,
+            },
+            {
+                actual: '/qwert/ggm',
+                expected: /\/qwert\/ggm/,
+            },
+            {
+                actual: '/test\\/g',
+                expected: /\/test\\\/g/,
             },
             {
                 actual: '',
