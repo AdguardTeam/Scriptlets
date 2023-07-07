@@ -149,7 +149,8 @@
             "ubo": "remove-node-text.js (rmnt.js)"
         },
         {
-            "adg": "set-attr"
+            "adg": "set-attr",
+            "ubo": "set-attr.js"
         },
         {
             "adg": "set-constant",
@@ -164,7 +165,8 @@
             "adg": "set-popads-dummy"
         },
         {
-            "adg": "set-session-storage-item"
+            "adg": "set-session-storage-item",
+            "ubo": "set-session-storage-item.js"
         },
         {
             "adg": "xml-prune",
@@ -279,7 +281,7 @@
             "ubo": "set-cookie.js"
         },
         {
-            "ubo": "no-window-open-if.js (nowoif.js)"
+            "ubo": "no-window-open-if.js (nowoif.js, prevent-window-open.js)"
         },
         {
             "ubo": "trusted-set-cookie.js"

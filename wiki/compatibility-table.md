@@ -47,11 +47,11 @@
 | [remove-class](../wiki/about-scriptlets.md#remove-class) | remove-class.js (rc.js) |  |
 | [remove-cookie](../wiki/about-scriptlets.md#remove-cookie) | cookie-remover.js |  |
 | [remove-node-text](../wiki/about-scriptlets.md#remove-node-text) | remove-node-text.js (rmnt.js) |  |
-| [set-attr](../wiki/about-scriptlets.md#set-attr) |  |  |
+| [set-attr](../wiki/about-scriptlets.md#set-attr) | set-attr.js |  |
 | [set-constant](../wiki/about-scriptlets.md#set-constant) | set-constant.js (set.js) | override-property-read |
 | [set-local-storage-item](../wiki/about-scriptlets.md#set-local-storage-item) | set-local-storage-item.js |  |
 | [set-popads-dummy](../wiki/about-scriptlets.md#set-popads-dummy) |  |  |
-| [set-session-storage-item](../wiki/about-scriptlets.md#set-session-storage-item) |  |  |
+| [set-session-storage-item](../wiki/about-scriptlets.md#set-session-storage-item) | set-session-storage-item.js |  |
 | [xml-prune](../wiki/about-scriptlets.md#xml-prune) | xml-prune.js |  |
 |  | webrtc-if.js |  |
 |  | overlay-buster.js |  |
@@ -89,7 +89,7 @@
 |  | replace-node-text.js (rpnt.js) |  |
 |  | trusted-set-constant.js (trusted-set.js) |  |
 |  | set-cookie.js |  |
-|  | no-window-open-if.js (nowoif.js) |  |
+|  | no-window-open-if.js (nowoif.js, prevent-window-open.js) |  |
 |  | trusted-set-cookie.js |  |
 |  | trusted-set-local-storage-item.js |  |
 
