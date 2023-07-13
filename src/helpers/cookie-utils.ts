@@ -60,27 +60,20 @@ export const getLimitedCookieValue = (value: string): string | number | null => 
         return null;
     }
 
+    const allowedCookieValues = new Set([
+        'true', 'True',
+        'false', 'False',
+        'yes', 'Yes',
+        'y', 'Y',
+        'no', 'No',
+        'n', 'N',
+        'ok', 'OK',
+        'Accept', 'Reject',
+    ]);
+
     let validValue;
-    if (value === 'true') {
-        validValue = 'true';
-    } else if (value === 'True') {
-        validValue = 'True';
-    } else if (value === 'false') {
-        validValue = 'false';
-    } else if (value === 'False') {
-        validValue = 'False';
-    } else if (value === 'yes') {
-        validValue = 'yes';
-    } else if (value === 'Yes') {
-        validValue = 'Yes';
-    } else if (value === 'Y') {
-        validValue = 'Y';
-    } else if (value === 'no') {
-        validValue = 'no';
-    } else if (value === 'ok') {
-        validValue = 'ok';
-    } else if (value === 'OK') {
-        validValue = 'OK';
+    if (allowedCookieValues.has(value)) {
+        validValue = value;
     } else if (/^\d+$/.test(value)) {
         validValue = parseFloat(value);
         if (nativeIsNaN(validValue)) {

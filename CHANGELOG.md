@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- new values to `set-cookie` and `set-cookie-reload` scriptlets: `Accept`, `Reject`, `y`, `n`, `N`, `No`
+  [#336](https://github.com/AdguardTeam/Scriptlets/issues/336)
 - ability to use flags in regular expression scriptlet parameters
   [#303](https://github.com/AdguardTeam/Scriptlets/issues/303)
 

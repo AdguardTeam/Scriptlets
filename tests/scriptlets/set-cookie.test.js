@@ -49,6 +49,27 @@ test('Set cookie with valid value', (assert) => {
     assert.strictEqual(document.cookie.includes(cName) && document.cookie.includes(cValue), true, 'Cookie is set');
     clearCookie(cName);
 
+    cName = '__test-cookie_n';
+    cValue = 'n';
+    runScriptlet(name, [cName, cValue]);
+    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+    assert.strictEqual(document.cookie.includes(cName) && document.cookie.includes(cValue), true, 'Cookie is set');
+    clearCookie(cName);
+
+    cName = '__test-cookie_Accept';
+    cValue = 'Accept';
+    runScriptlet(name, [cName, cValue]);
+    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+    assert.strictEqual(document.cookie.includes(cName) && document.cookie.includes(cValue), true, 'Cookie is set');
+    clearCookie(cName);
+
+    cName = '__test-cookie_Reject';
+    cValue = 'Reject';
+    runScriptlet(name, [cName, cValue]);
+    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+    assert.strictEqual(document.cookie.includes(cName) && document.cookie.includes(cValue), true, 'Cookie is set');
+    clearCookie(cName);
+
     cName = '__test-cookie_0';
     cValue = '0';
     runScriptlet(name, [cName, cValue]);
