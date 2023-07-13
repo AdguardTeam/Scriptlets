@@ -40,12 +40,12 @@
 | [prevent-popads-net](../wiki/about-scriptlets.md#prevent-popads-net) |  |  |
 | [prevent-refresh](../wiki/about-scriptlets.md#prevent-refresh) | refresh-defuser.js |  |
 | [prevent-requestAnimationFrame](../wiki/about-scriptlets.md#prevent-requestAnimationFrame) | no-requestAnimationFrame-if.js (norafif.js, prevent-requestAnimationFrame.js) |  |
-| [prevent-setInterval](../wiki/about-scriptlets.md#prevent-setInterval) | no-setInterval-if.js (nosiif.js, prevent-setInterval.js) |  |
+| [prevent-setInterval](../wiki/about-scriptlets.md#prevent-setInterval) | no-setInterval-if.js (nosiif.js, prevent-setInterval.js, setInterval-defuser.js) |  |
 | [prevent-setTimeout](../wiki/about-scriptlets.md#prevent-setTimeout) | no-setTimeout-if.js (nostif.js, prevent-setTimeout.js, setTimeout-defuser.js) |  |
 | [prevent-window-open](../wiki/about-scriptlets.md#prevent-window-open) |  |  |
 | [remove-attr](../wiki/about-scriptlets.md#remove-attr) | remove-attr.js (ra.js) |  |
 | [remove-class](../wiki/about-scriptlets.md#remove-class) | remove-class.js (rc.js) |  |
-| [remove-cookie](../wiki/about-scriptlets.md#remove-cookie) | cookie-remover.js |  |
+| [remove-cookie](../wiki/about-scriptlets.md#remove-cookie) | cookie-remover.js (remove-cookie.js) |  |
 | [remove-node-text](../wiki/about-scriptlets.md#remove-node-text) | remove-node-text.js (rmnt.js) |  |
 | [set-attr](../wiki/about-scriptlets.md#set-attr) | set-attr.js |  |
 | [set-constant](../wiki/about-scriptlets.md#set-constant) | set-constant.js (set.js) | override-property-read |

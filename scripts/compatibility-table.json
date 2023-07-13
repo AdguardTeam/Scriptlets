@@ -123,7 +123,7 @@
         },
         {
             "adg": "prevent-setInterval",
-            "ubo": "no-setInterval-if.js (nosiif.js, prevent-setInterval.js)"
+            "ubo": "no-setInterval-if.js (nosiif.js, prevent-setInterval.js, setInterval-defuser.js)"
         },
         {
             "adg": "prevent-setTimeout",
@@ -142,7 +142,7 @@
         },
         {
             "adg": "remove-cookie",
-            "ubo": "cookie-remover.js"
+            "ubo": "cookie-remover.js (remove-cookie.js)"
         },
         {
             "adg": "remove-node-text",
