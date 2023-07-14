@@ -86,7 +86,8 @@
         },
         {
             "adg": "prevent-addEventListener",
-            "ubo": "addEventListener-defuser.js (aeld.js, prevent-addEventListener.js)"
+            "ubo": "addEventListener-defuser.js (aeld.js, prevent-addEventListener.js)",
+            "abp": "prevent-listener"
         },
         {
             "adg": "prevent-adfly",
@@ -130,7 +131,8 @@
             "ubo": "no-setTimeout-if.js (nostif.js, prevent-setTimeout.js, setTimeout-defuser.js)"
         },
         {
-            "adg": "prevent-window-open"
+            "adg": "prevent-window-open",
+            "ubo": "no-window-open-if.js (nowoif.js, prevent-window-open.js)"
         },
         {
             "adg": "remove-attr",
@@ -142,7 +144,8 @@
         },
         {
             "adg": "remove-cookie",
-            "ubo": "cookie-remover.js (remove-cookie.js)"
+            "ubo": "cookie-remover.js (remove-cookie.js)",
+            "abp": "cookie-remover"
         },
         {
             "adg": "remove-node-text",
@@ -156,6 +159,13 @@
             "adg": "set-constant",
             "ubo": "set-constant.js (set.js)",
             "abp": "override-property-read"
+        },
+        {
+            "adg": "set-cookie",
+            "ubo": "set-cookie.js"
+        },
+        {
+            "adg": "set-cookie-reload"
         },
         {
             "adg": "set-local-storage-item",
@@ -182,22 +192,7 @@
             "ubo": "alert-buster.js"
         },
         {
-            "ubo": "gpt-defuser.js (removed)"
-        },
-        {
             "ubo": "golem.de.js"
-        },
-        {
-            "ubo": "upmanager-defuser.js (removed)"
-        },
-        {
-            "ubo": "smartadserver.com.js (removed)"
-        },
-        {
-            "ubo": "damoh-defuser.js (removed)"
-        },
-        {
-            "ubo": "twitch-videoad.js (removed)"
         },
         {
             "ubo": "href-sanitizer.js"
@@ -206,13 +201,34 @@
             "ubo": "call-nothrow.js"
         },
         {
-            "abp": "trace"
+            "abp": "abort-on-iframe-property-read"
         },
         {
-            "abp": "hide-if-shadow-contains"
+            "abp": "abort-on-iframe-property-write"
+        },
+        {
+            "abp": "freeze-element"
+        },
+        {
+            "abp": "json-override"
+        },
+        {
+            "abp": "simulate-mouse-event"
+        },
+        {
+            "abp": "strip-fetch-query-parameter"
         },
         {
             "abp": "hide-if-contains"
+        },
+        {
+            "abp": "hide-if-contains-image"
+        },
+        {
+            "abp": "hide-if-contains-image-hash"
+        },
+        {
+            "abp": "hide-if-contains-similar-text"
         },
         {
             "abp": "hide-if-contains-visible-text"
@@ -221,22 +237,10 @@
             "abp": "hide-if-contains-and-matches-style"
         },
         {
+            "abp": "hide-if-graph-matches"
+        },
+        {
             "abp": "hide-if-has-and-matches-style"
-        },
-        {
-            "abp": "hide-if-contains-image"
-        },
-        {
-            "abp": "strip-fetch-query-parameter"
-        },
-        {
-            "abp": "hide-if-contains-image-hash"
-        },
-        {
-            "abp": "ml-hide-if-graph-matches"
-        },
-        {
-            "abp": "debug"
         },
         {
             "abp": "hide-if-labelled-by"
@@ -245,25 +249,19 @@
             "abp": "hide-if-matches-xpath"
         },
         {
-            "abp": "profile"
+            "abp": "hide-if-matches-computed-xpath"
         },
         {
-            "abp": "freeze-element"
+            "abp": "hide-if-shadow-contains"
         },
         {
-            "abp": "prepareInjection"
+            "abp": "debug"
         },
         {
-            "abp": "commitInjection"
+            "abp": "trace"
         },
         {
-            "abp": "abort-on-iframe-property-read"
-        },
-        {
-            "abp": "abort-on-iframe-property-write"
-        },
-        {
-            "ubo": "no-floc.js (removed)"
+            "abp": "race"
         },
         {
             "ubo": "window.name-defuser.js"
@@ -276,12 +274,6 @@
         },
         {
             "ubo": "trusted-set-constant.js (trusted-set.js)"
-        },
-        {
-            "ubo": "set-cookie.js"
-        },
-        {
-            "ubo": "no-window-open-if.js (nowoif.js, prevent-window-open.js)"
         },
         {
             "ubo": "trusted-set-cookie.js"

@@ -30,7 +30,7 @@
 | [noeval](../wiki/about-scriptlets.md#noeval) |  |  |
 | [nowebrtc](../wiki/about-scriptlets.md#nowebrtc) | nowebrtc.js |  |
 | [no-topics](../wiki/about-scriptlets.md#no-topics) |  |  |
-| [prevent-addEventListener](../wiki/about-scriptlets.md#prevent-addEventListener) | addEventListener-defuser.js (aeld.js, prevent-addEventListener.js) |  |
+| [prevent-addEventListener](../wiki/about-scriptlets.md#prevent-addEventListener) | addEventListener-defuser.js (aeld.js, prevent-addEventListener.js) | prevent-listener |
 | [prevent-adfly](../wiki/about-scriptlets.md#prevent-adfly) | adfly-defuser.js |  |
 | [prevent-bab](../wiki/about-scriptlets.md#prevent-bab) |  |  |
 | [prevent-eval-if](../wiki/about-scriptlets.md#prevent-eval-if) | noeval-if.js (prevent-eval-if.js) |  |
@@ -42,13 +42,15 @@
 | [prevent-requestAnimationFrame](../wiki/about-scriptlets.md#prevent-requestAnimationFrame) | no-requestAnimationFrame-if.js (norafif.js, prevent-requestAnimationFrame.js) |  |
 | [prevent-setInterval](../wiki/about-scriptlets.md#prevent-setInterval) | no-setInterval-if.js (nosiif.js, prevent-setInterval.js, setInterval-defuser.js) |  |
 | [prevent-setTimeout](../wiki/about-scriptlets.md#prevent-setTimeout) | no-setTimeout-if.js (nostif.js, prevent-setTimeout.js, setTimeout-defuser.js) |  |
-| [prevent-window-open](../wiki/about-scriptlets.md#prevent-window-open) |  |  |
+| [prevent-window-open](../wiki/about-scriptlets.md#prevent-window-open) | no-window-open-if.js (nowoif.js, prevent-window-open.js) |  |
 | [remove-attr](../wiki/about-scriptlets.md#remove-attr) | remove-attr.js (ra.js) |  |
 | [remove-class](../wiki/about-scriptlets.md#remove-class) | remove-class.js (rc.js) |  |
-| [remove-cookie](../wiki/about-scriptlets.md#remove-cookie) | cookie-remover.js (remove-cookie.js) |  |
+| [remove-cookie](../wiki/about-scriptlets.md#remove-cookie) | cookie-remover.js (remove-cookie.js) | cookie-remover |
 | [remove-node-text](../wiki/about-scriptlets.md#remove-node-text) | remove-node-text.js (rmnt.js) |  |
 | [set-attr](../wiki/about-scriptlets.md#set-attr) | set-attr.js |  |
 | [set-constant](../wiki/about-scriptlets.md#set-constant) | set-constant.js (set.js) | override-property-read |
+| [set-cookie](../wiki/about-scriptlets.md#set-cookie) | set-cookie.js |  |
+| [set-cookie-reload](../wiki/about-scriptlets.md#set-cookie-reload) |  |  |
 | [set-local-storage-item](../wiki/about-scriptlets.md#set-local-storage-item) | set-local-storage-item.js |  |
 | [set-popads-dummy](../wiki/about-scriptlets.md#set-popads-dummy) |  |  |
 | [set-session-storage-item](../wiki/about-scriptlets.md#set-session-storage-item) | set-session-storage-item.js |  |
@@ -56,40 +58,34 @@
 |  | webrtc-if.js |  |
 |  | overlay-buster.js |  |
 |  | alert-buster.js |  |
-|  | gpt-defuser.js (removed) |  |
 |  | golem.de.js |  |
-|  | upmanager-defuser.js (removed) |  |
-|  | smartadserver.com.js (removed) |  |
-|  | damoh-defuser.js (removed) |  |
-|  | twitch-videoad.js (removed) |  |
 |  | href-sanitizer.js |  |
 |  | call-nothrow.js |  |
-|  |  | trace |
-|  |  | hide-if-shadow-contains |
-|  |  | hide-if-contains |
-|  |  | hide-if-contains-visible-text |
-|  |  | hide-if-contains-and-matches-style |
-|  |  | hide-if-has-and-matches-style |
-|  |  | hide-if-contains-image |
-|  |  | strip-fetch-query-parameter |
-|  |  | hide-if-contains-image-hash |
-|  |  | ml-hide-if-graph-matches |
-|  |  | debug |
-|  |  | hide-if-labelled-by |
-|  |  | hide-if-matches-xpath |
-|  |  | profile |
-|  |  | freeze-element |
-|  |  | prepareInjection |
-|  |  | commitInjection |
 |  |  | abort-on-iframe-property-read |
 |  |  | abort-on-iframe-property-write |
-|  | no-floc.js (removed) |  |
+|  |  | freeze-element |
+|  |  | json-override |
+|  |  | simulate-mouse-event |
+|  |  | strip-fetch-query-parameter |
+|  |  | hide-if-contains |
+|  |  | hide-if-contains-image |
+|  |  | hide-if-contains-image-hash |
+|  |  | hide-if-contains-similar-text |
+|  |  | hide-if-contains-visible-text |
+|  |  | hide-if-contains-and-matches-style |
+|  |  | hide-if-graph-matches |
+|  |  | hide-if-has-and-matches-style |
+|  |  | hide-if-labelled-by |
+|  |  | hide-if-matches-xpath |
+|  |  | hide-if-matches-computed-xpath |
+|  |  | hide-if-shadow-contains |
+|  |  | debug |
+|  |  | trace |
+|  |  | race |
 |  | window.name-defuser.js |  |
 |  | spoof-css.js |  |
 |  | replace-node-text.js (rpnt.js) |  |
 |  | trusted-set-constant.js (trusted-set.js) |  |
-|  | set-cookie.js |  |
-|  | no-window-open-if.js (nowoif.js, prevent-window-open.js) |  |
 |  | trusted-set-cookie.js |  |
 |  | trusted-set-local-storage-item.js |  |
 
