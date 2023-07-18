@@ -69,6 +69,7 @@ export const getLimitedCookieValue = (value: string): string | number | null => 
         'n', 'N',
         'ok', 'OK',
         'Accept', 'Reject',
+        'allow', 'deny',
     ]);
 
     let validValue;
