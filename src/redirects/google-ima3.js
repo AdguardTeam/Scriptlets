@@ -479,6 +479,15 @@ export function GoogleIma3(source) {
         window.google = {};
     }
 
+    // Workaround for https://github.com/AdguardTeam/Scriptlets/issues/331
+    // To avoid conflicts with the DAI SDK, we need to make sure that the
+    // google.ima.dai namespace is not overwritten.
+    // TODO: Later we should create a mock for the DAI SDK as well.
+    // See https://github.com/AdguardTeam/Scriptlets/issues/239
+    if (window.google.ima?.dai) {
+        ima.dai = window.google.ima.dai;
+    }
+
     window.google.ima = ima;
 
     hit(source);

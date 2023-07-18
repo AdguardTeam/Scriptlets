@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- issue with overwriting `google.ima` value if it was already set
+  [#331](https://github.com/AdguardTeam/Scriptlets/issues/331)
 - issue with printing unnecessary logs to the console in `log-addEventListener` scriptlet
   [#335](https://github.com/AdguardTeam/Scriptlets/issues/335)
 - error throwing in `prevent-fetch` and `prevent-xhr` scriptlets when a request is blocked

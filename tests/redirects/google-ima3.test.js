@@ -87,3 +87,30 @@ test('Ima - run requestAds function twice', (assert) => {
         done();
     });
 });
+
+// https://github.com/AdguardTeam/Scriptlets/issues/331
+test('Ima - check if DAI API is not discarded by the redirect', (assert) => {
+    // Define some dummy DAI API which cannot be discarded by the redirect
+    window.google = {
+        ima: {
+            // should be kept
+            dai: {
+                api: {
+                    foo: 'bar',
+                },
+            },
+            // should be discarded
+            bar: 'foo',
+        },
+    };
+
+    runRedirect(name);
+
+    // check if DAI API is not discarded by the redirect
+    assert.ok(window.google.ima.dai, 'window.google.ima.dai exists');
+    assert.ok(window.google.ima.dai.api, 'window.google.ima.dai.api exists');
+    assert.strictEqual(window.google.ima.dai.api.foo, 'bar', 'window.google.ima.dai.api.foo is equal to "bar"');
+
+    // other properties should be discarded
+    assert.strictEqual(window.google.ima.bar, undefined, 'window.google.ima.bar is undefined');
+});
