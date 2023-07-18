@@ -132,7 +132,7 @@
         },
         {
             "adg": "prevent-window-open",
-            "ubo": "no-window-open-if.js (nowoif.js, prevent-window-open.js)"
+            "ubo": "no-window-open-if.js (nowoif.js, prevent-window-open.js, window.open-defuser.js)"
         },
         {
             "adg": "remove-attr",
@@ -476,7 +476,7 @@
             "ubo": "outbrain-widget.js"
         },
         {
-            "ubo": "window.open-defuser.js"
+            "ubo": "window.open-defuser.js (removed)"
         },
         {
             "ubo": "noeval.js"

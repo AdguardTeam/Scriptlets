@@ -42,7 +42,7 @@
 | [prevent-requestAnimationFrame](../wiki/about-scriptlets.md#prevent-requestAnimationFrame) | no-requestAnimationFrame-if.js (norafif.js, prevent-requestAnimationFrame.js) |  |
 | [prevent-setInterval](../wiki/about-scriptlets.md#prevent-setInterval) | no-setInterval-if.js (nosiif.js, prevent-setInterval.js, setInterval-defuser.js) |  |
 | [prevent-setTimeout](../wiki/about-scriptlets.md#prevent-setTimeout) | no-setTimeout-if.js (nostif.js, prevent-setTimeout.js, setTimeout-defuser.js) |  |
-| [prevent-window-open](../wiki/about-scriptlets.md#prevent-window-open) | no-window-open-if.js (nowoif.js, prevent-window-open.js) |  |
+| [prevent-window-open](../wiki/about-scriptlets.md#prevent-window-open) | no-window-open-if.js (nowoif.js, prevent-window-open.js, window.open-defuser.js) |  |
 | [remove-attr](../wiki/about-scriptlets.md#remove-attr) | remove-attr.js (ra.js) |  |
 | [remove-class](../wiki/about-scriptlets.md#remove-class) | remove-class.js (rc.js) |  |
 | [remove-cookie](../wiki/about-scriptlets.md#remove-cookie) | cookie-remover.js (remove-cookie.js) | cookie-remover |
@@ -145,7 +145,7 @@
 |  | ligatus_angular-tag.js |  |
 |  | monkeybroker.js |  |
 |  | outbrain-widget.js |  |
-|  | window.open-defuser.js |  |
+|  | window.open-defuser.js (removed) |  |
 |  | noeval.js |  |
 |  | mxpnl_mixpanel.js |  |
 |  | noop-0.5s.mp3 |  |
