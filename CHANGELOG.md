@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ability to use flags in regular expression scriptlet parameters
   [#303](https://github.com/AdguardTeam/Scriptlets/issues/303)
 
+### Changed
+
+- predefined values of `set-cookie` and `set-cookie-reload` are now case-insensitive
+  [#342](https://github.com/AdguardTeam/Scriptlets/issues/342)
+
 ### Fixed
 
 - issue with overwriting `google.ima` value if it was already set

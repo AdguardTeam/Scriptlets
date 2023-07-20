@@ -28,12 +28,14 @@ import {
  * - `name` — required, cookie name to be set
  * - `value` — required, cookie value; possible values:
  *     - number `>= 0 && <= 15`
- *     - one of the predefined constants:
- *         - `true` / `True`
- *         - `false` / `False`
- *         - `yes` / `Yes` / `Y`
- *         - `no`
- *         - `ok` / `OK`
+ *     - one of the predefined constants in any case variation:
+ *         - `true`
+ *         - `false`
+ *         - `yes` / `y`
+ *         - `no` / `n`
+ *         - `ok`
+ *         - `accept`/ `reject`
+ *         - `allow` / `deny`
  * - `path` — optional, cookie path, defaults to `/`; possible values:
  *     - `/` — root path
  *     - `none` — to set no path at all

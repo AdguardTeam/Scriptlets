@@ -61,19 +61,21 @@ export const getLimitedCookieValue = (value: string): string | number | null => 
     }
 
     const allowedCookieValues = new Set([
-        'true', 'True',
-        'false', 'False',
-        'yes', 'Yes',
-        'y', 'Y',
-        'no', 'No',
-        'n', 'N',
-        'ok', 'OK',
-        'Accept', 'Reject',
-        'allow', 'deny',
+        'true',
+        'false',
+        'yes',
+        'y',
+        'no',
+        'n',
+        'ok',
+        'accept',
+        'reject',
+        'allow',
+        'deny',
     ]);
 
     let validValue;
-    if (allowedCookieValues.has(value)) {
+    if (allowedCookieValues.has(value.toLowerCase())) {
         validValue = value;
     } else if (/^\d+$/.test(value)) {
         validValue = parseFloat(value);
