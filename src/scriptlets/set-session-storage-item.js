@@ -3,6 +3,7 @@ import {
     logMessage,
     nativeIsNaN,
     setStorageItem,
+    removeStorageItem,
     getLimitedStorageItemValue,
 } from '../helpers/index';
 
@@ -13,6 +14,8 @@ import {
  * @description
  * Adds specified key and its value to sessionStorage object, or updates the value of the key if it already exists.
  * Scriptlet won't set item if storage is full.
+ *
+ * To remove item from sessionStorage use `$remove$` as a value.
  *
  * ### Syntax
  *
@@ -33,6 +36,7 @@ import {
  *         - `''` — empty string
  *         - `yes`
  *         - `no`
+ *         - `$remove$` — remove specific item from sessionStorage
  *
  * ### Examples
  *
@@ -40,6 +44,9 @@ import {
  * example.org#%#//scriptlet('set-session-storage-item', 'player.live.current.mute', 'false')
  *
  * example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '1')
+ *
+ * ! Removes the item with key 'foo' from session storage
+ * example.org#%#//scriptlet('set-session-storage-item', 'foo', '$remove$')
  * ```
  *
  * @added v1.4.3.
@@ -61,7 +68,11 @@ export function setSessionStorageItem(source, key, value) {
     }
 
     const { sessionStorage } = window;
-    setStorageItem(source, sessionStorage, key, validValue);
+    if (validValue === '$remove$') {
+        removeStorageItem(source, sessionStorage, key);
+    } else {
+        setStorageItem(source, sessionStorage, key, validValue);
+    }
     hit(source);
 }
 
@@ -74,5 +85,6 @@ setSessionStorageItem.injections = [
     logMessage,
     nativeIsNaN,
     setStorageItem,
+    removeStorageItem,
     getLimitedStorageItemValue,
 ];

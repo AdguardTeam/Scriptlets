@@ -127,4 +127,16 @@ if (isSafariBrowser()) {
         assert.strictEqual(window.localStorage.getItem(iName), null, 'localStorage item has not been set');
         clearStorageItem(iName);
     });
+
+    test('Remove item from localStorage', (assert) => {
+        const iName = '__test-item_remove';
+        const iValue = '$remove$';
+
+        localStorage.setItem(iName, 'true');
+
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.localStorage.getItem(iName), null, 'localStorage item has been removed');
+        clearStorageItem(iName);
+    });
 }

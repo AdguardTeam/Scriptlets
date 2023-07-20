@@ -3,6 +3,7 @@ import {
     logMessage,
     nativeIsNaN,
     setStorageItem,
+    removeStorageItem,
     getLimitedStorageItemValue,
 } from '../helpers/index';
 
@@ -13,6 +14,8 @@ import {
  * @description
  * Adds specified key and its value to localStorage object, or updates the value of the key if it already exists.
  * Scriptlet won't set item if storage is full.
+ *
+ * To remove item from localStorage use `$remove$` as a value.
  *
  * ### Syntax
  *
@@ -33,6 +36,7 @@ import {
  *         - `''` — empty string
  *         - `yes`
  *         - `no`
+ *         - `$remove$` — remove specific item from localStorage
  *
  * ### Examples
  *
@@ -40,6 +44,9 @@ import {
  * example.org#%#//scriptlet('set-local-storage-item', 'player.live.current.mute', 'false')
  *
  * example.org#%#//scriptlet('set-local-storage-item', 'exit-intent-marketing', '1')
+ *
+ * ! Removes the item with key 'foo' from local storage
+ * example.org#%#//scriptlet('set-local-storage-item', 'foo', '$remove$')
  * ```
  *
  * @added v1.4.3.
@@ -61,7 +68,11 @@ export function setLocalStorageItem(source, key, value) {
     }
 
     const { localStorage } = window;
-    setStorageItem(source, localStorage, key, validValue);
+    if (validValue === '$remove$') {
+        removeStorageItem(source, localStorage, key);
+    } else {
+        setStorageItem(source, localStorage, key, validValue);
+    }
     hit(source);
 }
 
@@ -74,5 +85,6 @@ setLocalStorageItem.injections = [
     logMessage,
     nativeIsNaN,
     setStorageItem,
+    removeStorageItem,
     getLimitedStorageItemValue,
 ];

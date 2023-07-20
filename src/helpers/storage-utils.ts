@@ -20,6 +20,23 @@ export const setStorageItem = (source: Source, storage: Storage, key: string, va
 };
 
 /**
+ * Removes the key/value pair with the given `key` from the `storage`.
+ * If unable to remove, logs the reason to console in debug mode.
+ *
+ * @param source scriptlet's configuration
+ * @param storage storage instance from which item has to be removed
+ * @param key storage key
+ */
+export const removeStorageItem = (source: Source, storage: Storage, key: string): void => {
+    try {
+        storage.removeItem(key);
+    } catch (e) {
+        const message = `Unable to remove storage item due to: ${(e as Error).message}`;
+        logMessage(source, message);
+    }
+};
+
+/**
  * Gets supported storage item value
  *
  * @param  value input item value
@@ -57,6 +74,8 @@ export const getLimitedStorageItemValue = (value: string): StorageItemValue | nu
         validValue = 'yes';
     } else if (value === 'no') {
         validValue = 'no';
+    } else if (value === '$remove$') {
+        validValue = '$remove$';
     } else {
         throw new Error('Invalid value');
     }

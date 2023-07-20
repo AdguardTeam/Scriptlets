@@ -128,3 +128,15 @@ test('Set sessionStorage key with invalid value', (assert) => {
     assert.strictEqual(window.sessionStorage.getItem(cName), null, 'sessionStorage item has not been set');
     clearStorageItem(cName);
 });
+
+test('Remove item from sessionStorage', (assert) => {
+    const cName = '__test-item_remove';
+    const cValue = '$remove$';
+
+    sessionStorage.setItem(cName, 'true');
+
+    runScriptlet(name, [cName, cValue]);
+    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+    assert.strictEqual(window.sessionStorage.getItem(cName), null, 'sessionStorage item has been removed');
+    clearStorageItem(cName);
+});
