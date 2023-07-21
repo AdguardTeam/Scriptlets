@@ -676,3 +676,22 @@ describe('Test redirects api methods', () => {
         });
     });
 });
+
+describe('convertScriptletToAdg -- non-scriptlet rules', () => {
+    const testRules = [
+        '||example.com^$all',
+        '||example.com/code/show.php$cookie=cookie_name',
+        "example.com##div[class^='textLink' i]",
+        '||example.com/pub$media,rewrite=abp-resource:blank-mp3,domain=example.org',
+        '##.div',
+        '##.banner:has(~ .right_bx, ~ div[class^="aside"])',
+        'example.com#$#body { background: black; }',
+        '||example.com^$script,redirect=noopjs.js',
+        '||example.com^$removeparam=qwerty',
+    ];
+
+    test.each(testRules)('%s', (rule) => {
+        // should not be changed
+        expect(convertScriptletToAdg(rule)).toStrictEqual([rule]);
+    });
+});

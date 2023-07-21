@@ -28,7 +28,7 @@ Scriptlet is a JavaScript function which can be used in a declarative manner in 
 AdGuard supports a lot of different scriptlets.
 Please note, that in order to achieve cross-blocker compatibility, we also support syntax of uBO and ABP.
 
-### <a id="scriptlet-syntax"></a> Syntax
+### <a name="scriptlet-syntax"></a> Syntax
 
 ```text
 rule = [domains]  "#%#//scriptlet(" scriptletName arguments ")"
@@ -70,13 +70,13 @@ and passes one argument to it (`alert`).
 - **[Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)**
 
 
-### <a id="trusted-scriptlets"></a> Trusted scriptlets
+### <a name="trusted-scriptlets"></a> Trusted scriptlets
 
 Trusted scriptlets are scriptlets with extended functionality.
 Their names are prefixed with `trusted-`, e.g `trusted-click-element`,
 to be easily distinguished from common scriptlets.
 
-#### <a id="trusted-scriptlets-restriction"></a> Restriction
+#### <a name="trusted-scriptlets-restriction"></a> Restriction
 
 Trusted scriptlets application must be restricted due to dangerous nature of their capabilities.
 Allowed sources of trusted scriptlets are:
@@ -94,7 +94,7 @@ Allowed sources of trusted scriptlets are:
 
 AdGuard is able to redirect web requests to a local "resource".
 
-### <a id="redirect-syntax"></a> Syntax
+### <a name="redirect-syntax"></a> Syntax
 
 AdGuard uses the same filtering rule syntax
 as [uBlock Origin](https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect).
@@ -128,7 +128,7 @@ See the list of [available redirect resources](./wiki/about-redirects.md#redirec
 
 * * *
 
-## <a id="how-to-build"></a> How to build
+## <a name="how-to-build"></a> How to build
 
 Install dependencies:
 
@@ -317,7 +317,7 @@ scriptlets.convertAdgToUbo(rule);
 ```
 
 
-##### <a id="redirects_api-methods"></a> Imported `redirects` methods
+##### <a name="redirects_api-methods"></a> Imported `redirects` methods
 
 ```javascript
 /**
@@ -516,7 +516,7 @@ const isBlocking = redirect.isBlocking('click2load.html');
 ```
 
 
-## <a id="how-to-test"></a> How to test
+## <a name="how-to-test"></a> How to test
 
 Some tests are run in QUnit, some in Jest.
 
@@ -587,7 +587,7 @@ yarn test
 and open needed HTML file from `tests/dist` in your browser with devtools
 
 
-## <a id="how-to-update-wiki"></a> How to update wiki
+## <a name="how-to-update-wiki"></a> How to update wiki
 
 There are two scripts to update wiki:
 
@@ -598,7 +598,7 @@ There are two scripts to update wiki:
     due to `@scriptlet`/`@redirect` and `@description` tags. Runs automatically while the release build.
 
 
-## <a id="browser-compatibility"> Browser Compatibility
+## <a name="browser-compatibility"> Browser Compatibility
 
 | Browser               | Version   |
 |-----------------------|:----------|
@@ -610,7 +610,7 @@ There are two scripts to update wiki:
 | Internet Explorer     | ❌        |
 
 
-## <a id="used-by"> Projects using Scriptlets
+## <a name="used-by"> Projects using Scriptlets
 
 - [CoreLibs](https://github.com/AdguardTeam/CoreLibs) (updates automatically)
 - [TSUrlFilter](https://github.com/AdguardTeam/tsurlfilter)

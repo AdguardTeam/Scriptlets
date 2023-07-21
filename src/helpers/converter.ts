@@ -70,6 +70,26 @@ const ADG_REMOVE_CLASS_NAME = REMOVE_CLASS_ALIASES[0];
 const REMOVE_ATTR_CLASS_APPLYING = ['asap', 'stay', 'complete'];
 
 /**
+ * Possible rule origins.
+ */
+enum Origin {
+    Ubo = 'ubo',
+    Abp = 'abp',
+    AdgValid = 'adgValid',
+    AdgInvalid = 'adgInvalid',
+}
+
+/**
+ * Array of origin names in the order they must be checked for rule conversion.
+ */
+const originNames = [
+    Origin.Ubo,
+    Origin.Abp,
+    Origin.AdgValid,
+    Origin.AdgInvalid,
+];
+
+/**
  * Returns array of strings separated by space which is not in quotes
  *
  * @param str arbitrary string
@@ -266,18 +286,9 @@ const isValidAdgScriptletRuleSyntax = (adgRuleText: string): boolean => {
     }
 };
 
-// Possible rule origins
-enum Origin {
-    Ubo = 'ubo',
-    Abp = 'abp',
-    AdgValid = 'adgValid',
-    AdgInvalid = 'adgInvalid',
-}
-
-// Array of origin names in the order they must be checked for rule conversion
-const originNames = [Origin.Ubo, Origin.Abp, Origin.AdgValid, Origin.AdgInvalid];
-
-// Functions to validate if a given string corresponds to a scriptlet rule of a particular origin.
+/**
+ * Functions to validate if a given string corresponds to a scriptlet rule of a particular origin.
+ */
 const OriginValidator = {
     [Origin.Ubo]: validator.isUboScriptletRule,
     [Origin.Abp]: validator.isAbpSnippetRule,
@@ -289,10 +300,10 @@ const OriginValidator = {
 
 // Functions to convert a given scriptlet rule from a mapped origin to an AdGuard rule
 const Converter = {
-    ubo: convertUboScriptletToAdg,
-    abp: convertAbpSnippetToAdg,
-    adgValid: (r: string) => [r],
-    adgInvalid: (r: string) => {
+    [Origin.Ubo]: convertUboScriptletToAdg,
+    [Origin.Abp]: convertAbpSnippetToAdg,
+    [Origin.AdgValid]: (r: string) => [r],
+    [Origin.AdgInvalid]: (r: string) => {
         // eslint-disable-next-line no-console
         console.log(`Invalid AdGuard scriptlet rule: ${r}`);
         return [];
@@ -300,23 +311,23 @@ const Converter = {
 } as const;
 
 /**
- * Get rule origin name in a meaningful order
+ * Returns rule origin name in a meaningful order.
  *
- * @param rule - The rule string to check.
- * @returns rule origin name or undefined if the rule has no valid origin
+ * @param rule The rule string to check.
+ * @returns Rule origin name or undefined if the rule has no valid origin.
  */
-const getRuleOrigin = (
-    rule: string,
-): Origin | undefined => originNames.find((originName) => OriginValidator[originName](rule));
+const getRuleOrigin = (rule: string): Origin | undefined => {
+    return originNames.find((originName) => OriginValidator[originName](rule));
+};
 
 /**
  * Converts any scriptlet rule into AdGuard syntax rule.
- * Comment is returned as is.
+ * Comments and non-scriptlet rules are returned without changes.
  *
- * @param rule Scriptlet rule.
+ * @param rule Rule.
  *
  * @returns Array of AdGuard scriptlet rules: one array item for ADG and UBO or few items for ABP.
- * For the ADG `rule`, validates its syntax and returns an empty array if it is invalid.
+ * For the ADG `rule` validates its syntax, and returns an empty array if it is invalid.
  */
 export const convertScriptletToAdg = (rule: string): string[] => {
     if (validator.isComment(rule)) {
@@ -326,10 +337,10 @@ export const convertScriptletToAdg = (rule: string): string[] => {
     // Determine rule's origin
     const originName = getRuleOrigin(rule);
 
+    // if the origin is unknown, return rule unchanged
+    // as it is a non-scriptlet rule
     if (!originName) {
-        // eslint-disable-next-line no-console
-        console.log(`Scriptlet rule of unknown origin: ${rule}`);
-        return [];
+        return [rule];
     }
 
     // Call converter of given origin
